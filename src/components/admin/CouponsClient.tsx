@@ -130,7 +130,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
             {coupons.map((coupon) => (
               <div
                 key={coupon.id}
-                className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
+                className="bg-app-card rounded-[10px] border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
                 onClick={() => openEdit(coupon)}
               >
                 <div className="@md:grid @md:grid-cols-[1fr_120px_120px_120px_100px_80px] @md:gap-4 @md:items-center space-y-3 @md:space-y-0">
@@ -145,7 +145,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   {/* Type */}
                   <div>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
                         coupon.discount_type === 'percentage'
                           ? 'bg-blue-500/10 text-blue-500'
                           : 'bg-purple-500/10 text-purple-500'
@@ -156,9 +156,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   </div>
 
                   {/* Value */}
-                  <div className="text-sm font-semibold text-app-text">
-                    {formatDiscount(coupon)}
-                  </div>
+                  <div className="text-sm font-bold text-app-text">{formatDiscount(coupon)}</div>
 
                   {/* Usage */}
                   <div className="text-sm text-app-text-secondary">
@@ -179,14 +177,14 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     {coupon.is_active ? (
                       <>
                         <ToggleRight className="h-5 w-5 text-green-600" />
-                        <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
                           {t('active')}
                         </span>
                       </>
                     ) : (
                       <>
                         <ToggleLeft className="h-5 w-5 text-app-text-muted" />
-                        <span className="text-xs font-semibold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
                           {t('inactive')}
                         </span>
                       </>
@@ -237,9 +235,9 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center bg-app-bg rounded-xl border border-dashed border-app-border">
+          <div className="py-12 text-center bg-app-bg rounded-[10px] border border-dashed border-app-border">
             <ListFilter className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-app-text">{t('noCoupons')}</h3>
+            <h3 className="text-sm font-bold text-app-text">{t('noCoupons')}</h3>
             <p className="text-xs text-app-text-secondary mt-1">{t('noCouponsDesc')}</p>
             <Button
               onClick={() => {

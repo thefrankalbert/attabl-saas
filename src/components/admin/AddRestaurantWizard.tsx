@@ -139,7 +139,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-app-border bg-app-card">
+      <div className="relative w-full max-w-lg rounded-[10px] border border-app-border bg-app-card">
         {/* Close button */}
         <Button
           variant="ghost"
@@ -183,7 +183,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm font-medium text-app-text">
+                <Label htmlFor="name" className="text-sm font-normal text-app-text">
                   {t('addRestaurant.nameLabel')}
                 </Label>
                 <Input
@@ -196,7 +196,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="type" className="text-sm font-medium text-app-text">
+                <Label htmlFor="type" className="text-sm font-normal text-app-text">
                   {t('addRestaurant.typeLabel')}
                 </Label>
                 <Select value={type} onValueChange={setType}>
@@ -214,7 +214,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="slug" className="text-sm font-medium text-app-text">
+                <Label htmlFor="slug" className="text-sm font-normal text-app-text">
                   {t('addRestaurant.slugLabel')}
                 </Label>
                 <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 2: Plan ───────────────────────────── */}
           {step === 2 && (
             <div className="space-y-3">
-              <p className="mb-2 text-sm font-medium text-app-text">
+              <p className="mb-2 text-sm font-normal text-app-text">
                 {t('addRestaurant.choosePlan')}
               </p>
               {PLAN_OPTIONS.map((p) => {
@@ -244,7 +244,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     key={p}
                     variant="outline"
                     onClick={() => setPlan(p)}
-                    className={`w-full rounded-xl border-2 p-4 text-left h-auto whitespace-normal ${
+                    className={`w-full rounded-[10px] border-2 p-4 text-left h-auto whitespace-normal ${
                       plan === p
                         ? 'border-accent bg-accent/5'
                         : 'border-app-border hover:border-app-border-hover'
@@ -273,7 +273,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 3: Summary ────────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="rounded-xl bg-app-bg p-4">
+              <div className="rounded-[10px] bg-app-bg p-4">
                 <div className="mb-4 flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-accent" />
                   <p className="text-sm font-bold text-app-text">{t('addRestaurant.summary')}</p>
@@ -284,13 +284,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     <span className="text-xs text-app-text-secondary">
                       {t('addRestaurant.summaryName')}
                     </span>
-                    <span className="text-sm font-medium text-app-text">{name}</span>
+                    <span className="text-sm font-normal text-app-text">{name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-app-text-secondary">
                       {t('addRestaurant.summaryType')}
                     </span>
-                    <span className="text-sm font-medium text-app-text">
+                    <span className="text-sm font-normal text-app-text">
                       {TYPE_KEYS[type] ? t(TYPE_KEYS[type]) : type}
                     </span>
                   </div>
@@ -298,13 +298,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     <span className="text-xs text-app-text-secondary">
                       {t('addRestaurant.summaryAddress')}
                     </span>
-                    <span className="text-sm font-medium text-app-text">{slug}.attabl.com</span>
+                    <span className="text-sm font-normal text-app-text">{slug}.attabl.com</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-app-text-secondary">
                       {t('addRestaurant.summaryPlan')}
                     </span>
-                    <span className="text-sm font-medium text-app-text">
+                    <span className="text-sm font-normal text-app-text">
                       {PLAN_KEYS[plan] ? t(PLAN_KEYS[plan].label) : plan}
                     </span>
                   </div>
@@ -350,7 +350,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <Button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 ? !step1Valid : !step2Valid}
-              className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-50"
+              className="gap-2 rounded-lg bg-accent text-sm font-bold text-accent-text hover:bg-accent-hover disabled:opacity-50"
             >
               {t('addRestaurant.next')}
               <ArrowRight className="h-4 w-4" />
@@ -359,7 +359,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <Button
               onClick={handleSubmit}
               disabled={loading}
-              className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover"
+              className="gap-2 rounded-lg bg-accent text-sm font-bold text-accent-text hover:bg-accent-hover"
             >
               {loading ? (
                 <>

@@ -57,7 +57,7 @@ export function ServiceRoomSection({
   return (
     <section className="mb-6 last:mb-0">
       <header className="mb-2.5 flex items-baseline justify-between border-b border-app-border/50 pb-2">
-        <div className="flex items-center gap-2.5 text-[13px] font-semibold text-app-text">
+        <div className="flex items-center gap-2.5 text-[13px] font-bold text-app-text">
           <span className={cn('block h-3.5 w-[3px]', swatchClass)} aria-hidden />
           <span>{zoneName}</span>
           {zoneTag && (

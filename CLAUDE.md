@@ -94,13 +94,14 @@ pnpm db:migrate       # Appliquer les migrations Supabase (supabase db push)
 
 ### Pipeline CI/CD (GitHub Actions)
 
-5 portes de qualite automatiques sur chaque PR vers `main` :
+6 portes de qualite automatiques sur chaque PR vers `main` :
 
 1. `pnpm typecheck` — Types TypeScript
 2. `pnpm lint` — ESLint
 3. `pnpm format:check` — Prettier
-4. `pnpm test` — Tests unitaires (99 tests Vitest)
-5. `pnpm build` — Build Next.js
+4. `pnpm rule09:check` — Charte Square (voir `.claude/rules/09-square-design.md`)
+5. `pnpm test` — Tests unitaires (568 tests Vitest)
+6. `pnpm build` — Build Next.js
 
 ## Multi-tenant : Flux de donnees
 
@@ -202,7 +203,9 @@ SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx,
 
 ## Design
 
-Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
+- Charte visuelle obligatoire : `.claude/rules/09-square-design.md` (direction Square for Restaurants, accent `#2e7d32`, radii `[4,6,10,50]`, weights `[400,700]`, un CTA vert par ecran).
+- Source de verite operationnelle : `docs/design/DESIGN.md`.
+- Pour toute tache frontend/design : respecter la regle 09 avant toute autre reference visuelle. Voir `.claude/skills/design-fidelity/SKILL.md` pour le process d'execution.
 
 ## Regles de securite - OBLIGATOIRES
 
@@ -271,6 +274,9 @@ Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
 - `agent_docs/architecture.md` : Details sur l'architecture en couches
 - `agent_docs/database-conventions.md` : Conventions base de donnees et migrations
 - `agent_docs/security-patterns.md` : Patterns de securite detailles
+- `docs/design/DESIGN.md` : Source de verite visuelle ATTABL
+- `docs/design/references/square.md` : Tokens Square for Restaurants extraits
+- `docs/design/audits/square-gap-analysis.md` : Gaps ATTABL vs Square + justifications
 
 ---
 
@@ -371,10 +377,11 @@ html (height: 100%, overflow: hidden)  -- globals.css
 Apres avoir termine une tache, executer systematiquement :
 
 ```bash
-pnpm typecheck    # Types TypeScript
-pnpm lint         # ESLint
-pnpm test         # Tests unitaires
-pnpm build        # Build production (detecte les erreurs Turbopack vs Webpack)
+pnpm typecheck     # Types TypeScript
+pnpm lint          # ESLint
+pnpm rule09:check  # Charte Square (accent #2e7d32, radii [4,6,10,50], weights [400,700])
+pnpm test          # Tests unitaires
+pnpm build         # Build production (detecte les erreurs Turbopack vs Webpack)
 ```
 
 Si l'un de ces checks echoue, corriger AVANT de considerer la tache terminee.

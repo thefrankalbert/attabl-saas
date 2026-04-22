@@ -36,7 +36,7 @@ function Stat({ icon: Icon, label, value, sub, delta, alert }: StatProps) {
     <div className="flex flex-1 items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
       <div
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]',
           alert ? 'bg-red-500/10 text-red-400' : 'bg-app-elevated text-app-text-secondary',
         )}
       >
@@ -44,7 +44,7 @@ function Stat({ icon: Icon, label, value, sub, delta, alert }: StatProps) {
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
             {label}
           </p>
           {delta && delta.direction !== 'flat' && (

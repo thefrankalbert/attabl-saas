@@ -136,7 +136,7 @@ export default function OrderDetails({
                 {fmt(displayTotal + tipAmount)}
               </span>
               {tipAmount > 0 && (
-                <span className="text-[10px] text-emerald-500 font-medium">
+                <span className="text-[10px] text-emerald-500 font-normal">
                   +{fmt(tipAmount)} {ta('tipLabel')}
                 </span>
               )}
@@ -181,9 +181,9 @@ export default function OrderDetails({
           </div>
 
           {/* Scrollable: items list only */}
-          <div className="rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0 flex-1">
+          <div className="rounded-[10px] border border-app-border overflow-hidden flex flex-col min-h-0 flex-1">
             <div className="px-3 py-2 bg-app-bg border-b border-app-border flex items-center justify-between shrink-0">
-              <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+              <p className="text-[10px] font-normal text-app-text-secondary uppercase tracking-wider">
                 {t('orderDetails')}
               </p>
               <p className="text-[10px] text-app-text-muted">
@@ -198,7 +198,7 @@ export default function OrderDetails({
                       {item.quantity}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-xs text-app-text">{item.name}</p>
+                      <p className="font-normal text-xs text-app-text">{item.name}</p>
                       {item.customer_notes && (
                         <p className="text-[10px] text-status-warning mt-0.5 bg-status-warning-bg px-1.5 py-0.5 rounded inline-block">
                           {item.customer_notes}
@@ -220,7 +220,7 @@ export default function OrderDetails({
                         )}
                     </div>
                   </div>
-                  <p className="font-medium text-sm text-app-text">
+                  <p className="font-normal text-sm text-app-text">
                     {fmt(item.price * item.quantity)}
                   </p>
                 </div>
@@ -285,8 +285,8 @@ export default function OrderDetails({
         <div className="@lg:w-56 shrink-0 space-y-3">
           {/* Status Actions */}
           {order.status !== 'delivered' && order.status !== 'cancelled' && (
-            <div className="rounded-xl border border-app-border p-3 space-y-2">
-              <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+            <div className="rounded-[10px] border border-app-border p-3 space-y-2">
+              <p className="text-[10px] font-normal text-app-text-secondary uppercase tracking-wider">
                 {t('statusLabel')}
               </p>
               <div className="grid grid-cols-1 gap-1.5">
@@ -340,8 +340,8 @@ export default function OrderDetails({
           )}
 
           {/* Print */}
-          <div className="rounded-xl border border-app-border p-3 space-y-2">
-            <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+          <div className="rounded-[10px] border border-app-border p-3 space-y-2">
+            <p className="text-[10px] font-normal text-app-text-secondary uppercase tracking-wider">
               {t('printLabel')}
             </p>
             <div className="grid grid-cols-1 gap-1.5">
@@ -368,7 +368,7 @@ export default function OrderDetails({
 
         {/* Warnings */}
         {order.status !== 'ready' && order.status !== 'delivered' && (
-          <div className="flex items-center gap-2 p-4 border border-amber-500/20 bg-amber-500/10 text-amber-500 rounded-xl text-xs">
+          <div className="flex items-center gap-2 p-4 border border-amber-500/20 bg-amber-500/10 text-amber-500 rounded-[10px] text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {t('warningReadyBeforeCheckout')}
           </div>
@@ -404,7 +404,7 @@ function InfoChip({
     <span className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-2 py-0.5 text-app-text">
       {icon}
       {label && <span className="text-app-text-muted">{label}:</span>}
-      <span className="font-medium">{value}</span>
+      <span className="font-normal">{value}</span>
     </span>
   );
 }

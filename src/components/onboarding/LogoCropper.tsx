@@ -98,7 +98,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl bg-app-card overflow-hidden border border-app-border">
+      <div className="w-full max-w-md rounded-[10px] bg-app-card overflow-hidden border border-app-border">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
           <h3 className="font-bold text-app-text">Recadrer le logo</h3>
@@ -108,7 +108,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             size="icon"
             onClick={onCancel}
             disabled={applying}
-            className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors h-8 w-8"
+            className="p-1.5 rounded-[10px] text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors h-8 w-8"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -137,7 +137,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               variant="outline"
               size="icon"
               onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
-              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
+              className="p-2 rounded-[10px] border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -156,7 +156,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               variant="outline"
               size="icon"
               onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
-              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
+              className="p-2 rounded-[10px] border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -168,7 +168,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
           <Button
             type="button"
             variant="outline"
-            className="flex-1 h-11 rounded-xl border-app-border"
+            className="flex-1 h-11 rounded-[10px] border-app-border"
             onClick={onCancel}
             disabled={applying}
           >
@@ -176,7 +176,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
           </Button>
           <Button
             type="button"
-            className="flex-1 h-11 rounded-xl bg-accent text-accent-text font-bold hover:bg-accent-hover"
+            className="flex-1 h-11 rounded-[10px] bg-accent text-accent-text font-bold hover:bg-accent-hover"
             onClick={handleApply}
             disabled={applying}
           >

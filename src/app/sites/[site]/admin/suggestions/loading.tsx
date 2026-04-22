@@ -7,7 +7,7 @@ export default function SuggestionsLoading() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 bg-app-elevated rounded-xl" />
+          <div key={i} className="h-32 bg-app-elevated rounded-[10px]" />
         ))}
       </div>
     </div>

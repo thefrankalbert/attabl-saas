@@ -40,7 +40,7 @@ const testimonials: Testimonial[] = [
     role: 'La Terrasse - Dakar',
   },
   {
-    text: "Le suivi des stocks en temps reel m'a evite des ruptures. Je sais exactement quoi commander et quand.",
+    text: "Le suivi des stocks en temps réel m'a evite des ruptures. Je sais exactement quoi commander et quand.",
     image: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=80&h=80&fit=crop&crop=face',
     name: 'Patrick O.',
     role: 'Saveurs Locales - Yaounde',
@@ -85,7 +85,7 @@ export default function SocialProof() {
         >
           <div className="flex justify-center">
             <div className="border border-neutral-200 dark:border-neutral-800 py-1 px-4 rounded-lg text-sm text-neutral-600 dark:text-neutral-400">
-              Temoignages
+              Témoignages
             </div>
           </div>
 

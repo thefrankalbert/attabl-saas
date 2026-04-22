@@ -22,10 +22,10 @@ interface Props {
 export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered }: Props) {
   return (
     <section className="shrink-0 border-t border-app-border/50 bg-app-card px-4 py-3 lg:hidden">
-      <header className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted">
+      <header className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[1.2px] text-app-text-muted">
         <Utensils className="h-3 w-3 text-status-warning" />
         <span>{labels.title}</span>
-        <span className="ml-auto font-mono font-medium text-app-text-secondary">
+        <span className="ml-auto font-mono font-normal text-app-text-secondary">
           {readyOrders.length}
         </span>
       </header>
@@ -46,7 +46,7 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-app-text">
+                    <span className="font-mono text-xs font-bold text-app-text">
                       {labels.tableShort} {order.table_number}
                     </span>
                     <span className="font-mono text-[10px] text-app-text-muted">
@@ -61,7 +61,7 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
                   type="button"
                   size="sm"
                   onClick={() => onMarkDelivered(order.id)}
-                  className="h-8 shrink-0 gap-1 bg-status-success px-2.5 text-[11px] font-semibold text-white hover:bg-status-success/90"
+                  className="h-8 shrink-0 gap-1 bg-status-success px-2.5 text-[11px] font-bold text-white hover:bg-status-success/90"
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   {labels.markDelivered}

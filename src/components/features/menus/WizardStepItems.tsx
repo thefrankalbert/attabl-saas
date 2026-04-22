@@ -81,11 +81,11 @@ export default function WizardStepItems({
     <div className="space-y-5 pt-2">
       {/* Breadcrumb context */}
       <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-        <span className="px-2 py-0.5 rounded bg-accent/10 text-accent font-medium">
+        <span className="px-2 py-0.5 rounded bg-accent/10 text-accent font-normal">
           {menu.name}
         </span>
         <span className="text-app-text-muted">/</span>
-        <span className="px-2 py-0.5 rounded bg-app-elevated text-app-text font-medium">
+        <span className="px-2 py-0.5 rounded bg-app-elevated text-app-text font-normal">
           {category.name}
         </span>
       </div>
@@ -96,9 +96,9 @@ export default function WizardStepItems({
           {items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-app-text">{item.name}</p>
+                <p className="text-sm font-normal text-app-text">{item.name}</p>
               </div>
-              <span className="text-sm font-medium text-app-text-secondary tabular-nums">
+              <span className="text-sm font-normal text-app-text-secondary tabular-nums">
                 {formatCurrency(item.price, currency)}
               </span>
             </div>

@@ -66,7 +66,7 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
         {/* Table name with glow effect */}
         {tableName && (
           <p
-            className="text-sm font-semibold uppercase tracking-wider"
+            className="text-sm font-bold uppercase tracking-wider"
             style={{
               color: accentColor,
               textShadow: `0 0 8px ${accentColor}CC, 0 0 16px ${accentColor}66`,
@@ -78,7 +78,7 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
 
         {/* QR code with glowing border */}
         <div
-          className="p-4 rounded-xl"
+          className="p-4 rounded-[10px]"
           style={{
             backgroundColor: '#FFFFFF',
             boxShadow: `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60`,
@@ -108,7 +108,7 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
 
         {/* CTA text in accent color */}
         <p
-          className="text-sm font-medium text-center"
+          className="text-sm font-normal text-center"
           style={{
             color: accentColor,
             textShadow: `0 0 6px ${accentColor}80`,

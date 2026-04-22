@@ -25,10 +25,10 @@ function AccessDenied() {
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-      <div className="p-4 bg-app-elevated rounded-xl mb-4">
+      <div className="p-4 bg-app-elevated rounded-[10px] mb-4">
         <ShieldX className="w-8 h-8 text-app-text-muted" />
       </div>
-      <h2 className="text-lg font-semibold text-app-text mb-1">{t('accessDenied')}</h2>
+      <h2 className="text-lg font-bold text-app-text mb-1">{t('accessDenied')}</h2>
       <p className="text-sm text-app-text-secondary max-w-sm">{t('ownerOnly')}</p>
     </div>
   );

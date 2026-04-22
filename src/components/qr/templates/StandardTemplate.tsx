@@ -73,7 +73,7 @@ export function StandardTemplate({ config, url, tenantName, tableName, logoUrl }
         )}
 
         {/* QR code in white rounded container */}
-        <div className="p-4 bg-white rounded-2xl shadow-inner">
+        <div className="p-4 bg-white rounded-[10px] shadow-inner">
           <QRCodeSVG
             value={url}
             size={config.qrSize}
@@ -98,7 +98,7 @@ export function StandardTemplate({ config, url, tenantName, tableName, logoUrl }
 
         {/* CTA text */}
         <p
-          className="mt-4 text-sm font-medium text-center"
+          className="mt-4 text-sm font-normal text-center"
           style={{ color: config.templateTextColor }}
         >
           {config.ctaText}

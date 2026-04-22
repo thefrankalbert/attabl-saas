@@ -172,7 +172,7 @@ export default function OnboardingPage() {
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
-    primaryColor: '#4d7c0f',
+    primaryColor: '#2e7d32',
     secondaryColor: '#000000',
     description: '',
     menuOption: 'skip',
@@ -488,8 +488,8 @@ export default function OnboardingPage() {
             <div className="h-7 w-64 rounded-lg bg-app-elevated/30" />
             <div className="h-4 w-96 rounded bg-app-elevated/20" />
             <div className="space-y-4">
-              <div className="h-48 rounded-xl bg-app-elevated/20" />
-              <div className="h-32 rounded-xl bg-app-elevated/20" />
+              <div className="h-48 rounded-[10px] bg-app-elevated/20" />
+              <div className="h-32 rounded-[10px] bg-app-elevated/20" />
             </div>
           </div>
           <div className="hidden lg:flex w-80 items-center justify-center p-6">
@@ -536,7 +536,7 @@ export default function OnboardingPage() {
           >
             <LayoutGrid className="w-4 h-4 text-app-text-muted" />
           </Link>
-          <span className="text-sm font-semibold text-app-text hidden sm:inline">
+          <span className="text-sm font-bold text-app-text hidden sm:inline">
             {data.tenantName || 'ATTABL'}
           </span>
         </div>
@@ -558,7 +558,7 @@ export default function OnboardingPage() {
                 onClick={() => {
                   if (isCompleted && phaseIsComplete(phaseNum)) goToPhase(phaseNum);
                 }}
-                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors h-auto ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-normal transition-colors h-auto ${
                   isActive
                     ? 'text-accent'
                     : isCompleted
@@ -661,7 +661,7 @@ export default function OnboardingPage() {
                   type="button"
                   variant="ghost"
                   onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
+                  className="flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
@@ -676,7 +676,7 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={completeOnboarding}
                   disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                  className="h-11 rounded-[10px] gap-2 text-sm font-bold px-6"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -692,7 +692,7 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={goNext}
                   disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                  className="h-11 rounded-[10px] gap-2 text-sm font-bold px-6"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

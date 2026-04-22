@@ -174,7 +174,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
               variant="outline"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
+                'px-3 py-1.5 text-[11px] font-bold rounded-lg whitespace-nowrap h-auto',
                 activeTab === tab.id
                   ? 'bg-app-text text-white border-app-text shadow-sm'
                   : 'bg-white border-app-border hover:bg-app-elevated',
@@ -198,12 +198,12 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
           <div className="space-y-4">
             {/* Plan status card */}
             <div
-              className="rounded-xl p-6 bg-white"
+              className="rounded-[10px] p-6 bg-white"
               style={{ border: '1px solid rgba(238,238,238,0.6)' }}
             >
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-5 w-5" style={{ color: 'rgb(115, 115, 115)' }} />
-                <h3 className="text-lg font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
+                <h3 className="text-lg font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                   {t('subscription.currentSubscription')}
                 </h3>
               </div>
@@ -219,7 +219,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   </div>
                   <span
                     className={cn(
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal',
                       getStatusBadge(tenant.subscription_status || 'active'),
                     )}
                   >
@@ -231,7 +231,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <p className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.billingCycle')}
                   </p>
-                  <p className="font-medium" style={{ color: 'rgb(26, 26, 26)' }}>
+                  <p className="font-normal" style={{ color: 'rgb(26, 26, 26)' }}>
                     {tenant.billing_interval === 'yearly'
                       ? t('subscription.yearly')
                       : t('subscription.monthly')}
@@ -243,7 +243,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                     <p className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                       {t('subscription.nextRenewal')}
                     </p>
-                    <p className="font-medium" style={{ color: 'rgb(26, 26, 26)' }}>
+                    <p className="font-normal" style={{ color: 'rgb(26, 26, 26)' }}>
                       {new Date(tenant.subscription_current_period_end).toLocaleDateString(locale, {
                         day: 'numeric',
                         month: 'long',
@@ -257,10 +257,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
 
             {/* Limits card */}
             <div
-              className="rounded-xl p-6 bg-white"
+              className="rounded-[10px] p-6 bg-white"
               style={{ border: '1px solid rgba(238,238,238,0.6)' }}
             >
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'rgb(26, 26, 26)' }}>
+              <h3 className="text-lg font-bold mb-4" style={{ color: 'rgb(26, 26, 26)' }}>
                 {t('subscription.usageLimits')}
               </h3>
               <div className="space-y-4">
@@ -268,7 +268,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <span className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.administrators')}
                   </span>
-                  <span className="font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
+                  <span className="font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {limits.admins > 50 ? t('subscription.unlimited') : limits.admins}
                   </span>
                 </div>
@@ -276,7 +276,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <span className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.venues')}
                   </span>
-                  <span className="font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
+                  <span className="font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {limits.venues > 50 ? t('subscription.unlimited') : limits.venues}
                   </span>
                 </div>
@@ -299,7 +299,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   variant="ghost"
                   onClick={() => setBillingInterval('monthly')}
                   className={cn(
-                    'px-4 py-2 rounded-full text-sm font-semibold h-auto',
+                    'px-4 py-2 rounded-full text-sm font-bold h-auto',
                     billingInterval === 'monthly' ? 'bg-app-text text-white' : '',
                   )}
                   style={
@@ -312,7 +312,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   variant="ghost"
                   onClick={() => setBillingInterval('yearly')}
                   className={cn(
-                    'px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-1 h-auto',
+                    'px-4 py-2 rounded-full text-sm font-bold flex items-center gap-1 h-auto',
                     billingInterval === 'yearly' ? 'bg-app-text text-white' : '',
                   )}
                   style={billingInterval !== 'yearly' ? { color: 'rgb(115, 115, 115)' } : undefined}
@@ -337,7 +337,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <div
                     key={plan}
                     className={cn(
-                      'border rounded-xl p-6 flex flex-col bg-white',
+                      'border rounded-[10px] p-6 flex flex-col bg-white',
                       isCurrent ? 'border-2 border-lime-400' : '',
                     )}
                     style={!isCurrent ? { border: '1px solid rgba(238,238,238,0.6)' } : undefined}
@@ -345,13 +345,13 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                     {/* Plan header */}
                     <div className="mb-6">
                       {isCurrent && (
-                        <span className="inline-block text-xs font-medium text-lime-700 bg-lime-50 px-2 py-0.5 rounded-full mb-2">
+                        <span className="inline-block text-xs font-normal text-lime-700 bg-lime-50 px-2 py-0.5 rounded-full mb-2">
                           {t('subscription.currentPlan')}
                         </span>
                       )}
                       <div className="flex items-center gap-2">
                         <PlanIcon className="h-5 w-5" style={{ color: 'rgb(115, 115, 115)' }} />
-                        <h3 className="text-xl font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
+                        <h3 className="text-xl font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                           {PLAN_NAMES[plan]}
                         </h3>
                       </div>
@@ -364,7 +364,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                           {price.toLocaleString(locale)}
                         </span>
                         <span
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                           style={{ color: 'rgb(115, 115, 115)' }}
                         >
                           {t('subscription.perMonth')}
@@ -392,7 +392,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                       onClick={() => handleUpgrade(plan, billingInterval)}
                       disabled={isLoading === plan || isCurrent}
                       className={cn(
-                        'w-full h-11 rounded-lg font-semibold text-sm transition-colors',
+                        'w-full h-11 rounded-lg font-bold text-sm transition-colors',
                         isCurrent
                           ? 'cursor-not-allowed'
                           : plan === 'pro'

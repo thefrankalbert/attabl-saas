@@ -203,9 +203,9 @@ function Count({ active, children }: { active: boolean; children: React.ReactNod
 
 function SubHead({ label, count }: { label: string; count: number }) {
   return (
-    <div className="mt-1.5 mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted first:mt-0">
+    <div className="mt-1.5 mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[1.2px] text-app-text-muted first:mt-0">
       <span>{label}</span>
-      <span className="font-mono font-medium tracking-[0.5px] text-app-text-secondary">
+      <span className="font-mono font-normal tracking-[0.5px] text-app-text-secondary">
         {count}
       </span>
     </div>
@@ -278,7 +278,7 @@ function ServerCard({
         dragging && 'opacity-50',
       )}
     >
-      <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full border border-app-border bg-app-bg text-[11px] font-semibold text-app-text-secondary">
+      <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full border border-app-border bg-app-bg text-[11px] font-bold text-app-text-secondary">
         {initials}
         <span
           className={cn(
@@ -288,7 +288,7 @@ function ServerCard({
         />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-xs font-medium text-app-text">
+        <div className="truncate text-xs font-normal text-app-text">
           {vm.server.full_name ?? '-'}
         </div>
         <div className="font-mono text-[10px] text-app-text-muted">
@@ -338,7 +338,7 @@ function OrderCard({
   return (
     <div className="mb-1.5 rounded border border-app-border bg-app-elevated p-2.5">
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-app-text">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-app-text">
           <Utensils className="h-3 w-3 text-status-warning" />
           <span className="font-mono">
             {labels.tableShort} {order.table_number}
@@ -360,7 +360,7 @@ function OrderCard({
       </div>
       <div className="flex items-center justify-between border-t border-dashed border-app-border/60 pt-2">
         <span className="flex items-center gap-1.5">
-          <span className="rounded-sm bg-status-warning/15 px-1.5 py-px text-[9px] font-semibold tracking-wide uppercase text-status-warning">
+          <span className="rounded-sm bg-status-warning/15 px-1.5 py-px text-[9px] font-bold tracking-wide uppercase text-status-warning">
             {labels.itemsCount(items.length)}
           </span>
           <span className="font-mono text-[10px] text-app-text-muted">
@@ -371,7 +371,7 @@ function OrderCard({
           type="button"
           size="sm"
           onClick={() => onMarkDelivered(order.id)}
-          className="h-7 gap-1 bg-status-success px-2.5 text-[11px] font-semibold text-white hover:bg-status-success/90"
+          className="h-7 gap-1 bg-status-success px-2.5 text-[11px] font-bold text-white hover:bg-status-success/90"
         >
           <CheckCircle2 className="h-3 w-3" />
           {labels.markDelivered}

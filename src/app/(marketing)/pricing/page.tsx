@@ -148,7 +148,7 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
     features: [
       { label: 'Gestion de stock', starter: false, pro: true, business: true, enterprise: true },
       {
-        label: 'Fiches techniques (cout matiere)',
+        label: 'Fiches techniques (coût matière)',
         starter: false,
         pro: true,
         business: true,
@@ -218,7 +218,7 @@ const faqs = [
     a: "14 jours d'acces complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables.",
   },
   {
-    q: 'Que se passe-t-il apres les 14 jours ?',
+    q: 'Que se passe-t-il après les 14 jours ?',
     a: 'Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le controle.',
   },
   {
@@ -248,7 +248,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between py-5 text-left h-auto px-0 justify-between hover:bg-transparent"
       >
-        <span className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
+        <span className="font-bold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
           {q}
         </span>
         <ChevronDown
@@ -275,7 +275,7 @@ function FeatureCell({ value }: { value: boolean | string }) {
   if (value === true) return <Check className="w-4 h-4 text-green-600 mx-auto" />;
   if (value === false)
     return <Minus className="w-4 h-4 text-neutral-300 dark:text-neutral-600 mx-auto" />;
-  return <span className="text-xs font-medium text-neutral-900 dark:text-white">{value}</span>;
+  return <span className="text-xs font-normal text-neutral-900 dark:text-white">{value}</span>;
 }
 
 // ─── Page ──────────────────────────────────
@@ -306,7 +306,7 @@ export default function PricingPage() {
                 variant="ghost"
                 onClick={() => setPeriod('monthly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                  'px-5 py-2 text-sm font-normal transition-all rounded-full h-auto',
                   period === 'monthly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
@@ -319,14 +319,14 @@ export default function PricingPage() {
                 variant="ghost"
                 onClick={() => setPeriod('yearly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                  'px-5 py-2 text-sm font-normal transition-all rounded-full h-auto',
                   period === 'yearly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
                 )}
               >
                 Annuel
-                <span className="ml-1.5 text-xs text-green-600 font-semibold">-20%</span>
+                <span className="ml-1.5 text-xs text-green-600 font-bold">-20%</span>
               </Button>
             </div>
           </div>
@@ -388,7 +388,7 @@ export default function PricingPage() {
               { text: 'KDS (ecran cuisine)' },
               { text: 'Gestion des tables et assignation serveurs' },
               { text: 'Gestion de stock et alertes' },
-              { text: 'Fiches techniques (cout matiere)' },
+              { text: 'Fiches techniques (coût matière)' },
               { text: 'Suivi fournisseurs' },
               { text: 'Mobile money et pourboires' },
               { text: 'Rapports de vente et best-sellers' },
@@ -475,7 +475,7 @@ export default function PricingPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-b-2 border-neutral-200 dark:border-neutral-700">
-                  <TableHead className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
+                  <TableHead className="text-left py-4 pr-4 text-sm font-normal text-neutral-500 dark:text-neutral-400 w-[40%]">
                     Fonctionnalite
                   </TableHead>
                   {['STARTER', 'PRO', 'BUSINESS', 'ENTERPRISE'].map((name) => (
@@ -494,7 +494,7 @@ export default function PricingPage() {
                     <TableRow>
                       <TableCell
                         colSpan={5}
-                        className="pt-8 pb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
+                        className="pt-8 pb-3 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
                       >
                         {cat.title}
                       </TableCell>

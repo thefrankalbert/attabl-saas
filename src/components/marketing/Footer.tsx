@@ -61,7 +61,7 @@ export default function Footer() {
           <div className="flex flex-1 flex-wrap gap-8 sm:gap-12">
             {footerColumns.map((column) => (
               <div key={column.title}>
-                <h3 className="mb-2 font-[family-name:var(--font-inter)] text-sm font-semibold text-white">
+                <h3 className="mb-2 font-[family-name:var(--font-inter)] text-sm font-bold text-white">
                   {column.title}
                 </h3>
                 <ul className="space-y-1.5">

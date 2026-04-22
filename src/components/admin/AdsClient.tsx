@@ -149,7 +149,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
         {ads.length > 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+          <div className="bg-app-card rounded-[10px] border border-app-border overflow-hidden">
             {ads.map((ad) => (
               <div
                 key={ad.id}
@@ -215,8 +215,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
             ))}
           </div>
         ) : (
-          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-app-card rounded-[10px] border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="w-8 h-8 text-app-text-muted" />
             </div>
             <h3 className="text-lg font-bold text-app-text">{t('noAds')}</h3>
@@ -230,7 +230,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           {/* Image */}
           <div className="space-y-2">
             <Label>{t('bannerImage')}</Label>
-            <div className="border-2 border-dashed border-app-border rounded-xl p-4 text-center hover:bg-app-bg transition-colors cursor-pointer relative">
+            <div className="border-2 border-dashed border-app-border rounded-[10px] p-4 text-center hover:bg-app-bg transition-colors cursor-pointer relative">
               {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
               <input
                 type="file"

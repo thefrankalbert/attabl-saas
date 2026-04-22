@@ -268,7 +268,7 @@ export default function MenuItemCard({
           )}
           {/* Item name - 16px SemiBold #1A1A1A max 2 lines */}
           <h3
-            className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5"
+            className="text-base font-bold leading-[1.4] line-clamp-2 mt-0.5"
             style={{ color: 'rgb(26, 26, 26)' }}
           >
             {getTranslatedContent(language, item.name, item.name_en)}
@@ -298,7 +298,7 @@ export default function MenuItemCard({
             <div className="flex items-center gap-1 mt-1.5">
               <Star className="w-3 h-3 fill-allergen" style={{ color: 'rgb(255, 184, 0)' }} />
               <span
-                className="text-[13px] font-medium leading-[1.4]"
+                className="text-[13px] font-normal leading-[1.4]"
                 style={{ color: 'rgb(26, 26, 26)' }}
               >
                 {item.rating.toFixed(1)}
@@ -339,7 +339,7 @@ export default function MenuItemCard({
 
           {hasModifiersOrVariants && (
             <span
-              className="text-[11px] font-medium leading-[1.4] mt-1 block"
+              className="text-[11px] font-normal leading-[1.4] mt-1 block"
               style={{ color: 'rgb(176, 176, 176)' }}
             >
               {tt('customizable')}
@@ -367,7 +367,7 @@ export default function MenuItemCard({
                 />
               </Button>
               {showVariantDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-app-border py-1 z-20 min-w-[160px]">
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-[10px] border border-app-border py-1 z-20 min-w-[160px]">
                   {item.price_variants?.map((variant) => (
                     <Button
                       key={variant.id}
@@ -427,11 +427,11 @@ export default function MenuItemCard({
 
       {/* IMAGE - Right side: 90x90px */}
       <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
-        <div className="w-full h-full rounded-xl overflow-hidden bg-app-elevated flex items-center justify-center">
+        <div className="w-full h-full rounded-[10px] overflow-hidden bg-app-elevated flex items-center justify-center">
           {hasValidImage ? (
             <>
               {!imageLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-xl" />
+                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-[10px]" />
               )}
               <Image
                 src={item.image_url!}
@@ -487,7 +487,7 @@ export default function MenuItemCard({
       {/* Unavailable overlay - covers entire card */}
       {isUnavailable && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
-          <span className="text-white text-xs font-semibold uppercase tracking-wide">
+          <span className="text-white text-xs font-bold uppercase tracking-wide">
             {tt('unavailable')}
           </span>
         </div>

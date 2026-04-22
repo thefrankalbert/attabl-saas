@@ -39,7 +39,7 @@ export default function UsersTable({
   const locale = useLocale();
 
   return (
-    <div className="bg-app-card border border-app-border rounded-xl overflow-hidden">
+    <div className="bg-app-card border border-app-border rounded-[10px] overflow-hidden">
       <div className="divide-y divide-app-border">
         {users.map((user) => {
           const roleConfig = getRoleConfig(user.role, t);
@@ -61,7 +61,7 @@ export default function UsersTable({
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-app-text">{user.full_name}</p>
+                    <p className="font-normal text-app-text">{user.full_name}</p>
                     {!user.is_active && (
                       <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
                         {t('inactive')}
@@ -75,7 +75,7 @@ export default function UsersTable({
               <div className="flex items-center gap-6">
                 <div
                   className={cn(
-                    'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2',
+                    'px-3 py-1 rounded-full text-xs font-normal flex items-center gap-2',
                     roleConfig.bg,
                     roleConfig.color,
                   )}

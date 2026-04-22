@@ -346,7 +346,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-900/10 dark:shadow-black/30',
+        'overflow-hidden rounded-[10px] border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-900/10 dark:shadow-black/30',
         className,
       )}
     >
@@ -355,7 +355,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-        <span className="ml-2 text-[9px] font-medium text-neutral-400 dark:text-neutral-500">
+        <span className="ml-2 text-[9px] font-normal text-neutral-400 dark:text-neutral-500">
           app.attabl.com
         </span>
       </div>
@@ -441,7 +441,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                 <div className="flex-1 rounded-lg border border-app-border bg-app-card p-2 flex flex-col min-h-0">
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div>
-                      <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                      <span className="text-[7px] font-bold text-app-text-muted uppercase tracking-wider">
                         Revenu - 7 jours
                       </span>
                       <div className="flex items-baseline gap-1 mt-0.5">
@@ -474,7 +474,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                 {/* Avg Basket (mini blue chart like real dashboard) */}
                 <div className="rounded-lg border border-app-border bg-app-card p-2">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                    <span className="text-[7px] font-bold text-app-text-muted uppercase tracking-wider">
                       Panier moyen
                     </span>
                     <span className="text-[10px] font-black text-app-text tabular-nums">
@@ -492,7 +492,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                       className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 border border-app-border rounded-lg"
                     >
                       <div className="h-2 w-2 rounded-sm bg-app-text-muted/20" />
-                      <span className="text-[7px] text-app-text-secondary font-medium">
+                      <span className="text-[7px] text-app-text-secondary font-normal">
                         {label}
                       </span>
                     </div>
@@ -503,10 +503,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
               {/* Right Column - Orders */}
               <div className="w-[42%] flex flex-col rounded-lg border border-app-border overflow-hidden bg-app-card">
                 <div className="flex items-center justify-between px-2 py-1.5 border-b border-app-border shrink-0">
-                  <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                  <span className="text-[7px] font-bold text-app-text-muted uppercase tracking-wider">
                     Commandes
                   </span>
-                  <span className="text-[7px] font-semibold text-accent">Tout voir</span>
+                  <span className="text-[7px] font-bold text-accent">Tout voir</span>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   {orders.map((order, i) => {

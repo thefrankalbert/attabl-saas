@@ -100,7 +100,7 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
               )}
             </div>
             <span
-              className={`text-[11px] font-medium ${tab.isActive ? 'text-app-text' : 'text-app-text-muted'}`}
+              className={`text-[11px] font-normal ${tab.isActive ? 'text-app-text' : 'text-app-text-muted'}`}
             >
               {tab.label}
             </span>

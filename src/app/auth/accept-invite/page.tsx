@@ -28,7 +28,7 @@ function AttablLogo() {
           <path d="M9 21V9" />
         </svg>
       </div>
-      <span className="text-xl font-semibold tracking-tight text-app-text">ATTABL</span>
+      <span className="text-xl font-bold tracking-tight text-app-text">ATTABL</span>
     </Link>
   );
 }
@@ -76,7 +76,7 @@ function AcceptInviteForm() {
     return (
       <div className="w-full">
         <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+        <div className="mt-10 bg-app-card rounded-[10px] border border-app-border p-8">
           <Alert
             variant="destructive"
             className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
@@ -86,7 +86,7 @@ function AcceptInviteForm() {
             </AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-app-text-secondary">
-            <Link href="/login" className="font-semibold text-app-text hover:underline">
+            <Link href="/login" className="font-bold text-app-text hover:underline">
               Retour a la connexion
             </Link>
           </p>
@@ -100,7 +100,7 @@ function AcceptInviteForm() {
     return (
       <div className="w-full">
         <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+        <div className="mt-10 bg-app-card rounded-[10px] border border-app-border p-8">
           <Alert
             variant="destructive"
             className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
@@ -111,7 +111,7 @@ function AcceptInviteForm() {
             </AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-app-text-secondary">
-            <Link href="/login" className="font-semibold text-app-text hover:underline">
+            <Link href="/login" className="font-bold text-app-text hover:underline">
               Retour a la connexion
             </Link>
           </p>
@@ -125,9 +125,9 @@ function AcceptInviteForm() {
     return (
       <div className="w-full">
         <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8 text-center">
+        <div className="mt-10 bg-app-card rounded-[10px] border border-app-border p-8 text-center">
           <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-app-text mb-2">Invitation acceptee !</h2>
+          <h2 className="text-xl font-bold text-app-text mb-2">Invitation acceptee !</h2>
           <p className="text-app-text-secondary text-sm">Redirection vers le tableau de bord...</p>
           <Loader2 className="h-5 w-5 animate-spin text-app-text-muted mx-auto mt-4" />
         </div>
@@ -179,10 +179,10 @@ function AcceptInviteForm() {
     <div className="w-full">
       <AttablLogo />
 
-      <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+      <div className="mt-10 bg-app-card rounded-[10px] border border-app-border p-8">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-app-text mb-2">
+          <h1 className="text-2xl font-bold tracking-tight text-app-text mb-2">
             Vous avez ete invite !
           </h1>
           <p className="text-app-text-secondary text-sm">
@@ -193,7 +193,7 @@ function AcceptInviteForm() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="fullName" className="text-app-text-secondary font-medium text-sm">
+            <Label htmlFor="fullName" className="text-app-text-secondary font-normal text-sm">
               Nom complet
             </Label>
             <Input
@@ -210,7 +210,7 @@ function AcceptInviteForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-app-text-secondary font-medium text-sm">
+            <Label htmlFor="password" className="text-app-text-secondary font-normal text-sm">
               Mot de passe
             </Label>
             <div className="relative">
@@ -240,7 +240,7 @@ function AcceptInviteForm() {
           <div className="space-y-1.5">
             <Label
               htmlFor="confirmPassword"
-              className="text-app-text-secondary font-medium text-sm"
+              className="text-app-text-secondary font-normal text-sm"
             >
               Confirmer le mot de passe
             </Label>
@@ -279,7 +279,7 @@ function AcceptInviteForm() {
 
           <Button
             type="submit"
-            className="w-full h-9 bg-accent hover:bg-accent/90 text-accent-text text-sm font-medium rounded-md shadow-sm transition-colors"
+            className="w-full h-9 bg-accent hover:bg-accent/90 text-accent-text text-sm font-normal rounded-md shadow-sm transition-colors"
             disabled={loading}
           >
             {loading ? (
@@ -306,7 +306,7 @@ function AcceptInviteForm() {
         {/* Login link */}
         <p className="text-center text-sm text-app-text-secondary">
           Vous avez deja un compte ?{' '}
-          <Link href="/login" className="font-semibold text-app-text hover:underline">
+          <Link href="/login" className="font-bold text-app-text hover:underline">
             Se connecter
           </Link>
         </p>

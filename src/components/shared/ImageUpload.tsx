@@ -207,12 +207,12 @@ export default function ImageUpload({
   // ─── Crop editor ───────────────────────────────────────────
   if (cropSrc) {
     return (
-      <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
+      <div className="w-full rounded-[10px] overflow-hidden border border-app-border bg-app-card shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
           <div className="flex items-center gap-2">
             <Crop className="h-4 w-4 text-accent" />
-            <span className="text-sm font-semibold text-app-text">
+            <span className="text-sm font-bold text-app-text">
               {isRecrop ? 'Recadrer' : 'Ajuster la photo'}
             </span>
           </div>
@@ -316,7 +316,7 @@ export default function ImageUpload({
           <Button
             type="button"
             variant="default"
-            className="flex-1 h-10 rounded-lg font-semibold"
+            className="flex-1 h-10 rounded-lg font-bold"
             onClick={handleCropAndUpload}
             disabled={isLoading}
           >
@@ -340,7 +340,7 @@ export default function ImageUpload({
   // ─── Preview with action toolbar ───────────────────────────
   if (value) {
     return (
-      <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
+      <div className="w-full rounded-[10px] overflow-hidden border border-app-border bg-app-card shadow-sm">
         {/* Image preview */}
         <div className="relative w-full h-56 bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -396,7 +396,7 @@ export default function ImageUpload({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          'relative w-full h-52 rounded-xl border-2 border-dashed',
+          'relative w-full h-52 rounded-[10px] border-2 border-dashed',
           'flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200',
           isDragging
             ? 'border-accent bg-accent/5 scale-[1.01]'
@@ -417,7 +417,7 @@ export default function ImageUpload({
 
         <div
           className={cn(
-            'p-3 rounded-xl transition-colors',
+            'p-3 rounded-[10px] transition-colors',
             isDragging ? 'bg-accent/10 text-accent' : 'bg-app-elevated text-app-text-muted',
           )}
         >
@@ -425,7 +425,7 @@ export default function ImageUpload({
         </div>
 
         <div className="text-center px-4">
-          <p className="text-sm font-medium text-app-text-secondary">
+          <p className="text-sm font-normal text-app-text-secondary">
             Cliquez ou glissez une image
           </p>
           <p className="text-xs text-app-text-muted mt-0.5">JPG, PNG, WebP - Max 10Mo</p>
@@ -458,7 +458,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors h-auto',
+        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-normal transition-colors h-auto',
         variant === 'danger'
           ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
           : 'text-app-text-secondary hover:bg-app-elevated hover:text-app-text',

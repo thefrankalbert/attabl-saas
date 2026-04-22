@@ -123,7 +123,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         header: ({ column }) => <SortableHeader column={column}>{tc('product')}</SortableHeader>,
         cell: ({ row }) => (
           <div>
-            <p className="font-medium text-app-text">{row.original.name}</p>
+            <p className="font-normal text-app-text">{row.original.name}</p>
             {row.original.category && (
               <p className="text-xs text-app-text-secondary">{row.original.category}</p>
             )}
@@ -430,7 +430,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         {/* Row 1: Name + Status */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-medium text-app-text break-words">{ing.name}</p>
+                            <p className="font-normal text-app-text break-words">{ing.name}</p>
                             {ing.category && (
                               <p className="text-xs text-app-text-secondary">{ing.category}</p>
                             )}
@@ -500,7 +500,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             >
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {tc('name')}
                   </Label>
                   <Input
@@ -513,7 +513,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                       {tc('unit')}
                     </Label>
                     <Select
@@ -534,7 +534,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   </div>
                   {modalMode === 'add' && (
                     <div>
-                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                         {t('currentStock')}
                       </Label>
                       <Input
@@ -550,7 +550,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                       {t('minAlert')}
                     </Label>
                     <Input
@@ -562,7 +562,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     />
                   </div>
                   <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                       {t('costPerUnit')}
                     </Label>
                     <Input
@@ -576,7 +576,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
 
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {t('categoryOptional')}
                   </Label>
                   <Input
@@ -625,7 +625,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                         {t('movementType')}
                       </Label>
                       <Select
@@ -653,7 +653,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     </div>
 
                     <div>
-                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                         {tc('quantity')}
                       </Label>
                       <Input
@@ -668,7 +668,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                     {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
                       <div>
-                        <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                           {t('supplierOptional')}
                         </Label>
                         <Select
@@ -693,7 +693,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     )}
 
                     <div>
-                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                         {t('notesOptional')}
                       </Label>
                       <Input

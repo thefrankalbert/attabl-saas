@@ -12,13 +12,13 @@ export default function POSLoading() {
         {/* Products */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 flex-1">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="bg-app-elevated rounded-xl h-28" />
+            <div key={i} className="bg-app-elevated rounded-[10px] h-28" />
           ))}
         </div>
       </div>
 
       {/* Cart sidebar */}
-      <div className="hidden md:flex w-full max-w-[320px] lg:max-w-[380px] bg-app-elevated rounded-xl shrink-0" />
+      <div className="hidden md:flex w-full max-w-[320px] lg:max-w-[380px] bg-app-elevated rounded-[10px] shrink-0" />
     </div>
   );
 }

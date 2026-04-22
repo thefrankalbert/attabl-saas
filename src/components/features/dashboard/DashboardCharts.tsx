@@ -35,7 +35,7 @@ export default function DashboardCharts({
   if (!showRevenueChart) return null;
 
   return (
-    <div className="bg-app-card rounded-2xl border border-app-border flex flex-col h-full hover:border-app-border-hover transition-colors">
+    <div className="bg-app-card rounded-[10px] border border-app-border flex flex-col h-full hover:border-app-border-hover transition-colors">
       <div className="px-6 py-5 border-b border-app-border">
         <h2 className="text-sm font-bold text-app-text uppercase tracking-wider">
           {t('revenueThisWeek')}

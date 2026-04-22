@@ -204,7 +204,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <p className="text-app-text-secondary text-sm leading-relaxed mb-2">
             Un email de confirmation a été envoyé à
           </p>
-          <p className="text-app-text font-semibold text-sm mb-6">{email}</p>
+          <p className="text-app-text font-bold text-sm mb-6">{email}</p>
           <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
             Cliquez sur le lien dans l&apos;email pour activer votre compte et accéder à la
             configuration de votre établissement.
@@ -216,7 +216,7 @@ function AuthForm({ mode }: AuthFormProps) {
               variant="outline"
               onClick={handleResendConfirmation}
               disabled={resending || resendCooldown > 0}
-              className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all"
+              className="w-full h-11 rounded-[10px] border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-normal transition-all"
             >
               {resending ? (
                 <>
@@ -240,7 +240,7 @@ function AuthForm({ mode }: AuthFormProps) {
                 variant="ghost"
                 onClick={handleResendConfirmation}
                 disabled={resendCooldown > 0}
-                className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50 h-auto p-0 inline"
+                className="text-accent hover:text-accent-hover font-normal transition-colors disabled:opacity-50 h-auto p-0 inline"
               >
                 {resendCooldown > 0 ? `renvoyez-le (${resendCooldown}s)` : 'renvoyez-le'}
               </Button>
@@ -296,7 +296,7 @@ function AuthForm({ mode }: AuthFormProps) {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-xl">
+          <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-[10px]">
             <MailCheck className="h-4 w-4" />
             <AlertDescription className="text-sm">
               Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.
@@ -329,7 +329,7 @@ function AuthForm({ mode }: AuthFormProps) {
             >
               <Alert
                 variant="destructive"
-                className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
+                className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-[10px]"
               >
                 <AlertDescription className="text-sm">{safeMessage}</AlertDescription>
               </Alert>
@@ -342,7 +342,7 @@ function AuthForm({ mode }: AuthFormProps) {
         <div className="space-y-1.5">
           <Label
             htmlFor="email"
-            className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
+            className="text-app-text-secondary font-normal text-xs uppercase tracking-widest"
           >
             Email
           </Label>
@@ -353,7 +353,7 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-11 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
+            className="h-11 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-[10px] text-sm"
           />
         </div>
 
@@ -361,14 +361,14 @@ function AuthForm({ mode }: AuthFormProps) {
           <div className="flex items-center justify-between">
             <Label
               htmlFor="password"
-              className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
+              className="text-app-text-secondary font-normal text-xs uppercase tracking-widest"
             >
               Mot de passe
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-xs text-accent hover:text-accent-hover font-medium transition-colors whitespace-nowrap"
+                className="text-xs text-accent hover:text-accent-hover font-normal transition-colors whitespace-nowrap"
               >
                 Oublié ?
               </Link>
@@ -383,7 +383,7 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
+              className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-[10px] text-sm"
             />
             <Button
               type="button"
@@ -403,7 +403,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <Alert
               variant="destructive"
-              className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
+              className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-[10px]"
             >
               <AlertDescription className="text-sm">
                 {error === 'email_not_confirmed' ? (
@@ -429,7 +429,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-xl transition-all active:scale-[0.98]"
+          className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-[10px] transition-all active:scale-[0.98]"
           disabled={loading}
         >
           {loading ? (
@@ -457,7 +457,7 @@ function AuthForm({ mode }: AuthFormProps) {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-app-border" />
         </div>
-        <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-medium">
+        <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-normal">
           <span className="bg-app-bg px-4 text-app-text-muted">ou</span>
         </div>
       </div>
@@ -469,7 +469,7 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all active:scale-[0.98]"
+          className="w-full h-11 rounded-[10px] border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-normal transition-all active:scale-[0.98]"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="mr-3 h-5 w-5 animate-spin" />

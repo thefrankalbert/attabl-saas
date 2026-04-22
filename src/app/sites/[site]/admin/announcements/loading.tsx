@@ -7,7 +7,7 @@ export default function AnnouncementsLoading() {
       </div>
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-20 bg-app-elevated rounded-xl" />
+          <div key={i} className="h-20 bg-app-elevated rounded-[10px]" />
         ))}
       </div>
     </div>

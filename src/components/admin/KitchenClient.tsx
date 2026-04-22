@@ -175,7 +175,7 @@ export default function KitchenClient({
       >
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
-          <p className="text-sm font-medium text-app-text-secondary">{t('loadingKds')}</p>
+          <p className="text-sm font-normal text-app-text-secondary">{t('loadingKds')}</p>
         </div>
       </div>
     );

@@ -18,7 +18,7 @@ interface BrandingStepProps {
 }
 
 const colorPresets = [
-  { name: 'Lime', primary: '#CCFF00', secondary: '#000000' },
+  { name: 'ATTABL', primary: '#2e7d32', secondary: '#1b5e20' },
   { name: 'Ocean', primary: '#3B82F6', secondary: '#1E3A8A' },
   { name: 'Ruby', primary: '#EF4444', secondary: '#7F1D1D' },
   { name: 'Forest', primary: '#22C55E', secondary: '#14532D' },
@@ -143,7 +143,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
 
               {/* Logo Upload */}
               <div className="mb-4">
-                <Label className="text-sm font-medium text-app-text-secondary mb-3 flex items-center gap-2">
+                <Label className="text-sm font-normal text-app-text-secondary mb-3 flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-app-text-muted" />
                   {t('logoLabel') || 'Logo'}
                 </Label>
@@ -167,7 +167,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         if (!data.logoUrl) fileInputRef.current?.click();
                       }
                     }}
-                    className="relative w-28 h-28 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
+                    className="relative w-28 h-28 shrink-0 border border-dashed border-app-border rounded-[10px] flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
                   >
                     {data.logoUrl ? (
                       <>
@@ -220,7 +220,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
               <div>
                 <Label
                   htmlFor="description"
-                  className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-2"
+                  className="text-sm font-normal text-app-text-secondary flex items-center gap-2 mb-2"
                 >
                   <Type className="h-4 w-4 text-app-text-muted" />
                   {t('descriptionLabel')}
@@ -236,7 +236,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   }}
                   rows={3}
                   maxLength={500}
-                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-[10px] resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                 />
                 <p className="text-xs text-app-text-muted mt-1.5 text-right">
                   {t('charCount', { count: data.description.length, max: 500 })}
@@ -252,7 +252,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
 
               {/* Presets */}
               <div className="mb-4">
-                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
+                <Label className="text-xs font-bold text-app-text mb-2.5 block">
                   {t('colorPresetsLabel')}
                 </Label>
                 <div className="grid grid-cols-5 gap-1.5">
@@ -269,7 +269,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                             secondaryColor: preset.secondary,
                           });
                         }}
-                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all h-auto ${
+                        className={`flex flex-col items-center gap-1 p-1.5 rounded-[10px] border transition-all h-auto ${
                           isSelected
                             ? 'border-accent bg-accent/5'
                             : 'border-app-border hover:border-app-border-hover'
@@ -284,7 +284,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                             style={{ backgroundColor: preset.primary }}
                           />
                         </div>
-                        <span className="text-[7px] font-semibold text-app-text-muted truncate w-full text-center">
+                        <span className="text-[7px] font-bold text-app-text-muted truncate w-full text-center">
                           {preset.name}
                         </span>
                       </Button>
@@ -295,7 +295,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
 
               {/* Custom Colors */}
               <div>
-                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
+                <Label className="text-xs font-bold text-app-text mb-2.5 block">
                   {t('customColorsLabel')}
                   {!hasPresetMatch && (
                     <span className="ml-1.5 text-[10px] text-accent">(actif)</span>
@@ -306,7 +306,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <div>
                     <Label
                       htmlFor="primaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
+                      className="text-xs font-normal text-app-text-secondary mb-1 block"
                     >
                       {t('primaryColor')}
                     </Label>
@@ -323,18 +323,18 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                             setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
                           }
                         }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
+                        className="w-11 h-11 rounded-[10px] border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
                         style={{ backgroundColor: data.primaryColor }}
                       />
                       <Input
                         type="text"
                         value={data.primaryColor}
                         onChange={(e) => updateData({ primaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+                        className="h-10 bg-app-elevated/50 border-app-border rounded-[10px] font-mono uppercase text-xs"
                       />
                     </div>
                     {showPickerFor === 'primary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
+                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-[10px] bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
                           <Button
                             key={color}
@@ -360,7 +360,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <div>
                     <Label
                       htmlFor="secondaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
+                      className="text-xs font-normal text-app-text-secondary mb-1 block"
                     >
                       {t('secondaryColor')}
                     </Label>
@@ -377,18 +377,18 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                             setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
                           }
                         }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
+                        className="w-11 h-11 rounded-[10px] border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
                         style={{ backgroundColor: data.secondaryColor }}
                       />
                       <Input
                         type="text"
                         value={data.secondaryColor}
                         onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+                        className="h-10 bg-app-elevated/50 border-app-border rounded-[10px] font-mono uppercase text-xs"
                       />
                     </div>
                     {showPickerFor === 'secondary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
+                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-[10px] bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
                           <Button
                             key={color}

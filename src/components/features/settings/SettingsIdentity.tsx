@@ -227,7 +227,7 @@ export default function SettingsIdentity({
         {/* Domain section (moved from separate tab) */}
         <div className="space-y-4">
           <div>
-            <Label className="text-sm font-semibold text-app-text">{t('customDomain')}</Label>
+            <Label className="text-sm font-bold text-app-text">{t('customDomain')}</Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('customDomainDesc')}</p>
           </div>
 
@@ -269,7 +269,7 @@ export default function SettingsIdentity({
           )}
 
           <div className="rounded-lg border border-app-border p-3 text-xs text-app-text-secondary">
-            <p className="font-medium text-app-text mb-1">{t('dnsConfig')}</p>
+            <p className="font-normal text-app-text mb-1">{t('dnsConfig')}</p>
             <p>{t('domainInstructions')}</p>
             <code className="block mt-2 bg-app-elevated p-2 rounded text-xs font-mono">
               CNAME &rarr; cname.vercel-dns.com
@@ -310,7 +310,7 @@ export default function SettingsIdentity({
 
         {/* Language section (moved from separate tab) */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold text-app-text">{t('languageSection')}</Label>
+          <Label className="text-sm font-bold text-app-text">{t('languageSection')}</Label>
           <p className="text-xs text-app-text-secondary">{t('languageDescription')}</p>
           <div className="relative flex items-center max-w-xs">
             <Globe className="absolute left-2.5 h-3.5 w-3.5 text-app-text-muted pointer-events-none z-10" />

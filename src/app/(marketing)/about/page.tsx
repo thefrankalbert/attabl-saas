@@ -21,9 +21,7 @@ export default function AboutPage() {
           quotidien des restaurateurs gr&acirc;ce &agrave; des outils modernes et intuitifs.
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          Notre vision
-        </h2>
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">Notre vision</h2>
         <p>
           Nous croyons que chaque &eacute;tablissement, du petit bistrot au grand h&ocirc;tel,
           m&eacute;rite des outils digitaux performants. ATTABL offre un menu QR code, un
@@ -31,7 +29,7 @@ export default function AboutPage() {
           (KDS), et des analytics avanc&eacute;s - le tout dans une seule plateforme.
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">Technologie</h2>
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">Technologie</h2>
         <p>
           Construite avec les technologies les plus r&eacute;centes (Next.js, React, Supabase,
           Tailwind CSS), ATTABL est rapide, s&eacute;curis&eacute;e et disponible en tant que
@@ -41,13 +39,13 @@ export default function AboutPage() {
         <div className="mt-12 flex gap-4">
           <Link
             href="/contact"
-            className="inline-flex items-center rounded-xl bg-neutral-900 dark:bg-white px-6 py-3 text-sm font-semibold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
+            className="inline-flex items-center rounded-[10px] bg-neutral-900 dark:bg-white px-6 py-3 text-sm font-bold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
           >
             Nous contacter
           </Link>
           <Link
             href="/pricing"
-            className="inline-flex items-center rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-3 text-sm font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
+            className="inline-flex items-center rounded-[10px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-3 text-sm font-bold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
           >
             Voir les tarifs
           </Link>

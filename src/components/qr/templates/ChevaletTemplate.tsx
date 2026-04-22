@@ -53,7 +53,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
             />
           ) : (
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
+              className="w-12 h-12 rounded-[10px] flex items-center justify-center mx-auto mb-2"
               style={{ backgroundColor: config.templateBgColor }}
             >
               <Layout className="h-6 w-6" style={{ color: config.templateAccentColor }} />
@@ -87,7 +87,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
         )}
 
         {/* QR code in white rounded container (flex-1 to fill space) */}
-        <div className="p-4 bg-white rounded-2xl shadow-lg flex-1 flex items-center">
+        <div className="p-4 bg-white rounded-[10px] shadow-lg flex-1 flex items-center">
           <QRCodeSVG
             value={url}
             size={config.qrSize}

@@ -15,7 +15,7 @@ export default function UnauthorizedPage() {
         <div className="flex flex-col gap-2">
           <Link
             href="/admin/tenants"
-            className="inline-flex items-center justify-center h-11 px-6 bg-accent text-accent-text font-semibold rounded-xl hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center justify-center h-11 px-6 bg-accent text-accent-text font-bold rounded-[10px] hover:bg-accent-hover transition-colors"
           >
             Mes établissements
           </Link>

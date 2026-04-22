@@ -153,7 +153,7 @@ export default function MenuForm({
           />
           <Globe className="w-4 h-4 text-lime-600 flex-shrink-0" />
           <div>
-            <Label htmlFor="menu-shared" className="text-app-text font-medium">
+            <Label htmlFor="menu-shared" className="text-app-text font-normal">
               {t('sharedMenu')}
             </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('sharedMenuHint')}</p>
@@ -231,7 +231,7 @@ export default function MenuForm({
           className="mt-0.5"
         />
         <div>
-          <Label htmlFor="menu-transversal" className="text-app-text font-medium">
+          <Label htmlFor="menu-transversal" className="text-app-text font-normal">
             {t('transversalMenu')}
           </Label>
           <p className="text-xs text-app-text-secondary mt-0.5">{t('transversalMenuHint')}</p>

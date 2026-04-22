@@ -37,9 +37,10 @@ import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
-import TablePicker from '@/components/tenant/TablePicker';
 import SearchOverlay from '@/components/tenant/SearchOverlay';
 import EmptyState from '@/components/shared/EmptyState';
+import { LockedTablePill } from '@/components/tenant/ui/LockedTablePill';
+import { HeroChefPick } from '@/components/tenant/ui/HeroChefPick';
 
 const triggerAddFeedback = () => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -238,7 +239,7 @@ function HeaderBar({
           />
         </svg>
         <span
-          className="text-[15px] font-semibold"
+          className="text-[15px] font-bold"
           style={{
             color: C.textPrimary,
           }}
@@ -373,7 +374,7 @@ function PromoBanner({
         {slides.map((slide, i) => (
           <div
             key={i}
-            className="min-w-[calc(100%-32px)] snap-start h-40 rounded-xl overflow-hidden relative shrink-0"
+            className="min-w-[calc(100%-32px)] snap-start h-40 rounded-[10px] overflow-hidden relative shrink-0"
           >
             {slide.imageUrl ? (
               <Image
@@ -395,7 +396,7 @@ function PromoBanner({
             <div className="absolute bottom-4 left-4 z-[2]">
               {slide.label && (
                 <span
-                  className="text-[11px] font-medium tracking-[1px]"
+                  className="text-[11px] font-normal tracking-[1px]"
                   style={{
                     color: C.textOnPrimary,
                   }}
@@ -459,7 +460,7 @@ function SectionHeader({
         <Button
           variant="ghost"
           onClick={onSeeAll}
-          className="text-sm font-semibold px-0 h-auto"
+          className="text-sm font-bold px-0 h-auto"
           style={{
             color: C.primary,
           }}
@@ -495,7 +496,7 @@ function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: 
     <Button
       variant="ghost"
       onClick={onClick}
-      className="w-60 shrink-0 rounded-xl overflow-hidden px-0 py-0 text-left flex flex-col justify-start h-auto"
+      className="w-60 shrink-0 rounded-[10px] overflow-hidden px-0 py-0 text-left flex flex-col justify-start h-auto"
       style={{
         background: C.surface,
         border: `1px solid ${C.divider}`,
@@ -585,7 +586,7 @@ function CategoryGrid({
               className="flex flex-col items-center gap-1.5 px-0 py-0 h-auto"
             >
               <div
-                className="w-full aspect-square rounded-xl flex items-center justify-center"
+                className="w-full aspect-square rounded-[10px] flex items-center justify-center"
                 style={{
                   background: C.surfaceAlt,
                 }}
@@ -601,7 +602,7 @@ function CategoryGrid({
                 />
               </div>
               <span
-                className="text-[11px] font-medium text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
+                className="text-[11px] font-normal text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
                 style={{
                   color: C.textPrimary,
                 }}
@@ -616,7 +617,7 @@ function CategoryGrid({
         <Button
           variant="ghost"
           onClick={onSeeAll}
-          className="block mt-3 mx-auto text-sm font-semibold px-0 h-auto"
+          className="block mt-3 mx-auto text-sm font-bold px-0 h-auto"
           style={{
             color: C.primary,
           }}
@@ -653,7 +654,7 @@ function FeaturedItemCard({
   return (
     <div
       onClick={onPress}
-      className="w-[180px] shrink-0 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+      className="w-[180px] shrink-0 rounded-[10px] overflow-hidden cursor-pointer flex flex-col"
       style={{
         background: C.surface,
         border: `1px solid ${C.divider}`,
@@ -734,7 +735,7 @@ function FeaturedItemCard({
       </div>
       <div className="p-3 pt-4 flex flex-col gap-1">
         <p
-          className="text-sm font-semibold m-0 overflow-hidden leading-[19.6px]"
+          className="text-sm font-bold m-0 overflow-hidden leading-[19.6px]"
           style={{
             color: C.textPrimary,
             display: '-webkit-box',
@@ -750,7 +751,7 @@ function FeaturedItemCard({
             <path d="M6 0l1.76 3.58L12 4.16 8.88 7.1l.74 4.32L6 9.27 2.38 11.42l.74-4.32L0 4.16l4.24-.58z" />
           </svg>
           <span
-            className="text-[13px] font-medium"
+            className="text-[13px] font-normal"
             style={{
               color: C.textPrimary,
             }}
@@ -801,7 +802,7 @@ function FloatingCartBar({
       >
         <ShoppingBag size={20} strokeWidth={2} color={C.textOnPrimary} />
         <span
-          className="text-sm font-semibold whitespace-nowrap"
+          className="text-sm font-bold whitespace-nowrap"
           style={{
             color: C.textOnPrimary,
           }}
@@ -902,7 +903,7 @@ function TenantInfoSheet({
           {/* Hero: large logo + name */}
           <div className="flex-shrink-0 flex flex-col items-center px-6 pb-4">
             <div
-              className="w-24 h-24 rounded-3xl overflow-hidden flex items-center justify-center"
+              className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center"
               style={{
                 backgroundColor: C.surfaceAlt,
               }}
@@ -934,7 +935,7 @@ function TenantInfoSheet({
             </h2>
             {tenant.establishment_type && (
               <p
-                className="mt-1 text-center font-medium uppercase text-[11px] tracking-[1px]"
+                className="mt-1 text-center font-normal uppercase text-[11px] tracking-[1px]"
                 style={{
                   color: C.textMuted,
                 }}
@@ -985,7 +986,7 @@ function TenantInfoSheet({
                     <Phone size={16} color={C.textPrimary} />
                   </div>
                   <span
-                    className="text-sm font-semibold"
+                    className="text-sm font-bold"
                     style={{
                       color: C.textPrimary,
                     }}
@@ -1062,7 +1063,13 @@ export default function ClientMenuPage({
   // Keep coupons referenced (used to decide discount section visibility)
   void coupons;
 
-  const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
+  // Refonte Phase 1: QR-locked table strict. `zones`/`tables` props are kept
+  // in the contract but no longer drive an interactive TablePicker - the
+  // table is read-only (derived from the QR param `initialTable` or the
+  // localStorage fallback). The picker is scheduled for removal in Phase 2.
+  void zones;
+  void tables;
+
   const [isTenantInfoOpen, setIsTenantInfoOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -1087,7 +1094,9 @@ export default function ClientMenuPage({
     }
     return true;
   };
-  const [tableNumber, setTableNumber] = useState<string | null>(() => {
+  // Read-only table number: QR param first, localStorage fallback. No setter
+  // is exposed - changing the table requires re-scanning a QR code.
+  const [tableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
       return localStorage.getItem(`attabl_${tenant.slug}_table`);
@@ -1126,15 +1135,6 @@ export default function ClientMenuPage({
     filter: `tenant_id=eq.${tenant.id}`,
     onChange: handleRealtimeChange,
   });
-
-  const handleTableSelect = (table: Table) => {
-    setTableNumber(table.table_number);
-    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
-    toast({
-      title: t('tableSelected'),
-      description: t('seatedAtTable', { table: table.table_number }),
-    });
-  };
 
   const locationName = tableNumber ? t('dineInTable', { number: tableNumber }) : tenant.name;
 
@@ -1197,18 +1197,42 @@ export default function ClientMenuPage({
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        {/* 1. Header */}
+        {/* 1. Header - location now opens venue info (QR-locked table). */}
         <HeaderBar
           locationName={locationName}
           logoUrl={tenant.logo_url ?? null}
           tenantName={tenant.name}
-          onLocationPress={() => setIsTablePickerOpen(true)}
+          onLocationPress={() => setIsTenantInfoOpen(true)}
           onAvatarPress={() => setIsTenantInfoOpen(true)}
         />
 
+        {/* Refonte: read-only table pill sourced from the QR param. */}
+        <div className="px-4 pt-2">
+          <LockedTablePill
+            tableNumber={tableNumber}
+            lockedLabel={t('refonteTableLocked')}
+            noTableLabel={t('refonteNoTable')}
+            rescanLabel={t('refonteRescanQr')}
+            onRescan={() => router.push(`/sites/${tenant.slug}?scan=1`)}
+          />
+        </div>
+
+        {/* Refonte: editorial chef's pick hero from the first featured item. */}
+        {featuredItems[0] && (
+          <div className="px-4 pt-4">
+            <HeroChefPick
+              item={featuredItems[0]}
+              eyebrow={t('refonteChefPick')}
+              ctaLabel={t('refonteAddToCart')}
+              onSelect={(item) => setSelectedItem(item)}
+              language={lang}
+            />
+          </div>
+        )}
+
         {/* Closed banner (when tenant is outside opening hours) */}
         {!openingState.isOpen && (
-          <div className="bg-gray-900 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium">
+          <div className="bg-gray-900 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-normal">
             <Clock size={16} />
             <span>{t('closedNow')}</span>
             {openingState.nextOpenAt && (
@@ -1225,7 +1249,7 @@ export default function ClientMenuPage({
             {ratingAgg && (
               <span className="flex items-center gap-1">
                 <Star size={13} className="fill-amber-500 text-amber-500" />
-                <span className="font-semibold text-gray-900">{ratingAgg.avg}</span>
+                <span className="font-bold text-gray-900">{ratingAgg.avg}</span>
                 <span className="text-gray-500">({ratingAgg.count})</span>
               </span>
             )}
@@ -1309,7 +1333,7 @@ export default function ClientMenuPage({
                   key={chip.key}
                   variant="ghost"
                   onClick={() => setDietFilter(chip.key)}
-                  className="flex-shrink-0 whitespace-nowrap h-auto px-4 py-2 rounded-full text-[11px] font-medium uppercase tracking-wider"
+                  className="flex-shrink-0 whitespace-nowrap h-auto px-4 py-2 rounded-full text-[11px] font-normal uppercase tracking-wider"
                   style={{
                     backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
                     color: isActive ? '#FFFFFF' : '#737373',
@@ -1452,13 +1476,6 @@ export default function ClientMenuPage({
       />
 
       {/* Modals */}
-      <TablePicker
-        isOpen={isTablePickerOpen}
-        onClose={() => setIsTablePickerOpen(false)}
-        onSelect={handleTableSelect}
-        zones={zones}
-        tables={tables}
-      />
       <TenantInfoSheet
         tenant={tenant}
         isOpen={isTenantInfoOpen}

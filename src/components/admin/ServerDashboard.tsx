@@ -92,7 +92,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
     <div className="space-y-6">
       {/* My Tables */}
       <div>
-        <h2 className="text-lg font-semibold text-app-text mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-app-text mb-3 flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-emerald-600" />
           {t('myTables', { count: myAssignments.length })}
         </h2>
@@ -146,7 +146,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                           className="bg-app-card rounded-lg p-3 border border-app-border"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold text-app-text-secondary uppercase">
+                            <span className="text-xs font-bold text-app-text-secondary uppercase">
                               #{order.id.slice(0, 8)}
                             </span>
                             <span
@@ -188,7 +188,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
 
       {/* Unassigned Orders */}
       <div>
-        <h2 className="text-lg font-semibold text-app-text mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-app-text mb-3 flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-app-text-secondary" />
           {t('unassignedOrders', { count: unassignedOrders.length })}
         </h2>
@@ -207,7 +207,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-app-text">
+                  <span className="text-sm font-normal text-app-text">
                     {formatCurrency(order.total_price + (order.tip_amount || 0), currency)}
                   </span>
                   <Button
@@ -215,7 +215,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                     onClick={() =>
                       claimOrder.mutate({ orderId: order.id, serverId: currentServerId })
                     }
-                    className="rounded-lg bg-app-text px-3 py-1 text-xs font-semibold text-accent-text hover:bg-app-text h-auto"
+                    className="rounded-lg bg-app-text px-3 py-1 text-xs font-bold text-accent-text hover:bg-app-text h-auto"
                   >
                     {t('claimOrder')}
                   </Button>

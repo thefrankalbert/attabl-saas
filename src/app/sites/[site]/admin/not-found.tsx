@@ -19,7 +19,7 @@ export default function AdminNotFound() {
       code="404"
       brand={
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-accent p-2.5">
+          <div className="rounded-[10px] bg-accent p-2.5">
             <LayoutDashboard className="h-6 w-6 text-accent-text" />
           </div>
           <span className="text-2xl font-bold text-app-text">ATTABL</span>
@@ -28,7 +28,7 @@ export default function AdminNotFound() {
       title={t('notFoundTitle')}
       description={t('notFoundDescription')}
       actions={
-        <Button asChild className="gap-2 h-11 rounded-xl">
+        <Button asChild className="gap-2 h-11 rounded-[10px]">
           <Link href={dashboardHref}>
             <ArrowLeft className="h-4 w-4" />
             {t('backToDashboard')}

@@ -131,7 +131,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
         <div className="space-y-3 p-4 rounded-lg border border-app-border">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="enableTax" className="text-sm font-medium text-app-text">
+              <Label htmlFor="enableTax" className="text-sm font-normal text-app-text">
                 {t('enableVat')}
               </Label>
               <p className="text-xs text-app-text-secondary mt-0.5">{t('applyTaxOnOrders')}</p>
@@ -181,7 +181,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
         <div className="space-y-3 p-4 rounded-lg border border-app-border">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="enableServiceCharge" className="text-sm font-medium text-app-text">
+              <Label htmlFor="enableServiceCharge" className="text-sm font-normal text-app-text">
                 {t('enableServiceFee')}
               </Label>
               <p className="text-xs text-app-text-secondary mt-0.5">{t('addServiceFeeToOrders')}</p>
@@ -231,7 +231,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
       <div className="space-y-3 p-4 rounded-lg border border-app-border">
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="enableCoupons" className="text-sm font-medium text-app-text">
+            <Label htmlFor="enableCoupons" className="text-sm font-normal text-app-text">
               {t('enableCoupons')}
             </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
@@ -253,7 +253,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
       <div className="space-y-3 p-4 rounded-lg border border-app-border">
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="barDisplayEnabled" className="text-sm font-medium text-app-text">
+            <Label htmlFor="barDisplayEnabled" className="text-sm font-normal text-app-text">
               {t('enableBarDisplay')}
             </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableBarDisplayDesc')}</p>

@@ -260,7 +260,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
             <div className="flex flex-col @lg:flex-row gap-6">
               {/* Items List */}
-              <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="flex-1 bg-app-card rounded-[10px] border border-app-border overflow-hidden">
                 <div className="max-h-[400px] md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
                     const hasRecipe = itemsWithRecipes.has(item.id);
@@ -281,7 +281,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         <div>
                           <p
                             className={cn(
-                              'font-medium text-sm',
+                              'font-normal text-sm',
                               isSelected ? 'text-accent' : 'text-app-text',
                             )}
                           >
@@ -310,7 +310,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
 
               {/* Recipe Editor Panel */}
-              <div className="@md:w-80 @lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="@md:w-80 @lg:w-[28rem] bg-app-card rounded-[10px] border border-app-border overflow-hidden">
                 {selectedItemId && selectedItem ? (
                   <div className="flex flex-col h-full">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">
@@ -412,7 +412,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 ) : (
                   <div className="flex flex-col items-center justify-center p-12 text-app-text-secondary">
                     <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">{t('selectDish')}</p>
+                    <p className="text-sm font-normal">{t('selectDish')}</p>
                     <p className="text-xs mt-1">{t('defineRecipe')}</p>
                   </div>
                 )}

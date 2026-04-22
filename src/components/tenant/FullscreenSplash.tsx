@@ -93,7 +93,7 @@ export default function FullscreenSplash({
       <div className="relative flex flex-col items-center gap-6 px-8 text-center">
         {/* Logo */}
         {logoUrl ? (
-          <div className="w-24 h-24 rounded-xl overflow-hidden bg-app-bg border border-app-border">
+          <div className="w-24 h-24 rounded-[10px] overflow-hidden bg-app-bg border border-app-border">
             <Image
               src={logoUrl}
               alt={tenantName}
@@ -104,7 +104,7 @@ export default function FullscreenSplash({
           </div>
         ) : (
           <div
-            className="w-24 h-24 rounded-xl flex items-center justify-center text-white text-4xl font-bold border border-app-border"
+            className="w-24 h-24 rounded-[10px] flex items-center justify-center text-white text-4xl font-bold border border-app-border"
             style={{ backgroundColor: primaryColor }}
           >
             {tenantName.charAt(0).toUpperCase()}
@@ -120,7 +120,7 @@ export default function FullscreenSplash({
         {/* Enter button */}
         <Button
           onClick={handleEnter}
-          className="mt-4 px-10 py-3.5 rounded-xl text-white font-semibold text-base active:scale-95 h-auto"
+          className="mt-4 px-10 py-3.5 rounded-[10px] text-white font-bold text-base active:scale-95 h-auto"
           style={{ backgroundColor: primaryColor }}
         >
           {t('splashEnter')}

@@ -67,7 +67,7 @@ export default function TablePicker({
           <div className="flex gap-4 h-64">
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
-              <Label className="text-[13px] font-semibold mb-2 text-center text-app-text-secondary">
+              <Label className="text-[13px] font-bold mb-2 text-center text-app-text-secondary">
                 {t('zone')}
               </Label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
@@ -79,7 +79,7 @@ export default function TablePicker({
                     className={cn(
                       'w-full text-left px-3 py-2 rounded-lg text-sm h-auto justify-start',
                       selectedZone?.id === zone.id
-                        ? 'text-white font-medium bg-app-text'
+                        ? 'text-white font-normal bg-app-text'
                         : 'text-app-text-secondary hover:bg-app-elevated',
                     )}
                   >
@@ -96,7 +96,7 @@ export default function TablePicker({
 
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
-              <Label className="text-[13px] font-semibold mb-2 text-center text-app-text-secondary">
+              <Label className="text-[13px] font-bold mb-2 text-center text-app-text-secondary">
                 {t('table')}
               </Label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
@@ -128,7 +128,7 @@ export default function TablePicker({
           <div className="mt-6">
             <Button
               className={cn(
-                'w-full text-base text-white rounded-xl h-[52px]',
+                'w-full text-base text-white rounded-[10px] h-[52px]',
                 selectedTable && 'bg-app-text',
               )}
               onClick={handleConfirm}

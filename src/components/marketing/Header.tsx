@@ -52,7 +52,7 @@ export default function Header() {
               onClick={() =>
                 setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
               }
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
+              className="text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
               Solutions
             </Button>
@@ -61,25 +61,25 @@ export default function Header() {
               variant="ghost"
               onMouseEnter={() => setActiveMegaMenu('features')}
               onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
+              className="text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
               Fonctionnalités
             </Button>
             <Link
               href="/pricing"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+              className="text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Tarifs
             </Link>
             <Link
               href="/nouveautes"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+              className="text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Nouveautés
             </Link>
             <Link
               href="/blog"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+              className="text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Blog
             </Link>
@@ -90,13 +90,13 @@ export default function Header() {
             <ThemeToggle className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
             <Link
               href="/login"
-              className="hidden text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors md:block"
+              className="hidden text-sm font-normal text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors md:block"
             >
               Se connecter
             </Link>
             <Link
               href="/signup"
-              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors md:block"
+              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-bold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors md:block"
             >
               Démarrer
             </Link>
@@ -131,7 +131,7 @@ export default function Header() {
                     onClick={() => setActiveMegaMenu(null)}
                     className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                    <span className="text-sm font-bold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
                       {seg.label}
                     </span>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
@@ -150,7 +150,7 @@ export default function Header() {
                     onClick={() => setActiveMegaMenu(null)}
                     className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                    <span className="text-sm font-bold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
                       {feat.label}
                     </span>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
@@ -161,7 +161,7 @@ export default function Header() {
                 <Link
                   href="/features"
                   onClick={() => setActiveMegaMenu(null)}
-                  className="rounded-lg p-4 text-sm font-semibold text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="rounded-lg p-4 text-sm font-bold text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
                   Toutes les fonctionnalités &rarr;
                 </Link>
@@ -176,7 +176,7 @@ export default function Header() {
         <div className="fixed inset-0 z-40 bg-white dark:bg-neutral-950 lg:hidden">
           <div className="flex h-full flex-col overflow-y-auto px-4 py-20 pb-[env(safe-area-inset-bottom,20px)] sm:px-6">
             <div className="space-y-1">
-              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              <p className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                 Solutions
               </p>
               {segments.map((seg) => (
@@ -184,7 +184,7 @@ export default function Header() {
                   key={seg.href}
                   href={seg.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   {seg.label}
                 </Link>
@@ -194,35 +194,35 @@ export default function Header() {
               <Link
                 href="/features"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Fonctionnalités
               </Link>
               <Link
                 href="/pricing"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Tarifs
               </Link>
               <Link
                 href="/nouveautes"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Nouveautés
               </Link>
               <Link
                 href="/blog"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Blog
               </Link>
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="block rounded-lg px-4 py-3 text-sm font-normal text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Se connecter
               </Link>
@@ -235,7 +235,7 @@ export default function Header() {
               <Link
                 href="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
+                className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-bold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
               >
                 Démarrer gratuitement
               </Link>

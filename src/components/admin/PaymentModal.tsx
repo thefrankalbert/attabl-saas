@@ -196,7 +196,7 @@ export default function PaymentModal({
         <div className="hidden @md:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
           {/* Hero: Pay Amount */}
           <div className="mb-4">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted mb-1">
+            <p className="text-xs font-normal uppercase tracking-widest text-app-text-muted mb-1">
               {t('amountToPay')}
             </p>
             <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-app-text tabular-nums tracking-tight">
@@ -289,7 +289,7 @@ export default function PaymentModal({
 
           {/* Tip Selection -- pushed to bottom */}
           <div className="space-y-2 mt-auto">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
+            <p className="text-xs font-normal uppercase tracking-widest text-app-text-muted">
               {t('tip')}
             </p>
             <div className="flex gap-1.5">
@@ -360,7 +360,7 @@ export default function PaymentModal({
         <div className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 lg:p-5">
           {/* Mobile: compact summary (hidden on desktop) */}
           <div className="flex items-center justify-between mb-3 @md:hidden shrink-0">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
+            <p className="text-xs font-normal uppercase tracking-widest text-app-text-muted">
               {t('amountToPay')}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-app-text tabular-nums">
@@ -389,7 +389,7 @@ export default function PaymentModal({
                 )}
               >
                 <pm.icon className="h-4 w-4" />
-                <span className="text-xs font-medium">{pm.label}</span>
+                <span className="text-xs font-normal">{pm.label}</span>
               </Button>
             ))}
           </div>
@@ -451,7 +451,7 @@ export default function PaymentModal({
           {/* Cash: Received amount */}
           {method === 'cash' && (
             <div className="rounded-lg bg-app-elevated/30 border border-app-border p-2 sm:p-3 text-center mb-2 sm:mb-3 shrink-0">
-              <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted">
+              <p className="text-[10px] font-normal uppercase tracking-widest text-app-text-muted">
                 {t('received')}
               </p>
               <p className="text-xl sm:text-2xl font-bold text-app-text tabular-nums">
@@ -502,7 +502,7 @@ export default function PaymentModal({
                   : 'border-app-border bg-app-elevated/30 text-app-text-muted',
               )}
             >
-              <p className="text-[10px] font-medium uppercase tracking-widest">{t('change')}</p>
+              <p className="text-[10px] font-normal uppercase tracking-widest">{t('change')}</p>
               <p className="text-lg sm:text-xl font-bold tabular-nums">
                 {formatCurrency(change, currency)}
               </p>

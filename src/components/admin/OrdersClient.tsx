@@ -344,7 +344,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             <div className="text-right">
               <span className="font-mono font-bold text-app-text">{formatNumber(total + tip)}</span>
               {tip > 0 && (
-                <span className="block text-xs text-emerald-500 font-medium">
+                <span className="block text-xs text-emerald-500 font-normal">
                   +{formatNumber(tip)} {ta('tipLabel')}
                 </span>
               )}
@@ -518,7 +518,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               {showSoundPicker && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowSoundPicker(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-app-card border border-app-border rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-app-card border border-app-border rounded-[10px] shadow-lg overflow-hidden">
                     <div className="px-3 py-2 border-b border-app-border">
                       <p className="text-xs font-bold text-app-text">
                         {t('soundPicker') || 'Sonnerie de notification'}
@@ -549,7 +549,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                             )}
                           >
                             <span className="flex-1 min-w-0">
-                              <span className="block text-xs font-medium break-words">
+                              <span className="block text-xs font-normal break-words">
                                 {sound.name}
                               </span>
                               <span className="block text-[10px] text-app-text-muted break-words">
@@ -576,7 +576,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             selectedIds.size > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none',
           )}
         >
-          <span className="text-xs font-medium text-app-text tabular-nums">
+          <span className="text-xs font-normal text-app-text tabular-nums">
             {t('selected', { count: selectedIds.size })}
           </span>
           <div className="w-px h-4 bg-app-border" />
@@ -682,7 +682,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />
-              <p className="text-sm font-medium text-app-text-secondary mb-1">
+              <p className="text-sm font-normal text-app-text-secondary mb-1">
                 {t('noOrdersTitle') || 'No orders yet'}
               </p>
               <p className="text-xs text-app-text-muted">
@@ -759,7 +759,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                               {formatNumber(total)}
                             </span>
                             {(order.tip_amount ?? 0) > 0 && (
-                              <span className="block text-xs text-emerald-500 font-medium">
+                              <span className="block text-xs text-emerald-500 font-normal">
                                 +{formatNumber(order.tip_amount ?? 0)} {ta('tipLabel')}
                               </span>
                             )}

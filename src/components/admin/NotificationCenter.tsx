@@ -118,7 +118,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
       <DropdownMenuContent align="end" className="w-80 p-0 bg-app-card border border-app-border">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-app-text">{t('title')}</h3>
+          <h3 className="text-sm font-bold text-app-text">{t('title')}</h3>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -156,7 +156,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
                         className={cn(
                           'text-sm break-words',
                           !notification.read
-                            ? 'font-medium text-app-text'
+                            ? 'font-normal text-app-text'
                             : 'text-app-text-secondary',
                         )}
                       >

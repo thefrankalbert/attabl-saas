@@ -62,7 +62,7 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
 
         {/* CTA button with arrow */}
         <div
-          className="inline-block px-3 py-1.5 rounded-lg text-xs font-medium"
+          className="inline-block px-3 py-1.5 rounded-lg text-xs font-normal"
           style={{
             backgroundColor: config.templateAccentColor,
             color: config.templateBgColor,
@@ -80,7 +80,7 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
       </div>
 
       {/* Right side: QR code */}
-      <div className="relative z-10 p-2 bg-white rounded-xl shadow-inner">
+      <div className="relative z-10 p-2 bg-white rounded-[10px] shadow-inner">
         <QRCodeSVG
           value={url}
           size={config.qrSize}

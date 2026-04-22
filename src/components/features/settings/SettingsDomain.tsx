@@ -110,7 +110,7 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
         )}
 
         <div className="rounded-lg border border-app-border p-3 text-xs text-app-text-secondary">
-          <p className="font-medium text-app-text mb-1">{t('dnsConfig')}</p>
+          <p className="font-normal text-app-text mb-1">{t('dnsConfig')}</p>
           <p>{t('domainInstructions')}</p>
           <code className="block mt-2 bg-app-elevated p-2 rounded text-xs font-mono">
             CNAME &rarr; cname.vercel-dns.com

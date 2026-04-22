@@ -80,7 +80,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
 
                   {/* Phase content */}
                   <div className={`pt-2 pb-6 ${isLast ? 'pb-0' : ''}`}>
-                    <p className="text-[13px] font-semibold text-foreground leading-none mb-1">
+                    <p className="text-[13px] font-bold text-foreground leading-none mb-1">
                       {t(phase.label)}
                     </p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -107,7 +107,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           {/* Trial reminder */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
+            <p className="text-[10px] font-normal text-muted-foreground">{t('trialReminder')}</p>
           </div>
         </div>
       </div>

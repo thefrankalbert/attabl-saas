@@ -16,13 +16,13 @@ export default function RestaurantsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <Link
               href="/signup"
-              className="bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors"
+              className="bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-bold hover:bg-neutral-800 transition-colors"
             >
               Démarrer gratuitement
             </Link>
             <Link
               href="/pricing"
-              className="border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              className="border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-lg px-8 py-4 text-base font-bold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
             >
               Voir les tarifs
             </Link>
@@ -56,12 +56,12 @@ export default function RestaurantsPage() {
             ].map((feature) => (
               <div
                 key={feature.title}
-                className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8"
+                className="bg-white dark:bg-neutral-800 rounded-[10px] border border-neutral-200 dark:border-neutral-700 p-8"
               >
                 <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center mb-5">
                   <feature.icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                 </div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
+                <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-3">
                   {feature.title}
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
@@ -84,7 +84,7 @@ export default function RestaurantsPage() {
           </p>
           <Link
             href="/signup"
-            className="inline-block bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors mt-8"
+            className="inline-block bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-bold hover:bg-neutral-800 transition-colors mt-8"
           >
             Démarrer gratuitement
           </Link>

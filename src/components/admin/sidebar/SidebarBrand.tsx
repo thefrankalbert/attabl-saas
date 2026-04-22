@@ -34,7 +34,7 @@ export function SidebarBrand({ name, slug, logoUrl, collapsed }: SidebarBrandPro
       </div>
       {!collapsed && (
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold tracking-tight text-app-text truncate">{name}</p>
+          <p className="text-[13px] font-bold tracking-tight text-app-text truncate">{name}</p>
           <p className="font-mono text-[11px] text-app-text-muted truncate">{slug}.attabl.com</p>
         </div>
       )}

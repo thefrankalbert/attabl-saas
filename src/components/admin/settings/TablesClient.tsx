@@ -340,9 +340,9 @@ export function TablesClient({
       <div className="flex flex-col @lg:flex-row gap-6">
         {/* Left Panel: Zone List */}
         <div className="w-full lg:w-72 flex-shrink-0">
-          <div className="bg-app-card rounded-xl border border-app-border p-4">
+          <div className="bg-app-card rounded-[10px] border border-app-border p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-app-text">{t('zonesHeader')}</h2>
+              <h2 className="text-sm font-bold text-app-text">{t('zonesHeader')}</h2>
               <span className="text-xs text-app-text-muted">
                 {t('zoneCount', { count: zones.length })}
               </span>
@@ -411,9 +411,7 @@ export function TablesClient({
                       <span
                         className={cn(
                           'text-sm flex-1 min-w-0 break-words',
-                          selectedZoneId === zone.id
-                            ? 'font-semibold text-app-text'
-                            : 'text-app-text',
+                          selectedZoneId === zone.id ? 'font-bold text-app-text' : 'text-app-text',
                         )}
                       >
                         {zone.name}
@@ -470,7 +468,7 @@ export function TablesClient({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Grid3x3 className="w-5 h-5 text-app-text-muted" />
-                  <h2 className="text-lg font-semibold text-app-text">{selectedZone.name}</h2>
+                  <h2 className="text-lg font-bold text-app-text">{selectedZone.name}</h2>
                   <span className="text-xs text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-full font-mono">
                     {selectedZone.prefix}
                   </span>
@@ -555,7 +553,7 @@ export function TablesClient({
                         <Button
                           type="button"
                           variant="ghost"
-                          className="text-sm font-semibold text-app-text mb-2 hover:text-app-text-secondary text-left h-auto px-0 py-0"
+                          className="text-sm font-bold text-app-text mb-2 hover:text-app-text-secondary text-left h-auto px-0 py-0"
                           onClick={() => handleStartEditTable(table)}
                         >
                           {table.display_name}
@@ -599,8 +597,8 @@ export function TablesClient({
                   ))}
                 </div>
               ) : (
-                <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-                  <div className="w-16 h-16 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
+                <div className="bg-app-card rounded-[10px] border border-app-border p-16 text-center">
+                  <div className="w-16 h-16 bg-app-elevated rounded-[10px] flex items-center justify-center mx-auto mb-4">
                     <Grid3x3 className="w-8 h-8 text-app-text-muted" />
                   </div>
                   <h3 className="text-lg font-bold text-app-text">{t('noTableTitle')}</h3>
@@ -615,8 +613,8 @@ export function TablesClient({
               )}
             </div>
           ) : (
-            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-              <div className="w-16 h-16 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
+            <div className="bg-app-card rounded-[10px] border border-app-border p-16 text-center">
+              <div className="w-16 h-16 bg-app-elevated rounded-[10px] flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-app-text-muted" />
               </div>
               <h3 className="text-lg font-bold text-app-text">{t('noZoneTitle')}</h3>
@@ -693,7 +691,7 @@ export function TablesClient({
           {selectedZone && (
             <p className="text-sm text-app-text-secondary">
               {t('addTablesZoneLabel')}{' '}
-              <span className="font-medium text-app-text">{selectedZone.name}</span>
+              <span className="font-normal text-app-text">{selectedZone.name}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-4">
@@ -733,11 +731,11 @@ export function TablesClient({
           {selectedZone && (
             <div className="bg-app-bg rounded-lg border border-app-border p-3 text-xs text-app-text-secondary">
               {t('tableNamingPreview')}{' '}
-              <span className="font-mono font-medium text-app-text">
+              <span className="font-mono font-normal text-app-text">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + 1}
               </span>{' '}
               {t('tableNamingTo')}{' '}
-              <span className="font-mono font-medium text-app-text">
+              <span className="font-mono font-normal text-app-text">
                 {selectedZone.prefix}-
                 {(tables.length > 0 ? tables.length : 0) + (Number(tableCount) || 0)}
               </span>

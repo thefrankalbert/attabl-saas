@@ -106,7 +106,7 @@ export function ServiceTableDetail({
       >
         <div className="border-b border-app-border/50 p-[18px]">
           <div className="mb-3.5 flex items-center justify-between">
-            <div className="text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted">
+            <div className="text-[10px] font-bold uppercase tracking-[1.2px] text-app-text-muted">
               {zone?.name ?? '-'}
             </div>
             <Button
@@ -120,7 +120,7 @@ export function ServiceTableDetail({
             </Button>
           </div>
           <div id="service-table-detail-title" className="flex items-baseline gap-2.5">
-            <span className="font-mono text-[22px] font-medium tracking-tight text-app-text">
+            <span className="font-mono text-[22px] font-normal tracking-tight text-app-text">
               {labels.tableLabel} {table.display_name || table.table_number}
             </span>
             <span className="font-mono text-xs text-app-text-muted">
@@ -132,7 +132,7 @@ export function ServiceTableDetail({
               <span
                 key={s.key}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[11px] font-medium',
+                  'inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[11px] font-normal',
                   status === s.key
                     ? 'border-app-border bg-app-elevated text-app-text'
                     : 'border-app-border text-app-text-muted opacity-60',
@@ -158,12 +158,12 @@ export function ServiceTableDetail({
           <Section title={labels.assignedServerSection}>
             {assignedServer ? (
               <div className="flex items-center gap-2.5 rounded border border-app-border bg-app-elevated p-2.5">
-                <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full border border-app-border bg-app-bg text-[11px] font-semibold text-app-text-secondary">
+                <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full border border-app-border bg-app-bg text-[11px] font-bold text-app-text-secondary">
                   {formatInitials(assignedServer.server.full_name)}
                   <span className="absolute -right-0.5 -bottom-0.5 h-[9px] w-[9px] rounded-full border-2 border-app-elevated bg-status-info" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium text-app-text">
+                  <div className="truncate text-xs font-normal text-app-text">
                     {assignedServer.server.full_name ?? '-'}
                   </div>
                   <div className="text-[10px] text-app-text-muted">
@@ -236,7 +236,7 @@ export function ServiceTableDetail({
                 </div>
                 <div className="mt-1.5 flex items-center justify-between rounded bg-app-elevated px-3 py-2 text-[12px]">
                   <span className="text-app-text-muted">{labels.orderTotal}</span>
-                  <span className="font-mono font-semibold text-app-text">
+                  <span className="font-mono font-bold text-app-text">
                     {orderTotal.toFixed(2)} {currencySymbol}
                   </span>
                 </div>
@@ -256,7 +256,7 @@ export function ServiceTableDetail({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-5 last:mb-0">
-      <h3 className="mb-2.5 text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted">
+      <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[1.2px] text-app-text-muted">
         {title}
       </h3>
       {children}
@@ -268,7 +268,7 @@ function FieldRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between border-b border-app-border/30 py-1.5 text-[11px] last:border-0">
       <span className="text-app-text-muted">{label}</span>
-      <span className="font-medium text-app-text">{value}</span>
+      <span className="font-normal text-app-text">{value}</span>
     </div>
   );
 }

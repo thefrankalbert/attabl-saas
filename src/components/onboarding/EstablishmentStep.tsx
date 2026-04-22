@@ -62,7 +62,7 @@ function LabeledSwitch({
 }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <Label className="text-sm font-medium text-app-text-secondary">{label}</Label>
+      <Label className="text-sm font-normal text-app-text-secondary">{label}</Label>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
@@ -83,7 +83,7 @@ function NumberStepper({
 }) {
   return (
     <div className="py-1">
-      <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
+      <Label className="text-sm font-normal text-app-text-secondary mb-2 block">{label}</Label>
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -148,10 +148,7 @@ export function EstablishmentStep({
 
           {showIdentity && (
             <div className="mb-3">
-              <Label
-                htmlFor="tenantName"
-                className="text-xs font-semibold text-app-text mb-1.5 block"
-              >
+              <Label htmlFor="tenantName" className="text-xs font-bold text-app-text mb-1.5 block">
                 {t('nameLabel')}
               </Label>
               <Input
@@ -160,14 +157,14 @@ export function EstablishmentStep({
                 placeholder={t('namePlaceholder')}
                 value={data.tenantName}
                 onChange={(e) => updateData({ tenantName: e.target.value })}
-                className="h-10 rounded-xl border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+                className="h-10 rounded-[10px] border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
               />
             </div>
           )}
 
           {showIdentity && (
             <div className="mb-3">
-              <Label className="text-xs font-semibold text-app-text mb-2 block">
+              <Label className="text-xs font-bold text-app-text mb-2 block">
                 {t('stepEstablishment')}
               </Label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
@@ -180,14 +177,14 @@ export function EstablishmentStep({
                       type="button"
                       variant="outline"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 h-auto ${
+                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] border transition-all duration-200 h-auto ${
                         isSelected
                           ? 'border-accent bg-accent/5'
                           : 'border-app-border hover:border-app-border-hover'
                       }`}
                     >
                       <div
-                        className={`p-2 rounded-xl transition-colors ${
+                        className={`p-2 rounded-[10px] transition-colors ${
                           isSelected ? 'bg-accent/10' : 'bg-app-elevated'
                         }`}
                       >
@@ -196,7 +193,7 @@ export function EstablishmentStep({
                         />
                       </div>
                       <span
-                        className={`font-medium text-[10px] text-center leading-tight ${
+                        className={`font-normal text-[10px] text-center leading-tight ${
                           isSelected ? 'text-app-text' : 'text-app-text-secondary'
                         }`}
                       >
@@ -221,7 +218,7 @@ export function EstablishmentStep({
                   <div>
                     <Label
                       htmlFor="address"
-                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                      className="text-sm font-normal text-app-text-secondary flex items-center gap-2 mb-1.5"
                     >
                       <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
                       {t('addressLabel')}
@@ -232,7 +229,7 @@ export function EstablishmentStep({
                       placeholder={t('addressPlaceholder')}
                       value={data.address}
                       onChange={(e) => updateData({ address: e.target.value })}
-                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
 
@@ -240,7 +237,7 @@ export function EstablishmentStep({
                     <div>
                       <Label
                         htmlFor="city"
-                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                        className="text-sm font-normal text-app-text-secondary mb-1.5 block"
                       >
                         {t('cityLabel')}
                       </Label>
@@ -250,13 +247,13 @@ export function EstablishmentStep({
                         placeholder={t('cityPlaceholder')}
                         value={data.city}
                         onChange={(e) => updateData({ city: e.target.value })}
-                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                        className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
                     <div>
                       <Label
                         htmlFor="country"
-                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                        className="text-sm font-normal text-app-text-secondary mb-1.5 block"
                       >
                         {t('countryLabel')}
                       </Label>
@@ -266,7 +263,7 @@ export function EstablishmentStep({
                         placeholder={t('countryLabel')}
                         value={data.country}
                         onChange={(e) => updateData({ country: e.target.value })}
-                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                        className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
                   </div>
@@ -274,7 +271,7 @@ export function EstablishmentStep({
                   <div>
                     <Label
                       htmlFor="phone"
-                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                      className="text-sm font-normal text-app-text-secondary flex items-center gap-2 mb-1.5"
                     >
                       <Phone className="h-3.5 w-3.5 text-app-text-muted" />
                       {t('phoneLabel')}
@@ -285,7 +282,7 @@ export function EstablishmentStep({
                       placeholder={t('phonePlaceholder')}
                       value={data.phone}
                       onChange={(e) => updateData({ phone: e.target.value })}
-                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
                 </div>
@@ -300,7 +297,7 @@ export function EstablishmentStep({
                 <div className="space-y-4">
                   {/* Language */}
                   <div>
-                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                    <Label className="text-sm font-normal text-app-text-secondary mb-1.5 block">
                       {t('languageLabel')}
                     </Label>
                     <Select
@@ -311,7 +308,7 @@ export function EstablishmentStep({
                         router.refresh();
                       }}
                     >
-                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                      <SelectTrigger className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -329,14 +326,14 @@ export function EstablishmentStep({
 
                   {/* Currency */}
                   <div>
-                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                    <Label className="text-sm font-normal text-app-text-secondary mb-1.5 block">
                       {t('currencyLabel')}
                     </Label>
                     <Select
                       value={data.currency}
                       onValueChange={(val) => updateData({ currency: val })}
                     >
-                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                      <SelectTrigger className="h-11 rounded-[10px] border-app-border bg-app-elevated/50 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,7 +390,7 @@ export function EstablishmentStep({
                             onChange={(val) => updateData({ tableCount: val })}
                           />
                           <div>
-                            <Label className="text-sm font-medium text-app-text-secondary mb-2 block">
+                            <Label className="text-sm font-normal text-app-text-secondary mb-2 block">
                               {t('starRating')}
                             </Label>
                             <div className="flex gap-1.5">
@@ -403,7 +400,7 @@ export function EstablishmentStep({
                                   type="button"
                                   variant="outline"
                                   onClick={() => updateData({ starRating: star })}
-                                  className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all p-0 ${
+                                  className={`w-10 h-10 rounded-[10px] border text-lg flex items-center justify-center transition-all p-0 ${
                                     (data.starRating || 0) >= star
                                       ? 'border-amber-400 bg-amber-400/10 text-amber-400'
                                       : 'border-app-border text-app-text-muted hover:border-app-border-hover'

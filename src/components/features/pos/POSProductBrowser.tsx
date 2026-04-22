@@ -283,7 +283,7 @@ export default function POSProductBrowser({
                       key={item.id}
                       variant="outline"
                       onClick={() => handleItemClick(item)}
-                      className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal"
+                      className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-[10px] p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal"
                     >
                       <div className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
                         {item.image_url ? (
@@ -293,7 +293,7 @@ export default function POSProductBrowser({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-xs text-app-text leading-tight">
+                        <h3 className="font-bold text-xs text-app-text leading-tight">
                           {item.name}
                         </h3>
                         <p className="text-[11px] font-bold text-app-text-secondary mt-0.5">
@@ -319,7 +319,7 @@ export default function POSProductBrowser({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-app-text-muted">
             <SearchX className="w-12 h-12 mb-3 opacity-20" />
-            <p className="text-sm font-medium">{t('noResults')}</p>
+            <p className="text-sm font-normal">{t('noResults')}</p>
           </div>
         )}
       </div>

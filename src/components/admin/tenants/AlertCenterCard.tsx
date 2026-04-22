@@ -57,7 +57,7 @@ export function AlertCenterCard({ alerts, onSelectTenant }: AlertCenterCardProps
                 >
                   <Icon className={cn('h-3.5 w-3.5 shrink-0', meta.color)} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-app-text">{alert.label}</p>
+                    <p className="truncate text-xs font-bold text-app-text">{alert.label}</p>
                     <p className="truncate text-[10px] text-app-text-muted">{alert.tenant_name}</p>
                   </div>
                   <ArrowRight className="h-3 w-3 text-app-text-muted group-hover:text-accent" />

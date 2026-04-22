@@ -192,7 +192,7 @@ export default function QRScanner({
     <div className="fixed inset-0 z-50 bg-black">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
-        <h2 className="text-white font-semibold text-lg">{t('title')}</h2>
+        <h2 className="text-white font-bold text-lg">{t('title')}</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -233,7 +233,7 @@ export default function QRScanner({
 
                 {/* Success indicator */}
                 {scanStatus === 'success' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-[10px] animate-[fadeIn_0.3s_ease-out]">
                     <CheckCircle2 className="w-12 h-12 text-green-400" />
                     {matchedTable && (
                       <p className="text-green-400 font-bold text-lg mt-2">
@@ -261,7 +261,7 @@ export default function QRScanner({
           {scanStatus === 'scanning' && <p className="text-white/70 text-sm">{t('placeQR')}</p>}
 
           {scanStatus === 'success' && (
-            <p className="text-green-400 text-sm font-semibold">{t('success')}</p>
+            <p className="text-green-400 text-sm font-bold">{t('success')}</p>
           )}
 
           {scanStatus === 'error' && (
@@ -270,7 +270,7 @@ export default function QRScanner({
                 <CameraOff className="w-7 h-7 text-white/40" />
               </div>
               <div>
-                <p className="text-white/80 text-sm font-medium">{t('cameraUnavailable')}</p>
+                <p className="text-white/80 text-sm font-normal">{t('cameraUnavailable')}</p>
                 <p className="text-white/40 text-xs mt-1">{t('cameraHint')}</p>
               </div>
               <div className="flex gap-3 mt-1">
@@ -280,7 +280,7 @@ export default function QRScanner({
                     setScanStatus('loading');
                     setRetryCount((c) => c + 1);
                   }}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 flex items-center gap-2"
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-[10px] text-sm font-normal hover:bg-white/20 flex items-center gap-2"
                 >
                   <RotateCcw className="w-4 h-4" />
                   {t('retry') || 'Reessayer'}
@@ -292,7 +292,7 @@ export default function QRScanner({
                       onClose();
                       onManualEntry();
                     }}
-                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-white/90"
+                    className="px-5 py-2.5 bg-white text-black rounded-[10px] text-sm font-bold flex items-center gap-2 hover:bg-white/90"
                   >
                     <Hash className="w-4 h-4" />
                     {t('enterManually')}
@@ -301,7 +301,7 @@ export default function QRScanner({
                 <Button
                   variant="ghost"
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20"
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-[10px] text-sm font-normal hover:bg-white/20"
                 >
                   {t('close')}
                 </Button>

@@ -95,7 +95,7 @@ export default function POSItemCustomizer({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-app-card w-full sm:max-w-sm sm:rounded-xl border border-app-border animate-in slide-in-from-bottom-4 sm:zoom-in-95 max-h-[85dvh] flex flex-col rounded-t-xl">
+      <div className="bg-app-card w-full sm:max-w-sm sm:rounded-[10px] border border-app-border animate-in slide-in-from-bottom-4 sm:zoom-in-95 max-h-[85dvh] flex flex-col rounded-t-xl">
         {/* ━━━ Header ━━━ */}
         <div className="flex items-start gap-3 p-4 border-b border-app-border">
           <div className="h-14 w-14 shrink-0 bg-app-elevated rounded-lg flex items-center justify-center relative overflow-hidden">
@@ -127,7 +127,7 @@ export default function POSItemCustomizer({
           {/* ─── Price Variants ──────────────────────────── */}
           {sortedVariants.length > 0 && (
             <div>
-              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <Label className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectVariant')}
               </Label>
               <div className="flex flex-wrap gap-2">
@@ -138,7 +138,7 @@ export default function POSItemCustomizer({
                     variant={selectedVariantId === variant.id ? 'default' : 'outline'}
                     onClick={() => setSelectedVariantId(variant.id)}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-sm font-medium h-auto',
+                      'flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-sm font-normal h-auto',
                       selectedVariantId === variant.id
                         ? 'bg-accent text-accent-text border-accent'
                         : 'border-app-border text-app-text-secondary hover:bg-app-hover hover:border-accent/30',
@@ -157,7 +157,7 @@ export default function POSItemCustomizer({
           {/* ─── Modifiers ──────────────────────────────── */}
           {sortedModifiers.length > 0 && (
             <div>
-              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <Label className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectModifiers')}
               </Label>
               <div className="space-y-1.5">
@@ -187,7 +187,7 @@ export default function POSItemCustomizer({
                         >
                           {isSelected && <Plus className="w-3 h-3 text-accent-text rotate-45" />}
                         </div>
-                        <span className="font-medium">{modifier.name}</span>
+                        <span className="font-normal">{modifier.name}</span>
                       </div>
                       <span className="text-xs text-app-text-muted font-mono">
                         +{formatCurrency(modifier.price, currency)}
@@ -204,7 +204,7 @@ export default function POSItemCustomizer({
         <div className="border-t border-app-border p-4 space-y-3">
           {/* Price summary */}
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-app-text-muted font-medium uppercase tracking-wide">
+            <span className="text-xs text-app-text-muted font-normal uppercase tracking-wide">
               {tc('total')}
             </span>
             <span className="text-xl font-bold text-app-text tabular-nums tracking-tight">
@@ -215,7 +215,7 @@ export default function POSItemCustomizer({
           {/* Add button */}
           <Button
             variant="default"
-            className="w-full h-12 text-sm font-bold rounded-xl"
+            className="w-full h-12 text-sm font-bold rounded-[10px]"
             onClick={handleAdd}
           >
             {t('addToCart')}

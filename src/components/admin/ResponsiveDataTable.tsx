@@ -47,7 +47,7 @@ export function ResponsiveDataTable<TData>({
       return (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-app-elevated rounded-xl h-24" />
+            <div key={i} className="animate-pulse bg-app-elevated rounded-[10px] h-24" />
           ))}
         </div>
       );

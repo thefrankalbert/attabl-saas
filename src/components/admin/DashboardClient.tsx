@@ -262,7 +262,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       {/* Page head */}
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="text-[22px] font-medium tracking-tight text-app-text">
+          <h1 className="text-[22px] font-normal tracking-tight text-app-text">
             {t(greetKey)}, {userName || tenantName}
             <span className="text-app-text-muted font-normal"> - {t('pageSubtitle')}</span>
           </h1>

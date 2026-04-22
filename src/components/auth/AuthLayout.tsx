@@ -14,13 +14,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
       {/* ── Right - Showcase panel ────────────────────────── */}
       <div className="hidden md:flex md:w-[45%] lg:w-[50%] items-center p-4 md:p-5">
-        <div className="w-full h-full rounded-2xl bg-neutral-950 flex flex-col justify-between p-8 lg:p-10 overflow-hidden">
+        <div className="w-full h-full rounded-[10px] bg-neutral-950 flex flex-col justify-between p-8 lg:p-10 overflow-hidden">
           {/* ── Top: Impact headline ────────────────────── */}
           <div className="shrink-0 mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold leading-tight font-[family-name:var(--font-sora)]">
               <span className="text-white">Vos clients vivent une</span>
               <br />
-              <span className="text-[#CCFF00]">expérience 5 étoiles.</span>
+              <span className="text-[#2e7d32]">expérience 5 étoiles.</span>
               <br />
               <span className="text-neutral-400">Votre gestion aussi.</span>
             </h2>
@@ -36,9 +36,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               ].map((stat) => (
                 <div
                   key={stat.value}
-                  className="bg-white/5 border border-white/10 rounded-xl p-3 text-center"
+                  className="bg-white/5 border border-white/10 rounded-[10px] p-3 text-center"
                 >
-                  <div className="text-lg font-black text-[#CCFF00] tabular-nums leading-none mb-1">
+                  <div className="text-lg font-black text-[#2e7d32] tabular-nums leading-none mb-1">
                     {stat.value}
                   </div>
                   <div className="text-[10px] text-neutral-400 mt-1">{stat.label}</div>
@@ -49,19 +49,18 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
           {/* ── Dashboard mini preview ─────────────────── */}
           <div className="shrink-0 mb-8">
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-white/5 border border-white/10 rounded-[10px] overflow-hidden">
               {/* Revenue header */}
               <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                 <div>
-                  <div className="text-[8px] text-neutral-500 uppercase tracking-widest font-medium mb-0.5">
+                  <div className="text-[8px] text-neutral-500 uppercase tracking-widest font-normal mb-0.5">
                     Chiffre du jour
                   </div>
                   <div className="text-base font-black text-white tabular-nums">
-                    1 847 000{' '}
-                    <span className="text-[10px] font-semibold text-neutral-500">FCFA</span>
+                    1 847 000 <span className="text-[10px] font-bold text-neutral-500">FCFA</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[#4ade80] text-[9px] bg-[#4ade80]/10 border border-[#4ade80]/20 px-1.5 py-0.5 rounded-full">
+                <div className="flex items-center gap-1 text-[#2e7d32] text-[9px] bg-[#2e7d32]/10 border border-[#2e7d32]/20 px-1.5 py-0.5 rounded-full">
                   <span className="font-bold">+18%</span>
                 </div>
               </div>
@@ -71,14 +70,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 <svg viewBox="0 0 280 32" className="w-full h-6" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="login-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#CCFF00" stopOpacity="0.12" />
-                      <stop offset="100%" stopColor="#CCFF00" stopOpacity="0" />
+                      <stop offset="0%" stopColor="#2e7d32" stopOpacity="0.12" />
+                      <stop offset="100%" stopColor="#2e7d32" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <path
                     d="M 0 26 L 40 22 L 80 18 L 120 24 L 160 14 L 200 10 L 240 12 L 280 4"
                     fill="none"
-                    stroke="#CCFF00"
+                    stroke="#2e7d32"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -96,15 +95,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               {/* Live orders */}
               <div className="px-3 py-2 space-y-1">
                 <div className="flex items-center justify-between px-1 mb-0.5">
-                  <span className="text-[8px] font-semibold text-neutral-500 uppercase tracking-widest">
+                  <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">
                     Commandes récentes
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#4ade80]" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2e7d32] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#2e7d32]" />
                     </span>
-                    <span className="text-[8px] text-[#4ade80] font-medium">Live</span>
+                    <span className="text-[8px] text-[#2e7d32] font-normal">Live</span>
                   </div>
                 </div>
                 {[
@@ -118,14 +117,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                     table: 'Table 7',
                     total: '78 000 FCFA',
                     status: 'Servi',
-                    cls: 'bg-[#4ade80]/10 text-[#4ade80]',
+                    cls: 'bg-[#2e7d32]/10 text-[#2e7d32]',
                   },
                 ].map((order, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-2 bg-white/5 rounded-lg px-2.5 py-1.5"
                   >
-                    <span className="text-[10px] font-semibold text-neutral-300 w-12 shrink-0">
+                    <span className="text-[10px] font-bold text-neutral-300 w-12 shrink-0">
                       {order.table}
                     </span>
                     <span className="text-[9px] text-neutral-500 tabular-nums flex-1">

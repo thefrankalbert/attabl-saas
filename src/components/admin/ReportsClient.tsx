@@ -304,7 +304,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
               variant="outline"
               onClick={() => setPeriod(pill.value)}
               className={cn(
-                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
+                'px-3 py-1.5 text-[11px] font-bold rounded-lg whitespace-nowrap h-auto',
                 period === pill.value
                   ? 'bg-app-text text-app-bg border-app-text shadow-sm'
                   : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
@@ -321,7 +321,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 text-accent shrink-0" />
-              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+              <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                 {t('revenueLabel')}
               </p>
             </div>
@@ -336,7 +336,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <ShoppingBag className="w-4 h-4 text-app-text-muted shrink-0" />
-              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+              <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                 {t('orders')}
               </p>
             </div>
@@ -351,7 +351,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <CreditCard className="w-4 h-4 text-app-text-muted shrink-0" />
-              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+              <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                 {t('averageBasket')}
               </p>
             </div>
@@ -371,13 +371,13 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           {/* Chart & Top Items */}
           <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3">
             {/* Revenue chart */}
-            <div className="@lg:col-span-2 bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="@lg:col-span-2 bg-app-card border border-app-border/60 rounded-[10px] p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-app-text-muted" />
                   <h3 className="text-sm font-bold text-app-text">{t('revenueEvolution')}</h3>
                 </div>
-                <span className="text-[10px] font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-normal text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md">
                   {periodDisplayLabel}
                 </span>
               </div>
@@ -438,7 +438,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
             </div>
 
             {/* Top 5 products */}
-            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="bg-app-card border border-app-border/60 rounded-[10px] p-4">
               <h3 className="text-sm font-bold text-app-text mb-4">{t('top5Products')}</h3>
               <div className="space-y-3">
                 {topItems.map((item, index) => (
@@ -455,7 +455,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         {index + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-app-text truncate">{item.name}</p>
+                        <p className="text-sm font-normal text-app-text truncate">{item.name}</p>
                         <p className="text-[10px] text-app-text-muted">
                           {t('salesCount', { count: item.quantity })}
                         </p>
@@ -475,21 +475,21 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
           {/* Product Ranking Table */}
           {topItems.length > 0 && (
-            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="bg-app-card border border-app-border/60 rounded-[10px] p-4">
               <h3 className="text-sm font-bold text-app-text mb-3">{t('productRanking')}</h3>
               <Table className="text-sm">
                 <TableHeader>
                   <TableRow className="border-b border-app-border/60">
-                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                       #
                     </TableHead>
-                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                       {t('productName')}
                     </TableHead>
-                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                       {t('ordersCount')}
                     </TableHead>
-                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                       {t('revenueLabel')}
                     </TableHead>
                   </TableRow>
@@ -503,13 +503,13 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                       <TableCell className="py-2.5 px-2 tabular-nums text-app-text-muted font-bold text-xs">
                         {index + 1}
                       </TableCell>
-                      <TableCell className="py-2.5 px-2 font-medium text-app-text text-sm">
+                      <TableCell className="py-2.5 px-2 font-normal text-app-text text-sm">
                         {item.name}
                       </TableCell>
                       <TableCell className="py-2.5 px-2 text-right tabular-nums text-app-text-secondary text-sm">
                         {item.quantity}
                       </TableCell>
-                      <TableCell className="py-2.5 px-2 text-right tabular-nums text-app-text font-semibold text-sm">
+                      <TableCell className="py-2.5 px-2 text-right tabular-nums text-app-text font-bold text-sm">
                         {fmt(item.revenue)}
                       </TableCell>
                     </TableRow>
@@ -522,7 +522,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           {/* Category Breakdown + Server Performance side by side */}
           <div className="grid grid-cols-1 @lg:grid-cols-2 gap-3">
             {/* Category Breakdown */}
-            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="bg-app-card border border-app-border/60 rounded-[10px] p-4">
               <h3 className="text-sm font-bold text-app-text mb-4">{t('categoryBreakdown')}</h3>
               {categories.length === 0 ? (
                 <p className="text-sm text-app-text-muted text-center py-6">{t('noCategories')}</p>
@@ -578,7 +578,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
             </div>
 
             {/* Server Performance */}
-            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="bg-app-card border border-app-border/60 rounded-[10px] p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-4 h-4 text-app-text-muted" />
                 <h3 className="text-sm font-bold text-app-text">{t('serverPerformance')}</h3>
@@ -634,16 +634,16 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   <Table className="text-sm">
                     <TableHeader>
                       <TableRow className="border-b border-app-border/60">
-                        <TableHead className="text-left py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                        <TableHead className="text-left py-2 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                           {t('serverName')}
                         </TableHead>
-                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                           {t('ordersCount')}
                         </TableHead>
-                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                           {t('revenueLabel')}
                         </TableHead>
-                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-bold uppercase tracking-wider text-app-text-muted">
                           {t('avgOrderValue')}
                         </TableHead>
                       </TableRow>
@@ -654,13 +654,13 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                           key={s.serverName}
                           className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
                         >
-                          <TableCell className="py-2 px-2 font-medium text-app-text text-sm">
+                          <TableCell className="py-2 px-2 font-normal text-app-text text-sm">
                             {s.serverName}
                           </TableCell>
                           <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
                             {s.orders}
                           </TableCell>
-                          <TableCell className="py-2 px-2 text-right tabular-nums text-app-text font-semibold">
+                          <TableCell className="py-2 px-2 text-right tabular-nums text-app-text font-bold">
                             {fmt(s.revenue)}
                           </TableCell>
                           <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">

@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
+                  className="text-app-text-secondary font-normal text-xs uppercase tracking-widest"
                 >
                   Adresse email
                 </Label>

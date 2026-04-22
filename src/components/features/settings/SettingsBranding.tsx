@@ -84,7 +84,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
 
         {/* Preview */}
         <div>
-          <p className="text-xs font-semibold text-app-text-secondary mb-3 uppercase tracking-wider">
+          <p className="text-xs font-bold text-app-text-secondary mb-3 uppercase tracking-wider">
             {t('buttonPreview')}
           </p>
           <div className="flex items-center justify-center h-24 rounded-lg border border-app-border">
@@ -106,13 +106,13 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
       <div className="mt-6 pt-6 border-t border-app-border">
         <Link
           href={`${basePath}/qr-codes`}
-          className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors group"
+          className="flex items-center gap-3 p-4 rounded-[10px] border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors group"
         >
           <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center shrink-0">
             <QrCode className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-app-text">{t('qrCodesTitle')}</p>
+            <p className="text-sm font-bold text-app-text">{t('qrCodesTitle')}</p>
             <p className="text-xs text-app-text-secondary">{t('qrCodesDescription')}</p>
           </div>
           <ExternalLink className="w-4 h-4 text-app-text-muted group-hover:text-app-text transition-colors shrink-0" />

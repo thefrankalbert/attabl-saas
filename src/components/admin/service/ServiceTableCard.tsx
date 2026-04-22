@@ -125,7 +125,7 @@ export function ServiceTableCard({
 
       {/* Head: id + seats + quick release */}
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-[13px] font-semibold tracking-tight text-app-text">
+        <span className="font-mono text-[13px] font-bold tracking-tight text-app-text">
           {displayId}
         </span>
         <div className="flex items-center gap-1.5">
@@ -150,7 +150,7 @@ export function ServiceTableCard({
       </div>
 
       {/* Status line */}
-      <div className={cn('mt-0.5 text-[11px] font-medium', STATUS_TEXT_CLASS[status])}>
+      <div className={cn('mt-0.5 text-[11px] font-normal', STATUS_TEXT_CLASS[status])}>
         {sinceLabel}
       </div>
 
@@ -191,7 +191,7 @@ function ServerMini({ vm }: { vm: ServiceServerVM | undefined }) {
       .join('') || '?';
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
-      <div className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-app-border bg-app-elevated text-[8px] font-semibold text-app-text-secondary">
+      <div className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-app-border bg-app-elevated text-[8px] font-bold text-app-text-secondary">
         {initials}
       </div>
       <span className="truncate text-app-text-secondary">{firstName}</span>

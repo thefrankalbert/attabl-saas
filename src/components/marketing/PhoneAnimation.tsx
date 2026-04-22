@@ -81,7 +81,7 @@ export default function PhoneAnimation() {
 
               {/* Time label */}
               <span
-                className={`mt-3 text-xs font-semibold transition-colors duration-300 ${
+                className={`mt-3 text-xs font-bold transition-colors duration-300 ${
                   i === activeStep ? 'text-white' : 'text-white/40'
                 }`}
               >
@@ -104,14 +104,14 @@ export default function PhoneAnimation() {
             >
               {/* Left: message card + insight */}
               <div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+                <div className="rounded-[10px] border border-white/10 bg-white/5 p-5">
                   <p className="text-sm leading-relaxed text-white/80">{current.message}</p>
                 </div>
-                <p className="mt-4 text-xs font-medium text-white/70">{current.insight}</p>
+                <p className="mt-4 text-xs font-normal text-white/70">{current.insight}</p>
               </div>
 
               {/* Right: placeholder mockup */}
-              <div className="hidden rounded-xl border border-white/10 bg-white/5 md:flex md:min-h-[120px] md:items-center md:justify-center">
+              <div className="hidden rounded-[10px] border border-white/10 bg-white/5 md:flex md:min-h-[120px] md:items-center md:justify-center">
                 <span className="text-xs text-white/20">Aperçu</span>
               </div>
             </motion.div>

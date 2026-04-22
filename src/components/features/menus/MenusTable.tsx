@@ -124,7 +124,7 @@ function MenuRow({
       {/* Menu name + badge */}
       <div className="flex-1 min-w-0 flex items-center gap-3 py-1">
         <span className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="font-medium text-sm text-app-text break-words">{menu.name}</span>
+          <span className="font-normal text-sm text-app-text break-words">{menu.name}</span>
           {childCount > 0 && (
             <span className="text-xs text-app-text-muted shrink-0">
               {t('subMenuCount', { count: childCount })}
@@ -135,7 +135,7 @@ function MenuRow({
         {/* Active badge */}
         <span
           className={cn(
-            'px-2 py-0.5 rounded-full text-xs font-semibold border shrink-0',
+            'px-2 py-0.5 rounded-full text-xs font-bold border shrink-0',
             menu.is_active
               ? 'bg-status-success-bg text-status-success border-status-success/20'
               : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -310,7 +310,7 @@ export default function MenusTable({
       {/* Empty state */}
       {menus.length === 0 && !loading && (
         <div className="p-12 text-center">
-          <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 bg-app-elevated rounded-[10px] flex items-center justify-center mx-auto mb-4">
             <Folder className="w-7 h-7 text-app-text-muted" />
           </div>
           <h3 className="text-base font-bold text-app-text">{t('noMenus')}</h3>

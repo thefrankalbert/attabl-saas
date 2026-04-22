@@ -577,7 +577,7 @@ export default function CartPage() {
           </p>
           <Button
             asChild
-            className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+            className="h-[52px] px-8 rounded-[10px] bg-[#1A1A1A] text-white text-[15px] font-bold hover:bg-black"
           >
             <Link href={menuPath}>
               <ArrowLeft className="w-4 h-4" />
@@ -607,11 +607,11 @@ export default function CartPage() {
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-xl">
+          <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-[10px]">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-[#FF3008] shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-semibold text-[#FF3008] text-[13px]">{error}</p>}
+                {error && <p className="font-bold text-[#FF3008] text-[13px]">{error}</p>}
                 {validationErrors.length > 0 && (
                   <ul className="mt-1 text-[13px] text-[#FF3008] list-disc list-inside">
                     {validationErrors.map((err, i) => (
@@ -653,7 +653,7 @@ export default function CartPage() {
                   {/* TEXT - Left side */}
                   <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-[16px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2">
+                      <h3 className="text-[16px] font-bold text-[#1A1A1A] leading-tight line-clamp-2">
                         {getTranslatedContent(language, item.name, item.name_en)}
                       </h3>
                       {(optionLabel || variantLabel) && (
@@ -696,7 +696,7 @@ export default function CartPage() {
 
                   {/* IMAGE - Right side (identical to MenuItemCard, with trash overlay instead of add) */}
                   <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
-                    <div className="w-full h-full rounded-xl overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
+                    <div className="w-full h-full rounded-[10px] overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
                       {item.image_url &&
                       !item.image_url.includes('placeholder') &&
                       !item.image_url.includes('default') ? (
@@ -733,7 +733,7 @@ export default function CartPage() {
             <Button
               variant="ghost"
               onClick={() => setNotesOpen(true)}
-              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-bold text-[#1A1A1A] py-3 hover:text-black"
             >
               <ChefHat className="w-4 h-4" />
               <span>{t('cartNotesLabel')}</span>
@@ -743,7 +743,7 @@ export default function CartPage() {
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label htmlFor="cart-notes" className="text-[13px] font-bold text-[#1A1A1A]">
                 {t('cartNotesLabel')}
               </Label>
               <Button
@@ -767,7 +767,7 @@ export default function CartPage() {
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
-                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
+                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-[10px] px-3 py-3 text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
               />
               <div className="mt-1 flex justify-end">
                 <span className="text-[11px] text-[#B0B0B0]">
@@ -788,7 +788,7 @@ export default function CartPage() {
                 <Utensils className="w-5 h-5 text-[#1A1A1A]" />
                 <h2 className="text-[20px] font-bold text-[#1A1A1A]">{t('upsellYouMayLike')}</h2>
               </div>
-              <Link href={menuPath} className="text-[14px] font-semibold text-[#1A1A1A]">
+              <Link href={menuPath} className="text-[14px] font-bold text-[#1A1A1A]">
                 {t('seeAll') || 'See all'}
               </Link>
             </div>
@@ -799,7 +799,7 @@ export default function CartPage() {
                   ? [1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] animate-pulse overflow-hidden"
+                        className="w-[160px] flex-shrink-0 bg-white rounded-[10px] border border-[#EEEEEE] animate-pulse overflow-hidden"
                       >
                         <div className="w-full h-[110px] bg-[#F6F6F6]" />
                         <div className="p-2.5">
@@ -817,7 +817,7 @@ export default function CartPage() {
                       return (
                         <div
                           key={item.id}
-                          className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] overflow-hidden"
+                          className="w-[160px] flex-shrink-0 bg-white rounded-[10px] border border-[#EEEEEE] overflow-hidden"
                         >
                           <div className="w-full h-[110px] overflow-hidden relative bg-[#F6F6F6] flex items-center justify-center">
                             {hasImage ? (
@@ -844,7 +844,7 @@ export default function CartPage() {
                             </Button>
                           </div>
                           <div className="p-2.5">
-                            <h3 className="text-[15px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
+                            <h3 className="text-[15px] font-bold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
                               {getTranslatedContent(language, item.name, item.name_en)}
                             </h3>
                             <span className="text-[14px] font-bold text-[#1A1A1A]">
@@ -865,14 +865,14 @@ export default function CartPage() {
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between gap-3 bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-2.5"
+              className="flex items-center justify-between gap-3 bg-[#F6F6F6] border border-[#EEEEEE] rounded-[10px] px-3 py-2.5"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center flex-shrink-0">
                   <Check className="w-4 h-4 text-white" strokeWidth={3} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">
+                  <p className="text-[13px] font-bold text-[#1A1A1A] truncate">
                     {appliedCoupon.code}
                   </p>
                   <p className="text-[11px] text-[#737373]">
@@ -896,7 +896,7 @@ export default function CartPage() {
             <Button
               variant="ghost"
               onClick={() => setPromoOpen(true)}
-              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-bold text-[#1A1A1A] py-3 hover:text-black"
             >
               <Tag className="w-4 h-4" />
               <span>{t('promoCode')}</span>
@@ -906,7 +906,7 @@ export default function CartPage() {
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="promo-input" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label htmlFor="promo-input" className="text-[13px] font-bold text-[#1A1A1A]">
                 {t('promoCode')}
               </Label>
               <Button
@@ -941,13 +941,13 @@ export default function CartPage() {
                   }}
                   placeholder={t('promoCodePlaceholder')}
                   autoFocus
-                  className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl pl-9 pr-3 text-[14px] font-medium text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                  className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-[10px] pl-9 pr-3 text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                 />
               </div>
               <Button
                 onClick={handleApplyPromo}
                 disabled={!promoInput.trim() || promoApplying}
-                className="h-[44px] px-4 rounded-xl bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-black min-w-[90px]"
+                className="h-[44px] px-4 rounded-[10px] bg-[#1A1A1A] text-white text-[14px] font-bold hover:bg-black min-w-[90px]"
               >
                 {promoApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('apply')}
               </Button>
@@ -985,7 +985,7 @@ export default function CartPage() {
             <Button
               variant="ghost"
               onClick={() => setTipOpen(true)}
-              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-bold text-[#1A1A1A] py-3 hover:text-black"
             >
               <HandCoins className="w-4 h-4" />
               <span>{t('tip')}</span>
@@ -993,9 +993,9 @@ export default function CartPage() {
             </Button>
           </section>
         ) : (
-          <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+          <section className="bg-white rounded-[10px] border border-[#EEEEEE] p-4">
             <div className="flex items-center justify-between mb-3">
-              <Label className="text-[13px] font-semibold text-[#1A1A1A]">{t('tip')}</Label>
+              <Label className="text-[13px] font-bold text-[#1A1A1A]">{t('tip')}</Label>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1031,7 +1031,7 @@ export default function CartPage() {
                       if (opt.key !== 'custom') setCustomTipInput('');
                     }}
                     className={cn(
-                      'min-h-[44px] rounded-xl text-[13px] font-semibold px-1',
+                      'min-h-[44px] rounded-[10px] text-[13px] font-bold px-1',
                       active
                         ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A] hover:bg-black'
                         : 'bg-white text-[#737373] border-[#EEEEEE] hover:border-[#B0B0B0]',
@@ -1059,7 +1059,7 @@ export default function CartPage() {
                       value={customTipInput}
                       onChange={(e) => setCustomTipInput(e.target.value)}
                       placeholder={t('tipCustomPlaceholder')}
-                      className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 text-[14px] font-semibold text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                      className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-[10px] px-3 text-[14px] font-bold text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                     />
                   </div>
                 </motion.div>
@@ -1069,7 +1069,7 @@ export default function CartPage() {
         )}
 
         {/* DETAILED ORDER SUMMARY */}
-        <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+        <section className="bg-white rounded-[10px] border border-[#EEEEEE] p-4">
           <div className="space-y-2.5">
             {/* Subtotal */}
             <div className="flex justify-between items-center">
@@ -1152,7 +1152,7 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
+            className="w-full h-[52px] rounded-[10px] bg-[#1A1A1A] text-white font-bold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />

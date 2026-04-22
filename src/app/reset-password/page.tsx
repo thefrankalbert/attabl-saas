@@ -179,7 +179,7 @@ function ResetPasswordContent() {
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
+                  className="text-app-text-secondary font-normal text-xs uppercase tracking-widest"
                 >
                   Nouveau mot de passe
                 </Label>
@@ -209,7 +209,7 @@ function ResetPasswordContent() {
               <div className="space-y-2">
                 <Label
                   htmlFor="confirmPassword"
-                  className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
+                  className="text-app-text-secondary font-normal text-xs uppercase tracking-widest"
                 >
                   Confirmer le mot de passe
                 </Label>

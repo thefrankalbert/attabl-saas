@@ -122,7 +122,7 @@ export default function OrderCard({
       layoutId={order.id}
       onClick={onClick}
       className={cn(
-        'bg-app-card rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
+        'bg-app-card rounded-[10px] border-l-[6px] transition-all cursor-pointer overflow-hidden',
         config.border,
         isUrgent && 'ring-2 ring-status-error ring-offset-2',
       )}

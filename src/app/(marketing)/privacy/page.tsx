@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           Derni&egrave;re mise &agrave; jour : 28 f&eacute;vrier 2026
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">
           1. Responsable du traitement
         </h2>
         <p>
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           traitement des donn&eacute;es personnelles collect&eacute;es via le site attabl.com.
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">
           2. Donn&eacute;es collect&eacute;es
         </h2>
         <p>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           directement par Stripe et ne sont pas stock&eacute;es sur nos serveurs.
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">
           3. Finalit&eacute;s
         </h2>
         <p>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           plateforme.
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">
           4. H&eacute;bergement et s&eacute;curit&eacute;
         </h2>
         <p>
@@ -53,23 +53,21 @@ export default function PrivacyPage() {
           les communications sont chiffr&eacute;es (HTTPS/TLS).
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          5. Vos droits
-        </h2>
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">5. Vos droits</h2>
         <p>
           Conform&eacute;ment au RGPD, vous disposez d&apos;un droit d&apos;acc&egrave;s, de
           rectification, de suppression et de portabilit&eacute; de vos donn&eacute;es.
           Contactez-nous &agrave;{' '}
           <a
             href="mailto:contact@attabl.com"
-            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+            className="text-neutral-900 dark:text-white font-bold hover:underline"
           >
             contact@attabl.com
           </a>
           .
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">6. Cookies</h2>
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mt-8">6. Cookies</h2>
         <p>
           Nous utilisons des cookies essentiels au fonctionnement du service (authentification,
           pr&eacute;f&eacute;rences de langue). Aucun cookie publicitaire n&apos;est utilis&eacute;.

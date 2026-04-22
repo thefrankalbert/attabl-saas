@@ -47,7 +47,7 @@ export function StockAlertsCard({
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
+        <div className="flex items-center gap-2 text-[13px] font-normal text-app-text">
           <AlertTriangle className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
         </div>

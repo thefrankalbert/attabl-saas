@@ -80,7 +80,7 @@ export function ColorPicker({
   return (
     <div className={disabled ? 'opacity-50 pointer-events-none' : undefined}>
       {/* Label */}
-      {label && <Label className="mb-2 block text-sm font-medium text-app-text">{label}</Label>}
+      {label && <Label className="mb-2 block text-sm font-normal text-app-text">{label}</Label>}
 
       {/* Preset Swatches */}
       <div className="flex flex-wrap gap-2 mb-3">

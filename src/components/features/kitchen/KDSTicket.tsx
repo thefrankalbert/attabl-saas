@@ -207,13 +207,13 @@ export default function KDSTicket({
         {/* Line 1: #order_number . table_number   Due HH:MM */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 min-w-0">
-            <span className="text-xs font-semibold text-app-text">#{shortOrderNumber}</span>
+            <span className="text-xs font-bold text-app-text">#{shortOrderNumber}</span>
             {order.order_number && order.table_number && (
               <>
                 <span className="text-app-text-muted text-xs" aria-hidden="true">
                   -
                 </span>
-                <span className="text-xs font-semibold text-app-text truncate">
+                <span className="text-xs font-bold text-app-text truncate">
                   {order.table_number}
                 </span>
               </>
@@ -228,7 +228,7 @@ export default function KDSTicket({
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <div className="flex items-center gap-1 min-w-0 text-xs text-app-text-muted truncate">
             {serverName && (
-              <span className="font-medium text-app-text-secondary truncate max-w-24">
+              <span className="font-normal text-app-text-secondary truncate max-w-24">
                 {serverName}
               </span>
             )}
@@ -308,7 +308,7 @@ export default function KDSTicket({
             type="button"
             variant="ghost"
             onClick={() => setExpanded(true)}
-            className="w-full text-center py-1 text-xs font-medium text-accent hover:underline h-auto"
+            className="w-full text-center py-1 text-xs font-normal text-accent hover:underline h-auto"
           >
             +{items.length - 4} {t('moreItems')}
           </Button>
@@ -318,7 +318,7 @@ export default function KDSTicket({
             type="button"
             variant="ghost"
             onClick={() => setExpanded(false)}
-            className="w-full text-center py-1 text-xs font-medium text-app-text-muted hover:underline h-auto"
+            className="w-full text-center py-1 text-xs font-normal text-app-text-muted hover:underline h-auto"
           >
             {t('showLess')}
           </Button>

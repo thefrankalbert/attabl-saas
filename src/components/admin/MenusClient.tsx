@@ -177,7 +177,7 @@ export default function MenusClient({
           {/* Limit warning */}
           {isLimitReached && (
             <div className="rounded-lg border border-status-warning/20 bg-status-warning-bg px-4 py-2">
-              <p className="text-xs text-status-warning font-medium">
+              <p className="text-xs text-status-warning font-normal">
                 {t('limitReached', { max: maxMenus })}{' '}
                 <Link
                   href={`/sites/${tenantSlug}/admin/subscription`}

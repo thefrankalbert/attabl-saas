@@ -110,7 +110,7 @@ export default function ItemModifierEditor({
             <div key={mod.id} className="flex items-center gap-2 p-2.5 bg-app-bg rounded-lg group">
               <GripVertical className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-app-text">{mod.name}</span>
+                <span className="text-sm font-normal text-app-text">{mod.name}</span>
                 {mod.name_en && (
                   <span className="text-xs text-app-text-muted ml-1.5">({mod.name_en})</span>
                 )}
@@ -153,7 +153,7 @@ export default function ItemModifierEditor({
 
       {/* Add new modifier */}
       <div className="border-t border-app-border pt-4">
-        <p className="text-xs font-semibold text-app-text mb-2">{t('addNew')}</p>
+        <p className="text-xs font-bold text-app-text mb-2">{t('addNew')}</p>
         <div className="flex gap-2">
           <Input
             value={newName}

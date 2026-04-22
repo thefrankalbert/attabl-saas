@@ -14,14 +14,14 @@ export default function ReportsLoading() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-28 bg-app-elevated rounded-xl" />
+          <div key={i} className="h-28 bg-app-elevated rounded-[10px]" />
         ))}
       </div>
 
       {/* Chart + Top items */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-        <div className="lg:col-span-2 h-80 bg-app-elevated rounded-xl" />
-        <div className="h-80 bg-app-elevated rounded-xl" />
+        <div className="lg:col-span-2 h-80 bg-app-elevated rounded-[10px]" />
+        <div className="h-80 bg-app-elevated rounded-[10px]" />
       </div>
     </div>
   );

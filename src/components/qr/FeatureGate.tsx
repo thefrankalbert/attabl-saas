@@ -34,12 +34,12 @@ export function FeatureGate({ feature, children, planRequired }: FeatureGateProp
       {/* Overlay with badge */}
       <div className="absolute inset-0 flex items-start justify-end p-2">
         {isEnterprise ? (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100/80 text-purple-700 backdrop-blur-sm">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-purple-100/80 text-purple-700 backdrop-blur-sm">
             <Crown className="h-3.5 w-3.5" />
             Enterprise
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
             <Lock className="h-3.5 w-3.5" />
             Pro
           </span>

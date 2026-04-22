@@ -122,22 +122,26 @@
   --app-text-secondary: #a8a29e;
   --app-text-muted: #6b6560;
 
-  --app-accent: #c2f542;
-  --app-accent-hover: #d1ff5c;
-  --app-accent-muted: rgba(194, 245, 66, 0.12);
+  /* Dark mode accent: green-400 (#66bb6a) for WCAG AA contrast (~6:1) on
+     near-black bg. Light mode keeps green-800 (#2e7d32) as the identity.
+     Same Material green ramp, different shade per mode. */
+  --app-accent: #66bb6a;
+  --app-accent-hover: #4caf50;
+  --app-accent-muted: rgba(102, 187, 106, 0.14);
   --app-accent-text: #0a0a0a;
 
-  /* Accent ramp -- aligned on mockup lime #c2f542 */
-  --accent-50: #f7ffe0;
-  --accent-100: #edfbc7;
-  --accent-200: #dcf78f;
-  --accent-300: #c2f542;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #6aa512;
-  --accent-700: #527f0e;
-  --accent-800: #3d5f0a;
-  --accent-900: #273f07;
+  /* Accent ramp (Material green) - identical in both modes, utility vars
+     bg-accent-50..900 map to these and don't need per-mode override. */
+  --accent-50: #e8f5e9;
+  --accent-100: #c8e6c9;
+  --accent-200: #a5d6a7;
+  --accent-300: #81c784;
+  --accent-400: #66bb6a;
+  --accent-500: #4caf50;
+  --accent-600: #43a047;
+  --accent-700: #388e3c;
+  --accent-800: #2e7d32;
+  --accent-900: #1b5e20;
 
   --app-status-success-bg: rgba(5, 150, 105, 0.15);
   --app-status-warning-bg: rgba(217, 119, 6, 0.15);
@@ -168,22 +172,22 @@
   --app-text-secondary: #57534e;
   --app-text-muted: #a8a29e;
 
-  --app-accent: #65a30d;
-  --app-accent-hover: #4d7c0f;
-  --app-accent-muted: rgba(101, 163, 13, 0.12);
+  --app-accent: #2e7d32;
+  --app-accent-hover: #1b5e20;
+  --app-accent-muted: rgba(46, 125, 50, 0.12);
   --app-accent-text: #ffffff;
 
-  /* Accent ramp (light mode) */
-  --accent-50: #f7fee7;
-  --accent-100: #ecfccb;
-  --accent-200: #d9f99d;
-  --accent-300: #bef264;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #65a30d;
-  --accent-700: #4d7c0f;
-  --accent-800: #3f6212;
-  --accent-900: #365314;
+  /* Accent ramp (light mode) - ATTABL Square green */
+  --accent-50: #e8f5e9;
+  --accent-100: #c8e6c9;
+  --accent-200: #a5d6a7;
+  --accent-300: #81c784;
+  --accent-400: #66bb6a;
+  --accent-500: #4caf50;
+  --accent-600: #43a047;
+  --accent-700: #388e3c;
+  --accent-800: #2e7d32;
+  --accent-900: #1b5e20;
 
   --app-status-success-bg: #ecfdf5;
   --app-status-warning-bg: #fffbeb;
@@ -208,21 +212,21 @@
     --app-text-secondary: #57534e;
     --app-text-muted: #a8a29e;
 
-    --app-accent: #65a30d;
-    --app-accent-hover: #4d7c0f;
-    --app-accent-muted: rgba(101, 163, 13, 0.12);
+    --app-accent: #2e7d32;
+    --app-accent-hover: #1b5e20;
+    --app-accent-muted: rgba(46, 125, 50, 0.12);
     --app-accent-text: #ffffff;
 
-    --accent-50: #f7fee7;
-    --accent-100: #ecfccb;
-    --accent-200: #d9f99d;
-    --accent-300: #bef264;
-    --accent-400: #a3e635;
-    --accent-500: #84cc16;
-    --accent-600: #65a30d;
-    --accent-700: #4d7c0f;
-    --accent-800: #3f6212;
-    --accent-900: #365314;
+    --accent-50: #e8f5e9;
+    --accent-100: #c8e6c9;
+    --accent-200: #a5d6a7;
+    --accent-300: #81c784;
+    --accent-400: #66bb6a;
+    --accent-500: #4caf50;
+    --accent-600: #43a047;
+    --accent-700: #388e3c;
+    --accent-800: #2e7d32;
+    --accent-900: #1b5e20;
 
     --app-status-success-bg: #ecfdf5;
     --app-status-warning-bg: #fffbeb;
@@ -261,15 +265,15 @@
   --app-text-secondary: #737373 !important;
   --app-text-muted: #b0b0b0 !important;
 
-  --app-accent: #06c167 !important;
-  --app-accent-hover: #05a557 !important;
-  --app-accent-muted: #e6f9f0 !important;
+  --app-accent: #2e7d32 !important;
+  --app-accent-hover: #1b5e20 !important;
+  --app-accent-muted: #e8f5e9 !important;
   --app-accent-text: #ffffff !important;
 
-  --app-status-success-bg: #e6f9f0 !important;
+  --app-status-success-bg: #e8f5e9 !important;
   --app-status-warning-bg: #fff8e1 !important;
   --app-status-error-bg: #ffebee !important;
-  --app-status-info-bg: #e6f9f0 !important;
+  --app-status-info-bg: #e8f5e9 !important;
 
   --color-danger: #ff3008 !important;
   --color-danger-hover: #e02b07 !important;
@@ -301,14 +305,147 @@
     --app-text: #1a1a1a !important;
     --app-text-secondary: #737373 !important;
     --app-text-muted: #b0b0b0 !important;
-    --app-accent: #06c167 !important;
-    --app-accent-hover: #05a557 !important;
-    --app-accent-muted: #e6f9f0 !important;
+    --app-accent: #2e7d32 !important;
+    --app-accent-hover: #1b5e20 !important;
+    --app-accent-muted: #e8f5e9 !important;
     --app-accent-text: #ffffff !important;
     color-scheme: light !important;
     background-color: #ffffff !important;
     color: #1a1a1a !important;
   }
+}
+
+/* ===== REFONTE UI CLIENT (Phase 1 - navy/gold/cream) =====
+   Scoped to .tenant-client. Non-destructive: adds new tokens on top of the
+   existing --app-* palette so legacy components keep rendering with the old
+   green accent until each screen is migrated. Admin shell is unaffected. */
+.tenant-client {
+  /* Palette */
+  --navy: #0b1e3f;
+  --navy-600: #182e54;
+  --navy-900: #050f24;
+  --navy-80: #34435f;
+  --navy-60: #6b7486;
+  --gold: #b89968;
+  --gold-ink: #8c6935;
+  --gold-soft: #d9c39a;
+  --gold-light: #f0dba8;
+  --cream: #f6f1e7;
+  --cream-2: #eee6d3;
+  --bone: #fbf8f1;
+  --paper: #fffef9;
+  --line: #e8e1d1;
+  --success-refonte: #2e7d5b;
+  --warn-refonte: #c98a3b;
+  --danger-refonte: #9b2c2c;
+
+  /* Ink opacities (text on light backgrounds) */
+  --ink: #1a1f2e;
+  --ink-60: rgba(26, 31, 46, 0.6);
+  --ink-45: rgba(26, 31, 46, 0.45);
+  --ink-30: rgba(26, 31, 46, 0.3);
+  --ink-12: rgba(26, 31, 46, 0.12);
+  --ink-6: rgba(26, 31, 46, 0.06);
+  --hair: rgba(26, 31, 46, 0.08);
+
+  /* Radii */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-full: 999px;
+
+  /* Shadows */
+  --sh-soft: 0 1px 2px rgba(11, 30, 63, 0.04), 0 2px 6px rgba(11, 30, 63, 0.04);
+  --sh-raised: 0 1px 2px rgba(11, 30, 63, 0.05), 0 10px 28px -6px rgba(11, 30, 63, 0.1);
+  --sh-float: 0 1px 2px rgba(11, 30, 63, 0.06), 0 28px 60px -18px rgba(11, 30, 63, 0.25);
+
+  /* Display font stack (loaded via next/font in src/app/layout.tsx) */
+  --font-display-refonte: var(--font-fraunces), 'Playfair Display', Georgia, serif;
+}
+
+/* Tenant primary_color override: when the tenant has configured a custom
+   primary brand color, it replaces --gold as the accent. --tenant-primary is
+   injected by ThemeProvider (src/components/theme/ThemeProvider.tsx). */
+.tenant-client[data-tenant-brand='true'] {
+  --gold: var(--tenant-primary, #b89968);
+}
+
+/* Display font utility - only applies inside .tenant-client to avoid touching
+   admin screens. Use with <h1 className="font-fraunces"> etc. */
+.tenant-client .font-fraunces {
+  font-family: var(--font-display-refonte);
+  font-optical-sizing: auto;
+}
+
+/* Editorial italic accent in display titles (e.g. "Que desirez-vous ce soir ?"). */
+.tenant-client em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+/* Refonte page background: opt-in class. Applied on the wrapper of
+   ClientMenuPageRefonte (and future refonte screens). Overrides the forced
+   white background from .tenant-client without leaking into legacy screens.
+   ===== ATTABL SKIN ON BLUTABLE LAYOUT =====
+   The refonte uses the Blutable mockup structure (app-head, greeting,
+   hero, cat-grid, sections, bottom-nav) but remaps the palette back to
+   ATTABL's UberEats-inspired design: white bg, green accent, Inter font.
+   This keeps the new layout without importing the navy/gold/serif feel. */
+.tenant-client-refonte {
+  /* ===== SQUARE FOR RESTAURANTS PALETTE =====
+     Pure black + white. No brand color accent - matches Square's minimal
+     aesthetic. CTAs are black-on-white, hover states use grey washes.
+     If the tenant configured a primary_color, it overrides --accent-custom
+     (used for subtle tints only - background chips, not CTAs). */
+  --navy: #1a1a1a;
+  --navy-600: #000000;
+  --navy-900: #000000;
+  --navy-80: #404040;
+  --navy-60: #737373;
+
+  /* Accent collapses to black - no color hierarchy in Square style. */
+  --gold: #1a1a1a;
+  --gold-ink: #1a1a1a;
+  --gold-soft: #f6f6f6;
+  --gold-light: #ffffff;
+
+  /* Surfaces - ATTABL whites & greys */
+  --cream: #ffffff;
+  --cream-2: #f6f6f6;
+  --bone: #ffffff;
+  --paper: #ffffff;
+  --line: #eeeeee;
+
+  /* Ink opacities - ATTABL text scale */
+  --ink: #1a1a1a;
+  --ink-60: rgba(26, 26, 26, 0.6);
+  --ink-45: rgba(26, 26, 26, 0.45);
+  --ink-30: rgba(26, 26, 26, 0.3);
+  --ink-12: rgba(26, 26, 26, 0.12);
+  --ink-6: rgba(26, 26, 26, 0.06);
+  --hair: rgba(26, 26, 26, 0.08);
+
+  /* Minimal shadows - Square favors borders and spacing for elevation */
+  --sh-soft: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sh-raised: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --sh-float: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  background: #ffffff !important;
+}
+
+/* Within the refonte scope, let headings inherit the tenant's curated font
+   (set via inline style in sites/[site]/layout.tsx). No Fraunces forcing. */
+.tenant-client-refonte .font-fraunces {
+  font-family: inherit;
+  font-optical-sizing: auto;
+}
+
+/* Editorial italic accent - just italic black (Square minimalist). */
+.tenant-client-refonte em {
+  font-style: italic;
+  color: inherit;
 }
 
 html,

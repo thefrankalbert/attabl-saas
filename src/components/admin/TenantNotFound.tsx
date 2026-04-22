@@ -11,7 +11,7 @@ export default function TenantNotFound() {
   return (
     <div className="flex-1 flex items-center justify-center p-4 bg-app-bg">
       <div className="text-center max-w-sm">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-app-card border border-app-border shadow-sm">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[10px] bg-app-card border border-app-border shadow-sm">
           <AlertCircle className="h-7 w-7 text-app-text-muted" />
         </div>
 

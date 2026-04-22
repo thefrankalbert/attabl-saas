@@ -27,7 +27,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
   if (!ads || ads.length === 0) return null;
 
   return (
-    <div className="relative mb-8 rounded-2xl overflow-hidden border border-app-border group">
+    <div className="relative mb-8 rounded-[10px] overflow-hidden border border-app-border group">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {ads.map((ad, index) => (

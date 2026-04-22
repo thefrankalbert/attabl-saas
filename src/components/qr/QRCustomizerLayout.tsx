@@ -39,7 +39,7 @@ export function QRCustomizerLayout({
       <div className="flex flex-col md:flex-row gap-6">
         {/* Mobile: preview first */}
         <div className="block md:hidden">
-          <div className="max-h-[300px] overflow-hidden rounded-2xl">
+          <div className="max-h-[300px] overflow-hidden rounded-[10px]">
             <QRPreview
               ref={previewRef}
               config={config}

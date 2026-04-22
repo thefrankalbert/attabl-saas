@@ -344,8 +344,8 @@ export default function ItemsClient({
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
-              <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
+            <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-[10px] bg-accent-muted border border-accent/20">
+              <span className="text-sm font-normal text-app-text">{selectedIds.size} selected</span>
               <div className="flex-1" />
               <Button
                 variant="outline"
@@ -391,12 +391,12 @@ export default function ItemsClient({
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="h-20 bg-app-card rounded-xl border border-app-border animate-pulse"
+                  className="h-20 bg-app-card rounded-[10px] border border-app-border animate-pulse"
                 />
               ))}
             </div>
           ) : items.length > 0 ? (
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+            <div className="bg-app-card rounded-[10px] border border-app-border overflow-hidden">
               {/* Select all header */}
               <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
                 {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
@@ -452,7 +452,7 @@ export default function ItemsClient({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-app-text text-sm break-words">{item.name}</p>
+                    <p className="font-bold text-app-text text-sm break-words">{item.name}</p>
                     <p className="text-xs text-app-text-muted mt-0.5">
                       {item.category?.name || t('uncategorized')}
                     </p>
@@ -469,7 +469,7 @@ export default function ItemsClient({
                       toggleAvailable(item);
                     }}
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
+                      'px-2.5 py-1 rounded-full text-xs font-bold shrink-0 whitespace-nowrap h-auto',
                       item.is_available
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -533,7 +533,7 @@ export default function ItemsClient({
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Package className="w-10 h-10 text-app-text-muted mb-3" />
-              <p className="text-sm font-medium text-app-text-secondary mb-1">{t('noItems')}</p>
+              <p className="text-sm font-normal text-app-text-secondary mb-1">{t('noItems')}</p>
               <p className="text-xs text-app-text-muted mb-4">{t('noItemsDesc')}</p>
               <Button onClick={openNewModal} size="sm">
                 <Plus className="w-4 h-4 mr-1" /> {seg.addItem}
@@ -572,30 +572,30 @@ export default function ItemsClient({
                       alt={selectedItem.name}
                       fill
                       sizes="(max-width: 640px) 100vw, 400px"
-                      className="rounded-xl object-cover border border-app-border"
+                      className="rounded-[10px] object-cover border border-app-border"
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-48 rounded-xl bg-app-bg border border-app-border flex items-center justify-center">
+                  <div className="w-full h-48 rounded-[10px] bg-app-bg border border-app-border flex items-center justify-center">
                     <ImageIcon className="w-12 h-12 text-app-text-muted" />
                   </div>
                 )}
 
                 {/* Name */}
                 <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('nameFr')}</p>
-                  <p className="text-sm font-semibold text-app-text">{selectedItem.name}</p>
+                  <p className="text-xs text-app-text-muted font-normal">{t('nameFr')}</p>
+                  <p className="text-sm font-bold text-app-text">{selectedItem.name}</p>
                 </div>
 
                 {/* Name EN */}
                 <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('nameEn')}</p>
+                  <p className="text-xs text-app-text-muted font-normal">{t('nameEn')}</p>
                   <p className="text-sm text-app-text">{selectedItem.name_en || '-'}</p>
                 </div>
 
                 {/* Description */}
                 <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('descriptionFr')}</p>
+                  <p className="text-xs text-app-text-muted font-normal">{t('descriptionFr')}</p>
                   <p className="text-sm text-app-text">
                     {selectedItem.description || t('noDescription')}
                   </p>
@@ -603,7 +603,7 @@ export default function ItemsClient({
 
                 {/* Price */}
                 <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('price')}</p>
+                  <p className="text-xs text-app-text-muted font-normal">{t('price')}</p>
                   <p className="text-lg font-bold text-app-text tabular-nums">
                     {formatCurrency(selectedItem.price, currency)}
                   </p>
@@ -625,7 +625,7 @@ export default function ItemsClient({
 
                 {/* Category */}
                 <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('category')}</p>
+                  <p className="text-xs text-app-text-muted font-normal">{t('category')}</p>
                   <p className="text-sm text-app-text">
                     {selectedItem.category?.name || t('uncategorized')}
                   </p>
@@ -634,7 +634,7 @@ export default function ItemsClient({
                 {/* Allergens */}
                 {selectedItem.allergens && selectedItem.allergens.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-app-text-muted font-medium flex items-center gap-1">
+                    <p className="text-xs text-app-text-muted font-normal flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
                       {ta('title')}
                     </p>
@@ -642,7 +642,7 @@ export default function ItemsClient({
                       {selectedItem.allergens.map((a) => (
                         <span
                           key={a}
-                          className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20"
+                          className="px-2 py-0.5 rounded-full text-xs font-normal bg-orange-500/10 text-orange-500 border border-orange-500/20"
                         >
                           {ta(a)}
                         </span>
@@ -654,7 +654,7 @@ export default function ItemsClient({
                 {/* Calories */}
                 {selectedItem.calories != null && (
                   <div className="space-y-1">
-                    <p className="text-xs text-app-text-muted font-medium">{ta('calories')}</p>
+                    <p className="text-xs text-app-text-muted font-normal">{ta('calories')}</p>
                     <p className="text-sm text-app-text">{selectedItem.calories} kcal</p>
                   </div>
                 )}
@@ -663,7 +663,7 @@ export default function ItemsClient({
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold border',
+                      'px-2.5 py-1 rounded-full text-xs font-bold border',
                       selectedItem.is_available
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -682,7 +682,7 @@ export default function ItemsClient({
                     )}
                   </span>
                   {selectedItem.is_featured && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" />
                       {t('featured')}
                     </span>
@@ -732,7 +732,7 @@ export default function ItemsClient({
                       if (step < formStep) setFormStep(step);
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium h-auto',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-normal h-auto',
                       isActive
                         ? 'bg-accent/10 text-accent border-accent/30'
                         : isCompleted
@@ -911,7 +911,7 @@ export default function ItemsClient({
                             )
                           }
                           className={cn(
-                            'px-2.5 py-1 rounded-full text-xs font-medium h-auto',
+                            'px-2.5 py-1 rounded-full text-xs font-normal h-auto',
                             selected
                               ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                               : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',

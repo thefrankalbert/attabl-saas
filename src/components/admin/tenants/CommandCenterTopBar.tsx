@@ -30,7 +30,7 @@ export function CommandCenterTopBar({
           <div className="flex min-w-0 items-baseline gap-2">
             <h1 className="text-sm font-bold tracking-tight text-app-text sm:text-base">ATTABL</h1>
             <span className="text-app-text-muted">/</span>
-            <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-app-text-secondary">
+            <span className="truncate text-[11px] font-bold uppercase tracking-wider text-app-text-secondary">
               {modeLabel}
             </span>
             {userName && (
@@ -47,7 +47,7 @@ export function CommandCenterTopBar({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-semibold text-app-text-secondary">
+            <span className="text-[11px] font-bold text-app-text-secondary">
               {ordersLiveCount > 0 ? `${ordersLiveCount} commandes aujourd'hui` : 'En veille'}
             </span>
           </div>
@@ -56,7 +56,7 @@ export function CommandCenterTopBar({
             variant="outline"
             size="sm"
             onClick={onLogout}
-            className="gap-2 rounded-xl border-app-border"
+            className="gap-2 rounded-[10px] border-app-border"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span className="hidden text-xs sm:inline">Deconnexion</span>

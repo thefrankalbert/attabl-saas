@@ -210,7 +210,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
           </div>
 
           {/* Tip */}
-          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="mb-6 p-4 rounded-[10px] bg-accent/5 border border-accent/20">
             <div className="flex items-start gap-2.5">
               <UtensilsCrossed className="h-4 w-4 text-accent mt-0.5 shrink-0" />
               <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
@@ -230,7 +230,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                 return (
                   <div
                     key={category.id}
-                    className="rounded-xl border border-app-border overflow-hidden"
+                    className="rounded-[10px] border border-app-border overflow-hidden"
                   >
                     {/* Category Header */}
                     <div className="flex items-center gap-3 p-4 bg-app-elevated/50">
@@ -253,10 +253,10 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                        className="flex-1 h-10 bg-app-bg border-app-border rounded-xl text-sm font-semibold"
+                        className="flex-1 h-10 bg-app-bg border-app-border rounded-[10px] text-sm font-bold"
                       />
 
-                      <span className="text-xs text-app-text-muted whitespace-nowrap px-2.5 py-1 bg-app-bg border border-app-border rounded-full font-medium">
+                      <span className="text-xs text-app-text-muted whitespace-nowrap px-2.5 py-1 bg-app-bg border border-app-border rounded-full font-normal">
                         {t('articlesCount', { count: articleCount })}
                       </span>
 
@@ -278,7 +278,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         {category.items.map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
+                            className="flex items-center gap-2.5 p-2 rounded-[10px] bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
                           >
                             {/* Photo upload */}
                             <div className="relative shrink-0">
@@ -296,7 +296,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 }}
                               />
                               {uploadingItemId === item.id ? (
-                                <div className="w-9 h-9 rounded-xl border border-app-border flex items-center justify-center">
+                                <div className="w-9 h-9 rounded-[10px] border border-app-border flex items-center justify-center">
                                   <Loader2 className="h-3.5 w-3.5 text-app-text-muted animate-spin" />
                                 </div>
                               ) : item.imageUrl ? (
@@ -304,7 +304,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                   <img
                                     src={item.imageUrl}
                                     alt=""
-                                    className="w-9 h-9 rounded-xl object-cover"
+                                    className="w-9 h-9 rounded-[10px] object-cover"
                                   />
                                   <Button
                                     type="button"
@@ -321,7 +321,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               ) : (
                                 <Label
                                   htmlFor={`photo-${item.id}`}
-                                  className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
+                                  className="w-9 h-9 rounded-[10px] border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
                                 >
                                   <Camera className="h-3.5 w-3.5 text-app-text-muted" />
                                 </Label>
@@ -333,7 +333,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               onChange={(e) =>
                                 updateArticle(category.id, item.id, 'name', e.target.value)
                               }
-                              className="flex-1 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                              className="flex-1 h-9 bg-app-bg border-app-border rounded-[10px] text-sm"
                             />
                             <div className="flex items-center gap-1.5">
                               <Input
@@ -345,9 +345,9 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 onChange={(e) =>
                                   updateArticle(category.id, item.id, 'price', e.target.value)
                                 }
-                                className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                                className="w-28 h-9 bg-app-bg border-app-border rounded-[10px] text-sm"
                               />
-                              <span className="text-xs text-app-text-muted font-medium">
+                              <span className="text-xs text-app-text-muted font-normal">
                                 {data.currency || 'EUR'}
                               </span>
                             </div>
@@ -369,7 +369,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                             type="button"
                             variant="outline"
                             onClick={() => addArticle(category.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-[10px] border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-normal h-auto"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             {t('addArticle')}
@@ -391,7 +391,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                   type="button"
                   variant="outline"
                   onClick={addCategory}
-                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                  className="flex items-center gap-2 px-4 py-3 w-full rounded-[10px] border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-normal h-auto"
                 >
                   <Plus className="h-4 w-4" />
                   {t('addCategory')}

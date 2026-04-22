@@ -82,7 +82,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
         cell: ({ row }) => (
           <div>
-            <p className="font-medium text-app-text">{row.original.name}</p>
+            <p className="font-normal text-app-text">{row.original.name}</p>
             {row.original.contact_name && (
               <p className="text-xs text-app-text-secondary">{row.original.contact_name}</p>
             )}
@@ -122,7 +122,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           <div className="text-center">
             <span
               className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-medium',
+                'px-2 py-0.5 rounded-full text-xs font-normal',
                 row.original.is_active
                   ? 'bg-status-success-bg text-status-success'
                   : 'bg-app-bg text-app-text-secondary',
@@ -349,11 +349,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 storageKey="suppliers"
                 mobileConfig={{
                   renderCard: (supplier) => (
-                    <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
+                    <div className="bg-app-card border border-app-border rounded-[10px] p-4 space-y-3">
                       {/* Row 1: Name + Status */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-medium text-app-text break-words">{supplier.name}</p>
+                          <p className="font-normal text-app-text break-words">{supplier.name}</p>
                           {supplier.contact_name && (
                             <p className="text-xs text-app-text-secondary">
                               {supplier.contact_name}
@@ -362,7 +362,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                         </div>
                         <span
                           className={cn(
-                            'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
+                            'px-2 py-0.5 rounded-full text-xs font-normal shrink-0',
                             supplier.is_active
                               ? 'bg-status-success-bg text-status-success'
                               : 'bg-app-bg text-app-text-secondary',
@@ -416,7 +416,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             >
               <div className="space-y-4 pt-4">
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {t('nameLabel')}
                   </Label>
                   <Input
@@ -428,7 +428,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 </div>
 
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {t('contactPerson')}
                   </Label>
                   <Input
@@ -440,7 +440,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                       {t('phoneLabel')}
                     </Label>
                     <Input
@@ -450,7 +450,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                       {t('emailLabel')}
                     </Label>
                     <Input
@@ -463,7 +463,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 </div>
 
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {t('addressLabel')}
                   </Label>
                   <Input
@@ -474,7 +474,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 </div>
 
                 <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-normal text-app-text-secondary mb-1 block">
                     {t('notesLabel')}
                   </Label>
                   <Input

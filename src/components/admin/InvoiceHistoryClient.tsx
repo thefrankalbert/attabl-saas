@@ -136,7 +136,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
       <div className="shrink-0">
         <div className="flex items-center gap-3 shrink-0">
           <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
-          <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+          <span className="text-xs font-normal text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
             {invoices.length}
           </span>
         </div>
@@ -155,36 +155,36 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
             </Button>
           </div>
         ) : !hasStripeCustomer || invoices.length === 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border/60 p-12 text-center">
-            <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-app-card rounded-[10px] border border-app-border/60 p-12 text-center">
+            <div className="w-14 h-14 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
               <FileX2 className="w-7 h-7 text-app-text-muted" />
             </div>
             <h3 className="text-base font-bold text-app-text">{t('empty')}</h3>
             <p className="text-sm text-app-text-secondary mt-2">{t('emptyDesc')}</p>
           </div>
         ) : (
-          <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
+          <div className="bg-app-card rounded-[10px] border border-app-border/60 overflow-hidden">
             {/* Desktop table */}
             <div className="hidden @md:block">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-app-border/60 bg-app-bg/50">
-                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colNumber')}
                     </TableHead>
-                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colDate')}
                     </TableHead>
-                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colPeriod')}
                     </TableHead>
-                    <TableHead className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-right text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colAmount')}
                     </TableHead>
-                    <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-center text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colStatus')}
                     </TableHead>
-                    <TableHead className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    <TableHead className="text-right text-xs font-bold text-app-text-secondary px-4 py-3">
                       {t('colActions')}
                     </TableHead>
                   </TableRow>
@@ -196,7 +196,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                       className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                     >
                       <TableCell className="px-4 py-3">
-                        <span className="text-sm font-medium text-app-text">
+                        <span className="text-sm font-normal text-app-text">
                           {inv.number || ' - '}
                         </span>
                       </TableCell>
@@ -230,7 +230,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                               href={inv.invoice_pdf}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-medium text-app-text-secondary hover:text-app-text transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-normal text-app-text-secondary hover:text-app-text transition-colors"
                             >
                               <Download className="w-3.5 h-3.5" />
                               PDF
@@ -241,7 +241,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                               href={inv.hosted_invoice_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-medium text-primary hover:underline transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-normal text-primary hover:underline transition-colors"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                               {t('view')}
@@ -260,7 +260,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
               {invoices.map((inv) => (
                 <div key={inv.id} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-app-text">{inv.number || ' - '}</span>
+                    <span className="text-sm font-normal text-app-text">{inv.number || ' - '}</span>
                     <Badge
                       variant={statusVariant(inv.status)}
                       className={cn(
@@ -284,7 +284,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                         href={inv.invoice_pdf}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-medium bg-app-bg rounded-lg text-app-text hover:bg-app-bg transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-normal bg-app-bg rounded-lg text-app-text hover:bg-app-bg transition-colors"
                       >
                         <Download className="w-3.5 h-3.5" />
                         PDF
@@ -295,7 +295,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                         href={inv.hosted_invoice_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-medium text-primary hover:underline transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-normal text-primary hover:underline transition-colors"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         {t('view')}

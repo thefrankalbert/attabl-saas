@@ -66,12 +66,12 @@ export default function FeaturesPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-white dark:bg-neutral-950 p-8 rounded-2xl border border-neutral-200 dark:border-neutral-800"
+                  className="bg-white dark:bg-neutral-950 p-8 rounded-[10px] border border-neutral-200 dark:border-neutral-800"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-6">
+                  <div className="w-12 h-12 rounded-[10px] bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-6">
                     <feat.icon className="h-6 w-6 text-neutral-700 dark:text-neutral-300" />
                   </div>
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
                     {feat.title}
                   </h3>
                   <p className="text-neutral-600 dark:text-neutral-400 text-sm">{feat.desc}</p>

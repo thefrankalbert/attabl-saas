@@ -75,7 +75,7 @@ describe('onboardingCompleteSchema', () => {
         phone: '+23512345678',
         tableCount: 10,
         logoUrl: 'https://example.com/logo.png',
-        primaryColor: '#CCFF00',
+        primaryColor: '#2e7d32',
         secondaryColor: '#000000',
         description: 'Un restaurant test',
         tenantSlug: 'mon-restaurant',

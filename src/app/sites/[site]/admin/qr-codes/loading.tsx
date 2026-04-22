@@ -9,7 +9,7 @@ export default function QRCodesLoading() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="border border-app-border rounded-xl p-6 flex flex-col items-center gap-4"
+            className="border border-app-border rounded-[10px] p-6 flex flex-col items-center gap-4"
           >
             <div className="h-32 w-32 bg-app-elevated rounded-lg" />
             <div className="h-4 w-24 bg-app-elevated rounded" />

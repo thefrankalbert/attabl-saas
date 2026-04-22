@@ -449,7 +449,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         tableConfigMode: 'skip',
         tableZones: [],
         logoUrl: tenant.logo_url || '',
-        primaryColor: tenant.primary_color || '#CCFF00',
+        primaryColor: tenant.primary_color || '#2e7d32',
         secondaryColor: tenant.secondary_color || '#000000',
         description: tenant.description || '',
       };

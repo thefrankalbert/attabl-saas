@@ -110,7 +110,7 @@ function FooterSummaryBarInner({
     <footer className="h-14 shrink-0 z-[210] bg-app-card border-t border-app-border flex items-center px-4 gap-4">
       {/* Left: tenant name */}
       {tenantName && (
-        <span className="text-sm font-semibold text-app-text truncate max-w-40 hidden sm:block">
+        <span className="text-sm font-bold text-app-text truncate max-w-40 hidden sm:block">
           {tenantName}
         </span>
       )}
@@ -162,7 +162,7 @@ function FooterSummaryBarInner({
         >
           <ChevronUp className="w-4 h-4" />
         </Button>
-        <span className="text-xs font-medium text-app-text-secondary tabular-nums whitespace-nowrap">
+        <span className="text-xs font-normal text-app-text-secondary tabular-nums whitespace-nowrap">
           {t('footerPage')} {currentPage}/{totalPages}
         </span>
         <Button

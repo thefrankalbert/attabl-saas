@@ -119,7 +119,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </Button>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-app-text text-sm">{cat.name}</p>
+        <p className="font-normal text-app-text text-sm">{cat.name}</p>
       </div>
       {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
         <div
@@ -143,7 +143,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         title={`${cat.items_count || 0} plats`}
       >
         <Utensils className="w-3 h-3" />
-        <span className="font-medium tabular-nums">{cat.items_count || 0}</span>
+        <span className="font-normal tabular-nums">{cat.items_count || 0}</span>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <Button
@@ -427,11 +427,11 @@ export default function CategoriesClient({
                         <div className="flex items-center gap-4 px-4 py-3 bg-app-bg border-b border-accent shadow-sm">
                           <GripVertical className="w-4 h-4 text-app-text-secondary" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-app-text text-sm">{cat.name}</p>
+                            <p className="font-normal text-app-text text-sm">{cat.name}</p>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
                             <Utensils className="w-3.5 h-3.5" />
-                            <span className="font-medium">
+                            <span className="font-normal">
                               {t('dishCount', { count: cat.items_count || 0 })}
                             </span>
                           </div>
@@ -443,7 +443,7 @@ export default function CategoriesClient({
             </DndContext>
           ) : (
             <div className="p-12 text-center">
-              <div className="w-14 h-14 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-app-elevated rounded-[10px] flex items-center justify-center mx-auto mb-4">
                 <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
               <h3 className="text-base font-bold text-app-text">{t('noCategories')}</h3>
@@ -543,7 +543,7 @@ export default function CategoriesClient({
               {isFeaturedOnHome &&
                 featuredCount >= FEATURED_LIMIT &&
                 !(editingCategory && editingCategory.is_featured_on_home === true) && (
-                  <p className="text-xs text-amber-500 font-medium mt-2">
+                  <p className="text-xs text-amber-500 font-normal mt-2">
                     {t('featuredOnHomeLimit', { count: FEATURED_LIMIT })}
                   </p>
                 )}
@@ -567,7 +567,7 @@ export default function CategoriesClient({
                     variant="outline"
                     onClick={() => setPreparationZone(value)}
                     className={cn(
-                      'flex flex-col items-center gap-1.5 p-3 h-auto rounded-lg border text-xs font-medium transition-all',
+                      'flex flex-col items-center gap-1.5 p-3 h-auto rounded-lg border text-xs font-normal transition-all',
                       preparationZone === value
                         ? 'border-accent bg-accent/10 text-accent'
                         : 'border-app-border text-app-text-muted hover:border-app-text-secondary hover:text-app-text-secondary',

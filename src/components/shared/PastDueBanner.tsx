@@ -27,7 +27,7 @@ export function PastDueBanner() {
     <div className="bg-status-warning/10 border-b border-status-warning/20 px-4 py-2.5 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 min-w-0">
         <CreditCard className="w-4 h-4 text-status-warning shrink-0" />
-        <p className="text-xs sm:text-sm font-medium text-status-warning truncate">
+        <p className="text-xs sm:text-sm font-normal text-status-warning truncate">
           Votre paiement a échoué. Mettez à jour votre carte.
         </p>
       </div>

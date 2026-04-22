@@ -38,13 +38,13 @@ export default function VideoHero() {
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/signup"
-              className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+              className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-bold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               Commencer
             </Link>
             <Link
               href="/contact"
-              className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-8 py-4 text-base font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-8 py-4 text-base font-bold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
             >
               Contacter l{"'"}équipe
             </Link>
@@ -57,7 +57,7 @@ export default function VideoHero() {
                 key={key}
                 variant="ghost"
                 onClick={() => setActiveSegment(key)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium h-auto ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-normal h-auto ${
                   activeSegment === key
                     ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'

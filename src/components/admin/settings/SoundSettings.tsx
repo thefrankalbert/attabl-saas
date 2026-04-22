@@ -231,7 +231,7 @@ export function SoundSettings({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Volume2 className="w-5 h-5 text-app-text-secondary" />
-          <h3 className="font-semibold text-app-text">{t('notificationSoundsTitle')}</h3>
+          <h3 className="font-bold text-app-text">{t('notificationSoundsTitle')}</h3>
         </div>
         {!isPremium && (
           <span className="text-xs text-app-text-secondary">{t('soundsAvailableCount')}</span>
@@ -296,7 +296,7 @@ export function SoundSettings({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`text-xs font-medium ${isLocked ? 'text-app-text-muted' : 'text-app-text'}`}
+                    className={`text-xs font-normal ${isLocked ? 'text-app-text-muted' : 'text-app-text'}`}
                   >
                     {sound.name}
                   </span>

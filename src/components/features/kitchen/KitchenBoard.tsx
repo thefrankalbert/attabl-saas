@@ -29,10 +29,10 @@ function EmptyState() {
   const t = useTranslations('kitchen');
   return (
     <div className="flex flex-col items-center justify-center py-24 px-6 text-center col-span-full">
-      <div className="w-14 h-14 rounded-xl bg-app-elevated/30 flex items-center justify-center mb-4">
+      <div className="w-14 h-14 rounded-[10px] bg-app-elevated/30 flex items-center justify-center mb-4">
         <ClipboardList className="w-7 h-7 text-app-text-secondary" />
       </div>
-      <p className="text-sm font-medium text-app-text-secondary">{t('emptyActive')}</p>
+      <p className="text-sm font-normal text-app-text-secondary">{t('emptyActive')}</p>
     </div>
   );
 }

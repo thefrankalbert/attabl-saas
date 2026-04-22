@@ -152,7 +152,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         header: ({ column }) => <SortableHeader column={column}>{t('columnDate')}</SortableHeader>,
         cell: ({ row }) => (
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-app-text tabular-nums">
+            <span className="text-xs font-normal text-app-text tabular-nums">
               {formatDateShort(row.original.created_at)}
             </span>
             <span className="text-[10px] text-app-text-muted tabular-nums">
@@ -173,7 +173,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               <Box className="w-3.5 h-3.5 text-app-text-muted" />
             </div>
             <div className="min-w-0">
-              <span className="font-medium text-sm text-app-text block truncate">
+              <span className="font-normal text-sm text-app-text block truncate">
                 {row.original.ingredient?.name || '\u2014'}
               </span>
               {row.original.ingredient?.unit && (
@@ -193,7 +193,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           return (
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold',
+                'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold',
                 style?.bg,
                 style?.text,
               )}
@@ -271,7 +271,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <div className="flex items-center gap-3 shrink-0">
               <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+              <span className="text-xs font-normal text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
                 {filtered.length}
               </span>
             </div>
@@ -302,7 +302,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   size="sm"
                   onClick={() => setFilterType(f.value)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 h-auto text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 h-auto text-[11px] font-bold rounded-lg whitespace-nowrap transition-all border',
                     isActive
                       ? 'bg-app-text text-app-bg border-app-text shadow-sm'
                       : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
@@ -325,7 +325,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 <p className="text-lg font-bold text-status-success tabular-nums leading-tight">
                   +{stats.additions}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                   {t('statsAdditions')}
                 </p>
               </div>
@@ -336,7 +336,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 <p className="text-lg font-bold text-status-error tabular-nums leading-tight">
                   -{stats.removals}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                   {t('statsRemovals')}
                 </p>
               </div>
@@ -347,7 +347,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
                   {stats.uniqueIngredients}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                <p className="text-[10px] font-normal text-app-text-muted uppercase tracking-wider">
                   {t('statsProducts')}
                 </p>
               </div>
@@ -382,7 +382,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   const isPositive = movement.quantity > 0;
                   const Icon = style?.icon || Package;
                   return (
-                    <div className="bg-app-card border border-app-border/60 rounded-xl p-3.5 space-y-2.5">
+                    <div className="bg-app-card border border-app-border/60 rounded-[10px] p-3.5 space-y-2.5">
                       {/* Top: ingredient + quantity */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -395,13 +395,13 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                             <Icon className={cn('w-4 h-4', style?.text)} />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm text-app-text truncate">
+                            <p className="font-bold text-sm text-app-text truncate">
                               {movement.ingredient?.name || '\u2014'}
                             </p>
                             <div className="flex items-center gap-1.5">
                               <span
                                 className={cn(
-                                  'inline-flex items-center gap-1 text-[10px] font-semibold',
+                                  'inline-flex items-center gap-1 text-[10px] font-bold',
                                   style?.text,
                                 )}
                               >

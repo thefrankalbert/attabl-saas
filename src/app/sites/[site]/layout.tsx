@@ -42,6 +42,13 @@ export default async function SiteLayout({
   const tenantFont = getFontById(tenant?.font_family);
   const tenantFontFamily = `var(${tenantFont.cssVariable}), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`;
 
+  // Signal to the refonte CSS that this tenant has a custom brand color so
+  // the `.tenant-client[data-tenant-brand="true"]` rule in globals.css can
+  // remap --gold onto the tenant's primary color. The default locked value
+  // (#1A1A1A) means "no custom brand" and the navy/gold palette stays pure.
+  const hasCustomBrand =
+    !!tenant?.primary_color && tenant.primary_color.toLowerCase() !== '#1a1a1a';
+
   return (
     <NextThemesProvider attribute="class" forcedTheme="light">
       <TenantProvider slug={site} tenantId={tenantId} tenant={tenant}>
@@ -62,6 +69,7 @@ export default async function SiteLayout({
             >
               <div
                 className="tenant-client h-full overflow-y-auto"
+                data-tenant-brand={hasCustomBrand ? 'true' : undefined}
                 style={{ fontFamily: tenantFontFamily }}
               >
                 {children}

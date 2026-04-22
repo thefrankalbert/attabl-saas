@@ -32,7 +32,7 @@ export default function PendingInvitations({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold tracking-tight">{t('pendingInvitationsTitle')}</h2>
+      <h2 className="text-lg font-bold tracking-tight">{t('pendingInvitationsTitle')}</h2>
 
       {loadingInvitations ? (
         <div className="flex items-center justify-center py-8 text-app-text-muted">
@@ -40,7 +40,7 @@ export default function PendingInvitations({
           {tc('loading')}
         </div>
       ) : pendingOnly.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-app-border p-8 text-center text-app-text-secondary">
+        <div className="rounded-[10px] border border-dashed border-app-border p-8 text-center text-app-text-secondary">
           {t('noPendingInvitations')}
         </div>
       ) : (
@@ -51,17 +51,17 @@ export default function PendingInvitations({
             return (
               <div
                 key={invitation.id}
-                className="rounded-xl border border-dashed border-app-border p-4"
+                className="rounded-[10px] border border-dashed border-app-border p-4"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
                     <Mail className="w-5 h-5 text-app-text-muted mt-0.5 shrink-0" />
                     <div className="space-y-1">
-                      <p className="font-medium text-app-text">{invitation.email}</p>
+                      <p className="font-normal text-app-text">{invitation.email}</p>
                       <div className="flex items-center gap-3 text-xs text-app-text-secondary">
                         <div
                           className={cn(
-                            'px-2 py-0.5 rounded-full font-medium flex items-center gap-1',
+                            'px-2 py-0.5 rounded-full font-normal flex items-center gap-1',
                             roleConfig.bg,
                             roleConfig.color,
                           )}

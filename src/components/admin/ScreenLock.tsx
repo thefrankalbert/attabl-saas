@@ -102,7 +102,7 @@ export function ScreenLock({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-status-warning px-4 py-2.5 text-sm font-medium text-accent-text"
+            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-status-warning px-4 py-2.5 text-sm font-normal text-accent-text"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{t('lockingIn', { time: formatTime(remainingSeconds) })}</span>
@@ -139,7 +139,7 @@ export function ScreenLock({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 className="mb-8"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/20">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[10px] bg-accent/10 ring-1 ring-accent/20">
                   <Lock className="h-9 w-9 text-accent" />
                 </div>
               </motion.div>
@@ -165,7 +165,7 @@ export function ScreenLock({
               </div>
 
               {/* Tenant name */}
-              <h2 className="text-xl font-semibold text-app-text mb-2">{tenantName}</h2>
+              <h2 className="text-xl font-bold text-app-text mb-2">{tenantName}</h2>
               <p className="text-sm text-app-text-muted mb-8">{t('sessionLocked')}</p>
 
               {mode === 'overlay' ? (

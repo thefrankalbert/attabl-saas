@@ -405,7 +405,7 @@ export default function ClientMenuDetailPage({
           <Input
             type="text"
             placeholder={t('searchMenu')}
-            className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0"
+            className="w-full pl-9 pr-3 text-sm font-normal outline-none border-0 shadow-none focus-visible:ring-0"
             style={{
               backgroundColor: '#F6F6F6',
               borderRadius: '10px',
@@ -428,7 +428,7 @@ export default function ClientMenuDetailPage({
         )}
         {searchQuery.length >= 2 && searchResults.length > 0 && (
           <div
-            className="mt-2 rounded-xl overflow-hidden z-50 relative"
+            className="mt-2 rounded-[10px] overflow-hidden z-50 relative"
             style={{
               backgroundColor: '#FFFFFF',
               border: '1px solid #EEEEEE',
@@ -456,7 +456,7 @@ export default function ClientMenuDetailPage({
                     setSelectedItem(item);
                     setSearchQuery('');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto"
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-[10px] text-left justify-start h-auto"
                   style={{ backgroundColor: 'transparent' }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#F6F6F6';
@@ -754,13 +754,13 @@ export default function ClientMenuDetailPage({
       ) : (
         <div className="text-center py-20">
           <div
-            className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto"
+            className="rounded-[10px] p-6 sm:p-8 max-w-sm mx-auto"
             style={{
               backgroundColor: '#FFFFFF',
               border: '1px solid #EEEEEE',
             }}
           >
-            <p className="font-medium" style={{ color: '#B0B0B0' }}>
+            <p className="font-normal" style={{ color: '#B0B0B0' }}>
               {t('noMenuAvailable')}
             </p>
           </div>

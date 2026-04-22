@@ -59,12 +59,12 @@ export default function FeaturesShowcase() {
             return (
               <div
                 key={feature.title}
-                className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 transition-shadow hover:shadow-md"
+                className="rounded-[10px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 transition-shadow hover:shadow-md"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
                   <Icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                 </div>
-                <h3 className="mb-2 text-base font-semibold text-neutral-900 dark:text-white">
+                <h3 className="mb-2 text-base font-bold text-neutral-900 dark:text-white">
                   {feature.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">

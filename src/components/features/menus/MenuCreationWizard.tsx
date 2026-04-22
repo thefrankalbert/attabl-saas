@@ -137,7 +137,7 @@ export default function MenuCreationWizard({
           {/* Step 1.5: Confirmation - add categories? */}
           {step === 'confirm' && createdMenu && (
             <div className="py-8 text-center space-y-6">
-              <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 bg-accent/10 rounded-[10px] flex items-center justify-center mx-auto">
                 <Check className="w-7 h-7 text-accent" />
               </div>
               <div>

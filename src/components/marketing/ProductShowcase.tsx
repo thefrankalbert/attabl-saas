@@ -54,11 +54,11 @@ export default function ProductShowcase() {
           {products.map((product) => (
             <div
               key={product.verb}
-              className={`rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 transition-shadow hover:shadow-lg ${
+              className={`rounded-[10px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 transition-shadow hover:shadow-lg ${
                 product.span === 2 ? 'md:col-span-2' : ''
               }`}
             >
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
                 {product.verb}
               </p>
               <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-white">
@@ -72,8 +72,8 @@ export default function ProductShowcase() {
               {product.hero && (
                 <div className="mt-6 flex gap-4">
                   {/* Mini bar chart 1 */}
-                  <div className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4">
-                    <p className="mb-2 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                  <div className="flex-1 rounded-[10px] bg-neutral-50 dark:bg-neutral-900 p-4">
+                    <p className="mb-2 text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
                       Revenu mensuel
                     </p>
                     <div className="flex h-16 items-end gap-1">
@@ -87,8 +87,8 @@ export default function ProductShowcase() {
                     </div>
                   </div>
                   {/* Mini bar chart 2 */}
-                  <div className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4">
-                    <p className="mb-2 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                  <div className="flex-1 rounded-[10px] bg-neutral-50 dark:bg-neutral-900 p-4">
+                    <p className="mb-2 text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
                       Commandes / jour
                     </p>
                     <div className="flex h-16 items-end gap-1">

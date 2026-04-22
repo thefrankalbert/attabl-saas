@@ -267,12 +267,12 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
       )}
 
       {/* Permissions Matrix */}
-      <div className="border border-app-border rounded-xl overflow-hidden">
+      <div className="border border-app-border rounded-[10px] overflow-hidden">
         <Table>
           {/* Sticky Header Row */}
           <TableHeader>
             <TableRow className="bg-app-bg border-b border-app-border">
-              <TableHead className="text-left text-sm font-semibold text-app-text px-5 py-3.5 min-w-[180px] @lg:min-w-[220px] sticky left-0 bg-app-bg z-10">
+              <TableHead className="text-left text-sm font-bold text-app-text px-5 py-3.5 min-w-[180px] @lg:min-w-[220px] sticky left-0 bg-app-bg z-10">
                 {t('permissionColumn')}
               </TableHead>
               {/* Owner column (locked) */}
@@ -335,7 +335,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                       colSpan={2 + EDITABLE_ROLES.length}
                       className="px-5 py-2.5 bg-app-card sticky left-0"
                     >
-                      <span className="text-xs font-medium text-app-text-secondary uppercase tracking-wide">
+                      <span className="text-xs font-normal text-app-text-secondary uppercase tracking-wide">
                         {categoryLabel(category.key)}
                       </span>
                     </TableCell>
@@ -352,7 +352,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                     >
                       {/* Permission label (no code column) */}
                       <TableCell className="text-sm text-app-text px-5 py-3 sticky left-0 bg-inherit z-10">
-                        <span className="font-medium">{permissionLabel(perm)}</span>
+                        <span className="font-normal">{permissionLabel(perm)}</span>
                       </TableCell>
 
                       {/* Owner cell (always on, locked) */}
@@ -383,7 +383,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                               {isOverridden && (
                                 <span
                                   className={cn(
-                                    'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                                    'text-[10px] font-normal px-1.5 py-0.5 rounded-full',
                                     isEnabled !== defaultVal
                                       ? 'bg-amber-500/10 text-amber-500'
                                       : 'bg-app-bg text-app-text-muted',
@@ -406,7 +406,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
       </div>
 
       {/* Legend */}
-      <div className="border border-app-border rounded-xl p-6 text-xs text-app-text-secondary space-y-1.5">
+      <div className="border border-app-border rounded-[10px] p-6 text-xs text-app-text-secondary space-y-1.5">
         <p>
           <span className="inline-block w-3 h-3 rounded-full bg-lime-400 align-middle mr-1.5" />={' '}
           {t('legendAllowed')}
@@ -414,7 +414,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
           = {t('legendDenied')}
         </p>
         <p>
-          <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium align-middle mr-1.5">
+          <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-normal align-middle mr-1.5">
             {t('modified')}
           </span>
           = {t('legendModified')}

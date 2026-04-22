@@ -143,7 +143,7 @@ export default function MenuImportExcel({
       <a
         href="/api/menu-import"
         download
-        className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+        className="inline-flex items-center gap-2 text-sm font-normal text-accent hover:text-accent/80 transition-colors"
       >
         <Download className="w-4 h-4" />
         {t('downloadTemplate')}
@@ -175,7 +175,7 @@ export default function MenuImportExcel({
         onDragLeave={handleDragLeave}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all',
+          'relative flex flex-col items-center justify-center gap-3 rounded-[10px] border-2 border-dashed p-8 cursor-pointer transition-all',
           isDragOver
             ? 'border-lime-400 bg-lime-50'
             : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
@@ -189,12 +189,12 @@ export default function MenuImportExcel({
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files?.[0])}
         />
-        <div className="w-12 h-12 bg-app-card rounded-xl border border-app-border flex items-center justify-center">
+        <div className="w-12 h-12 bg-app-card rounded-[10px] border border-app-border flex items-center justify-center">
           <Upload className="w-5 h-5 text-app-text-muted" />
         </div>
         {importFile ? (
           <div className="text-center">
-            <p className="text-sm font-semibold text-app-text">{importFile.name}</p>
+            <p className="text-sm font-bold text-app-text">{importFile.name}</p>
             <p className="text-xs text-app-text-secondary mt-0.5">
               {formatFileSize(importFile.size)}
             </p>
@@ -209,7 +209,7 @@ export default function MenuImportExcel({
 
       {/* Import results */}
       {importResult && (
-        <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
+        <div className="rounded-[10px] border border-app-border bg-app-elevated p-4 space-y-2">
           {importResult.categoriesCreated > 0 && (
             <div className="flex items-center gap-2 text-sm text-emerald-700">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -230,7 +230,7 @@ export default function MenuImportExcel({
           )}
           {importResult.errors.length > 0 && (
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm font-medium text-red-700">
+              <div className="flex items-center gap-2 text-sm font-normal text-red-700">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {t('errorsFound', { count: importResult.errors.length })}
               </div>
@@ -255,7 +255,7 @@ export default function MenuImportExcel({
           variant="default"
           disabled={!importFile || !importMenuId || importing}
           onClick={handleImport}
-          className="gap-2 rounded-xl"
+          className="gap-2 rounded-[10px]"
         >
           {importing && <Loader2 className="w-4 h-4 animate-spin" />}
           {importing ? t('importing') : t('importExcel')}

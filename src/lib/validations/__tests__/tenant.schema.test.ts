@@ -4,7 +4,7 @@ import { updateTenantSettingsSchema } from '../tenant.schema';
 describe('updateTenantSettingsSchema', () => {
   const validInput = {
     name: 'Mon Restaurant',
-    primaryColor: '#CCFF00',
+    primaryColor: '#2e7d32',
     secondaryColor: '#000000',
   };
 

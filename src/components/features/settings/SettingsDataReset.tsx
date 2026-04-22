@@ -118,7 +118,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
       <div className="mt-8 border-t border-status-error/20 pt-6">
         <div className="flex items-center gap-2 mb-1">
           <AlertTriangle className="w-4 h-4 text-status-error" />
-          <h3 className="text-sm font-semibold text-status-error">{t('dangerZone')}</h3>
+          <h3 className="text-sm font-bold text-status-error">{t('dangerZone')}</h3>
         </div>
         <p className="text-xs text-app-text-muted mb-4">{t('dangerZoneDescription')}</p>
 
@@ -129,13 +129,13 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
               type="button"
               variant="outline"
               onClick={() => openDialog(option.type)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:border-status-error/40 bg-app-elevated hover:bg-app-status-error-bg/30 text-left group min-h-[44px] h-auto whitespace-normal"
+              className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:border-status-error/40 bg-app-elevated hover:bg-app-status-error-bg/30 text-left group min-h-[44px] h-auto whitespace-normal"
             >
               <div className="p-1.5 rounded-lg bg-app-status-error-bg text-status-error group-hover:bg-status-error/20 transition-colors">
                 {option.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-app-text">
+                <div className="text-sm font-normal text-app-text">
                   {t(`reset_${option.type}_title`)}
                 </div>
                 <div className="text-xs text-app-text-muted">
@@ -176,7 +176,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
 
             {!result?.success && (
               <>
-                <div className="p-3 rounded-xl bg-app-status-error-bg/50 border border-status-error/10">
+                <div className="p-3 rounded-[10px] bg-app-status-error-bg/50 border border-status-error/10">
                   <p className="text-xs text-app-text-secondary">
                     {t('resetConfirmInstruction')}{' '}
                     <span className="font-mono font-bold text-status-error">
@@ -188,7 +188,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="confirm-reset"
-                    className="text-xs uppercase tracking-widest text-app-text-secondary font-medium"
+                    className="text-xs uppercase tracking-widest text-app-text-secondary font-normal"
                   >
                     {t('resetConfirmLabel')}
                   </Label>
@@ -197,7 +197,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                     value={confirmText}
                     onChange={(e) => setConfirmText(e.target.value)}
                     placeholder={CONFIRMATION_PHRASE}
-                    className="h-11 bg-app-elevated border-app-border text-app-text font-mono text-sm rounded-xl focus:ring-2 focus:ring-status-error/20 focus:border-status-error/40"
+                    className="h-11 bg-app-elevated border-app-border text-app-text font-mono text-sm rounded-[10px] focus:ring-2 focus:ring-status-error/20 focus:border-status-error/40"
                     autoComplete="off"
                     disabled={loading}
                   />

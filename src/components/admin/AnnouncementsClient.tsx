@@ -165,7 +165,7 @@ export default function AnnouncementsClient({
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
         {announcements.length > 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+          <div className="bg-app-card rounded-[10px] border border-app-border overflow-hidden">
             {announcements.map((ann) => (
               <div
                 key={ann.id}
@@ -173,7 +173,7 @@ export default function AnnouncementsClient({
                 onClick={() => openEdit(ann)}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-app-text text-sm break-words">{ann.title}</p>
+                  <p className="font-normal text-app-text text-sm break-words">{ann.title}</p>
                   {ann.description && (
                     <p className="text-xs text-app-text-muted break-words mt-0.5">
                       {ann.description}
@@ -227,8 +227,8 @@ export default function AnnouncementsClient({
             ))}
           </div>
         ) : (
-          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-app-card rounded-[10px] border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
               <Megaphone className="w-8 h-8 text-app-text-muted" />
             </div>
             <h3 className="text-lg font-bold text-app-text">{t('noAnnouncements')}</h3>

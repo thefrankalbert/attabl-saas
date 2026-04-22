@@ -111,7 +111,7 @@ export function DataTable<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
+    <div className="border border-app-border rounded-[10px] overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
       {/* Scrollable table area - thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
         <Table className="text-sm min-w-0">
@@ -125,7 +125,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="px-4 xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
+                    className="px-4 xl:px-6 py-3 text-left text-xs font-normal text-app-text-secondary uppercase tracking-wider"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder

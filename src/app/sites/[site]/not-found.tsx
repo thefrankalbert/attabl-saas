@@ -19,7 +19,7 @@ export default function TenantNotFound() {
       code="404"
       brand={
         <div className="flex items-center gap-3">
-          <div className="rounded-xl p-2.5" style={{ backgroundColor: '#06C167' }}>
+          <div className="rounded-[10px] p-2.5" style={{ backgroundColor: '#2e7d32' }}>
             <UtensilsCrossed className="h-6 w-6 text-white" />
           </div>
           <span className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
@@ -32,7 +32,7 @@ export default function TenantNotFound() {
       actions={
         <Button
           asChild
-          className="gap-2 h-12 rounded-xl text-white font-semibold px-6"
+          className="gap-2 h-12 rounded-[10px] text-white font-bold px-6"
           style={{ backgroundColor: '#1A1A1A' }}
         >
           <Link href={menuHref}>

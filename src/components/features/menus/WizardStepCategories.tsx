@@ -68,7 +68,7 @@ export default function WizardStepCategories({
     <div className="space-y-5 pt-2">
       {/* Context badge */}
       <div className="flex items-center gap-2 text-xs text-app-text-secondary">
-        <span className="px-2 py-0.5 rounded bg-accent/10 text-accent font-medium">
+        <span className="px-2 py-0.5 rounded bg-accent/10 text-accent font-normal">
           {menu.name}
         </span>
       </div>
@@ -79,7 +79,7 @@ export default function WizardStepCategories({
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-app-text">{cat.name}</p>
+                <p className="text-sm font-normal text-app-text">{cat.name}</p>
               </div>
               {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
                 <span
@@ -146,7 +146,7 @@ export default function WizardStepCategories({
                 variant="outline"
                 onClick={() => setPreparationZone(value)}
                 className={cn(
-                  'flex flex-col items-center gap-1 p-2.5 rounded-lg text-xs font-medium h-auto',
+                  'flex flex-col items-center gap-1 p-2.5 rounded-lg text-xs font-normal h-auto',
                   preparationZone === value
                     ? 'border-accent bg-accent/10 text-accent'
                     : 'border-app-border text-app-text-muted hover:border-app-text-secondary hover:text-app-text-secondary',

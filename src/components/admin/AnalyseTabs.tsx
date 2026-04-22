@@ -28,7 +28,7 @@ export default function AnalyseTabs() {
             key={path}
             href={href}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors',
               active
                 ? 'bg-accent/10 text-accent'
                 : 'text-app-text-muted hover:text-app-text hover:bg-app-hover',

@@ -87,11 +87,18 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      # Gate 4: Unit tests (Vitest — services + Zod schemas)
+      # Gate 4: Rule 09 (Square design system) compliance
+      # Fails if any forbidden legacy color, radius class or font weight is
+      # reintroduced in src/ (shadcn/ui primitives are exempt).
+      # See .claude/rules/09-square-design.md for the full rule.
+      - name: Rule 09 (Square design) check
+        run: pnpm rule09:check
+
+      # Gate 5: Unit tests (Vitest — services + Zod schemas)
       - name: Test
         run: pnpm test
 
-      # Gate 5: Next.js build
+      # Gate 6: Next.js build
       - name: Build
         run: pnpm build
         env:

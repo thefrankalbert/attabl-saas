@@ -22,7 +22,7 @@ interface ShortcutsHelpProps {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-app-elevated border border-app-border rounded-md text-xs font-mono font-medium text-app-text-secondary">
+    <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-app-elevated border border-app-border rounded-md text-xs font-mono font-normal text-app-text-secondary">
       {children}
     </kbd>
   );
@@ -136,7 +136,7 @@ export function ShortcutsHelp({ open, onOpenChange, shortcuts }: ShortcutsHelpPr
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2">
+      <h3 className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-2">
         {title}
       </h3>
       <div className="space-y-1.5">{children}</div>

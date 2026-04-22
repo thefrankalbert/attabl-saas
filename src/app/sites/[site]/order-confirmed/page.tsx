@@ -236,7 +236,7 @@ function OrderConfirmedContent() {
         </p>
         <Link
           href={menuPath}
-          className="text-white px-6 py-3 rounded-xl font-medium"
+          className="text-white px-6 py-3 rounded-[10px] font-normal"
           style={{ backgroundColor: '#1A1A1A' }}
         >
           {t('backToMenu')}
@@ -266,7 +266,7 @@ function OrderConfirmedContent() {
         {/* Order ready banner - prominent notification */}
         {showReadyBanner && (
           <div
-            className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 animate-pulse-once"
+            className="relative text-white rounded-[10px] px-4 py-4 flex items-center gap-3 animate-pulse-once"
             style={{ backgroundColor: '#1A1A1A' }}
           >
             <BellRing className="w-6 h-6 shrink-0" />
@@ -296,7 +296,7 @@ function OrderConfirmedContent() {
             <Button
               variant="ghost"
               onClick={requestPermission}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors h-auto justify-start"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-[10px] text-sm font-normal transition-colors h-auto justify-start"
               style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
             >
               <Bell className="w-4 h-4 shrink-0" />
@@ -309,7 +309,7 @@ function OrderConfirmedContent() {
 
         {/* Order summary card - same style as cart */}
         <section
-          className="bg-white rounded-xl overflow-hidden"
+          className="bg-white rounded-[10px] overflow-hidden"
           style={{ border: '1px solid #EEEEEE' }}
         >
           {order.table_number && (
@@ -317,7 +317,7 @@ function OrderConfirmedContent() {
               className="px-4 py-3 flex items-center justify-between"
               style={{ borderBottom: '1px solid rgba(238,238,238,0.5)' }}
             >
-              <span className="text-[13px] font-semibold" style={{ color: '#737373' }}>
+              <span className="text-[13px] font-bold" style={{ color: '#737373' }}>
                 {t('tableLabel')}
               </span>
               <span className="text-sm font-bold font-mono" style={{ color: '#1A1A1A' }}>
@@ -355,7 +355,7 @@ function OrderConfirmedContent() {
             {order.subtotal && order.subtotal !== order.total && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('subtotal')}</span>
-                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="font-normal" style={{ color: '#1A1A1A' }}>
                   {formatDisplayPrice(order.subtotal)}
                 </span>
               </div>
@@ -363,7 +363,7 @@ function OrderConfirmedContent() {
             {order.discount_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('discount')}</span>
-                <span className="font-medium" style={{ color: '#22C55E' }}>
+                <span className="font-normal" style={{ color: '#22C55E' }}>
                   -{formatDisplayPrice(order.discount_amount)}
                 </span>
               </div>
@@ -371,7 +371,7 @@ function OrderConfirmedContent() {
             {order.tax_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('tax')}</span>
-                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="font-normal" style={{ color: '#1A1A1A' }}>
                   {formatDisplayPrice(order.tax_amount)}
                 </span>
               </div>
@@ -379,7 +379,7 @@ function OrderConfirmedContent() {
             {order.service_charge_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('serviceCharge')}</span>
-                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="font-normal" style={{ color: '#1A1A1A' }}>
                   {formatDisplayPrice(order.service_charge_amount)}
                 </span>
               </div>
@@ -387,7 +387,7 @@ function OrderConfirmedContent() {
             {order.tip_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('tip')}</span>
-                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="font-normal" style={{ color: '#1A1A1A' }}>
                   +{formatDisplayPrice(order.tip_amount)}
                 </span>
               </div>
@@ -406,7 +406,7 @@ function OrderConfirmedContent() {
         {/* Back to menu */}
         <Link href={menuPath} className="block">
           <Button
-            className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-[10px] text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{ backgroundColor: '#1A1A1A' }}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -462,11 +462,11 @@ function OrderStatusMessage({ status }: { status: string }) {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
+      className="flex items-center gap-3 px-4 py-3.5 rounded-[10px]"
       style={{ backgroundColor: c.bg }}
     >
       <ChefHat className="w-5 h-5 shrink-0" style={{ color: c.color }} />
-      <span className="text-sm font-semibold" style={{ color: c.color }}>
+      <span className="text-sm font-bold" style={{ color: c.color }}>
         {c.message}
       </span>
     </div>

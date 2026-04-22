@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blutable — Refonte UI (v3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BLUTABLE — v3 (premium redesign)
+   ============================================================ */
+:root {
+  --navy:      #0B1E3F;
+  --navy-600:  #182E54;
+  --navy-900:  #050F24;
+  --gold:      #B89968;
+  --gold-ink:  #8C6935;
+  --gold-soft: #E8D9B8;
+  --cream:     #F6F1E7;
+  --cream-2:   #EEE6D3;
+  --bone:      #FBF8F1;
+  --paper:     #FFFEF9;
+  --ink:       #1A1F2E;
+  --ink-60:    rgba(26,31,46,0.60);
+  --ink-45:    rgba(26,31,46,0.45);
+  --ink-30:    rgba(26,31,46,0.30);
+  --ink-12:    rgba(26,31,46,0.12);
+  --ink-6:     rgba(26,31,46,0.06);
+  --hair:      rgba(26,31,46,0.08);
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 22px;
+  --r-2xl: 28px;
+
+  --s-soft:    0 1px 2px rgba(11,30,63,0.04), 0 2px 6px rgba(11,30,63,0.04);
+  --s-raised:  0 1px 2px rgba(11,30,63,0.05), 0 10px 28px -6px rgba(11,30,63,0.10);
+  --s-float:   0 1px 2px rgba(11,30,63,0.06), 0 28px 60px -18px rgba(11,30,63,0.25);
+  --s-phone:   0 50px 90px -20px rgba(11,30,63,0.28), 0 30px 55px -30px rgba(11,30,63,0.30);
+}
+
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% 0%, #E9ECF3 0%, #DDE2EC 40%, #D3D9E5 100%);
+  min-height: 100vh;
+}
+.display { font-family: 'Fraunces', 'Didot', Georgia, serif; font-optical-sizing: auto; }
+.italic-ed { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 500; font-variation-settings: 'opsz' 48; }
+
+/* --- Desktop chrome --- */
+.wrap { max-width: 1400px; margin: 0 auto; padding: 56px 40px 96px; }
+.kicker { font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 800; color: rgba(11,30,63,0.55); }
+.doc-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 46px; line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 6px 0 10px;
+  font-variation-settings: 'opsz' 72;
+}
+.doc-title .dot { color: var(--gold); }
+.doc-sub { color: var(--ink-60); font-size: 15px; max-width: 720px; line-height: 1.55; }
+.legend { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 18px; font-size: 13px; }
+.legend span.l { display: inline-flex; align-items: center; gap: 8px; }
+.lg-e { width: 9px; height: 9px; border-radius: 999px; background: #10B981; }
+.lg-x { width: 9px; height: 9px; border-radius: 999px; background: var(--gold); }
+
+.grid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 52px 36px;
+  justify-items: center;
+}
+
+.scr-head {
+  width: 100%; max-width: 390px;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800;
+}
+.pill-e { background: #E8F6EF; color: #047857; }
+.pill-x { background: #F6ECD6; color: var(--gold-ink); }
+.scr-head h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 19px; font-weight: 700; margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* --- Phone frame --- */
+.phone {
+  position: relative;
+  width: 390px; height: 820px;
+  background: #000;
+  border-radius: 58px;
+  padding: 11px;
+  box-shadow: var(--s-phone);
+}
+.phone::before {
+  content: ''; position: absolute;
+  left: 50%; top: 16px; transform: translateX(-50%);
+  width: 122px; height: 28px;
+  background: #000;
+  border-radius: 999px; z-index: 50;
+}
+.inner {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 48px;
+  overflow: hidden;
+  background: var(--cream);
+}
+.bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 46px; z-index: 40;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 30px 0;
+  font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+}
+.bar.lt { color: #fff; }
+.hi {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+  width: 130px; height: 4.5px;
+  border-radius: 999px; background: rgba(0,0,0,0.82);
+  z-index: 70;
+}
+
+/* --- Screen scroll container --- */
+.scr {
+  position: absolute; inset: 0;
+  overflow-y: auto;
+  padding-bottom: 104px;
+}
+.scr::-webkit-scrollbar { width: 0; height: 0; }
+.scr.dark { background: var(--cream); }
+.scr.bone { background: var(--bone); }
+
+/* --- Icons via SVG data URIs (mask) --- */
+.i {
+  display: inline-block;
+  width: 22px; height: 22px;
+  background: currentColor;
+  -webkit-mask: var(--u) center/contain no-repeat;
+          mask: var(--u) center/contain no-repeat;
+  flex-shrink: 0;
+}
+.i-home   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M3 11.2 12 4l9 7.2'/><path d='M5 10v10h14V10'/></svg>"); }
+.i-cart   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M3 5h2l3 12h11l2-9H6.5'/><circle cx='9' cy='20' r='1.5'/><circle cx='18' cy='20' r='1.5'/></svg>"); }
+.i-orders { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M20 7 12 3 4 7v10l8 4 8-4z'/><path d='M4 7l8 4 8-4'/><path d='M12 11v10'/></svg>"); }
+.i-user   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6'/></svg>"); }
+.i-search { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg>"); }
+.i-pin    { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s7-7.3 7-13A7 7 0 0 0 5 9c0 5.7 7 13 7 13z'/><circle cx='12' cy='9' r='2.5'/></svg>"); }
+.i-chevd  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>"); }
+.i-chevl  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m15 6-6 6 6 6'/></svg>"); }
+.i-chevr  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m9 6 6 6-6 6'/></svg>"); }
+.i-plus   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'><path d='M12 5v14M5 12h14'/></svg>"); }
+.i-minus  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'><path d='M5 12h14'/></svg>"); }
+.i-close  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'><path d='M6 6l12 12M18 6 6 18'/></svg>"); }
+.i-bag    { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 7h12l-1 13H7z'/><path d='M9 7a3 3 0 1 1 6 0'/></svg>"); }
+.i-chef   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M6 13a5 5 0 0 1 6-5 4 4 0 0 1 6 3 3 3 0 0 1-2 5H6z'/><path d='M8 18v3h8v-3'/></svg>"); }
+.i-bell   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9z'/><path d='M10 21a2 2 0 0 0 4 0'/></svg>"); }
+.i-check  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m5 12 5 5 9-11'/></svg>"); }
+.i-dl     { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M12 4v12m-5-5 5 5 5-5M5 21h14'/></svg>"); }
+.i-phone  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5c0-1 1-2 2-2h2l2 4-2 2a12 12 0 0 0 6 6l2-2 4 2v2c0 1-1 2-2 2A18 18 0 0 1 4 5z'/></svg>"); }
+.i-globe  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/></svg>"); }
+.i-coin   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M15 9.5A3 3 0 0 0 12 8h-.5a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 1 0 5H12a3 3 0 0 1-3-1.5M12 6v12'/></svg>"); }
+.i-info   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 8h.01M11 12h1v5h1'/></svg>"); }
+.i-shield { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z'/></svg>"); }
+.i-help   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M10 9a2 2 0 1 1 3 1.8c-.7.4-1 1-1 1.7V13M12 17h.01'/></svg>"); }
+.i-heart  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M20.5 8.5a5.5 5.5 0 0 0-9.5-3.8A5.5 5.5 0 0 0 3.5 12c0 6 8.5 10 8.5 10s8.5-4 8.5-10a5.5 5.5 0 0 0 0-3.5z'/></svg>"); }
+.i-qr     { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='7' rx='1'/><rect x='14' y='3' width='7' height='7' rx='1'/><rect x='3' y='14' width='7' height='7' rx='1'/><path d='M14 14h3v3M20 14v.01M14 20v.01M20 20h1v1h-1zM17 17v4'/></svg>"); }
+.i-star   { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='1.5' stroke-linejoin='round'><path d='m12 3 2.8 6 6.2.6-4.7 4.3 1.4 6.1L12 16.9 6.3 20l1.4-6.1L3 9.6l6.2-.6z'/></svg>"); }
+.i-clock  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>"); }
+.i-trash  { --u: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16M10 11v6M14 11v6M6 7 7 20a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3'/></svg>"); }
+
+/* --- Typography helpers --- */
+.micro {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-45);
+}
+.micro.gold { color: var(--gold-ink); }
+.h-display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 40;
+}
+
+/* ============================================================
+   SCREEN · 1  ACCUEIL
+   ============================================================ */
+.app-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 58px 22px 0;
+}
+.app-head .where { display: flex; flex-direction: column; gap: 2px; }
+.app-head .where .m { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--ink-45); }
+.app-head .where .v {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.01em;
+}
+.app-head .where .v .i-chevd { width: 13px; height: 13px; color: var(--ink-45); }
+.app-head .where .v .i-pin { width: 14px; height: 14px; color: var(--gold-ink); margin-right: 2px; }
+.logo {
+  width: 44px; height: 44px; border-radius: 999px;
+  background: radial-gradient(120% 100% at 0 0, #1E3A6A, #0B1E3F 55%, #04112A 100%);
+  box-shadow: 0 6px 14px -4px rgba(11,30,63,0.35), inset 0 0 0 1px rgba(255,255,255,0.08);
+  display: grid; place-items: center;
+}
+.logo .mark {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 800; font-size: 11px;
+  background: linear-gradient(135deg, #F0DBA8 0%, #B89968 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  letter-spacing: 0.05em;
+}
+
+.greet {
+  padding: 26px 22px 16px;
+}
+.greet .k { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; color: var(--gold-ink); }
+.greet h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500; font-size: 34px;
+  margin: 6px 0 0; letter-spacing: -0.02em;
+  line-height: 1.05;
+  font-variation-settings: 'opsz' 72;
+}
+.greet h1 em { font-style: italic; font-weight: 500; color: var(--gold-ink); font-variation-settings: 'opsz' 72; }
+
+.search {
+  margin: 14px 22px 0;
+  padding: 0 16px;
+  height: 52px;
+  background: #fff;
+  border-radius: 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--s-soft);
+  border: 1px solid var(--hair);
+}
+.search .i-search { width: 18px; height: 18px; color: var(--ink-45); }
+.search .ph { color: var(--ink-45); font-size: 14px; flex: 1; }
+.search .key {
+  font-size: 10px; padding: 4px 8px;
+  background: var(--ink-6); border-radius: 6px;
+  color: var(--ink-60); font-weight: 600;
+  font-family: 'Inter', monospace; letter-spacing: 0.04em;
+}
+
+.sec {
+  padding: 26px 22px 0;
+}
+.sec .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.sec .head h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px; font-weight: 600; letter-spacing: -0.015em;
+  margin: 0;
+  font-variation-settings: 'opsz' 48;
+}
+.sec .head .seeall {
+  font-size: 12px; font-weight: 600; color: var(--navy);
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 1.5px;
+}
+
+/* Categories: 4-col grid BUT elevated */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.cat {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--s-soft);
+  background: var(--ink-12);
+}
+.cat img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cat::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(10,15,28,0.82) 0%, rgba(10,15,28,0.15) 60%, transparent 100%);
+}
+.cat .lbl {
+  position: absolute; left: 10px; right: 10px; bottom: 9px;
+  color: #fff;
+  font-size: 11px; line-height: 1.2; font-weight: 700;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+
+/* Chef's pick hero (elevates the home — premium move) */
+.hero {
+  margin: 26px 22px 0;
+  position: relative;
+  border-radius: 24px; overflow: hidden;
+  box-shadow: var(--s-raised);
+  aspect-ratio: 16/11;
+  background: var(--ink-12);
+}
+.hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(5,15,36,0.85) 100%);
+}
+.hero .cap {
+  position: absolute; left: 18px; right: 18px; bottom: 16px; color: #fff;
+}
+.hero .cap .k {
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 800;
+  color: #F0DBA8;
+}
+.hero .cap h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 22px;
+  margin: 4px 0 4px; letter-spacing: -0.01em; line-height: 1.1;
+  font-variation-settings: 'opsz' 48;
+}
+.hero .cap p { font-size: 12.5px; color: rgba(255,255,255,0.85); margin: 0; line-height: 1.45; max-width: 240px; }
+.hero .cap .cta {
+  margin-top: 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: #fff; color: var(--navy);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+}
+.hero .cap .cta .i-chevr { width: 13px; height: 13px; }
+
+/* Horizontal scroll row for dish cards / menus */
+.row-h {
+  display: flex; gap: 12px;
+  padding-left: 22px; padding-right: 22px; padding-bottom: 4px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.row-h::-webkit-scrollbar { display: none; }
+
+.dcard {
+  flex: 0 0 172px;
+  background: var(--paper);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--s-soft);
+  border: 1px solid var(--hair);
+}
+.dcard .im { aspect-ratio: 4/3; overflow: hidden; background: var(--ink-12); position: relative; }
+.dcard .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dcard .im .rating {
+  position: absolute; top: 8px; left: 8px;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 7px; border-radius: 999px;
+  background: rgba(255,255,255,0.94);
+  font-size: 10.5px; font-weight: 700;
+}
+.dcard .im .rating .i-star { width: 10px; height: 10px; color: var(--gold); }
+.dcard .b { padding: 10px 11px 11px; }
+.dcard .b .name {
+  font-size: 13px; font-weight: 600; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.dcard .b .meta {
+  font-size: 10.5px; color: var(--ink-45); margin-top: 2px;
+  display: flex; align-items: center; gap: 4px;
+}
+.dcard .b .meta .i-clock { width: 11px; height: 11px; }
+.dcard .b .row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 9px;
+}
+.dcard .b .p {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 14.5px; letter-spacing: -0.01em;
+}
+.addbtn {
+  width: 28px; height: 28px; border-radius: 999px;
+  background: var(--navy); color: #fff;
+  display: grid; place-items: center;
+  box-shadow: 0 4px 10px -3px rgba(11,30,63,0.4);
+}
+.addbtn .i-plus { width: 13px; height: 13px; }
+
+/* Menu cards (restaurant interiors) */
+.mcard {
+  flex: 0 0 268px;
+  aspect-ratio: 16/10;
+  position: relative;
+  border-radius: 22px; overflow: hidden;
+  box-shadow: var(--s-raised);
+}
+.mcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mcard::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(5,15,36,0) 40%, rgba(5,15,36,0.85) 100%);
+}
+.mcard .cap {
+  position: absolute; left: 16px; right: 16px; bottom: 14px; color: #fff;
+}
+.mcard .cap .k { font-size: 9.5px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 800; color: #F0DBA8; }
+.mcard .cap h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 18px;
+  margin: 2px 0 4px; letter-spacing: -0.01em; line-height: 1.15;
+}
+.mcard .cap .sub { font-size: 11px; color: rgba(255,255,255,0.78); }
+
+/* --- BOTTOM NAV --- */
+.bnav {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: rgba(251,248,241,0.92);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-top: 1px solid var(--hair);
+  padding: 10px 14px 22px;
+  display: flex; justify-content: space-around;
+  z-index: 30;
+}
+.bnav .t {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--ink-45);
+  font-size: 10px; font-weight: 500; letter-spacing: 0.01em;
+  padding: 4px 12px;
+  min-width: 60px;
+}
+.bnav .t .ic { width: 22px; height: 22px; position: relative; }
+.bnav .t .ic .i { width: 22px; height: 22px; }
+.bnav .t.on { color: var(--navy); font-weight: 700; }
+.bnav .t.on::before {
+  content: ''; position: absolute;
+  top: -4px; left: 50%; transform: translateX(-50%);
+  width: 14px; height: 2.5px;
+  border-radius: 999px;
+  background: var(--gold);
+}
+.badge-n {
+  position: absolute; top: -5px; right: -8px;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  background: var(--navy); color: #fff;
+  font-size: 10px; font-weight: 800;
+  display: grid; place-items: center;
+  border: 2px solid var(--cream);
+}
+
+/* ============================================================
+   SCREEN · 2  TABLE CONFIRM (READ-ONLY, from QR scan)
+   ============================================================ */
+.scrim {
+  position: absolute; inset: 0;
+  background: rgba(5,15,36,0.5);
+  backdrop-filter: blur(3px);
+  z-index: 60;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.scrim.center { align-items: center; padding: 20px; }
+.sheet {
+  width: 100%;
+  background: var(--bone);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 22px 26px;
+  box-shadow: 0 -20px 50px -20px rgba(5,15,36,0.4);
+}
+.grab { width: 38px; height: 4px; border-radius: 999px; background: var(--ink-12); margin: 4px auto 14px; }
+
+.table-card {
+  position: relative;
+  margin-top: 4px;
+  border-radius: 22px;
+  padding: 22px 22px 20px;
+  overflow: hidden;
+  background: radial-gradient(160% 120% at 0 0, #1E3A6A 0%, #0B1E3F 55%, #04112A 100%);
+  color: #fff;
+  box-shadow: var(--s-raised);
+}
+.table-card::after {
+  content: ''; position: absolute;
+  right: -40px; top: -40px;
+  width: 180px; height: 180px; border-radius: 999px;
+  background: radial-gradient(closest-side, rgba(232,217,184,0.18), transparent 70%);
+  pointer-events: none;
+}
+.table-card .k { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 800; color: #F0DBA8; }
+.table-card .v {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 34px; font-weight: 500; line-height: 1;
+  margin: 10px 0 0; letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 72;
+}
+.table-card .v em { font-style: italic; color: #F0DBA8; }
+.table-card .sub { font-size: 12.5px; color: rgba(255,255,255,0.7); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.table-card .sub .i { width: 12px; height: 12px; color: #F0DBA8; }
+.table-card .note {
+  margin-top: 16px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  border: 1px solid rgba(232,217,184,0.12);
+}
+
+.rescan {
+  margin-top: 14px;
+  display: flex; gap: 8px;
+}
+.rescan .a {
+  flex: 1;
+  height: 50px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 13.5px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--hair);
+  box-shadow: var(--s-soft);
+}
+.rescan .a.prim {
+  background: var(--navy); color: #fff;
+  border: none;
+  box-shadow: var(--s-float);
+}
+.rescan .a .i { width: 16px; height: 16px; }
+.rescan .a.prim .i { color: #F0DBA8; }
+
+/* ============================================================
+   SCREEN · 3  RESTAURANT INFO
+   ============================================================ */
+.info-card {
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--bone);
+  box-shadow: var(--s-float);
+}
+.info-hero {
+  position: relative;
+  height: 200px;
+}
+.info-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.info-hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(5,15,36,0.35) 0%, rgba(5,15,36,0.85) 100%);
+}
+.info-hero .close {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+  width: 34px; height: 34px; border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.22);
+  display: grid; place-items: center;
+}
+.info-hero .close .i { width: 14px; height: 14px; color: #fff; }
+.info-hero .cap {
+  position: absolute; left: 22px; right: 22px; bottom: 18px; color: #fff;
+  z-index: 2;
+}
+.info-hero .cap .k { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 800; color: #F0DBA8; }
+.info-hero .cap h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 26px;
+  margin: 4px 0 0; letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 72;
+}
+.info-body { padding: 16px 18px 22px; display: flex; flex-direction: column; gap: 10px; }
+.info-line {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+}
+.info-line .ib {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--cream-2);
+  color: var(--gold-ink);
+  display: grid; place-items: center;
+}
+.info-line .ib .i { width: 17px; height: 17px; }
+.info-line .t { flex: 1; }
+.info-line .t .l1 { font-size: 11px; color: var(--ink-45); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+.info-line .t .l2 { font-size: 14px; font-weight: 600; margin-top: 1px; }
+
+/* ============================================================
+   SCREEN · 4  PWA BANNER (floating over Accueil)
+   ============================================================ */
+.pwa {
+  position: absolute;
+  left: 14px; right: 14px; bottom: 92px;
+  background: rgba(251,248,241,0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  box-shadow: var(--s-float);
+  padding: 12px;
+  display: flex; align-items: center; gap: 12px;
+  z-index: 40;
+}
+.pwa .logo { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; }
+.pwa .t { flex: 1; min-width: 0; }
+.pwa .t .l1 { font-size: 13px; font-weight: 700; }
+.pwa .t .l2 { font-size: 11.5px; color: var(--ink-45); margin-top: 1px; }
+.pwa .act {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 12px; border-radius: 999px;
+  background: var(--navy); color: #fff;
+  font-size: 12px; font-weight: 700;
+}
+.pwa .act .i { width: 12px; height: 12px; }
+.pwa .x {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--ink-6);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.pwa .x .i { width: 12px; height: 12px; color: var(--ink-60); }
+
+/* ============================================================
+   SCREEN · 5  EMPTY CART
+   ============================================================ */
+.cart-head { padding: 58px 22px 14px; }
+.cart-head .k { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; color: var(--gold-ink); }
+.cart-head h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 30px; font-weight: 600; letter-spacing: -0.02em;
+  margin: 4px 0 0;
+  font-variation-settings: 'opsz' 72;
+}
+
+.empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 0 40px 110px;
+}
+.empty .bubble {
+  width: 110px; height: 110px;
+  border-radius: 999px;
+  background:
+    radial-gradient(closest-side, var(--gold-soft), transparent 70%),
+    var(--bone);
+  display: grid; place-items: center;
+  margin-bottom: 20px;
+  border: 1px solid var(--gold-soft);
+}
+.empty .bubble .i { width: 44px; height: 44px; color: var(--gold-ink); }
+.empty h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px; font-weight: 600; margin: 0;
+  font-variation-settings: 'opsz' 48;
+  letter-spacing: -0.01em;
+}
+.empty p {
+  color: var(--ink-60);
+  font-size: 14px; line-height: 1.55;
+  margin: 8px 0 24px;
+  max-width: 260px;
+}
+.empty .browse {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 24px; height: 50px;
+  border-radius: 14px;
+  background: var(--navy); color: #fff;
+  font-size: 14px; font-weight: 700;
+  box-shadow: var(--s-float);
+}
+.empty .browse .i { width: 16px; height: 16px; color: #F0DBA8; }
+
+/* ============================================================
+   SCREEN · 6  CART WITH ITEMS
+   ============================================================ */
+.table-row {
+  margin: 4px 22px 0;
+  background: var(--paper);
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  padding: 10px 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+.table-row .ib {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--cream-2);
+  color: var(--gold-ink);
+  display: grid; place-items: center;
+}
+.table-row .ib .i { width: 16px; height: 16px; }
+.table-row .tb { flex: 1; }
+.table-row .tb .l1 { font-size: 10.5px; color: var(--ink-45); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+.table-row .tb .l2 { font-size: 14px; font-weight: 700; margin-top: 1px; }
+.table-row .locked {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px;
+  background: #E8F6EF; color: #047857;
+  border-radius: 999px;
+  font-size: 10.5px; font-weight: 700;
+}
+.table-row .locked::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 999px;
+  background: #10B981;
+}
+
+.items { padding: 16px 22px 0; display: flex; flex-direction: column; gap: 10px; }
+.item {
+  display: flex; gap: 12px;
+  padding: 11px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+}
+.item .im {
+  width: 76px; height: 76px; flex-shrink: 0;
+  border-radius: 12px; overflow: hidden;
+  background: var(--ink-12);
+}
+.item .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.item .b { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+.item .name {
+  font-size: 14px; font-weight: 600; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.item .desc { font-size: 11.5px; color: var(--ink-45); margin-top: 2px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.item .row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 4px;
+}
+.item .row .p {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 14.5px; letter-spacing: -0.01em;
+}
+.stepper {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--ink-6);
+  padding: 3px;
+  border-radius: 999px;
+}
+.stepper .b {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--paper);
+  display: grid; place-items: center;
+  border: 1px solid var(--hair);
+}
+.stepper .b.prim {
+  background: var(--navy);
+  border-color: transparent;
+  color: #fff;
+}
+.stepper .b .i { width: 12px; height: 12px; }
+.stepper .q { min-width: 22px; text-align: center; font-size: 13px; font-weight: 700; }
+
+.totals {
+  margin: 18px 22px 0;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  padding: 16px;
+}
+.totals .ln { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13.5px; color: var(--ink-60); }
+.totals .sep { height: 1px; background: var(--hair); margin: 10px 0; }
+.totals .ln.big {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 18px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.cta-bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 70px;
+  padding: 0 14px;
+  z-index: 20;
+}
+.cta {
+  width: 100%; height: 54px;
+  border-radius: 14px;
+  background: var(--navy);
+  color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px;
+  font-size: 14px; font-weight: 700;
+  box-shadow: var(--s-float);
+}
+.cta .sum {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 15.5px;
+  padding: 4px 10px; border-radius: 8px;
+  background: rgba(232,217,184,0.18);
+  color: #F0DBA8;
+}
+
+/* ============================================================
+   SCREEN · 7  MES COMMANDES
+   ============================================================ */
+.back {
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  display: grid; place-items: center;
+  box-shadow: var(--s-soft);
+}
+.back .i { width: 18px; height: 18px; }
+
+.order-active {
+  margin: 0 22px 14px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: radial-gradient(140% 100% at 0 0, #182E54 0%, #0B1E3F 55%, #04112A 100%);
+  color: #fff;
+  box-shadow: var(--s-raised);
+}
+.order-active .head {
+  padding: 16px 18px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.order-active .n {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 17px; letter-spacing: -0.01em;
+}
+.order-active .st {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(232,217,184,0.14);
+  color: #F0DBA8;
+  font-size: 10.5px; font-weight: 700;
+}
+.order-active .st .d { width: 6px; height: 6px; border-radius: 999px; background: #F0DBA8; animation: blink 1.8s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+.order-active .totl {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 19px;
+}
+
+.timeline {
+  padding: 0 18px 18px;
+  display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr auto;
+  gap: 8px; align-items: center;
+}
+.step {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.step.done { background: rgba(232,217,184,0.95); color: var(--navy-900); }
+.step.cur {
+  background: #fff; color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(240,219,168,0.35);
+}
+.step.todo { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.4); }
+.step .i { width: 16px; height: 16px; }
+.tlb { height: 2px; border-radius: 999px; }
+.tlb.done { background: #F0DBA8; }
+.tlb.todo { background: rgba(255,255,255,0.12); }
+
+.tl-labels {
+  padding: 0 12px 18px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+  font-size: 10px; color: rgba(255,255,255,0.65);
+  text-align: center;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.tl-labels .on { color: #F0DBA8; font-weight: 700; }
+
+.order-prev {
+  margin: 0 22px;
+  border-radius: 18px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+.order-prev .head {
+  padding: 14px 16px;
+  background: var(--cream);
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--hair);
+}
+.order-prev .head .left { display: flex; align-items: center; gap: 10px; }
+.order-prev .head .n {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 16px;
+}
+.order-prev .head .st {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--ink-6);
+  font-size: 10px; font-weight: 700;
+  color: var(--ink-60);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.order-prev .head .right { display: flex; align-items: center; gap: 8px; }
+.order-prev .head .totl { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 16.5px; }
+.order-prev .head .chev { width: 12px; height: 12px; color: var(--ink-45); }
+
+.ln-item {
+  display: flex; gap: 10px;
+  padding: 10px 14px;
+  align-items: center;
+  border-bottom: 1px solid var(--ink-6);
+}
+.ln-item:last-child { border-bottom: none; }
+.ln-item .im {
+  width: 40px; height: 40px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
+  background: var(--ink-12);
+}
+.ln-item .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ln-item .b { flex: 1; min-width: 0; }
+.ln-item .b .nm { font-size: 12.5px; font-weight: 600; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.ln-item .b .mm { font-size: 10.5px; color: var(--ink-45); margin-top: 1px; }
+.ln-item .px { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 12.5px; }
+
+.order-prev .foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-top: 1px solid var(--hair);
+  background: var(--bone);
+}
+.order-prev .foot .lbl { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 13.5px; }
+.order-prev .foot .dt { font-size: 10.5px; color: var(--ink-45); margin-top: 1px; }
+.order-prev .foot .totl { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 17px; }
+
+/* ============================================================
+   SCREEN · 8  ACCOUNT
+   ============================================================ */
+.brand-card {
+  margin: 0 22px;
+  padding: 22px 22px 24px;
+  background: var(--paper);
+  border-radius: 22px;
+  border: 1px solid var(--hair);
+  text-align: center;
+  box-shadow: var(--s-soft);
+  position: relative; overflow: hidden;
+}
+.brand-card::before {
+  content: ''; position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(180px 100px at 15% 0%, rgba(184,153,104,0.12), transparent 70%),
+    radial-gradient(200px 100px at 90% 100%, rgba(11,30,63,0.04), transparent 70%);
+  pointer-events: none;
+}
+.brand-card .logo-lg {
+  width: 70px; height: 70px;
+  border-radius: 20px;
+  background: radial-gradient(120% 100% at 0 0, #1E3A6A 0%, #0B1E3F 55%, #04112A 100%);
+  margin: 0 auto;
+  display: grid; place-items: center;
+  position: relative;
+  box-shadow: 0 12px 30px -10px rgba(11,30,63,0.45), inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+.brand-card .logo-lg .mark {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 800; font-size: 17px;
+  background: linear-gradient(135deg, #F0DBA8 0%, #B89968 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-card h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 22px;
+  margin: 14px 0 2px; letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 48;
+}
+.brand-card .sub { font-size: 12.5px; color: var(--ink-60); line-height: 1.5; }
+.brand-card .divider { height: 1px; background: var(--hair); margin: 14px 0; }
+.brand-card .table-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  background: var(--cream-2);
+  font-size: 12px; font-weight: 700;
+  color: var(--gold-ink);
+}
+.brand-card .table-pill .i { width: 13px; height: 13px; }
+
+.settings { padding: 0 22px; margin-top: 24px; }
+.settings .lbl {
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-45);
+  margin-bottom: 10px; padding: 0 2px;
+}
+.settings .group {
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.s-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.s-row .ib {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--cream-2);
+  color: var(--gold-ink);
+  display: grid; place-items: center;
+}
+.s-row .ib .i { width: 16px; height: 16px; }
+.s-row .tb { flex: 1; min-width: 0; }
+.s-row .tb .l1 { font-size: 14px; font-weight: 600; }
+.s-row .tb .l2 { font-size: 12px; color: var(--ink-60); margin-top: 1px; }
+.s-row .chev { width: 14px; height: 14px; color: var(--ink-30); }
+.s-sep { height: 1px; background: var(--ink-6); margin: 0 16px; }
+
+.seg {
+  display: inline-flex; background: var(--ink-6);
+  border-radius: 999px; padding: 3px;
+}
+.seg button {
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700;
+  color: var(--ink-60);
+  background: transparent; border: none;
+}
+.seg button.on { background: var(--navy); color: #fff; }
+
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 16px 14px; }
+.tile {
+  padding: 10px 6px; border-radius: 10px;
+  background: var(--ink-6);
+  font-size: 12px; font-weight: 700;
+  color: var(--ink-60);
+  text-align: center;
+}
+.tile.on { background: var(--navy); color: #fff; }
+
+.tog {
+  width: 42px; height: 24px; border-radius: 999px;
+  background: var(--navy);
+  position: relative;
+}
+.tog::after {
+  content: ''; position: absolute;
+  top: 3px; right: 3px;
+  width: 18px; height: 18px; border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.tog.off { background: var(--ink-12); }
+.tog.off::after { right: auto; left: 3px; }
+
+/* ============================================================
+   SCREEN · 9  CATEGORY VIEW (extension)
+   ============================================================ */
+.cat-hero {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+}
+.cat-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cat-hero::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5,15,36,0.55) 0%, transparent 30%),
+    linear-gradient(180deg, transparent 45%, rgba(5,15,36,0.88) 100%);
+}
+.cat-hero .ctr {
+  position: absolute; top: 52px; left: 18px; right: 18px;
+  display: flex; justify-content: space-between;
+  z-index: 2;
+}
+.gbtn {
+  width: 40px; height: 40px; border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.22);
+  display: grid; place-items: center;
+}
+.gbtn .i { width: 18px; height: 18px; color: #fff; }
+.cat-hero .cap {
+  position: absolute; bottom: 18px; left: 22px; right: 22px;
+  color: #fff; z-index: 2;
+}
+.cat-hero .cap .k { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 800; color: #F0DBA8; }
+.cat-hero .cap h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 30px;
+  margin: 6px 0 4px; letter-spacing: -0.02em; line-height: 1.05;
+  font-variation-settings: 'opsz' 72;
+}
+.cat-hero .cap .n {
+  font-size: 12px; color: rgba(255,255,255,0.78);
+  display: flex; align-items: center; gap: 5px;
+}
+.cat-hero .cap .n .i { width: 12px; height: 12px; color: #F0DBA8; }
+
+.filters {
+  padding: 14px 22px 6px;
+  display: flex; gap: 8px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 13px; border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  font-size: 12.5px; font-weight: 600;
+  color: var(--ink-60);
+  box-shadow: var(--s-soft);
+}
+.chip.on { background: var(--navy); color: #fff; border-color: transparent; }
+
+.cat-list { padding: 14px 22px 0; display: flex; flex-direction: column; gap: 10px; }
+.drow {
+  display: flex; gap: 12px;
+  padding: 11px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+}
+.drow .im {
+  width: 82px; height: 82px; border-radius: 12px; overflow: hidden; flex-shrink: 0;
+  background: var(--ink-12); position: relative;
+}
+.drow .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.drow .im .sig {
+  position: absolute; top: 6px; left: 6px;
+  padding: 3px 6px; border-radius: 6px;
+  background: rgba(11,30,63,0.85);
+  color: #F0DBA8;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.drow .b { flex: 1; min-width: 0; padding: 2px 0; display: flex; flex-direction: column; justify-content: space-between; }
+.drow .top { }
+.drow .nm { font-size: 14px; font-weight: 600; line-height: 1.2; }
+.drow .mt {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px;
+  font-size: 11px; color: var(--ink-45);
+}
+.drow .mt .r { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; color: var(--ink); }
+.drow .mt .r .i { width: 11px; height: 11px; color: var(--gold); }
+.drow .mt .c { display: inline-flex; align-items: center; gap: 3px; }
+.drow .mt .c .i { width: 11px; height: 11px; }
+.drow .dsc {
+  font-size: 11.5px; color: var(--ink-60); margin-top: 4px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.drow .row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 6px;
+}
+.drow .p { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+
+/* ============================================================
+   SCREEN · 10  DISH DETAIL (sheet)
+   ============================================================ */
+.dish-full { background: var(--cream); }
+.dish-hero {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+}
+.dish-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dish-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 40%);
+  z-index: 1;
+}
+.dish-hero .ctr {
+  position: absolute; top: 52px; left: 18px; right: 18px;
+  display: flex; justify-content: space-between;
+  z-index: 2;
+}
+
+.dish-body {
+  position: relative;
+  margin-top: -26px;
+  background: var(--cream);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 22px 130px;
+  z-index: 2;
+}
+.dish-body .grab { width: 38px; height: 4px; border-radius: 999px; background: var(--ink-12); margin: 0 auto 14px; }
+.dish-titles { display: flex; align-items: flex-start; gap: 14px; margin-top: 2px; }
+.dish-titles .left { flex: 1; }
+.dish-titles .k { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 800; color: var(--gold-ink); }
+.dish-titles h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 26px;
+  margin: 4px 0 0; letter-spacing: -0.015em; line-height: 1.08;
+  font-variation-settings: 'opsz' 72;
+}
+.dish-titles .price {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700; font-size: 19px; letter-spacing: -0.01em;
+  padding: 4px 11px;
+  background: #fff; border: 1px solid var(--hair);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.dish-meta {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+}
+.dish-meta .c { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.dish-meta .c .i { width: 14px; height: 14px; color: var(--gold-ink); }
+.dish-meta .c .v { font-weight: 700; }
+.dish-meta .c .l { color: var(--ink-45); font-size: 10.5px; }
+.dish-meta .divv { width: 1px; height: 26px; background: var(--hair); }
+
+.dish-desc { margin-top: 16px; font-size: 14px; color: var(--ink-60); line-height: 1.6; }
+
+.dish-section { margin-top: 22px; }
+.dish-section h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 17px;
+  margin: 0 0 10px; letter-spacing: -0.01em;
+}
+.dish-options { display: flex; flex-direction: column; gap: 8px; }
+.opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+}
+.opt .rb {
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 1.5px solid var(--ink-12);
+  flex-shrink: 0;
+}
+.opt.on .rb {
+  border-color: var(--navy);
+  background: var(--navy);
+  position: relative;
+}
+.opt.on .rb::after {
+  content: ''; position: absolute;
+  top: 5px; left: 5px;
+  width: 8px; height: 8px; border-radius: 999px;
+  background: #fff;
+}
+.opt .tb { flex: 1; }
+.opt .tb .l1 { font-size: 13.5px; font-weight: 600; }
+.opt .tb .l2 { font-size: 11px; color: var(--ink-45); margin-top: 1px; }
+.opt .px { font-size: 12.5px; color: var(--ink-60); font-weight: 600; }
+
+.dish-instr {
+  margin-top: 16px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 14px;
+}
+.dish-instr .k { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; color: var(--ink-45); margin-bottom: 6px; }
+.dish-instr textarea {
+  width: 100%; border: none; resize: none; outline: none;
+  min-height: 54px;
+  font-family: inherit; font-size: 13.5px;
+  color: var(--ink); background: transparent;
+}
+
+.dish-cta {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 14px 16px 26px;
+  background: rgba(251,248,241,0.94);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--hair);
+  display: flex; align-items: center; gap: 12px;
+  z-index: 30;
+}
+.dish-cta .stepper .b { width: 34px; height: 34px; }
+.dish-cta .stepper .b .i { width: 14px; height: 14px; }
+.dish-cta .stepper .q { min-width: 28px; font-size: 14.5px; }
+.dish-cta .add {
+  flex: 1; height: 52px; border-radius: 14px;
+  background: var(--navy); color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px;
+  font-size: 14px; font-weight: 700;
+  box-shadow: var(--s-float);
+}
+.dish-cta .add .sum {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+  background: rgba(232,217,184,0.2);
+  color: #F0DBA8;
+  font-size: 14.5px;
+}
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+img { display: block; }
+
+@media (max-width: 900px) {
+  .wrap { padding: 32px 16px 60px; }
+  .doc-title { font-size: 34px; }
+  .grid { gap: 40px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="kicker">Refonte UI · Preview</div>
+  <h1 class="doc-title">Blutable<span class="dot">.</span></h1>
+  <p class="doc-sub">
+    10 écrans — les 8 de vos captures (lecture + commande) et 2 extensions logiques
+    nécessaires (vue catégorie, fiche plat). Les fonctionnalités sont strictement conservées ;
+    seul le design change. La table est <b>lue depuis le QR</b>, en lecture seule.
+  </p>
+  <div class="legend">
+    <span class="l"><span class="lg-e"></span> <b>Existant</b> — présent dans vos captures</span>
+    <span class="l"><span class="lg-x"></span> <b>Extension</b> — à valider avec vous</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- ============================================================
+         1 · ACCUEIL
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Accueil</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div class="app-head">
+            <div class="where">
+              <div class="m"><span class="i i-pin"></span> Vous êtes à</div>
+              <div class="v">Blutable <span class="i i-chevd"></span></div>
+            </div>
+            <div class="logo"><span class="mark">BLU</span></div>
+          </div>
+          <div class="greet">
+            <div class="k">Bonsoir</div>
+            <h1>Que désirez-vous <em>ce soir</em> ?</h1>
+          </div>
+          <div class="search">
+            <span class="i i-search"></span>
+            <span class="ph">Quelle est votre envie ?</span>
+            <span class="key">⌘K</span>
+          </div>
+
+          <div class="hero" style="margin-top:22px">
+            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=900&q=80" alt="Signature"/>
+            <div class="cap">
+              <div class="k">Plat Signature</div>
+              <h3>Dibi d'Agneau à la Braise</h3>
+              <p>Une spécialité sénégalaise, grillée au feu de bois, oignons confits.</p>
+              <a class="cta">Découvrir <span class="i i-chevr"></span></a>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="head">
+              <h2>Parcourir le menu</h2>
+              <a class="seeall">Tout voir</a>
+            </div>
+            <div class="cat-grid">
+              <div class="cat"><img src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&q=80" alt=""/><div class="lbl">Pour Commencer</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" alt=""/><div class="lbl">Plats Principaux</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1604908554264-3f2bcc3cf9ae?w=400&q=80" alt=""/><div class="lbl">Plats Africains</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&q=80" alt=""/><div class="lbl">Nos Pâtes</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80" alt=""/><div class="lbl">Végétarien</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=400&q=80" alt=""/><div class="lbl">Accompagnements</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80" alt=""/><div class="lbl">Desserts</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=400&q=80" alt=""/><div class="lbl">Entre Deux</div></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="head">
+              <h2>Nos menus</h2>
+              <a class="seeall">Tout voir</a>
+            </div>
+          </div>
+          <div class="row-h">
+            <div class="mcard">
+              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" alt=""/>
+              <div class="cap"><div class="k">Menu</div><h4>Panorama Restaurant</h4><div class="sub">Vue sur la ville · dîner gastronomique</div></div>
+            </div>
+            <div class="mcard">
+              <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" alt=""/>
+              <div class="cap"><div class="k">Menu</div><h4>Lobby Lounge</h4><div class="sub">Cocktails · tapas · ambiance live</div></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="head">
+              <h2>Populaires ce soir</h2>
+              <a class="seeall">Tout voir</a>
+            </div>
+          </div>
+          <div class="row-h">
+            <div class="dcard">
+              <div class="im"><img src="https://images.unsplash.com/photo-1558030006-450675393462?w=500&q=80" alt=""/><div class="rating"><span class="i i-star"></span> 4.9</div></div>
+              <div class="b">
+                <div class="name">Dibi d'Agneau Grillé</div>
+                <div class="meta"><span class="i i-clock"></span> 18–22 min</div>
+                <div class="row"><div class="p">12 000 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+            <div class="dcard">
+              <div class="im"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=500&q=80" alt=""/><div class="rating"><span class="i i-star"></span> 4.7</div></div>
+              <div class="b">
+                <div class="name">Spaghetti Bolognaise</div>
+                <div class="meta"><span class="i i-clock"></span> 14–16 min</div>
+                <div class="row"><div class="p">9 000 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+            <div class="dcard">
+              <div class="im"><img src="https://images.unsplash.com/photo-1619895092538-128f4de2c2b4?w=500&q=80" alt=""/><div class="rating"><span class="i i-star"></span> 4.8</div></div>
+              <div class="b">
+                <div class="name">Lasagne Al Forno</div>
+                <div class="meta"><span class="i i-clock"></span> 20–24 min</div>
+                <div class="row"><div class="p">9 000 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bnav">
+          <div class="t on"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t"><div class="ic"><span class="i i-cart"></span><span class="badge-n">3</span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         2 · TABLE CONFIRM (READ-ONLY, QR-assigned)
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant · logique corrigée</span><h3>Votre table</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr" style="filter:blur(2px);opacity:0.6">
+          <div class="app-head">
+            <div class="where"><div class="m">Blutable</div></div>
+            <div class="logo"><span class="mark">BLU</span></div>
+          </div>
+          <div class="greet">
+            <h1>Que désirez-vous <em>ce soir</em> ?</h1>
+          </div>
+          <div class="sec">
+            <div class="cat-grid">
+              <div class="cat"><img src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&q=80" alt=""/></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" alt=""/></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1604908554264-3f2bcc3cf9ae?w=400&q=80" alt=""/></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&q=80" alt=""/></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim">
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="table-card">
+              <div class="k">Votre table</div>
+              <div class="v">Salle · <em>P03</em></div>
+              <div class="sub"><span class="i i-qr"></span> Assignée automatiquement via le QR</div>
+              <div class="note">
+                Votre commande et votre addition seront rattachées à cette table.
+                Pour changer de table, scannez un nouveau QR code.
+              </div>
+            </div>
+            <div class="rescan">
+              <button class="a prim"><span class="i i-qr"></span> Scanner un autre QR</button>
+            </div>
+          </div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         3 · RESTAURANT INFO
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Fiche restaurant</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr" style="filter:blur(2px);opacity:0.6"></div>
+        <div class="scrim center">
+          <div class="info-card">
+            <div class="info-hero">
+              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80" alt=""/>
+              <div class="close"><span class="i i-close"></span></div>
+              <div class="cap">
+                <div class="k">Restaurant</div>
+                <h3>Blutable</h3>
+              </div>
+            </div>
+            <div class="info-body">
+              <div class="info-line">
+                <div class="ib"><span class="i i-pin"></span></div>
+                <div class="t">
+                  <div class="l1">Adresse</div>
+                  <div class="l2">Radisson Blu N'Djamena — Cité du premier janvier</div>
+                </div>
+              </div>
+              <div class="info-line">
+                <div class="ib"><span class="i i-phone"></span></div>
+                <div class="t">
+                  <div class="l1">Téléphone</div>
+                  <div class="l2">+235 66 00 00 00</div>
+                </div>
+              </div>
+              <div class="info-line">
+                <div class="ib"><span class="i i-clock"></span></div>
+                <div class="t">
+                  <div class="l1">Service</div>
+                  <div class="l2">12h00 – 15h00 · 19h00 – 23h30</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         4 · PWA BANNER
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Bannière PWA</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div class="app-head">
+            <div class="where">
+              <div class="m"><span class="i i-pin"></span> Vous êtes à</div>
+              <div class="v">Blutable <span class="i i-chevd"></span></div>
+            </div>
+            <div class="logo"><span class="mark">BLU</span></div>
+          </div>
+          <div class="greet">
+            <div class="k">Bonsoir</div>
+            <h1>Que désirez-vous <em>ce soir</em> ?</h1>
+          </div>
+          <div class="search">
+            <span class="i i-search"></span>
+            <span class="ph">Quelle est votre envie ?</span>
+          </div>
+          <div class="sec">
+            <div class="head"><h2>Parcourir le menu</h2><a class="seeall">Tout voir</a></div>
+            <div class="cat-grid">
+              <div class="cat"><img src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&q=80" alt=""/><div class="lbl">Pour Commencer</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" alt=""/><div class="lbl">Plats Principaux</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1604908554264-3f2bcc3cf9ae?w=400&q=80" alt=""/><div class="lbl">Plats Africains</div></div>
+              <div class="cat"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&q=80" alt=""/><div class="lbl">Nos Pâtes</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="pwa">
+          <div class="logo"><span class="mark">BLU</span></div>
+          <div class="t">
+            <div class="l1">Installer Blutable</div>
+            <div class="l2">Accès rapide en un geste</div>
+          </div>
+          <div class="act"><span class="i i-dl"></span> Installer</div>
+          <div class="x"><span class="i i-close"></span></div>
+        </div>
+        <div class="bnav">
+          <div class="t on"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t"><div class="ic"><span class="i i-cart"></span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         5 · EMPTY CART
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Panier vide</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div class="cart-head">
+            <div class="k">Votre commande</div>
+            <h1>Panier</h1>
+          </div>
+          <div class="empty">
+            <div class="bubble"><span class="i i-bag"></span></div>
+            <h2>Votre panier est vide</h2>
+            <p>Ajoutez quelques plats de notre carte pour commencer votre commande.</p>
+            <a class="browse"><span class="i i-chevl"></span> Parcourir le menu</a>
+          </div>
+        </div>
+        <div class="bnav">
+          <div class="t"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t on"><div class="ic"><span class="i i-cart"></span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         6 · CART WITH ITEMS
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Panier avec items</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div class="cart-head">
+            <div class="k">Votre commande</div>
+            <h1>Panier · 3 articles</h1>
+          </div>
+          <div class="table-row">
+            <div class="ib"><span class="i i-pin"></span></div>
+            <div class="tb">
+              <div class="l1">Table</div>
+              <div class="l2">Salle · P03</div>
+            </div>
+            <div class="locked">Verrouillée QR</div>
+          </div>
+
+          <div class="items">
+            <div class="item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1558030006-450675393462?w=300&q=80" alt=""/></div>
+              <div class="b">
+                <div>
+                  <div class="name">Dibi d'Agneau Grillé</div>
+                  <div class="desc">Agneau grillé à la braise, oignons confits, moutarde maison.</div>
+                </div>
+                <div class="row">
+                  <div class="p">12 000 FCFA</div>
+                  <div class="stepper">
+                    <div class="b"><span class="i i-minus"></span></div>
+                    <div class="q">1</div>
+                    <div class="b prim"><span class="i i-plus"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&q=80" alt=""/></div>
+              <div class="b">
+                <div>
+                  <div class="name">Spaghetti Bolognaise</div>
+                  <div class="desc">Pâtes fraîches, sauce bolognaise mijotée, parmesan.</div>
+                </div>
+                <div class="row">
+                  <div class="p">18 000 FCFA</div>
+                  <div class="stepper">
+                    <div class="b"><span class="i i-minus"></span></div>
+                    <div class="q">2</div>
+                    <div class="b prim"><span class="i i-plus"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="totals">
+            <div class="ln"><span>Sous-total</span><span>30 000 FCFA</span></div>
+            <div class="ln"><span>Service (5%)</span><span>1 500 FCFA</span></div>
+            <div class="sep"></div>
+            <div class="ln big"><span>Total</span><span>31 500 FCFA</span></div>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <div class="cta"><span>Envoyer la commande</span><span class="sum">31 500 FCFA</span></div>
+        </div>
+        <div class="bnav">
+          <div class="t"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t on"><div class="ic"><span class="i i-cart"></span><span class="badge-n">3</span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         7 · MES COMMANDES
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Mes commandes</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div style="padding:58px 22px 12px"><div class="back"><span class="i i-chevl"></span></div></div>
+          <div class="cart-head" style="padding-top:0">
+            <div class="k">Suivi en direct</div>
+            <h1>Mes commandes</h1>
+          </div>
+
+          <div class="order-active">
+            <div class="head">
+              <div>
+                <div class="n">#9-002</div>
+                <div style="font-size:11.5px;color:rgba(255,255,255,0.65);margin-top:2px">5 articles · Salle · P03</div>
+              </div>
+              <div class="st"><span class="d"></span> En préparation</div>
+            </div>
+            <div class="timeline">
+              <div class="step done"><span class="i i-bag"></span></div>
+              <div class="tlb done"></div>
+              <div class="step cur"><span class="i i-chef"></span></div>
+              <div class="tlb todo"></div>
+              <div class="step todo"><span class="i i-bell"></span></div>
+              <div class="tlb todo"></div>
+              <div class="step todo"><span class="i i-check"></span></div>
+            </div>
+            <div class="tl-labels">
+              <div>Reçue</div>
+              <div class="on">Préparation</div>
+              <div>Prête</div>
+              <div>Servie</div>
+            </div>
+            <div style="padding:16px 18px;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:0.08em;text-transform:uppercase">Total</div>
+              <div class="totl">108 500 FCFA</div>
+            </div>
+          </div>
+
+          <div class="order-prev">
+            <div class="head">
+              <div class="left">
+                <div class="n">#9-001</div>
+                <div class="st">En attente</div>
+              </div>
+              <div class="right">
+                <div class="totl">40 000 FCFA</div>
+                <span class="i i-chevd chev"></span>
+              </div>
+            </div>
+            <div class="ln-item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1574484284002-952d92456975?w=200&q=80" alt=""/></div>
+              <div class="b"><div class="nm">Sauté d'Agneau au Gingembre</div><div class="mm">1 × 10 000 FCFA</div></div>
+              <div class="px">10 000 FCFA</div>
+            </div>
+            <div class="ln-item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=200&q=80" alt=""/></div>
+              <div class="b"><div class="nm">Spaghetti Bolognaise</div><div class="mm">1 × 9 000 FCFA</div></div>
+              <div class="px">9 000 FCFA</div>
+            </div>
+            <div class="ln-item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1619895092538-128f4de2c2b4?w=200&q=80" alt=""/></div>
+              <div class="b"><div class="nm">Lasagne Al Forno, Pât…</div><div class="mm">1 × 9 000 FCFA</div></div>
+              <div class="px">9 000 FCFA</div>
+            </div>
+            <div class="ln-item">
+              <div class="im"><img src="https://images.unsplash.com/photo-1558030006-450675393462?w=200&q=80" alt=""/></div>
+              <div class="b"><div class="nm">Dibi d'Agneau Grillé</div><div class="mm">1 × 12 000 FCFA</div></div>
+              <div class="px">12 000 FCFA</div>
+            </div>
+            <div class="foot">
+              <div>
+                <div class="lbl">Total à payer</div>
+                <div class="dt">19 Avr 2026 · 22:24</div>
+              </div>
+              <div class="totl">40 000 FCFA</div>
+            </div>
+          </div>
+        </div>
+        <div class="bnav">
+          <div class="t"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t"><div class="ic"><span class="i i-cart"></span></div>Panier</div>
+          <div class="t on"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         8 · ACCOUNT
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-e">Existant</span><h3>Mon compte</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div style="padding:58px 22px 8px"><div class="back"><span class="i i-chevl"></span></div></div>
+          <div style="padding:0 22px 16px">
+            <div class="k" style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;font-weight:700;color:var(--gold-ink)">Votre espace</div>
+            <h1 class="h-display" style="font-size:28px;margin:6px 0 0">Mon compte</h1>
+          </div>
+
+          <div class="brand-card">
+            <div class="logo-lg"><span class="mark">BLU</span></div>
+            <h4>Blutable</h4>
+            <div class="sub">Restaurant gastronomique du<br/>Radisson Blu N'Djamena</div>
+            <div class="divider"></div>
+            <div class="table-pill"><span class="i i-pin"></span> Salle · P03</div>
+          </div>
+
+          <div class="settings">
+            <div class="lbl">Vos commandes</div>
+            <div class="group">
+              <div class="s-row">
+                <div class="ib"><span class="i i-orders"></span></div>
+                <div class="tb"><div class="l1">Historique</div><div class="l2">Voir mes commandes</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+              <div class="s-sep"></div>
+              <div class="s-row">
+                <div class="ib"><span class="i i-qr"></span></div>
+                <div class="tb"><div class="l1">Ma table</div><div class="l2">Salle · P03 · verrouillée via QR</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings">
+            <div class="lbl">Préférences</div>
+            <div class="group">
+              <div class="s-row">
+                <div class="ib"><span class="i i-globe"></span></div>
+                <div class="tb"><div class="l1">Langue</div><div class="l2">English</div></div>
+                <div class="seg"><button>FR</button><button class="on">EN</button></div>
+              </div>
+              <div class="s-sep"></div>
+              <div style="padding:14px 16px">
+                <div class="s-row" style="padding:0 0 10px">
+                  <div class="ib"><span class="i i-coin"></span></div>
+                  <div class="tb"><div class="l1">Devise</div><div class="l2">Affichage des prix</div></div>
+                </div>
+              </div>
+              <div class="grid3">
+                <div class="tile on">FCFA</div>
+                <div class="tile">Euro</div>
+                <div class="tile">Dollar</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings">
+            <div class="lbl">Notifications</div>
+            <div class="group">
+              <div class="s-row">
+                <div class="ib"><span class="i i-bell"></span></div>
+                <div class="tb"><div class="l1">Suivi en temps réel</div><div class="l2">Alerte quand votre commande évolue</div></div>
+                <div class="tog"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings">
+            <div class="lbl">Le restaurant</div>
+            <div class="group">
+              <div class="s-row">
+                <div class="ib"><span class="i i-pin"></span></div>
+                <div class="tb"><div class="l1">Adresse</div><div class="l2">Cité du premier janvier, N'Djamena</div></div>
+              </div>
+              <div class="s-sep"></div>
+              <div class="s-row">
+                <div class="ib"><span class="i i-phone"></span></div>
+                <div class="tb"><div class="l1">Téléphone</div><div class="l2">+235 66 00 00 00</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings">
+            <div class="lbl">Aide</div>
+            <div class="group">
+              <div class="s-row">
+                <div class="ib"><span class="i i-help"></span></div>
+                <div class="tb"><div class="l1">Aide & Support</div><div class="l2">Une question ? Nous sommes là.</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+              <div class="s-sep"></div>
+              <div class="s-row">
+                <div class="ib"><span class="i i-shield"></span></div>
+                <div class="tb"><div class="l1">Confidentialité</div><div class="l2">Vos données</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+              <div class="s-sep"></div>
+              <div class="s-row">
+                <div class="ib"><span class="i i-info"></span></div>
+                <div class="tb"><div class="l1">À propos</div><div class="l2">Blutable</div></div>
+                <span class="i i-chevr chev"></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center;font-size:11px;color:var(--ink-30);margin:24px 0 8px;letter-spacing:0.08em">BLUTABLE · v2.0</div>
+        </div>
+        <div class="bnav">
+          <div class="t"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t"><div class="ic"><span class="i i-cart"></span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t on"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         9 · CATEGORY VIEW (extension)
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-x">Extension</span><h3>Vue catégorie</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar lt"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr">
+          <div class="cat-hero">
+            <img src="https://images.unsplash.com/photo-1604908554264-3f2bcc3cf9ae?w=900&q=80" alt=""/>
+            <div class="ctr">
+              <div class="gbtn"><span class="i i-chevl"></span></div>
+              <div class="gbtn"><span class="i i-search"></span></div>
+            </div>
+            <div class="cap">
+              <div class="k">Catégorie</div>
+              <h1>Plats Africains</h1>
+              <div class="n"><span class="i i-chef"></span> 8 plats signature · Chef Amadou</div>
+            </div>
+          </div>
+          <div class="filters">
+            <div class="chip on">Tous</div>
+            <div class="chip">Populaires</div>
+            <div class="chip">Signature</div>
+            <div class="chip">Épicé</div>
+            <div class="chip">&lt;15 min</div>
+          </div>
+          <div class="cat-list">
+            <div class="drow">
+              <div class="im">
+                <img src="https://images.unsplash.com/photo-1558030006-450675393462?w=300&q=80" alt=""/>
+                <div class="sig">Signature</div>
+              </div>
+              <div class="b">
+                <div>
+                  <div class="nm">Dibi d'Agneau Grillé</div>
+                  <div class="mt"><span class="r"><span class="i i-star"></span> 4.9</span><span class="c"><span class="i i-clock"></span> 18–22 min</span></div>
+                  <div class="dsc">Agneau grillé à la braise, oignons confits, moutarde maison.</div>
+                </div>
+                <div class="row"><div class="p">12 000 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+            <div class="drow">
+              <div class="im">
+                <img src="https://images.unsplash.com/photo-1574484284002-952d92456975?w=300&q=80" alt=""/>
+              </div>
+              <div class="b">
+                <div>
+                  <div class="nm">Sauté d'Agneau au Gingembre</div>
+                  <div class="mt"><span class="r"><span class="i i-star"></span> 4.7</span><span class="c"><span class="i i-clock"></span> 14–18 min</span></div>
+                  <div class="dsc">Agneau mijoté, gingembre frais, citron vert, épices douces.</div>
+                </div>
+                <div class="row"><div class="p">10 000 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+            <div class="drow">
+              <div class="im">
+                <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300&q=80" alt=""/>
+                <div class="sig">Épicé</div>
+              </div>
+              <div class="b">
+                <div>
+                  <div class="nm">Poulet Yassa</div>
+                  <div class="mt"><span class="r"><span class="i i-star"></span> 4.8</span><span class="c"><span class="i i-clock"></span> 15–18 min</span></div>
+                  <div class="dsc">Poulet mariné au citron, oignons confits, riz parfumé.</div>
+                </div>
+                <div class="row"><div class="p">8 500 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+            <div class="drow">
+              <div class="im">
+                <img src="https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=300&q=80" alt=""/>
+              </div>
+              <div class="b">
+                <div>
+                  <div class="nm">Maffé de Bœuf</div>
+                  <div class="mt"><span class="r"><span class="i i-star"></span> 4.6</span><span class="c"><span class="i i-clock"></span> 20–24 min</span></div>
+                  <div class="dsc">Bœuf mijoté à la pâte d'arachide, légumes de saison, riz.</div>
+                </div>
+                <div class="row"><div class="p">9 500 FCFA</div><div class="addbtn"><span class="i i-plus"></span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bnav">
+          <div class="t on"><div class="ic"><span class="i i-home"></span></div>Accueil</div>
+          <div class="t"><div class="ic"><span class="i i-cart"></span></div>Panier</div>
+          <div class="t"><div class="ic"><span class="i i-orders"></span></div>Commandes</div>
+          <div class="t"><div class="ic"><span class="i i-user"></span></div>Compte</div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+    <!-- ============================================================
+         10 · DISH DETAIL (extension)
+         ============================================================ -->
+    <div>
+      <div class="scr-head"><span class="pill pill-x">Extension</span><h3>Fiche plat</h3></div>
+      <div class="phone"><div class="inner">
+        <div class="bar lt"><span>22:49</span><span>Blutable</span></div>
+        <div class="scr dish-full">
+          <div class="dish-hero">
+            <img src="https://images.unsplash.com/photo-1558030006-450675393462?w=900&q=80" alt=""/>
+            <div class="ctr">
+              <div class="gbtn"><span class="i i-chevl"></span></div>
+              <div class="gbtn"><span class="i i-heart"></span></div>
+            </div>
+          </div>
+          <div class="dish-body">
+            <div class="grab"></div>
+            <div class="dish-titles">
+              <div class="left">
+                <div class="k">Signature du Chef</div>
+                <h1>Dibi d'Agneau Grillé</h1>
+              </div>
+              <div class="price">12 000 FCFA</div>
+            </div>
+            <div class="dish-meta">
+              <div class="c"><span class="i i-star"></span><span class="v">4.9</span><span class="l">(128)</span></div>
+              <div class="divv"></div>
+              <div class="c"><span class="i i-clock"></span><span class="v">18–22 min</span></div>
+              <div class="divv"></div>
+              <div class="c"><span class="i i-chef"></span><span class="v">Chef Amadou</span></div>
+            </div>
+            <p class="dish-desc">
+              Agneau grillé à la braise façon sénégalaise, mariné dans nos épices maison,
+              servi avec oignons confits au citron vert et moutarde épicée.
+            </p>
+
+            <div class="dish-section">
+              <h4>Cuisson</h4>
+              <div class="dish-options">
+                <div class="opt"><div class="rb"></div><div class="tb"><div class="l1">Rosé</div><div class="l2">Tendre · recommandé</div></div></div>
+                <div class="opt on"><div class="rb"></div><div class="tb"><div class="l1">À point</div><div class="l2">Juteux · classique</div></div></div>
+                <div class="opt"><div class="rb"></div><div class="tb"><div class="l1">Bien cuit</div><div class="l2">Ferme</div></div></div>
+              </div>
+            </div>
+
+            <div class="dish-section">
+              <h4>Accompagnement</h4>
+              <div class="dish-options">
+                <div class="opt on"><div class="rb"></div><div class="tb"><div class="l1">Riz parfumé</div><div class="l2">Inclus</div></div><div class="px">Inclus</div></div>
+                <div class="opt"><div class="rb"></div><div class="tb"><div class="l1">Frites maison</div></div><div class="px">+ 1 500</div></div>
+                <div class="opt"><div class="rb"></div><div class="tb"><div class="l1">Légumes grillés</div></div><div class="px">+ 2 000</div></div>
+              </div>
+            </div>
+
+            <div class="dish-instr">
+              <div class="k">Instructions spéciales</div>
+              <textarea placeholder="Allergies, préférences, à la place de…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="dish-cta">
+          <div class="stepper">
+            <div class="b"><span class="i i-minus"></span></div>
+            <div class="q">1</div>
+            <div class="b prim"><span class="i i-plus"></span></div>
+          </div>
+          <div class="add"><span>Ajouter au panier</span><span class="sum">12 000 FCFA</span></div>
+        </div>
+        <div class="hi"></div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:60px;padding:24px 28px;background:var(--paper);border:1px solid var(--hair);border-radius:18px;box-shadow:var(--s-soft);max-width:720px">
+    <div class="kicker" style="color:var(--gold-ink)">Corrections v3</div>
+    <ul style="margin:12px 0 0;padding-left:20px;font-size:14px;line-height:1.7;color:var(--ink-60)">
+      <li><b>Logique table</b> : lecture seule, assignée par QR, changement uniquement par rescan.</li>
+      <li><b>Vraies photos</b> pour catégories, plats, menus — fini les aplats dégradés.</li>
+      <li><b>Fraunces + Inter</b> (Google Fonts) — typographie réellement chargée.</li>
+      <li><b>Micro-détails</b> : rating, temps de prep, signature, locked-QR badge, filtre chips.</li>
+      <li><b>Suivi visuel</b> : timeline 4 étapes avec labels, pulse sur l'étape courante.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

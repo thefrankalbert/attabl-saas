@@ -2,7 +2,7 @@ export default function StockHistoryLoading() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="h-7 w-44 bg-app-elevated rounded" />
-      <div className="border border-app-border rounded-xl overflow-hidden">
+      <div className="border border-app-border rounded-[10px] overflow-hidden">
         <div className="h-10 bg-app-bg" />
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="h-12 border-t border-app-border flex items-center gap-4 px-4">

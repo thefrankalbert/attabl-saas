@@ -3,6 +3,7 @@ import {
   Geist,
   Geist_Mono,
   DM_Serif_Display,
+  Fraunces,
   Inter,
   Poppins,
   Montserrat,
@@ -38,6 +39,20 @@ const dmSerifDisplay = DM_Serif_Display({
   variable: '--font-dm-serif-display',
   subsets: ['latin'],
   weight: ['400'],
+  display: 'swap',
+});
+
+// ===== Refonte display font (Phase 1 - .tenant-client scope only) =====
+// Fraunces is the display font for the tenant client refonte (headings,
+// editorial italic accents). It is not part of the curated tenant font
+// selector - it is fixed for the refonte look. Loaded as a variable font
+// with the optical sizing axis so headings at 34px/22px/17px render with
+// the correct proportions (font-variation-settings: 'opsz' <px>).
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  axes: ['opsz'],
+  style: ['normal', 'italic'],
   display: 'swap',
 });
 
@@ -119,7 +134,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#CCFF00',
+  themeColor: '#2e7d32',
 };
 
 export const metadata: Metadata = {
@@ -154,6 +169,7 @@ export default async function RootLayout({
           geistSans.variable,
           geistMono.variable,
           dmSerifDisplay.variable,
+          fraunces.variable,
           inter.variable,
           poppins.variable,
           montserrat.variable,

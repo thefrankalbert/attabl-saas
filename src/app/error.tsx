@@ -30,7 +30,7 @@ export default function Error({
         code="500"
         brand={
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-accent p-2.5">
+            <div className="rounded-[10px] bg-accent p-2.5">
               <Layout className="h-6 w-6 text-accent-text" />
             </div>
             <span className="text-2xl font-bold text-app-text">ATTABL</span>
@@ -40,7 +40,7 @@ export default function Error({
         description={t('errorHint')}
         debug={
           process.env.NODE_ENV === 'development' ? (
-            <div className="p-3 bg-status-error-bg rounded-xl text-left border border-app-border">
+            <div className="p-3 bg-status-error-bg rounded-[10px] text-left border border-app-border">
               <p className="text-xs font-mono text-status-error break-all">{error.message}</p>
               {error.digest && (
                 <p className="text-xs text-app-text-muted mt-1">Digest: {error.digest}</p>
@@ -52,12 +52,12 @@ export default function Error({
           <>
             <Button
               onClick={reset}
-              className="gap-2 h-11 rounded-xl bg-accent text-accent-text hover:bg-accent-hover"
+              className="gap-2 h-11 rounded-[10px] bg-accent text-accent-text hover:bg-accent-hover"
             >
               <RefreshCw className="w-4 h-4" />
               {t('retry')}
             </Button>
-            <Button asChild variant="outline" className="gap-2 h-11 rounded-xl">
+            <Button asChild variant="outline" className="gap-2 h-11 rounded-[10px]">
               <Link href="/">
                 <Home className="w-4 h-4" />
                 {t('backToHome')}

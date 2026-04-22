@@ -23,7 +23,10 @@ export default function KitchenLoading() {
       {/* KDS ticket grid */}
       <div className="flex-1 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-hidden">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-neutral-900 border border-app-border rounded-xl p-4 space-y-3">
+          <div
+            key={i}
+            className="bg-neutral-900 border border-app-border rounded-[10px] p-4 space-y-3"
+          >
             <div className="flex justify-between">
               <div className="h-5 w-16 bg-neutral-800 rounded" />
               <div className="h-5 w-12 bg-neutral-800 rounded" />

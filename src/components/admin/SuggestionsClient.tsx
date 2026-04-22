@@ -305,7 +305,7 @@ export default function SuggestionsClient({
           {/* Suggestions List */}
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
             {filtered.length > 0 ? (
-              <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="bg-app-card rounded-[10px] border border-app-border overflow-hidden">
                 {filtered.map((suggestion) => {
                   const typeConfig = SUGGESTION_TYPES.find(
                     (st) => st.value === suggestion.suggestion_type,
@@ -341,11 +341,11 @@ export default function SuggestionsClient({
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-app-text break-words">
-                          <span className="font-medium">
+                          <span className="font-normal">
                             {suggestion.menu_item?.name || tc('unknown')}
                           </span>
                           <span className="text-app-text-muted mx-2">→</span>
-                          <span className="font-medium text-accent">
+                          <span className="font-normal text-accent">
                             {suggestion.suggested_item?.name || tc('unknown')}
                           </span>
                         </p>
@@ -371,8 +371,8 @@ export default function SuggestionsClient({
                 })}
               </div>
             ) : (
-              <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="bg-app-card rounded-[10px] border border-app-border p-16 text-center">
+                <div className="w-16 h-16 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
                   <Lightbulb className="w-8 h-8 text-app-text-muted" />
                 </div>
                 <p className="text-lg font-bold text-app-text">{t('noSuggestions')}</p>
@@ -390,7 +390,7 @@ export default function SuggestionsClient({
           >
             <div className="space-y-4 pt-4">
               <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                <Label className="text-sm font-normal text-app-text mb-1.5 block">
                   {t('sourceDish')}
                 </Label>
                 <Select value={sourceItemId || undefined} onValueChange={setSourceItemId}>
@@ -408,7 +408,7 @@ export default function SuggestionsClient({
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                <Label className="text-sm font-normal text-app-text mb-1.5 block">
                   {t('suggestionType')}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
@@ -419,7 +419,7 @@ export default function SuggestionsClient({
                       variant="outline"
                       onClick={() => setSuggestionType(st.value)}
                       className={cn(
-                        'flex flex-col items-center gap-1 p-2 h-auto rounded-lg border text-xs font-medium transition-all',
+                        'flex flex-col items-center gap-1 p-2 h-auto rounded-lg border text-xs font-normal transition-all',
                         suggestionType === st.value
                           ? 'border-accent bg-accent-muted text-app-text'
                           : 'border-app-border text-app-text-secondary hover:bg-app-bg',
@@ -433,7 +433,7 @@ export default function SuggestionsClient({
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                <Label className="text-sm font-normal text-app-text mb-1.5 block">
                   {t('suggestedDish')}
                 </Label>
                 <Select value={targetItemId || undefined} onValueChange={setTargetItemId}>
@@ -451,7 +451,7 @@ export default function SuggestionsClient({
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                <Label className="text-sm font-normal text-app-text mb-1.5 block">
                   {t('serverAdvice')}
                 </Label>
                 <Input

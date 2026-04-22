@@ -94,7 +94,7 @@ export function TopDishesCard({
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border flex-wrap">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
+        <div className="flex items-center gap-2 text-[13px] font-normal text-app-text">
           <UtensilsCrossed className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
           <span className="font-mono text-[11px] text-app-text-muted px-1.5 py-0.5 bg-app-elevated rounded">
@@ -155,14 +155,14 @@ export function TopDishesCard({
               >
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-lg border grid place-items-center font-mono text-[11px] font-semibold',
+                    'w-9 h-9 rounded-lg border grid place-items-center font-mono text-[11px] font-bold',
                     COLOR_CLASS[d.color],
                   )}
                 >
                   {d.initials}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[13px] font-medium text-app-text truncate">{d.name}</div>
+                  <div className="text-[13px] font-normal text-app-text truncate">{d.name}</div>
                   <div className="font-mono text-[11px] text-app-text-muted truncate">
                     {d.subline}
                   </div>

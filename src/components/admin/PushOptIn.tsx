@@ -26,7 +26,7 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
           <BellOff className="h-5 w-5 text-app-text-muted" />
         )}
         <div>
-          <p className="text-sm font-medium">{t('title')}</p>
+          <p className="text-sm font-normal">{t('title')}</p>
           <p className="text-xs text-app-text-secondary">
             {isSubscribed ? t('enabledDesc') : t('disabledDesc')}
           </p>

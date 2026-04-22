@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations, getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
-import ClientMenuPage from '@/components/tenant/ClientMenuPage';
+import ClientMenuPage from '@/components/tenant/ui/ClientMenuPageRefonte';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
 import type {
@@ -83,7 +83,7 @@ export default async function MenuPage({
         </header>
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold mb-2" style={{ color: '#737373' }}>
+            <h2 className="text-xl font-bold mb-2" style={{ color: '#737373' }}>
               {t('notConfiguredTitle')}
             </h2>
             <p style={{ color: '#737373' }}>{t('notConfiguredDesc', { slug: tenantSlug })}</p>
@@ -107,6 +107,7 @@ export default async function MenuPage({
     featuredResult,
     recentResult,
     couponsResult,
+    searchableResult,
   ] = await Promise.all([
     // Root menus only (parent_menu_id IS NULL) - sub-menus are fetched on demand
     // by the menu detail page when a parent is selected.
@@ -177,6 +178,18 @@ export default async function MenuPage({
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
       .or(`valid_until.is.null,valid_until.gte.${now}`),
+
+    // Full searchable index: all available items (capped at 200). Powers the
+    // home SearchOverlay so users can find any dish, not just featured/recent.
+    supabase
+      .from('menu_items')
+      .select(
+        'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
+      )
+      .eq('tenant_id', tenant.id)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true })
+      .limit(200),
   ]);
 
   const menus = (menusResult.data || []) as unknown as Menu[];
@@ -207,6 +220,7 @@ export default async function MenuPage({
   const featuredItems = (featuredResult.data || []) as unknown as MenuItem[];
   const recentItems = (recentResult.data || []) as unknown as MenuItem[];
   const coupons = (couponsResult.data || []) as unknown as Coupon[];
+  const searchableItems = (searchableResult.data || []) as unknown as MenuItem[];
 
   // Discounted items = featured items if there are active coupons, else empty
   const discountedItems: MenuItem[] = coupons.length > 0 ? featuredItems.slice(0, 10) : [];
@@ -322,6 +336,7 @@ export default async function MenuPage({
         ordersThisWeek={ordersThisWeek}
         ratingAgg={ratingAgg}
         recommendedItems={recommendedItems}
+        searchableItems={searchableItems}
       />
     </NextIntlClientProvider>
   );

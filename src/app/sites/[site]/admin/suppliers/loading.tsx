@@ -5,7 +5,7 @@ export default function SuppliersLoading() {
         <div className="h-7 w-36 bg-app-elevated rounded" />
         <div className="h-10 w-40 bg-app-elevated rounded-lg" />
       </div>
-      <div className="border border-app-border rounded-xl overflow-hidden">
+      <div className="border border-app-border rounded-[10px] overflow-hidden">
         <div className="h-10 bg-app-bg" />
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-14 border-t border-app-border flex items-center gap-4 px-4">

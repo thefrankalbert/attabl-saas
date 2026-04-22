@@ -11,13 +11,13 @@ export default function CTASection() {
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Link
             href="/signup"
-            className="inline-block rounded-lg bg-white dark:bg-white px-8 py-4 font-semibold text-neutral-900 dark:text-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-200"
+            className="inline-block rounded-lg bg-white dark:bg-white px-8 py-4 font-bold text-neutral-900 dark:text-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-200"
           >
             Créer mon compte gratuit
           </Link>
           <Link
             href="/contact"
-            className="inline-block rounded-lg border border-neutral-600 px-8 py-4 font-semibold text-white transition-colors hover:bg-neutral-800"
+            className="inline-block rounded-lg border border-neutral-600 px-8 py-4 font-bold text-white transition-colors hover:bg-neutral-800"
           >
             Parler à un conseiller
           </Link>

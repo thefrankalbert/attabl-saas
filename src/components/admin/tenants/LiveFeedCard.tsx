@@ -56,7 +56,7 @@ export function LiveFeedCard({ orders, multiTenant, onSelectTenant }: LiveFeedCa
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-[10px] font-medium text-emerald-400">Live</span>
+            <span className="text-[10px] font-normal text-emerald-400">Live</span>
           </div>
         )}
       </div>

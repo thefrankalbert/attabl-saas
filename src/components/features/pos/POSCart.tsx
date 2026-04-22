@@ -198,7 +198,7 @@ export default function POSCart({
                 variant={serviceType === st.value ? 'default' : 'outline'}
                 onClick={() => setServiceType(st.value)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] whitespace-nowrap text-xs font-medium',
+                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] whitespace-nowrap text-xs font-normal',
                   serviceType === st.value
                     ? 'bg-accent text-accent-text'
                     : 'text-app-text-secondary hover:bg-app-hover',
@@ -254,18 +254,18 @@ export default function POSCart({
                     {/* Line 1: Name + line total */}
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-app-text leading-tight">
+                        <p className="text-sm font-normal text-app-text leading-tight">
                           {item.name}
                         </p>
                         {/* Variant + Modifiers + Notes inline */}
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
                           {item.selectedVariant && (
-                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20 font-medium">
+                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20 font-normal">
                               {item.selectedVariant.name}
                             </span>
                           )}
                           {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                            <span className="text-[10px] text-app-text-muted font-medium">
+                            <span className="text-[10px] text-app-text-muted font-normal">
                               +{item.selectedModifiers.map((m) => m.name).join(', ')}
                             </span>
                           )}
@@ -314,7 +314,7 @@ export default function POSCart({
                       <Button
                         variant="ghost"
                         onClick={() => onEditNotes(itemKey, item.notes || '')}
-                        className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 touch-manipulation"
+                        className="text-[11px] text-app-text-muted hover:text-app-text font-normal h-8 px-2 touch-manipulation"
                       >
                         {item.notes ? tc('edit') : seg.productionNote}
                       </Button>
@@ -342,7 +342,7 @@ export default function POSCart({
             variant="ghost"
             onClick={() => setShowOrderNotes((prev) => !prev)}
             className={cn(
-              'flex items-center gap-1 text-[11px] font-medium shrink-0 h-auto px-1 py-0.5',
+              'flex items-center gap-1 text-[11px] font-normal shrink-0 h-auto px-1 py-0.5',
               orderNotes ? 'text-amber-500' : 'text-app-text-muted hover:text-app-text-secondary',
             )}
           >
@@ -356,7 +356,7 @@ export default function POSCart({
             <div className="flex-1 min-w-0">
               {appliedCoupon ? (
                 <div className="flex items-center gap-1 animate-in fade-in">
-                  <div className="flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
+                  <div className="flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md px-2 py-1 text-[10px] font-normal min-w-0">
                     <Tag className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate">{appliedCoupon.code}</span>
                     <span className="text-green-500 shrink-0">
@@ -420,7 +420,7 @@ export default function POSCart({
 
         {/* Coupon error */}
         {enableCoupons && couponError && (
-          <p className="text-[10px] text-status-error font-medium animate-in fade-in">
+          <p className="text-[10px] text-status-error font-normal animate-in fade-in">
             {couponError}
           </p>
         )}
@@ -434,14 +434,14 @@ export default function POSCart({
               <span className="text-[11px] text-app-text-muted">
                 {tc('subtotal')} ({totalItems} {t('itemsCount')})
               </span>
-              <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
+              <span className="text-xs font-normal text-app-text-secondary tabular-nums font-mono">
                 {formatCurrency(pricing.subtotal, currency)}
               </span>
             </div>
             {pricing.discountAmount > 0 && (
               <div className="flex justify-between items-baseline">
                 <span className="text-[11px] text-green-600">{tc('discount') || 'Remise'}</span>
-                <span className="text-xs font-medium text-green-600 tabular-nums font-mono">
+                <span className="text-xs font-normal text-green-600 tabular-nums font-mono">
                   -{formatCurrency(pricing.discountAmount, currency)}
                 </span>
               </div>
@@ -449,7 +449,7 @@ export default function POSCart({
             {pricing.taxAmount > 0 && (
               <div className="flex justify-between items-baseline">
                 <span className="text-[11px] text-app-text-muted">{tc('tax')}</span>
-                <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
+                <span className="text-xs font-normal text-app-text-secondary tabular-nums font-mono">
                   {formatCurrency(pricing.taxAmount, currency)}
                 </span>
               </div>
@@ -457,7 +457,7 @@ export default function POSCart({
             {pricing.serviceChargeAmount > 0 && (
               <div className="flex justify-between items-baseline">
                 <span className="text-[11px] text-app-text-muted">{tc('service')}</span>
-                <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
+                <span className="text-xs font-normal text-app-text-secondary tabular-nums font-mono">
                   {formatCurrency(pricing.serviceChargeAmount, currency)}
                 </span>
               </div>
@@ -468,7 +468,7 @@ export default function POSCart({
         {/* Total */}
         <div className="flex justify-between items-baseline">
           <div className="flex items-baseline gap-2">
-            <span className="text-xs text-app-text-muted font-medium uppercase tracking-wide">
+            <span className="text-xs text-app-text-muted font-normal uppercase tracking-wide">
               {tc('total')}
             </span>
             {totalItems > 0 &&
@@ -489,7 +489,7 @@ export default function POSCart({
         <div className="grid grid-cols-7 gap-2">
           <Button
             variant="outline"
-            className="col-span-2 h-10 rounded-xl gap-1.5"
+            className="col-span-2 h-10 rounded-[10px] gap-1.5"
             disabled={cart.length === 0}
             onClick={onPrintOrder}
             title={seg.sentToProduction}
@@ -526,7 +526,7 @@ export default function POSCart({
               <div className="flex gap-4 h-72">
                 {/* Zone Column */}
                 <div className="w-36 flex flex-col shrink-0">
-                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Zone
                   </Label>
                   <div className="flex-1 overflow-y-auto space-y-1">
@@ -539,7 +539,7 @@ export default function POSCart({
                         className={cn(
                           'w-full justify-start px-3 py-2 rounded-lg text-sm flex items-center gap-2 h-auto',
                           pickerZoneId === zone.id
-                            ? 'bg-accent text-accent-text font-medium'
+                            ? 'bg-accent text-accent-text font-normal'
                             : 'text-app-text-secondary hover:bg-app-hover',
                         )}
                       >
@@ -554,7 +554,7 @@ export default function POSCart({
 
                 {/* Tables Grid */}
                 <div className="flex-1 flex flex-col min-w-0">
-                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Tables
                   </Label>
                   <div className="flex-1 overflow-y-auto">
@@ -577,7 +577,7 @@ export default function POSCart({
                                 : 'border-app-border text-app-text hover:bg-app-hover hover:border-accent/30',
                             )}
                           >
-                            <span className="font-semibold text-xs">{table.table_number}</span>
+                            <span className="font-bold text-xs">{table.table_number}</span>
                             {table.display_name !== table.table_number && (
                               <span className="text-[10px] opacity-70 truncate max-w-full">
                                 {table.display_name}
@@ -597,7 +597,7 @@ export default function POSCart({
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-app-text-muted">
                 <LayoutGrid className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm font-medium">{t('noResults')}</p>
+                <p className="text-sm font-normal">{t('noResults')}</p>
                 <p className="text-xs mt-1 text-app-text-muted">{tc('save')}</p>
               </div>
             )}

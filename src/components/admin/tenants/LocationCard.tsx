@@ -57,7 +57,7 @@ export function LocationRow({ location, rank, onOpenDashboard, onOpenMenu }: Loc
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-semibold text-app-text">{location.tenant_name}</h3>
+          <h3 className="truncate text-sm font-bold text-app-text">{location.tenant_name}</h3>
           <span
             className={cn(
               'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
@@ -80,7 +80,7 @@ export function LocationRow({ location, rank, onOpenDashboard, onOpenMenu }: Loc
           {location.tenant_plan && (
             <Badge
               variant="outline"
-              className="rounded-md border-app-border px-1 py-0 text-[9px] font-semibold uppercase"
+              className="rounded-md border-app-border px-1 py-0 text-[9px] font-bold uppercase"
             >
               {location.tenant_plan}
             </Badge>

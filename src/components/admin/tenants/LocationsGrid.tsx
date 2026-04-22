@@ -89,7 +89,7 @@ export function LocationsGrid({
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
           <ShoppingBag className="h-6 w-6 text-app-text-muted/40" />
-          <h3 className="text-sm font-semibold text-app-text">
+          <h3 className="text-sm font-bold text-app-text">
             {query ? 'Aucun resultat' : 'Aucun etablissement'}
           </h3>
           <p className="max-w-xs text-xs text-app-text-muted">

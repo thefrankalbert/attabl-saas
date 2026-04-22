@@ -48,7 +48,7 @@ export default function GlobalError({
                   width: '6px',
                   height: '6px',
                   borderRadius: '9999px',
-                  backgroundColor: '#CCFF00',
+                  backgroundColor: '#2e7d32',
                   display: 'inline-block',
                 }}
               />
@@ -92,11 +92,11 @@ export default function GlobalError({
             <button
               onClick={reset}
               style={{
-                backgroundColor: '#CCFF00',
-                color: '#0a0a0a',
+                backgroundColor: '#2e7d32',
+                color: '#ffffff',
                 border: 'none',
                 padding: '14px 28px',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 fontSize: '0.9375rem',
                 cursor: 'pointer',
                 fontWeight: 700,

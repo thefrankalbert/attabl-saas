@@ -156,7 +156,7 @@ export default function KitchenFilters({
               variant="ghost"
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium h-auto',
+                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-normal h-auto',
                 viewMode === mode
                   ? 'bg-app-bg text-app-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text-secondary',

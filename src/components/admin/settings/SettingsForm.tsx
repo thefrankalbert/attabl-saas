@@ -74,7 +74,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               <TabsTrigger
                 key={key}
                 value={key}
-                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 sm:px-4 lg:px-6 xl:px-8 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
+                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 sm:px-4 lg:px-6 xl:px-8 py-3 min-h-[44px] text-xs sm:text-sm font-normal text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-bold data-[state=active]:shadow-none"
               >
                 {t(labelKey)}
               </TabsTrigger>

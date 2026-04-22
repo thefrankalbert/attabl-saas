@@ -16,7 +16,7 @@ export default function PresenceSection() {
     <section className="bg-white dark:bg-neutral-950 py-20 sm:py-28 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 dark:bg-white/10 px-4 py-1.5 text-sm font-medium text-neutral-600 dark:text-white/70 mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 dark:bg-white/10 px-4 py-1.5 text-sm font-normal text-neutral-600 dark:text-white/70 mb-6">
             <MapPin className="h-4 w-4" />
             Presence en Afrique
           </div>

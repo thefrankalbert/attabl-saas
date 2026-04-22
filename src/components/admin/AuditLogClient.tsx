@@ -214,7 +214,7 @@ export default function AuditLogClient({
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <div className="flex items-center gap-3 shrink-0">
             <h1 className="text-lg sm:text-xl font-bold text-app-text">{t('title')}</h1>
-            <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+            <span className="text-xs font-normal text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
               {totalCount}
             </span>
           </div>
@@ -232,10 +232,10 @@ export default function AuditLogClient({
 
         {/* Filters */}
         {showFilters && (
-          <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
+          <div className="bg-app-card rounded-[10px] border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
             <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
               <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-bold text-app-text mb-1 block">
                   {t('filterAction')}
                 </Label>
                 <Select
@@ -264,7 +264,7 @@ export default function AuditLogClient({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-bold text-app-text mb-1 block">
                   {t('filterEntity')}
                 </Label>
                 <Select
@@ -288,7 +288,7 @@ export default function AuditLogClient({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-bold text-app-text mb-1 block">
                   {t('filterUser')}
                 </Label>
                 <div className="relative">
@@ -328,8 +328,8 @@ export default function AuditLogClient({
             </Button>
           </div>
         ) : logs.length === 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border/60 p-12 text-center">
-            <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-app-card rounded-[10px] border border-app-border/60 p-12 text-center">
+            <div className="w-14 h-14 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
               <ScrollText className="w-7 h-7 text-app-text-muted" />
             </div>
             <h3 className="text-base font-bold text-app-text">{t('empty')}</h3>
@@ -337,25 +337,25 @@ export default function AuditLogClient({
           </div>
         ) : (
           <>
-            <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
+            <div className="bg-app-card rounded-[10px] border border-app-border/60 overflow-hidden">
               {/* Desktop table */}
               <div className="hidden @md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-app-border/60 bg-app-bg/50">
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                         {t('colDate')}
                       </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                         {t('colUser')}
                       </TableHead>
-                      <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      <TableHead className="text-center text-xs font-bold text-app-text-secondary px-4 py-3">
                         {t('colAction')}
                       </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                         {t('colEntity')}
                       </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      <TableHead className="text-left text-xs font-bold text-app-text-secondary px-4 py-3">
                         {t('colDetails')}
                       </TableHead>
                     </TableRow>
@@ -375,7 +375,7 @@ export default function AuditLogClient({
                               {entry.user_email || ' - '}
                             </span>
                             {entry.user_role && (
-                              <span className="ml-1.5 text-[10px] text-app-text-muted font-medium">
+                              <span className="ml-1.5 text-[10px] text-app-text-muted font-normal">
                                 ({entry.user_role})
                               </span>
                             )}
@@ -385,7 +385,7 @@ export default function AuditLogClient({
                           {actionBadge(entry.action)}
                         </TableCell>
                         <TableCell className="px-4 py-3">
-                          <span className="text-sm font-medium text-app-text">
+                          <span className="text-sm font-normal text-app-text">
                             {entityLabel(entry.entity_type)}
                           </span>
                         </TableCell>
@@ -407,7 +407,7 @@ export default function AuditLogClient({
                       {actionBadge(entry.action)}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-app-text">
+                      <span className="text-sm font-normal text-app-text">
                         {entityLabel(entry.entity_type)}
                       </span>
                     </div>
@@ -444,7 +444,7 @@ export default function AuditLogClient({
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm font-medium text-app-text px-3">
+                  <span className="text-sm font-normal text-app-text px-3">
                     {page + 1} / {totalPages}
                   </span>
                   <Button

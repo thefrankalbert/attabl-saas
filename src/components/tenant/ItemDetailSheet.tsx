@@ -256,9 +256,9 @@ export default function ItemDetailSheet({
             {/* Scrollable content (flex-1) - scroll inside this area only, button stays put */}
             <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
               <div className="px-6 pb-3 pt-4">
-                {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #06C167 */}
+                {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #2e7d32 */}
                 {category && (
-                  <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-app-text">
+                  <p className="font-normal uppercase text-[11px] leading-[15.4px] tracking-[1px] text-app-text">
                     {category}
                   </p>
                 )}
@@ -290,19 +290,19 @@ export default function ItemDetailSheet({
                   <>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.is_vegetarian && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-app-text">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-normal text-[11px] rounded-lg bg-app-elevated text-app-text">
                           <Leaf className="h-3 w-3" />
                           {t('vegetarian')}
                         </span>
                       )}
                       {item.is_spicy && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-danger">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-normal text-[11px] rounded-lg bg-app-elevated text-danger">
                           <Flame className="h-3 w-3" />
                           {t('spicy')}
                         </span>
                       )}
                       {hasAllergens && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-allergen">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-normal text-[11px] rounded-lg bg-app-elevated text-allergen">
                           <AlertTriangle className="h-3 w-3" />
                           {t('allergenWarning')}
                         </span>
@@ -323,7 +323,7 @@ export default function ItemDetailSheet({
                 {hasVariants && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold text-sm text-app-text">{t('size')}</h3>
+                      <h3 className="mb-2 font-bold text-sm text-app-text">{t('size')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .price_variants!.sort((a, b) => a.display_order - b.display_order)
@@ -334,7 +334,7 @@ export default function ItemDetailSheet({
                                 key={variant.id}
                                 variant="outline"
                                 onClick={() => setSelectedVariant(variant)}
-                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
+                                className={`flex items-center justify-between rounded-[10px] border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Radio dot */}
@@ -345,7 +345,7 @@ export default function ItemDetailSheet({
                                       <div className="h-2.5 w-2.5 rounded-full bg-app-text" />
                                     )}
                                   </div>
-                                  <span className="font-medium text-sm text-app-text">
+                                  <span className="font-normal text-sm text-app-text">
                                     {getTranslatedContent(
                                       language,
                                       variant.variant_name_fr,
@@ -372,7 +372,7 @@ export default function ItemDetailSheet({
                 {hasModifiers && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold text-sm text-app-text">{t('extras')}</h3>
+                      <h3 className="mb-2 font-bold text-sm text-app-text">{t('extras')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .modifiers!.filter((m) => m.is_available)
@@ -384,7 +384,7 @@ export default function ItemDetailSheet({
                                 key={modifier.id}
                                 variant="outline"
                                 onClick={() => toggleModifier(modifier)}
-                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
+                                className={`flex items-center justify-between rounded-[10px] border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Checkbox */}
@@ -393,7 +393,7 @@ export default function ItemDetailSheet({
                                   >
                                     {isActive && <Check className="h-3 w-3 text-white" />}
                                   </div>
-                                  <span className="font-medium text-sm text-app-text">
+                                  <span className="font-normal text-sm text-app-text">
                                     {getTranslatedContent(
                                       language,
                                       modifier.name,
@@ -402,7 +402,7 @@ export default function ItemDetailSheet({
                                   </span>
                                 </div>
                                 {modifier.price > 0 && (
-                                  <span className="font-medium text-sm text-app-text-secondary">
+                                  <span className="font-normal text-sm text-app-text-secondary">
                                     +
                                     {resolveAndFormatPrice(
                                       modifier.price,
@@ -454,7 +454,7 @@ export default function ItemDetailSheet({
 
                 {/* --- Special instructions (pushed down by quantity selector) --- */}
                 <div>
-                  <h3 className="mb-1.5 font-semibold text-[13px] text-app-text">
+                  <h3 className="mb-1.5 font-bold text-[13px] text-app-text">
                     {t('specialInstructions')}
                   </h3>
                   <Textarea
@@ -462,7 +462,7 @@ export default function ItemDetailSheet({
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}
                     rows={1}
-                    className="w-full resize-none rounded-xl border border-app-border px-3 py-2 font-normal focus:outline-none focus:ring-0 text-[13px] text-app-text bg-app-elevated"
+                    className="w-full resize-none rounded-[10px] border border-app-border px-3 py-2 font-normal focus:outline-none focus:ring-0 text-[13px] text-app-text bg-app-elevated"
                   />
                 </div>
               </div>
@@ -478,7 +478,7 @@ export default function ItemDetailSheet({
               <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-app-text hover:bg-black"
+                className="w-full gap-1.5 font-bold text-white h-[52px] rounded-[10px] text-[15px] bg-app-text hover:bg-black"
               >
                 {showSuccess ? (
                   <motion.div

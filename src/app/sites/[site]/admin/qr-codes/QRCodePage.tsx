@@ -102,7 +102,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 bg-app-elevated rounded-xl">
+          <div className="p-2 bg-app-elevated rounded-[10px]">
             <QrCode className="h-5 w-5 text-app-text-secondary" />
           </div>
           <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
@@ -122,7 +122,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsContent value="choose" className="flex-1 overflow-auto">
           <div>
             {/* Info Banner */}
-            <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+            <div className="mb-6 p-4 rounded-[10px] bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
               <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-blue-800">
@@ -142,8 +142,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Table & Menu Selectors */}
             {(tables.length > 0 || menus.length > 0) && (
-              <div className="bg-app-card rounded-xl border border-app-border p-5">
-                <h3 className="text-sm font-semibold text-app-text-secondary mb-4 flex items-center gap-2">
+              <div className="bg-app-card rounded-[10px] border border-app-border p-5">
+                <h3 className="text-sm font-bold text-app-text-secondary mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-app-text-muted" />
                   {t('selectTableMenu')}
                 </h3>
@@ -153,7 +153,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                     <div>
                       <Label
                         htmlFor="qr-table-select"
-                        className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
+                        className="flex items-center gap-1.5 text-xs font-normal text-app-text-secondary mb-1.5"
                       >
                         <Table2 className="w-3.5 h-3.5" />
                         {t('table')}
@@ -190,7 +190,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                     <div>
                       <Label
                         htmlFor="qr-menu-select"
-                        className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
+                        className="flex items-center gap-1.5 text-xs font-normal text-app-text-secondary mb-1.5"
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                         {t('menuLabel')}
@@ -217,7 +217,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
                 {/* Dynamic URL Preview */}
                 {(selectedTable || selectedMenu) && (
-                  <div className="mt-3 p-2.5 bg-app-bg rounded-xl">
+                  <div className="mt-3 p-2.5 bg-app-bg rounded-[10px]">
                     <p className="text-xs text-app-text-secondary font-mono break-all">{qrUrl}</p>
                   </div>
                 )}
@@ -225,8 +225,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
             )}
 
             {/* Selection Summary */}
-            <div className="mt-4 p-4 rounded-xl bg-app-bg border border-app-border">
-              <h4 className="text-xs font-semibold text-app-text-secondary uppercase tracking-wide mb-2">
+            <div className="mt-4 p-4 rounded-[10px] bg-app-bg border border-app-border">
+              <h4 className="text-xs font-bold text-app-text-secondary uppercase tracking-wide mb-2">
                 {t('selectionSummary')}
               </h4>
               <div className="flex flex-wrap gap-3">
@@ -245,7 +245,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
         {/* ─── Tab: Customize ─── */}
         <TabsContent value="customize" className="flex-1 overflow-auto">
-          <div className="bg-app-card rounded-xl border border-app-border p-6">
+          <div className="bg-app-card rounded-[10px] border border-app-border p-6">
             <QRCustomizerLayout
               config={config}
               updateField={updateField}
@@ -263,7 +263,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsContent value="download" className="flex-1 overflow-auto">
           <div>
             {/* Single QR Preview + Download */}
-            <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
+            <div className="bg-app-card rounded-[10px] border border-app-border p-6 mb-6">
               <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
                 <QrCode className="w-4 h-4 text-app-text-muted" />
                 {t('yourQRCode')}
@@ -289,7 +289,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Batch Generation Section (A4 format) */}
             {tables.length > 0 && (
-              <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
+              <div className="bg-app-card rounded-[10px] border border-app-border p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-bold text-app-text flex items-center gap-2">
@@ -318,20 +318,20 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Tips */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1">{t('tipStandard')}</h3>
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1">{t('tipStandard')}</h3>
                 <p className="text-sm text-app-text-secondary">{t('tipStandardDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1">{t('tipEasel')}</h3>
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1">{t('tipEasel')}</h3>
                 <p className="text-sm text-app-text-secondary">{t('tipEaselDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1">{t('tipCard')}</h3>
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1">{t('tipCard')}</h3>
                 <p className="text-sm text-app-text-secondary">{t('tipCardDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1 flex items-center gap-2">
                   {t('tipMinimal')}
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
@@ -340,8 +340,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                 </h3>
                 <p className="text-sm text-app-text-secondary">{t('tipMinimalDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1 flex items-center gap-2">
                   {t('tipElegant')}
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
@@ -350,8 +350,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                 </h3>
                 <p className="text-sm text-app-text-secondary">{t('tipElegantDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-[10px] bg-app-bg border border-app-border">
+                <h3 className="font-bold text-app-text mb-1 flex items-center gap-2">
                   {t('tipNeon')}
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
@@ -527,10 +527,10 @@ function BatchQRPreview({
             {zoneTables.map((table) => (
               <div
                 key={table.id}
-                className="flex items-center gap-2 p-2 bg-app-bg rounded-xl text-xs"
+                className="flex items-center gap-2 p-2 bg-app-bg rounded-[10px] text-xs"
               >
                 <Table2 className="w-3 h-3 text-app-text-muted shrink-0" />
-                <span className="text-app-text-secondary font-medium break-words">
+                <span className="text-app-text-secondary font-normal break-words">
                   {table.display_name}
                 </span>
               </div>

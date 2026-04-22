@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
   {
     question: "Comment fonctionne l'ecran cuisine (KDS) ?",
     answer:
-      'L\'ecran cuisine affiche en temps reel les commandes entrantes. Les commandes sont automatiquement routees selon leur type (boissons vers le bar, plats vers la cuisine). Le personnel peut marquer les commandes comme "en preparation" puis "pretes".',
+      'L\'ecran cuisine affiche en temps réel les commandes entrantes. Les commandes sont automatiquement routees selon leur type (boissons vers le bar, plats vers la cuisine). Le personnel peut marquer les commandes comme "en preparation" puis "pretes".',
   },
   {
     question: 'Puis-je modifier les prix de mes articles ?',
@@ -34,7 +34,7 @@ const FAQ_ITEMS = [
       'Accedez a "Abonnement" depuis le menu de votre compte (en bas de la barre laterale). Vous pouvez passer du plan Starter au plan Pro ou Business, ou basculer entre facturation mensuelle, semestrielle et annuelle. Le changement prend effet immediatement.',
   },
   {
-    question: 'Comment gerer les commandes en temps reel ?',
+    question: 'Comment gerer les commandes en temps réel ?',
     answer:
       'Les nouvelles commandes apparaissent instantanement dans l\'onglet "Commandes" et sur l\'ecran cuisine. Vous recevez une notification sonore a chaque nouvelle commande. Vous pouvez accepter, preparer et marquer les commandes comme servies.',
   },
@@ -46,7 +46,7 @@ const FAQ_ITEMS = [
   {
     question: 'Comment gerer mon inventaire et mes fournisseurs ?',
     answer:
-      'La section "Inventaire" permet de suivre vos stocks en temps reel. Ajoutez des fournisseurs dans "Fournisseurs" et creez des fiches techniques (recettes) dans "Recettes" pour calculer automatiquement les couts de revient. L\'historique des mouvements de stock est disponible dans "Historique stock".',
+      'La section "Inventaire" permet de suivre vos stocks en temps réel. Ajoutez des fournisseurs dans "Fournisseurs" et creez des fiches techniques (recettes) dans "Recettes" pour calculer automatiquement les couts de revient. L\'historique des mouvements de stock est disponible dans "Historique stock".',
   },
   {
     question: 'Comment gerer mon equipe et les permissions ?',

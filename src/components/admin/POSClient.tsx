@@ -97,7 +97,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     variant="ghost"
                     onClick={() => setMobileView('products')}
                     className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors rounded-none',
+                      'flex-1 py-3 min-h-[44px] text-sm font-bold transition-colors rounded-none',
                       mobileView === 'products'
                         ? 'border-b-2 border-accent text-app-text'
                         : 'text-app-text-muted',
@@ -111,7 +111,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     variant="ghost"
                     onClick={() => setMobileView('cart')}
                     className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative rounded-none',
+                      'flex-1 py-3 min-h-[44px] text-sm font-bold transition-colors relative rounded-none',
                       mobileView === 'cart'
                         ? 'border-b-2 border-accent text-app-text'
                         : 'text-app-text-muted',
@@ -126,7 +126,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   </Button>
                 </div>
               ) : (
-                <h1 className="text-sm font-semibold text-app-text">{t('title') || 'POS'}</h1>
+                <h1 className="text-sm font-bold text-app-text">{t('title') || 'POS'}</h1>
               )}
             </div>
 
@@ -199,7 +199,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             {/* Note Modal -- flat design */}
             {pos.editingNotes && (
               <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-                <div className="bg-app-card rounded-xl border border-app-border p-6 w-full max-w-sm animate-in zoom-in-95">
+                <div className="bg-app-card rounded-[10px] border border-app-border p-6 w-full max-w-sm animate-in zoom-in-95">
                   <h3 className="font-bold text-lg text-app-text mb-4">
                     {seg.productionNoteTitle}
                   </h3>
@@ -213,12 +213,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   <div className="flex justify-end gap-2 mt-4">
                     <Button
                       variant="ghost"
-                      className="rounded-xl"
+                      className="rounded-[10px]"
                       onClick={() => pos.setEditingNotes(null)}
                     >
                       {tc('cancel')}
                     </Button>
-                    <Button variant="default" className="rounded-xl" onClick={pos.saveNotes}>
+                    <Button variant="default" className="rounded-[10px]" onClick={pos.saveNotes}>
                       {tc('save')}
                     </Button>
                   </div>

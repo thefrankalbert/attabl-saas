@@ -265,7 +265,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
         categoryMap[name] = (categoryMap[name] || 0) + revenue;
       }
-      const DONUT_COLORS = ['#CCFF00', '#F59E0B', '#3B82F6', '#D4D4D8'];
+      const DONUT_COLORS = ['#2e7d32', '#F59E0B', '#3B82F6', '#D4D4D8'];
       const sortedCategories = Object.entries(categoryMap).sort(([, a], [, b]) => b - a);
       const top3 = sortedCategories.slice(0, 3);
       const othersValue = sortedCategories.slice(3).reduce((sum, [, v]) => sum + v, 0);

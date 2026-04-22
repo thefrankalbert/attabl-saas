@@ -396,13 +396,13 @@ export default function MenuDetailClient({
             {t('breadcrumbMenus')}
           </Link>
           <span className="text-app-text-secondary">/</span>
-          <h1 className="text-app-text font-semibold break-words">{menu.name}</h1>
+          <h1 className="text-app-text font-bold break-words">{menu.name}</h1>
         </div>
         <Button
           variant="outline"
           onClick={toggleMenuActive}
           className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-semibold h-auto shrink-0',
+            'px-3 py-1.5 rounded-full text-xs font-bold h-auto shrink-0',
             menu.is_active
               ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
               : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -426,7 +426,7 @@ export default function MenuDetailClient({
         {/* Categories section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-app-text flex items-center gap-2">
+            <h2 className="text-sm font-bold text-app-text flex items-center gap-2">
               <Folder className="w-4 h-4 text-app-text-muted" />
               {t('categoriesCount', { count: categories.length })}
             </h2>
@@ -481,7 +481,7 @@ export default function MenuDetailClient({
               {[1, 2].map((i) => (
                 <div
                   key={i}
-                  className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
+                  className="h-16 bg-app-card rounded-[10px] border border-app-border animate-pulse"
                 />
               ))}
             </div>
@@ -494,7 +494,7 @@ export default function MenuDetailClient({
                   <div key={cat.id} className={cn('space-y-2', !isCatActive && 'opacity-50')}>
                     {/* Category header - click to expand/collapse */}
                     <div
-                      className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
+                      className="flex items-center gap-4 p-4 bg-app-card rounded-[10px] border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
                       onClick={() =>
                         setExpandedCategories((prev) => {
                           const next = new Set(prev);
@@ -513,11 +513,11 @@ export default function MenuDetailClient({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                        <p className="font-bold text-app-text text-sm">{cat.name}</p>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
                         <Utensils className="w-3.5 h-3.5" />
-                        <span className="font-medium">
+                        <span className="font-normal">
                           {t('dishCount', { count: catItems.length })}
                         </span>
                       </div>
@@ -573,7 +573,7 @@ export default function MenuDetailClient({
                             ) : (
                               <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                             )}
-                            <span className="flex-1 text-sm text-app-text font-medium break-words">
+                            <span className="flex-1 text-sm text-app-text font-normal break-words">
                               {item.name}
                             </span>
 
@@ -633,7 +633,7 @@ export default function MenuDetailClient({
                               variant="outline"
                               onClick={() => toggleItemAvailable(item)}
                               className={cn(
-                                'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
+                                'px-2 py-0.5 rounded-full text-xs font-bold h-auto',
                                 item.is_available
                                   ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                   : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -660,8 +660,8 @@ export default function MenuDetailClient({
               })}
             </div>
           ) : (
-            <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
-              <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+            <div className="bg-app-card rounded-[10px] border border-app-border p-12 text-center">
+              <div className="w-14 h-14 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
                 <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
               <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
@@ -766,7 +766,7 @@ export default function MenuDetailClient({
                 variant="outline"
                 onClick={() => setItemFormAvailable(!itemFormAvailable)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold h-auto',
+                  'px-3 py-1.5 rounded-full text-xs font-bold h-auto',
                   itemFormAvailable
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-app-bg text-app-text-secondary border-app-border',

@@ -106,22 +106,22 @@ export default function NouveautesPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.05 }}
                 viewport={{ once: true }}
-                className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8"
+                className="rounded-[10px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8"
               >
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-neutral-100 dark:bg-neutral-800">
                     <update.icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                    <span className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                       {update.date}
                     </span>
-                    <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                    <span className="rounded-full px-2.5 py-0.5 text-xs font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
                       {update.tag}
                     </span>
                   </div>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-neutral-900 dark:text-white">
+                <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-white">
                   {update.title}
                 </h3>
                 <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
@@ -144,7 +144,7 @@ export default function NouveautesPage() {
           </p>
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center rounded-lg bg-black px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-900"
+            className="inline-flex items-center justify-center rounded-lg bg-black px-8 py-4 text-base font-bold text-white transition-colors hover:bg-neutral-900"
           >
             Commencer gratuitement
           </Link>

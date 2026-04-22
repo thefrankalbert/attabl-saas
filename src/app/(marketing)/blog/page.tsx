@@ -52,7 +52,7 @@ export default function BlogPage() {
             <article key={article.slug} className="group">
               <Link href={`/blog/${article.slug}`} className="block">
                 <div className="mb-3 flex items-center gap-3 text-sm text-neutral-400 dark:text-neutral-500">
-                  <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
+                  <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-normal text-neutral-900 dark:text-white">
                     {article.category}
                   </span>
                   <span>{article.date}</span>
@@ -65,7 +65,7 @@ export default function BlogPage() {
                 <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
                   {article.excerpt}
                 </p>
-                <span className="mt-4 inline-block text-sm font-semibold text-neutral-900 dark:text-white group-hover:underline">
+                <span className="mt-4 inline-block text-sm font-bold text-neutral-900 dark:text-white group-hover:underline">
                   Lire l&apos;article &rarr;
                 </span>
               </Link>

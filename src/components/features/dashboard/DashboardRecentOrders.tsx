@@ -59,7 +59,7 @@ export default function DashboardRecentOrders({
       {/* Recent Orders */}
       {showOrders && (
         <div
-          className={`min-h-[300px] @md:min-h-0 overflow-hidden rounded-2xl bg-app-card border border-app-border hover:border-app-border-hover transition-colors flex flex-col ${showStock ? 'col-span-1 @md:col-span-2' : 'col-span-1 @md:col-span-3'}`}
+          className={`min-h-[300px] @md:min-h-0 overflow-hidden rounded-[10px] bg-app-card border border-app-border hover:border-app-border-hover transition-colors flex flex-col ${showStock ? 'col-span-1 @md:col-span-2' : 'col-span-1 @md:col-span-3'}`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export default function DashboardRecentOrders({
                 <div key={order.id} className="px-6 py-4 hover:bg-app-bg/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-app-text font-black text-sm">
+                      <div className="w-11 h-11 rounded-[10px] bg-accent/10 border border-accent/20 flex items-center justify-center text-app-text font-black text-sm">
                         {order.table_number}
                       </div>
                       <div>
@@ -128,7 +128,7 @@ export default function DashboardRecentOrders({
                             variant="ghost"
                             size="icon"
                             onClick={() => onStatusChange(order.id, 'preparing')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] bg-status-info-bg text-status-info rounded-xl hover:bg-status-info-bg"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-status-info-bg text-status-info rounded-[10px] hover:bg-status-info-bg"
                             title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
@@ -139,7 +139,7 @@ export default function DashboardRecentOrders({
                             variant="ghost"
                             size="icon"
                             onClick={() => onStatusChange(order.id, 'ready')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] bg-status-success-bg text-status-success rounded-xl hover:bg-status-success-bg"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-status-success-bg text-status-success rounded-[10px] hover:bg-status-success-bg"
                             title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -150,7 +150,7 @@ export default function DashboardRecentOrders({
                             variant="ghost"
                             size="icon"
                             onClick={() => onStatusChange(order.id, 'delivered')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-app-bg text-app-text-secondary rounded-[10px] hover:bg-app-elevated"
                             title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -158,7 +158,7 @@ export default function DashboardRecentOrders({
                         )}
                         <Link
                           href={`${adminBase}/orders`}
-                          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated transition-colors"
+                          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-app-bg text-app-text-secondary rounded-[10px] hover:bg-app-elevated transition-colors"
                           title={t('viewDetails')}
                         >
                           <Eye className="w-4 h-4" />
@@ -172,7 +172,7 @@ export default function DashboardRecentOrders({
           ) : (
             <div className="flex-1 min-h-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-16 h-16 bg-app-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-4">
                   <ShoppingBag className="w-8 h-8 text-app-text-muted" />
                 </div>
                 <h3 className="font-bold text-app-text mb-1">{t('noOrders')}</h3>
@@ -186,7 +186,7 @@ export default function DashboardRecentOrders({
       {/* Stock Alerts */}
       {showStock && (
         <div
-          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 @md:col-span-3' : ''}`}
+          className={`overflow-hidden bg-app-card border border-app-border rounded-[10px] hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 @md:col-span-3' : ''}`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ export default function DashboardRecentOrders({
                   <div
                     key={item.id}
                     className={cn(
-                      'p-3.5 rounded-xl border transition-colors',
+                      'p-3.5 rounded-[10px] border transition-colors',
                       isOut
                         ? 'border-status-error/20 bg-status-error-bg'
                         : isLow
@@ -226,7 +226,7 @@ export default function DashboardRecentOrders({
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold text-app-text break-words">{item.name}</p>
-                      <span className="text-[10px] text-app-text-muted font-semibold uppercase">
+                      <span className="text-[10px] text-app-text-muted font-bold uppercase">
                         {item.unit}
                       </span>
                     </div>
@@ -260,7 +260,7 @@ export default function DashboardRecentOrders({
           ) : (
             <div className="flex-1 min-h-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-14 h-14 bg-app-bg rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <div className="w-14 h-14 bg-app-bg rounded-[10px] flex items-center justify-center mx-auto mb-3">
                   <Package className="w-6 h-6 text-app-text-muted" />
                 </div>
                 <p className="text-sm text-app-text-muted">{t('noDataAvailable')}</p>

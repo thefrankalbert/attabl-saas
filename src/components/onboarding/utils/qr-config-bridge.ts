@@ -19,7 +19,7 @@ export function onboardingDataToQRConfig(
   templateOverride?: QRTemplateId,
 ): QRDesignConfig {
   const templateId: QRTemplateId = templateOverride ?? (data.qrTemplate as QRTemplateId);
-  const primary = data.primaryColor || '#CCFF00';
+  const primary = data.primaryColor || '#2e7d32';
   const secondary = data.secondaryColor || '#000000';
 
   const base = createDefaultQRDesignConfig(primary, secondary);

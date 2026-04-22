@@ -81,7 +81,7 @@ export default function SearchOverlay({
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div className="flex-1 flex items-center gap-2 rounded-xl px-3 py-2.5 bg-app-elevated">
+            <div className="flex-1 flex items-center gap-2 rounded-[10px] px-3 py-2.5 bg-app-elevated">
               <Search className="w-4 h-4 text-app-text-muted" />
               <Input
                 ref={inputRef}

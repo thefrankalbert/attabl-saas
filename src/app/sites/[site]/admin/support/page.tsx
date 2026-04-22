@@ -31,7 +31,7 @@ const QUICK_LINKS = [
   {
     icon: ClipboardList,
     title: 'Commandes & KDS',
-    description: 'Ecran cuisine, routage des commandes, mode service et suivi en temps reel.',
+    description: 'Écran cuisine, routage des commandes, mode service et suivi en temps réel.',
     href: '#',
   },
   {
@@ -79,7 +79,7 @@ export default function SupportPage() {
         <div className="container mx-auto max-w-3xl py-8 px-4 space-y-8">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-muted flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[10px] bg-accent-muted flex items-center justify-center">
               <LifeBuoy className="w-5 h-5 text-accent" />
             </div>
             <div>
@@ -92,7 +92,7 @@ export default function SupportPage() {
 
           {/* Quick Links */}
           <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-app-text-muted mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-app-text-muted mb-4">
               Guides rapides
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -127,7 +127,7 @@ export default function SupportPage() {
 
           {/* FAQ */}
           <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-app-text-muted mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-app-text-muted mb-4">
               Questions fr\u00e9quentes
             </h2>
             <Card>
@@ -142,11 +142,11 @@ export default function SupportPage() {
             <Card className="border-accent/20 bg-accent-muted/30">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-accent-muted flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-[10px] bg-accent-muted flex items-center justify-center shrink-0">
                     <Mail className="w-6 h-6 text-accent" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold text-app-text">
+                    <h3 className="text-base font-bold text-app-text">
                       Besoin d&apos;aide suppl\u00e9mentaire ?
                     </h3>
                     <p className="text-sm text-app-text-secondary mt-1">
@@ -156,7 +156,7 @@ export default function SupportPage() {
                   </div>
                   <a
                     href="mailto:support@attabl.com"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-accent-text font-semibold text-sm hover:bg-accent-hover transition-colors shrink-0"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-accent text-accent-text font-bold text-sm hover:bg-accent-hover transition-colors shrink-0"
                   >
                     <Mail className="w-4 h-4" />
                     Contacter le support

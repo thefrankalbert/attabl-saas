@@ -43,10 +43,10 @@ function Tile({
         className,
       )}
     >
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted">
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[1.2px] text-app-text-muted">
         {label}
       </div>
-      <div className="font-mono text-[22px] font-medium leading-[1.1] tracking-tight text-app-text">
+      <div className="font-mono text-[22px] font-normal leading-[1.1] tracking-tight text-app-text">
         {value}
         {unit && <span className="ml-1 text-[13px] text-app-text-muted">{unit}</span>}
       </div>

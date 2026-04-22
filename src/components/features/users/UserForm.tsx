@@ -75,7 +75,7 @@ export default function UserForm({
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 text-sm rounded-none h-auto',
             activeTab === 'invite'
-              ? 'border-b-2 border-accent text-app-text font-medium'
+              ? 'border-b-2 border-accent text-app-text font-normal'
               : 'text-app-text-muted hover:text-app-text-secondary',
           )}
           onClick={() => setActiveTab('invite')}
@@ -89,7 +89,7 @@ export default function UserForm({
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 text-sm rounded-none h-auto',
             activeTab === 'direct'
-              ? 'border-b-2 border-accent text-app-text font-medium'
+              ? 'border-b-2 border-accent text-app-text font-normal'
               : 'text-app-text-muted hover:text-app-text-secondary',
           )}
           onClick={() => setActiveTab('direct')}

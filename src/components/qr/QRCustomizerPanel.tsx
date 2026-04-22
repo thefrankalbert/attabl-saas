@@ -118,7 +118,7 @@ function SliderField({ label, value, unit, min, max, step, onChange }: SliderFie
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-app-text">{title}</h3>
+      <h3 className="text-sm font-bold text-app-text">{title}</h3>
       {children}
     </div>
   );
@@ -184,7 +184,7 @@ export function QRCustomizerPanel({
   // ─── Render ─────────────────────────────────────────
 
   return (
-    <div className="bg-app-card rounded-xl border border-app-border p-4">
+    <div className="bg-app-card rounded-[10px] border border-app-border p-4">
       <Tabs defaultValue="template">
         {/* Tab triggers */}
         <TabsList className="grid w-full grid-cols-5 mb-4">
@@ -225,7 +225,7 @@ export function QRCustomizerPanel({
                   variant="outline"
                   onClick={() => setTemplate(id)}
                   className={`
-                    relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-2 text-left
+                    relative flex flex-col items-start gap-1.5 p-4 rounded-[10px] border-2 text-left
                     h-auto whitespace-normal
                     ${isSelected ? 'border-accent bg-app-bg' : 'border-app-border hover:border-app-text-muted bg-app-card'}
                   `}
@@ -243,7 +243,7 @@ export function QRCustomizerPanel({
                   >
                     {defaults.width}
                   </div>
-                  <span className="text-sm font-semibold text-app-text">{defaults.name}</span>
+                  <span className="text-sm font-bold text-app-text">{defaults.name}</span>
                   <span className="text-xs text-app-text-muted leading-tight">
                     {defaults.description}
                   </span>
@@ -294,7 +294,7 @@ export function QRCustomizerPanel({
                     variant={config.errorCorrection === value ? 'default' : 'outline'}
                     onClick={() => updateField('errorCorrection', value)}
                     className={`
-                      px-3 py-2 rounded-lg text-xs font-medium h-auto
+                      px-3 py-2 rounded-lg text-xs font-normal h-auto
                       ${
                         config.errorCorrection === value
                           ? 'border-accent bg-accent text-white'
@@ -381,7 +381,7 @@ export function QRCustomizerPanel({
 
                       {/* Preview of uploaded/selected logo */}
                       {config.logo.src && (
-                        <div className="relative rounded-xl border border-app-border p-2 bg-app-elevated">
+                        <div className="relative rounded-[10px] border border-app-border p-2 bg-app-elevated">
                           <div className="flex items-center gap-3">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -555,7 +555,7 @@ export function QRCustomizerPanel({
                         variant={config.shadow === value ? 'default' : 'outline'}
                         onClick={() => updateField('shadow', value)}
                         className={`
-                          px-2 py-1.5 rounded-lg text-xs font-medium h-auto
+                          px-2 py-1.5 rounded-lg text-xs font-normal h-auto
                           ${
                             config.shadow === value
                               ? 'border-accent bg-accent text-white'

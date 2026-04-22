@@ -157,17 +157,17 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
           {/* Summary Card -- Full width */}
           {showSummary && (
-            <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
+            <div className="mb-6 p-5 rounded-[10px] bg-app-elevated/40 border border-app-border">
               <div className="flex items-center gap-4 mb-5">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border/50"
+                  className="w-14 h-14 rounded-[10px] flex items-center justify-center shrink-0 border border-app-border/50"
                   style={{ backgroundColor: accentColor }}
                 >
                   {data.logoUrl ? (
                     <img
                       src={data.logoUrl}
                       alt="Logo"
-                      className="w-full h-full rounded-xl object-cover"
+                      className="w-full h-full rounded-[10px] object-cover"
                     />
                   ) : (
                     <Layout className="h-7 w-7 text-white" />
@@ -211,19 +211,19 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
           {/* Menu URL */}
           {showSummary && (
-            <div className="mb-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
+            <div className="mb-6 p-4 rounded-[10px] bg-app-elevated/40 border border-app-border">
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
                 Lien du menu
               </p>
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text break-all">
+                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-[10px] border border-app-border font-mono text-xs text-app-text break-all">
                   {menuUrl}
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handleCopyUrl}
-                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
+                  className="p-2.5 bg-app-bg rounded-[10px] border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
                   title={t('copyUrl')}
                 >
                   {copied ? (
@@ -236,13 +236,13 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                   href={menuUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
+                  className="p-2.5 bg-app-bg rounded-[10px] border border-app-border hover:border-accent/40 transition-colors"
                 >
                   <ExternalLink className="h-4 w-4 text-app-text-secondary" />
                 </a>
               </div>
               {copied && (
-                <p className="text-xs mt-2 font-medium" style={{ color: accentColor }}>
+                <p className="text-xs mt-2 font-normal" style={{ color: accentColor }}>
                   {t('urlCopied')}
                 </p>
               )}
@@ -269,7 +269,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
               </p>
 
               {/* Tab Pills */}
-              <div className="flex gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border inline-flex">
+              <div className="flex gap-1.5 mb-6 p-1 rounded-[10px] bg-app-elevated/40 border border-app-border inline-flex">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -279,7 +279,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       type="button"
                       variant={isActive ? 'default' : 'ghost'}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 h-auto ${
+                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold transition-all duration-200 h-auto ${
                         isActive
                           ? 'bg-accent text-accent-text'
                           : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
@@ -297,7 +297,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <div className="space-y-6">
                   {/* Templates */}
                   <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
+                    <p className="text-xs font-bold text-app-text-secondary mb-3">Template</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {TEMPLATES.map((tmpl) => {
                         const isSelected = data.qrTemplate === tmpl.id;
@@ -307,7 +307,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             type="button"
                             variant="outline"
                             onClick={() => updateData({ qrTemplate: tmpl.id })}
-                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
+                            className={`rounded-[10px] border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
                               isSelected
                                 ? 'border-accent bg-accent/5 '
                                 : 'border-app-border hover:border-app-border-hover'
@@ -318,7 +318,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             </div>
                             <div className="py-2 border-t border-app-border">
                               <span
-                                className={`text-xs font-semibold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
+                                className={`text-xs font-bold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
                               >
                                 {t(tmpl.labelKey)}
                               </span>
@@ -331,7 +331,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
                   {/* QR Color Styles */}
                   <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                    <p className="text-xs font-bold text-app-text-secondary mb-3">
                       {t('qrCodeTitle')}
                     </p>
                     <div className="flex gap-2.5">
@@ -345,7 +345,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             type="button"
                             variant="outline"
                             onClick={() => updateData({ qrStyle: style.id })}
-                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all p-0 ${
+                            className={`w-12 h-12 rounded-[10px] border flex items-center justify-center transition-all p-0 ${
                               isActive
                                 ? 'border-accent '
                                 : 'border-app-border hover:border-app-border-hover'
@@ -369,7 +369,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <div className="space-y-6">
                   {/* CTA Presets */}
                   <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                    <p className="text-xs font-bold text-app-text-secondary mb-3">
                       {t('qrCtaLabel')}
                     </p>
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -381,7 +381,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             type="button"
                             variant={isActive ? 'default' : 'outline'}
                             onClick={() => updateData({ qrCta: preset.value })}
-                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
+                            className={`px-4 py-2 rounded-[10px] text-xs font-normal transition-all h-auto ${
                               isActive
                                 ? 'bg-accent text-accent-text'
                                 : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
@@ -397,14 +397,14 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       value={data.qrCta}
                       onChange={(e) => updateData({ qrCta: e.target.value })}
                       placeholder={t('qrCtaLabel')}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-[10px] bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                       maxLength={60}
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                    <p className="text-xs font-bold text-app-text-secondary mb-3">
                       {t('qrDescriptionLabel')}
                     </p>
                     <Textarea
@@ -413,7 +413,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       placeholder={t('qrDescriptionLabel')}
                       rows={2}
                       maxLength={120}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-[10px] bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                     />
                   </div>
                 </div>

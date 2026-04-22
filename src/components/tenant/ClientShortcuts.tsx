@@ -86,13 +86,13 @@ function ShortcutButton({
       className="flex flex-col items-center gap-2 group active:scale-95 h-auto px-0 py-0"
     >
       <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-app-border group-hover:shadow-md transition-all bg-white"
+        className="w-14 h-14 rounded-[10px] flex items-center justify-center shadow-sm border border-app-border group-hover:shadow-md transition-all bg-white"
         style={{ color: color }}
       >
         {icon}
       </div>
       <span
-        className="text-[10px] font-semibold uppercase tracking-wide text-center leading-tight"
+        className="text-[10px] font-bold uppercase tracking-wide text-center leading-tight"
         style={{ color: 'rgb(115, 115, 115)' }}
       >
         {label}

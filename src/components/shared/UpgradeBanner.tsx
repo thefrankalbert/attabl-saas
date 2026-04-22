@@ -42,7 +42,7 @@ export function UpgradeBanner({
         <span className="flex-1">{message || defaultMessage}</span>
         <Link
           href={upgradeUrl}
-          className="text-amber-700 font-semibold hover:underline whitespace-nowrap flex items-center gap-1"
+          className="text-amber-700 font-bold hover:underline whitespace-nowrap flex items-center gap-1"
         >
           Passer au Premium
           <ArrowRight className="w-3 h-3" />
@@ -53,20 +53,20 @@ export function UpgradeBanner({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-6 ${className}`}
+      className={`relative overflow-hidden rounded-[10px] border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-6 ${className}`}
     >
       {/* Decorative gradient */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full" />
 
       <div className="relative">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[10px] bg-amber-500/10 flex items-center justify-center">
             <Crown className="w-5 h-5 text-amber-600" />
           </div>
           <div>
             <h3 className="font-bold text-app-text">Fonctionnalite Premium</h3>
             <p className="text-xs text-app-text-secondary">
-              Votre plan actuel : <span className="font-semibold">{planName}</span>
+              Votre plan actuel : <span className="font-bold">{planName}</span>
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export function UpgradeBanner({
 
         <Button
           asChild
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm rounded-[10px] hover:from-amber-600 hover:to-orange-600 transition-all shadow-sm"
         >
           <Link href={upgradeUrl}>
             <Crown className="w-4 h-4" />

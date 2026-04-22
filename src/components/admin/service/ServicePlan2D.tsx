@@ -150,12 +150,12 @@ export function ServicePlan2D({
           'repeating-linear-gradient(0deg, transparent 0 39px, var(--color-app-border, rgba(255,255,255,0.04)) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, var(--color-app-border, rgba(255,255,255,0.04)) 39px 40px)',
       }}
     >
-      <div className="absolute left-3 top-3 z-10 rounded-sm bg-app-bg px-2 py-0.5 text-[10px] font-semibold tracking-[1.5px] uppercase text-app-text-muted">
+      <div className="absolute left-3 top-3 z-10 rounded-sm bg-app-bg px-2 py-0.5 text-[10px] font-bold tracking-[1.5px] uppercase text-app-text-muted">
         {zoneName} · {labels.roomPlanLabel}
       </div>
 
       {editMode && (
-        <div className="absolute right-3 top-3 z-10 rounded-sm bg-accent-muted/40 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-accent">
+        <div className="absolute right-3 top-3 z-10 rounded-sm bg-accent-muted/40 px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-accent">
           {labels.editModeHint}
         </div>
       )}

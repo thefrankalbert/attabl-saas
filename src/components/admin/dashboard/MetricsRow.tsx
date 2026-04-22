@@ -95,7 +95,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[28px] font-medium tracking-tight text-app-text tabular-nums">
+              <span className="text-[28px] font-normal tracking-tight text-app-text tabular-nums">
                 {m.value}
               </span>
               {m.unit && (
@@ -106,7 +106,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             <div className="mt-1.5 flex items-center gap-2 font-mono text-[11px] text-app-text-muted">
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium',
+                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-normal',
                   deltaClass,
                 )}
               >

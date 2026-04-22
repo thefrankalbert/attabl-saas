@@ -114,7 +114,7 @@ export function OverviewChart({
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border flex-wrap">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
+        <div className="flex items-center gap-2 text-[13px] font-normal text-app-text">
           <Activity className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
         </div>
@@ -251,7 +251,7 @@ export function OverviewChart({
             }}
           >
             <div className="font-mono text-[10px] text-app-text-muted">{hovered.label}</div>
-            <div className="text-[15px] font-medium text-app-text tabular-nums mt-0.5">
+            <div className="text-[15px] font-normal text-app-text tabular-nums mt-0.5">
               {metric === 'revenue' ? formatValue(hovered.value) : `${hovered.value}`}
             </div>
             {hovered.prev !== undefined && hovered.prev > 0 && (

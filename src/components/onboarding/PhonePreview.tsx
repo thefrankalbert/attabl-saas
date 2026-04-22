@@ -168,7 +168,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                     style={{ width: '10px', height: '10px', color: '#9ca3af' }}
                     strokeWidth={1.5}
                   />
-                  <span className="text-[8px] font-medium" style={{ color: '#9ca3af' }}>
+                  <span className="text-[8px] font-normal" style={{ color: '#9ca3af' }}>
                     Rechercher un plat...
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             <div className="px-3 pt-1 pb-3" style={{ backgroundColor: '#ffffff' }}>
               {hasMenu && categories.length > 0 ? (
                 <>
-                  <p className="text-[8px] font-semibold mb-2" style={{ color: '#1f2937' }}>
+                  <p className="text-[8px] font-bold mb-2" style={{ color: '#1f2937' }}>
                     Nos saveurs
                   </p>
                   <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
@@ -255,7 +255,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               {hasMenu && featured.length > 0 ? (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[8px] font-semibold" style={{ color: '#1f2937' }}>
+                    <p className="text-[8px] font-bold" style={{ color: '#1f2937' }}>
                       À ne pas manquer
                     </p>
                     <span
@@ -395,7 +395,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
 
           {/* ═══ FLOATING CART BAR (teal) ═══ */}
           <div
-            className="absolute left-2 right-2 flex items-center justify-center gap-1.5 rounded-xl py-1.5"
+            className="absolute left-2 right-2 flex items-center justify-center gap-1.5 rounded-[10px] py-1.5"
             style={{
               bottom: '16px',
               backgroundColor: '#14b8a6',
@@ -411,7 +411,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             >
               <ShoppingCart style={{ width: '8px', height: '8px', color: '#ffffff' }} />
             </div>
-            <span className="font-semibold" style={{ fontSize: '7px', color: '#ffffff' }}>
+            <span className="font-bold" style={{ fontSize: '7px', color: '#ffffff' }}>
               Votre panier
             </span>
           </div>

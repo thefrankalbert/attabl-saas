@@ -235,7 +235,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
             onDragLeave={handleDragLeave}
             onClick={() => step !== 'extracting' && fileInputRef.current?.click()}
             className={cn(
-              'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all',
+              'relative flex flex-col items-center justify-center gap-3 rounded-[10px] border-2 border-dashed p-8 transition-all',
               step === 'extracting' ? 'cursor-default' : 'cursor-pointer',
               isDragOver
                 ? 'border-accent bg-accent/5'
@@ -254,22 +254,22 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
 
             {step === 'extracting' ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-accent/10 rounded-[10px] flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-accent animate-spin" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-app-text">{t('pdfImporting')}</p>
+                  <p className="text-sm font-normal text-app-text">{t('pdfImporting')}</p>
                   <p className="text-xs text-app-text-muted mt-1">{file?.name}</p>
                 </div>
               </div>
             ) : (
               <>
-                <div className="w-12 h-12 bg-app-card rounded-xl border border-app-border flex items-center justify-center">
+                <div className="w-12 h-12 bg-app-card rounded-[10px] border border-app-border flex items-center justify-center">
                   <Upload className="w-5 h-5 text-app-text-muted" />
                 </div>
                 {file ? (
                   <div className="text-center">
-                    <p className="text-sm font-semibold text-app-text">{file.name}</p>
+                    <p className="text-sm font-bold text-app-text">{file.name}</p>
                     <p className="text-xs text-app-text-secondary mt-0.5">
                       {formatFileSize(file.size)}
                     </p>
@@ -298,7 +298,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               variant="default"
               disabled={!file || !menuId || step === 'extracting'}
               onClick={handleExtract}
-              className="gap-2 rounded-xl"
+              className="gap-2 rounded-[10px]"
             >
               {step === 'extracting' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -315,15 +315,15 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {step === 'preview' && (
         <>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-app-text">{t('pdfPreview')}</p>
+            <p className="text-sm font-normal text-app-text">{t('pdfPreview')}</p>
             <p className="text-xs text-app-text-secondary">{t('pdfPreviewDesc')}</p>
-            <p className="text-xs text-accent font-medium">
+            <p className="text-xs text-accent font-normal">
               {t('pdfExtracted', { count: extractedItems.length })}
             </p>
           </div>
 
           {/* Scrollable item list */}
-          <div className="max-h-80 overflow-y-auto rounded-xl border border-app-border divide-y divide-app-border">
+          <div className="max-h-80 overflow-y-auto rounded-[10px] border border-app-border divide-y divide-app-border">
             {extractedItems.map((item, index) => (
               <div
                 key={`${item.category}-${item.name}-${index}`}
@@ -331,17 +331,17 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-normal uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
                       {item.category}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-app-text mt-1 break-words">{item.name}</p>
+                  <p className="text-sm font-normal text-app-text mt-1 break-words">{item.name}</p>
                   {item.description && (
                     <p className="text-xs text-app-text-secondary mt-0.5">{item.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold text-app-text tabular-nums">
+                  <span className="text-sm font-bold text-app-text tabular-nums">
                     {formatPrice(item.price)}
                   </span>
                   <Button
@@ -380,7 +380,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               variant="default"
               disabled={extractedItems.length === 0}
               onClick={handleImport}
-              className="gap-2 rounded-xl"
+              className="gap-2 rounded-[10px]"
             >
               <CheckCircle2 className="w-4 h-4" />
               {t('pdfConfirmImport')}
@@ -400,7 +400,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {/* Step: Done */}
       {step === 'done' && importResult && (
         <>
-          <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
+          <div className="rounded-[10px] border border-app-border bg-app-elevated p-4 space-y-2">
             {importResult.categoriesCreated > 0 && (
               <div className="flex items-center gap-2 text-sm text-emerald-600">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -421,7 +421,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
             )}
             {importResult.errors.length > 0 && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                <div className="flex items-center gap-2 text-sm font-normal text-red-600">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {t('errorsFound', { count: importResult.errors.length })}
                 </div>
@@ -438,7 +438,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
 
           {/* Close button */}
           <div className="flex justify-end pt-4 border-t border-app-border">
-            <Button variant="default" onClick={onCancel} className="rounded-xl">
+            <Button variant="default" onClick={onCancel} className="rounded-[10px]">
               {t('cancel')}
             </Button>
           </div>

@@ -78,7 +78,7 @@ export function LiveOrdersFeed({
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
+        <div className="flex items-center gap-2 text-[13px] font-normal text-app-text">
           <Zap className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{labels.title}</span>
         </div>
@@ -147,7 +147,7 @@ export function LiveOrdersFeed({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium text-[13px] tabular-nums">
+                  <div className="font-normal text-[13px] tabular-nums">
                     {formatValue((order.total_price ?? 0) + (order.tip_amount ?? 0))}
                   </div>
                   <div className="font-mono text-[10px] text-app-text-muted mt-[2px]">

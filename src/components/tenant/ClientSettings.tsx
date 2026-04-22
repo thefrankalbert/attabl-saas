@@ -80,7 +80,7 @@ function SettingsRow({
           <p className="text-[13px] font-bold truncate" style={{ color: 'rgb(26, 26, 26)' }}>
             {label}
           </p>
-          <p className="text-[12px] font-medium truncate" style={{ color: 'rgb(115, 115, 115)' }}>
+          <p className="text-[12px] font-normal truncate" style={{ color: 'rgb(115, 115, 115)' }}>
             {subtitle}
           </p>
         </div>
@@ -236,7 +236,7 @@ export default function ClientSettings({
       <div className="max-w-lg mx-auto px-4 space-y-5">
         {/* 1. Restaurant Profile Card */}
         <section
-          className="bg-white rounded-xl overflow-hidden"
+          className="bg-white rounded-[10px] overflow-hidden"
           style={{ border: '1px solid rgb(238, 238, 238)' }}
         >
           <div className="px-4 py-6 flex flex-col items-center text-center">
@@ -277,7 +277,7 @@ export default function ClientSettings({
           </h2>
 
           <section
-            className="bg-white rounded-xl overflow-hidden"
+            className="bg-white rounded-[10px] overflow-hidden"
             style={{ border: '1px solid rgb(238, 238, 238)' }}
           >
             <SettingsRow
@@ -311,7 +311,7 @@ export default function ClientSettings({
           </h2>
 
           <section
-            className="bg-white rounded-xl overflow-hidden"
+            className="bg-white rounded-[10px] overflow-hidden"
             style={{ border: '1px solid rgb(238, 238, 238)' }}
           >
             {/* Language */}
@@ -331,7 +331,7 @@ export default function ClientSettings({
                   <p className="text-[13px] font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {t('languageLabel')}
                   </p>
-                  <p className="text-[12px] font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
+                  <p className="text-[12px] font-normal" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('currentLanguage')}
                   </p>
                 </div>
@@ -388,7 +388,7 @@ export default function ClientSettings({
                   <p className="text-[13px] font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {t('currencyLabel')}
                   </p>
-                  <p className="text-[12px] font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
+                  <p className="text-[12px] font-normal" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('priceDisplay')}
                   </p>
                 </div>
@@ -405,7 +405,7 @@ export default function ClientSettings({
                     variant="outline"
                     onClick={() => handleCurrencyChange(c.code)}
                     className={cn(
-                      'flex-1 min-h-[44px] py-2.5 rounded-xl text-[13px] font-semibold',
+                      'flex-1 min-h-[44px] py-2.5 rounded-[10px] text-[13px] font-bold',
                       displayCurrency === c.code ? 'text-white' : 'bg-white',
                     )}
                     style={
@@ -429,7 +429,7 @@ export default function ClientSettings({
           </h2>
 
           <section
-            className="bg-white rounded-xl overflow-hidden"
+            className="bg-white rounded-[10px] overflow-hidden"
             style={{ border: '1px solid rgb(238, 238, 238)' }}
           >
             <SettingsRow
@@ -478,7 +478,7 @@ export default function ClientSettings({
             </h2>
 
             <section
-              className="bg-white rounded-xl overflow-hidden"
+              className="bg-white rounded-[10px] overflow-hidden"
               style={{ border: '1px solid rgb(238, 238, 238)' }}
             >
               {hasAddress && (
@@ -517,7 +517,7 @@ export default function ClientSettings({
           </h2>
 
           <section
-            className="bg-white rounded-xl overflow-hidden"
+            className="bg-white rounded-[10px] overflow-hidden"
             style={{ border: '1px solid rgb(238, 238, 238)' }}
           >
             <SettingsRow
@@ -551,10 +551,10 @@ export default function ClientSettings({
 
         {/* 7. Footer */}
         <div className="text-center pt-4 pb-6 space-y-1">
-          <p className="text-[11px] font-medium" style={{ color: 'rgb(176, 176, 176)' }}>
+          <p className="text-[11px] font-normal" style={{ color: 'rgb(176, 176, 176)' }}>
             {t('poweredBy')}
           </p>
-          <p className="text-[11px] font-medium" style={{ color: 'rgb(176, 176, 176)' }}>
+          <p className="text-[11px] font-normal" style={{ color: 'rgb(176, 176, 176)' }}>
             {t('appVersion')}
           </p>
         </div>
@@ -663,7 +663,7 @@ export default function ClientSettings({
             </div>
             <div className="px-10 py-10 pb-20 overflow-y-auto max-h-[85vh]">
               <div className="text-center mb-10">
-                <h3 className="text-[11px] font-medium" style={{ color: 'rgb(26, 26, 26)' }}>
+                <h3 className="text-[11px] font-normal" style={{ color: 'rgb(26, 26, 26)' }}>
                   ATTABL
                 </h3>
               </div>

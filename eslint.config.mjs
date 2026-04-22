@@ -28,10 +28,13 @@ const eslintConfig = defineConfig([
     'prototype-*.{js,jsx,ts,tsx}',
   ]),
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui
-  // Les fichiers dans src/components/ui/ sont exclus (ce sont les composants shadcn eux-memes)
+  // Les fichiers dans src/components/ui/ sont exclus (ce sont les composants
+  // shadcn eux-memes). src/components/tenant/ui/ est exclu aussi: ce sont les
+  // primitives du design system tenant refonte (wrappers CVA maison qui
+  // necessitent les elements natifs, meme pattern que shadcn).
   {
     files: ['src/**/*.tsx'],
-    ignores: ['src/components/ui/**'],
+    ignores: ['src/components/ui/**', 'src/components/tenant/ui/**'],
     rules: {
       'react/forbid-elements': [
         'warn',

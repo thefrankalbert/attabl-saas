@@ -35,7 +35,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
         {/* Enable/disable toggle */}
         <div className="flex items-center justify-between p-4 rounded-lg border border-app-border">
           <div>
-            <Label className="text-sm font-medium text-app-text">{t('enableAutoLock')}</Label>
+            <Label className="text-sm font-normal text-app-text">{t('enableAutoLock')}</Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('screenLockedAfterIdle')}</p>
           </div>
           <Label className="relative inline-flex items-center cursor-pointer">
@@ -97,7 +97,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
                       : 'border-app-border hover:border-app-text-muted'
                   }`}
                 >
-                  <div className="font-medium text-sm text-app-text">{t('overlaySimple')}</div>
+                  <div className="font-normal text-sm text-app-text">{t('overlaySimple')}</div>
                   <div className="text-xs text-app-text-secondary mt-0.5">{t('clickToUnlock')}</div>
                 </Button>
                 <Button
@@ -110,7 +110,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
                       : 'border-app-border hover:border-app-text-muted'
                   }`}
                 >
-                  <div className="font-medium text-sm text-app-text">{t('passwordRequired')}</div>
+                  <div className="font-normal text-sm text-app-text">{t('passwordRequired')}</div>
                   <div className="text-xs text-app-text-secondary mt-0.5">
                     {t('reenterPassword')}
                   </div>

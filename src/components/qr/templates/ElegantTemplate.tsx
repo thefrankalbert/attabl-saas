@@ -84,7 +84,7 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
         {/* Table name in elegant badge */}
         {tableName && (
           <div
-            className="mb-4 px-5 py-1.5 text-sm font-semibold text-center"
+            className="mb-4 px-5 py-1.5 text-sm font-bold text-center"
             style={{
               border: `1px solid ${config.templateAccentColor}`,
               borderRadius: '4px',

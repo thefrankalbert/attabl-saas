@@ -97,8 +97,8 @@ export function ErrorLayout({
                     'aspect-square rounded-full flex items-center justify-center',
                     cell.filled
                       ? isTenant
-                        ? 'bg-[#E6F9F0]'
-                        : 'bg-[#CCFF00]/10 dark:bg-[#CCFF00]/15'
+                        ? 'bg-[#E8F5E9]'
+                        : 'bg-[#2e7d32]/10 dark:bg-[#2e7d32]/15'
                       : isTenant
                         ? 'bg-[#F6F6F6] border border-[#EEEEEE]'
                         : 'bg-neutral-100 border border-neutral-200 dark:bg-white/5 dark:border-white/10',
@@ -106,10 +106,7 @@ export function ErrorLayout({
                 >
                   {Icon && (
                     <Icon
-                      className={cn(
-                        'h-6 w-6 sm:h-8 sm:w-8',
-                        isTenant ? 'text-[#06C167]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
-                      )}
+                      className={cn('h-6 w-6 sm:h-8 sm:w-8', 'text-[#2e7d32] dark:text-[#66bb6a]')}
                     />
                   )}
                 </div>

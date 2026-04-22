@@ -177,7 +177,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
                 href={`${basePath}${tile.path}`}
                 className={cn(
                   'flex-1 flex flex-col items-center justify-center gap-2.5',
-                  'rounded-xl border transition-colors duration-150',
+                  'rounded-[10px] border transition-colors duration-150',
                   'active:scale-[0.97] touch-manipulation min-h-[80px]',
                   tile.featured
                     ? 'bg-accent border-accent/20 hover:border-accent/40'
@@ -193,7 +193,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
                 />
                 <span
                   className={cn(
-                    'text-sm font-semibold text-center leading-tight px-2',
+                    'text-sm font-bold text-center leading-tight px-2',
                     tile.featured ? 'text-accent-text' : 'text-accent',
                   )}
                 >
@@ -219,10 +219,10 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
             <Link
               key={tile.id}
               href={`${basePath}${tile.path}`}
-              className="relative flex flex-col items-center justify-center gap-2 rounded-xl border border-app-border bg-app-card hover:border-app-border-hover hover:bg-app-hover transition-colors duration-150 active:scale-[0.97] touch-manipulation"
+              className="relative flex flex-col items-center justify-center gap-2 rounded-[10px] border border-app-border bg-app-card hover:border-app-border-hover hover:bg-app-hover transition-colors duration-150 active:scale-[0.97] touch-manipulation"
             >
               <Icon className="w-5 h-5 text-app-text-secondary" strokeWidth={1.6} />
-              <span className="text-xs font-semibold text-center leading-tight px-2 text-app-text">
+              <span className="text-xs font-bold text-center leading-tight px-2 text-app-text">
                 {t(tile.labelKey)}
               </span>
             </Link>

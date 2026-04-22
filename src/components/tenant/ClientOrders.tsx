@@ -340,7 +340,7 @@ export default function ClientOrders({
         {!showHistory && (
           <Button
             asChild
-            className="h-12 px-8 rounded-xl bg-app-text text-white text-[15px] font-semibold hover:bg-black"
+            className="h-12 px-8 rounded-[10px] bg-app-text text-white text-[15px] font-bold hover:bg-black"
           >
             <Link href={`/sites/${tenantSlug}/menu`}>
               <ArrowLeft className="w-4 h-4" />
@@ -361,7 +361,7 @@ export default function ClientOrders({
     >
       {/* Order ready banner (active mode only) */}
       {!showHistory && showReadyBanner && (
-        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-app-text">
+        <div className="relative text-white rounded-[10px] px-4 py-4 flex items-center gap-3 bg-app-text">
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -392,7 +392,7 @@ export default function ClientOrders({
         return (
           <div
             key={order.id}
-            className="rounded-xl overflow-hidden bg-white border border-app-border"
+            className="rounded-[10px] overflow-hidden bg-white border border-app-border"
           >
             {/* Collapsed header */}
             <Button
@@ -405,7 +405,7 @@ export default function ClientOrders({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="whitespace-nowrap text-base font-semibold text-app-text">
+                    <span className="whitespace-nowrap text-base font-bold text-app-text">
                       {shortOrderNumber(order)}
                     </span>
                     <BadgeStatus status={order.status} />
@@ -476,16 +476,14 @@ export default function ClientOrders({
                         >
                           {/* Thumbnail placeholder 48x48 */}
                           <div
-                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-app-elevated border border-app-border"
+                            className="shrink-0 rounded-[10px] flex items-center justify-center w-12 h-12 bg-app-elevated border border-app-border"
                             aria-hidden
                           >
                             <ShoppingBag className="w-5 h-5 text-app-text-muted" />
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm font-semibold text-app-text">
-                              {item.name}
-                            </p>
+                            <p className="truncate text-sm font-bold text-app-text">{item.name}</p>
                             <p className="text-xs text-app-text-secondary">
                               {item.quantity} x {formatDisplayPrice(item.price, currency)}
                             </p>
@@ -522,7 +520,7 @@ export default function ClientOrders({
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full h-12 rounded-xl bg-app-text text-white text-[15px] font-semibold hover:bg-black"
+                          className="w-full h-12 rounded-[10px] bg-app-text text-white text-[15px] font-bold hover:bg-black"
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -543,7 +541,7 @@ export default function ClientOrders({
                             e.stopPropagation();
                             handleReorder(order);
                           }}
-                          className="w-full h-12 rounded-xl bg-white border-app-border text-app-text text-[15px] font-semibold"
+                          className="w-full h-12 rounded-[10px] bg-white border-app-border text-app-text text-[15px] font-bold"
                         >
                           <RotateCcw className="w-4 h-4" />
                           {t('reorder')}
@@ -574,7 +572,7 @@ function OrdersSkeleton() {
       aria-live="polite"
     >
       {[0, 1, 2].map((i) => (
-        <div key={i} className="rounded-xl p-4 bg-white border border-app-border">
+        <div key={i} className="rounded-[10px] p-4 bg-white border border-app-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="h-5 w-20 rounded-md animate-pulse bg-app-elevated" />
@@ -624,7 +622,7 @@ function BadgeStatus({ status }: { status: string }) {
 
   return (
     <span
-      className="px-2.5 py-1 rounded-lg text-[11px] leading-[15px] font-medium"
+      className="px-2.5 py-1 rounded-lg text-[11px] leading-[15px] font-normal"
       style={{
         backgroundColor: colors.bg,
         color: colors.color,

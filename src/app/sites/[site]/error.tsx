@@ -32,7 +32,7 @@ export default function TenantError({
       code="500"
       brand={
         <div className="flex items-center gap-3">
-          <div className="rounded-xl p-2.5" style={{ backgroundColor: '#06C167' }}>
+          <div className="rounded-[10px] p-2.5" style={{ backgroundColor: '#2e7d32' }}>
             <UtensilsCrossed className="h-6 w-6 text-white" />
           </div>
           <span className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
@@ -45,7 +45,7 @@ export default function TenantError({
       debug={
         process.env.NODE_ENV === 'development' ? (
           <div
-            className="p-3 rounded-xl text-left border border-[#EEEEEE]"
+            className="p-3 rounded-[10px] text-left border border-[#EEEEEE]"
             style={{ backgroundColor: '#FEF2F2' }}
           >
             <p className="text-xs font-mono break-all" style={{ color: '#DC2626' }}>
@@ -58,7 +58,7 @@ export default function TenantError({
         <>
           <Button
             onClick={reset}
-            className="gap-2 h-12 rounded-xl text-white font-semibold px-6"
+            className="gap-2 h-12 rounded-[10px] text-white font-bold px-6"
             style={{ backgroundColor: '#1A1A1A' }}
           >
             <RefreshCw className="w-4 h-4" />
@@ -67,7 +67,7 @@ export default function TenantError({
           <Button
             asChild
             variant="ghost"
-            className="gap-2 h-12 rounded-xl"
+            className="gap-2 h-12 rounded-[10px]"
             style={{ color: '#737373' }}
           >
             <Link href={site ? `/sites/${site}/menu` : '/'}>
