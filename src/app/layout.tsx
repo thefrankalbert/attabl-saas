@@ -14,6 +14,7 @@ import {
   Lato,
   Open_Sans,
   Source_Sans_3,
+  Sora,
 } from 'next/font/google';
 import './globals.css';
 import { Suspense } from 'react';
@@ -123,6 +124,17 @@ const sourceSans3 = Source_Sans_3({
   display: 'swap',
 });
 
+// Sora is the display font used by marketing landing pages, blog articles
+// and the i18n nouveautes/features sections via
+// `font-[family-name:var(--font-sora)]`. Adding it here ensures the variable
+// is defined; otherwise the class silently fell back to the body default.
+const sora = Sora({
+  variable: '--font-sora',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -173,6 +185,7 @@ export default async function RootLayout({
           lato.variable,
           openSans.variable,
           sourceSans3.variable,
+          sora.variable,
           'antialiased font-sans',
         )}
         suppressHydrationWarning
