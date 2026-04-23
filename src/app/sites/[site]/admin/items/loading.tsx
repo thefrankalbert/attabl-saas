@@ -1,32 +1,42 @@
 export default function ItemsLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      {/* Header + search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="h-7 w-28 bg-app-elevated rounded" />
-        <div className="flex gap-2">
-          <div className="h-10 w-48 bg-app-elevated rounded-lg" />
-          <div className="h-10 w-32 bg-app-elevated rounded-lg" />
+    <div className="h-full flex flex-col space-y-6 animate-pulse p-4 sm:p-6">
+      {/* Header Skeleton matching ItemsClient */}
+      <div className="shrink-0">
+        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
+          <div className="h-8 w-32 bg-app-elevated rounded-lg" />
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="h-9 w-44 bg-app-elevated rounded-lg" />
+            <div className="h-9 w-36 bg-app-elevated rounded-lg" />
+          </div>
+
+          <div className="h-9 w-32 bg-app-elevated rounded-lg lg:ml-auto" />
         </div>
       </div>
 
-      {/* Category filter pills */}
-      <div className="flex gap-2 overflow-hidden">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-8 w-20 bg-app-elevated rounded-full shrink-0" />
-        ))}
-      </div>
+      {/* Items list container */}
+      <div className="flex-1 min-h-0 bg-app-card rounded-xl border border-app-border overflow-visible mt-6">
+        {/* Select all header skeleton */}
+        <div className="h-10 border-b border-app-border bg-app-bg/30 flex items-center px-4 gap-3">
+          <div className="h-4 w-4 bg-app-elevated rounded" />
+          <div className="h-3 w-20 bg-app-elevated rounded" />
+        </div>
 
-      {/* Items grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="border border-app-border rounded-xl overflow-hidden">
-            <div className="h-36 bg-app-elevated" />
-            <div className="p-4 space-y-2">
-              <div className="h-4 w-3/4 bg-app-elevated rounded" />
-              <div className="h-3 w-1/2 bg-app-elevated rounded" />
-              <div className="h-5 w-20 bg-app-elevated rounded mt-2" />
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-wrap @md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-4 py-3 border-b border-app-border last:border-b-0 overflow-visible"
+          >
+            <div className="h-4 w-4 bg-app-elevated rounded shrink-0" />
+            <div className="h-12 w-12 bg-app-elevated rounded-lg shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/3 bg-app-elevated rounded" />
+              <div className="h-3 w-1/4 bg-app-elevated/60 rounded" />
             </div>
+            <div className="h-5 w-16 bg-app-elevated rounded shrink-0 text-right" />
+            <div className="h-7 w-20 bg-app-elevated rounded-full shrink-0" />
+            <div className="h-5 w-5 bg-app-elevated rounded shrink-0" />
           </div>
         ))}
       </div>

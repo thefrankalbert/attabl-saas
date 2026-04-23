@@ -262,10 +262,38 @@ export default function DashboardClient(props: DashboardClientProps) {
   // ── Loading
   if (loading) {
     return (
-      <div className="h-full flex flex-col p-4 sm:p-6 gap-4 overflow-hidden">
-        <div className="h-8 w-48 sm:w-64 rounded-lg bg-app-elevated/30 animate-pulse" />
-        <div className="h-[120px] rounded-[10px] bg-app-elevated/30 animate-pulse" />
-        <div className="flex-1 rounded-[10px] bg-app-elevated/30 animate-pulse" />
+      <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 lg:h-full lg:overflow-hidden lg:pb-6 animate-pulse">
+        {/* Header row */}
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <div className="h-7 w-64 bg-app-elevated/30 rounded-lg" />
+            <div className="h-4 w-48 bg-app-elevated/30 rounded mt-2" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-28 bg-app-elevated/30 rounded-md" />
+            <div className="h-9 w-28 bg-app-elevated/30 rounded-md" />
+            <div className="h-9 w-28 bg-app-elevated/30 rounded-md" />
+          </div>
+        </div>
+
+        {/* Metrics Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-24 bg-app-elevated/30 rounded-xl border border-app-border/50"
+            />
+          ))}
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5 flex-1 min-h-0">
+          <div className="flex flex-col gap-5">
+            <div className="h-[400px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
+            <div className="h-[300px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
+          </div>
+          <div className="h-full bg-app-elevated/30 rounded-xl border border-app-border/50" />
+        </div>
       </div>
     );
   }
