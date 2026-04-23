@@ -283,7 +283,7 @@ export default function POSProductBrowser({
                       key={item.id}
                       variant="outline"
                       onClick={() => handleItemClick(item)}
-                      className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal"
+                      className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal overflow-visible"
                     >
                       <div className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
                         {item.image_url ? (

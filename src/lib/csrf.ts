@@ -15,7 +15,13 @@ export function verifyOrigin(request: Request): NextResponse | null {
   // Allow requests with matching origin
   if (origin) {
     const allowedOrigins = [appUrl, `https://${appDomain}`, `https://www.${appDomain}`];
+
+    // In development, allow any localhost port
+    const isLocalDev =
+      process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost:');
+
     if (
+      isLocalDev ||
       allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
       origin.endsWith(`.${appDomain}`)
     ) {
@@ -25,7 +31,8 @@ export function verifyOrigin(request: Request): NextResponse | null {
 
   // Allow requests with matching referer (fallback)
   if (referer) {
-    if (referer.includes(appDomain)) {
+    const isLocalReferer = process.env.NODE_ENV === 'development' && referer.includes('localhost:');
+    if (isLocalReferer || referer.includes(appDomain)) {
       return null; // OK
     }
   }
