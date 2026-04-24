@@ -1,15 +1,25 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
+import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
 
 export default function ResetPasswordPage() {
   return (
@@ -29,16 +39,17 @@ export default function ResetPasswordPage() {
 }
 
 function ResetPasswordContent() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
   const [sessionReady, setSessionReady] = useState(false);
   const [checking, setChecking] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const form = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  });
 
   // Detect recovery session via two mechanisms:
   // 1. Primary: PASSWORD_RECOVERY event from onAuthStateChange (client-side token in URL hash)
@@ -80,34 +91,23 @@ function ResetPasswordContent() {
     };
   }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
-      return;
-    }
-
-    setLoading(true);
-
+  const onSubmit = async (data: ResetPasswordInput) => {
     try {
       const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await supabase.auth.updateUser({ password: data.password });
 
       if (updateError) {
         const code = (updateError as { code?: string }).code;
         const msg = updateError.message?.toLowerCase() ?? '';
         logger.error('Password update failed', { error: updateError.message, code });
         if (code === 'same_password' || msg.includes('same') || msg.includes('different')) {
-          setError('Le nouveau mot de passe doit être différent de l\u2019ancien.');
+          form.setError('root', {
+            message: "Le nouveau mot de passe doit etre different de l'ancien.",
+          });
         } else {
-          setError('Erreur lors de la mise à jour du mot de passe. Veuillez réessayer.');
+          form.setError('root', {
+            message: 'Erreur lors de la mise a jour du mot de passe. Veuillez reessayer.',
+          });
         }
       } else {
         setSuccess(true);
@@ -115,11 +115,12 @@ function ResetPasswordContent() {
         setTimeout(() => router.push('/login'), 3000);
       }
     } catch {
-      setError('Une erreur est survenue. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
+      form.setError('root', { message: 'Une erreur est survenue. Veuillez reessayer.' });
     }
   };
+
+  const password = form.watch('password');
+  const confirmPassword = form.watch('confirmPassword');
 
   return (
     <AuthLayout>
@@ -130,9 +131,9 @@ function ResetPasswordContent() {
             <div className="w-14 h-14 bg-status-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-status-success" />
             </div>
-            <h1 className="text-2xl font-bold text-app-text mb-2">Mot de passe mis à jour</h1>
+            <h1 className="text-2xl font-bold text-app-text mb-2">Mot de passe mis a jour</h1>
             <p className="text-sm text-app-text-secondary mb-6">
-              Votre mot de passe a été changé avec succès. Vous allez être redirigé vers la page de
+              Votre mot de passe a ete change avec succes. Vous allez etre redirige vers la page de
               connexion.
             </p>
             <Button onClick={() => router.push('/login')} className="w-full min-h-[44px]">
@@ -151,9 +152,9 @@ function ResetPasswordContent() {
             <div className="w-14 h-14 bg-status-warning-bg rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-7 h-7 text-status-warning" />
             </div>
-            <h1 className="text-2xl font-bold text-app-text mb-2">Lien expiré</h1>
+            <h1 className="text-2xl font-bold text-app-text mb-2">Lien expire</h1>
             <p className="text-sm text-app-text-secondary mb-6">
-              Ce lien de réinitialisation est invalide ou a expiré. Veuillez en demander un nouveau.
+              Ce lien de reinitialisation est invalide ou a expire. Veuillez en demander un nouveau.
             </p>
             <Button onClick={() => router.push('/forgot-password')} className="w-full min-h-[44px]">
               Demander un nouveau lien
@@ -169,90 +170,104 @@ function ResetPasswordContent() {
               </p>
             </div>
 
-            {error && (
+            {form.formState.errors.root && (
               <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
-                >
-                  Nouveau mot de passe
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Minimum 8 caractères"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoFocus
-                    className="min-h-[44px] pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Hide password"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text h-auto w-auto p-0"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
-                >
-                  Confirmer le mot de passe
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Retapez votre mot de passe"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="min-h-[44px]"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-app-text-secondary font-medium text-xs uppercase tracking-widest">
+                        Nouveau mot de passe
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Minimum 8 caracteres"
+                            autoFocus
+                            className="min-h-[44px] pr-10"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Hide password"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text h-auto w-auto p-0"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              {/* Password strength hints */}
-              <div className="flex gap-2 text-xs">
-                <span
-                  className={password.length >= 8 ? 'text-status-success' : 'text-app-text-muted'}
-                >
-                  8+ caractères
-                </span>
-                <span className="text-app-border">|</span>
-                <span
-                  className={
-                    password === confirmPassword && confirmPassword.length > 0
-                      ? 'text-status-success'
-                      : 'text-app-text-muted'
-                  }
-                >
-                  Mots de passe identiques
-                </span>
-              </div>
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-app-text-secondary font-medium text-xs uppercase tracking-widest">
+                        Confirmer le mot de passe
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Retapez votre mot de passe"
+                          className="min-h-[44px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                type="submit"
-                disabled={loading || password.length < 8 || password !== confirmPassword}
-                className="w-full min-h-[44px]"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Mettre à jour le mot de passe
-              </Button>
-            </form>
+                {/* Password strength hints */}
+                <div className="flex gap-2 text-xs">
+                  <span
+                    className={password.length >= 8 ? 'text-status-success' : 'text-app-text-muted'}
+                  >
+                    8+ caracteres
+                  </span>
+                  <span className="text-app-border">|</span>
+                  <span
+                    className={
+                      password === confirmPassword && confirmPassword.length > 0
+                        ? 'text-status-success'
+                        : 'text-app-text-muted'
+                    }
+                  >
+                    Mots de passe identiques
+                  </span>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                  className="w-full min-h-[44px]"
+                >
+                  {form.formState.isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Mettre a jour le mot de passe
+                </Button>
+              </form>
+            </Form>
           </>
         )}
       </div>
