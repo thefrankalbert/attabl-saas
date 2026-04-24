@@ -307,10 +307,10 @@ export default function DashboardClient(props: DashboardClientProps) {
       {/* Page head (greeting + quick-action Links) - full width, fixed on lg+ */}
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="text-[22px] font-medium tracking-tight text-app-text">
+          <h1 className="text-[22px] font-medium tracking-tight text-app-text truncate max-w-[600px]">
             {t(greetKey)}, {userName || tenantName}
-            <span className="text-app-text-muted font-normal"> - {t('pageSubtitle')}</span>
           </h1>
+          <p className="text-[13px] text-app-text-muted font-normal mt-0">{t('pageSubtitle')}</p>
           <p
             className="font-mono text-[13px] text-app-text-secondary mt-0.5"
             suppressHydrationWarning
