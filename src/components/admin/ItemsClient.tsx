@@ -208,7 +208,7 @@ export default function ItemsClient({
 
       const menuItemService = createMenuItemService(supabase);
       if (editingItem) {
-        await menuItemService.updateMenuItem(editingItem.id, payload);
+        await menuItemService.updateMenuItem(editingItem.id, tenantId, payload);
         toast({ title: t('itemUpdated') });
       } else {
         const limitCheck = await actionCheckCanAddMenuItem(tenantId);
@@ -247,7 +247,7 @@ export default function ItemsClient({
     if (!deleteTarget) return;
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.deleteMenuItem(deleteTarget.id);
+      await menuItemService.deleteMenuItem(deleteTarget.id, tenantId);
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
