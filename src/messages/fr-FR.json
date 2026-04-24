@@ -110,14 +110,26 @@
     "next": "Suivant"
   },
   "checkout": {
-    "successTitle": "Paiement réussi !",
-    "successDescription": "Votre abonnement est maintenant actif. Vous bénéficiez de 14 jours d'essai gratuit.",
-    "goToDashboard": "Accéder à mon dashboard",
+    "successTitle": "Paiement reussi !",
+    "successDescription": "Votre abonnement est maintenant actif. Vous beneficiez de 14 jours d'essai gratuit.",
+    "goToDashboard": "Acceder a mon dashboard",
     "login": "Se connecter",
-    "backToHome": "Retour à l'accueil",
-    "cancelTitle": "Paiement annulé",
-    "cancelDescription": "Votre paiement a été annulé. Vous pouvez réessayer à tout moment.",
-    "retry": "Réessayer"
+    "backToHome": "Retour a l'accueil",
+    "cancelTitle": "Paiement annule",
+    "cancelDescription": "Votre paiement a ete annule. Vous pouvez reessayer a tout moment.",
+    "retry": "Reessayer",
+    "page": {
+      "title": "ATTABL - Abonnement",
+      "subscribingTo": "Vous souscrivez a",
+      "monthly": "/ mois",
+      "yearly": "/ an",
+      "semiannual": "/ 6 mois",
+      "securePayment": "Paiement securise par Stripe - vos donnees bancaires sont protegees",
+      "loading": "Chargement du formulaire de paiement...",
+      "errorTitle": "Impossible de charger le paiement",
+      "errorDescription": "Une erreur est survenue. Veuillez reessayer ou contacter le support.",
+      "retry": "Retour"
+    }
   },
   "menu": {
     "selectMenu": "Sélectionnez votre carte",
