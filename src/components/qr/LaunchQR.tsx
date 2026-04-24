@@ -80,7 +80,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
   if (!mounted) {
     return (
       <div className="p-4 rounded-xl border border-app-border bg-app-card">
-        <div className="flex items-center justify-center" style={{ minHeight: 200 }}>
+        <div className="flex items-center justify-center min-h-[200px]">
           <div className="w-32 h-32 bg-app-elevated rounded-lg animate-pulse" />
         </div>
       </div>
@@ -91,9 +91,8 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
     <div className="rounded-xl border border-app-border bg-app-card overflow-hidden">
       {/* Template Preview - dot pattern background */}
       <div
-        className="bg-app-elevated p-6 flex items-center justify-center"
+        className="bg-app-elevated p-6 flex items-center justify-center min-h-[260px]"
         style={{
-          minHeight: 260,
           backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
           backgroundSize: '12px 12px',
         }}

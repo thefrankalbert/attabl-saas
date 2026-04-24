@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Shield, Zap, Globe, BarChart3, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 
 type UpdateTag = 'tagNew' | 'tagImprovement';
 type DateKey = 'dateFeb2026' | 'dateJan2026' | 'dateDec2025';
@@ -111,12 +112,9 @@ export default function NouveautesPage() {
             {t('ctaTitle')}
           </h2>
           <p className="mb-10 text-lg text-neutral-600 dark:text-neutral-400">{t('ctaSubtitle')}</p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center rounded-lg bg-black px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-900"
-          >
-            {t('ctaButton')}
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/signup">{t('ctaButton')}</Link>
+          </Button>
         </div>
       </section>
     </>

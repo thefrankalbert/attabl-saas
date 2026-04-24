@@ -28,10 +28,10 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
 
   return (
     <div
-      className={`flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm ${styleConfig.containerClass}`}
+      className={`flex items-center justify-between gap-2 @sm:gap-3 px-3 @sm:px-4 py-2 @sm:py-2.5 text-xs @sm:text-sm ${styleConfig.containerClass}`}
       role="alert"
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+      <div className="flex items-center gap-1.5 @sm:gap-2 min-w-0 flex-wrap">
         <Clock className={`w-4 h-4 flex-shrink-0 ${styleConfig.iconClass}`} />
         <span className={`font-medium ${styleConfig.textClass}`}>{message}</span>
         <Link

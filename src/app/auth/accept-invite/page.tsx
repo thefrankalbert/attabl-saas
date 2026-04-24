@@ -82,12 +82,12 @@ function AcceptInviteForm() {
             className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
           >
             <AlertDescription className="text-sm">
-              Lien d&apos;invitation invalide. Verifiez le lien dans votre email.
+              Lien d&apos;invitation invalide. V&#233;rifiez le lien dans votre email.
             </AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-app-text-secondary">
             <Link href="/login" className="font-semibold text-app-text hover:underline">
-              Retour a la connexion
+              Retour &#224; la connexion
             </Link>
           </p>
         </div>
@@ -106,13 +106,13 @@ function AcceptInviteForm() {
             className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
           >
             <AlertDescription className="text-sm">
-              Ce lien d&apos;invitation a expire. Demandez a l&apos;administrateur de vous renvoyer
-              une invitation.
+              Ce lien d&apos;invitation a expir&#233;. Demandez &#224; l&apos;administrateur de vous
+              renvoyer une invitation.
             </AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-app-text-secondary">
             <Link href="/login" className="font-semibold text-app-text hover:underline">
-              Retour a la connexion
+              Retour &#224; la connexion
             </Link>
           </p>
         </div>
@@ -183,10 +183,10 @@ function AcceptInviteForm() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-app-text mb-2">
-            Vous avez ete invite !
+            Vous avez &#233;t&#233; invit&#233; !
           </h1>
           <p className="text-app-text-secondary text-sm">
-            Rejoignez l&apos;equipe sur ATTABL en creant votre compte.
+            Rejoignez l&apos;equipe sur ATTABL en cr&#233;ant votre compte.
           </p>
         </div>
 
@@ -307,7 +307,7 @@ function AcceptInviteForm() {
 
         {/* Login link */}
         <p className="text-center text-sm text-app-text-secondary">
-          Vous avez deja un compte ?{' '}
+          Vous avez d&#233;j&#224; un compte ?{' '}
           <Link href="/login" className="font-semibold text-app-text hover:underline">
             Se connecter
           </Link>
@@ -316,7 +316,7 @@ function AcceptInviteForm() {
 
       {/* Help text below card */}
       <p className="mt-6 text-center text-xs text-app-text-muted max-w-sm mx-auto leading-relaxed">
-        Si vous avez deja un compte ATTABL, connectez-vous pour accepter automatiquement
+        Si vous avez d&#233;j&#224; un compte ATTABL, connectez-vous pour accepter automatiquement
         l&apos;invitation.
       </p>
     </div>
@@ -326,7 +326,7 @@ function AcceptInviteForm() {
 // --- Main Page ---
 export default function AcceptInvitePage() {
   return (
-    <div className="min-h-dvh w-full flex items-center justify-center bg-app-bg px-4 py-6 sm:py-10">
+    <div className="w-full flex items-center justify-center bg-app-bg px-4 py-6 sm:py-10">
       <div className="w-full max-w-md">
         <Suspense
           fallback={

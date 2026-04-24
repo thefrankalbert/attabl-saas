@@ -173,7 +173,7 @@ export default function AnnouncementsClient({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 @sm:mt-4">
         {announcements.length > 0 ? (
           <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
             {announcements.map((ann) => (
@@ -208,7 +208,7 @@ export default function AnnouncementsClient({
                   {ann.is_active ? t('statusActive') : t('statusInactive')}
                 </span>
                 <div
-                  className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0"
+                  className="flex items-center gap-1 @lg:opacity-0 @lg:group-hover:opacity-100 transition-opacity shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Button

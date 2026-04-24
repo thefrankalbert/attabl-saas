@@ -296,7 +296,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             <div className="shrink-0 space-y-3">
               {/* Header - single line on desktop */}
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Truck className="w-6 h-6" />
                   {t('title')}
                   <span className="text-base font-normal text-app-text-secondary">
@@ -333,14 +333,14 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   ))}
                 </div>
 
-                <Button onClick={openAdd} variant="default" className="gap-2 lg:ml-auto shrink-0">
+                <Button onClick={openAdd} variant="default" className="gap-2 @lg:ml-auto shrink-0">
                   <Plus className="w-4 h-4" />
                   {t('addSupplier')}
                 </Button>
               </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
               {/* Table / Cards */}
               <ResponsiveDataTable
                 columns={columns}

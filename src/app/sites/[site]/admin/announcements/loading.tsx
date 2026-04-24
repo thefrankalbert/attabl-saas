@@ -1,14 +1,33 @@
 export default function AnnouncementsLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-7 w-36 bg-app-elevated rounded" />
-        <div className="h-10 w-40 bg-app-elevated rounded-lg" />
+    <div className="h-full flex flex-col animate-pulse p-4 sm:p-6 lg:p-8">
+      <div className="shrink-0 flex items-center">
+        <div className="inline-flex items-center gap-2 border border-app-border rounded-lg px-1.5 py-1">
+          <div className="h-4 w-6 bg-app-elevated rounded" />
+          <div className="h-7 w-36 bg-app-elevated rounded-md" />
+        </div>
       </div>
-      <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-20 bg-app-elevated rounded-xl" />
-        ))}
+
+      <div className="flex-1 mt-2 sm:mt-4 bg-app-card rounded-xl border border-app-border overflow-hidden">
+        <div className="divide-y divide-app-border">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3">
+              <div className="flex-1 space-y-1.5">
+                <div className="h-4 w-48 bg-app-elevated rounded" />
+                <div className="h-3 w-72 bg-app-elevated rounded" />
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="h-3 w-3 bg-app-elevated rounded" />
+                <div className="h-3 w-20 bg-app-elevated rounded" />
+              </div>
+              <div className="h-5 w-16 bg-app-elevated rounded shrink-0" />
+              <div className="flex items-center gap-1 shrink-0">
+                <div className="h-8 w-8 bg-app-elevated rounded" />
+                <div className="h-8 w-8 bg-app-elevated rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

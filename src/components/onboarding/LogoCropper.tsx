@@ -56,6 +56,7 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
 
 export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCropperProps) {
   const tc = useTranslations('common');
+  const to = useTranslations('onboarding');
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -103,7 +104,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
       <div className="w-full max-w-md rounded-2xl bg-app-card overflow-hidden border border-app-border">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
-          <h3 className="font-bold text-app-text">Recadrer le logo</h3>
+          <h3 className="font-bold text-app-text">{to('cropTitle')}</h3>
           <Button
             type="button"
             variant="ghost"
@@ -177,7 +178,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             onClick={onCancel}
             disabled={applying}
           >
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             type="button"
@@ -188,12 +189,12 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             {applying ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Envoi...
+                {to('cropUploading')}
               </>
             ) : (
               <>
                 <Check className="h-4 w-4 mr-2" />
-                Appliquer
+                {to('cropApply')}
               </>
             )}
           </Button>

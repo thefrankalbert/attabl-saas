@@ -38,18 +38,12 @@ export default function VideoHero() {
 
           {/* CTA row */}
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              href="/signup"
-              className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-            >
-              {t('ctaPrimary')}
-            </Link>
-            <Link
-              href="/contact"
-              className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-8 py-4 text-base font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
-            >
-              {t('ctaSecondary')}
-            </Link>
+            <Button asChild size="lg">
+              <Link href="/signup">{t('ctaPrimary')}</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/contact">{t('ctaSecondary')}</Link>
+            </Button>
           </div>
 
           {/* Segment pills */}

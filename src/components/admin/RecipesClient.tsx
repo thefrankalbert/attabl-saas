@@ -209,7 +209,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           {/* Header + Filters - single line on desktop */}
           <div className="shrink-0 space-y-3">
             <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-              <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                 <BookOpenCheck className="w-6 h-6" />
                 {t('recipesTech')}
                 <span className="text-base font-normal text-app-text-secondary">
@@ -245,11 +245,11 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           </div>
 
           {/* Layout: Items list + Recipe editor */}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
             <div className="flex flex-col @lg:flex-row gap-6">
               {/* Items List */}
               <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
-                <div className="max-h-[400px] md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
+                <div className="max-h-[400px] @md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
                     const hasRecipe = itemsWithRecipes.has(item.id);
                     const isSelected = selectedItemId === item.id;
@@ -310,7 +310,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     {loadingRecipe ? (
                       <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
                     ) : (
-                      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[300px] md:max-h-[400px]">
+                      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[300px] @md:max-h-[400px]">
                         {recipeLines.map((line, idx) => (
                           <div
                             key={idx}

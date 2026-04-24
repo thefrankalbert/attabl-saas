@@ -19,10 +19,7 @@ function SubmitButton() {
     <Button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white hover:bg-neutral-800 dark:hover:bg-neutral-100"
-      style={{
-        backgroundColor: pending ? 'rgba(0, 0, 0, 0.5)' : undefined,
-      }}
+      className={`w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white hover:bg-neutral-800 dark:hover:bg-neutral-100${pending ? ' bg-black/50' : ''}`}
     >
       {pending ? (
         <span className="flex items-center justify-center gap-2">
