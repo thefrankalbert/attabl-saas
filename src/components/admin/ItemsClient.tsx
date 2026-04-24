@@ -289,14 +289,14 @@ export default function ItemsClient({
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {seg.items}
               <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
             </h1>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                <SelectTrigger className="h-9 w-full @sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -309,7 +309,7 @@ export default function ItemsClient({
                 </SelectContent>
               </Select>
               <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-                <SelectTrigger className="h-9 w-full sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                <SelectTrigger className="h-9 w-full @sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('all')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,7 +330,7 @@ export default function ItemsClient({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 pb-6">
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
@@ -406,7 +406,7 @@ export default function ItemsClient({
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="flex flex-wrap @md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                  className="flex flex-wrap @md:flex-nowrap items-center gap-2 @sm:gap-3 md:gap-4 px-3 @sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
                   <Checkbox
                     aria-label={`${tc('select') || 'Select'} ${item.name}`}
@@ -426,11 +426,11 @@ export default function ItemsClient({
                       alt={item.name}
                       width={48}
                       height={48}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-app-border shrink-0"
+                      className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg object-cover border border-app-border shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-app-bg flex items-center justify-center shrink-0">
-                      <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-app-text-muted" />
+                    <div className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg bg-app-bg flex items-center justify-center shrink-0">
+                      <ImageIcon className="w-4 h-4 @sm:w-5 @sm:h-5 text-app-text-muted" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
