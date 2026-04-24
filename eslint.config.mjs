@@ -1,4 +1,56 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
+
+// Viewport breakpoints forbidden in admin/features components.
+// Admin components live inside a @container, so they MUST use container
+// queries (@sm:, @md:, @lg:, @xl:, @2xl:) - NOT viewport queries
+// (sm:, md:, lg:, xl:, 2xl:).
+// Using viewport queries makes layout depend on window size instead of
+// the available container width, breaking tablet layouts where the
+// sidebar shrinks the content area below the viewport breakpoint.
+const noViewportInAdminRule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow viewport breakpoints (sm:, md:, lg:, xl:, 2xl:) in admin/features components. Use container queries (@sm:, @md:, @lg:, @xl:, @2xl:) instead.',
+    },
+    messages: {
+      useContainerQuery:
+        'Found viewport query "{{vq}}" - use container query "{{cq}}" instead in admin/features. ' +
+        'Admin components are inside a @container; viewport queries ignore the sidebar width.',
+    },
+    schema: [],
+  },
+  create(context) {
+    const VP_TO_CQ = { 'sm:': '@sm:', 'md:': '@md:', 'lg:': '@lg:', 'xl:': '@xl:', '2xl:': '@2xl:' };
+
+    // Patterns that are legitimately viewport-based even inside admin components:
+    // - sm:max-w-* / sm:w-* : Dialog/Sheet sizing (modal overlays the viewport)
+    // - lg:hidden / lg:flex / lg:block : sidebar show/hide is viewport-driven
+    // - lg:flex-row / lg:flex-col : top-level shell flex direction
+    const ALLOWED = /(?:sm:|md:|lg:|xl:)(?:max-w-|min-w-|w-\[|hidden|flex$|block$|flex-row|flex-col|flex-col$)/;
+
+    function checkString(node, value) {
+      const matches = value.match(/(?<![/@\w])(?:2xl|xl|lg|md|sm):/g);
+      if (!matches) return;
+      // Skip if the whole value is a known-allowed pattern
+      if (ALLOWED.test(value)) return;
+      for (const vq of matches) {
+        const cq = VP_TO_CQ[vq];
+        if (cq) context.report({ node, messageId: 'useContainerQuery', data: { vq, cq } });
+      }
+    }
+
+    return {
+      Literal(node) {
+        if (typeof node.value === 'string') checkString(node, node.value);
+      },
+      TemplateLiteral(node) {
+        node.quasis.forEach((q) => checkString(q, q.value.raw));
+      },
+    };
+  },
+};
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettier from 'eslint-config-prettier';
@@ -49,6 +101,19 @@ const eslintConfig = defineConfig([
       'jsx-a11y/no-redundant-roles': 'error',
       'jsx-a11y/tabindex-no-positive': 'error',
       'jsx-a11y/scope': 'error',
+    },
+  },
+  // Responsive guardrail: interdire les viewport queries dans les composants dashboard.
+  // Ces composants sont rendus dans un @container (main-content, AdminLayoutClient:133).
+  // Viewport queries (sm:, md:, lg:) ignorent la sidebar et brisent le layout tablette.
+  // Regle scopee a dashboard/ uniquement pour eviter les faux positifs sur les Dialogs
+  // et AdminLayoutClient qui eux utilisent legitiment les viewport queries.
+  {
+    files: ['src/components/admin/dashboard/**/*.{ts,tsx}'],
+    ignores: ['**/__tests__/**'],
+    plugins: { attabl: { rules: { 'no-viewport-in-admin': noViewportInAdminRule } } },
+    rules: {
+      'attabl/no-viewport-in-admin': 'error',
     },
   },
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui
