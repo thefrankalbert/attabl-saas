@@ -266,7 +266,7 @@ export default function MenuDetailClient({
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_available: newValue } : i)));
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.toggleAvailable(item.id, newValue);
+      await menuItemService.toggleAvailable(item.id, newValue, tenantId);
     } catch {
       // Rollback
       setItems((prev) =>
@@ -293,7 +293,7 @@ export default function MenuDetailClient({
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)));
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.updatePrice(item.id, newPrice);
+      await menuItemService.updatePrice(item.id, newPrice, tenantId);
       toast({ title: t('itemSaved') });
     } catch {
       // Rollback
@@ -326,7 +326,7 @@ export default function MenuDetailClient({
         image_url: itemFormImageUrl || null,
       };
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.updateMenuItem(editingItem.id, payload);
+      await menuItemService.updateMenuItem(editingItem.id, tenantId, payload);
 
       // Optimistic update
       setItems((prev) =>

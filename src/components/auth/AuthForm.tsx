@@ -353,10 +353,13 @@ function AuthForm({ mode }: AuthFormProps) {
           <Input
             id="email"
             type="email"
+            name="email"
+            autoComplete="email"
             placeholder={tForm('emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            aria-required="true"
             className="h-11 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
           />
         </div>
@@ -382,12 +385,15 @@ function AuthForm({ mode }: AuthFormProps) {
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
+              name="password"
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
               placeholder={
                 isLogin ? tForm('passwordPlaceholderLogin') : tForm('passwordPlaceholderSignup')
               }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-required="true"
               minLength={isLogin ? undefined : 8}
               className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
             />
