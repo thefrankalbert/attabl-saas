@@ -201,85 +201,35 @@ export default function MenuItemCard({
           {(item.is_featured || isNew || item.is_vegetarian || item.is_spicy) && (
             <div className="flex flex-wrap items-center gap-1 mb-1">
               {item.is_featured && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    letterSpacing: '1px',
-                    color: 'rgb(115, 115, 115)',
-                    backgroundColor: 'rgb(246, 246, 246)',
-                    padding: '2px 6px',
-                    borderRadius: '8px',
-                    lineHeight: 1.4,
-                  }}
-                >
+                <span className="text-[11px] font-medium tracking-[1px] text-[#737373] bg-[#F6F6F6] px-[6px] py-[2px] rounded-lg leading-[1.4]">
                   {tt('popularBadge')}
                 </span>
               )}
               {isNew && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    letterSpacing: '1px',
-                    color: 'rgb(115, 115, 115)',
-                    backgroundColor: 'rgb(246, 246, 246)',
-                    padding: '2px 6px',
-                    borderRadius: '8px',
-                    lineHeight: 1.4,
-                  }}
-                >
+                <span className="text-[11px] font-medium tracking-[1px] text-[#737373] bg-[#F6F6F6] px-[6px] py-[2px] rounded-lg leading-[1.4]">
                   {tt('newBadge')}
                 </span>
               )}
               {item.is_vegetarian && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    letterSpacing: '1px',
-                    color: 'rgb(115, 115, 115)',
-                    backgroundColor: 'rgb(246, 246, 246)',
-                    padding: '2px 6px',
-                    borderRadius: '8px',
-                    lineHeight: 1.4,
-                  }}
-                >
+                <span className="text-[11px] font-medium tracking-[1px] text-[#737373] bg-[#F6F6F6] px-[6px] py-[2px] rounded-lg leading-[1.4]">
                   {tt('veggieBadge')}
                 </span>
               )}
               {item.is_spicy && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    letterSpacing: '1px',
-                    color: 'rgb(115, 115, 115)',
-                    backgroundColor: 'rgb(246, 246, 246)',
-                    padding: '2px 6px',
-                    borderRadius: '8px',
-                    lineHeight: 1.4,
-                  }}
-                >
+                <span className="text-[11px] font-medium tracking-[1px] text-[#737373] bg-[#F6F6F6] px-[6px] py-[2px] rounded-lg leading-[1.4]">
                   {tt('spicyBadge')}
                 </span>
               )}
             </div>
           )}
           {/* Item name - 16px SemiBold #1A1A1A max 2 lines */}
-          <h3
-            className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5"
-            style={{ color: 'rgb(26, 26, 26)' }}
-          >
+          <h3 className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5 text-[#1A1A1A]">
             {getTranslatedContent(language, item.name, item.name_en)}
           </h3>
 
           {/* Description - 13px Regular #737373 max 2 lines */}
           {description && (
-            <p
-              className="text-[13px] font-normal leading-[1.4] line-clamp-2 mt-1"
-              style={{ color: 'rgb(115, 115, 115)' }}
-            >
+            <p className="text-[13px] font-normal leading-[1.4] line-clamp-2 mt-1 text-[#737373]">
               {description}
             </p>
           )}
@@ -296,18 +246,12 @@ export default function MenuItemCard({
           {/* Rating row - renders when rating data is available */}
           {item.rating != null && item.rating > 0 && (
             <div className="flex items-center gap-1 mt-1.5">
-              <Star className="w-3 h-3 fill-allergen" style={{ color: 'rgb(255, 184, 0)' }} />
-              <span
-                className="text-[13px] font-medium leading-[1.4]"
-                style={{ color: 'rgb(26, 26, 26)' }}
-              >
+              <Star className="w-3 h-3 fill-allergen text-[#FFB800]" />
+              <span className="text-[13px] font-medium leading-[1.4] text-[#1A1A1A]">
                 {item.rating.toFixed(1)}
               </span>
               {item.rating_count != null && (
-                <span
-                  className="text-[13px] font-normal leading-[1.4]"
-                  style={{ color: 'rgb(176, 176, 176)' }}
-                >
+                <span className="text-[13px] font-normal leading-[1.4] text-[#B0B0B0]">
                   ({item.rating_count}+)
                 </span>
               )}
@@ -319,18 +263,12 @@ export default function MenuItemCard({
         <div className="mt-2">
           <div className="flex items-center flex-wrap gap-2">
             {/* Price - 15px Bold #1A1A1A (NOT green) */}
-            <span
-              className="text-[15px] font-bold leading-[1.4]"
-              style={{ color: 'rgb(26, 26, 26)' }}
-            >
+            <span className="text-[15px] font-bold leading-[1.4] text-[#1A1A1A]">
               {formattedPrice}
             </span>
 
             {item.calories != null && item.calories > 0 && (
-              <span
-                className="text-[13px] font-normal leading-[1.4]"
-                style={{ color: 'rgb(115, 115, 115)' }}
-              >
+              <span className="text-[13px] font-normal leading-[1.4] text-[#737373]">
                 {' - '}
                 {tt('calories', { n: item.calories })}
               </span>
@@ -338,10 +276,7 @@ export default function MenuItemCard({
           </div>
 
           {hasModifiersOrVariants && (
-            <span
-              className="text-[11px] font-medium leading-[1.4] mt-1 block"
-              style={{ color: 'rgb(176, 176, 176)' }}
-            >
+            <span className="text-[11px] font-medium leading-[1.4] mt-1 block text-[#B0B0B0]">
               {tt('customizable')}
             </span>
           )}
@@ -380,14 +315,9 @@ export default function MenuItemCard({
                       className={cn(
                         'w-full px-3 py-2.5 text-left text-sm h-auto rounded-none',
                         selectedVariant?.id === variant.id
-                          ? 'font-bold bg-app-elevated'
+                          ? 'font-bold bg-app-elevated text-[#1A1A1A]'
                           : 'text-app-text-secondary',
                       )}
-                      style={
-                        selectedVariant?.id === variant.id
-                          ? { color: 'rgb(26, 26, 26)' }
-                          : undefined
-                      }
                     >
                       {getVariantName(variant)} -{' '}
                       {resolveAndFormatPrice(variant.price, variant.prices, currency)}
@@ -448,23 +378,16 @@ export default function MenuItemCard({
               />
             </>
           ) : isDrinkCategory ? (
-            <Martini className="w-8 h-8" style={{ color: 'rgb(176, 176, 176)' }} />
+            <Martini className="w-8 h-8 text-[#B0B0B0]" />
           ) : (
-            <Utensils className="w-8 h-8" style={{ color: 'rgb(176, 176, 176)' }} />
+            <Utensils className="w-8 h-8 text-[#B0B0B0]" />
           )}
         </div>
 
         {/* Add button or quantity badge - absolute bottom-right offset -8px */}
-        <div
-          className="absolute"
-          style={{ bottom: '-8px', right: '-8px' }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="absolute -bottom-2 -right-2" onClick={(e) => e.stopPropagation()}>
           {cartItem ? (
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ backgroundColor: 'rgb(26, 26, 26)' }}
-            >
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white bg-[#1A1A1A]">
               {cartItem.quantity}
             </div>
           ) : !isUnavailable ? (

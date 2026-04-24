@@ -256,7 +256,7 @@ export default function ItemDetailSheet({
             {/* Scrollable content (flex-1) - scroll inside this area only, button stays put */}
             <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
               <div className="px-6 pb-3 pt-4">
-                {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #06C167 */}
+                {/* Category label */}
                 {category && (
                   <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-app-text">
                     {category}

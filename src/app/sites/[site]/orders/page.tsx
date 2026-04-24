@@ -30,14 +30,13 @@ export default async function OrdersPage({
   if (!tenant) return notFound();
 
   return (
-    <div className="h-full bg-white" style={{ color: '#1A1A1A' }}>
+    <div className="h-full bg-white text-[#1A1A1A]">
       {/* Header: sticky back button, same bg as page, no title */}
       <div className="sticky top-0 z-40 bg-white">
         <div className="max-w-lg mx-auto px-3 py-2">
           <Link
             href={showHistory ? `/sites/${tenantSlug}/settings` : `/sites/${tenantSlug}`}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F6F6F6] text-[#1A1A1A]"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
