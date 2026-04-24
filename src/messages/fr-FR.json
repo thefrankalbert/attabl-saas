@@ -1481,7 +1481,11 @@
     "logoAcceptedFormats": "Formats acceptés : PNG, JPG, WebP, SVG, GIF",
     "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
-    "addressPlaceholder": "123 Rue de la République...",
+    "addressPlaceholder": "123 Rue de la Republique...",
+    "city": "Ville",
+    "cityPlaceholder": "ex: Douala",
+    "country": "Pays",
+    "countryPlaceholder": "ex: Cameroun",
     "phonePlaceholder": "+235 66 77 88 99",
     "modify": "Modifier",
     "recommendedFormat": "Format recommandé : PNG ou JPG",
@@ -3133,7 +3137,13 @@
     "continueButton": "Continuer",
     "optional": "optionnel",
     "studioTitle": "Bienvenue dans votre studio",
-    "studioSubtitle": "Configurez votre menu digital en quelques minutes"
+    "studioSubtitle": "Configurez votre menu digital en quelques minutes",
+    "cropTitle": "Recadrer le logo",
+    "cropApply": "Appliquer",
+    "cropUploading": "Envoi...",
+    "previewHighlights": "A ne pas manquer",
+    "previewViewMenu": "Voir le menu complet",
+    "previewCart": "Votre panier"
   },
   "auditLog": {
     "title": "Journal d'audit",

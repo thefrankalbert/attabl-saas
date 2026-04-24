@@ -1482,6 +1482,10 @@
     "logoUploading": "Uploading logo...",
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 Main Street...",
+    "city": "City",
+    "cityPlaceholder": "ex: Douala",
+    "country": "Country",
+    "countryPlaceholder": "ex: Cameroon",
     "phonePlaceholder": "+1 555 123 4567",
     "modify": "Edit",
     "recommendedFormat": "Recommended format: PNG or JPG",
@@ -3133,7 +3137,13 @@
     "continueButton": "Continue",
     "optional": "optional",
     "studioTitle": "Welcome to your studio",
-    "studioSubtitle": "Set up your digital menu in just a few minutes"
+    "studioSubtitle": "Set up your digital menu in just a few minutes",
+    "cropTitle": "Crop logo",
+    "cropApply": "Apply",
+    "cropUploading": "Uploading...",
+    "previewHighlights": "Not to miss",
+    "previewViewMenu": "View full menu",
+    "previewCart": "Your cart"
   },
   "auditLog": {
     "title": "Audit Log",
