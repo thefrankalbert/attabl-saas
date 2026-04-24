@@ -175,7 +175,7 @@ export default function ClientSettings({
 
   const setLanguage = useCallback((l: string) => {
     const newLocale = l === 'fr' ? 'fr-FR' : 'en-US';
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Strict;Secure`;
     window.location.reload();
   }, []);
 
