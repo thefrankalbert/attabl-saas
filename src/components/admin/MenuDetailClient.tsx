@@ -293,7 +293,7 @@ export default function MenuDetailClient({
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)));
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.updatePrice(item.id, newPrice);
+      await menuItemService.updatePrice(item.id, newPrice, tenantId);
       toast({ title: t('itemSaved') });
     } catch {
       // Rollback
