@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -42,6 +43,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const tc = useTranslations('common');
 
   const [activeTab, setActiveTab] = useSessionState<SettingsTab>('settings:activeTab', 'identity');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setActiveTab(value as SettingsTab);
+      // Reset scroll to top so each tab starts from the beginning
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    },
+    [setActiveTab],
+  );
 
   const {
     form,
@@ -66,7 +77,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       >
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as SettingsTab)}
+          onValueChange={handleTabChange}
           className="flex flex-col flex-1 min-h-0"
         >
           <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
@@ -74,14 +85,17 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               <TabsTrigger
                 key={key}
                 value={key}
-                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 sm:px-4 lg:px-6 xl:px-8 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
+                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 @sm:px-4 @lg:px-6 @xl:px-8 py-3 min-h-[44px] text-xs @sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
               >
                 {t(labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          <div
+            ref={scrollRef}
+            className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6"
+          >
             {/* Identity tab (includes domain + language) */}
             <SettingsIdentity
               form={form}
@@ -134,7 +148,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               type="submit"
               variant="default"
               disabled={saving || uploading}
-              className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
+              className="min-w-[120px] @sm:min-w-[150px] min-h-[44px]"
             >
               {saving ? (
                 <>
