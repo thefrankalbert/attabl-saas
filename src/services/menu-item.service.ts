@@ -11,14 +11,21 @@ export function createMenuItemService(supabase: SupabaseClient) {
     /**
      * Create a new menu item.
      */
-    async createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<void> {
-      const { error } = await supabase
+    async createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<string> {
+      if (!tenantId) throw new ServiceError('tenant_id manquant', 'VALIDATION');
+      const { data, error } = await supabase
         .from('menu_items')
-        .insert([{ ...payload, tenant_id: tenantId }]);
+        .insert([{ ...payload, tenant_id: tenantId }])
+        .select('id')
+        .single();
 
       if (error) {
         throw new ServiceError('Erreur lors de la creation du plat', 'INTERNAL', error);
       }
+      if (!data?.id) {
+        throw new ServiceError('Plat non cree (RLS ou contrainte DB)', 'INTERNAL');
+      }
+      return data.id as string;
     },
 
     /**
