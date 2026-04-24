@@ -330,7 +330,7 @@ export default function ItemsClient({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 pb-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
