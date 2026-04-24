@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Search, ShoppingCart, Utensils } from 'lucide-react';
 
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -90,6 +91,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
+  const to = useTranslations('onboarding');
   const { primaryColor, logoUrl, tenantName, menuItems, currency } = data;
 
   const safePrimary = /^#[0-9A-Fa-f]{3,8}$/.test(primaryColor || '') ? primaryColor : '#1a1a2e';
@@ -256,7 +258,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                 <>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] font-semibold" style={{ color: '#1f2937' }}>
-                      À ne pas manquer
+                      {to('previewHighlights')}
                     </p>
                     <span
                       className="text-[10px] font-bold uppercase tracking-wider"
@@ -385,7 +387,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                 }}
               >
                 <Utensils style={{ width: '8px', height: '8px' }} />
-                <span className="text-[10px] font-bold">Voir le menu complet</span>
+                <span className="text-[10px] font-bold">{to('previewViewMenu')}</span>
               </div>
             </div>
 
@@ -412,7 +414,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               <ShoppingCart style={{ width: '8px', height: '8px', color: '#ffffff' }} />
             </div>
             <span className="font-semibold" style={{ fontSize: '7px', color: '#ffffff' }}>
-              Votre panier
+              {to('previewCart')}
             </span>
           </div>
 

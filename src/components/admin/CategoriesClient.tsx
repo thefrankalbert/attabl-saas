@@ -371,12 +371,12 @@ export default function CategoriesClient({
           <div className="flex items-center gap-2 ml-auto shrink-0">
             <Button onClick={openNewModal} variant="default" size="sm" className="gap-1.5 shrink-0">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('newCategory')}</span>
+              <span className="hidden @sm:inline">{t('newCategory')}</span>
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
           {/* List */}
           {loading ? (
             <div className="space-y-1">

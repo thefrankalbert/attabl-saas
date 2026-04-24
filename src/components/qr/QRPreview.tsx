@@ -36,10 +36,7 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
   const scale = useMemo(() => SCALE_MAP[config.templateId] ?? 0.7, [config.templateId]);
 
   return (
-    <div
-      className="bg-app-elevated rounded-2xl p-8 flex items-center justify-center"
-      style={{ minHeight: 400 }}
-    >
+    <div className="bg-app-elevated rounded-2xl p-8 flex items-center justify-center min-h-[400px]">
       {/* Dot pattern background */}
       <div
         className="relative flex items-center justify-center w-full h-full"

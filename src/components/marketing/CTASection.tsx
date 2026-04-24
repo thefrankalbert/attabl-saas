@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { Button } from '@/components/ui/button';
 
 export default async function CTASection() {
   const t = await getTranslations('marketing.home.cta');
@@ -12,18 +13,12 @@ export default async function CTASection() {
         </h2>
         <p className="mt-4 text-neutral-400">{t('subtitle')}</p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-          <Link
-            href="/signup"
-            className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-neutral-900 dark:text-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-200"
-          >
-            {t('primary')}
-          </Link>
-          <Link
-            href="/contact"
-            className="inline-block rounded-lg border border-neutral-600 px-8 py-4 font-semibold text-white transition-colors hover:bg-neutral-800"
-          >
-            {t('secondary')}
-          </Link>
+          <Button asChild size="lg" variant="secondary">
+            <Link href="/signup">{t('primary')}</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/contact">{t('secondary')}</Link>
+          </Button>
         </div>
         <p className="mt-6 text-sm text-neutral-500">{t('footer')}</p>
       </div>

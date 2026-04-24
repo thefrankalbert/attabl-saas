@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { Button } from '@/components/ui/button';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.about');
@@ -30,18 +31,12 @@ export default async function AboutPage() {
         <p>{t('techBody')}</p>
 
         <div className="mt-12 flex gap-4">
-          <Link
-            href="/contact"
-            className="inline-flex items-center rounded-xl bg-neutral-900 dark:bg-white px-6 py-3 text-sm font-semibold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
-          >
-            {t('contactButton')}
-          </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-3 text-sm font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
-          >
-            {t('pricingButton')}
-          </Link>
+          <Button asChild>
+            <Link href="/contact">{t('contactButton')}</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/pricing">{t('pricingButton')}</Link>
+          </Button>
         </div>
       </div>
     </div>

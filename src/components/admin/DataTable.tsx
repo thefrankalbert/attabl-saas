@@ -125,7 +125,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="px-4 xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
+                    className="px-4 @xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
@@ -187,7 +187,7 @@ export function DataTable<TData>({
 
       {/* Pagination footer - fixed at bottom, outside scroll */}
       {pageCount > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
+        <div className="flex flex-col @sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
           <p className="text-xs text-app-text-secondary">
             Page {currentPage} / {pageCount}
           </p>

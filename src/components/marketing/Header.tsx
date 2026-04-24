@@ -136,12 +136,9 @@ export default function Header() {
             >
               {t('login')}
             </Link>
-            <Link
-              href="/signup"
-              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors md:block"
-            >
-              {t('getStarted')}
-            </Link>
+            <Button asChild className="hidden md:flex">
+              <Link href="/signup">{t('getStarted')}</Link>
+            </Button>
 
             {/* Mobile hamburger */}
             <Button
@@ -277,13 +274,11 @@ export default function Header() {
                 </span>
                 <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors" />
               </div>
-              <Link
-                href="/signup"
-                onClick={() => setMobileOpen(false)}
-                className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
-              >
-                {t('getStartedFree')}
-              </Link>
+              <Button asChild className="w-full">
+                <Link href="/signup" onClick={() => setMobileOpen(false)}>
+                  {t('getStartedFree')}
+                </Link>
+              </Button>
             </div>
           </div>
         </div>

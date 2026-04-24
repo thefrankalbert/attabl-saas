@@ -42,9 +42,10 @@ function ResetPasswordContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
-  const [checking, setChecking] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  // If the URL already contains ?error=invalid_token the token is known-invalid — skip checking.
+  const [checking, setChecking] = useState(searchParams.get('error') !== 'invalid_token');
 
   const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
@@ -66,10 +67,8 @@ function ResetPasswordContent() {
       }
     });
 
-    // If the URL has ?error=invalid_token, the callback already rejected the token.
-    // Skip the fallback and show the expired state immediately.
+    // If the URL has ?error=invalid_token, checking was already initialised to false — just cleanup.
     if (searchParams.get('error') === 'invalid_token') {
-      setChecking(false);
       return () => subscription.unsubscribe();
     }
 
@@ -118,9 +117,6 @@ function ResetPasswordContent() {
       form.setError('root', { message: 'Une erreur est survenue. Veuillez reessayer.' });
     }
   };
-
-  const password = form.watch('password');
-  const confirmPassword = form.watch('confirmPassword');
 
   return (
     <AuthLayout>
@@ -237,17 +233,22 @@ function ResetPasswordContent() {
                   )}
                 />
 
-                {/* Password strength hints */}
+                {/* Password strength hints - read directly from form values to avoid form.watch() */}
                 <div className="flex gap-2 text-xs">
                   <span
-                    className={password.length >= 8 ? 'text-status-success' : 'text-app-text-muted'}
+                    className={
+                      (form.getValues('password') ?? '').length >= 8
+                        ? 'text-status-success'
+                        : 'text-app-text-muted'
+                    }
                   >
                     8+ caracteres
                   </span>
                   <span className="text-app-border">|</span>
                   <span
                     className={
-                      password === confirmPassword && confirmPassword.length > 0
+                      form.getValues('password') === form.getValues('confirmPassword') &&
+                      (form.getValues('confirmPassword') ?? '').length > 0
                         ? 'text-status-success'
                         : 'text-app-text-muted'
                     }

@@ -74,9 +74,7 @@ export function Hero({
         style={{ color: 'var(--cc-text-3)' }}
       >
         <span>{t('todayRevenue')}</span>
-        <span className="cc-live-dot" style={{ textTransform: 'none' }}>
-          {t('live')}
-        </span>
+        <span className="cc-live-dot normal-case">{t('live')}</span>
       </div>
 
       <div

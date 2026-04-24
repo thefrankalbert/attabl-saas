@@ -51,7 +51,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
   if (isImmersivePage(pathname)) return null;
 
   return (
-    <header className="shrink-0 h-[52px] bg-app-bg/85 backdrop-blur-md border-b border-app-border flex items-center px-4 sm:px-6 transition-colors duration-200 relative z-40 overflow-hidden">
+    <header className="shrink-0 h-[52px] bg-app-bg/85 backdrop-blur-md border-b border-app-border flex items-center px-4 @sm:px-6 transition-colors duration-200 relative z-40 overflow-hidden">
       {/* Breadcrumbs - left side */}
       <div className="flex-1 min-w-0 overflow-hidden text-[13px] text-app-text-secondary">
         {breadcrumbs}

@@ -146,7 +146,7 @@ export default function MenusClient({
                 className="pl-10 h-9"
               />
             </div>
-            <div className="flex items-center gap-2 lg:ml-auto shrink-0">
+            <div className="flex items-center gap-2 @lg:ml-auto shrink-0">
               {selectedIds.size > 0 && (
                 <Button
                   onClick={handleDeleteSelected}
@@ -165,7 +165,7 @@ export default function MenusClient({
                 className="gap-1.5 shrink-0"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('importExcel')}</span>
+                <span className="hidden @sm:inline">{t('importExcel')}</span>
               </Button>
               <Button
                 onClick={() => setShowPdfImportModal(true)}
@@ -174,7 +174,7 @@ export default function MenusClient({
                 className="gap-1.5 shrink-0"
               >
                 <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('importPdf')}</span>
+                <span className="hidden @sm:inline">{t('importPdf')}</span>
               </Button>
               <Button
                 onClick={() => openNewMenuModal()}
@@ -184,7 +184,7 @@ export default function MenusClient({
                 className="gap-1.5 shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('newMenu')}</span>
+                <span className="hidden @sm:inline">{t('newMenu')}</span>
               </Button>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function MenusClient({
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
           {/* Menu list */}
           <MenusTable
             tenantSlug={tenantSlug}

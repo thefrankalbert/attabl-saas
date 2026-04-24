@@ -234,10 +234,10 @@ export default function QRScanner({
 
                 {/* Success indicator */}
                 {scanStatus === 'success' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
-                    <CheckCircle2 className="w-12 h-12 text-green-400" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-amber-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                    <CheckCircle2 className="w-12 h-12 text-amber-500" />
                     {matchedTable && (
-                      <p className="text-green-400 font-bold text-lg mt-2">
+                      <p className="text-amber-500 font-bold text-lg mt-2">
                         {t('tableMatched', { table: matchedTable })}
                       </p>
                     )}
@@ -262,7 +262,7 @@ export default function QRScanner({
           {scanStatus === 'scanning' && <p className="text-white/70 text-sm">{t('placeQR')}</p>}
 
           {scanStatus === 'success' && (
-            <p className="text-green-400 text-sm font-semibold">{t('success')}</p>
+            <p className="text-amber-500 text-sm font-semibold">{t('success')}</p>
           )}
 
           {scanStatus === 'error' && (

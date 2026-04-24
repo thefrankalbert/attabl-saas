@@ -132,7 +132,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             </div>
 
             {/* Main layout - flat surfaces separated by border lines, no boxed cards */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col @md:flex-row overflow-hidden min-h-0">
               {/* Products Section - flat surface, no card border */}
               <div
                 className={cn(

@@ -303,7 +303,7 @@ export function QRCustomizerPanel({
                     `}
                   >
                     <span className="font-bold">{value}</span>
-                    {' \u2014 '}
+                    {' - '}
                     {label}
                   </Button>
                 ))}

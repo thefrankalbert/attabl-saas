@@ -262,7 +262,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   // ── Loading
   if (loading) {
     return (
-      <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 lg:h-full lg:overflow-hidden lg:pb-6 animate-pulse">
+      <div className="flex flex-col gap-5 p-4 @sm:p-6 pb-12 @lg:h-full @lg:overflow-hidden @lg:pb-6 animate-pulse">
         {/* Header row */}
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
@@ -277,7 +277,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* Metrics Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 @sm:grid-cols-2 @lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
@@ -287,7 +287,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5 flex-1 min-h-0">
+        <div className="grid grid-cols-1 @lg:grid-cols-[minmax(0,1fr)_380px] gap-5 flex-1 min-h-0">
           <div className="flex flex-col gap-5">
             <div className="h-[400px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
             <div className="h-[300px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
@@ -303,7 +303,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     // and metrics row stay fixed at top; only the left column (chart + top
     // dishes) scrolls internally. Right column is stationary on lg+.
     // Below lg: plain stacked page scroll (mobile UX unchanged).
-    <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 lg:h-full lg:overflow-hidden lg:pb-6">
+    <div className="flex flex-col gap-5 p-4 @sm:p-6 pb-12 @lg:h-full @lg:overflow-hidden @lg:pb-6">
       {/* Page head (greeting + quick-action Links) - full width, fixed on lg+ */}
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
@@ -370,9 +370,9 @@ export default function DashboardClient(props: DashboardClientProps) {
           the row to the grid's computed height - without them the implicit
           row is `auto` (content-sized), the left column never overflows
           its parent, and `overflow-y-auto` never triggers a scrollbar. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-1 gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+      <div className="grid grid-cols-1 @lg:grid-cols-[minmax(0,1fr)_380px] @lg:grid-rows-1 gap-5 @lg:flex-1 @lg:min-h-0 @lg:overflow-hidden">
         {/* Left column - scrolls internally on lg+ (chart + top dishes) */}
-        <div className="flex flex-col gap-5 min-w-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+        <div className="flex flex-col gap-5 min-w-0 @lg:min-h-0 @lg:overflow-y-auto @lg:pr-1">
           <OverviewChart
             metric={chartMetric}
             onMetricChange={(next) => setMetricKey(next === 'orders' ? 'orders' : 'revenue')}
@@ -420,7 +420,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         {/* Right column - fixed on lg+. StockAlertsCard is conditional
             (only when alerts exist). LiveOrdersFeed uses flex-1 min-h-0
             so it fills remaining space; its internal order list scrolls. */}
-        <div className="flex flex-col gap-5 lg:min-h-0 lg:overflow-hidden">
+        <div className="flex flex-col gap-5 @lg:min-h-0 @lg:overflow-hidden">
           <StockAlertsCard
             alerts={stockAlerts}
             title={t('stockAlertsTitle')}

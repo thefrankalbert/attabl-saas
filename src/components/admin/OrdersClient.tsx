@@ -473,7 +473,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
         <h1 className="sr-only">{t('title')}</h1>
         <div className="shrink-0">
           {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
-          <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+          <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 @sm:gap-3 overflow-x-auto scrollbar-hide">
             <div className="relative w-full @lg:w-auto @lg:min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
@@ -684,7 +684,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
         </Dialog>
 
         {/* Orders Table / Cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />

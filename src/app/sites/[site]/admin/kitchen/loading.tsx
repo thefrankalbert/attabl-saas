@@ -1,40 +1,65 @@
 export default function KitchenLoading() {
   return (
     <div
-      className="fixed inset-0 z-[200] bg-neutral-950 flex flex-col overflow-hidden animate-pulse"
+      className="h-full flex flex-col overflow-hidden animate-pulse bg-app-bg"
       style={{
         padding:
           'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
       }}
     >
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-neutral-800 rounded" />
-          <div className="h-5 w-32 bg-neutral-800 rounded" />
+      {/* Header h-12 : back icon + search | view tabs + zone filters + fullscreen */}
+      <header className="h-12 shrink-0 border-b border-app-border flex items-center justify-between px-2 sm:px-4 bg-app-bg">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 bg-app-elevated rounded-lg shrink-0" />
+          <div className="h-5 w-24 bg-app-elevated rounded hidden sm:block" />
         </div>
-        <div className="flex gap-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-8 w-20 bg-neutral-800 rounded-lg" />
+        <div className="flex items-center gap-1.5">
+          <div className="h-8 w-20 bg-app-elevated rounded-lg" />
+          <div className="h-8 w-24 bg-app-elevated rounded-lg" />
+          <div className="h-8 w-8 bg-app-elevated rounded-lg" />
+        </div>
+      </header>
+
+      {/* Board : grille de tickets KDS */}
+      <div className="flex-1 overflow-hidden p-2 sm:p-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 h-full">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-app-card border border-app-border rounded-xl p-4 flex flex-col gap-3 min-h-[320px]"
+            >
+              {/* Ticket header : order number + time badge */}
+              <div className="flex items-center justify-between">
+                <div className="h-5 w-16 bg-app-elevated rounded" />
+                <div className="h-5 w-12 bg-app-elevated rounded-full" />
+              </div>
+              {/* Table / customer label */}
+              <div className="h-3.5 w-28 bg-app-elevated rounded" />
+              {/* Items list */}
+              <div className="flex-1 flex flex-col gap-2 mt-1">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <div key={j} className="flex items-center gap-2">
+                    <div className="h-3.5 w-5 bg-app-elevated rounded shrink-0" />
+                    <div className="h-3.5 flex-1 bg-app-elevated rounded" />
+                  </div>
+                ))}
+              </div>
+              {/* Action button */}
+              <div className="h-9 w-full bg-app-elevated rounded-lg mt-auto" />
+            </div>
           ))}
         </div>
       </div>
 
-      {/* KDS ticket grid */}
-      <div className="flex-1 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-neutral-900 border border-app-border rounded-xl p-4 space-y-3">
-            <div className="flex justify-between">
-              <div className="h-5 w-16 bg-neutral-800 rounded" />
-              <div className="h-5 w-12 bg-neutral-800 rounded" />
-            </div>
-            {Array.from({ length: 3 }).map((_, j) => (
-              <div key={j} className="h-4 w-full bg-neutral-800 rounded" />
-            ))}
-            <div className="h-9 w-full bg-neutral-800 rounded-lg mt-2" />
-          </div>
-        ))}
-      </div>
+      {/* Footer h-14 : tenant name + status tabs */}
+      <footer className="h-14 shrink-0 border-t border-app-border flex items-center px-4 gap-4 bg-app-card">
+        <div className="h-4 w-28 bg-app-elevated rounded hidden sm:block" />
+        <div className="flex items-center gap-1.5 flex-1 justify-center">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-7 w-16 bg-app-elevated rounded-lg" />
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }

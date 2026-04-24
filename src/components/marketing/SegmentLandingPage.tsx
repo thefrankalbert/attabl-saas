@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Shared marketing landing for the 5 vertical-segment pages
@@ -40,18 +41,12 @@ export async function SegmentLandingPage({ segmentKey, icons }: SegmentLandingPa
             {t('heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-            <Link
-              href="/signup"
-              className="bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors"
-            >
-              {tShared('ctaPrimary')}
-            </Link>
-            <Link
-              href="/pricing"
-              className="border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-            >
-              {tShared('ctaSecondary')}
-            </Link>
+            <Button asChild size="lg">
+              <Link href="/signup">{tShared('ctaPrimary')}</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/pricing">{tShared('ctaSecondary')}</Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -89,12 +84,9 @@ export async function SegmentLandingPage({ segmentKey, icons }: SegmentLandingPa
           <p className="text-lg text-neutral-500 dark:text-neutral-400 mt-4">
             {tShared('ctaSubtitle')}
           </p>
-          <Link
-            href="/signup"
-            className="inline-block bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors mt-8"
-          >
-            {tShared('ctaPrimary')}
-          </Link>
+          <Button asChild size="lg" className="mt-8">
+            <Link href="/signup">{tShared('ctaPrimary')}</Link>
+          </Button>
         </div>
       </section>
     </>
