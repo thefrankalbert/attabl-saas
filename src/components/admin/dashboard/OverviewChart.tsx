@@ -159,7 +159,7 @@ export function OverviewChart({
 
         <svg
           ref={hostRef}
-          className="w-full h-[260px] block"
+          className="w-full h-[200px] @lg:h-[260px] block"
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
           onMouseMove={onMove}
