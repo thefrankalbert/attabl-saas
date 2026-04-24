@@ -90,7 +90,7 @@ export function LiveOrdersFeed({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Play"
+          aria-label={paused ? labels.resumeTitle : labels.pauseTitle}
           onClick={togglePause}
           title={paused ? labels.resumeTitle : labels.pauseTitle}
           className="w-[30px] h-[30px] rounded-md border border-app-border bg-app-card text-app-text-secondary hover:bg-app-elevated hover:text-app-text"

@@ -292,7 +292,7 @@ export default function DashboardClient(props: DashboardClientProps) {
             <div className="h-[400px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
             <div className="h-[300px] bg-app-elevated/30 rounded-xl border border-app-border/50" />
           </div>
-          <div className="h-full bg-app-elevated/30 rounded-xl border border-app-border/50" />
+          <div className="min-h-[240px] @lg:h-full bg-app-elevated/30 rounded-xl border border-app-border/50" />
         </div>
       </div>
     );
