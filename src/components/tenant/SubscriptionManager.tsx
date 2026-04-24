@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Crown, Zap, Building2, Check, Loader2, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
-import { logger } from '@/lib/logger';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
 interface Tenant {
@@ -61,7 +60,7 @@ const BILLING_INTERVALS: BillingInterval[] = ['monthly', 'yearly', 'semiannual']
 export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
   const t = useTranslations('admin');
   const locale = useLocale();
-  const { toast } = useToast();
+  const router = useRouter();
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
     (tenant.billing_interval as BillingInterval) || 'monthly',
   );
@@ -76,23 +75,9 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
         : 'starter'
     ];
 
-  const handleUpgrade = async (plan: SelfServicePlan) => {
-    try {
-      setIsLoading(plan);
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, billingInterval }),
-      });
-      const { url, error } = await res.json();
-      if (error) throw new Error(error);
-      if (url) window.location.href = url;
-    } catch (err) {
-      logger.error('Checkout session error', err);
-      toast({ title: t('subscription.paymentError'), variant: 'destructive' });
-    } finally {
-      setIsLoading(null);
-    }
+  const handleUpgrade = (plan: SelfServicePlan) => {
+    setIsLoading(plan);
+    router.push(`/checkout?plan=${plan}&interval=${billingInterval}`);
   };
 
   const statusBadgeClasses = (status: string) => {
