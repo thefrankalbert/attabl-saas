@@ -22,12 +22,12 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
 
   // Immersive pages (KDS/POS) - no padding, no animation
   if (isImmersive) {
-    return <div className="h-full">{children}</div>;
+    return <div className="flex-1 min-h-0">{children}</div>;
   }
 
   // Home page - minimal wrapper, dark bg handled by DashboardClient
   if (isHome) {
-    return <div className="h-full w-full flex flex-col">{children}</div>;
+    return <div className="flex-1 min-h-0 w-full flex flex-col">{children}</div>;
   }
 
   const duration = prefersReduced ? 0 : 0.2;
@@ -35,10 +35,10 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   return (
     <div
       className={cn(
-        'h-full w-full flex flex-col overflow-hidden',
+        'flex-1 min-h-0 w-full flex flex-col overflow-hidden',
         isFullBleed
-          ? 'px-2 py-2 sm:px-3 sm:py-3'
-          : 'px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-12 xl:py-10 2xl:px-16 2xl:py-12',
+          ? 'px-2 py-2 @sm:px-3 @sm:py-3'
+          : 'px-4 py-4 @sm:px-6 @sm:py-6 @lg:px-8 @lg:py-8 @xl:px-12 @xl:py-10 @2xl:px-16 @2xl:py-12',
       )}
     >
       {chrome}

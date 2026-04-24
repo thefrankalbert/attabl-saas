@@ -129,9 +129,12 @@ function AdminLayoutInner({
 
         <main
           id="main-content"
-          className={cn('flex-1 min-h-0 @container overflow-y-auto', isDevMode && 'pt-6')}
+          className={cn(
+            'flex-1 min-h-0 @container overflow-y-auto flex flex-col',
+            isDevMode && 'pt-6',
+          )}
         >
-          <div className="max-w-screen-2xl mx-auto h-full">{children}</div>
+          <div className="max-w-screen-2xl mx-auto flex-1 min-h-0 flex flex-col">{children}</div>
         </main>
 
         {(isMobile || isTablet) && !isHome && (
