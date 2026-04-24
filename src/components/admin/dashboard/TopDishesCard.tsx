@@ -97,7 +97,7 @@ export function TopDishesCard({
           On mobile the three groups wrap to stay readable; on lg+ they
           stay on a single line to save vertical space. The search input
           narrows on lg+ to keep everything on one line at common widths. */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-app-border flex-wrap lg:flex-nowrap">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-app-border flex-wrap @lg:flex-nowrap">
         <div className="flex items-center gap-2 text-[13px] font-medium text-app-text shrink-0">
           <UtensilsCrossed className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
@@ -112,7 +112,7 @@ export function TopDishesCard({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] lg:w-[140px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] @lg:w-[140px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
         <div className="ml-auto inline-flex p-[2px] rounded-md bg-app-bg border border-app-border shrink-0">

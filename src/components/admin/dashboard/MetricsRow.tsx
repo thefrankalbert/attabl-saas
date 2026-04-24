@@ -45,7 +45,7 @@ function buildSparklinePath(values: number[], width = 52, height = 18) {
 
 export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: MetricsRowProps) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 border border-app-border rounded-[10px] bg-app-card overflow-hidden">
+    <div className="grid grid-cols-2 @lg:grid-cols-4 border border-app-border rounded-[10px] bg-app-card overflow-hidden">
       {metrics.map((m, idx) => {
         const isActive = m.key === activeKey;
         const delta = m.deltaPercent ?? 0;
@@ -69,11 +69,11 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             variant="ghost"
             onClick={() => onSelect?.(m.key)}
             className={cn(
-              'relative h-auto flex-col items-stretch justify-start rounded-none text-left px-4 sm:px-5 py-2.5 transition-colors group cursor-pointer shadow-none font-normal',
+              'relative h-auto flex-col items-stretch justify-start rounded-none text-left px-4 @sm:px-5 py-2.5 transition-colors group cursor-pointer shadow-none font-normal',
               'border-app-border',
-              idx < metrics.length - 1 && 'lg:border-r',
-              idx % 2 === 0 && 'border-r lg:border-r',
-              idx < 2 && 'border-b lg:border-b-0',
+              idx < metrics.length - 1 && '@lg:border-r',
+              idx % 2 === 0 && 'border-r @lg:border-r',
+              idx < 2 && 'border-b @lg:border-b-0',
               isActive ? 'bg-app-elevated' : 'hover:bg-app-elevated/70',
             )}
           >
