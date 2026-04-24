@@ -39,6 +39,7 @@
     "error": "Erreur",
     "actions": "Actions",
     "saveChanges": "Enregistrer les modifications",
+    "confirmDelete": "Confirmer la suppression",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ?",
     "loadingData": "Chargement des données...",
     "item": "article",

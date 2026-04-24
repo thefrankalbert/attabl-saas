@@ -39,6 +39,7 @@
     "error": "Error",
     "actions": "Actions",
     "saveChanges": "Save changes",
+    "confirmDelete": "Confirm deletion",
     "deleteConfirm": "Are you sure you want to delete?",
     "loadingData": "Loading data...",
     "item": "item",
