@@ -50,7 +50,7 @@ export function CommandCenterShell({
       const next: Theme = prev === 'light' ? 'dark' : 'light';
       try {
         // 1 year, lax, full path so every admin route sees it next render.
-        document.cookie = `${CC_THEME_COOKIE}=${next};max-age=${60 * 60 * 24 * 365};path=/;samesite=lax`;
+        document.cookie = `${CC_THEME_COOKIE}=${next};max-age=${60 * 60 * 24 * 365};path=/;SameSite=Strict;Secure`;
       } catch {}
       return next;
     });

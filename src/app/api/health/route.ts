@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = createAdminClient();
+    const supabase = await createClient();
     const { error } = await supabase.from('tenants').select('id').limit(1);
 
     if (error) {

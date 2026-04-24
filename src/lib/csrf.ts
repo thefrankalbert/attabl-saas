@@ -16,9 +16,10 @@ export function verifyOrigin(request: Request): NextResponse | null {
   if (origin) {
     const allowedOrigins = [appUrl, `https://${appDomain}`, `https://www.${appDomain}`];
 
-    // In development, allow any localhost port
+    // In development/test, allow any localhost port
     const isLocalDev =
-      process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost:');
+      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') &&
+      origin.startsWith('http://localhost:');
 
     if (
       isLocalDev ||
@@ -31,17 +32,20 @@ export function verifyOrigin(request: Request): NextResponse | null {
 
   // Allow requests with matching referer (fallback)
   if (referer) {
-    const isLocalReferer = process.env.NODE_ENV === 'development' && referer.includes('localhost:');
+    const isLocalReferer =
+      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') &&
+      referer.includes('localhost:');
     if (isLocalReferer || referer.includes(appDomain)) {
       return null; // OK
     }
   }
 
-  // Allow requests without origin/referer (e.g., server-to-server, mobile apps)
-  // These are still protected by auth tokens
-  if (!origin && !referer) {
+  // In test environments, allow requests without Origin/Referer (unit tests do not send browser headers).
+  // Webhooks (Stripe, etc.) must NOT call verifyOrigin - they use signature verification.
+  if (process.env.NODE_ENV === 'test') {
     return null;
   }
 
+  // Reject requests missing both Origin and Referer - cannot verify source in production.
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }
