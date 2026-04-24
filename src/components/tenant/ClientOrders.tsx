@@ -468,13 +468,10 @@ export default function ClientOrders({
                       {(order.items || []).map((item, idx) => (
                         <div
                           key={`${item.menu_item_id || item.name}-${idx}`}
-                          className="px-4 py-3 flex items-center gap-3"
-                          style={{
-                            borderBottom:
-                              idx < order.items.length - 1
-                                ? '1px solid rgb(238, 238, 238)'
-                                : 'none',
-                          }}
+                          className={cn(
+                            'px-4 py-3 flex items-center gap-3',
+                            idx < order.items.length - 1 && 'border-b border-[rgb(238,238,238)]',
+                          )}
                         >
                           {/* Thumbnail placeholder 48x48 */}
                           <div

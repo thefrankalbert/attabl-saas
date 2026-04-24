@@ -24,9 +24,7 @@ import SearchOverlay from '@/components/tenant/SearchOverlay';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => (
-    <div className="h-64 animate-pulse rounded-lg" style={{ backgroundColor: '#F6F6F6' }} />
-  ),
+  loading: () => <div className="h-64 animate-pulse rounded-lg bg-[#F6F6F6]" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -378,14 +376,11 @@ export default function ClientMenuDetailPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="flex-1 w-full"
-      style={{
-        backgroundColor: '#FFFFFF',
-        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
-      }}
+      className="flex-1 w-full bg-white"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ HEADER + SEARCH (same row) ═══ */}
-      <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FFFFFF' }}>
+      <div className="px-3 py-2 flex items-center gap-2 bg-white">
         <Button
           variant="ghost"
           size="icon"
@@ -393,25 +388,16 @@ export default function ClientMenuDetailPage({
           className="w-9 h-9 rounded-full bg-app-elevated flex-shrink-0"
           aria-label={t('ariaGoBack')}
         >
-          <ChevronLeft className="w-5 h-5" style={{ color: 'rgb(26, 26, 26)' }} />
+          <ChevronLeft className="w-5 h-5 text-[#1A1A1A]" />
         </Button>
         <div className="relative flex-1 min-w-0">
-          <div
-            className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-            style={{ color: '#B0B0B0' }}
-          >
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#B0B0B0]">
             <Search className="w-4 h-4" strokeWidth={1.5} />
           </div>
           <Input
             type="text"
             placeholder={t('searchMenu')}
-            className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0"
-            style={{
-              backgroundColor: '#F6F6F6',
-              borderRadius: '10px',
-              height: '40px',
-              color: '#1A1A1A',
-            }}
+            className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0 bg-[#F6F6F6] rounded-[10px] h-10 text-[#1A1A1A]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -419,33 +405,17 @@ export default function ClientMenuDetailPage({
       </div>
 
       {/* ═══ SEARCH RESULTS DROPDOWN ═══ */}
-      <div className="px-4" style={{ backgroundColor: '#FFFFFF' }}>
+      <div className="px-4 bg-white">
         {/* Inline search results */}
         {searchQuery.length >= 2 && searchResults.length === 0 && (
-          <p className="text-center text-sm py-8" style={{ color: '#B0B0B0' }}>
+          <p className="text-center text-sm py-8 text-[#B0B0B0]">
             {t('noSearchResults', { query: searchQuery })}
           </p>
         )}
         {searchQuery.length >= 2 && searchResults.length > 0 && (
-          <div
-            className="mt-2 rounded-xl overflow-hidden z-50 relative"
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #EEEEEE',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            }}
-          >
+          <div className="mt-2 rounded-xl overflow-hidden z-50 relative bg-white border border-[#EEEEEE] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
             <div className="p-2">
-              <h3
-                className="px-3 py-2"
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: '#B0B0B0',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                }}
-              >
+              <h3 className="px-3 py-2 text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px]">
                 {t('dishesFound')}
               </h3>
               {searchResults.map((item) => (
@@ -456,24 +426,17 @@ export default function ClientMenuDetailPage({
                     setSelectedItem(item);
                     setSearchQuery('');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto"
-                  style={{ backgroundColor: 'transparent' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#F6F6F6';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto hover:bg-[#F6F6F6]"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
+                    <p className="text-sm font-bold text-[#1A1A1A]">
                       {lang === 'en' && item.name_en ? item.name_en : item.name}
                     </p>
                   </div>
-                  <span className="text-sm font-bold flex-shrink-0" style={{ color: '#1A1A1A' }}>
+                  <span className="text-sm font-bold flex-shrink-0 text-[#1A1A1A]">
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5" style={{ color: '#B0B0B0' }} />
+                  <ChevronRight className="w-3.5 h-3.5 text-[#B0B0B0]" />
                 </Button>
               ))}
             </div>
@@ -483,26 +446,14 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ VENUE FILTER PILLS ═══ */}
       {venues && venues.length > 1 && !hideVenueRow && (
-        <div
-          className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
-          style={{ backgroundColor: '#FFFFFF' }}
-        >
+        <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide bg-white">
           <Button
             variant="ghost"
             onClick={() => setActiveVenueId(null)}
             className={cn(
-              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto',
-              !activeVenueId ? 'text-white' : '',
+              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+              !activeVenueId ? 'bg-[#1A1A1A] text-white' : 'bg-[#F6F6F6] text-[#737373]',
             )}
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              textTransform: 'uppercase' as const,
-              letterSpacing: 1,
-              ...(!activeVenueId
-                ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                : { backgroundColor: '#F6F6F6', color: '#737373' }),
-            }}
           >
             {t('allFilter')}
           </Button>
@@ -511,16 +462,12 @@ export default function ClientMenuDetailPage({
               key={venue.id}
               variant="ghost"
               onClick={() => setActiveVenueId(venue.id)}
-              className={cn('flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto')}
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                textTransform: 'uppercase' as const,
-                letterSpacing: 1,
-                ...(activeVenueId === venue.id
-                  ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                  : { backgroundColor: '#F6F6F6', color: '#737373' }),
-              }}
+              className={cn(
+                'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+                activeVenueId === venue.id
+                  ? 'bg-[#1A1A1A] text-white'
+                  : 'bg-[#F6F6F6] text-[#737373]',
+              )}
             >
               {venue.name}
             </Button>
@@ -537,16 +484,12 @@ export default function ClientMenuDetailPage({
                 key={menu.slug}
                 variant="ghost"
                 onClick={() => handleMenuChange(menu.slug)}
-                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: 1,
-                  ...(activeMenuSlug === menu.slug
-                    ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                    : { backgroundColor: '#F6F6F6', color: '#737373' }),
-                }}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+                  activeMenuSlug === menu.slug
+                    ? 'bg-[#1A1A1A] text-white'
+                    : 'bg-[#F6F6F6] text-[#737373]',
+                )}
               >
                 {menu.name}
               </Button>
@@ -564,16 +507,10 @@ export default function ClientMenuDetailPage({
               <Button
                 variant="ghost"
                 onClick={() => setActiveSubMenuId(null)}
-                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: 1,
-                  ...(!activeSubMenuId
-                    ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                    : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
-                }}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+                  !activeSubMenuId ? 'bg-[#1A1A1A] text-white' : 'bg-[#F6F6F6] text-[#B0B0B0]',
+                )}
               >
                 {t('all')}
               </Button>
@@ -584,16 +521,12 @@ export default function ClientMenuDetailPage({
                     key={child.slug}
                     variant="ghost"
                     onClick={() => setActiveSubMenuId(child.id)}
-                    className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 500,
-                      textTransform: 'uppercase' as const,
-                      letterSpacing: 1,
-                      ...(activeSubMenuId === child.id
-                        ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                        : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
-                    }}
+                    className={cn(
+                      'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+                      activeSubMenuId === child.id
+                        ? 'bg-[#1A1A1A] text-white'
+                        : 'bg-[#F6F6F6] text-[#B0B0B0]',
+                    )}
                   >
                     {child.name}
                   </Button>
@@ -603,16 +536,12 @@ export default function ClientMenuDetailPage({
                   key={tm.slug}
                   variant="ghost"
                   onClick={() => setActiveSubMenuId(tm.id)}
-                  className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: 1,
-                    ...(activeSubMenuId === tm.id
-                      ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                      : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
-                  }}
+                  className={cn(
+                    'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
+                    activeSubMenuId === tm.id
+                      ? 'bg-[#1A1A1A] text-white'
+                      : 'bg-[#F6F6F6] text-[#B0B0B0]',
+                  )}
                 >
                   {lang === 'en' && tm.name_en ? tm.name_en : tm.name}
                 </Button>
@@ -625,10 +554,7 @@ export default function ClientMenuDetailPage({
           Rule: on a specific ?menu=X view we keep a SINGLE navigation row
           (CategoryNav). Diet filters stay accessible via the search overlay. */}
       {!initialMenuSlug && (
-        <div
-          className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
-          style={{ backgroundColor: '#FFFFFF' }}
-        >
+        <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide bg-white">
           {(
             [
               { key: 'all', label: t('filterAll') },
@@ -649,18 +575,10 @@ export default function ClientMenuDetailPage({
                 key={chip.key}
                 variant="ghost"
                 onClick={() => setDietFilter(chip.key)}
-                className="flex-shrink-0 whitespace-nowrap h-auto"
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '24px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  lineHeight: 1.4,
-                  backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
-                  color: isActive ? '#FFFFFF' : '#737373',
-                }}
+                className={cn(
+                  'flex-shrink-0 whitespace-nowrap h-auto px-4 py-2 rounded-[24px] text-[11px] font-medium uppercase tracking-[1px] leading-[1.4]',
+                  isActive ? 'bg-[#1A1A1A] text-white' : 'bg-[#F6F6F6] text-[#737373]',
+                )}
               >
                 {chip.label}
               </Button>
@@ -684,43 +602,16 @@ export default function ClientMenuDetailPage({
           {filteredItemsByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section
-                  key={category.id}
-                  id={`cat-${category.id}`}
-                  style={{ scrollMarginTop: '112px' }}
-                >
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[112px]">
                   {/* Sticky section header - sits below sticky category nav */}
-                  <div
-                    style={{
-                      position: 'sticky',
-                      top: '48px',
-                      zIndex: 20,
-                      backgroundColor: '#FFFFFF',
-                      borderBottom: '1px solid #EEEEEE',
-                      padding: '16px 16px 14px',
-                    }}
-                  >
-                    <h2
-                      style={{
-                        fontSize: '20px',
-                        fontWeight: 700,
-                        color: '#1A1A1A',
-                        lineHeight: 1.4,
-                      }}
-                    >
+                  <div className="sticky top-12 z-20 bg-white border-b border-[#EEEEEE] px-4 pt-4 pb-[14px]">
+                    <h2 className="text-[20px] font-bold text-[#1A1A1A] leading-[1.4]">
                       {category.name}
                     </h2>
                   </div>
 
                   {/* Items list */}
-                  <div
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      paddingTop: '12px',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                    }}
-                  >
+                  <div className="bg-white pt-3 px-4">
                     <div>
                       {category.items.map((item: MenuItem, index: number) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
@@ -745,7 +636,7 @@ export default function ClientMenuDetailPage({
 
                   {/* Spacer between sections */}
                   {catIndex < filteredItemsByCategory.length - 1 && (
-                    <div className="h-5" style={{ backgroundColor: '#FFFFFF' }} />
+                    <div className="h-5 bg-white" />
                   )}
                 </section>
               ),
@@ -753,16 +644,8 @@ export default function ClientMenuDetailPage({
         </div>
       ) : (
         <div className="text-center py-20">
-          <div
-            className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto"
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #EEEEEE',
-            }}
-          >
-            <p className="font-medium" style={{ color: '#B0B0B0' }}>
-              {t('noMenuAvailable')}
-            </p>
+          <div className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto bg-white border border-[#EEEEEE]">
+            <p className="font-medium text-[#B0B0B0]">{t('noMenuAvailable')}</p>
           </div>
         </div>
       )}
@@ -775,50 +658,20 @@ export default function ClientMenuDetailPage({
         >
           <Link
             href={`/sites/${tenant.slug}/cart`}
-            className="inline-flex items-center gap-2.5 px-4 no-underline"
-            style={{
-              backgroundColor: '#1A1A1A',
-              borderRadius: '999px',
-              height: '48px',
-              color: '#FFFFFF',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-              maxWidth: 'calc(100% - 32px)',
-            }}
+            className="inline-flex items-center gap-2.5 px-4 no-underline bg-[#1A1A1A] rounded-full h-12 text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] max-w-[calc(100%-32px)]"
           >
-            <ShoppingCart className="w-5 h-5 flex-shrink-0" style={{ color: '#FFFFFF' }} />
-            <span
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#FFFFFF',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <ShoppingCart className="w-5 h-5 flex-shrink-0 text-white" />
+            <span className="text-[14px] font-semibold text-white whitespace-nowrap">
               {t('viewCart')}
             </span>
-            <span
-              style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span className="text-[14px] font-bold text-white whitespace-nowrap">
               {totalCartItems}
             </span>
             <span
               aria-hidden="true"
-              className="inline-block rounded-full bg-white"
-              style={{ width: 5, height: 5 }}
+              className="inline-block rounded-full bg-white w-[5px] h-[5px]"
             />
-            <span
-              style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span className="text-[14px] font-bold text-white whitespace-nowrap">
               {formatDisplayPrice(grandTotal, tenant.currency)}
             </span>
           </Link>

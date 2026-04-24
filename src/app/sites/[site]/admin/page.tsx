@@ -327,7 +327,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   }
 
   return (
-    <div className="h-full">
+    <div className="flex-1 min-h-0">
       <DashboardClient
         tenantId={tenant.id}
         tenantSlug={tenant.slug}
