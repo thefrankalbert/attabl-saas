@@ -35,7 +35,11 @@ export async function POST(request: Request) {
 
     const parseResult = signupSchema.safeParse(body);
     if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message ?? t('invalidDataFallback');
+      const rawMessage = parseResult.error.issues[0]?.message ?? t('invalidDataFallback');
+      const firstError =
+        rawMessage.includes('received undefined') || rawMessage.includes('required')
+          ? 'Donnees invalides ou manquantes'
+          : rawMessage;
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 

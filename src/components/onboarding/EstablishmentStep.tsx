@@ -309,7 +309,7 @@ export function EstablishmentStep({
                       value={data.language}
                       onValueChange={(val) => {
                         updateData({ language: val });
-                        document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365}`;
+                        document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Strict;Secure`;
                         router.refresh();
                       }}
                     >
