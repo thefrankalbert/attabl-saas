@@ -108,7 +108,7 @@ export function ErrorLayout({
                     <Icon
                       className={cn(
                         'h-6 w-6 sm:h-8 sm:w-8',
-                        isTenant ? 'text-[#06C167]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
+                        isTenant ? 'text-[#1A1A1A]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
                       )}
                     />
                   )}
