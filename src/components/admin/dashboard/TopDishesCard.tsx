@@ -97,7 +97,7 @@ export function TopDishesCard({
           On mobile the three groups wrap to stay readable; on lg+ they
           stay on a single line to save vertical space. The search input
           narrows on lg+ to keep everything on one line at common widths. */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-app-border flex-wrap @lg:flex-nowrap">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-app-border flex-wrap @md:flex-nowrap">
         <div className="flex items-center gap-2 text-[13px] font-medium text-app-text shrink-0">
           <UtensilsCrossed className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
@@ -136,8 +136,8 @@ export function TopDishesCard({
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[720px]">
-          <div className="grid grid-cols-[44px_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-2.5 border-b border-app-border bg-white/[0.015] font-mono text-[10px] uppercase tracking-[0.08em] text-app-text-muted">
+        <div className="min-w-[540px]">
+          <div className="grid grid-cols-[36px_1.5fr_1fr_1fr_1fr_1fr_auto] gap-3 px-4 py-2 border-b border-app-border bg-white/[0.015] font-mono text-[10px] uppercase tracking-[0.08em] text-app-text-muted">
             <div />
             <div>{headers.dish}</div>
             <div>{headers.portions}</div>
@@ -155,7 +155,7 @@ export function TopDishesCard({
             filtered.map((d) => (
               <div
                 key={d.id}
-                className="grid grid-cols-[44px_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center px-5 py-3.5 border-b border-app-border last:border-b-0 hover:bg-app-elevated/70 transition-colors cursor-pointer"
+                className="grid grid-cols-[36px_1.5fr_1fr_1fr_1fr_1fr_auto] gap-3 items-center px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-elevated/70 transition-colors cursor-pointer"
               >
                 <div
                   className={cn(
