@@ -231,8 +231,8 @@ export const adminResetLimiter = createLimiter(
   true,
 );
 
-/** Login: 10 requests / 5 minutes per IP (fail-closed: brute-force protection) */
-export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(10, '5 m'), true);
+/** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
+export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
 
 /** Billing portal: 10 requests / minute per IP */
 export const billingPortalLimiter = createLimiter(
