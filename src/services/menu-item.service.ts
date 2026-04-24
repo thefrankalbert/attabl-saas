@@ -86,8 +86,12 @@ export function createMenuItemService(supabase: SupabaseClient) {
     /**
      * Update the price of a menu item.
      */
-    async updatePrice(itemId: string, price: number): Promise<void> {
-      const { error } = await supabase.from('menu_items').update({ price }).eq('id', itemId);
+    async updatePrice(itemId: string, price: number, tenantId: string): Promise<void> {
+      const { error } = await supabase
+        .from('menu_items')
+        .update({ price })
+        .eq('id', itemId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du prix', 'INTERNAL', error);
