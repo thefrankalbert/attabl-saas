@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ function isValidInterval(value: string | null): value is BillingInterval {
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const t = useTranslations('checkout');
 
   const planParam = searchParams.get('plan');
@@ -58,6 +59,12 @@ function CheckoutContent() {
 
         const data = await res.json();
 
+        if (res.status === 401) {
+          const returnUrl = `/checkout?plan=${plan}&interval=${interval}`;
+          router.replace(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+          return;
+        }
+
         if (!res.ok) {
           setError(data.error ?? 'server_error');
           return;
@@ -77,11 +84,11 @@ function CheckoutContent() {
     return () => {
       cancelled = true;
     };
-  }, [plan, interval]);
+  }, [plan, interval, router]);
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#0a0a0a]">
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
         <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
       </div>
     );
@@ -89,7 +96,7 @@ function CheckoutContent() {
 
   if (error || !clientSecret || !plan) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4 gap-4">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a0a] px-4 gap-4">
         <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
           <AlertCircle className="w-6 h-6 text-red-400" />
         </div>
@@ -107,9 +114,11 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-dvh">
+    <div className="fixed inset-0 flex flex-col md:flex-row">
       <CheckoutLeftPanel plan={plan} interval={interval} />
-      <CheckoutRightPanel clientSecret={clientSecret} />
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <CheckoutRightPanel clientSecret={clientSecret} />
+      </div>
     </div>
   );
 }
@@ -120,7 +129,7 @@ export default function CheckoutPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-dvh flex items-center justify-center bg-[#0a0a0a]">
+        <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
           <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
         </div>
       }
