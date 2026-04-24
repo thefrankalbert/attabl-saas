@@ -11,8 +11,10 @@ export function createMenuItemService(supabase: SupabaseClient) {
     /**
      * Create a new menu item.
      */
-    async createMenuItem(payload: Record<string, unknown>): Promise<void> {
-      const { error } = await supabase.from('menu_items').insert([payload]);
+    async createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<void> {
+      const { error } = await supabase
+        .from('menu_items')
+        .insert([{ ...payload, tenant_id: tenantId }]);
 
       if (error) {
         throw new ServiceError('Erreur lors de la creation du plat', 'INTERNAL', error);

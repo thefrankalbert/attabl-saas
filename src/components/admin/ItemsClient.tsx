@@ -217,7 +217,7 @@ export default function ItemsClient({
           setSaving(false);
           return;
         }
-        await menuItemService.createMenuItem(payload);
+        await menuItemService.createMenuItem(tenantId, payload);
         toast({ title: t('itemCreated') });
       }
       setShowModal(false);
