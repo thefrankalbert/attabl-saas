@@ -120,14 +120,14 @@
     "retry": "Reessayer",
     "page": {
       "title": "ATTABL - Abonnement",
-      "subscribingTo": "Vous souscrivez a",
+      "subscribingTo": "Vous souscrivez à",
       "monthly": "/ mois",
       "yearly": "/ an",
       "semiannual": "/ 6 mois",
-      "securePayment": "Paiement securise par Stripe - vos donnees bancaires sont protegees",
+      "securePayment": "Paiement sécurisé par Stripe - vos données bancaires sont protégées",
       "loading": "Chargement du formulaire de paiement...",
       "errorTitle": "Impossible de charger le paiement",
-      "errorDescription": "Une erreur est survenue. Veuillez reessayer ou contacter le support.",
+      "errorDescription": "Une erreur est survenue. Veuillez réessayer ou contacter le support.",
       "retry": "Retour"
     }
   },

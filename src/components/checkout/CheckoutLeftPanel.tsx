@@ -55,28 +55,32 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
   };
 
   return (
-    <div className="flex flex-col justify-between bg-[#0a0a0a] text-[#f5f5f4] p-8 md:p-12 md:w-[42%] md:min-h-screen">
+    <div className="flex flex-col bg-[#0a0a0a] text-[#f5f5f4] p-8 md:p-12 md:w-[42%] shrink-0 overflow-hidden">
       {/* Logo */}
-      <div>
-        <div className="flex items-center gap-2 mb-12">
-          <div className="w-8 h-8 rounded-lg bg-[#c2f542] flex items-center justify-center shrink-0">
-            <span className="text-[#0a0a0a] font-black text-sm leading-none">A</span>
-          </div>
-          <span className="text-[#f5f5f4] font-bold text-lg tracking-tight">ATTABL</span>
+      <div className="flex items-center gap-2 mb-auto pb-10">
+        <div className="w-8 h-8 rounded-lg bg-[#c2f542] flex items-center justify-center shrink-0">
+          <span className="text-[#0a0a0a] font-black text-sm leading-none">A</span>
         </div>
+        <span className="text-[#f5f5f4] font-bold text-lg tracking-tight">ATTABL</span>
+      </div>
 
+      {/* Center block */}
+      <div className="flex-1 flex flex-col justify-center">
         {/* Plan info */}
         <p className="text-sm text-[#a8a29e] mb-2">{tc('page.subscribingTo')}</p>
         <h1 className="text-3xl font-bold text-[#f5f5f4] mb-1">ATTABL {planName}</h1>
 
         {/* Price */}
-        <div className="flex items-baseline gap-1 mt-4 mb-8">
+        <div className="flex items-baseline gap-1 mt-4 mb-10">
           <span className="text-4xl font-bold tabular-nums">{price}</span>
           <span className="text-[#a8a29e] text-sm ml-1">FCFA {intervalLabel[interval]}</span>
         </div>
 
+        {/* Divider */}
+        <div className="h-px bg-white/8 mb-8" />
+
         {/* Features */}
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {features.map((key) => (
             <li key={key} className="flex items-start gap-3">
               <div className="w-5 h-5 rounded-full bg-[#c2f542]/15 flex items-center justify-center shrink-0 mt-0.5">
@@ -90,8 +94,8 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
         </ul>
       </div>
 
-      {/* Security badge */}
-      <div className="mt-12 flex items-center gap-2 text-[#6b6560]">
+      {/* Security badge — always visible at bottom */}
+      <div className="mt-auto pt-10 flex items-center gap-2 text-[#6b6560]">
         <ShieldCheck className="w-4 h-4 shrink-0" />
         <p className="text-xs">{tc('page.securePayment')}</p>
       </div>
