@@ -117,7 +117,19 @@
     "backToHome": "Back to home",
     "cancelTitle": "Payment cancelled",
     "cancelDescription": "Your payment has been cancelled. You can try again at any time.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "page": {
+      "title": "ATTABL - Subscription",
+      "subscribingTo": "You are subscribing to",
+      "monthly": "/ month",
+      "yearly": "/ year",
+      "semiannual": "/ 6 months",
+      "securePayment": "Secure payment by Stripe - your banking data is protected",
+      "loading": "Loading payment form...",
+      "errorTitle": "Unable to load payment",
+      "errorDescription": "An error occurred. Please try again or contact support.",
+      "retry": "Go back"
+    }
   },
   "menu": {
     "selectMenu": "Select your menu",
