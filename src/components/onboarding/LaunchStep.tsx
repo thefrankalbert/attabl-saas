@@ -1,8 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { HexColorPicker } from 'react-colorful';
 import {
   Check,
   ExternalLink,
@@ -12,6 +13,11 @@ import {
   Paintbrush,
   Type,
   Download,
+  Upload,
+  Trash2,
+  Loader2,
+  RotateCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +29,7 @@ import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
+import { useToast } from '@/components/ui/use-toast';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface LaunchStepProps {
@@ -42,22 +49,19 @@ const TEMPLATES: Array<{ id: QRTemplateId; labelKey: string }> = [
   { id: 'neon', labelKey: 'qrTemplateNeon' },
 ];
 
-const QR_STYLES: Array<{
-  id: OnboardingData['qrStyle'];
-  fg: string;
-  bg: string;
-}> = [
-  { id: 'classic', fg: '#000000', bg: '#FFFFFF' },
-  { id: 'branded', fg: 'primary', bg: '#FFFFFF' },
-  { id: 'inverted', fg: '#FFFFFF', bg: '#000000' },
-  { id: 'dark', fg: '#FFFFFF', bg: '#1a1a1a' },
-];
-
 const CTA_PRESETS = [
   { key: 'qrCtaScan', value: 'Scannez pour commander' },
   { key: 'qrCtaMenu', value: 'Scannez pour voir le menu' },
-  { key: 'qrCtaDiscover', value: 'Scannez pour d\u00e9couvrir' },
+  { key: 'qrCtaDiscover', value: 'Scannez pour decouvrir' },
   { key: 'qrCtaCard', value: 'Scannez notre carte' },
+];
+
+// Dimension constraints (A5 -> A4 with portrait/landscape)
+const MIN_DIM_MM = 148;
+const MAX_DIM_MM = 297;
+const FORMAT_PRESETS = [
+  { id: 'a5', label: 'A5', width: 148, height: 210 },
+  { id: 'a4', label: 'A4', width: 210, height: 297 },
 ];
 
 /** Renders a real template at mini scale for the template picker */
@@ -69,28 +73,19 @@ function TemplateMiniPreview({
   data: OnboardingData;
 }) {
   const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
-
   const TemplateComponent = TEMPLATE_REGISTRY[templateId];
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
   const templateHeightPx = defaults.height * 3.78;
   const templateWidthPx = defaults.width * 3.78;
-  const scale = Math.min(70 / templateHeightPx, 100 / templateWidthPx, 0.18);
+  const scale = Math.min(86 / templateHeightPx, 110 / templateWidthPx, 0.22);
 
   return (
     <div
-      className="relative overflow-hidden flex items-start justify-center"
-      style={{
-        height: 72,
-        width: '100%',
-      }}
+      className="relative overflow-hidden flex items-center justify-center"
+      style={{ height: 90, width: '100%' }}
     >
-      <div
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: 'top center',
-        }}
-      >
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
         <TemplateComponent
           config={config}
           url="https://attabl.com"
@@ -102,10 +97,43 @@ function TemplateMiniPreview({
   );
 }
 
+/** Color preset swatch - clickable to select a quick color */
+function ColorSwatch({
+  color,
+  isActive,
+  onClick,
+  ariaLabel,
+}: {
+  color: string;
+  isActive: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={`w-9 h-9 rounded-full border-2 p-0 transition-all ${
+        isActive
+          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
+          : 'border-app-border hover:border-app-border-hover'
+      }`}
+      style={{ backgroundColor: color }}
+    />
+  );
+}
+
 export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps) {
   const t = useTranslations('onboarding');
+  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<LaunchTab>('style');
+  const [showFgPicker, setShowFgPicker] = useState(false);
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showQr = variant === 'qr';
   const showSummary = variant === 'summary';
@@ -143,6 +171,102 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   const qrConfig = useMemo(() => onboardingDataToQRConfig(data), [data]);
 
+  // ─── Color helpers ───────────────────────────────
+  const fgColor = data.qrCustomFgColor ?? '#000000';
+  const bgColor = data.qrCustomBgColor ?? '#FFFFFF';
+
+  const fgPresets = [
+    { color: '#000000', label: 'Noir' },
+    { color: '#FFFFFF', label: 'Blanc' },
+    { color: data.primaryColor || '#000000', label: 'Couleur de marque' },
+  ];
+
+  const bgPresets = [
+    { color: '#FFFFFF', label: 'Blanc' },
+    { color: '#F6F6F6', label: 'Gris clair' },
+    { color: '#000000', label: 'Noir' },
+  ];
+
+  // ─── Dimensions helpers ───────────────────────────
+  const defaults = TEMPLATE_DEFAULTS[data.qrTemplate ?? 'standard'];
+  const widthMm = data.qrSupportWidth ?? defaults.width;
+  const heightMm = data.qrSupportHeight ?? defaults.height;
+  const orientation = data.qrOrientation ?? 'portrait';
+
+  const clampDim = (n: number) => Math.min(MAX_DIM_MM, Math.max(MIN_DIM_MM, Math.round(n)));
+
+  const setDimensions = (w: number, h: number) => {
+    updateData({
+      qrSupportWidth: clampDim(w),
+      qrSupportHeight: clampDim(h),
+    });
+  };
+
+  const toggleOrientation = (next: 'portrait' | 'landscape') => {
+    if (next === orientation) return;
+    // Swap width and height
+    updateData({
+      qrOrientation: next,
+      qrSupportWidth: heightMm,
+      qrSupportHeight: widthMm,
+    });
+  };
+
+  const applyFormatPreset = (preset: (typeof FORMAT_PRESETS)[number]) => {
+    if (orientation === 'landscape') {
+      setDimensions(preset.height, preset.width);
+    } else {
+      setDimensions(preset.width, preset.height);
+    }
+  };
+
+  // ─── Upload handler ───────────────────────────────
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/onboarding/upload-qr-design', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast({
+          title: result.error || t('qrUploadError') || 'Erreur lors du tele versement',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      updateData({ qrUploadedDesignUrl: result.url });
+      toast({
+        title: t('qrUploadSuccess') || 'Design telecharge',
+      });
+    } catch {
+      toast({
+        title: t('qrUploadError') || 'Erreur lors du tele versement',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Reset input so the same file can be re-uploaded if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveUpload = () => updateData({ qrUploadedDesignUrl: undefined });
+
+  const hasUpload = !!data.qrUploadedDesignUrl;
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
@@ -176,7 +300,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <div>
                   <h2 className="text-xl font-bold text-app-text">{data.tenantName}</h2>
                   <p className="text-app-text-secondary capitalize text-sm">
-                    {data.establishmentType} &bull; {data.city || 'Non d\u00e9fini'}
+                    {data.establishmentType} &bull; {data.city || 'Non defini'}
                   </p>
                 </div>
               </div>
@@ -293,33 +417,39 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 })}
               </div>
 
-              {/* Style Tab */}
+              {/* ────── Style Tab ────── */}
               {activeTab === 'style' && (
-                <div className="space-y-6">
+                <div className="space-y-7">
                   {/* Templates */}
                   <div>
                     <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {TEMPLATES.map((tmpl) => {
                         const isSelected = data.qrTemplate === tmpl.id;
+                        const isDisabledByUpload = hasUpload;
                         return (
                           <Button
                             key={tmpl.id}
                             type="button"
                             variant="outline"
                             onClick={() => updateData({ qrTemplate: tmpl.id })}
+                            disabled={isDisabledByUpload}
                             className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
-                              isSelected
-                                ? 'border-accent bg-accent/5 '
+                              isSelected && !isDisabledByUpload
+                                ? 'border-accent bg-accent/5'
                                 : 'border-app-border hover:border-app-border-hover'
-                            }`}
+                            } ${isDisabledByUpload ? 'opacity-40' : ''}`}
                           >
                             <div className="pt-3 px-2">
                               <TemplateMiniPreview templateId={tmpl.id} data={data} />
                             </div>
-                            <div className="py-2 border-t border-app-border">
+                            <div className="py-2 border-t border-app-border w-full">
                               <span
-                                className={`text-xs font-semibold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
+                                className={`text-xs font-semibold ${
+                                  isSelected && !isDisabledByUpload
+                                    ? 'text-accent'
+                                    : 'text-app-text-secondary'
+                                }`}
                               >
                                 {t(tmpl.labelKey)}
                               </span>
@@ -328,44 +458,267 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         );
                       })}
                     </div>
+                    {hasUpload && (
+                      <p className="text-xs text-app-text-muted mt-2 flex items-center gap-1.5">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Templates desactives car un design personnalise est en cours
+                      </p>
+                    )}
                   </div>
 
-                  {/* QR Color Styles */}
+                  {/* QR Foreground Color */}
                   <div>
                     <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrCodeTitle')}
+                      Couleur du QR
                     </p>
-                    <div className="flex gap-2.5">
-                      {QR_STYLES.map((style) => {
-                        const isActive = data.qrStyle === style.id;
-                        const previewFg =
-                          style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {fgPresets.map((p) => (
+                        <ColorSwatch
+                          key={p.color}
+                          color={p.color}
+                          isActive={fgColor.toLowerCase() === p.color.toLowerCase()}
+                          onClick={() => {
+                            updateData({ qrCustomFgColor: p.color });
+                            setShowFgPicker(false);
+                          }}
+                          ariaLabel={p.label}
+                        />
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowFgPicker((v) => !v)}
+                        className={`h-9 px-3 rounded-full border text-xs ${
+                          showFgPicker
+                            ? 'border-accent bg-accent/5 text-accent'
+                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
+                        }`}
+                      >
+                        Personnalise
+                      </Button>
+                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
+                        {fgColor.toUpperCase()}
+                      </span>
+                    </div>
+                    {showFgPicker && (
+                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
+                        <HexColorPicker
+                          color={fgColor}
+                          onChange={(c) => updateData({ qrCustomFgColor: c })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* QR Background Color */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Fond du QR</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {bgPresets.map((p) => (
+                        <ColorSwatch
+                          key={p.color}
+                          color={p.color}
+                          isActive={bgColor.toLowerCase() === p.color.toLowerCase()}
+                          onClick={() => {
+                            updateData({ qrCustomBgColor: p.color });
+                            setShowBgPicker(false);
+                          }}
+                          ariaLabel={p.label}
+                        />
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowBgPicker((v) => !v)}
+                        className={`h-9 px-3 rounded-full border text-xs ${
+                          showBgPicker
+                            ? 'border-accent bg-accent/5 text-accent'
+                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
+                        }`}
+                      >
+                        Personnalise
+                      </Button>
+                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
+                        {bgColor.toUpperCase()}
+                      </span>
+                    </div>
+                    {showBgPicker && (
+                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
+                        <HexColorPicker
+                          color={bgColor}
+                          onChange={(c) => updateData({ qrCustomBgColor: c })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dimensions */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      Dimensions du support
+                    </p>
+
+                    {/* Orientation toggle */}
+                    <div className="inline-flex items-center h-9 rounded-xl border border-app-border bg-app-elevated overflow-hidden mb-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => toggleOrientation('portrait')}
+                        className={`h-full px-4 rounded-none border-r border-app-border text-xs font-medium ${
+                          orientation === 'portrait'
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-app-text-secondary hover:bg-app-border/30'
+                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                      >
+                        Portrait
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => toggleOrientation('landscape')}
+                        className={`h-full px-4 rounded-none text-xs font-medium ${
+                          orientation === 'landscape'
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-app-text-secondary hover:bg-app-border/30'
+                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                      >
+                        <RotateCw className="h-3 w-3 mr-1.5" />
+                        Paysage
+                      </Button>
+                    </div>
+
+                    {/* Format presets */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {FORMAT_PRESETS.map((preset) => {
+                        const presetW = orientation === 'landscape' ? preset.height : preset.width;
+                        const presetH = orientation === 'landscape' ? preset.width : preset.height;
+                        const isActive = widthMm === presetW && heightMm === presetH;
                         return (
                           <Button
-                            key={style.id}
+                            key={preset.id}
                             type="button"
                             variant="outline"
-                            onClick={() => updateData({ qrStyle: style.id })}
-                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all p-0 ${
+                            onClick={() => applyFormatPreset(preset)}
+                            className={`h-8 px-3 rounded-lg border text-xs font-medium ${
                               isActive
-                                ? 'border-accent '
-                                : 'border-app-border hover:border-app-border-hover'
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary'
                             }`}
-                            style={{ backgroundColor: style.bg }}
                           >
-                            <div
-                              className="w-5 h-5 rounded-md"
-                              style={{ backgroundColor: previewFg }}
-                            />
+                            {preset.label}
                           </Button>
                         );
                       })}
                     </div>
+
+                    {/* Width / Height inputs */}
+                    <div className="grid grid-cols-2 gap-3 max-w-md">
+                      <div>
+                        <label className="text-[11px] text-app-text-muted block mb-1.5">
+                          Largeur (mm)
+                        </label>
+                        <Input
+                          type="number"
+                          min={MIN_DIM_MM}
+                          max={MAX_DIM_MM}
+                          value={widthMm}
+                          onChange={(e) =>
+                            setDimensions(Number(e.target.value) || MIN_DIM_MM, heightMm)
+                          }
+                          className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-app-text-muted block mb-1.5">
+                          Hauteur (mm)
+                        </label>
+                        <Input
+                          type="number"
+                          min={MIN_DIM_MM}
+                          max={MAX_DIM_MM}
+                          value={heightMm}
+                          onChange={(e) =>
+                            setDimensions(widthMm, Number(e.target.value) || MIN_DIM_MM)
+                          }
+                          className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-app-text-muted mt-2">
+                      Entre {MIN_DIM_MM} mm (A5) et {MAX_DIM_MM} mm (A4)
+                    </p>
+                  </div>
+
+                  {/* Upload custom design */}
+                  <div className="border-t border-app-border pt-6">
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      Ou uploadez votre propre design
+                    </p>
+                    {/* Native file input — exception per react/forbid-elements rule comment */}
+                    {/* eslint-disable-next-line react/forbid-elements */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/svg+xml,application/pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    {hasUpload ? (
+                      <div className="flex items-center gap-3 p-3 rounded-xl border border-app-border bg-app-elevated/40">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-app-bg flex items-center justify-center shrink-0">
+                          {data.qrUploadedDesignUrl?.endsWith('.pdf') ? (
+                            <span className="text-[10px] font-bold text-app-text-muted">PDF</span>
+                          ) : (
+                            <img
+                              src={data.qrUploadedDesignUrl}
+                              alt="Uploaded design"
+                              className="w-full h-full object-contain"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-app-text">Design personnalise</p>
+                          <p className="text-[11px] text-app-text-muted truncate">
+                            {widthMm} x {heightMm} mm appliques a l&apos;export
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleRemoveUpload}
+                          aria-label="Supprimer"
+                          className="h-9 w-9 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleUploadClick}
+                        disabled={uploading}
+                        className="w-full h-auto py-4 px-4 rounded-xl border border-dashed border-app-border hover:border-accent/40 hover:bg-app-elevated/30 transition-all flex flex-col items-center gap-1.5"
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-app-text-muted" />
+                        ) : (
+                          <Upload className="h-5 w-5 text-app-text-muted" />
+                        )}
+                        <span className="text-sm font-semibold text-app-text-secondary">
+                          {uploading ? 'Telechargement...' : 'Glissez ou cliquez pour choisir'}
+                        </span>
+                        <span className="text-[11px] text-app-text-muted">
+                          PNG, SVG, PDF - max 5 Mo
+                        </span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Text Tab */}
+              {/* ────── Text Tab ────── */}
               {activeTab === 'text' && (
                 <div className="space-y-6">
                   {/* CTA Presets */}
@@ -420,15 +773,25 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 </div>
               )}
 
-              {/* Export Tab */}
+              {/* ────── Export Tab ────── */}
               {activeTab === 'export' && (
                 <div>
-                  <LaunchQR
-                    config={qrConfig}
-                    url={menuUrl}
-                    tenantName={data.tenantName}
-                    logoUrl={data.logoUrl || undefined}
-                  />
+                  <div className="rounded-xl border border-app-border bg-app-elevated/40 p-5">
+                    <p className="text-sm font-semibold text-app-text mb-1">
+                      Telecharger votre QR code
+                    </p>
+                    <p className="text-xs text-app-text-muted mb-4 tabular-nums">
+                      Support : {widthMm} x {heightMm} mm ·{' '}
+                      {orientation === 'landscape' ? 'Paysage' : 'Portrait'}
+                      {hasUpload ? ' · Design personnalise' : ''}
+                    </p>
+                    <LaunchQR
+                      config={qrConfig}
+                      url={menuUrl}
+                      tenantName={data.tenantName}
+                      logoUrl={data.logoUrl || undefined}
+                    />
+                  </div>
                 </div>
               )}
             </div>

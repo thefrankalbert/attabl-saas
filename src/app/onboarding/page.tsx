@@ -22,6 +22,7 @@ import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
 import { PhonePreview } from '@/components/onboarding/PhonePreview';
+import { QRTemplatePreview } from '@/components/onboarding/QRTemplatePreview';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -103,6 +104,15 @@ export interface OnboardingData {
   qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
   qrCta: string;
   qrDescription: string;
+  // Custom QR colors (independent from brand primaryColor)
+  qrCustomFgColor?: string;
+  qrCustomBgColor?: string;
+  // Custom support dimensions in mm (A5: 148-210, A4: 210-297)
+  qrSupportWidth?: number;
+  qrSupportHeight?: number;
+  qrOrientation?: 'portrait' | 'landscape';
+  // Uploaded design URL (Supabase Storage)
+  qrUploadedDesignUrl?: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -710,9 +720,14 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Phone preview - desktop only */}
+        {/* Right sidebar preview - desktop only */}
+        {/* Shows QR template preview during QR/summary screens, phone mockup otherwise */}
         <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
-          <PhonePreview data={data} phase={phase} />
+          {screenKey === 'qr' || screenKey === 'summary' ? (
+            <QRTemplatePreview data={data} />
+          ) : (
+            <PhonePreview data={data} phase={phase} />
+          )}
         </div>
       </div>
     </div>

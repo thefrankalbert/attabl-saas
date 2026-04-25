@@ -26,10 +26,15 @@ export function onboardingDataToQRConfig(
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
   // Resolve QR fg/bg colors
+  // Custom colors (qrCustomFgColor, qrCustomBgColor) take precedence over qrStyle preset
   const styleKey = data.qrStyle || 'branded';
   const styleColors = QR_STYLE_COLORS[styleKey] ?? QR_STYLE_COLORS.branded;
-  const qrFg = styleColors.fg === 'primary' ? primary : styleColors.fg;
-  const qrBg = styleColors.bg;
+  const qrFg = data.qrCustomFgColor ?? (styleColors.fg === 'primary' ? primary : styleColors.fg);
+  const qrBg = data.qrCustomBgColor ?? styleColors.bg;
+
+  // Resolve dimensions: custom support dimensions take precedence over template defaults
+  const supportWidth = data.qrSupportWidth ?? defaults.width;
+  const supportHeight = data.qrSupportHeight ?? defaults.height;
 
   return {
     ...base,
@@ -37,8 +42,8 @@ export function onboardingDataToQRConfig(
     qrFgColor: qrFg,
     qrBgColor: qrBg,
     qrSize: defaults.qrSize,
-    templateWidth: defaults.width,
-    templateHeight: defaults.height,
+    templateWidth: supportWidth,
+    templateHeight: supportHeight,
     templateAccentColor: primary,
     templateBgColor: secondary,
     templateTextColor: '#FFFFFF',

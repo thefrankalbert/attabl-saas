@@ -207,7 +207,9 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         size="icon"
                         type="button"
                         aria-label="Decrease"
-                        onClick={() => updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))}
+                        onClick={() =>
+                          updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))
+                        }
                         disabled={zone.tableCount <= 1}
                         className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       >
@@ -221,7 +223,9 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         size="icon"
                         type="button"
                         aria-label="Increase"
-                        onClick={() => updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))}
+                        onClick={() =>
+                          updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))
+                        }
                         disabled={zone.tableCount >= 100}
                         className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       >
@@ -366,7 +370,9 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                               size="icon"
                               type="button"
                               aria-label="Decrease"
-                              onClick={() => updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))}
+                              onClick={() =>
+                                updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))
+                              }
                               disabled={zone.tableCount <= 1}
                               className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             >
@@ -380,7 +386,9 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                               size="icon"
                               type="button"
                               aria-label="Increase"
-                              onClick={() => updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))}
+                              onClick={() =>
+                                updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))
+                              }
                               disabled={zone.tableCount >= 100}
                               className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             >
