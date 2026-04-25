@@ -228,7 +228,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                   title={t('copyUrl')}
                 >
                   {copied ? (
-                    <CheckCheck className="h-4 w-4 text-green-500" />
+                    <CheckCheck className="h-4 w-4 text-accent" />
                   ) : (
                     <Copy className="h-4 w-4 text-app-text-secondary" />
                   )}
