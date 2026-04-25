@@ -343,7 +343,7 @@
         "enterprise": {
           "badge": "Sur mesure",
           "title": "ENTERPRISE",
-          "subtitle": "Solution sur mesure pour les grands groupes.",
+          "subtitle": "Pour les groupes, franchises et chaines qui gerent plusieurs sites.",
           "button": "Contactez-nous",
           "featuresTitle": "Inclus dans ENTERPRISE",
           "benefits": {
@@ -513,7 +513,7 @@
       "metaTitle": "Fonctionnalités",
       "metaDescription": "Découvrez toutes les fonctionnalités d'ATTABL : menu digital, commandes, stock, analytics et plus.",
       "heroTitle": "Tout ce dont vous avez besoin",
-      "heroSubtitle": "Une plateforme complète pour gérer votre activité.",
+      "heroSubtitle": "Tout ce dont vous avez besoin. Un seul outil.",
       "categories": {
         "menu": {
           "title": "Menu & Commandes",
@@ -779,7 +779,7 @@
       }
     },
     "footer": {
-      "tagline": "La plateforme moderne\npour la restauration",
+      "tagline": "Votre restaurant digital,\nde A a Z.",
       "copyright": "© {year} Attabl. Tous droits réservés.",
       "columns": {
         "product": {
@@ -819,11 +819,11 @@
     },
     "about": {
       "metaTitle": "À propos",
-      "metaDescription": "Découvrez ATTABL, la plateforme SaaS de gestion digitale pour la restauration et l'hôtellerie.",
+      "metaDescription": "ATTABL aide les restaurants, hotels et bars d'Afrique a digitaliser leur menu, leurs commandes et leur gestion. Decouvrez notre histoire.",
       "heading": "À propos d'ATTABL",
-      "intro": "ATTABL est une plateforme SaaS conçue pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
+      "intro": "ATTABL est un outil concu pour digitaliser la gestion des restaurants, hotels et etablissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
       "visionTitle": "Notre vision",
-      "visionBody": "Nous croyons que chaque établissement, du petit bistrot au grand hôtel, mérite des outils digitaux performants. ATTABL offre un menu QR code, un système de commandes en temps réel, un POS tactile, un affichage cuisine (KDS), et des analytics avancés - le tout dans une seule plateforme.",
+      "visionBody": "Nous croyons que chaque etablissement, du petit bistrot au grand hotel, merite des outils digitaux qui fonctionnent vraiment. ATTABL regroupe menu QR code, commandes en temps reel, POS tactile, ecran cuisine (KDS) et analytics - tout au meme endroit.",
       "techTitle": "Technologie",
       "techBody": "Construite avec les technologies les plus récentes (Next.js, React, Supabase, Tailwind CSS), ATTABL est rapide, sécurisée et disponible en tant que Progressive Web App (PWA) sur tous les appareils.",
       "contactButton": "Nous contacter",
@@ -909,7 +909,7 @@
         "heroTitle": "1 point de vente ou 10. Même contrôle.",
         "heroSubtitle": "Ecran cuisine, stock centralise. La vitesse a grande echelle.",
         "feature1Title": "Dashboard multi-sites",
-        "feature1Description": "Performances de chaque point de vente en temps réel. Comparez, identifiez, optimisez.",
+        "feature1Description": "Performances de chaque point de vente en temps réel. Comparez. Identifiez. Ajustez.",
         "feature2Title": "KDS intelligent",
         "feature2Description": "Commandes directes vers la cuisine. Priorite automatique, zero erreur.",
         "feature3Title": "Stock centralisé",
@@ -917,7 +917,7 @@
         "ctaTitle": "Grandissez sans perdre le contrôle."
       },
       "hotels": {
-        "heroTitle": "Un hôtel. Plusieurs restaurants. Une seule plateforme.",
+        "heroTitle": "Un hôtel. Plusieurs restaurants. Un seul tableau de bord.",
         "heroSubtitle": "Room service, bar, restaurant - vos clients commandent dans leur langue, vous gérez tout au même endroit.",
         "feature1Title": "Chambre par chambre",
         "feature1Description": "QR code unique par chambre. Le client commande depuis son lit, dans sa langue. Zéro appel à la réception.",
