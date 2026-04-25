@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { LaunchQR } from '@/components/qr/LaunchQR';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
@@ -97,7 +98,8 @@ function TemplateMiniPreview({
   );
 }
 
-/** Color preset swatch - clickable to select a quick color */
+/** Color preset swatch - clickable to select a quick color.
+ *  Renders a checkered pattern when color === 'transparent' to make it visually distinct. */
 function ColorSwatch({
   color,
   isActive,
@@ -109,18 +111,29 @@ function ColorSwatch({
   onClick: () => void;
   ariaLabel: string;
 }) {
+  const isTransparent = color === 'transparent';
   return (
     <Button
       type="button"
       variant="outline"
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`w-9 h-9 rounded-full border-2 p-0 transition-all ${
+      className={`w-9 h-9 rounded-full border-2 p-0 transition-all overflow-hidden ${
         isActive
           ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
           : 'border-app-border hover:border-app-border-hover'
       }`}
-      style={{ backgroundColor: color }}
+      style={
+        isTransparent
+          ? {
+              backgroundImage:
+                'linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)',
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
+              backgroundColor: '#ffffff',
+            }
+          : { backgroundColor: color }
+      }
     />
   );
 }
@@ -132,6 +145,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const [activeTab, setActiveTab] = useState<LaunchTab>('style');
   const [showFgPicker, setShowFgPicker] = useState(false);
   const [showBgPicker, setShowBgPicker] = useState(false);
+  const [showCardPicker, setShowCardPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,6 +188,10 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   // ─── Color helpers ───────────────────────────────
   const fgColor = data.qrCustomFgColor ?? '#000000';
   const bgColor = data.qrCustomBgColor ?? '#FFFFFF';
+  const cardBgColor = data.qrCustomCardBgColor ?? '#FFFFFF';
+
+  // Logo: explicit toggle. Default ON if user has a logoUrl, OFF otherwise.
+  const showLogo = data.qrShowLogo === undefined ? !!data.logoUrl : data.qrShowLogo;
 
   const fgPresets = [
     { color: '#000000', label: 'Noir' },
@@ -184,7 +202,14 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const bgPresets = [
     { color: '#FFFFFF', label: 'Blanc' },
     { color: '#F6F6F6', label: 'Gris clair' },
-    { color: '#000000', label: 'Noir' },
+    { color: 'transparent', label: 'Transparent' },
+  ];
+
+  const cardBgPresets = [
+    { color: '#FFFFFF', label: 'Blanc' },
+    { color: '#F6F6F6', label: 'Gris clair' },
+    { color: data.primaryColor || '#000000', label: 'Couleur de marque' },
+    { color: 'transparent', label: 'Sans fond' },
   ];
 
   // ─── Dimensions helpers ───────────────────────────
@@ -562,6 +587,69 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       </div>
                     )}
                   </div>
+
+                  {/* Couleur du support (carte) */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      Couleur du support
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {cardBgPresets.map((p) => (
+                        <ColorSwatch
+                          key={p.color}
+                          color={p.color}
+                          isActive={cardBgColor.toLowerCase() === p.color.toLowerCase()}
+                          onClick={() => {
+                            updateData({ qrCustomCardBgColor: p.color });
+                            setShowCardPicker(false);
+                          }}
+                          ariaLabel={p.label}
+                        />
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCardPicker((v) => !v)}
+                        className={`h-9 px-3 rounded-full border text-xs ${
+                          showCardPicker
+                            ? 'border-accent bg-accent/5 text-accent'
+                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
+                        }`}
+                      >
+                        Personnalise
+                      </Button>
+                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
+                        {cardBgColor === 'transparent' ? 'TRANSPARENT' : cardBgColor.toUpperCase()}
+                      </span>
+                    </div>
+                    {showCardPicker && (
+                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
+                        <HexColorPicker
+                          color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
+                          onChange={(c) => updateData({ qrCustomCardBgColor: c })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Logo toggle - only shown if user has uploaded a logo */}
+                  {data.logoUrl && (
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-app-border bg-app-elevated/30">
+                      <div>
+                        <p className="text-sm font-semibold text-app-text">
+                          Afficher le logo dans le QR
+                        </p>
+                        <p className="text-xs text-app-text-muted mt-0.5">
+                          Place votre logo au centre du QR code
+                        </p>
+                      </div>
+                      <Switch
+                        checked={showLogo}
+                        onCheckedChange={(checked) => updateData({ qrShowLogo: checked })}
+                        aria-label="Afficher le logo dans le QR"
+                      />
+                    </div>
+                  )}
 
                   {/* Dimensions */}
                   <div>

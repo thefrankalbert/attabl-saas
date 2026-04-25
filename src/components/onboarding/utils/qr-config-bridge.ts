@@ -38,6 +38,17 @@ export function onboardingDataToQRConfig(
   const supportWidth = data.qrSupportWidth || defaults.width;
   const supportHeight = data.qrSupportHeight || defaults.height;
 
+  // Card background: user choice > white default. NEVER force the brand secondary color.
+  // Templates would impose dark/colored cards otherwise (most users want a clean white card).
+  const cardBg = data.qrCustomCardBgColor || '#FFFFFF';
+
+  // Logo on QR: explicit toggle. Default ON only if user has uploaded a logo.
+  // Once user has explicitly set qrShowLogo=false, respect that choice.
+  const logoEnabled = data.qrShowLogo === false ? false : !!data.logoUrl;
+
+  // Text color auto-adapts to card background for readability
+  const textColor = isLightColor(cardBg) ? '#1A1A1A' : '#FFFFFF';
+
   return {
     ...base,
     templateId,
@@ -47,12 +58,12 @@ export function onboardingDataToQRConfig(
     templateWidth: supportWidth,
     templateHeight: supportHeight,
     templateAccentColor: primary,
-    templateBgColor: secondary,
-    templateTextColor: '#FFFFFF',
+    templateBgColor: cardBg,
+    templateTextColor: textColor,
     ctaText: data.qrCta || '',
     descriptionText: data.qrDescription || '',
     logo: {
-      enabled: !!data.logoUrl,
+      enabled: logoEnabled,
       src: data.logoUrl || '',
       width: 50,
       height: 50,
@@ -63,4 +74,27 @@ export function onboardingDataToQRConfig(
     showPoweredBy: true,
     fontFamily: 'Geist',
   };
+}
+
+/**
+ * Returns true if a hex color is light (luminance > 0.6).
+ * Used to pick contrasting text color on the card.
+ * Returns true for 'transparent' (assume light backdrop).
+ */
+function isLightColor(hex: string): boolean {
+  if (hex === 'transparent' || !hex.startsWith('#')) return true;
+  const clean = hex.replace('#', '');
+  if (clean.length !== 3 && clean.length !== 6) return true;
+  const expanded =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
+  const r = parseInt(expanded.slice(0, 2), 16) / 255;
+  const g = parseInt(expanded.slice(2, 4), 16) / 255;
+  const b = parseInt(expanded.slice(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.6;
 }

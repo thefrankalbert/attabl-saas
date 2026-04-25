@@ -107,6 +107,11 @@ export interface OnboardingData {
   // Custom QR colors (independent from brand primaryColor)
   qrCustomFgColor?: string;
   qrCustomBgColor?: string;
+  // Logo on QR template - explicit user choice (default true if logoUrl exists)
+  qrShowLogo?: boolean;
+  // Custom card/support background color (override imposed brand secondary color)
+  // Use 'transparent' for no background
+  qrCustomCardBgColor?: string;
   // Custom support dimensions in mm (A5: 148-210, A4: 210-297)
   qrSupportWidth?: number;
   qrSupportHeight?: number;
