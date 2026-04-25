@@ -39,7 +39,6 @@
     "error": "Erreur",
     "actions": "Actions",
     "saveChanges": "Enregistrer les modifications",
-    "confirmDelete": "Confirmer la suppression",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ?",
     "loadingData": "Chargement des données...",
     "item": "article",
@@ -276,8 +275,8 @@
         "starter": {
           "badge": "Pour démarrer",
           "title": "STARTER",
-          "subtitle": "Digitalisez votre menu et vos commandes.",
-          "button": "Commencer",
+          "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
+          "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans STARTER",
           "benefits": {
             "b1": "Menu QR bilingue (FR/EN)",
@@ -296,7 +295,7 @@
         "pro": {
           "badge": "Essai gratuit 14 jours",
           "title": "PRO",
-          "subtitle": "Pilotez votre restaurant comme un pro.",
+          "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout controler.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans PRO",
           "benefits": {
@@ -321,7 +320,7 @@
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Gérez un hôtel ou une chaîne, tout au même endroit.",
+          "subtitle": "Hotel, chaine ou multi-sites : un seul dashboard pour tout piloter.",
           "primaryButton": "Commencer",
           "secondaryButton": "Voir une démo",
           "featuresTitle": "Inclus dans BUSINESS",
@@ -562,9 +561,9 @@
         "titleLine1": "Petit comptoir",
         "titleLine2": "ou grande enseigne.",
         "titleLine3": "Marquez votre territoire.",
-        "subtitle": "Menu, commandes, stocks, finances - tout piloté depuis un seul outil.",
-        "ctaPrimary": "Commencer",
-        "ctaSecondary": "Contacter l'équipe",
+        "subtitle": "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Vos chiffres tombent sans effort.",
+        "ctaPrimary": "Essayer gratuitement",
+        "ctaSecondary": "Voir une demo",
         "segments": {
           "restaurant": "Restaurant",
           "hotel": "Hôtel",
@@ -717,9 +716,9 @@
       },
       "cta": {
         "title": "Votre commerce mérite mieux qu'un carnet et une calculette.",
-        "subtitle": "Créez votre compte en 2 minutes.",
-        "primary": "Créer mon compte gratuit",
-        "secondary": "Parler à un conseiller",
+        "subtitle": "Compte cree en 2 minutes. Votre menu en ligne aujourd'hui.",
+        "primary": "Lancer mon restaurant - gratuit",
+        "secondary": "Voir comment ca marche",
         "footer": "14 jours gratuits - Aucune carte bancaire requise - Support WhatsApp 24/7"
       }
     },
@@ -735,18 +734,48 @@
       "appearance": "Apparence",
       "allFeatures": "Toutes les fonctionnalités",
       "segments": {
-        "restaurants": { "label": "Restaurants", "description": "Gastronomie et service à table" },
-        "hotels": { "label": "Hôtels", "description": "Room service et multi-venues" },
-        "quickService": { "label": "Quick-Service", "description": "Rapidité et efficacité" },
-        "barsCafes": { "label": "Bars & Cafés", "description": "Comptoir et terrasse" },
-        "fastFood": { "label": "Fast-Food", "description": "Vitesse et volume optimisés" }
+        "restaurants": {
+          "label": "Restaurants",
+          "description": "Gastronomie et service à table"
+        },
+        "hotels": {
+          "label": "Hôtels",
+          "description": "Room service et multi-venues"
+        },
+        "quickService": {
+          "label": "Quick-Service",
+          "description": "Rapidité et efficacité"
+        },
+        "barsCafes": {
+          "label": "Bars & Cafés",
+          "description": "Comptoir et terrasse"
+        },
+        "fastFood": {
+          "label": "Fast-Food",
+          "description": "Vitesse et volume optimisés"
+        }
       },
       "featuresList": {
-        "menu": { "label": "Menu Digital", "description": "QR code, bilingue, modifiers" },
-        "orders": { "label": "Commandes", "description": "4 modes de service" },
-        "stock": { "label": "Stock & Recettes", "description": "Déstockage automatique" },
-        "analytics": { "label": "Analytics", "description": "Rapports en temps réel" },
-        "currencies": { "label": "Multi-devises", "description": "XAF, EUR, USD" }
+        "menu": {
+          "label": "Menu Digital",
+          "description": "QR code, bilingue, modifiers"
+        },
+        "orders": {
+          "label": "Commandes",
+          "description": "4 modes de service"
+        },
+        "stock": {
+          "label": "Stock & Recettes",
+          "description": "Déstockage automatique"
+        },
+        "analytics": {
+          "label": "Analytics",
+          "description": "Rapports en temps réel"
+        },
+        "currencies": {
+          "label": "Multi-devises",
+          "description": "XAF, EUR, USD"
+        }
       }
     },
     "footer": {
@@ -2998,20 +3027,20 @@
     "next": "Continuer",
     "back": "Précédent",
     "skip": "Passer",
-    "launchButton": "Lancer mon établissement",
-    "trialReminder": "14 jours d'essai gratuit",
+    "launchButton": "Lancer mon restaurant",
+    "trialReminder": "14 jours gratuits - aucune carte requise",
     "stepEstablishment": "Établissement",
-    "stepEstablishmentDesc": "Informations de base",
+    "stepEstablishmentDesc": "Nom, type, adresse",
     "stepTables": "Tables",
-    "stepTablesDesc": "Configuration des zones",
+    "stepTablesDesc": "Vos tables en 30 secondes",
     "stepBranding": "Personnalisation",
     "stepBrandingDesc": "Logo et couleurs",
     "stepMenu": "Menu",
-    "stepMenuDesc": "Vos premiers plats",
+    "stepMenuDesc": "Votre premiere carte",
     "stepLaunch": "Lancement",
-    "stepLaunchDesc": "Tout est prêt",
-    "establishmentTitle": "Parlez-nous de votre établissement",
-    "establishmentSubtitle": "Ces informations nous aident à configurer votre espace",
+    "stepLaunchDesc": "QR code et mise en ligne",
+    "establishmentTitle": "Comment s'appelle votre restaurant ?",
+    "establishmentSubtitle": "On configure tout automatiquement ensuite.",
     "nameLabel": "Nom de l'établissement",
     "namePlaceholder": "Ex : Le Petit Bistrot",
     "typeRestaurant": "Restaurant",
@@ -3112,7 +3141,7 @@
     "launchCTA": "Lancer mon établissement",
     "saveError": "Erreur lors de la sauvegarde",
     "completeError": "Erreur lors du lancement",
-    "welcomeTitle": "Bienvenue {name} !",
+    "welcomeTitle": "On lance {name}.",
     "welcomeSubtitle": "Configurons votre espace en quelques minutes",
     "welcomeCTA": "C'est parti",
     "autoSaving": "Sauvegarde...",
@@ -3149,13 +3178,13 @@
     "phaseIdentity": "Identité",
     "phaseMenu": "Menu",
     "phaseLaunch": "Lancement",
-    "phaseIdentityDesc": "Votre établissement et votre marque",
-    "phaseMenuDesc": "Tables et carte du menu",
-    "phaseLaunchDesc": "QR code et mise en ligne",
+    "phaseIdentityDesc": "Votre nom, votre adresse, vos couleurs",
+    "phaseMenuDesc": "Vos tables et votre premiere carte",
+    "phaseLaunchDesc": "Votre QR code pret a imprimer",
     "continueButton": "Continuer",
     "optional": "optionnel",
     "studioTitle": "Bienvenue dans votre studio",
-    "studioSubtitle": "Configurez votre menu digital en quelques minutes",
+    "studioSubtitle": "3 etapes. 5 minutes. Votre restaurant en ligne aujourd'hui.",
     "cropTitle": "Recadrer le logo",
     "cropApply": "Appliquer",
     "cropUploading": "Envoi...",
