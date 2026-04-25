@@ -27,7 +27,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           width: '900px',
           height: '600px',
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 50%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 100%)',
+            'radial-gradient(ellipse 60% 50% at 50% 50%, color-mix(in srgb, var(--app-accent) 6%, transparent) 0%, transparent 100%)',
         }}
       />
       <div
@@ -36,7 +36,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           width: '600px',
           height: '300px',
           background:
-            'radial-gradient(ellipse 70% 60% at 50% 100%, color-mix(in srgb, var(--primary) 5%, transparent) 0%, transparent 100%)',
+            'radial-gradient(ellipse 70% 60% at 50% 100%, color-mix(in srgb, var(--app-accent) 4%, transparent) 0%, transparent 100%)',
         }}
       />
 
@@ -70,7 +70,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
                   {/* Timeline spine */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 relative">
-                      <Icon className="h-[18px] w-[18px] text-primary" strokeWidth={2} />
+                      <Icon className="h-[18px] w-[18px] text-app-text-secondary" strokeWidth={2} />
                       <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground leading-none">
                         {phase.num}
                       </span>
@@ -106,7 +106,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
 
           {/* Trial reminder */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
           </div>
         </div>
