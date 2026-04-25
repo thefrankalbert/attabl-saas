@@ -76,39 +76,31 @@ function NumberStepper({
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
-      <div className="flex items-center gap-2">
+      <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           aria-label="Decrease"
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
+          className="h-full w-11 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-4 w-4 text-app-text-secondary" />
         </Button>
-        <Input
-          type="number"
-          value={value}
-          onChange={(e) => {
-            const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= min && val <= max) {
-              onChange(val);
-            }
-          }}
-          className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          min={min}
-          max={max}
-        />
+        <span className="w-14 text-center font-semibold text-base text-app-text tabular-nums select-none">
+          {value}
+        </span>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           aria-label="Increase"
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
+          className="h-full w-11 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 text-app-text-secondary" />
         </Button>
       </div>
     </div>
