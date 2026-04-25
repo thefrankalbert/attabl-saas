@@ -60,7 +60,7 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
         />
 
         {/* Logo or tenant name in larger font */}
-        {logoUrl ? (
+        {logoUrl && config.logo.enabled ? (
           <img src={logoUrl} alt={tenantName} className="h-10 w-auto object-contain mb-2" />
         ) : (
           <h2

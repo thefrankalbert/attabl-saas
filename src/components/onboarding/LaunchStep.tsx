@@ -24,7 +24,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { LaunchQR } from '@/components/qr/LaunchQR';
-import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
@@ -64,39 +63,6 @@ const FORMAT_PRESETS = [
   { id: 'a5', label: 'A5', width: 148, height: 210 },
   { id: 'a4', label: 'A4', width: 210, height: 297 },
 ];
-
-/** Renders a real template at mini scale for the template picker */
-function TemplateMiniPreview({
-  templateId,
-  data,
-}: {
-  templateId: QRTemplateId;
-  data: OnboardingData;
-}) {
-  const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
-  const TemplateComponent = TEMPLATE_REGISTRY[templateId];
-  const defaults = TEMPLATE_DEFAULTS[templateId];
-
-  const templateHeightPx = defaults.height * 3.78;
-  const templateWidthPx = defaults.width * 3.78;
-  const scale = Math.min(86 / templateHeightPx, 110 / templateWidthPx, 0.22);
-
-  return (
-    <div
-      className="relative overflow-hidden flex items-center justify-center"
-      style={{ height: 90, width: '100%' }}
-    >
-      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
-        <TemplateComponent
-          config={config}
-          url="https://attabl.com"
-          tenantName={data.tenantName || 'Mon resto'}
-          logoUrl={data.logoUrl || undefined}
-        />
-      </div>
-    </div>
-  );
-}
 
 /** Color preset swatch - clickable to select a quick color.
  *  Renders a checkered pattern when color === 'transparent' to make it visually distinct. */
@@ -453,241 +419,226 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 })}
               </div>
 
-              {/* ────── Style Tab ────── */}
+              {/* ────── Style Tab — compact ChatGPT-like hierarchy ────── */}
               {activeTab === 'style' && (
-                <div className="space-y-7">
-                  {/* Templates */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="space-y-5">
+                  {/* Template — compact text pills (no card grid) */}
+                  <section>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-app-text-secondary">Template</p>
+                      {hasUpload && (
+                        <span className="text-[11px] text-app-text-muted flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Desactive (design personnalise)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
                       {TEMPLATES.map((tmpl) => {
                         const isSelected = data.qrTemplate === tmpl.id;
-                        const isDisabledByUpload = hasUpload;
+                        const disabled = hasUpload;
                         return (
                           <Button
                             key={tmpl.id}
                             type="button"
                             variant="outline"
                             onClick={() => updateData({ qrTemplate: tmpl.id })}
-                            disabled={isDisabledByUpload}
-                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
-                              isSelected && !isDisabledByUpload
-                                ? 'border-accent bg-accent/5'
-                                : 'border-app-border hover:border-app-border-hover'
-                            } ${isDisabledByUpload ? 'opacity-40' : ''}`}
+                            disabled={disabled}
+                            className={`h-8 px-3 rounded-full border text-xs font-medium transition-all ${
+                              isSelected && !disabled
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                            } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                           >
-                            <div className="pt-3 px-2">
-                              <TemplateMiniPreview templateId={tmpl.id} data={data} />
-                            </div>
-                            <div className="py-2 border-t border-app-border w-full">
-                              <span
-                                className={`text-xs font-semibold ${
-                                  isSelected && !isDisabledByUpload
-                                    ? 'text-accent'
-                                    : 'text-app-text-secondary'
-                                }`}
-                              >
-                                {t(tmpl.labelKey)}
-                              </span>
-                            </div>
+                            {t(tmpl.labelKey)}
                           </Button>
                         );
                       })}
                     </div>
-                    {hasUpload && (
-                      <p className="text-xs text-app-text-muted mt-2 flex items-center gap-1.5">
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        Templates desactives car un design personnalise est en cours
+                  </section>
+
+                  {/* Colors grid — 2 columns on desktop, stacks on mobile */}
+                  <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                    {/* QR foreground */}
+                    <div>
+                      <p className="text-[11px] font-semibold text-app-text-secondary mb-2">
+                        Couleur du QR
                       </p>
-                    )}
-                  </div>
-
-                  {/* QR Foreground Color */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      Couleur du QR
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {fgPresets.map((p) => (
-                        <ColorSwatch
-                          key={p.color}
-                          color={p.color}
-                          isActive={fgColor.toLowerCase() === p.color.toLowerCase()}
-                          onClick={() => {
-                            updateData({ qrCustomFgColor: p.color });
-                            setShowFgPicker(false);
-                          }}
-                          ariaLabel={p.label}
-                        />
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowFgPicker((v) => !v)}
-                        className={`h-9 px-3 rounded-full border text-xs ${
-                          showFgPicker
-                            ? 'border-accent bg-accent/5 text-accent'
-                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
-                        }`}
-                      >
-                        Personnalise
-                      </Button>
-                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
-                        {fgColor.toUpperCase()}
-                      </span>
-                    </div>
-                    {showFgPicker && (
-                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
-                        <HexColorPicker
-                          color={fgColor}
-                          onChange={(c) => updateData({ qrCustomFgColor: c })}
-                        />
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {fgPresets.map((p) => (
+                          <ColorSwatch
+                            key={p.color}
+                            color={p.color}
+                            isActive={fgColor.toLowerCase() === p.color.toLowerCase()}
+                            onClick={() => {
+                              updateData({ qrCustomFgColor: p.color });
+                              setShowFgPicker(false);
+                            }}
+                            ariaLabel={p.label}
+                          />
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowFgPicker((v) => !v)}
+                          className={`h-9 px-2.5 rounded-full border text-[11px] ${
+                            showFgPicker
+                              ? 'border-accent bg-accent/5 text-accent'
+                              : 'border-app-border text-app-text-secondary'
+                          }`}
+                        >
+                          Custom
+                        </Button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* QR Background Color */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Fond du QR</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {bgPresets.map((p) => (
-                        <ColorSwatch
-                          key={p.color}
-                          color={p.color}
-                          isActive={bgColor.toLowerCase() === p.color.toLowerCase()}
-                          onClick={() => {
-                            updateData({ qrCustomBgColor: p.color });
-                            setShowBgPicker(false);
-                          }}
-                          ariaLabel={p.label}
-                        />
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowBgPicker((v) => !v)}
-                        className={`h-9 px-3 rounded-full border text-xs ${
-                          showBgPicker
-                            ? 'border-accent bg-accent/5 text-accent'
-                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
-                        }`}
-                      >
-                        Personnalise
-                      </Button>
-                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
-                        {bgColor.toUpperCase()}
-                      </span>
+                      {showFgPicker && (
+                        <div className="mt-2 inline-block p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                          <HexColorPicker
+                            color={fgColor}
+                            onChange={(c) => updateData({ qrCustomFgColor: c })}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {showBgPicker && (
-                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
-                        <HexColorPicker
-                          color={bgColor}
-                          onChange={(c) => updateData({ qrCustomBgColor: c })}
-                        />
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Couleur du support (carte) */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      Couleur du support
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {cardBgPresets.map((p) => (
-                        <ColorSwatch
-                          key={p.color}
-                          color={p.color}
-                          isActive={cardBgColor.toLowerCase() === p.color.toLowerCase()}
-                          onClick={() => {
-                            updateData({ qrCustomCardBgColor: p.color });
-                            setShowCardPicker(false);
-                          }}
-                          ariaLabel={p.label}
-                        />
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowCardPicker((v) => !v)}
-                        className={`h-9 px-3 rounded-full border text-xs ${
-                          showCardPicker
-                            ? 'border-accent bg-accent/5 text-accent'
-                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover'
-                        }`}
-                      >
-                        Personnalise
-                      </Button>
-                      <span className="text-[11px] font-mono text-app-text-muted ml-2 tabular-nums">
-                        {cardBgColor === 'transparent' ? 'TRANSPARENT' : cardBgColor.toUpperCase()}
-                      </span>
+                    {/* QR background */}
+                    <div>
+                      <p className="text-[11px] font-semibold text-app-text-secondary mb-2">
+                        Fond du QR
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {bgPresets.map((p) => (
+                          <ColorSwatch
+                            key={p.color}
+                            color={p.color}
+                            isActive={bgColor.toLowerCase() === p.color.toLowerCase()}
+                            onClick={() => {
+                              updateData({ qrCustomBgColor: p.color });
+                              setShowBgPicker(false);
+                            }}
+                            ariaLabel={p.label}
+                          />
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowBgPicker((v) => !v)}
+                          className={`h-9 px-2.5 rounded-full border text-[11px] ${
+                            showBgPicker
+                              ? 'border-accent bg-accent/5 text-accent'
+                              : 'border-app-border text-app-text-secondary'
+                          }`}
+                        >
+                          Custom
+                        </Button>
+                      </div>
+                      {showBgPicker && (
+                        <div className="mt-2 inline-block p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                          <HexColorPicker
+                            color={bgColor === 'transparent' ? '#ffffff' : bgColor}
+                            onChange={(c) => updateData({ qrCustomBgColor: c })}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {showCardPicker && (
-                      <div className="mt-3 inline-block p-3 rounded-xl border border-app-border bg-app-bg shadow-sm">
-                        <HexColorPicker
-                          color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
-                          onChange={(c) => updateData({ qrCustomCardBgColor: c })}
-                        />
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Logo toggle - only shown if user has uploaded a logo */}
-                  {data.logoUrl && (
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-app-border bg-app-elevated/30">
+                    {/* Card support background */}
+                    <div>
+                      <p className="text-[11px] font-semibold text-app-text-secondary mb-2">
+                        Couleur du support
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {cardBgPresets.map((p) => (
+                          <ColorSwatch
+                            key={p.color}
+                            color={p.color}
+                            isActive={cardBgColor.toLowerCase() === p.color.toLowerCase()}
+                            onClick={() => {
+                              updateData({ qrCustomCardBgColor: p.color });
+                              setShowCardPicker(false);
+                            }}
+                            ariaLabel={p.label}
+                          />
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowCardPicker((v) => !v)}
+                          className={`h-9 px-2.5 rounded-full border text-[11px] ${
+                            showCardPicker
+                              ? 'border-accent bg-accent/5 text-accent'
+                              : 'border-app-border text-app-text-secondary'
+                          }`}
+                        >
+                          Custom
+                        </Button>
+                      </div>
+                      {showCardPicker && (
+                        <div className="mt-2 inline-block p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                          <HexColorPicker
+                            color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
+                            onChange={(c) => updateData({ qrCustomCardBgColor: c })}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Logo toggle - inline compact */}
+                    {data.logoUrl && (
                       <div>
-                        <p className="text-sm font-semibold text-app-text">
-                          Afficher le logo dans le QR
+                        <p className="text-[11px] font-semibold text-app-text-secondary mb-2">
+                          Logo
                         </p>
-                        <p className="text-xs text-app-text-muted mt-0.5">
-                          Place votre logo au centre du QR code
-                        </p>
+                        <div className="flex items-center justify-between h-9 px-3 rounded-full border border-app-border bg-app-elevated/40">
+                          <span className="text-xs text-app-text-secondary">Afficher</span>
+                          <Switch
+                            checked={showLogo}
+                            onCheckedChange={(checked) => updateData({ qrShowLogo: checked })}
+                            aria-label="Afficher le logo"
+                          />
+                        </div>
                       </div>
-                      <Switch
-                        checked={showLogo}
-                        onCheckedChange={(checked) => updateData({ qrShowLogo: checked })}
-                        aria-label="Afficher le logo dans le QR"
-                      />
+                    )}
+                  </section>
+
+                  {/* Dimensions — orientation + format + inputs all on one row */}
+                  <section>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-app-text-secondary">Dimensions</p>
+                      <span className="text-[11px] text-app-text-muted">
+                        A5 a A4 (148 - 297 mm)
+                      </span>
                     </div>
-                  )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Orientation pill toggle */}
+                      <div className="inline-flex items-center h-9 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => toggleOrientation('portrait')}
+                          className={`h-full px-3 rounded-none text-[11px] font-medium ${
+                            orientation === 'portrait'
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-app-text-secondary hover:bg-app-border/30'
+                          } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                        >
+                          Portrait
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => toggleOrientation('landscape')}
+                          className={`h-full px-3 rounded-none border-l border-app-border text-[11px] font-medium ${
+                            orientation === 'landscape'
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-app-text-secondary hover:bg-app-border/30'
+                          } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                        >
+                          <RotateCw className="h-3 w-3 mr-1" />
+                          Paysage
+                        </Button>
+                      </div>
 
-                  {/* Dimensions */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      Dimensions du support
-                    </p>
-
-                    {/* Orientation toggle */}
-                    <div className="inline-flex items-center h-9 rounded-xl border border-app-border bg-app-elevated overflow-hidden mb-3">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleOrientation('portrait')}
-                        className={`h-full px-4 rounded-none border-r border-app-border text-xs font-medium ${
-                          orientation === 'portrait'
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-app-text-secondary hover:bg-app-border/30'
-                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                      >
-                        Portrait
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleOrientation('landscape')}
-                        className={`h-full px-4 rounded-none text-xs font-medium ${
-                          orientation === 'landscape'
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-app-text-secondary hover:bg-app-border/30'
-                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                      >
-                        <RotateCw className="h-3 w-3 mr-1.5" />
-                        Paysage
-                      </Button>
-                    </div>
-
-                    {/* Format presets */}
-                    <div className="flex items-center gap-2 mb-3">
+                      {/* Format presets */}
                       {FORMAT_PRESETS.map((preset) => {
                         const presetW = orientation === 'landscape' ? preset.height : preset.width;
                         const presetH = orientation === 'landscape' ? preset.width : preset.height;
@@ -698,7 +649,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             type="button"
                             variant="outline"
                             onClick={() => applyFormatPreset(preset)}
-                            className={`h-8 px-3 rounded-lg border text-xs font-medium ${
+                            className={`h-9 px-3 rounded-full border text-[11px] font-medium ${
                               isActive
                                 ? 'border-accent bg-accent/10 text-accent'
                                 : 'border-app-border text-app-text-secondary'
@@ -708,14 +659,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                           </Button>
                         );
                       })}
-                    </div>
 
-                    {/* Width / Height inputs - local state allows free typing, clamps on blur */}
-                    <div className="grid grid-cols-2 gap-3 max-w-md">
-                      <div>
-                        <label className="text-[11px] text-app-text-muted block mb-1.5">
-                          Largeur (mm)
-                        </label>
+                      {/* Inline width x height inputs */}
+                      <div className="flex items-center gap-1 ml-auto">
                         <Input
                           type="number"
                           min={MIN_DIM_MM}
@@ -730,13 +676,10 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             }
                             setDimensions(n, heightMm);
                           }}
-                          className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
+                          aria-label="Largeur en mm"
+                          className="h-9 w-16 px-2 bg-app-elevated/50 border-app-border rounded-lg text-xs tabular-nums text-center"
                         />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-app-text-muted block mb-1.5">
-                          Hauteur (mm)
-                        </label>
+                        <span className="text-app-text-muted text-xs">x</span>
                         <Input
                           type="number"
                           min={MIN_DIM_MM}
@@ -751,18 +694,17 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             }
                             setDimensions(widthMm, n);
                           }}
-                          className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
+                          aria-label="Hauteur en mm"
+                          className="h-9 w-16 px-2 bg-app-elevated/50 border-app-border rounded-lg text-xs tabular-nums text-center"
                         />
+                        <span className="text-app-text-muted text-[11px] ml-1">mm</span>
                       </div>
                     </div>
-                    <p className="text-[11px] text-app-text-muted mt-2">
-                      Entre {MIN_DIM_MM} mm (A5) et {MAX_DIM_MM} mm (A4)
-                    </p>
-                  </div>
+                  </section>
 
-                  {/* Upload custom design */}
-                  <div className="border-t border-app-border pt-6">
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                  {/* Upload custom design — compact */}
+                  <section className="border-t border-app-border pt-4">
+                    <p className="text-xs font-semibold text-app-text-secondary mb-2">
                       Ou uploadez votre propre design
                     </p>
                     {/* Native file input — exception per react/forbid-elements rule comment */}
@@ -825,7 +767,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         </span>
                       </Button>
                     )}
-                  </div>
+                  </section>
                 </div>
               )}
 

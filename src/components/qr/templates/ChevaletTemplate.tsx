@@ -15,7 +15,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
         height: `${config.templateHeight * 3.78}px`,
         borderRadius: `${config.cornerRadius}px`,
         padding: `${config.padding}px`,
-        backgroundColor: config.gradient.enabled ? undefined : config.templateAccentColor,
+        backgroundColor: config.gradient.enabled ? undefined : config.templateBgColor,
         backgroundImage: config.gradient.enabled
           ? `linear-gradient(${config.gradient.angle}deg, ${config.gradient.colorStart}, ${config.gradient.colorEnd})`
           : config.backgroundImage.enabled && config.backgroundImage.src
@@ -45,7 +45,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
       <div className="relative z-10 flex flex-col items-center w-full h-full">
         {/* Header: Logo or icon */}
         <div className="text-center mb-4">
-          {logoUrl ? (
+          {logoUrl && config.logo.enabled ? (
             <img
               src={logoUrl}
               alt={tenantName}

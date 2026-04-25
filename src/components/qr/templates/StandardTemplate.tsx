@@ -44,7 +44,7 @@ export function StandardTemplate({ config, url, tenantName, tableName, logoUrl }
       <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
         {/* Logo or tenant name header */}
         <div className="mb-4 flex items-center gap-2">
-          {logoUrl ? (
+          {logoUrl && config.logo.enabled ? (
             <img src={logoUrl} alt={tenantName} className="h-8 w-auto object-contain" />
           ) : (
             <div
