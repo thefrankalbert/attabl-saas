@@ -22,13 +22,20 @@ const noViewportInAdminRule = {
     schema: [],
   },
   create(context) {
-    const VP_TO_CQ = { 'sm:': '@sm:', 'md:': '@md:', 'lg:': '@lg:', 'xl:': '@xl:', '2xl:': '@2xl:' };
+    const VP_TO_CQ = {
+      'sm:': '@sm:',
+      'md:': '@md:',
+      'lg:': '@lg:',
+      'xl:': '@xl:',
+      '2xl:': '@2xl:',
+    };
 
     // Patterns that are legitimately viewport-based even inside admin components:
     // - sm:max-w-* / sm:w-* : Dialog/Sheet sizing (modal overlays the viewport)
     // - lg:hidden / lg:flex / lg:block : sidebar show/hide is viewport-driven
     // - lg:flex-row / lg:flex-col : top-level shell flex direction
-    const ALLOWED = /(?:sm:|md:|lg:|xl:)(?:max-w-|min-w-|w-\[|hidden|flex$|block$|flex-row|flex-col|flex-col$)/;
+    const ALLOWED =
+      /(?:sm:|md:|lg:|xl:)(?:max-w-|min-w-|w-\[|hidden|flex$|block$|flex-row|flex-col|flex-col$)/;
 
     function checkString(node, value) {
       const matches = value.match(/(?<![/@\w])(?:2xl|xl|lg|md|sm):/g);

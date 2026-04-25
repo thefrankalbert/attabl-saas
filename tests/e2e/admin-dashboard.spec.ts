@@ -56,9 +56,12 @@ for (const vp of VIEWPORTS) {
     test('MetricsRow renders 4 KPI cards', async ({ page }) => {
       // Each KPI card is a Button inside the MetricsRow grid
       // The grid has 4 children buttons
-      const metricsGrid = page.locator('.grid').filter({
-        has: page.locator('button').nth(3),
-      }).first();
+      const metricsGrid = page
+        .locator('.grid')
+        .filter({
+          has: page.locator('button').nth(3),
+        })
+        .first();
       await expect(metricsGrid).toBeVisible();
     });
 

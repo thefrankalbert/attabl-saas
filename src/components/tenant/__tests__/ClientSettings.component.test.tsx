@@ -96,10 +96,11 @@ afterEach(() => {
 describe('ClientSettings', () => {
   // ─── Rendering ──────────────────────────────────────
 
-  // Header title was removed per UX feedback - only a back button remains
-  it.skip('renders the header with settings title', () => {
+  it('renders back button in header (no title)', () => {
     renderSettings();
-    expect(screen.getByText('settingsTitle')).toBeInTheDocument();
+    const backBtn = screen.getByRole('button', { name: 'ariaGoBack' });
+    expect(backBtn).toBeInTheDocument();
+    expect(screen.queryByText('settingsTitle')).not.toBeInTheDocument();
   });
 
   it('renders the Preferences section label', () => {
@@ -112,11 +113,10 @@ describe('ClientSettings', () => {
     expect(screen.getByText('supportSection')).toBeInTheDocument();
   });
 
-  // TODO: ClientSettings was refactored (footer/about/theme structure changed). Re-enable
-  // and update assertions once the refactor is finalized.
-  it.skip('renders version footer', () => {
+  it('renders footer with poweredBy and appVersion', () => {
     renderSettings();
-    expect(screen.getByText('ATTABL v1.0')).toBeInTheDocument();
+    expect(screen.getByText('poweredBy')).toBeInTheDocument();
+    expect(screen.getByText('appVersion')).toBeInTheDocument();
   });
 
   // ─── Language Toggle ────────────────────────────────
@@ -222,11 +222,10 @@ describe('ClientSettings', () => {
     expect(screen.getByText('storageTitle')).toBeInTheDocument();
   });
 
-  // TODO: privacy modal footer structure changed in refactor; revisit assertion.
-  it.skip('shows tenant name in privacy modal footer', () => {
+  it('shows rights section in privacy modal', () => {
     renderSettings();
     fireEvent.click(screen.getByText('privacyPolicy').closest('button')!);
-    expect(screen.getByText('Le Gourmet • privacy@attabl.com')).toBeInTheDocument();
+    expect(screen.getByText('rightsTitle')).toBeInTheDocument();
   });
 
   it('closes privacy modal with X button', () => {
@@ -276,11 +275,12 @@ describe('ClientSettings', () => {
     expect(screen.queryByAltText('Le Gourmet')).not.toBeInTheDocument();
   });
 
-  // TODO: "Powered by ATTABL" copy moved/removed in refactor; revisit.
-  it.skip('shows "Powered by ATTABL" in about modal', () => {
+  it('shows ATTABL brand and appVersion in about modal', () => {
     renderSettings();
     fireEvent.click(screen.getByText('aboutLabel').closest('button')!);
-    expect(screen.getByText(/Powered by ATTABL/)).toBeInTheDocument();
+    expect(screen.getByText('ATTABL')).toBeInTheDocument();
+    // appVersion appears in footer + modal — verify at least 2 occurrences
+    expect(screen.getAllByText('appVersion').length).toBeGreaterThanOrEqual(2);
   });
 
   // ─── Navigation ─────────────────────────────────────
@@ -295,12 +295,11 @@ describe('ClientSettings', () => {
 
   // ─── Layout ─────────────────────────────────────────
 
-  // TODO: theme token migration in progress (bg-app-bg vs bg-white). Revisit when stable.
-  it.skip('main element uses theme background', () => {
+  it('main element uses bg-white background', () => {
     const { container } = renderSettings();
     const main = container.querySelector('main');
     expect(main).toBeTruthy();
-    expect(main!.className).toContain('bg-app-bg');
+    expect(main!.className).toContain('bg-white');
   });
 
   // ─── Translation keys used consistently ─────────────

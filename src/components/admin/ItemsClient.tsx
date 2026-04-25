@@ -37,7 +37,7 @@ import {
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
-import { actionCheckCanAddMenuItem } from '@/app/actions/menu-items';
+import { actionCreateMenuItem } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
@@ -179,6 +179,7 @@ export default function ItemsClient({
   };
 
   const handleSubmit = async () => {
+    if (saving) return;
     if (formStep !== 3) return;
     if (!name.trim() || !categoryId) return;
     setSaving(true);
@@ -196,7 +197,6 @@ export default function ItemsClient({
         is_featured: isFeatured,
         allergens,
         calories: calories === '' ? null : Number(calories),
-        tenant_id: tenantId,
       };
 
       // Only include the prices JSONB field when the tenant has secondary currencies.
@@ -211,13 +211,12 @@ export default function ItemsClient({
         await menuItemService.updateMenuItem(editingItem.id, tenantId, payload);
         toast({ title: t('itemUpdated') });
       } else {
-        const limitCheck = await actionCheckCanAddMenuItem(tenantId);
-        if (limitCheck.error) {
-          toast({ title: limitCheck.error, variant: 'destructive' });
+        const result = await actionCreateMenuItem(tenantId, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
           setSaving(false);
           return;
         }
-        await menuItemService.createMenuItem(payload);
         toast({ title: t('itemCreated') });
       }
       setShowModal(false);
