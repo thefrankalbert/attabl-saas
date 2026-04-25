@@ -343,7 +343,7 @@
         "enterprise": {
           "badge": "Custom",
           "title": "ENTERPRISE",
-          "subtitle": "Tailored solution for large groups.",
+          "subtitle": "For groups, franchises and chains managing multiple sites.",
           "button": "Contact us",
           "featuresTitle": "Included in ENTERPRISE",
           "benefits": {
@@ -513,7 +513,7 @@
       "metaTitle": "Features",
       "metaDescription": "Discover all ATTABL features: digital menu, orders, stock, analytics and more.",
       "heroTitle": "Everything you need",
-      "heroSubtitle": "A complete platform to run your business.",
+      "heroSubtitle": "Everything you need. One single tool.",
       "categories": {
         "menu": {
           "title": "Menu & Orders",
@@ -779,7 +779,7 @@
       }
     },
     "footer": {
-      "tagline": "The modern platform\nfor hospitality",
+      "tagline": "The modern tool\nfor hospitality",
       "copyright": "© {year} Attabl. All rights reserved.",
       "columns": {
         "product": {
@@ -819,7 +819,7 @@
     },
     "about": {
       "metaTitle": "About",
-      "metaDescription": "Discover ATTABL, the SaaS platform for digital restaurant and hospitality management.",
+      "metaDescription": "ATTABL helps restaurants, hotels and bars across Africa digitise their menu, orders and management. Our story.",
       "heading": "About ATTABL",
       "intro": "ATTABL is a SaaS platform designed to digitize the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
       "visionTitle": "Our vision",
@@ -909,7 +909,7 @@
         "heroTitle": "1 location or 10. Same control.",
         "heroSubtitle": "Kitchen display, centralized inventory. Speed at scale.",
         "feature1Title": "Multi-site dashboard",
-        "feature1Description": "Performance of each location in real time. Compare, identify, optimize.",
+        "feature1Description": "Performance of each location in real time. Compare, identify, improve.",
         "feature2Title": "Smart KDS",
         "feature2Description": "Orders go straight to the kitchen. Automatic priority, zero errors.",
         "feature3Title": "Centralized inventory",
@@ -917,7 +917,7 @@
         "ctaTitle": "Grow without losing control."
       },
       "hotels": {
-        "heroTitle": "One hotel. Several restaurants. One platform.",
+        "heroTitle": "One hotel. Several restaurants. One dashboard.",
         "heroSubtitle": "Room service, bar, restaurant - your guests order in their language, you manage everything in one place.",
         "feature1Title": "Room by room",
         "feature1Description": "Unique QR code per room. Guests order from their bed, in their language. Zero front-desk calls.",
