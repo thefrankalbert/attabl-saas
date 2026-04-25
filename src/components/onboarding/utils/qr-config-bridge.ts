@@ -26,15 +26,17 @@ export function onboardingDataToQRConfig(
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
   // Resolve QR fg/bg colors
-  // Custom colors (qrCustomFgColor, qrCustomBgColor) take precedence over qrStyle preset
+  // Custom colors (qrCustomFgColor, qrCustomBgColor) take precedence over qrStyle preset.
+  // Use `||` (not `??`) so an empty string from a cleared input falls back to the preset.
   const styleKey = data.qrStyle || 'branded';
   const styleColors = QR_STYLE_COLORS[styleKey] ?? QR_STYLE_COLORS.branded;
-  const qrFg = data.qrCustomFgColor ?? (styleColors.fg === 'primary' ? primary : styleColors.fg);
-  const qrBg = data.qrCustomBgColor ?? styleColors.bg;
+  const qrFg = data.qrCustomFgColor || (styleColors.fg === 'primary' ? primary : styleColors.fg);
+  const qrBg = data.qrCustomBgColor || styleColors.bg;
 
-  // Resolve dimensions: custom support dimensions take precedence over template defaults
-  const supportWidth = data.qrSupportWidth ?? defaults.width;
-  const supportHeight = data.qrSupportHeight ?? defaults.height;
+  // Resolve dimensions: custom support dimensions take precedence over template defaults.
+  // Use `||` to also fallback when a user clears the input (NaN/0 -> default).
+  const supportWidth = data.qrSupportWidth || defaults.width;
+  const supportHeight = data.qrSupportHeight || defaults.height;
 
   return {
     ...base,

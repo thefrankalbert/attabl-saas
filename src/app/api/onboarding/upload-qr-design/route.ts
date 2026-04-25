@@ -8,9 +8,12 @@ import { logger } from '@/lib/logger';
 const QR_DESIGNS_BUCKET = 'qr-designs';
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
+// SVG intentionally excluded: stored XSS risk via <script>/event handlers in a public bucket.
+// If SVG support is needed later, sanitize server-side with DOMPurify or serve via private bucket
+// with signed URLs and Content-Disposition: attachment.
 const ALLOWED_TYPES: Record<string, string> = {
   'image/png': 'png',
-  'image/svg+xml': 'svg',
+  'image/jpeg': 'jpg',
   'application/pdf': 'pdf',
 };
 
@@ -26,15 +29,14 @@ function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
     return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
   }
 
+  // JPEG: FF D8 FF
+  if (declaredType === 'image/jpeg') {
+    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
   // PDF: 25 50 44 46 (%PDF)
   if (declaredType === 'application/pdf') {
     return buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
-  }
-
-  // SVG: text starting with "<?xml" or "<svg"
-  if (declaredType === 'image/svg+xml') {
-    const head = buffer.slice(0, Math.min(buffer.length, 256)).toString('utf-8').trimStart();
-    return head.startsWith('<?xml') || head.startsWith('<svg');
   }
 
   return false;
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
     const ext = ALLOWED_TYPES[file.type];
     if (!ext) {
       return NextResponse.json(
-        { error: 'Invalid file type. Allowed: PNG, SVG, PDF' },
+        { error: 'Invalid file type. Allowed: PNG, JPG, PDF' },
         { status: 400 },
       );
     }
@@ -130,7 +132,8 @@ export async function POST(request: Request) {
         userId: user.id,
         tenantId: adminUser.tenant_id,
       });
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      // Generic message to client - detailed error logged server-side only
+      return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
     }
 
     const {

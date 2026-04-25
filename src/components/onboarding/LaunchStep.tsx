@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { HexColorPicker } from 'react-colorful';
 import {
@@ -202,6 +202,16 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
     });
   };
 
+  // Local edit state for dimension inputs - allows free typing, only clamps on blur
+  const [widthInput, setWidthInput] = useState<string>(String(widthMm));
+  const [heightInput, setHeightInput] = useState<string>(String(heightMm));
+
+  // Sync local state when external value changes (orientation toggle, format preset)
+  useEffect(() => {
+    setWidthInput(String(widthMm));
+    setHeightInput(String(heightMm));
+  }, [widthMm, heightMm]);
+
   const toggleOrientation = (next: 'portrait' | 'landscape') => {
     if (next === orientation) return;
     // Swap width and height
@@ -241,7 +251,8 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
       if (!res.ok) {
         toast({
-          title: result.error || t('qrUploadError') || 'Erreur lors du tele versement',
+          title: t('qrUploadError'),
+          description: typeof result.error === 'string' ? result.error : undefined,
           variant: 'destructive',
         });
         return;
@@ -249,11 +260,11 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
       updateData({ qrUploadedDesignUrl: result.url });
       toast({
-        title: t('qrUploadSuccess') || 'Design telecharge',
+        title: t('qrUploadSuccess'),
       });
     } catch {
       toast({
-        title: t('qrUploadError') || 'Erreur lors du tele versement',
+        title: t('qrUploadError'),
         variant: 'destructive',
       });
     } finally {
@@ -611,7 +622,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       })}
                     </div>
 
-                    {/* Width / Height inputs */}
+                    {/* Width / Height inputs - local state allows free typing, clamps on blur */}
                     <div className="grid grid-cols-2 gap-3 max-w-md">
                       <div>
                         <label className="text-[11px] text-app-text-muted block mb-1.5">
@@ -621,10 +632,16 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                           type="number"
                           min={MIN_DIM_MM}
                           max={MAX_DIM_MM}
-                          value={widthMm}
-                          onChange={(e) =>
-                            setDimensions(Number(e.target.value) || MIN_DIM_MM, heightMm)
-                          }
+                          value={widthInput}
+                          onChange={(e) => setWidthInput(e.target.value)}
+                          onBlur={() => {
+                            const n = Number(widthInput);
+                            if (!Number.isFinite(n) || n <= 0) {
+                              setWidthInput(String(widthMm));
+                              return;
+                            }
+                            setDimensions(n, heightMm);
+                          }}
                           className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
                         />
                       </div>
@@ -636,10 +653,16 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                           type="number"
                           min={MIN_DIM_MM}
                           max={MAX_DIM_MM}
-                          value={heightMm}
-                          onChange={(e) =>
-                            setDimensions(widthMm, Number(e.target.value) || MIN_DIM_MM)
-                          }
+                          value={heightInput}
+                          onChange={(e) => setHeightInput(e.target.value)}
+                          onBlur={() => {
+                            const n = Number(heightInput);
+                            if (!Number.isFinite(n) || n <= 0) {
+                              setHeightInput(String(heightMm));
+                              return;
+                            }
+                            setDimensions(widthMm, n);
+                          }}
                           className="h-10 bg-app-elevated/50 border-app-border rounded-xl text-sm tabular-nums"
                         />
                       </div>
@@ -659,7 +682,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/png,image/svg+xml,application/pdf"
+                      accept="image/png,image/jpeg,application/pdf"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -710,7 +733,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                           {uploading ? 'Telechargement...' : 'Glissez ou cliquez pour choisir'}
                         </span>
                         <span className="text-[11px] text-app-text-muted">
-                          PNG, SVG, PDF - max 5 Mo
+                          PNG, JPG, PDF - max 5 Mo
                         </span>
                       </Button>
                     )}

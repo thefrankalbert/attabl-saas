@@ -1,5 +1,12 @@
 -- Create storage bucket for custom QR designs uploaded during onboarding
 -- Used by /api/onboarding/upload-qr-design
+--
+-- Bucket is public so the uploaded design URL can be embedded in <img> previews.
+-- Security trade-offs:
+--  - URLs are random UUIDs (security through obscurity, but acceptable for designs
+--    intended for printing/QR menu stands which the user will display anyway).
+--  - SVG uploads are NOT allowed (XSS risk via inline scripts/event handlers).
+--  - Only PNG, JPG, PDF accepted via the API route + magic-byte validation.
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('qr-designs', 'qr-designs', true)

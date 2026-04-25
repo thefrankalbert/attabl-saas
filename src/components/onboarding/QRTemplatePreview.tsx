@@ -30,7 +30,8 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
 
   const templateId = data.qrTemplate ?? 'standard';
   const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
-  const defaults = TEMPLATE_DEFAULTS[templateId];
+  // Defensive fallback: if templateId is somehow not in registry (legacy data), use 'standard'
+  const defaults = TEMPLATE_DEFAULTS[templateId] ?? TEMPLATE_DEFAULTS.standard;
 
   const widthMm = data.qrSupportWidth ?? defaults.width;
   const heightMm = data.qrSupportHeight ?? defaults.height;
@@ -85,15 +86,24 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
                 overflow: 'hidden',
               }}
             >
-              <img
-                src={data.qrUploadedDesignUrl}
-                alt="Uploaded design"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                }}
-              />
+              {data.qrUploadedDesignUrl?.endsWith('.pdf') ? (
+                <div className="flex flex-col items-center justify-center text-center px-4">
+                  <span className="text-3xl font-bold text-app-text mb-2">PDF</span>
+                  <span className="text-xs text-app-text-muted">
+                    Apercu non disponible - Le PDF sera utilise pour l&apos;export
+                  </span>
+                </div>
+              ) : (
+                <img
+                  src={data.qrUploadedDesignUrl}
+                  alt="Uploaded design"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              )}
             </div>
           ) : (
             <TemplateComponent
