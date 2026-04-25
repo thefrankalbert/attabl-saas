@@ -519,3 +519,85 @@ Si l'un de ces checks echoue, corriger AVANT de considerer la tache terminee.
 ### En cas de doute
 
 Si une tache necessite de modifier un fichier protege ou de casser un pattern critique, demander confirmation a l'utilisateur AVANT de proceder. Ne JAMAIS prendre l'initiative de "refactorer", "nettoyer", ou "ameliorer" du code qui n'est pas directement lie a la tache demandee.
+
+
+---
+
+## Copywriting ATTABL - Regles obligatoires
+
+Ces regles s'appliquent a tout texte visible par l'utilisateur : landing page, onboarding,
+emails, notifications, copies UI, descriptions de fonctionnalites, titres de plans, CTAs.
+Elles s'appliquent en francais ET en anglais.
+
+### Marche cible
+
+ATTABL sert les restaurateurs et hoteliers d'Afrique subsaharienne francophone (Burkina
+Faso, Cote d'Ivoire, Senegal, Cameroun, Gabon, Tchad, Congo). Ce sont des entrepreneurs
+qui gent actuellement leur activite avec du papier, WhatsApp et Excel. Ils ont peu de
+temps. Ils veulent du concret. Ils apprecient un ton direct et chaleureux, pas corporate.
+
+### Voix de la marque
+
+- **Direct** : une phrase = une idee. Pas de subordinees qui s'emboitent.
+- **Concret** : des chiffres, des exemples, des situations reelles. Pas "optimisez votre gestion".
+- **Chaleureux** : on parle a un entrepreneur, pas a un CFO. On connait sa realite.
+- **Africain** : references locales quand c'est pertinent (mobile money, FCFA, WhatsApp).
+- **Fier** : ATTABL est un bon produit. On ne s'excuse pas, on n'est pas timide.
+
+### Mots et phrases INTERDITS (genrent un texte IA generique)
+
+- "solution", "plateforme", "outil tout-en-un" (dire ce que ca fait, pas ce que c'est)
+- "optimisez", "ameliorez", "maximisez" (trop corporate)
+- "innovant", "robuste", "complet", "puissant", "performant"
+- "dans le but de", "afin de", "permettant de" (trop formel)
+- "nous vous invitons", "n'hesitez pas" (language institutionnel)
+- "configurez votre espace", "parametrez votre compte" (jargon SaaS froid)
+- "ces informations nous aident a" (phrase de formulaire IA)
+- "solution sur mesure", "a votre disposition"
+- Em dash (--), ellipses unicode, guillemets francais dans le code
+
+### Patterns qui fonctionnent
+
+**Pain -> Resolution:**
+"Fini les tickets perdus entre la salle et la cuisine. Chaque commande arrive sur l'ecran, en temps reel."
+
+**Avant/Apres:**
+"Avant : carnet, calculette, erreurs. Maintenant : tout dans votre poche."
+
+**Specifique + nombre:**
+"40% d'erreurs en moins. C'est ce qu'Amadou a vu en 2 mois au Jardin, N'Djamena."
+
+**Question directe au lieu d'une affirmation generique:**
+"Comment s'appelle votre restaurant ?" plutot que "Informations sur votre etablissement"
+
+**CTA avec benefice (pas juste un verbe):**
+"Essayer gratuitement 14 jours" plutot que "Commencer"
+"Creer mon menu maintenant" plutot que "Continuer"
+
+### Frameworks copy a utiliser
+
+**Pour les CTAs :** Action + Benefice + (eventuellement) Friction reduite
+- "Lancer mon restaurant - gratuit 14 jours"
+- "Voir comment ca marche"
+- "Creer mon compte en 2 minutes"
+
+**Pour les titres de sections :** Verb fort + Resultat, pas Feature + Description
+- "Votre cuisine voit tout. En temps reel." (pas "Gestion des commandes cuisine")
+- "Encaissez mobile money, carte ou cash." (pas "Multi-modes de paiement")
+
+**Pour les descriptions de plans :** Ce que le client gagne, pas ce que le plan contient
+- "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie."
+- "Pour ceux qui servent 100+ couverts par jour."
+
+**Pour l'onboarding :** Parler comme un collegue, pas comme un formulaire
+- "Comment vous appelez-vous ?" pas "Nom de l'etablissement"
+- "Combien de tables avez-vous ?" pas "Nombre de tables"
+- "On y est presque." pas "Etape 4/5"
+
+### Regles de style
+
+- Paragraphes courts. 1 a 3 phrases max.
+- Mix de phrases courtes percutantes et de phrases un peu plus longues.
+- Ponctuation ASCII uniquement dans le code (voir section Typographie).
+- Majuscule uniquement en debut de phrase et pour les noms propres.
+- Pas de point d'exclamation en serie. Un seul, utilise avec parcimonie.

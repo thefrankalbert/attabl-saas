@@ -10,12 +10,13 @@ import CTASection from '@/components/marketing/CTASection';
 export const revalidate = 3600; // ISR: regenerate every hour
 
 export const metadata: Metadata = {
-  title: 'Attabl - Menu digital & gestion pour la restauration',
+  title: 'Attabl - Votre restaurant digital en 5 minutes',
   description:
-    "La plateforme tout-en-un pour la restauration et l'hôtellerie. Menu, commandes, stock, analytics en temps réel.",
+    "Menu QR, commandes en temps reel, encaissement mobile money. Utilise par des restaurants au Burkina Faso, Cote d'Ivoire et au Senegal. Essai gratuit 14 jours.",
   openGraph: {
-    title: 'Attabl - Petit comptoir ou grande enseigne',
-    description: 'Menu, commandes, stock - tout piloté depuis un seul outil.',
+    title: 'Attabl - Petit comptoir ou grande enseigne. Marquez votre territoire.',
+    description:
+      "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Essai gratuit 14 jours.",
     type: 'website',
   },
 };
