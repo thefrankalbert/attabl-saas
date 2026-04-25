@@ -2,14 +2,24 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { Search, ShoppingCart, Utensils } from 'lucide-react';
+import {
+  ChevronDown,
+  Clock,
+  Home,
+  MapPin,
+  Plus,
+  Search,
+  ShoppingBag,
+  User,
+  Utensils,
+} from 'lucide-react';
 
 import type { OnboardingData } from '@/app/onboarding/page';
 
-// ─── Emoji mapping (mirrors ClientMenuPage.tsx) ─────────────────────────────
+// ─── Emoji mapping (mirrors CategoryGrid/ClientMenuPage) ────────────────────
 
 const CATEGORY_EMOJIS: Record<string, string> = {
+  entree: '🥗',
   entrée: '🥗',
   starters: '🥗',
   'pour commencer': '🥗',
@@ -18,6 +28,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   hamburger: '🍔',
   pizza: '🍕',
   pizzas: '🍕',
+  pates: '🍝',
   pâtes: '🍝',
   pasta: '🍝',
   grillade: '🍖',
@@ -26,6 +37,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   'plat principal': '🍽️',
   'main course': '🍽️',
   plats: '🍽️',
+  vegetarien: '🥬',
   végétarien: '🥬',
   vegetarian: '🥬',
   dessert: '🍰',
@@ -36,7 +48,9 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   drinks: '🍹',
   cocktail: '🍸',
   cocktails: '🍸',
+  aperitif: '🫒',
   apéritif: '🫒',
+  cafe: '☕',
   café: '☕',
   coffee: '☕',
   africain: '🍲',
@@ -51,6 +65,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   soup: '🍲',
   vin: '🍷',
   wine: '🍷',
+  biere: '🍺',
   bière: '🍺',
   beer: '🍺',
 };
@@ -64,39 +79,34 @@ function getCategoryEmoji(name: string): string {
   return '🍽️';
 }
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface PhonePreviewProps {
   data: OnboardingData;
   phase: number;
 }
 
-/** Convert any hex color to rgba for safe gradient usage */
-function hexToRgba(hex: string, alpha: number): string {
-  const clean = hex.replace('#', '');
-  const bigint = parseInt(
-    clean.length === 3
-      ? clean
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : clean,
-    16,
-  );
-  if (isNaN(bigint)) return `rgba(26,26,46,${alpha})`;
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return `rgba(${r},${g},${b},${alpha})`;
-}
+// ─── Tokens (mirrors menu-tokens.ts) ────────────────────────────────────────
+
+const C = {
+  bg: '#FFFFFF',
+  surface: '#F6F6F6',
+  divider: '#EEEEEE',
+  text: '#1A1A1A',
+  textSecondary: '#737373',
+  textMuted: '#B0B0B0',
+  cartBg: '#1A1A1A',
+  cartText: '#FFFFFF',
+  iconInactive: '#B0B0B0',
+  skeletonBase: '#E5E7EB',
+  skeletonAlt: '#F3F4F6',
+};
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
-  const to = useTranslations('onboarding');
-  const { primaryColor, logoUrl, tenantName, menuItems, currency } = data;
+  const { logoUrl, tenantName, menuItems, currency } = data;
 
-  const safePrimary = /^#[0-9A-Fa-f]{3,8}$/.test(primaryColor || '') ? primaryColor : '#1a1a2e';
-
-  // Unique categories derived from menu items
   const categories = useMemo(() => {
     if (!menuItems || menuItems.length === 0) return [];
     const seen = new Set<string>();
@@ -111,107 +121,218 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
     return cats;
   }, [menuItems]);
 
-  // Featured items (first 4 items with unique names)
-  const featured = useMemo(() => {
-    if (!menuItems || menuItems.length === 0) return [];
-    return menuItems.slice(0, 4);
-  }, [menuItems]);
+  const displayItems = useMemo(() => (menuItems ?? []).slice(0, 5), [menuItems]);
 
   const hasMenu = phase >= 2 && menuItems && menuItems.length > 0;
+  const initial = (tenantName || 'M').charAt(0).toUpperCase();
 
   return (
     <div className="relative flex items-center justify-center">
-      {/* Phone frame */}
-      <div className="relative w-64 aspect-[1/2] rounded-[2.5rem] border-2 border-app-border bg-app-card overflow-hidden">
-        {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-b-2xl z-10" />
+      {/* ── Phone shell ─────────────────────────────── */}
+      <div
+        style={{
+          position: 'relative',
+          width: '256px',
+          height: '512px',
+          borderRadius: '40px',
+          border: '2px solid #D1D5DB',
+          backgroundColor: '#000',
+          overflow: 'hidden',
+          boxShadow: '0 24px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06) inset',
+        }}
+      >
+        {/* Dynamic island */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '64px',
+            height: '16px',
+            backgroundColor: '#000',
+            borderRadius: '999px',
+            zIndex: 20,
+          }}
+        />
 
-        {/* Screen */}
-        <div className="absolute inset-[2px] rounded-[2.3rem] overflow-hidden flex flex-col bg-white">
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto scrollbar-none">
-            {/* ═══ GRADIENT HERO ═══ */}
+        {/* ── Screen ────────────────────────────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: '2px',
+            borderRadius: '38px',
+            backgroundColor: C.bg,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* ── Scrollable content ──────────────────── */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              scrollbarWidth: 'none',
+            }}
+          >
+            {/* Safe area top (dynamic island) */}
+            <div style={{ height: '30px' }} />
+
+            {/* ─── HEADER ─── location left / logo right */}
             <div
               style={{
-                background: `linear-gradient(180deg, ${hexToRgba(safePrimary, 1)} 0%, ${hexToRgba(safePrimary, 0.8)} 22%, ${hexToRgba(safePrimary, 0.53)} 40%, ${hexToRgba(safePrimary, 0.27)} 55%, ${hexToRgba(safePrimary, 0.13)} 68%, ${hexToRgba(safePrimary, 0.07)} 78%, ${hexToRgba(safePrimary, 0.03)} 86%, transparent 93%, #ffffff 100%)`,
-                paddingTop: '32px',
-                paddingBottom: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                height: '33px',
+                paddingLeft: '12px',
+                paddingRight: '12px',
               }}
             >
-              {/* Centered logo or tenant name */}
-              <div className="flex justify-center px-4 mb-3">
+              {/* Location picker */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <MapPin style={{ width: '9px', height: '9px', color: C.text }} strokeWidth={2} />
+                <span style={{ fontSize: '8px', fontWeight: 600, color: C.text }}>Sur place</span>
+                <ChevronDown
+                  style={{ width: '8px', height: '8px', color: C.text }}
+                  strokeWidth={2}
+                />
+              </div>
+
+              {/* Restaurant logo avatar */}
+              <div
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  backgroundColor: C.surface,
+                  border: `1px solid ${C.divider}`,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
                 {logoUrl ? (
                   <img
                     src={logoUrl}
-                    alt={tenantName || 'Logo'}
-                    className="h-5 w-auto max-w-35 object-contain"
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
                   <span
-                    className="text-sm font-bold tracking-tight text-white"
-                    style={{ color: '#ffffff' }}
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: C.text,
+                      lineHeight: 1,
+                    }}
                   >
-                    {tenantName || 'Mon Restaurant'}
+                    {initial}
                   </span>
                 )}
               </div>
+            </div>
 
-              {/* Mini search bar */}
-              <div className="px-4 mb-3">
-                <div
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+            {/* ─── SEARCH BAR ─── */}
+            <div
+              style={{
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingBottom: '10px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  height: '28px',
+                  backgroundColor: C.surface,
+                  borderRadius: '8px',
+                  paddingLeft: '10px',
+                  paddingRight: '10px',
+                }}
+              >
+                <Search
+                  style={{ width: '10px', height: '10px', color: C.textMuted }}
+                  strokeWidth={2}
+                />
+                <span
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #d1d5db',
+                    fontSize: '8px',
+                    color: C.textMuted,
+                    fontWeight: 500,
                   }}
                 >
-                  <Search
-                    className="shrink-0"
-                    style={{ width: '10px', height: '10px', color: '#9ca3af' }}
-                    strokeWidth={1.5}
-                  />
-                  <span className="text-[10px] font-medium" style={{ color: '#9ca3af' }}>
-                    Rechercher un plat...
-                  </span>
-                </div>
-              </div>
-
-              {/* Welcome text */}
-              <div className="px-4 mb-2">
-                <p className="text-[10px] font-bold leading-tight" style={{ color: '#ffffff' }}>
-                  Découvrez notre carte
-                </p>
+                  Chercher un plat...
+                </span>
               </div>
             </div>
 
-            {/* ═══ CATEGORY EMOJI CIRCLES ═══ */}
-            <div className="px-3 pt-1 pb-3" style={{ backgroundColor: '#ffffff' }}>
+            {/* ─── CATEGORY GRID ─── 4 colonnes, tuiles carrées */}
+            <div
+              style={{
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingBottom: '8px',
+              }}
+            >
               {hasMenu && categories.length > 0 ? (
                 <>
-                  <p className="text-[10px] font-semibold mb-2" style={{ color: '#1f2937' }}>
-                    Nos saveurs
+                  <p
+                    style={{
+                      fontSize: '8px',
+                      fontWeight: 700,
+                      color: C.text,
+                      marginBottom: '6px',
+                    }}
+                  >
+                    Catégories
                   </p>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-                    {categories.slice(0, 6).map((cat) => (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '5px',
+                    }}
+                  >
+                    {categories.slice(0, 8).map((cat) => (
                       <div
                         key={cat.name}
-                        className="flex flex-col items-center shrink-0"
-                        style={{ width: '36px' }}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '2px',
+                        }}
                       >
                         <div
-                          className="flex items-center justify-center rounded-full mb-0.5"
                           style={{
-                            width: '30px',
-                            height: '30px',
-                            backgroundColor: '#f9fafb',
-                            border: '1px solid #f3f4f6',
+                            width: '100%',
+                            aspectRatio: '1',
+                            backgroundColor: C.surface,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
-                          <span style={{ fontSize: '14px', lineHeight: 1 }}>{cat.emoji}</span>
+                          <span style={{ fontSize: '16px', lineHeight: 1 }}>{cat.emoji}</span>
                         </div>
                         <span
-                          className="text-center leading-tight truncate w-full"
-                          style={{ fontSize: '6px', color: '#4b5563' }}
+                          style={{
+                            fontSize: '6px',
+                            color: C.textSecondary,
+                            textAlign: 'center',
+                            lineHeight: 1.2,
+                            width: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
                         >
                           {cat.name}
                         </span>
@@ -220,29 +341,40 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                   </div>
                 </>
               ) : (
-                /* Skeleton category circles */
+                /* Skeleton catégories */
                 <>
                   <div
-                    className="h-1.5 w-10 rounded-full mb-2"
-                    style={{ backgroundColor: '#e5e7eb' }}
+                    style={{
+                      height: '8px',
+                      width: '48px',
+                      backgroundColor: C.skeletonBase,
+                      borderRadius: '999px',
+                      marginBottom: '6px',
+                    }}
                   />
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="flex flex-col items-center" style={{ width: '36px' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '5px',
+                    }}
+                  >
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i}>
                         <div
-                          className="rounded-full mb-0.5"
                           style={{
-                            width: '30px',
-                            height: '30px',
-                            backgroundColor: '#f3f4f6',
+                            width: '100%',
+                            aspectRatio: '1',
+                            backgroundColor: C.skeletonAlt,
+                            borderRadius: '8px',
+                            marginBottom: '3px',
                           }}
                         />
                         <div
-                          className="rounded-full"
                           style={{
-                            width: '24px',
-                            height: '4px',
-                            backgroundColor: '#f3f4f6',
+                            height: '5px',
+                            backgroundColor: C.skeletonAlt,
+                            borderRadius: '999px',
                           }}
                         />
                       </div>
@@ -252,179 +384,351 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               )}
             </div>
 
-            {/* ═══ FEATURED ITEMS (horizontal scroll cards) ═══ */}
-            <div className="px-3 pb-3" style={{ backgroundColor: '#ffffff' }}>
-              {hasMenu && featured.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-semibold" style={{ color: '#1f2937' }}>
-                      {to('previewHighlights')}
-                    </p>
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wider"
-                      style={{ color: '#9ca3af' }}
+            {/* ─── CATEGORY NAV PILLS (sticky dans l'app réelle) ─── */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingTop: '4px',
+                paddingBottom: '8px',
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                borderBottom: `1px solid ${C.divider}`,
+                marginBottom: '8px',
+              }}
+            >
+              {hasMenu && categories.length > 0
+                ? categories.slice(0, 6).map((cat, i) => (
+                    <div
+                      key={cat.name}
+                      style={{
+                        flexShrink: 0,
+                        backgroundColor: i === 0 ? C.cartBg : C.surface,
+                        borderRadius: '999px',
+                        paddingLeft: '7px',
+                        paddingRight: '7px',
+                        paddingTop: '3px',
+                        paddingBottom: '3px',
+                      }}
                     >
-                      Voir tout →
-                    </span>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-                    {featured.map((item, idx) => (
-                      <div
-                        key={`${item.name}-${idx}`}
-                        className="shrink-0 rounded-lg overflow-hidden"
+                      <span
                         style={{
-                          width: '80px',
-                          border: '1px solid #e5e7eb',
-                          backgroundColor: '#ffffff',
+                          fontSize: '7px',
+                          fontWeight: 600,
+                          color: i === 0 ? C.cartText : C.textSecondary,
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        {/* Image area */}
-                        <div
-                          className="flex items-center justify-center"
+                        {cat.name}
+                      </span>
+                    </div>
+                  ))
+                : /* Skeleton pills */
+                  [52, 40, 56, 36].map((w, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        flexShrink: 0,
+                        width: `${w}px`,
+                        height: '18px',
+                        backgroundColor: i === 0 ? C.skeletonBase : C.skeletonAlt,
+                        borderRadius: '999px',
+                      }}
+                    />
+                  ))}
+            </div>
+
+            {/* ─── ITEMS LIST ─── image droite / texte gauche (MenuItemCard) */}
+            <div style={{ paddingLeft: '12px', paddingRight: '12px' }}>
+              {hasMenu
+                ? displayItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '8px',
+                        paddingBottom: '10px',
+                        marginBottom: '8px',
+                        borderBottom:
+                          idx < displayItems.length - 1 ? `1px solid ${C.divider}` : 'none',
+                      }}
+                    >
+                      {/* Texte — gauche */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
                           style={{
-                            width: '80px',
-                            height: '52px',
-                            backgroundColor: '#f3f4f6',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            color: C.text,
+                            lineHeight: 1.3,
                             overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            marginBottom: '2px',
+                          }}
+                        >
+                          {item.name}
+                        </p>
+                        {item.category && (
+                          <p
+                            style={{
+                              fontSize: '7px',
+                              color: C.textSecondary,
+                              lineHeight: 1.3,
+                              marginBottom: '4px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {item.category}
+                          </p>
+                        )}
+                        <p
+                          style={{
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            color: C.text,
+                          }}
+                        >
+                          {item.price.toLocaleString()}&nbsp;{currency || 'FCFA'}
+                        </p>
+                      </div>
+
+                      {/* Image — droite (w-90px → 53px scaled) */}
+                      <div
+                        style={{
+                          position: 'relative',
+                          flexShrink: 0,
+                          width: '53px',
+                          height: '53px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '53px',
+                            height: '53px',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            backgroundColor: C.surface,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
                           {item.imageUrl ? (
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              className="w-full h-full object-cover"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
                             />
                           ) : (
-                            <Utensils style={{ width: '14px', height: '14px', color: '#d1d5db' }} />
+                            <Utensils
+                              style={{
+                                width: '18px',
+                                height: '18px',
+                                color: C.textMuted,
+                              }}
+                              strokeWidth={1.5}
+                            />
                           )}
                         </div>
-                        {/* Text area */}
-                        <div className="px-1.5 py-1">
-                          <p
-                            className="leading-tight truncate"
-                            style={{
-                              fontSize: '7px',
-                              fontWeight: 600,
-                              color: '#111827',
-                              marginBottom: '1px',
-                            }}
-                          >
-                            {item.name}
-                          </p>
-                          <p
-                            className="font-bold"
-                            style={{
-                              fontSize: '7px',
-                              color: '#C5A065',
-                            }}
-                          >
-                            {item.price.toLocaleString()}&nbsp;{currency || 'FCFA'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                /* Skeleton featured cards */
-                <>
-                  <div className="flex items-center justify-between mb-2">
-                    <div
-                      className="h-1.5 w-14 rounded-full"
-                      style={{ backgroundColor: '#e5e7eb' }}
-                    />
-                    <div className="h-1 w-8 rounded-full" style={{ backgroundColor: '#f3f4f6' }} />
-                  </div>
-                  <div className="flex gap-2">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="shrink-0 rounded-lg overflow-hidden"
-                        style={{
-                          width: '80px',
-                          border: '1px solid #f3f4f6',
-                        }}
-                      >
+                        {/* Bouton (+) noir */}
                         <div
                           style={{
-                            width: '80px',
-                            height: '52px',
-                            backgroundColor: '#f3f4f6',
+                            position: 'absolute',
+                            bottom: '-3px',
+                            right: '-3px',
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            backgroundColor: C.cartBg,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
-                        />
-                        <div className="px-1.5 py-1.5">
-                          <div
-                            className="rounded-full mb-1"
+                        >
+                          <Plus
                             style={{
-                              height: '4px',
-                              width: `${50 + i * 15}%`,
-                              backgroundColor: '#e5e7eb',
+                              width: '10px',
+                              height: '10px',
+                              color: C.cartText,
                             }}
-                          />
-                          <div
-                            className="rounded-full"
-                            style={{
-                              height: '4px',
-                              width: '40%',
-                              backgroundColor: '#f3f4f6',
-                            }}
+                            strokeWidth={2.5}
                           />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                    </div>
+                  ))
+                : /* Skeleton items */
+                  [1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '8px',
+                        paddingBottom: '10px',
+                        marginBottom: '8px',
+                        borderBottom: `1px solid ${C.divider}`,
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            height: '8px',
+                            width: `${50 + i * 18}%`,
+                            backgroundColor: C.skeletonBase,
+                            borderRadius: '4px',
+                            marginBottom: '4px',
+                          }}
+                        />
+                        <div
+                          style={{
+                            height: '6px',
+                            width: '70%',
+                            backgroundColor: C.skeletonAlt,
+                            borderRadius: '4px',
+                            marginBottom: '5px',
+                          }}
+                        />
+                        <div
+                          style={{
+                            height: '8px',
+                            width: '38%',
+                            backgroundColor: C.skeletonBase,
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flexShrink: 0,
+                          width: '53px',
+                          height: '53px',
+                          borderRadius: '10px',
+                          backgroundColor: C.skeletonAlt,
+                        }}
+                      />
+                    </div>
+                  ))}
             </div>
 
-            {/* ═══ "SEE FULL MENU" CTA ═══ */}
-            <div className="px-3 pb-3" style={{ backgroundColor: '#ffffff' }}>
-              <div
-                className="flex items-center justify-center gap-1 rounded-lg py-2"
-                style={{
-                  backgroundColor: safePrimary,
-                  color: '#ffffff',
-                }}
-              >
-                <Utensils style={{ width: '8px', height: '8px' }} />
-                <span className="text-[10px] font-bold">{to('previewViewMenu')}</span>
-              </div>
-            </div>
-
-            {/* Bottom spacer for floating bar */}
-            <div className="h-8" />
+            {/* Spacer bottom (cart bar + bottom nav) */}
+            <div style={{ height: '90px' }} />
           </div>
 
-          {/* ═══ FLOATING CART BAR (teal) ═══ */}
-          <div
-            className="absolute left-2 right-2 flex items-center justify-center gap-1.5 rounded-xl py-1.5"
-            style={{
-              bottom: '16px',
-              backgroundColor: '#14b8a6',
-            }}
-          >
+          {/* ─── FLOATING CART BAR ─── noir, rounded-full (FloatingCartBar.tsx) */}
+          {hasMenu && (
             <div
-              className="flex items-center justify-center rounded-full"
               style={{
-                width: '16px',
-                height: '16px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                position: 'absolute',
+                left: '10px',
+                right: '10px',
+                bottom: '44px',
+                height: '30px',
+                backgroundColor: C.cartBg,
+                borderRadius: '999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                zIndex: 30,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
               }}
             >
-              <ShoppingCart style={{ width: '8px', height: '8px', color: '#ffffff' }} />
+              <ShoppingBag
+                style={{ width: '11px', height: '11px', color: C.cartText }}
+                strokeWidth={2}
+              />
+              <span
+                style={{
+                  fontSize: '8px',
+                  fontWeight: 600,
+                  color: C.cartText,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Voir le panier
+              </span>
+              {/* Separator dot */}
+              <span
+                style={{
+                  width: '3px',
+                  height: '3px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.5)',
+                  display: 'inline-block',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '8px',
+                  fontWeight: 700,
+                  color: C.cartText,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {displayItems.length}&nbsp;•&nbsp;{(displayItems[0]?.price ?? 0).toLocaleString()}
+                &nbsp;{currency || 'FCFA'}
+              </span>
             </div>
-            <span className="font-semibold" style={{ fontSize: '7px', color: '#ffffff' }}>
-              {to('previewCart')}
-            </span>
+          )}
+
+          {/* ─── BOTTOM NAV ─── 4 tabs (BottomNav.tsx) */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '40px',
+              backgroundColor: C.bg,
+              borderTop: `1px solid ${C.divider}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+              paddingLeft: '8px',
+              paddingRight: '8px',
+              zIndex: 40,
+            }}
+          >
+            <Home style={{ width: '16px', height: '16px', color: C.text }} strokeWidth={2} />
+            <ShoppingBag
+              style={{ width: '16px', height: '16px', color: C.iconInactive }}
+              strokeWidth={2}
+            />
+            <Clock
+              style={{ width: '16px', height: '16px', color: C.iconInactive }}
+              strokeWidth={2}
+            />
+            <User
+              style={{ width: '16px', height: '16px', color: C.iconInactive }}
+              strokeWidth={2}
+            />
           </div>
 
-          {/* Home indicator */}
+          {/* Home indicator bar */}
           <div
-            className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full"
             style={{
-              width: '60px',
+              position: 'absolute',
+              bottom: '5px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '48px',
               height: '3px',
-              backgroundColor: 'rgba(0,0,0,0.15)',
+              borderRadius: '999px',
+              backgroundColor: 'rgba(0,0,0,0.12)',
+              zIndex: 50,
             }}
           />
         </div>
