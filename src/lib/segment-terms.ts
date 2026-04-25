@@ -13,11 +13,12 @@ export type EstablishmentSegment =
   | 'bar'
   | 'cafe'
   | 'fastfood'
+  | 'other'
+  // Legacy — existing tenants only, not shown in onboarding
   | 'retail'
   | 'boutique'
   | 'pharmacy'
-  | 'salon'
-  | 'other';
+  | 'salon';
 
 export type SegmentFamily = 'food' | 'hospitality' | 'retail' | 'services';
 
@@ -27,11 +28,12 @@ export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   bar: 'food',
   cafe: 'food',
   fastfood: 'food',
+  other: 'food',
+  // Legacy mappings preserved for existing tenants
   retail: 'retail',
   boutique: 'retail',
   pharmacy: 'retail',
   salon: 'services',
-  other: 'retail',
 };
 
 // ─── Term keys ──────────────────────────────────────────
