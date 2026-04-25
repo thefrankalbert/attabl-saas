@@ -76,7 +76,7 @@ function NumberStepper({
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
-      <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden">
+      <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
         <Button
           variant="ghost"
           size="icon"
@@ -84,7 +84,7 @@ function NumberStepper({
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="h-full w-11 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+          className="h-full w-11 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         >
           <Minus className="h-4 w-4 text-app-text-secondary" />
         </Button>
@@ -98,7 +98,7 @@ function NumberStepper({
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          className="h-full w-11 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+          className="h-full w-11 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         >
           <Plus className="h-4 w-4 text-app-text-secondary" />
         </Button>

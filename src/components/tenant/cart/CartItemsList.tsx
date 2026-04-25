@@ -108,14 +108,14 @@ export function CartItemsList({
                   </p>
                 </div>
                 <div className="mt-2">
-                  <div className="inline-flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden">
+                  <div className="inline-flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       type="button"
                       aria-label={labels.decrease}
                       onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                      className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                      className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
                       <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
                     </Button>
@@ -128,7 +128,7 @@ export function CartItemsList({
                       type="button"
                       aria-label={labels.increase}
                       onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                      className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                      className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
                       <Plus className="h-3.5 w-3.5 text-app-text-secondary" />
                     </Button>

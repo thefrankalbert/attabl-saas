@@ -201,7 +201,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
                       />
                     </div>
-                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0">
+                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0 focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -209,7 +209,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         aria-label="Decrease"
                         onClick={() => updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))}
                         disabled={zone.tableCount <= 1}
-                        className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                        className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       >
                         <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
                       </Button>
@@ -223,7 +223,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         aria-label="Increase"
                         onClick={() => updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))}
                         disabled={zone.tableCount >= 100}
-                        className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                        className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       >
                         <Plus className="h-3.5 w-3.5 text-app-text-secondary" />
                       </Button>
@@ -360,7 +360,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                           <Label className="text-app-text-secondary text-xs mb-1.5 block">
                             {t('zoneTableCount')}
                           </Label>
-                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full">
+                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -368,7 +368,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                               aria-label="Decrease"
                               onClick={() => updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))}
                               disabled={zone.tableCount <= 1}
-                              className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                              className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             >
                               <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
                             </Button>
@@ -382,7 +382,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                               aria-label="Increase"
                               onClick={() => updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))}
                               disabled={zone.tableCount >= 100}
-                              className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                              className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             >
                               <Plus className="h-3.5 w-3.5 text-app-text-secondary" />
                             </Button>

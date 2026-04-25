@@ -424,7 +424,7 @@ export default function ItemDetailSheet({
 
                 {/* --- Quantity selector - integrated stepper, LEFT-aligned, above instructions --- */}
                 <div className="mb-3 flex justify-start">
-                  <div className="inline-flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden">
+                  <div className="inline-flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -432,7 +432,7 @@ export default function ItemDetailSheet({
                       aria-label={t('ariaDecrease')}
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
-                      className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                      className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
                       <Minus className="h-4 w-4 text-app-text-secondary" />
                     </Button>
@@ -445,7 +445,7 @@ export default function ItemDetailSheet({
                       type="button"
                       aria-label={t('ariaIncrease')}
                       onClick={() => setQuantity((q) => q + 1)}
-                      className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                      className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
                       <Plus className="h-4 w-4 text-app-text-secondary" />
                     </Button>
