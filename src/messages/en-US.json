@@ -654,23 +654,23 @@
         "cards": {
           "restaurants": {
             "title": "Restaurants",
-            "description": "Manage your floor, your menus and your kitchen from a single screen."
+            "description": "Order ticket, kitchen screen, bill. Your dining room and kitchen finally connected."
           },
           "hotels": {
             "title": "Hotels",
-            "description": "Room service, restaurant, pool bar - all unified, multilingual."
+            "description": "Room service, F&B, multilingual. Your rooms and restaurant in one dashboard."
           },
           "quickService": {
             "title": "Quick-Service",
-            "description": "Counter, drive-thru, express orders. Every second counts."
+            "description": "Pace, KDS, counter express. Every second counts during the lunch rush."
           },
           "barsCafes": {
             "title": "Bars & Cafes",
-            "description": "Cocktail menu, terrace service, real-time drink tracking."
+            "description": "Daily board, counter, terrace. Wastage under control, menu updated in 30 seconds."
           },
           "fastFood": {
             "title": "Fast-Food",
-            "description": "Kitchen display, kiosks, multi-site. Speed without chaos."
+            "description": "Kiosks, drive-through, multi-site. High-volume pace, without losing the thread."
           }
         }
       },
@@ -884,59 +884,59 @@
         "ctaSubtitle": "Try it free."
       },
       "quickService": {
-        "heroTitle": "200 orders. Zero downtime.",
-        "heroSubtitle": "Counter, drive-thru, delivery - every order tracked from customer to kitchen.",
-        "feature1Title": "Kitchen Display (KDS)",
-        "feature1Description": "Orders show in real time. Automatic priority. Prep time visible.",
-        "feature2Title": "Fast POS",
-        "feature2Description": "Checkout in 3 clicks. Cash, card, mobile money. Every transaction tracked.",
-        "feature3Title": "Real-time notifications",
-        "feature3Description": "Your customers and your team are informed at every stage of the order.",
-        "ctaTitle": "Speed without the chaos."
+        "heroTitle": "High volume, zero downtime.",
+        "heroSubtitle": "Counter, drive-through, delivery - every order tracked, every second counts.",
+        "feature1Title": "KDS: the screen that drives your pace",
+        "feature1Description": "Orders appear in real time on the kitchen screen. Auto-priority by service time. Your team knows what to prep, in what order, without anyone shouting.",
+        "feature2Title": "Fast POS: checkout in 3 taps",
+        "feature2Description": "Cash, card, mobile money. Average ticket shown live. During the lunch rush, every second at the counter is one more order served.",
+        "feature3Title": "Zero stockouts during the rush",
+        "feature3Description": "Stock alerts before the peak hits. Your key ingredients won't run out at the worst moment. Product rotation tracked continuously.",
+        "ctaTitle": "Serve faster. Lose less. Stay in control."
       },
       "barsCafes": {
-        "heroTitle": "Your bar. Your terrace. Everything under control.",
-        "heroSubtitle": "Cocktail menu, terrace service, drink inventory - all in one.",
-        "feature1Title": "Terrace QR menu",
-        "feature1Description": "Customers scan from their table, order without waiting for a server. No more back and forth.",
-        "feature2Title": "Drink tracking",
-        "feature2Description": "Every glass served is deducted from stock. See spillage in real time. No more invisible losses.",
-        "feature3Title": "Live best-sellers",
-        "feature3Description": "Which cocktails are selling tonight? Which beers are stagnating? Adjust your menu in real time.",
-        "ctaTitle": "Your bar deserves better than a spreadsheet."
+        "heroTitle": "Coffee counter in the morning, cocktail terrace in the evening.",
+        "heroSubtitle": "Your menu adapts, your stock too. Daily specials and drink tracking in one place.",
+        "feature1Title": "Daily board and QR code, together",
+        "feature1Description": "Your daily menu on QR - cocktails, hot drinks, boards. Guests order from the terrace without flagging a server. You update the board in 30 seconds.",
+        "feature2Title": "Drink wastage tracked in real time",
+        "feature2Description": "Every drink served is deducted from stock. You see wastage before it becomes a loss. Whether you're a bartender or a barista, you know exactly what's going out and what's left.",
+        "feature3Title": "Your best-sellers, night after night",
+        "feature3Description": "Which cocktails are moving tonight? Which hot drink sells best in the morning? Adjust your menu and your happy hour based on what the numbers say.",
+        "ctaTitle": "Your counter deserves better than a spreadsheet."
       },
       "fastFood": {
-        "heroTitle": "1 location or 10. Same control.",
-        "heroSubtitle": "Kitchen display, centralized inventory. Speed at scale.",
-        "feature1Title": "Multi-site dashboard",
-        "feature1Description": "Performance of each location in real time. Compare, identify, improve.",
-        "feature2Title": "Smart KDS",
-        "feature2Description": "Orders go straight to the kitchen. Automatic priority, zero errors.",
-        "feature3Title": "Centralized inventory",
-        "feature3Description": "Centralized procurement for all your locations. Alerts per site, per ingredient.",
+        "heroTitle": "1 kiosk or 10 locations. Same control.",
+        "heroSubtitle": "Kitchen screen, order kiosks, drive-through, central stock. High-volume at scale.",
+        "feature1Title": "KDS and kiosks: the winning pair",
+        "feature1Description": "Your order kiosks send directly to the kitchen. KDS screen sorts, prioritises, times. Reduced wait times, higher throughput, zero prep errors.",
+        "feature2Title": "Multi-site dashboard",
+        "feature2Description": "Each location's performance in real time - average ticket, throughput, drive-through time. Compare. Spot the underperforming site. Act.",
+        "feature3Title": "Centralised stock across the chain",
+        "feature3Description": "Central supply management for all your locations. Per-site alerts before stockouts. No more combos off the menu because of missing ingredients.",
         "ctaTitle": "Grow without losing control."
       },
       "hotels": {
-        "heroTitle": "One hotel. Several restaurants. One dashboard.",
-        "heroSubtitle": "Room service, bar, restaurant - your guests order in their language, you manage everything in one place.",
-        "feature1Title": "Room by room",
-        "feature1Description": "Unique QR code per room. Guests order from their bed, in their language. Zero front-desk calls.",
-        "feature2Title": "All under one roof",
-        "feature2Description": "Restaurant, lounge bar, pool, room service. One dashboard to control everything.",
-        "feature3Title": "Welcome the world",
-        "feature3Description": "Menu in French, English, and more. Payment in XAF, EUR, USD. Your international guests feel at home.",
-        "ctaTitle": "Your guests come from everywhere. Your service should keep up."
+        "heroTitle": "Room service, restaurant, bar. One dashboard.",
+        "heroSubtitle": "Guests order from their room in their language. Your F&B team sees everything in real time.",
+        "feature1Title": "QR code per room, digital room service",
+        "feature1Description": "Every room has its own QR code. Guests order from bed - continental breakfast, minibar, full meal. Zero front desk calls, zero lost tickets.",
+        "feature2Title": "All your F&B under one roof",
+        "feature2Description": "Restaurant, bar lounge, pool, room service. One dashboard for all your outlets. Your room nights and your F&B finally connected.",
+        "feature3Title": "Guests come from everywhere",
+        "feature3Description": "Menu in French, English and more. Payment in XAF, EUR, USD. Check-in or check-out, guests are served in their language and pay how they want.",
+        "ctaTitle": "Your F&B deserves a system as good as your hotel."
       },
       "restaurants": {
-        "heroTitle": "Your floor. Your kitchen. All connected.",
-        "heroSubtitle": "From the order to the plate, nothing gets lost.",
-        "feature1Title": "Your menu, digitized",
-        "feature1Description": "Categories, subcategories, allergens, photos. Your customers see everything from their phone.",
-        "feature2Title": "The kitchen sees it all",
-        "feature2Description": "Starters, mains, desserts - each station gets its orders at the right time. No more shouting.",
-        "feature3Title": "Your recipes, your margins",
-        "feature3Description": "Ingredients, proportions, material cost. You know exactly how much you make per dish.",
-        "ctaTitle": "Your restaurant deserves flawless service."
+        "heroTitle": "Front of house, kitchen, bill. All connected.",
+        "heroSubtitle": "From the order ticket to the final bill, nothing gets lost between your dining room and your kitchen.",
+        "feature1Title": "Your daily menu, live",
+        "feature1Description": "Daily specials, allergens, photos, modifiers. Guests browse and order from their table. No more laminated menus gathering dust.",
+        "feature2Title": "Kitchen sees every ticket",
+        "feature2Description": "Every order ticket hits the kitchen screen at the right moment. Starters, mains, desserts - each station gets its part. Zero forgotten dishes, zero shouting across the pass.",
+        "feature3Title": "Recipes, margins, covers",
+        "feature3Description": "Food cost per dish, lunch and dinner service covers, weekly best-sellers. You know exactly where you stand before mise en place every morning.",
+        "ctaTitle": "Your dinner service deserves better than a notepad and a calculator."
       }
     }
   },
@@ -3040,15 +3040,15 @@
     "nameLabel": "Establishment name",
     "namePlaceholder": "E.g.: The Little Bistro",
     "typeRestaurant": "Restaurant",
-    "typeRestaurantDesc": "Table service",
+    "typeRestaurantDesc": "Table service, lunch and dinner",
     "typeHotel": "Hotel",
-    "typeHotelDesc": "Accommodation and dining",
+    "typeHotelDesc": "Room service, F&B, accommodation",
     "typeBar": "Bar",
-    "typeBarDesc": "Drinks and cocktails",
+    "typeBarDesc": "Cocktails, drinks, terrace",
     "typeCafe": "Café",
-    "typeCafeDesc": "Hot drinks and snacks",
+    "typeCafeDesc": "Hot drinks, snacks, daily board",
     "typeFastfood": "Fast food",
-    "typeFastfoodDesc": "Quick service",
+    "typeFastfoodDesc": "Kiosks, drive-through, fast pace",
     "typeOther": "Other",
     "typeOtherDesc": "Other type of business",
     "addressLabel": "Address",
