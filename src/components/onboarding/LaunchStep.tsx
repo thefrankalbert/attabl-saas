@@ -60,11 +60,9 @@ const FORMAT_PRESETS = [
 /** Rainbow conic gradient swatch — opens the custom HEX color picker.
  *  Replaces the old "Custom" text button with an intuitive icon-like swatch. */
 function RainbowSwatch({
-  isActive,
   onClick,
   ariaLabel,
 }: {
-  isActive: boolean;
   onClick: () => void;
   ariaLabel: string;
 }) {
@@ -75,11 +73,7 @@ function RainbowSwatch({
       onClick={onClick}
       aria-label={ariaLabel}
       title="Couleur personnalisee"
-      className={`w-8 h-8 rounded-full border-2 p-0 transition-all overflow-hidden ${
-        isActive
-          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
-          : 'border-app-border hover:border-app-border-hover'
-      }`}
+      className="w-8 h-8 rounded-full p-0 overflow-hidden transition-opacity hover:opacity-80"
       style={{
         background:
           'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
@@ -528,7 +522,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             />
                           ))}
                           <RainbowSwatch
-                            isActive={showFgPicker}
                             onClick={() => setShowFgPicker((v) => !v)}
                             ariaLabel="Couleur personnalisee du QR"
                           />
@@ -539,6 +532,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               color={fgColor}
                               onChange={(c) => updateData({ qrCustomFgColor: c })}
                             />
+                            <Button type="button" size="sm" onClick={() => setShowFgPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
+                              {t('colorValidate')}
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -562,7 +558,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             />
                           ))}
                           <RainbowSwatch
-                            isActive={showBgPicker}
                             onClick={() => setShowBgPicker((v) => !v)}
                             ariaLabel="Fond personnalise du QR"
                           />
@@ -573,6 +568,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               color={bgColor === 'transparent' ? '#ffffff' : bgColor}
                               onChange={(c) => updateData({ qrCustomBgColor: c })}
                             />
+                            <Button type="button" size="sm" onClick={() => setShowBgPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
+                              {t('colorValidate')}
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -596,7 +594,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             />
                           ))}
                           <RainbowSwatch
-                            isActive={showCardPicker}
                             onClick={() => setShowCardPicker((v) => !v)}
                             ariaLabel="Couleur personnalisee du support"
                           />
@@ -607,6 +604,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
                               onChange={(c) => updateData({ qrCustomCardBgColor: c })}
                             />
+                            <Button type="button" size="sm" onClick={() => setShowCardPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
+                              {t('colorValidate')}
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -1053,7 +1053,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               />
                             ))}
                             <RainbowSwatch
-                              isActive={showTextColorPicker}
                               onClick={() => setShowTextColorPicker((v) => !v)}
                               ariaLabel="Couleur personnalisee du texte"
                             />
@@ -1075,6 +1074,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                                 color={data.qrCustomTextColor || '#1A1A1A'}
                                 onChange={(c) => updateData({ qrCustomTextColor: c })}
                               />
+                              <Button type="button" size="sm" onClick={() => setShowTextColorPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
+                                {t('colorValidate')}
+                              </Button>
                             </div>
                           )}
                         </div>

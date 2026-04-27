@@ -211,9 +211,9 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {t('primaryColor')}
                   </Label>
                   <div className="flex items-center gap-2">
-                    {/* Current color preview */}
+                    {/* Current color preview — no border */}
                     <div
-                      className="w-10 h-10 rounded-xl border border-app-border shrink-0"
+                      className="w-10 h-10 rounded-xl shrink-0"
                       style={{ backgroundColor: data.primaryColor }}
                     />
                     {/* Hex input */}
@@ -224,20 +224,16 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       onChange={(e) => updateData({ primaryColor: e.target.value })}
                       className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
                     />
-                    {/* Rainbow picker button */}
+                    {/* Rainbow picker button — no border */}
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() =>
                         setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
                       }
                       aria-label="Choisir une couleur personnalisee"
                       title="Couleur personnalisee"
-                      className={`w-10 h-10 rounded-xl border-2 p-0 overflow-hidden shrink-0 transition-all ${
-                        showPickerFor === 'primary'
-                          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
-                          : 'border-app-border hover:border-app-border-hover'
-                      }`}
+                      className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
                       style={{
                         background:
                           'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
@@ -250,6 +246,14 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         color={data.primaryColor || '#000000'}
                         onChange={(color) => updateData({ primaryColor: color })}
                       />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => setShowPickerFor(null)}
+                        className="mt-2 h-8 px-4 text-xs font-semibold"
+                      >
+                        {t('colorValidate')}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -276,20 +280,16 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       onChange={(e) => updateData({ secondaryColor: e.target.value })}
                       className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
                     />
-                    {/* Rainbow picker button */}
+                    {/* Rainbow picker button — no border */}
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() =>
                         setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
                       }
                       aria-label="Choisir une couleur personnalisee"
                       title="Couleur personnalisee"
-                      className={`w-10 h-10 rounded-xl border-2 p-0 overflow-hidden shrink-0 transition-all ${
-                        showPickerFor === 'secondary'
-                          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
-                          : 'border-app-border hover:border-app-border-hover'
-                      }`}
+                      className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
                       style={{
                         background:
                           'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
@@ -302,6 +302,14 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         color={data.secondaryColor || '#000000'}
                         onChange={(color) => updateData({ secondaryColor: color })}
                       />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => setShowPickerFor(null)}
+                        className="mt-2 h-8 px-4 text-xs font-semibold"
+                      >
+                        {t('colorValidate')}
+                      </Button>
                     </div>
                   )}
                 </div>

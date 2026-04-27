@@ -3093,6 +3093,7 @@
     "brandingSubtitle": "Logo, couleurs et description",
     "identitySection": "Identite visuelle",
     "colorsSection": "Couleurs",
+    "colorValidate": "Valider",
     "logoLabel": "Logo de l'établissement",
     "logoUpload": "Glissez ou cliquez pour ajouter",
     "logoDelete": "Supprimer le logo",
