@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { HexColorPicker } from 'react-colorful';
 import {
@@ -10,9 +10,6 @@ import {
   Layout,
   Copy,
   CheckCheck,
-  Paintbrush,
-  Type,
-  Download,
   Upload,
   Trash2,
   Loader2,
@@ -21,12 +18,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { LaunchQR } from '@/components/qr/LaunchQR';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
-import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,15 +32,12 @@ interface LaunchStepProps {
   variant?: 'qr' | 'summary';
 }
 
-type LaunchTab = 'style' | 'text' | 'export';
+type LaunchTab = 'style' | 'text';
 
 const TEMPLATES: Array<{ id: QRTemplateId; labelKey: string }> = [
   { id: 'standard', labelKey: 'qrTemplateStandard' },
-  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
   { id: 'carte', labelKey: 'qrTemplateCarte' },
-  { id: 'minimal', labelKey: 'qrTemplateMinimal' },
-  { id: 'elegant', labelKey: 'qrTemplateElegant' },
-  { id: 'neon', labelKey: 'qrTemplateNeon' },
+  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
 ];
 
 const CTA_PRESETS = [
@@ -63,6 +54,37 @@ const FORMAT_PRESETS = [
   { id: 'a5', label: 'A5', width: 148, height: 210 },
   { id: 'a4', label: 'A4', width: 210, height: 297 },
 ];
+
+/** Rainbow conic gradient swatch — opens the custom HEX color picker.
+ *  Replaces the old "Custom" text button with an intuitive icon-like swatch. */
+function RainbowSwatch({
+  isActive,
+  onClick,
+  ariaLabel,
+}: {
+  isActive: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      title="Couleur personnalisee"
+      className={`w-8 h-8 rounded-full border-2 p-0 transition-all overflow-hidden ${
+        isActive
+          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
+          : 'border-app-border hover:border-app-border-hover'
+      }`}
+      style={{
+        background:
+          'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+      }}
+    />
+  );
+}
 
 /** Color preset swatch - clickable to select a quick color.
  *  Renders a checkered pattern when color === 'transparent' to make it visually distinct. */
@@ -112,6 +134,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const [showFgPicker, setShowFgPicker] = useState(false);
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [showCardPicker, setShowCardPicker] = useState(false);
+  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -143,13 +166,10 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   const accentColor = data.primaryColor || '#000';
 
-  const tabs: Array<{ id: LaunchTab; icon: typeof Paintbrush; label: string }> = [
-    { id: 'style', icon: Paintbrush, label: t('qrStyleTab') },
-    { id: 'text', icon: Type, label: t('qrTextTab') },
-    { id: 'export', icon: Download, label: t('qrExportTab') },
+  const tabs: Array<{ id: LaunchTab; label: string }> = [
+    { id: 'style', label: t('qrStyleTab') },
+    { id: 'text', label: t('qrTextTab') },
   ];
-
-  const qrConfig = useMemo(() => onboardingDataToQRConfig(data), [data]);
 
   // ─── Color helpers ───────────────────────────────
   const fgColor = data.qrCustomFgColor ?? '#000000';
@@ -158,6 +178,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   // Logo: explicit toggle. Default ON if user has a logoUrl, OFF otherwise.
   const showLogo = data.qrShowLogo === undefined ? !!data.logoUrl : data.qrShowLogo;
+  // Per-element controls
+  const qrCodeSize = data.qrCodeSize ?? 'md';
+  const qrTextSize = data.qrTextSize ?? 'md';
+  const showName = data.qrShowName !== false;
+  const showCta = data.qrShowCta !== false;
+  const qrPosition = data.qrPosition ?? 'center';
 
   const fgPresets = [
     { color: '#000000', label: 'Noir' },
@@ -176,6 +202,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
     { color: '#F6F6F6', label: 'Gris clair' },
     { color: data.primaryColor || '#000000', label: 'Couleur de marque' },
     { color: 'transparent', label: 'Sans fond' },
+  ];
+
+  const textColorPresets = [
+    { color: '#1A1A1A', label: 'Noir' },
+    { color: '#FFFFFF', label: 'Blanc' },
+    { color: data.primaryColor || '#000000', label: 'Couleur de marque' },
   ];
 
   // ─── Dimensions helpers ───────────────────────────
@@ -271,11 +303,22 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+      <div
+        className="flex-1 min-h-0 overflow-y-auto"
+        data-onboarding-scroll
+      >
+        <div
+          className={
+            showQr
+              ? 'px-4 pt-2 pb-1 sm:px-6 lg:px-8'
+              : 'px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5'
+          }
+        >
           {/* Header — compact for QR variant */}
-          <div className={showSummary ? 'mb-6' : 'mb-3'}>
-            <h1 className="text-lg font-bold text-app-text mb-0.5">
+          <div className={showSummary ? 'mb-6' : 'mb-2'}>
+            <h1
+              className={`font-bold text-app-text ${showSummary ? 'text-lg mb-0.5' : 'text-base'}`}
+            >
               {showSummary ? t('launchTitle') : t('qrCodeTitle')}
             </h1>
             {showSummary && (
@@ -378,25 +421,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
             </div>
           )}
 
-          {/* LaunchQR export for summary variant */}
-          {showSummary && (
-            <div className="mb-6">
-              <LaunchQR
-                config={qrConfig}
-                url={menuUrl}
-                tenantName={data.tenantName}
-                logoUrl={data.logoUrl || undefined}
-              />
-            </div>
-          )}
-
           {/* QR Customization */}
           {showQr && (
             <div>
               {/* Tab Pills — compact */}
               <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-app-elevated/40 border border-app-border inline-flex">
                 {tabs.map((tab) => {
-                  const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
                     <Button
@@ -404,383 +434,459 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       type="button"
                       variant={isActive ? 'default' : 'ghost'}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 h-auto ${
+                      className={`rounded-md px-4 py-1.5 text-xs font-semibold transition-all duration-200 h-auto ${
                         isActive
                           ? 'bg-accent text-accent-text'
                           : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
                       }`}
                     >
-                      <Icon className="h-3 w-3" />
                       {tab.label}
                     </Button>
                   );
                 })}
               </div>
 
-              {/* ────── Style Tab — ultra-compact ────── */}
+              {/* ────── Style Tab — Modele/Couleurs full width, puis Elements | Upload, puis Format ────── */}
               {activeTab === 'style' && (
-                <div className="space-y-3">
-                  {/* Template — pills on the same row as label */}
-                  <section className="flex items-center flex-wrap gap-2">
-                    <p className="text-[11px] font-semibold text-app-text-secondary mr-1">
-                      Template
-                    </p>
-                    {TEMPLATES.map((tmpl) => {
-                      const isSelected = data.qrTemplate === tmpl.id;
-                      const disabled = hasUpload;
-                      return (
-                        <Button
-                          key={tmpl.id}
-                          type="button"
-                          variant="outline"
-                          onClick={() => updateData({ qrTemplate: tmpl.id })}
-                          disabled={disabled}
-                          className={`h-7 px-2.5 rounded-full border text-[11px] font-medium transition-all ${
-                            isSelected && !disabled
-                              ? 'border-accent bg-accent/10 text-accent'
-                              : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
-                          } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-                        >
-                          {t(tmpl.labelKey)}
-                        </Button>
-                      );
-                    })}
-                    {hasUpload && (
-                      <span className="text-[10px] text-app-text-muted flex items-center gap-1 ml-auto">
-                        <AlertCircle className="h-3 w-3" />
-                        Desactive
-                      </span>
-                    )}
+                <div className="divide-y divide-app-border/50">
+                  {/* Section 1: Modele */}
+                  <section className="pb-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="text-xs font-semibold text-app-text">Modele</h3>
+                      {hasUpload && (
+                        <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Desactive (design personnalise)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TEMPLATES.map((tmpl) => {
+                        const isSelected = data.qrTemplate === tmpl.id;
+                        const disabled = hasUpload;
+                        return (
+                          <Button
+                            key={tmpl.id}
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const d = TEMPLATE_DEFAULTS[tmpl.id];
+                              updateData({
+                                qrTemplate: tmpl.id,
+                                qrSupportWidth: d.width,
+                                qrSupportHeight: d.height,
+                                qrOrientation: d.orientation,
+                              });
+                            }}
+                            disabled={disabled}
+                            className={`h-7 px-2.5 rounded-full border text-[11px] font-medium transition-all ${
+                              isSelected && !disabled
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                            } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          >
+                            {t(tmpl.labelKey)}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </section>
 
-                  {/* Colors grid — 2 columns on desktop, stacks on mobile */}
-                  <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
-                    {/* QR foreground */}
-                    <div className="relative">
-                      <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
-                        Couleur du QR
-                      </p>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {fgPresets.map((p) => (
-                          <ColorSwatch
-                            key={p.color}
-                            color={p.color}
-                            isActive={fgColor.toLowerCase() === p.color.toLowerCase()}
-                            onClick={() => {
-                              updateData({ qrCustomFgColor: p.color });
-                              setShowFgPicker(false);
-                            }}
-                            ariaLabel={p.label}
-                          />
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowFgPicker((v) => !v)}
-                          className={`h-8 px-2.5 rounded-full border text-[11px] ${
-                            showFgPicker
-                              ? 'border-accent bg-accent/5 text-accent'
-                              : 'border-app-border text-app-text-secondary'
-                          }`}
-                        >
-                          Custom
-                        </Button>
-                      </div>
-                      {showFgPicker && (
-                        <div className="absolute z-50 top-full left-0 mt-1 p-2 rounded-lg border border-app-border bg-app-bg shadow-lg">
-                          <HexColorPicker
-                            color={fgColor}
-                            onChange={(c) => updateData({ qrCustomFgColor: c })}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* QR background */}
-                    <div className="relative">
-                      <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
-                        Fond du QR
-                      </p>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {bgPresets.map((p) => (
-                          <ColorSwatch
-                            key={p.color}
-                            color={p.color}
-                            isActive={bgColor.toLowerCase() === p.color.toLowerCase()}
-                            onClick={() => {
-                              updateData({ qrCustomBgColor: p.color });
-                              setShowBgPicker(false);
-                            }}
-                            ariaLabel={p.label}
-                          />
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowBgPicker((v) => !v)}
-                          className={`h-8 px-2.5 rounded-full border text-[11px] ${
-                            showBgPicker
-                              ? 'border-accent bg-accent/5 text-accent'
-                              : 'border-app-border text-app-text-secondary'
-                          }`}
-                        >
-                          Custom
-                        </Button>
-                      </div>
-                      {showBgPicker && (
-                        <div className="absolute z-50 top-full left-0 mt-1 p-2 rounded-lg border border-app-border bg-app-bg shadow-lg">
-                          <HexColorPicker
-                            color={bgColor === 'transparent' ? '#ffffff' : bgColor}
-                            onChange={(c) => updateData({ qrCustomBgColor: c })}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card support background */}
-                    <div className="relative">
-                      <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
-                        Couleur du support
-                      </p>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {cardBgPresets.map((p) => (
-                          <ColorSwatch
-                            key={p.color}
-                            color={p.color}
-                            isActive={cardBgColor.toLowerCase() === p.color.toLowerCase()}
-                            onClick={() => {
-                              updateData({ qrCustomCardBgColor: p.color });
-                              setShowCardPicker(false);
-                            }}
-                            ariaLabel={p.label}
-                          />
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowCardPicker((v) => !v)}
-                          className={`h-8 px-2.5 rounded-full border text-[11px] ${
-                            showCardPicker
-                              ? 'border-accent bg-accent/5 text-accent'
-                              : 'border-app-border text-app-text-secondary'
-                          }`}
-                        >
-                          Custom
-                        </Button>
-                      </div>
-                      {showCardPicker && (
-                        <div className="absolute z-50 top-full left-0 mt-1 p-2 rounded-lg border border-app-border bg-app-bg shadow-lg">
-                          <HexColorPicker
-                            color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
-                            onChange={(c) => updateData({ qrCustomCardBgColor: c })}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Logo toggle - inline compact */}
-                    {data.logoUrl && (
+                  {/* Section 2: Couleurs */}
+                  <section className="py-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Couleurs</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
+                      {/* QR foreground */}
                       <div>
                         <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
-                          Logo
+                          Couleur du QR
                         </p>
-                        <div className="flex items-center justify-between h-8 px-2.5 rounded-full border border-app-border bg-app-elevated/40">
-                          <span className="text-[11px] text-app-text-secondary">Afficher</span>
-                          <Switch
-                            checked={showLogo}
-                            onCheckedChange={(checked) => updateData({ qrShowLogo: checked })}
-                            aria-label="Afficher le logo"
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {fgPresets.map((p) => (
+                            <ColorSwatch
+                              key={p.color}
+                              color={p.color}
+                              isActive={fgColor.toLowerCase() === p.color.toLowerCase()}
+                              onClick={() => {
+                                updateData({ qrCustomFgColor: p.color });
+                                setShowFgPicker(false);
+                              }}
+                              ariaLabel={p.label}
+                            />
+                          ))}
+                          <RainbowSwatch
+                            isActive={showFgPicker}
+                            onClick={() => setShowFgPicker((v) => !v)}
+                            ariaLabel="Couleur personnalisee du QR"
                           />
                         </div>
-                      </div>
-                    )}
-                  </section>
-
-                  {/* Dimensions — label + everything on one compact row */}
-                  <section className="flex items-center flex-wrap gap-1.5">
-                    <p className="text-[10px] font-semibold text-app-text-secondary mr-1">
-                      Dimensions
-                    </p>
-
-                    {/* Orientation pill toggle */}
-                    <div className="inline-flex items-center h-8 rounded-full border border-app-border bg-app-elevated overflow-hidden">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleOrientation('portrait')}
-                        className={`h-full px-2.5 rounded-none text-[11px] font-medium ${
-                          orientation === 'portrait'
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-app-text-secondary hover:bg-app-border/30'
-                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                      >
-                        Portrait
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleOrientation('landscape')}
-                        className={`h-full px-2.5 rounded-none border-l border-app-border text-[11px] font-medium ${
-                          orientation === 'landscape'
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-app-text-secondary hover:bg-app-border/30'
-                        } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                      >
-                        <RotateCw className="h-3 w-3 mr-1" />
-                        Paysage
-                      </Button>
-                    </div>
-
-                    {/* Format presets */}
-                    {FORMAT_PRESETS.map((preset) => {
-                      const presetW = orientation === 'landscape' ? preset.height : preset.width;
-                      const presetH = orientation === 'landscape' ? preset.width : preset.height;
-                      const isActive = widthMm === presetW && heightMm === presetH;
-                      return (
-                        <Button
-                          key={preset.id}
-                          type="button"
-                          variant="outline"
-                          onClick={() => applyFormatPreset(preset)}
-                          className={`h-8 px-2.5 rounded-full border text-[11px] font-medium ${
-                            isActive
-                              ? 'border-accent bg-accent/10 text-accent'
-                              : 'border-app-border text-app-text-secondary'
-                          }`}
-                        >
-                          {preset.label}
-                        </Button>
-                      );
-                    })}
-
-                    {/* Inline width x height inputs */}
-                    <div className="flex items-center gap-1 ml-auto">
-                      <Input
-                        type="number"
-                        min={MIN_DIM_MM}
-                        max={MAX_DIM_MM}
-                        value={widthInput}
-                        onChange={(e) => setWidthInput(e.target.value)}
-                        onBlur={() => {
-                          const n = Number(widthInput);
-                          if (!Number.isFinite(n) || n <= 0) {
-                            setWidthInput(String(widthMm));
-                            return;
-                          }
-                          setDimensions(n, heightMm);
-                        }}
-                        aria-label="Largeur en mm"
-                        className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
-                      />
-                      <span className="text-app-text-muted text-[11px]">x</span>
-                      <Input
-                        type="number"
-                        min={MIN_DIM_MM}
-                        max={MAX_DIM_MM}
-                        value={heightInput}
-                        onChange={(e) => setHeightInput(e.target.value)}
-                        onBlur={() => {
-                          const n = Number(heightInput);
-                          if (!Number.isFinite(n) || n <= 0) {
-                            setHeightInput(String(heightMm));
-                            return;
-                          }
-                          setDimensions(widthMm, n);
-                        }}
-                        aria-label="Hauteur en mm"
-                        className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
-                      />
-                      <span className="text-app-text-muted text-[10px] ml-0.5">mm</span>
-                    </div>
-                  </section>
-
-                  {/* Upload custom design — single line compact */}
-                  <section className="border-t border-app-border pt-3">
-                    {/* Native file input — exception per react/forbid-elements rule comment */}
-                    {/* eslint-disable-next-line react/forbid-elements */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,application/pdf"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    {hasUpload ? (
-                      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-app-border bg-app-elevated/40">
-                        <div className="w-8 h-8 rounded overflow-hidden bg-app-bg flex items-center justify-center shrink-0">
-                          {data.qrUploadedDesignUrl?.endsWith('.pdf') ? (
-                            <span className="text-[9px] font-bold text-app-text-muted">PDF</span>
-                          ) : (
-                            <img
-                              src={data.qrUploadedDesignUrl}
-                              alt="Uploaded design"
-                              className="w-full h-full object-contain"
+                        {showFgPicker && (
+                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                            <HexColorPicker
+                              color={fgColor}
+                              onChange={(c) => updateData({ qrCustomFgColor: c })}
                             />
-                          )}
-                        </div>
-                        <p className="flex-1 min-w-0 text-[11px] text-app-text truncate">
-                          Design personnalise -{' '}
-                          <span className="text-app-text-muted">
-                            {widthMm} x {heightMm} mm
-                          </span>
-                        </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleRemoveUpload}
-                          aria-label="Supprimer"
-                          className="h-7 w-7 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 rounded"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleUploadClick}
-                        disabled={uploading}
-                        className="w-full h-9 px-3 rounded-lg border border-dashed border-app-border hover:border-accent/40 hover:bg-app-elevated/30 transition-all flex items-center justify-center gap-2"
-                      >
-                        {uploading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-app-text-muted" />
-                        ) : (
-                          <Upload className="h-3.5 w-3.5 text-app-text-muted" />
+                          </div>
                         )}
-                        <span className="text-[11px] font-semibold text-app-text-secondary">
-                          {uploading ? 'Telechargement...' : 'Uploader votre propre design'}
-                        </span>
-                        <span className="text-[10px] text-app-text-muted">
-                          PNG, JPG, PDF - 5 Mo max
-                        </span>
-                      </Button>
-                    )}
+                      </div>
+
+                      {/* QR background */}
+                      <div>
+                        <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
+                          Fond du QR
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {bgPresets.map((p) => (
+                            <ColorSwatch
+                              key={p.color}
+                              color={p.color}
+                              isActive={bgColor.toLowerCase() === p.color.toLowerCase()}
+                              onClick={() => {
+                                updateData({ qrCustomBgColor: p.color });
+                                setShowBgPicker(false);
+                              }}
+                              ariaLabel={p.label}
+                            />
+                          ))}
+                          <RainbowSwatch
+                            isActive={showBgPicker}
+                            onClick={() => setShowBgPicker((v) => !v)}
+                            ariaLabel="Fond personnalise du QR"
+                          />
+                        </div>
+                        {showBgPicker && (
+                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                            <HexColorPicker
+                              color={bgColor === 'transparent' ? '#ffffff' : bgColor}
+                              onChange={(c) => updateData({ qrCustomBgColor: c })}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card support background */}
+                      <div>
+                        <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
+                          Couleur du support
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {cardBgPresets.map((p) => (
+                            <ColorSwatch
+                              key={p.color}
+                              color={p.color}
+                              isActive={cardBgColor.toLowerCase() === p.color.toLowerCase()}
+                              onClick={() => {
+                                updateData({ qrCustomCardBgColor: p.color });
+                                setShowCardPicker(false);
+                              }}
+                              ariaLabel={p.label}
+                            />
+                          ))}
+                          <RainbowSwatch
+                            isActive={showCardPicker}
+                            onClick={() => setShowCardPicker((v) => !v)}
+                            ariaLabel="Couleur personnalisee du support"
+                          />
+                        </div>
+                        {showCardPicker && (
+                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                            <HexColorPicker
+                              color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
+                              onChange={(c) => updateData({ qrCustomCardBgColor: c })}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Logo toggle - compact on/off pill */}
+                      {data.logoUrl && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-app-text-secondary mb-1">
+                            Logo
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => updateData({ qrShowLogo: !showLogo })}
+                            aria-pressed={showLogo}
+                            title={showLogo ? 'Masquer le logo' : 'Afficher le logo'}
+                            className={`h-8 w-16 px-2 rounded-full border text-[11px] font-bold uppercase transition-all ${
+                              showLogo
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border bg-app-elevated/40 text-app-text-muted hover:border-app-border-hover'
+                            }`}
+                          >
+                            {showLogo ? 'On' : 'Off'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </section>
+
+                  {/* Row: Elements (gauche) + Utiliser votre design (droite). Une seule section,
+                      un seul separator avant et apres, comme demande par l'utilisateur. */}
+                  <section className="py-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-5 items-start">
+                      {/* Colonne gauche : Elements */}
+                      <div>
+                        <h3 className="text-xs font-semibold text-app-text mb-1.5">Elements</h3>
+                        <div className="space-y-2">
+                          {/* Taille du QR */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
+                              Taille QR
+                            </span>
+                            <div className="inline-flex items-center h-7 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                              {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((s, i) => (
+                                <Button
+                                  key={s}
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => updateData({ qrCodeSize: s })}
+                                  className={`h-full px-2 rounded-none text-[10px] font-bold uppercase ${
+                                    qrCodeSize === s
+                                      ? 'bg-accent/10 text-accent'
+                                      : 'text-app-text-secondary hover:bg-app-border/30'
+                                  } ${i > 0 ? 'border-l border-app-border' : ''} focus-visible:ring-0 focus-visible:ring-offset-0`}
+                                >
+                                  {s}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Visibilite nom + CTA */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
+                              Afficher
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => updateData({ qrShowName: !showName })}
+                              aria-pressed={showName}
+                              className={`h-7 px-3 rounded-full border text-[10px] font-bold uppercase ${
+                                showName
+                                  ? 'border-accent bg-accent/10 text-accent'
+                                  : 'border-app-border bg-app-elevated/40 text-app-text-muted'
+                              }`}
+                            >
+                              Nom {showName ? 'on' : 'off'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => updateData({ qrShowCta: !showCta })}
+                              aria-pressed={showCta}
+                              className={`h-7 px-3 rounded-full border text-[10px] font-bold uppercase ${
+                                showCta
+                                  ? 'border-accent bg-accent/10 text-accent'
+                                  : 'border-app-border bg-app-elevated/40 text-app-text-muted'
+                              }`}
+                            >
+                              Accroche {showCta ? 'on' : 'off'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Colonne droite : Utiliser votre design */}
+                      <div>
+                        <h3 className="text-xs font-semibold text-app-text mb-1.5">
+                          Ou utilisez votre design
+                        </h3>
+                        {/* eslint-disable-next-line react/forbid-elements */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,application/pdf"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        {hasUpload ? (
+                          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-app-border bg-app-elevated/40">
+                            <div className="w-8 h-8 rounded overflow-hidden bg-app-bg flex items-center justify-center shrink-0">
+                              {data.qrUploadedDesignUrl &&
+                              data.qrUploadedDesignUrl
+                                .split('?')[0]
+                                .split('#')[0]
+                                .toLowerCase()
+                                .endsWith('.pdf') ? (
+                                <span className="text-[9px] font-bold text-app-text-muted">
+                                  PDF
+                                </span>
+                              ) : (
+                                <img
+                                  src={data.qrUploadedDesignUrl}
+                                  alt="Uploaded design"
+                                  className="w-full h-full object-contain"
+                                />
+                              )}
+                            </div>
+                            <p className="flex-1 min-w-0 text-[11px] text-app-text truncate">
+                              Design personnalise -{' '}
+                              <span className="text-app-text-muted">
+                                {widthMm} x {heightMm} mm
+                              </span>
+                            </p>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleRemoveUpload}
+                              aria-label="Supprimer"
+                              className="h-7 w-7 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 rounded"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleUploadClick}
+                            disabled={uploading}
+                            className="w-full h-auto py-3 px-4 rounded-xl border-2 border-dashed border-app-border hover:border-accent/50 hover:bg-app-elevated/30 transition-all flex flex-col items-center justify-center gap-1.5"
+                          >
+                            {uploading ? (
+                              <Loader2 className="h-5 w-5 animate-spin text-app-text-muted" />
+                            ) : (
+                              <Upload className="h-5 w-5 text-app-text-muted" />
+                            )}
+                            <span className="text-xs font-semibold text-app-text">
+                              {uploading ? 'Telechargement...' : 'Choisir un fichier'}
+                            </span>
+                            <span className="text-[10px] text-app-text-muted">
+                              PNG, JPG, PDF - 5 Mo max
+                            </span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Section 3: Format - dimensions custom uniquement pour Standard.
+                      Carte = format carte de visite fixe (85x55mm).
+                      Chevalet = format A6 fixe (105x148mm). */}
+                  {data.qrTemplate === 'standard' && (
+                    <section className="py-2">
+                      <h3 className="text-xs font-semibold text-app-text mb-1.5">Format</h3>
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        {/* Orientation pill toggle */}
+                        <div className="inline-flex items-center h-8 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => toggleOrientation('portrait')}
+                            className={`h-full px-2.5 rounded-none text-[11px] font-medium ${
+                              orientation === 'portrait'
+                                ? 'bg-accent/10 text-accent'
+                                : 'text-app-text-secondary hover:bg-app-border/30'
+                            } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                          >
+                            Portrait
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => toggleOrientation('landscape')}
+                            className={`h-full px-2.5 rounded-none border-l border-app-border text-[11px] font-medium ${
+                              orientation === 'landscape'
+                                ? 'bg-accent/10 text-accent'
+                                : 'text-app-text-secondary hover:bg-app-border/30'
+                            } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                          >
+                            <RotateCw className="h-3 w-3 mr-1" />
+                            Paysage
+                          </Button>
+                        </div>
+
+                        {/* Format presets */}
+                        {FORMAT_PRESETS.map((preset) => {
+                          const presetW =
+                            orientation === 'landscape' ? preset.height : preset.width;
+                          const presetH =
+                            orientation === 'landscape' ? preset.width : preset.height;
+                          const isActive = widthMm === presetW && heightMm === presetH;
+                          return (
+                            <Button
+                              key={preset.id}
+                              type="button"
+                              variant="outline"
+                              onClick={() => applyFormatPreset(preset)}
+                              className={`h-8 px-2.5 rounded-full border text-[11px] font-medium ${
+                                isActive
+                                  ? 'border-accent bg-accent/10 text-accent'
+                                  : 'border-app-border text-app-text-secondary'
+                              }`}
+                            >
+                              {preset.label}
+                            </Button>
+                          );
+                        })}
+
+                        {/* Inline width x height inputs */}
+                        <div className="flex items-center gap-1 ml-auto">
+                          <Input
+                            type="number"
+                            min={MIN_DIM_MM}
+                            max={MAX_DIM_MM}
+                            value={widthInput}
+                            onChange={(e) => setWidthInput(e.target.value)}
+                            onBlur={() => {
+                              const n = Number(widthInput);
+                              if (!Number.isFinite(n) || n <= 0) {
+                                setWidthInput(String(widthMm));
+                                return;
+                              }
+                              setDimensions(n, heightMm);
+                            }}
+                            aria-label="Largeur en mm"
+                            className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
+                          />
+                          <span className="text-app-text-muted text-[11px]">x</span>
+                          <Input
+                            type="number"
+                            min={MIN_DIM_MM}
+                            max={MAX_DIM_MM}
+                            value={heightInput}
+                            onChange={(e) => setHeightInput(e.target.value)}
+                            onBlur={() => {
+                              const n = Number(heightInput);
+                              if (!Number.isFinite(n) || n <= 0) {
+                                setHeightInput(String(heightMm));
+                                return;
+                              }
+                              setDimensions(widthMm, n);
+                            }}
+                            aria-label="Hauteur en mm"
+                            className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
+                          />
+                          <span className="text-app-text-muted text-[10px] ml-0.5">mm</span>
+                        </div>
+                      </div>
+                    </section>
+                  )}
                 </div>
               )}
 
-              {/* ────── Text Tab ────── */}
+              {/* ────── Text Tab — compact, structure ────── */}
               {activeTab === 'text' && (
-                <div className="space-y-6">
-                  {/* CTA Presets */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrCtaLabel')}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-3">
+                <div className="divide-y divide-app-border/50">
+                  {/* Section: Accroche (CTA) */}
+                  <section className="pb-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Accroche</h3>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
                       {CTA_PRESETS.map((preset) => {
                         const isActive = data.qrCta === preset.value;
                         return (
                           <Button
                             key={preset.key}
                             type="button"
-                            variant={isActive ? 'default' : 'outline'}
+                            variant="outline"
                             onClick={() => updateData({ qrCta: preset.value })}
-                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
+                            className={`h-7 px-2.5 rounded-full border text-[11px] font-medium ${
                               isActive
-                                ? 'bg-accent text-accent-text'
-                                : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
                             }`}
                           >
                             {t(preset.key)}
@@ -793,47 +899,134 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       value={data.qrCta}
                       onChange={(e) => updateData({ qrCta: e.target.value })}
                       placeholder={t('qrCtaLabel')}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30"
                       maxLength={60}
                     />
-                  </div>
+                  </section>
 
-                  {/* Description */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrDescriptionLabel')}
-                    </p>
+                  {/* Section: Description */}
+                  <section className="py-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Description</h3>
                     <Textarea
                       value={data.qrDescription}
                       onChange={(e) => updateData({ qrDescription: e.target.value })}
                       placeholder={t('qrDescriptionLabel')}
                       rows={2}
                       maxLength={120}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                      className="w-full px-3 py-2 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30"
                     />
-                  </div>
-                </div>
-              )}
+                  </section>
 
-              {/* ────── Export Tab ────── */}
-              {activeTab === 'export' && (
-                <div>
-                  <div className="rounded-xl border border-app-border bg-app-elevated/40 p-5">
-                    <p className="text-sm font-semibold text-app-text mb-1">
-                      Telecharger votre QR code
-                    </p>
-                    <p className="text-xs text-app-text-muted mb-4 tabular-nums">
-                      Support : {widthMm} x {heightMm} mm ·{' '}
-                      {orientation === 'landscape' ? 'Paysage' : 'Portrait'}
-                      {hasUpload ? ' · Design personnalise' : ''}
-                    </p>
-                    <LaunchQR
-                      config={qrConfig}
-                      url={menuUrl}
-                      tenantName={data.tenantName}
-                      logoUrl={data.logoUrl || undefined}
-                    />
-                  </div>
+                  {/* Section: Mise en forme du texte (taille / position / couleur) */}
+                  <section className="py-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Mise en forme</h3>
+                    <div className="space-y-2">
+                      {/* Taille du texte */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
+                          Taille
+                        </span>
+                        <div className="inline-flex items-center h-7 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                          {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((s, i) => (
+                            <Button
+                              key={s}
+                              type="button"
+                              variant="ghost"
+                              onClick={() => updateData({ qrTextSize: s })}
+                              className={`h-full px-2 rounded-none text-[10px] font-bold uppercase ${
+                                qrTextSize === s
+                                  ? 'bg-accent/10 text-accent'
+                                  : 'text-app-text-secondary hover:bg-app-border/30'
+                              } ${i > 0 ? 'border-l border-app-border' : ''} focus-visible:ring-0 focus-visible:ring-offset-0`}
+                            >
+                              {s}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Position du texte */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
+                          Position
+                        </span>
+                        <div className="inline-flex items-center h-7 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                          {(
+                            [
+                              {
+                                id: 'start',
+                                label: orientation === 'landscape' ? 'Gauche' : 'Haut',
+                              },
+                              { id: 'center', label: 'Centre' },
+                              { id: 'end', label: orientation === 'landscape' ? 'Droite' : 'Bas' },
+                            ] as const
+                          ).map((p, i) => (
+                            <Button
+                              key={p.id}
+                              type="button"
+                              variant="ghost"
+                              onClick={() => updateData({ qrPosition: p.id })}
+                              className={`h-full px-2.5 rounded-none text-[10px] font-medium ${
+                                qrPosition === p.id
+                                  ? 'bg-accent/10 text-accent'
+                                  : 'text-app-text-secondary hover:bg-app-border/30'
+                              } ${i > 0 ? 'border-l border-app-border' : ''} focus-visible:ring-0 focus-visible:ring-offset-0`}
+                            >
+                              {p.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Couleur du texte */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
+                          Couleur
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {textColorPresets.map((p) => (
+                              <ColorSwatch
+                                key={p.color}
+                                color={p.color}
+                                isActive={
+                                  (data.qrCustomTextColor ?? '').toLowerCase() ===
+                                  p.color.toLowerCase()
+                                }
+                                onClick={() => {
+                                  updateData({ qrCustomTextColor: p.color });
+                                  setShowTextColorPicker(false);
+                                }}
+                                ariaLabel={p.label}
+                              />
+                            ))}
+                            <RainbowSwatch
+                              isActive={showTextColorPicker}
+                              onClick={() => setShowTextColorPicker((v) => !v)}
+                              ariaLabel="Couleur personnalisee du texte"
+                            />
+                            {data.qrCustomTextColor && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => updateData({ qrCustomTextColor: undefined })}
+                                className="h-7 px-2 text-[10px] text-app-text-muted hover:text-app-text"
+                                title="Reinitialiser (auto)"
+                              >
+                                Auto
+                              </Button>
+                            )}
+                          </div>
+                          {showTextColorPicker && (
+                            <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
+                              <HexColorPicker
+                                color={data.qrCustomTextColor || '#1A1A1A'}
+                                onChange={(c) => updateData({ qrCustomTextColor: c })}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               )}
             </div>
