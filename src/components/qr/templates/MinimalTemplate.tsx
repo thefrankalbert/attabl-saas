@@ -1,10 +1,83 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function MinimalTemplate({ config, url, tenantName, tableName }: QRTemplateProps) {
+export function MinimalTemplate({ config, url, tenantName, tableName, isExport }: QRTemplateProps) {
+  const isLandscape = config.templateWidth > config.templateHeight;
+  const textScale = config.textScale ?? 1;
+  const showName = config.showName !== false;
+  const showCta = config.showCta !== false;
+
+  const QR = (
+    <QRCodeCanvas
+      value={url}
+      size={config.qrSize}
+      level={config.errorCorrection}
+      fgColor={config.qrFgColor}
+      bgColor={config.qrBgColor}
+      marginSize={config.marginSize}
+      imageSettings={
+        config.logo.enabled
+          ? {
+              src: config.logo.src,
+              width: config.logo.width,
+              height: config.logo.height,
+              excavate: config.logo.excavate,
+              opacity: config.logo.opacity,
+              crossOrigin: 'anonymous' as const,
+            }
+          : undefined
+      }
+    />
+  );
+
+  const Texts = (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="opacity-30"
+        style={{ width: '60px', height: '1px', backgroundColor: config.templateAccentColor }}
+      />
+      {showName && (
+        <p
+          className="uppercase tracking-widest opacity-60"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
+        >
+          {tenantName}
+        </p>
+      )}
+      {tableName && (
+        <p className="opacity-50" style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}>
+          {tableName}
+        </p>
+      )}
+      {config.descriptionText && (
+        <p
+          className="italic text-center opacity-60"
+          style={{ color: config.templateTextColor, fontSize: `${0.7 * textScale}rem` }}
+        >
+          {config.descriptionText}
+        </p>
+      )}
+      {showCta && config.ctaText && (
+        <p className="italic opacity-40" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+          {config.ctaText}
+        </p>
+      )}
+      {config.footerText && (
+        <p className="text-center opacity-30" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+          {config.footerText}
+        </p>
+      )}
+      {config.showPoweredBy && (
+        <p className="text-center opacity-25" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+          Powered by Attabl
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -22,11 +95,10 @@ export function MinimalTemplate({ config, url, tenantName, tableName }: QRTempla
         backgroundPosition: 'center',
         fontFamily: config.fontFamily,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isExport ? 'visible' : 'hidden',
       }}
-      className={`flex flex-col items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
+      className={`flex items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
     >
-      {/* Background image overlay */}
       {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
         <div
           style={{
@@ -38,88 +110,17 @@ export function MinimalTemplate({ config, url, tenantName, tableName }: QRTempla
         />
       )}
 
-      {/* Content - ultra-clean, maximum whitespace */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-5">
-        {/* Large QR code - no extra container, just the QR directly */}
-        <QRCodeSVG
-          value={url}
-          size={config.qrSize}
-          level={config.errorCorrection}
-          fgColor={config.qrFgColor}
-          bgColor={config.qrBgColor}
-          marginSize={config.marginSize}
-          imageSettings={
-            config.logo.enabled
-              ? {
-                  src: config.logo.src,
-                  width: config.logo.width,
-                  height: config.logo.height,
-                  excavate: config.logo.excavate,
-                  opacity: config.logo.opacity,
-                  crossOrigin: 'anonymous' as const,
-                }
-              : undefined
-          }
-        />
-
-        {/* Thin horizontal line */}
-        <div
-          className="opacity-30"
-          style={{
-            width: '60%',
-            height: '1px',
-            backgroundColor: config.templateAccentColor,
-          }}
-        />
-
-        {/* Tenant name - very small, uppercase, letter-spacing-widest */}
-        <p
-          className="text-xs uppercase tracking-widest opacity-60"
-          style={{ color: config.templateTextColor }}
-        >
-          {tenantName}
-        </p>
-
-        {/* Table name underneath if present */}
-        {tableName && (
-          <p
-            className="text-xs font-normal -mt-3 opacity-50"
-            style={{ color: config.templateTextColor }}
-          >
-            {tableName}
-          </p>
-        )}
-
-        {/* CTA text in tiny italic */}
-        {config.ctaText && (
-          <p
-            className="text-[10px] italic opacity-40 -mt-2"
-            style={{ color: config.templateTextColor }}
-          >
-            {config.ctaText}
-          </p>
-        )}
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p
-            className="text-[10px] text-center opacity-30 -mt-2"
-            style={{ color: config.templateTextColor }}
-          >
-            {config.footerText}
-          </p>
-        )}
-
-        {/* Powered by Attabl */}
-        {config.showPoweredBy && (
-          <p
-            className="text-[10px] text-center opacity-25 -mt-2"
-            style={{ color: config.templateTextColor }}
-          >
-            Powered by Attabl
-          </p>
-        )}
-      </div>
+      {isLandscape ? (
+        <div className="relative z-10 flex items-center justify-center gap-6 w-full h-full">
+          {QR}
+          {Texts}
+        </div>
+      ) : (
+        <div className="relative z-10 flex flex-col items-center justify-center gap-5 w-full h-full">
+          {QR}
+          {Texts}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,123 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateProps) {
+export function NeonTemplate({ config, url, tenantName, tableName, isExport }: QRTemplateProps) {
   const accentColor = config.templateAccentColor;
+  const isLandscape = config.templateWidth > config.templateHeight;
+  const textScale = config.textScale ?? 1;
+  const showName = config.showName !== false;
+  const showCta = config.showCta !== false;
+
+  const NeonLine = (
+    <div
+      style={{
+        width: '100%',
+        height: '1px',
+        backgroundColor: accentColor,
+        boxShadow: `0 0 6px ${accentColor}, 0 0 12px ${accentColor}80`,
+      }}
+    />
+  );
+
+  const Texts = (
+    <div className="flex flex-col items-center gap-3 w-full">
+      {showName && (
+        <h2
+          className="font-bold uppercase tracking-widest text-center"
+          style={{
+            color: accentColor,
+            fontSize: `${1.25 * textScale}rem`,
+            textShadow: `0 0 10px ${accentColor}80, 0 0 20px ${accentColor}40`,
+          }}
+        >
+          {tenantName}
+        </h2>
+      )}
+      {NeonLine}
+      {tableName && (
+        <p
+          className="font-semibold uppercase tracking-wider"
+          style={{
+            color: accentColor,
+            fontSize: `${0.875 * textScale}rem`,
+            textShadow: `0 0 8px ${accentColor}CC, 0 0 16px ${accentColor}66`,
+          }}
+        >
+          {tableName}
+        </p>
+      )}
+      {config.descriptionText && (
+        <p
+          className="text-center opacity-70"
+          style={{
+            color: accentColor,
+            fontSize: `${0.75 * textScale}rem`,
+            textShadow: `0 0 6px ${accentColor}60`,
+          }}
+        >
+          {config.descriptionText}
+        </p>
+      )}
+      {showCta && config.ctaText && (
+        <p
+          className="font-medium text-center"
+          style={{
+            color: accentColor,
+            fontSize: `${0.875 * textScale}rem`,
+            textShadow: `0 0 6px ${accentColor}80`,
+          }}
+        >
+          {config.ctaText}
+        </p>
+      )}
+      {NeonLine}
+      {config.footerText && (
+        <p className="text-center opacity-60" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+          {config.footerText}
+        </p>
+      )}
+      {config.showPoweredBy && (
+        <p className="text-center opacity-40" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+          Powered by Attabl
+        </p>
+      )}
+    </div>
+  );
+
+  const QR = (
+    <div
+      className="p-4 rounded-xl shrink-0"
+      style={{
+        backgroundColor:
+          config.qrBgColor === 'transparent' ? 'transparent' : config.qrBgColor || '#FFFFFF',
+        boxShadow: `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60`,
+      }}
+    >
+      <QRCodeCanvas
+        value={url}
+        size={config.qrSize}
+        level={config.errorCorrection}
+        fgColor={config.qrFgColor}
+        bgColor={config.qrBgColor}
+        marginSize={config.marginSize}
+        imageSettings={
+          config.logo.enabled
+            ? {
+                src: config.logo.src,
+                width: config.logo.width,
+                height: config.logo.height,
+                excavate: config.logo.excavate,
+                opacity: config.logo.opacity,
+                crossOrigin: 'anonymous' as const,
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
 
   return (
     <div
@@ -24,11 +136,10 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
         backgroundPosition: 'center',
         fontFamily: config.fontFamily,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isExport ? 'visible' : 'hidden',
       }}
-      className={`flex flex-col items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
+      className={`flex items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
     >
-      {/* Background image overlay */}
       {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
         <div
           style={{
@@ -40,107 +151,17 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
         />
       )}
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-4 w-full">
-        {/* Tenant name in accent color, bold, uppercase, letter-spacing */}
-        <h2
-          className="text-xl font-bold uppercase tracking-widest text-center"
-          style={{
-            color: accentColor,
-            textShadow: `0 0 10px ${accentColor}80, 0 0 20px ${accentColor}40`,
-          }}
-        >
-          {tenantName}
-        </h2>
-
-        {/* Neon line decorative element */}
-        <div
-          style={{
-            width: '100%',
-            height: '1px',
-            backgroundColor: accentColor,
-            boxShadow: `0 0 6px ${accentColor}, 0 0 12px ${accentColor}80`,
-          }}
-        />
-
-        {/* Table name with glow effect */}
-        {tableName && (
-          <p
-            className="text-sm font-semibold uppercase tracking-wider"
-            style={{
-              color: accentColor,
-              textShadow: `0 0 8px ${accentColor}CC, 0 0 16px ${accentColor}66`,
-            }}
-          >
-            {tableName}
-          </p>
-        )}
-
-        {/* QR code with glowing border */}
-        <div
-          className="p-4 rounded-xl"
-          style={{
-            backgroundColor: '#FFFFFF',
-            boxShadow: `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60`,
-          }}
-        >
-          <QRCodeSVG
-            value={url}
-            size={config.qrSize}
-            level={config.errorCorrection}
-            fgColor={config.qrFgColor}
-            bgColor={config.qrBgColor}
-            marginSize={config.marginSize}
-            imageSettings={
-              config.logo.enabled
-                ? {
-                    src: config.logo.src,
-                    width: config.logo.width,
-                    height: config.logo.height,
-                    excavate: config.logo.excavate,
-                    opacity: config.logo.opacity,
-                    crossOrigin: 'anonymous' as const,
-                  }
-                : undefined
-            }
-          />
+      {isLandscape ? (
+        <div className="relative z-10 flex items-center justify-center gap-6 w-full h-full">
+          <div className="flex-1 flex items-center justify-center">{Texts}</div>
+          {QR}
         </div>
-
-        {/* CTA text in accent color */}
-        <p
-          className="text-sm font-medium text-center"
-          style={{
-            color: accentColor,
-            textShadow: `0 0 6px ${accentColor}80`,
-          }}
-        >
-          {config.ctaText}
-        </p>
-
-        {/* Bottom neon line */}
-        <div
-          style={{
-            width: '100%',
-            height: '1px',
-            backgroundColor: accentColor,
-            boxShadow: `0 0 6px ${accentColor}, 0 0 12px ${accentColor}80`,
-          }}
-        />
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p className="text-[10px] text-center opacity-50" style={{ color: accentColor }}>
-            {config.footerText}
-          </p>
-        )}
-
-        {/* Powered by Attabl */}
-        {config.showPoweredBy && (
-          <p className="text-[10px] text-center opacity-30" style={{ color: accentColor }}>
-            Powered by Attabl
-          </p>
-        )}
-      </div>
+      ) : (
+        <div className="relative z-10 flex flex-col items-center justify-center gap-4 w-full h-full">
+          {Texts}
+          {QR}
+        </div>
+      )}
     </div>
   );
 }
