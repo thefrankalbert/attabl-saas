@@ -458,8 +458,7 @@ export default function CartPage() {
                 <span>{t('confirmOrder')}</span>
                 <span
                   aria-hidden="true"
-                  className="inline-block rounded-full bg-white"
-                  style={{ width: 5, height: 5 }}
+                  className="inline-block rounded-full bg-white w-[5px] h-[5px]"
                 />
                 <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
               </>
