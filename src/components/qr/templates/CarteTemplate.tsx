@@ -35,17 +35,13 @@ export function CarteTemplate({ config, url, tenantName, tableName, isExport }: 
           Room Service
         </p>
       )}
-      {showCta && (
-        <div
-          className="inline-block px-3 py-1.5 rounded-lg font-medium"
-          style={{
-            backgroundColor: config.templateAccentColor,
-            color: config.templateAccentTextColor ?? config.templateBgColor,
-            fontSize: `${0.75 * textScale}rem`,
-          }}
+      {showCta && config.ctaText && (
+        <p
+          className="font-medium text-center"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
         >
-          {config.ctaText} &rarr;
-        </div>
+          {config.ctaText}
+        </p>
       )}
       {config.descriptionText && (
         <p
@@ -64,7 +60,7 @@ export function CarteTemplate({ config, url, tenantName, tableName, isExport }: 
   );
 
   const QR = (
-    <div className="p-2 bg-white rounded-xl shadow-inner shrink-0">
+    <div className="shrink-0">
       <QRCodeCanvas
         value={url}
         size={config.qrSize}

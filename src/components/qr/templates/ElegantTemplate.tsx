@@ -64,13 +64,7 @@ export function ElegantTemplate({
   );
 
   const QR = (
-    <div
-      className="p-3 rounded-lg shrink-0"
-      style={{
-        backgroundColor: `${config.templateAccentColor}0A`,
-        border: `1px solid ${config.templateAccentColor}20`,
-      }}
-    >
+    <div className="shrink-0">
       <QRCodeCanvas
         value={url}
         size={config.qrSize}

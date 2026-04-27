@@ -66,7 +66,7 @@ export function ChevaletTemplate({
   );
 
   const QR = (
-    <div className="p-4 bg-white rounded-2xl shadow-lg flex items-center justify-center shrink-0">
+    <div className="shrink-0">
       <QRCodeCanvas
         value={url}
         size={config.qrSize}

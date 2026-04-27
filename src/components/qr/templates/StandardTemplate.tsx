@@ -56,7 +56,7 @@ export function StandardTemplate({
   );
 
   const QR = (
-    <div className="p-4 bg-white rounded-2xl shadow-inner shrink-0">
+    <div className="shrink-0">
       <QRCodeCanvas
         value={url}
         size={config.qrSize}

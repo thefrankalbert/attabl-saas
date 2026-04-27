@@ -185,6 +185,15 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const showCta = data.qrShowCta !== false;
   const qrPosition = data.qrPosition ?? 'center';
 
+  const SIZE_LABELS: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
+    xs: '55%',
+    sm: '75%',
+    md: '100%',
+    lg: '130%',
+    xl: '160%',
+  };
+  const QR_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+
   const fgPresets = [
     { color: '#000000', label: 'Noir' },
     { color: '#FFFFFF', label: 'Blanc' },
@@ -636,22 +645,36 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
                               Taille QR
                             </span>
-                            <div className="inline-flex items-center h-7 rounded-full border border-app-border bg-app-elevated overflow-hidden">
-                              {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((s, i) => (
-                                <Button
-                                  key={s}
-                                  type="button"
-                                  variant="ghost"
-                                  onClick={() => updateData({ qrCodeSize: s })}
-                                  className={`h-full px-2 rounded-none text-[10px] font-bold uppercase ${
-                                    qrCodeSize === s
-                                      ? 'bg-accent/10 text-accent'
-                                      : 'text-app-text-secondary hover:bg-app-border/30'
-                                  } ${i > 0 ? 'border-l border-app-border' : ''} focus-visible:ring-0 focus-visible:ring-offset-0`}
-                                >
-                                  {s}
-                                </Button>
-                              ))}
+                            <div className="inline-flex items-center gap-1.5">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  const idx = QR_SIZES.indexOf(qrCodeSize);
+                                  if (idx > 0) updateData({ qrCodeSize: QR_SIZES[idx - 1] });
+                                }}
+                                disabled={qrCodeSize === 'xs'}
+                                aria-label="Reduire la taille du QR"
+                                className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
+                              >
+                                <span className="text-sm leading-none select-none">-</span>
+                              </Button>
+                              <span className="text-[11px] font-semibold text-app-text w-9 text-center tabular-nums">
+                                {SIZE_LABELS[qrCodeSize]}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  const idx = QR_SIZES.indexOf(qrCodeSize);
+                                  if (idx < QR_SIZES.length - 1) updateData({ qrCodeSize: QR_SIZES[idx + 1] });
+                                }}
+                                disabled={qrCodeSize === 'xl'}
+                                aria-label="Augmenter la taille du QR"
+                                className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
+                              >
+                                <span className="text-sm leading-none select-none">+</span>
+                              </Button>
                             </div>
                           </div>
                           {/* Visibilite nom + CTA */}
@@ -766,9 +789,8 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                   {/* Section 3: Format - dimensions custom uniquement pour Standard.
                       Carte = format carte de visite fixe (85x55mm).
                       Chevalet = format A6 fixe (105x148mm). */}
-                  {data.qrTemplate === 'standard' && (
-                    <section className="py-2">
-                      <h3 className="text-xs font-semibold text-app-text mb-1.5">Format</h3>
+                  <section className="py-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Format</h3>
                       <div className="flex items-center flex-wrap gap-1.5">
                         {/* Orientation pill toggle */}
                         <div className="inline-flex items-center h-8 rounded-full border border-app-border bg-app-elevated overflow-hidden">
@@ -864,7 +886,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         </div>
                       </div>
                     </section>
-                  )}
                 </div>
               )}
 
@@ -926,22 +947,36 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         <span className="text-[10px] font-semibold text-app-text-secondary w-20 shrink-0">
                           Taille
                         </span>
-                        <div className="inline-flex items-center h-7 rounded-full border border-app-border bg-app-elevated overflow-hidden">
-                          {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((s, i) => (
-                            <Button
-                              key={s}
-                              type="button"
-                              variant="ghost"
-                              onClick={() => updateData({ qrTextSize: s })}
-                              className={`h-full px-2 rounded-none text-[10px] font-bold uppercase ${
-                                qrTextSize === s
-                                  ? 'bg-accent/10 text-accent'
-                                  : 'text-app-text-secondary hover:bg-app-border/30'
-                              } ${i > 0 ? 'border-l border-app-border' : ''} focus-visible:ring-0 focus-visible:ring-offset-0`}
-                            >
-                              {s}
-                            </Button>
-                          ))}
+                        <div className="inline-flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const idx = QR_SIZES.indexOf(qrTextSize);
+                              if (idx > 0) updateData({ qrTextSize: QR_SIZES[idx - 1] });
+                            }}
+                            disabled={qrTextSize === 'xs'}
+                            aria-label="Reduire la taille du texte"
+                            className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
+                          >
+                            <span className="text-sm leading-none select-none">-</span>
+                          </Button>
+                          <span className="text-[11px] font-semibold text-app-text w-9 text-center tabular-nums">
+                            {SIZE_LABELS[qrTextSize]}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const idx = QR_SIZES.indexOf(qrTextSize);
+                              if (idx < QR_SIZES.length - 1) updateData({ qrTextSize: QR_SIZES[idx + 1] });
+                            }}
+                            disabled={qrTextSize === 'xl'}
+                            aria-label="Augmenter la taille du texte"
+                            className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
+                          >
+                            <span className="text-sm leading-none select-none">+</span>
+                          </Button>
                         </div>
                       </div>
                       {/* Position du texte */}

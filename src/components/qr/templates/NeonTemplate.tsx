@@ -88,14 +88,7 @@ export function NeonTemplate({ config, url, tenantName, tableName, isExport }: Q
   );
 
   const QR = (
-    <div
-      className="p-4 rounded-xl shrink-0"
-      style={{
-        backgroundColor:
-          config.qrBgColor === 'transparent' ? 'transparent' : config.qrBgColor || '#FFFFFF',
-        boxShadow: `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60`,
-      }}
-    >
+    <div className="shrink-0">
       <QRCodeCanvas
         value={url}
         size={config.qrSize}
