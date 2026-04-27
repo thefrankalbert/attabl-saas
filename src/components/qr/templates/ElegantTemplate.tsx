@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { QRCodeCanvas } from 'qrcode.react';
@@ -10,7 +9,6 @@ export function ElegantTemplate({
   url,
   tenantName,
   tableName,
-  logoUrl,
   isExport,
 }: QRTemplateProps) {
   const isLandscape = config.templateWidth > config.templateHeight;
@@ -30,16 +28,12 @@ export function ElegantTemplate({
   const Header = (
     <div className="flex flex-col items-center gap-2">
       {Decoration}
-      {logoUrl && config.logo.enabled ? (
-        <img src={logoUrl} alt={tenantName} className="h-10 w-auto object-contain" />
-      ) : (
-        <h2
-          className="font-bold text-center"
-          style={{ color: config.templateTextColor, fontSize: `${1.5 * textScale}rem` }}
-        >
-          {tenantName}
-        </h2>
-      )}
+      <h2
+        className="font-bold text-center"
+        style={{ color: config.templateTextColor, fontSize: `${1.5 * textScale}rem` }}
+      >
+        {tenantName}
+      </h2>
       {config.descriptionText && (
         <p
           className="italic text-center opacity-70"

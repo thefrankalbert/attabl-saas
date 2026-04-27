@@ -109,6 +109,14 @@ export interface OnboardingData {
   qrCustomBgColor?: string;
   // Logo on QR template - explicit user choice (default true if logoUrl exists)
   qrShowLogo?: boolean;
+  // Per-element controls (Option A: 5-level size + visibility + 3-position layout)
+  qrCodeSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  qrTextSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  qrShowName?: boolean;
+  qrShowCta?: boolean;
+  qrPosition?: 'start' | 'center' | 'end';
+  /** User-picked text color override. Empty/undefined = auto-derived from card bg. */
+  qrCustomTextColor?: string;
   // Custom card/support background color (override imposed brand secondary color)
   // Use 'transparent' for no background
   qrCustomCardBgColor?: string;
@@ -118,6 +126,7 @@ export interface OnboardingData {
   qrOrientation?: 'portrait' | 'landscape';
   // Uploaded design URL (Supabase Storage)
   qrUploadedDesignUrl?: string;
+  qrCustomName?: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -618,7 +627,7 @@ export default function OnboardingPage() {
         {/* Config panel */}
         <div className="flex-1 flex flex-col min-w-0">
           <main
-            className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
+            className={`flex-1 min-h-0 scroll-smooth ${screenKey === 'qr' ? 'overflow-hidden' : 'overflow-y-auto'}`}
             data-onboarding-scroll
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX;

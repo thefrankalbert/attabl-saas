@@ -47,10 +47,12 @@ const CTA_PRESETS = [
   { key: 'qrCtaCard', value: 'Scannez notre carte' },
 ];
 
-// Dimension constraints (A5 -> A4 with portrait/landscape)
-const MIN_DIM_MM = 148;
-const MAX_DIM_MM = 297;
+// Dimension constraints: from business card (50mm) to A3 (420mm)
+const MIN_DIM_MM = 50;
+const MAX_DIM_MM = 420;
 const FORMAT_PRESETS = [
+  { id: 'carte', label: 'Carte', width: 85, height: 55 },
+  { id: 'a6', label: 'A6', width: 105, height: 148 },
   { id: 'a5', label: 'A5', width: 148, height: 210 },
   { id: 'a4', label: 'A4', width: 210, height: 297 },
 ];
@@ -185,14 +187,16 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const showCta = data.qrShowCta !== false;
   const qrPosition = data.qrPosition ?? 'center';
 
-  const SIZE_LABELS: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', string> = {
-    xs: '55%',
+  const SIZE_LABELS: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl', string> = {
+    xs: '50%',
     sm: '75%',
     md: '100%',
     lg: '130%',
     xl: '160%',
+    '2xl': '200%',
+    '3xl': '250%',
   };
-  const QR_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+  const QR_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'] as const;
 
   const fgPresets = [
     { color: '#000000', label: 'Noir' },
@@ -669,7 +673,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                                   const idx = QR_SIZES.indexOf(qrCodeSize);
                                   if (idx < QR_SIZES.length - 1) updateData({ qrCodeSize: QR_SIZES[idx + 1] });
                                 }}
-                                disabled={qrCodeSize === 'xl'}
+                                disabled={qrCodeSize === '3xl'}
                                 aria-label="Augmenter la taille du QR"
                                 className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
                               >
@@ -892,6 +896,21 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
               {/* ────── Text Tab — compact, structure ────── */}
               {activeTab === 'text' && (
                 <div className="divide-y divide-app-border/50">
+                  {/* Section: Nom affiche */}
+                  <section className="pb-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Nom affiche</h3>
+                    <Input
+                      type="text"
+                      value={data.qrCustomName ?? ''}
+                      onChange={(e) => updateData({ qrCustomName: e.target.value || undefined })}
+                      placeholder={data.tenantName || "Nom de l'etablissement"}
+                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30"
+                      maxLength={60}
+                    />
+                    <p className="text-[10px] text-app-text-muted mt-1">
+                      Laisser vide pour utiliser le nom de votre etablissement.
+                    </p>
+                  </section>
                   {/* Section: Accroche (CTA) */}
                   <section className="pb-2">
                     <h3 className="text-xs font-semibold text-app-text mb-1.5">Accroche</h3>
@@ -971,7 +990,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               const idx = QR_SIZES.indexOf(qrTextSize);
                               if (idx < QR_SIZES.length - 1) updateData({ qrTextSize: QR_SIZES[idx + 1] });
                             }}
-                            disabled={qrTextSize === 'xl'}
+                            disabled={qrTextSize === '3xl'}
                             aria-label="Augmenter la taille du texte"
                             className="h-7 w-7 rounded-full border border-app-border p-0 flex items-center justify-center text-app-text disabled:opacity-40"
                           >

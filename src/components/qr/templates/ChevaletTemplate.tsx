@@ -1,8 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { QRCodeCanvas } from 'qrcode.react';
-import { Layout } from 'lucide-react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
@@ -11,7 +9,6 @@ export function ChevaletTemplate({
   url,
   tenantName,
   tableName,
-  logoUrl,
   isExport,
 }: QRTemplateProps) {
   const isLandscape = config.templateWidth > config.templateHeight;
@@ -19,21 +16,8 @@ export function ChevaletTemplate({
   const showName = config.showName !== false;
   const showCta = config.showCta !== false;
 
-  const Header = (showName || (logoUrl && config.logo.enabled)) && (
+  const Header = (showName || config.descriptionText) && (
     <div className="text-center">
-      {logoUrl && config.logo.enabled ? (
-        <img src={logoUrl} alt={tenantName} className="h-12 w-auto object-contain mx-auto mb-2" />
-      ) : (
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
-          style={{ backgroundColor: config.templateAccentColor }}
-        >
-          <Layout
-            className="h-6 w-6"
-            style={{ color: config.templateAccentTextColor ?? config.templateBgColor }}
-          />
-        </div>
-      )}
       {showName && (
         <h2
           className="font-bold"
@@ -95,11 +79,6 @@ export function ChevaletTemplate({
       {showCta && (
         <p className="font-bold mb-1" style={{ fontSize: `${1.125 * textScale}rem` }}>
           {config.ctaText}
-        </p>
-      )}
-      {showCta && (
-        <p className="opacity-70" style={{ fontSize: `${0.75 * textScale}rem` }}>
-          Menu digital &bull; Commande rapide
         </p>
       )}
       {config.footerText && (

@@ -1,8 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { QRCodeCanvas } from 'qrcode.react';
-import { Layout } from 'lucide-react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
@@ -11,7 +9,6 @@ export function StandardTemplate({
   url,
   tenantName,
   tableName,
-  logoUrl,
   isExport,
 }: QRTemplateProps) {
   // >= so square (100x100) maps to landscape, matching TEMPLATE_DEFAULTS.standard.orientation
@@ -20,27 +17,13 @@ export function StandardTemplate({
   const showName = config.showName !== false;
   const showCta = config.showCta !== false;
 
-  const Header = (showName || (logoUrl && config.logo.enabled)) && (
-    <div className="flex items-center gap-2">
-      {logoUrl && config.logo.enabled ? (
-        <img src={logoUrl} alt={tenantName} className="h-8 w-auto object-contain" />
-      ) : (
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: config.templateAccentColor }}
-        >
-          <Layout className="h-4 w-4 text-white" />
-        </div>
-      )}
-      {showName && (
-        <span
-          className="font-bold"
-          style={{ color: config.templateTextColor, fontSize: `${1.125 * textScale}rem` }}
-        >
-          {tenantName}
-        </span>
-      )}
-    </div>
+  const Header = showName && (
+    <span
+      className="font-bold text-center"
+      style={{ color: config.templateTextColor, fontSize: `${1.125 * textScale}rem` }}
+    >
+      {tenantName}
+    </span>
   );
 
   const Badge = tableName && (
