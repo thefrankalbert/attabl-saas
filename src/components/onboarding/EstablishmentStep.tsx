@@ -328,7 +328,7 @@ export function EstablishmentStep({
                       </p>
 
                       {data.establishmentType === 'restaurant' && (
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
                           <NumberStepper
                             label={t('tableCountLabel')}
                             value={data.tableCount}
