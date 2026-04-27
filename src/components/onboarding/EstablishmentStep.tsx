@@ -129,14 +129,16 @@ export function EstablishmentStep({
               >
                 {t('nameLabel')}
               </Label>
-              <Input
-                id="tenantName"
-                type="text"
-                placeholder={t('namePlaceholder')}
-                value={data.tenantName}
-                onChange={(e) => updateData({ tenantName: e.target.value })}
-                className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
-              />
+              <div className="max-w-sm">
+                <Input
+                  id="tenantName"
+                  type="text"
+                  placeholder={t('namePlaceholder')}
+                  value={data.tenantName}
+                  onChange={(e) => updateData({ tenantName: e.target.value })}
+                  className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+                />
+              </div>
             </div>
           )}
 
