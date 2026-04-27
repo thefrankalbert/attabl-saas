@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, X, Zap, Settings, Clock } from 'lucide-react';
+import { Plus, Minus, X, Clock } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface TablesStepProps {
@@ -42,7 +42,6 @@ function derivePrefix(name: string): string {
 }
 
 const modeIds: ConfigMode[] = ['complete', 'minimum', 'skip'];
-const modeIcons = [Settings, Zap, Clock] as const;
 
 export function TablesStep({ data, updateData }: TablesStepProps) {
   const t = useTranslations('onboarding');
@@ -132,40 +131,28 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
               Mode de configuration
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {modeIds.map((id, idx) => {
+              {modeIds.map((id) => {
                 const isActive = mode === id;
-                const Icon = modeIcons[idx];
                 return (
                   <Button
                     key={id}
                     type="button"
                     variant="outline"
                     onClick={() => handleModeChange(id)}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
+                    className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
                       isActive
                         ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
                     }`}
                   >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
-                          ? 'bg-accent text-accent-text'
-                          : 'bg-app-elevated text-app-text-muted'
-                      }`}
+                    <p
+                      className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
                     >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p
-                        className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
-                      >
-                        {t(modeLabelKeys[id])}
-                      </p>
-                      <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
-                        {t(modeDescKeys[id])}
-                      </p>
-                    </div>
+                      {t(modeLabelKeys[id])}
+                    </p>
+                    <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
+                      {t(modeDescKeys[id])}
+                    </p>
                   </Button>
                 );
               })}

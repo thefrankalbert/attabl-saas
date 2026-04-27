@@ -5,18 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Coffee,
-  Flame,
-  Hotel,
-  MapPin,
-  Minus,
-  Phone,
-  Plus,
-  Building2,
-  UtensilsCrossed,
-  Wine,
-} from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -29,12 +18,12 @@ import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 const establishmentTypes = [
-  { id: 'restaurant', icon: UtensilsCrossed, titleKey: 'typeRestaurant' },
-  { id: 'hotel', icon: Hotel, titleKey: 'typeHotel' },
-  { id: 'bar', icon: Wine, titleKey: 'typeBar' },
-  { id: 'cafe', icon: Coffee, titleKey: 'typeCafe' },
-  { id: 'fastfood', icon: Flame, titleKey: 'typeFastfood' },
-  { id: 'other', icon: Building2, titleKey: 'typeOther' },
+  { id: 'restaurant', titleKey: 'typeRestaurant' },
+  { id: 'hotel', titleKey: 'typeHotel' },
+  { id: 'bar', titleKey: 'typeBar' },
+  { id: 'cafe', titleKey: 'typeCafe' },
+  { id: 'fastfood', titleKey: 'typeFastfood' },
+  { id: 'other', titleKey: 'typeOther' },
 ] as const;
 
 interface EstablishmentStepProps {
@@ -156,9 +145,8 @@ export function EstablishmentStep({
               <Label className="text-xs font-semibold text-app-text mb-2 block">
                 {t('stepEstablishment')}
               </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {establishmentTypes.map((type) => {
-                  const Icon = type.icon;
                   const isSelected = data.establishmentType === type.id;
                   return (
                     <Button
@@ -166,28 +154,13 @@ export function EstablishmentStep({
                       type="button"
                       variant="outline"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 h-auto ${
+                      className={`h-9 px-4 rounded-full border text-xs font-semibold transition-all ${
                         isSelected
-                          ? 'border-accent bg-accent/5'
-                          : 'border-app-border hover:border-app-border-hover'
+                          ? 'border-accent bg-accent/10 text-accent'
+                          : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
                       }`}
                     >
-                      <div
-                        className={`p-2 rounded-xl transition-colors ${
-                          isSelected ? 'bg-accent/10' : 'bg-app-elevated'
-                        }`}
-                      >
-                        <Icon
-                          className={`h-4 w-4 ${isSelected ? 'text-accent' : 'text-app-text-muted'}`}
-                        />
-                      </div>
-                      <span
-                        className={`font-medium text-[10px] text-center leading-tight ${
-                          isSelected ? 'text-app-text' : 'text-app-text-secondary'
-                        }`}
-                      >
-                        {t(type.titleKey)}
-                      </span>
+                      {t(type.titleKey)}
                     </Button>
                   );
                 })}
@@ -207,9 +180,8 @@ export function EstablishmentStep({
                   <div>
                     <Label
                       htmlFor="address"
-                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                      className="text-sm font-medium text-app-text-secondary mb-1.5 block"
                     >
-                      <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
                       {t('addressLabel')}
                     </Label>
                     <Input
@@ -260,19 +232,20 @@ export function EstablishmentStep({
                   <div>
                     <Label
                       htmlFor="phone"
-                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                      className="text-sm font-medium text-app-text-secondary mb-1.5 block"
                     >
-                      <Phone className="h-3.5 w-3.5 text-app-text-muted" />
                       {t('phoneLabel')}
                     </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder={t('phonePlaceholder')}
-                      value={data.phone}
-                      onChange={(e) => updateData({ phone: e.target.value })}
-                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
-                    />
+                    <div className="max-w-xs">
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder={t('phonePlaceholder')}
+                        value={data.phone}
+                        onChange={(e) => updateData({ phone: e.target.value })}
+                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -284,63 +257,66 @@ export function EstablishmentStep({
                 </p>
 
                 <div className="space-y-4">
-                  {/* Language */}
-                  <div>
-                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
-                      {t('languageLabel')}
-                    </Label>
-                    <Select
-                      value={data.language}
-                      onValueChange={(val) => {
-                        updateData({ language: val });
-                        document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Strict;Secure`;
-                        router.refresh();
-                      }}
-                    >
-                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(LOCALE_LABELS).map(([code, { label, flag }]) => (
-                          <SelectItem key={code} value={code}>
-                            <span className="inline-flex items-center gap-2">
-                              <span>{flag}</span>
-                              <span>{label}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Language + Currency */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Language */}
+                    <div>
+                      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                        {t('languageLabel')}
+                      </Label>
+                      <Select
+                        value={data.language}
+                        onValueChange={(val) => {
+                          updateData({ language: val });
+                          document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Strict;Secure`;
+                          router.refresh();
+                        }}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(LOCALE_LABELS).map(([code, { label, flag }]) => (
+                            <SelectItem key={code} value={code}>
+                              <span className="inline-flex items-center gap-2">
+                                <span>{flag}</span>
+                                <span>{label}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Currency */}
-                  <div>
-                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
-                      {t('currencyLabel')}
-                    </Label>
-                    <Select
-                      value={data.currency}
-                      onValueChange={(val) => updateData({ currency: val })}
-                    >
-                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
-                        <SelectItem value="XAF">XAF (FCFA)</SelectItem>
-                        <SelectItem value="XOF">XOF (FCFA)</SelectItem>
-                        <SelectItem value="MAD">
-                          MAD ({'\u062f'}.{'\u0645'}.)
-                        </SelectItem>
-                        <SelectItem value="TND">
-                          TND ({'\u062f'}.{'\u062a'})
-                        </SelectItem>
-                        <SelectItem value="CAD">CAD ($)</SelectItem>
-                        <SelectItem value="CHF">CHF (Fr.)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Currency */}
+                    <div>
+                      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                        {t('currencyLabel')}
+                      </Label>
+                      <Select
+                        value={data.currency}
+                        onValueChange={(val) => updateData({ currency: val })}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
+                          <SelectItem value="XAF">XAF (FCFA)</SelectItem>
+                          <SelectItem value="XOF">XOF (FCFA)</SelectItem>
+                          <SelectItem value="MAD">
+                            MAD ({'\u062f'}.{'\u0645'}.)
+                          </SelectItem>
+                          <SelectItem value="TND">
+                            TND ({'\u062f'}.{'\u062a'})
+                          </SelectItem>
+                          <SelectItem value="CAD">CAD ($)</SelectItem>
+                          <SelectItem value="CHF">CHF (Fr.)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Type-specific fields */}

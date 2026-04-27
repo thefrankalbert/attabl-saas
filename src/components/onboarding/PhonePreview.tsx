@@ -112,7 +112,8 @@ const C = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
-  const { logoUrl, tenantName, menuItems, currency } = data;
+  const { logoUrl, tenantName, menuItems, currency, primaryColor } = data;
+  const accentColor = primaryColor || C.cartBg;
 
   const categories = useMemo(() => {
     if (!menuItems || menuItems.length === 0) return [];
@@ -377,7 +378,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                       key={cat.name}
                       style={{
                         flexShrink: 0,
-                        backgroundColor: i === 0 ? C.cartBg : C.surface,
+                        backgroundColor: i === 0 ? accentColor : C.surface,
                         borderRadius: '999px',
                         paddingLeft: '7px',
                         paddingRight: '7px',
@@ -606,7 +607,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                 right: '10px',
                 bottom: '44px',
                 height: '30px',
-                backgroundColor: C.cartBg,
+                backgroundColor: accentColor,
                 borderRadius: '999px',
                 display: 'flex',
                 alignItems: 'center',

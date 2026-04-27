@@ -346,7 +346,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 onChange={(e) =>
                                   updateArticle(category.id, item.id, 'price', e.target.value)
                                 }
-                                className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                                className="w-20 h-9 bg-app-bg border-app-border rounded-xl text-sm"
                               />
                               <span className="text-xs text-app-text-muted font-medium">
                                 {data.currency || 'EUR'}
