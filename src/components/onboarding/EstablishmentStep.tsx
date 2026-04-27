@@ -110,22 +110,22 @@ export function EstablishmentStep({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           {/* Header */}
-          <div className="mb-3">
-            <h1 className="text-lg font-bold text-app-text mb-0.5">
+          <div className="mb-7">
+            <h1 className="text-xl font-bold text-app-text mb-1.5">
               {showDetails ? t('addressLabel') : t('establishmentTitle')}
             </h1>
-            <p className="text-app-text-secondary text-xs">
+            <p className="text-app-text-secondary text-sm">
               {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
             </p>
           </div>
 
           {showIdentity && (
-            <div className="mb-3">
+            <div className="mb-6">
               <Label
                 htmlFor="tenantName"
-                className="text-xs font-semibold text-app-text mb-1.5 block"
+                className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-2 block"
               >
                 {t('nameLabel')}
               </Label>
@@ -135,17 +135,17 @@ export function EstablishmentStep({
                 placeholder={t('namePlaceholder')}
                 value={data.tenantName}
                 onChange={(e) => updateData({ tenantName: e.target.value })}
-                className="h-10 rounded-xl border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+                className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
               />
             </div>
           )}
 
           {showIdentity && (
             <div className="mb-3">
-              <Label className="text-xs font-semibold text-app-text mb-2 block">
+              <Label className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-3 block">
                 {t('stepEstablishment')}
               </Label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {establishmentTypes.map((type) => {
                   const isSelected = data.establishmentType === type.id;
                   return (
@@ -154,7 +154,7 @@ export function EstablishmentStep({
                       type="button"
                       variant="outline"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`h-9 px-4 rounded-full border text-xs font-semibold transition-all ${
+                      className={`h-10 px-3 rounded-xl border text-xs font-semibold transition-all ${
                         isSelected
                           ? 'border-accent bg-accent/10 text-accent'
                           : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
@@ -169,10 +169,10 @@ export function EstablishmentStep({
           )}
 
           {showDetails && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left: Address */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
                   {t('addressLabel')}
                 </p>
 
@@ -249,7 +249,7 @@ export function EstablishmentStep({
 
               {/* Right: Configuration */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
                   Configuration
                 </p>
 
@@ -318,8 +318,8 @@ export function EstablishmentStep({
 
                   {/* Type-specific fields */}
                   {data.establishmentType && (
-                    <div className="pt-2 border-t border-app-border">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
+                    <div className="pt-3 border-t border-app-border/50">
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4">
                         {t('typeSpecificLabel')}
                       </p>
 
