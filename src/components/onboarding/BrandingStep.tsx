@@ -78,25 +78,25 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           {/* Header */}
-          <div className="mb-4">
-            <h1 className="text-lg font-bold text-app-text mb-1">{t('brandingTitle')}</h1>
+          <div className="mb-7">
+            <h1 className="text-xl font-bold text-app-text mb-1.5">{t('brandingTitle')}</h1>
             <p className="text-app-text-secondary text-sm">{t('brandingSubtitle')}</p>
           </div>
 
-          {/* Two-column: Logo & Description + Colors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Two-column: Identity + Colors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left: Logo & Description */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Identit\u00e9 visuelle
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                {t('identitySection')}
               </p>
 
               {/* Logo Upload */}
-              <div className="mb-4">
-                <Label className="text-sm font-medium text-app-text-secondary mb-3">
-                  {t('logoLabel') || 'Logo'}
+              <div className="mb-5">
+                <Label className="text-xs font-medium text-app-text-secondary mb-2 block">
+                  {t('logoLabel')}
                 </Label>
                 {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
                 <input
@@ -118,7 +118,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         if (!data.logoUrl) fileInputRef.current?.click();
                       }
                     }}
-                    className="relative w-28 h-28 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
+                    className="relative w-24 h-24 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
                   >
                     {data.logoUrl ? (
                       <>
@@ -151,7 +151,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       </>
                     )}
                   </div>
-                  <div className="pt-3">
+                  <div className="flex flex-col gap-1.5 pt-1">
                     <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
                     {data.logoUrl && (
                       <Button
@@ -159,7 +159,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-2 text-xs h-8 px-3 rounded-lg"
+                        className="text-xs h-8 px-3 rounded-lg w-fit"
                       >
                         {t('logoChange')}
                       </Button>
@@ -172,7 +172,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
               <div>
                 <Label
                   htmlFor="description"
-                  className="text-sm font-medium text-app-text-secondary mb-2"
+                  className="text-xs font-medium text-app-text-secondary mb-2 block"
                 >
                   {t('descriptionLabel')}
                 </Label>
@@ -189,105 +189,121 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   maxLength={500}
                   className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                 />
-                <p className="text-xs text-app-text-muted mt-1.5 text-right">
-                  {t('charCount', { count: data.description.length, max: 500 })}
+                <p className="text-xs text-app-text-muted mt-1.5">
+                  {data.description.length}/500
                 </p>
               </div>
             </div>
 
             {/* Right: Colors */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Couleurs
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                {t('colorsSection')}
               </p>
 
-              {/* Custom Colors */}
-              <div>
-                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
-                  {t('customColorsLabel')}
-                </Label>
-                <div className="space-y-4">
-                  {/* Primary */}
-                  <div>
-                    <Label
-                      htmlFor="primaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('primaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.primaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.primaryColor}
-                        onChange={(e) => updateData({ primaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+              <div className="space-y-5">
+                {/* Primary Color */}
+                <div>
+                  <Label
+                    htmlFor="primaryColor"
+                    className="text-xs font-medium text-app-text-secondary mb-2 block"
+                  >
+                    {t('primaryColor')}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {/* Current color preview */}
+                    <div
+                      className="w-10 h-10 rounded-xl border border-app-border shrink-0"
+                      style={{ backgroundColor: data.primaryColor }}
+                    />
+                    {/* Hex input */}
+                    <Input
+                      type="text"
+                      id="primaryColor"
+                      value={data.primaryColor}
+                      onChange={(e) => updateData({ primaryColor: e.target.value })}
+                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
+                    />
+                    {/* Rainbow picker button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
+                      }
+                      aria-label="Choisir une couleur personnalisee"
+                      title="Couleur personnalisee"
+                      className={`w-10 h-10 rounded-xl border-2 p-0 overflow-hidden shrink-0 transition-all ${
+                        showPickerFor === 'primary'
+                          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
+                          : 'border-app-border hover:border-app-border-hover'
+                      }`}
+                      style={{
+                        background:
+                          'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+                      }}
+                    />
+                  </div>
+                  {showPickerFor === 'primary' && (
+                    <div className="mt-2">
+                      <HexColorPicker
+                        color={data.primaryColor || '#000000'}
+                        onChange={(color) => updateData({ primaryColor: color })}
                       />
                     </div>
-                    {showPickerFor === 'primary' && (
-                      <div className="mt-2">
-                        <HexColorPicker
-                          color={data.primaryColor || '#000000'}
-                          onChange={(color) => updateData({ primaryColor: color })}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  )}
+                </div>
 
-                  {/* Secondary */}
-                  <div>
-                    <Label
-                      htmlFor="secondaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('secondaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.secondaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.secondaryColor}
-                        onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+                {/* Secondary Color */}
+                <div>
+                  <Label
+                    htmlFor="secondaryColor"
+                    className="text-xs font-medium text-app-text-secondary mb-2 block"
+                  >
+                    {t('secondaryColor')}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {/* Current color preview */}
+                    <div
+                      className="w-10 h-10 rounded-xl border border-app-border shrink-0"
+                      style={{ backgroundColor: data.secondaryColor }}
+                    />
+                    {/* Hex input */}
+                    <Input
+                      type="text"
+                      id="secondaryColor"
+                      value={data.secondaryColor}
+                      onChange={(e) => updateData({ secondaryColor: e.target.value })}
+                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
+                    />
+                    {/* Rainbow picker button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
+                      }
+                      aria-label="Choisir une couleur personnalisee"
+                      title="Couleur personnalisee"
+                      className={`w-10 h-10 rounded-xl border-2 p-0 overflow-hidden shrink-0 transition-all ${
+                        showPickerFor === 'secondary'
+                          ? 'border-accent ring-2 ring-accent/30 ring-offset-1'
+                          : 'border-app-border hover:border-app-border-hover'
+                      }`}
+                      style={{
+                        background:
+                          'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+                      }}
+                    />
+                  </div>
+                  {showPickerFor === 'secondary' && (
+                    <div className="mt-2">
+                      <HexColorPicker
+                        color={data.secondaryColor || '#000000'}
+                        onChange={(color) => updateData({ secondaryColor: color })}
                       />
                     </div>
-                    {showPickerFor === 'secondary' && (
-                      <div className="mt-2">
-                        <HexColorPicker
-                          color={data.secondaryColor || '#000000'}
-                          onChange={(color) => updateData({ secondaryColor: color })}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

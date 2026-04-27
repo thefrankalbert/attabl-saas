@@ -3091,6 +3091,8 @@
     "tipPrefix": "Les tables seront nommées automatiquement",
     "brandingTitle": "Personnalisez votre établissement",
     "brandingSubtitle": "Logo, couleurs et description",
+    "identitySection": "Identite visuelle",
+    "colorsSection": "Couleurs",
     "logoLabel": "Logo de l'établissement",
     "logoUpload": "Glissez ou cliquez pour ajouter",
     "logoDelete": "Supprimer le logo",

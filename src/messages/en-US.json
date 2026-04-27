@@ -3091,6 +3091,8 @@
     "tipPrefix": "Tables will be named automatically",
     "brandingTitle": "Customize your establishment",
     "brandingSubtitle": "Logo, colors, and description",
+    "identitySection": "Visual identity",
+    "colorsSection": "Colors",
     "logoLabel": "Establishment logo",
     "logoUpload": "Drag or click to add",
     "logoDelete": "Remove logo",
