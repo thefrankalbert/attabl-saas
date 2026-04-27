@@ -114,10 +114,10 @@ export function EstablishmentStep({
           {/* Header */}
           <div className="mb-7">
             <h1 className="text-xl font-bold text-app-text mb-1.5">
-              {showDetails ? t('addressLabel') : t('establishmentTitle')}
+              {showDetails ? t('detailsStepTitle') : t('establishmentTitle')}
             </h1>
             <p className="text-app-text-secondary text-sm">
-              {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
+              {showDetails ? t('detailsStepSubtitle') : t('establishmentSubtitle')}
             </p>
           </div>
 
@@ -170,17 +170,18 @@ export function EstablishmentStep({
 
           {showDetails && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left: Address */}
+              {/* Left: Localisation */}
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
-                  {t('addressLabel')}
+                  {t('locationSection')}
                 </p>
 
                 <div className="space-y-4">
+                  {/* Adresse compl\u00e8te */}
                   <div>
                     <Label
                       htmlFor="address"
-                      className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                      className="text-xs font-medium text-app-text-secondary mb-1.5 block"
                     >
                       {t('addressLabel')}
                     </Label>
@@ -194,11 +195,12 @@ export function EstablishmentStep({
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* Ville + Pays \u2014 2 colonnes */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label
                         htmlFor="city"
-                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                        className="text-xs font-medium text-app-text-secondary mb-1.5 block"
                       >
                         {t('cityLabel')}
                       </Label>
@@ -214,7 +216,7 @@ export function EstablishmentStep({
                     <div>
                       <Label
                         htmlFor="country"
-                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                        className="text-xs font-medium text-app-text-secondary mb-1.5 block"
                       >
                         {t('countryLabel')}
                       </Label>
@@ -227,30 +229,32 @@ export function EstablishmentStep({
                         className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
-                    <div>
-                      <Label
-                        htmlFor="phone"
-                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
-                      >
-                        {t('phoneLabel')}
-                      </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder={t('phonePlaceholder')}
-                        value={data.phone}
-                        onChange={(e) => updateData({ phone: e.target.value })}
-                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
-                      />
-                    </div>
+                  </div>
+
+                  {/* T\u00e9l\u00e9phone \u2014 pleine largeur */}
+                  <div>
+                    <Label
+                      htmlFor="phone"
+                      className="text-xs font-medium text-app-text-secondary mb-1.5 block"
+                    >
+                      {t('phoneLabel')}
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={t('phonePlaceholder')}
+                      value={data.phone}
+                      onChange={(e) => updateData({ phone: e.target.value })}
+                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Right: Configuration */}
+              {/* Right: Pr\u00e9f\u00e9rences */}
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
-                  Configuration
+                  {t('settingsSection')}
                 </p>
 
                 <div className="space-y-4">
@@ -258,7 +262,7 @@ export function EstablishmentStep({
                   <div className="grid grid-cols-2 gap-3">
                     {/* Language */}
                     <div>
-                      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1.5 block">
                         {t('languageLabel')}
                       </Label>
                       <Select
@@ -287,7 +291,7 @@ export function EstablishmentStep({
 
                     {/* Currency */}
                     <div>
-                      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1.5 block">
                         {t('currencyLabel')}
                       </Label>
                       <Select
