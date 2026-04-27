@@ -2,81 +2,88 @@
 'use client';
 
 import { useMemo } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
   ChevronDown,
   Clock,
+  Coffee,
+  Fish,
+  Flame,
+  GlassWater,
   Home,
+  Leaf,
   MapPin,
   Plus,
   Search,
   ShoppingBag,
   User,
   Utensils,
+  Wine,
 } from 'lucide-react';
 
 import type { OnboardingData } from '@/app/onboarding/page';
 
-// ─── Emoji mapping (mirrors CategoryGrid/ClientMenuPage) ────────────────────
+// ─── Icon mapping (mirrors CategoryGrid categories) ────────────────────────
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  entree: '🥗',
-  entrée: '🥗',
-  starters: '🥗',
-  'pour commencer': '🥗',
-  burger: '🍔',
-  burgers: '🍔',
-  hamburger: '🍔',
-  pizza: '🍕',
-  pizzas: '🍕',
-  pates: '🍝',
-  pâtes: '🍝',
-  pasta: '🍝',
-  grillade: '🍖',
-  grills: '🍖',
-  'du grill': '🍖',
-  'plat principal': '🍽️',
-  'main course': '🍽️',
-  plats: '🍽️',
-  vegetarien: '🥬',
-  végétarien: '🥬',
-  vegetarian: '🥬',
-  dessert: '🍰',
-  desserts: '🍰',
-  douceurs: '🍰',
-  boisson: '🍹',
-  boissons: '🍹',
-  drinks: '🍹',
-  cocktail: '🍸',
-  cocktails: '🍸',
-  aperitif: '🫒',
-  apéritif: '🫒',
-  cafe: '☕',
-  café: '☕',
-  coffee: '☕',
-  africain: '🍲',
-  african: '🍲',
-  'plats africains': '🍲',
-  poisson: '🐟',
-  fish: '🐟',
-  seafood: '🦐',
-  salade: '🥗',
-  salad: '🥗',
-  soupe: '🍲',
-  soup: '🍲',
-  vin: '🍷',
-  wine: '🍷',
-  biere: '🍺',
-  bière: '🍺',
-  beer: '🍺',
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  entree: Leaf,
+  entrée: Leaf,
+  starters: Leaf,
+  'pour commencer': Leaf,
+  burger: Utensils,
+  burgers: Utensils,
+  hamburger: Utensils,
+  pizza: Utensils,
+  pizzas: Utensils,
+  pates: Utensils,
+  pâtes: Utensils,
+  pasta: Utensils,
+  grillade: Flame,
+  grills: Flame,
+  'du grill': Flame,
+  'plat principal': Utensils,
+  'main course': Utensils,
+  plats: Utensils,
+  vegetarien: Leaf,
+  végétarien: Leaf,
+  vegetarian: Leaf,
+  dessert: Utensils,
+  desserts: Utensils,
+  douceurs: Utensils,
+  boisson: GlassWater,
+  boissons: GlassWater,
+  drinks: GlassWater,
+  cocktail: Wine,
+  cocktails: Wine,
+  aperitif: Wine,
+  apéritif: Wine,
+  cafe: Coffee,
+  café: Coffee,
+  coffee: Coffee,
+  africain: Utensils,
+  african: Utensils,
+  'plats africains': Utensils,
+  poisson: Fish,
+  fish: Fish,
+  seafood: Fish,
+  salade: Leaf,
+  salad: Leaf,
+  soupe: Utensils,
+  soup: Utensils,
+  vin: Wine,
+  wine: Wine,
+  biere: GlassWater,
+  bière: GlassWater,
+  beer: GlassWater,
 };
 
-function getCategoryEmoji(name: string): string {
+function getCategoryIcon(name: string): LucideIcon {
   const lower = name.toLowerCase().trim();
-  if (CATEGORY_EMOJIS[lower]) return CATEGORY_EMOJIS[lower];
-  for (const [key, emoji] of Object.entries(CATEGORY_EMOJIS)) {
-    if (lower.includes(key) || key.includes(lower)) return emoji;
+  if (CATEGORY_ICONS[lower]) return CATEGORY_ICONS[lower];
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key) || key.includes(lower)) return icon;
   }
-  return '🍽️';
+  return Utensils;
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -110,12 +117,12 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
   const categories = useMemo(() => {
     if (!menuItems || menuItems.length === 0) return [];
     const seen = new Set<string>();
-    const cats: Array<{ name: string; emoji: string }> = [];
+    const cats: Array<{ name: string; Icon: LucideIcon }> = [];
     for (const item of menuItems) {
       const cat = item.category || 'Menu';
       if (!seen.has(cat)) {
         seen.add(cat);
-        cats.push({ name: cat, emoji: getCategoryEmoji(cat) });
+        cats.push({ name: cat, Icon: getCategoryIcon(cat) });
       }
     }
     return cats;
@@ -129,55 +136,19 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
   return (
     <div className="relative flex items-center justify-center">
       {/* ── Phone shell ─────────────────────────────── */}
-      <div
-        style={{
-          position: 'relative',
-          width: '256px',
-          height: '512px',
-          borderRadius: '40px',
-          border: '2px solid #D1D5DB',
-          backgroundColor: '#000',
-          overflow: 'hidden',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06) inset',
-        }}
-      >
+      <div className="relative w-[256px] h-[512px] rounded-[40px] border-2 border-[#D1D5DB] bg-black overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.06)_inset]">
         {/* Dynamic island */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '64px',
-            height: '16px',
-            backgroundColor: '#000',
-            borderRadius: '999px',
-            zIndex: 20,
-          }}
-        />
+        <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-full z-20" />
 
         {/* ── Screen ────────────────────────────────── */}
         <div
-          style={{
-            position: 'absolute',
-            inset: '2px',
-            borderRadius: '38px',
-            backgroundColor: C.bg,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className="absolute inset-[2px] rounded-[38px] overflow-hidden flex flex-col"
+          style={{ backgroundColor: C.bg }}
         >
           {/* ── Scrollable content ──────────────────── */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              scrollbarWidth: 'none',
-            }}
-          >
+          <div className="flex-1 overflow-y-auto [scrollbar-width:none]">
             {/* Safe area top (dynamic island) */}
-            <div style={{ height: '30px' }} />
+            <div className="h-[30px]" />
 
             {/* ─── HEADER ─── location left / logo right */}
             <div
@@ -320,7 +291,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                             justifyContent: 'center',
                           }}
                         >
-                          <span style={{ fontSize: '16px', lineHeight: 1 }}>{cat.emoji}</span>
+                          {(() => { const CatIcon = cat.Icon; return <CatIcon style={{ width: '14px', height: '14px', color: C.textSecondary }} strokeWidth={1.5} />; })()}
                         </div>
                         <span
                           style={{
@@ -623,7 +594,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             </div>
 
             {/* Spacer bottom (cart bar + bottom nav) */}
-            <div style={{ height: '90px' }} />
+            <div className="h-[90px]" />
           </div>
 
           {/* ─── FLOATING CART BAR ─── noir, rounded-full (FloatingCartBar.tsx) */}
