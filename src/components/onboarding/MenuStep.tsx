@@ -219,7 +219,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
 
           {/* Categories - Full width */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
               {tSeg(`${family}.catalog`)}
             </p>
 
@@ -346,7 +346,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 onChange={(e) =>
                                   updateArticle(category.id, item.id, 'price', e.target.value)
                                 }
-                                className="w-20 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                                className="w-24 h-9 bg-app-bg border-app-border rounded-xl text-sm"
                               />
                               <span className="text-xs text-app-text-muted font-medium">
                                 {data.currency || 'EUR'}

@@ -113,7 +113,7 @@ export function EstablishmentStep({
         <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
           {/* Header */}
           <div className="mb-3">
-            <h1 className="text-base font-bold text-app-text mb-0.5">
+            <h1 className="text-lg font-bold text-app-text mb-0.5">
               {showDetails ? t('addressLabel') : t('establishmentTitle')}
             </h1>
             <p className="text-app-text-secondary text-xs">
@@ -172,7 +172,7 @@ export function EstablishmentStep({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left: Address */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
                   {t('addressLabel')}
                 </p>
 
@@ -194,7 +194,7 @@ export function EstablishmentStep({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label
                         htmlFor="city"
@@ -227,16 +227,13 @@ export function EstablishmentStep({
                         className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="phone"
-                      className="text-sm font-medium text-app-text-secondary mb-1.5 block"
-                    >
-                      {t('phoneLabel')}
-                    </Label>
-                    <div className="max-w-xs">
+                    <div>
+                      <Label
+                        htmlFor="phone"
+                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                      >
+                        {t('phoneLabel')}
+                      </Label>
                       <Input
                         id="phone"
                         type="tel"
@@ -252,7 +249,7 @@ export function EstablishmentStep({
 
               {/* Right: Configuration */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-5">
                   Configuration
                 </p>
 

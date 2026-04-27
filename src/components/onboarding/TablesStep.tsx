@@ -127,7 +127,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Mode Selector */}
           <div className="mb-6">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
               Mode de configuration
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -139,18 +139,25 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     type="button"
                     variant="outline"
                     onClick={() => handleModeChange(id)}
-                    className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
+                    className={`flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
                       isActive
                         ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
                     }`}
                   >
-                    <p
-                      className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
-                    >
-                      {t(modeLabelKeys[id])}
-                    </p>
-                    <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${isActive ? 'border-accent' : 'border-app-border'}`}
+                      >
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                      </div>
+                      <span
+                        className={`font-semibold text-sm ${isActive ? 'text-accent' : 'text-app-text'}`}
+                      >
+                        {t(modeLabelKeys[id])}
+                      </span>
+                    </div>
+                    <p className="text-xs text-app-text-muted pl-[22px] leading-relaxed">
                       {t(modeDescKeys[id])}
                     </p>
                   </Button>
@@ -170,7 +177,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode: Minimum */}
           {mode === 'minimum' && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                 Zones
               </p>
               <div className="space-y-3">
@@ -285,7 +292,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode: Complete */}
           {mode === 'complete' && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                 Zones
               </p>
               <div className="space-y-4">
