@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Download, FileText, Save } from 'lucide-react';
@@ -41,13 +41,14 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
   const { toast } = useToast();
   const previewRef = useRef<HTMLDivElement | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasMountedRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const [config, setConfig] = useState<ChevaletConfig>(savedConfig ?? buildDefaultConfig(tenant));
   const [unit, setUnit] = useState<UnitSystem>(savedConfig?.unit ?? 'cm');
 
-  const supabase = createClient();
-  const service = createSupportsService(supabase);
+  const supabase = useMemo(() => createClient(), []);
+  const service = useMemo(() => createSupportsService(supabase), [supabase]);
 
   const persistConfig = useCallback(
     async (cfg: ChevaletConfig) => {
@@ -73,8 +74,12 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
     [supabase, service],
   );
 
-  // Debounced autosave - 2 seconds after last change
+  // Debounced autosave - 2 seconds after last change, skip initial mount
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       void persistConfig(config);
@@ -107,7 +112,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
         }),
       });
       if (!res.ok) {
-        toast({ title: 'Erreur export PDF', variant: 'destructive' });
+        toast({ title: t('exportPdfError'), variant: 'destructive' });
         return;
       }
       const blob = await res.blob();
@@ -118,7 +123,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast({ title: 'Erreur export PDF', variant: 'destructive' });
+      toast({ title: t('exportPdfError'), variant: 'destructive' });
     }
   };
 
@@ -133,14 +138,14 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
       a.download = `chevalet-${tenant.slug}.png`;
       a.click();
     } catch {
-      toast({ title: 'Erreur export PNG', variant: 'destructive' });
+      toast({ title: t('exportPngError'), variant: 'destructive' });
     }
   };
 
   return (
     <div className="flex h-full overflow-hidden">
       {/* Panneau gauche - controles */}
-      <div className="w-80 shrink-0 border-r border-app-border h-full overflow-hidden flex flex-col">
+      <div className="w-80 shrink-0 border-r border-app-border h-full overflow-y-auto flex flex-col">
         <ChevaletControls
           config={config}
           unit={unit}

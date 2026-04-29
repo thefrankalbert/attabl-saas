@@ -51,17 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
   }
 
-  // 2. Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 3. Validate input
+  // 2. Validate input (before auth to fail fast on bad payloads)
   let body: unknown;
   try {
     body = await request.json();
@@ -74,20 +64,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
-  const { config, tenantSlug } = parsed.data;
+  const { config } = parsed.data;
+
+  // 3. Auth
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 4. Derive tenant from session (never trust client-supplied tenant identifiers)
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('tenant_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (!adminUser) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('slug, logo_url')
+    .eq('id', adminUser.tenant_id)
+    .maybeSingle();
+  if (!tenant) {
+    return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+  }
 
   try {
-    // 4. Fetch assets
+    // 5. Fetch assets using server-derived logo_url
+    const logoUrl = tenant.logo_url ?? null;
     const [logoDataUrl, qrDataUrl] = await Promise.all([
-      config.logo.visible
-        ? fetchImageAsDataUrl(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${tenantSlug}.png`,
-          )
+      (config.logo.visible || config.verso === 'logo') && logoUrl
+        ? fetchImageAsDataUrl(logoUrl)
         : Promise.resolve(null),
       buildQrDataUrl(config.qrCode.menuUrl, config.qrCode.style),
     ]);
 
-    // 5. Build PDF page component
+    // 6. Build PDF page components
     const RectoPage = () =>
       React.createElement(
         Page,
@@ -151,14 +169,14 @@ export async function POST(request: Request) {
       );
 
     const VersoPage = () => {
-      if (config.verso === 'mirror') return RectoPage();
+      if (config.verso === 'mirror') return React.createElement(RectoPage);
       return React.createElement(
         Page,
         {
           size: [W_CM * CM2PT, H_CM * CM2PT] as [number, number],
           style: { ...styles.page, backgroundColor: config.background },
         },
-        config.logo.visible && logoDataUrl
+        logoDataUrl
           ? React.createElement(Image, {
               src: logoDataUrl,
               style: {
@@ -185,7 +203,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="chevalet-${tenantSlug}.pdf"`,
+        'Content-Disposition': `attachment; filename="chevalet-${tenant.slug}.pdf"`,
       },
     });
   } catch (error) {

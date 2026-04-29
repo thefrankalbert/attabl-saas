@@ -20,7 +20,7 @@ export default async function SupportsPage({ params }: { params: Promise<{ site:
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold text-app-text">{t('pageTitle')}</h1>
-        <p className="text-app-text-secondary mt-2">Tenant non trouve</p>
+        <p className="text-app-text-secondary mt-2">{t('tenantNotFound')}</p>
       </div>
     );
   }

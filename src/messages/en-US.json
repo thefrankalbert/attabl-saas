@@ -1682,7 +1682,10 @@
       "saving": "Saving...",
       "saved": "Saved",
       "rectoLabel": "FRONT",
-      "versoLabel": "BACK"
+      "versoLabel": "BACK",
+      "exportPdfError": "PDF export failed",
+      "exportPngError": "PNG export failed",
+      "tenantNotFound": "Restaurant not found"
     },
     "navReports": "Reports",
     "navUsers": "Users",

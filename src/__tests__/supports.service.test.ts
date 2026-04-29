@@ -48,11 +48,12 @@ describe('createSupportsService', () => {
       await expect(service.getConfig('tenant-123')).rejects.toThrow('Failed to load');
     });
 
-    it('filters by tenant_id', async () => {
+    it('filters by tenant_id and type', async () => {
       const supabase = makeMockSupabase();
       const service = createSupportsService(supabase as never);
       await service.getConfig('tenant-abc');
-      expect(supabase.eq).toHaveBeenCalledWith('tenant_id', 'tenant-abc');
+      expect(supabase.eq).toHaveBeenNthCalledWith(1, 'tenant_id', 'tenant-abc');
+      expect(supabase.eq).toHaveBeenNthCalledWith(2, 'type', 'chevalet_standard');
     });
   });
 

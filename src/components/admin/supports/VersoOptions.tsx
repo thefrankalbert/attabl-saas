@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Label } from '@/components/ui/label';
 import type { VersoMode } from '@/types/supports.types';
 
 interface VersoOptionsProps {
@@ -20,7 +21,7 @@ export function VersoOptions({ value, onChange }: VersoOptionsProps) {
   return (
     <div className="space-y-2">
       {OPTIONS.map((opt) => (
-        <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+        <Label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
           {/* eslint-disable-next-line react/forbid-elements -- <input type="radio"> pas d'equivalent shadcn */}
           <input
             type="radio"
@@ -33,7 +34,7 @@ export function VersoOptions({ value, onChange }: VersoOptionsProps) {
           <span className="text-xs text-app-text-secondary group-hover:text-app-text transition-colors">
             {t(opt.labelKey)}
           </span>
-        </label>
+        </Label>
       ))}
     </div>
   );

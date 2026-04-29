@@ -28,7 +28,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
   const t = useTranslations('sidebar.supports');
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-4 overflow-y-auto h-full">
+    <div className="flex flex-col gap-5 px-4 py-4 h-full">
       {/* Selecteur d'unites */}
       <div className="flex items-center gap-1 p-1 bg-app-elevated rounded-xl self-start">
         {(['cm', 'mm', 'px'] as UnitSystem[]).map((u) => (
@@ -166,7 +166,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 <Input
                   type="number"
                   value={config.name.fontSize}
-                  min={8}
+                  min={6}
                   max={72}
                   onChange={(e) =>
                     onChange({

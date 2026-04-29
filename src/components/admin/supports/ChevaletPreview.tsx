@@ -49,8 +49,7 @@ function Panel({
         }}
       >
         {isVersoBgOnly ? (
-          // Verso "logo seul"
-          config.logo.visible &&
+          // Verso "logo seul" - show logo regardless of recto logo.visible toggle
           logoUrl && (
             <img
               src={logoUrl}

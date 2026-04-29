@@ -21,11 +21,14 @@ export function createSupportsService(supabase: SupabaseClient) {
     },
 
     async saveConfig(tenantId: string, config: ChevaletConfig): Promise<void> {
+      const validated = chevaletConfigSchema.safeParse(config);
+      if (!validated.success) throw new ServiceError('Invalid chevalet config', 'VALIDATION');
+
       const { error } = await supabase.from('tenant_supports').upsert(
         {
           tenant_id: tenantId,
           type: 'chevalet_standard',
-          config,
+          config: validated.data,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'tenant_id,type' },

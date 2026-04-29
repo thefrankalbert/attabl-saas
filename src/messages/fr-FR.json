@@ -1682,7 +1682,10 @@
       "saving": "Sauvegarde...",
       "saved": "Sauvegarde",
       "rectoLabel": "RECTO",
-      "versoLabel": "VERSO"
+      "versoLabel": "VERSO",
+      "exportPdfError": "Erreur lors de l'export PDF",
+      "exportPngError": "Erreur lors de l'export PNG",
+      "tenantNotFound": "Restaurant introuvable"
     },
     "navReports": "Rapports",
     "navUsers": "Utilisateurs",
