@@ -115,12 +115,12 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     planRequired: 'starter',
   },
   chevalet: {
-    width: 105,
-    height: 148,
+    width: 217,
+    height: 110,
     qrSize: 170,
-    orientation: 'portrait',
+    orientation: 'landscape',
     name: 'Chevalet',
-    description: 'A6 vertical, pour les tables',
+    description: 'Chevalet standard 21.7x11 cm',
     planRequired: 'starter',
   },
   carte: {

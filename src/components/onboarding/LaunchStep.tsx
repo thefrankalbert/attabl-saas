@@ -303,7 +303,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 min-h-0 overflow-hidden" data-onboarding-scroll>
+      <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
         <div
           className={
             showQr ? 'px-4 pt-2 pb-1 sm:px-6 lg:px-8' : 'px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5'
@@ -827,9 +827,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     </div>
                   </section>
 
-                  {/* Section 3: Format - dimensions custom uniquement pour Standard.
-                      Carte = format carte de visite fixe (85x55mm).
-                      Chevalet = format A6 fixe (105x148mm). */}
+                  {/* Section 3: Format - dimensions custom pour tous les templates */}
                   <section className="py-2">
                     <h3 className="text-xs font-semibold text-app-text mb-1.5">Format</h3>
                     <div className="flex items-center flex-wrap gap-1.5">
