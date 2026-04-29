@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,18 +32,20 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
       {/* Selecteur d'unites */}
       <div className="flex items-center gap-1 p-1 bg-app-elevated rounded-xl self-start">
         {(['cm', 'mm', 'px'] as UnitSystem[]).map((u) => (
-          <button
+          <Button
             key={u}
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onUnitChange(u)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors h-auto ${
               unit === u
                 ? 'bg-app-card text-app-text shadow-sm'
                 : 'text-app-text-muted hover:text-app-text'
             }`}
           >
             {u}
-          </button>
+          </Button>
         ))}
       </div>
 
