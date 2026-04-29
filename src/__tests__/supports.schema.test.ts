@@ -75,7 +75,11 @@ describe('exportRequestSchema', () => {
   });
 
   it('defaults format to pdf when omitted', () => {
-    const { format: _, ...withoutFormat } = validRequest;
+    const withoutFormat = {
+      config: validRequest.config,
+      menuUrl: validRequest.menuUrl,
+      tenantSlug: validRequest.tenantSlug,
+    };
     const result = exportRequestSchema.safeParse(withoutFormat);
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.format).toBe('pdf');

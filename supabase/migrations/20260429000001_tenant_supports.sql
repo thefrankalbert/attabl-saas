@@ -45,6 +45,14 @@ create policy "tenant_supports_update"
     )
   );
 
+create policy "tenant_supports_delete"
+  on tenant_supports for delete
+  using (
+    tenant_id in (
+      select tenant_id from admin_users where user_id = auth.uid()
+    )
+  );
+
 create or replace function update_tenant_supports_updated_at()
 returns trigger language plpgsql as $$
 begin
