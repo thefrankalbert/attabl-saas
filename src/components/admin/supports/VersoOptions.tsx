@@ -20,10 +20,7 @@ export function VersoOptions({ value, onChange }: VersoOptionsProps) {
   return (
     <div className="space-y-2">
       {OPTIONS.map((opt) => (
-        <label
-          key={opt.value}
-          className="flex items-center gap-2.5 cursor-pointer group"
-        >
+        <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
           {/* eslint-disable-next-line react/forbid-elements -- <input type="radio"> pas d'equivalent shadcn */}
           <input
             type="radio"

@@ -43,9 +43,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  const [config, setConfig] = useState<ChevaletConfig>(
-    savedConfig ?? buildDefaultConfig(tenant),
-  );
+  const [config, setConfig] = useState<ChevaletConfig>(savedConfig ?? buildDefaultConfig(tenant));
   const [unit, setUnit] = useState<UnitSystem>(savedConfig?.unit ?? 'cm');
 
   const supabase = createClient();
@@ -55,7 +53,9 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
     async (cfg: ChevaletConfig) => {
       setSaveStatus('saving');
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
         const { data: adminUser } = await supabase
           .from('admin_users')
@@ -162,11 +162,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
         </div>
 
         {/* Preview */}
-        <ChevaletPreview
-          config={config}
-          logoUrl={tenant.logoUrl}
-          previewRef={previewRef}
-        />
+        <ChevaletPreview config={config} logoUrl={tenant.logoUrl} previewRef={previewRef} />
 
         {/* Boutons export */}
         <div className="flex gap-3">

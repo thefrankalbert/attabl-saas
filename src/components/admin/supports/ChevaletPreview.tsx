@@ -31,8 +31,7 @@ function Panel({
 }) {
   const qrDark =
     config.qrCode.style === 'inverted' || config.qrCode.style === 'dark' ? '#FFFFFF' : '#000000';
-  const qrLight =
-    config.qrCode.style === 'inverted' ? '#000000' : 'transparent';
+  const qrLight = config.qrCode.style === 'inverted' ? '#000000' : 'transparent';
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -51,7 +50,8 @@ function Panel({
       >
         {isVersoBgOnly ? (
           // Verso "logo seul"
-          config.logo.visible && logoUrl && (
+          config.logo.visible &&
+          logoUrl && (
             <img
               src={logoUrl}
               alt="Logo"
@@ -149,11 +149,7 @@ export function ChevaletPreview({ config, logoUrl, previewRef }: ChevaletPreview
     <div className="flex flex-col items-center gap-4 w-full overflow-x-auto">
       {/* Recto */}
       <div ref={previewRef}>
-        <Panel
-          config={config}
-          logoUrl={logoUrl}
-          label={t('rectoLabel')}
-        />
+        <Panel config={config} logoUrl={logoUrl} label={t('rectoLabel')} />
       </div>
 
       {/* Verso - seulement si pas "none" */}

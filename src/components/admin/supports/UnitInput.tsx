@@ -42,13 +42,7 @@ export function UnitInput({
   const displayMax = cmToUnit(maxCm, unit);
 
   const displayStep =
-    step !== undefined
-      ? cmToUnit(step, unit)
-      : unit === 'px'
-        ? 1
-        : unit === 'mm'
-          ? 0.5
-          : 0.1;
+    step !== undefined ? cmToUnit(step, unit) : unit === 'px' ? 1 : unit === 'mm' ? 0.5 : 0.1;
 
   return (
     <div className={className}>

@@ -54,7 +54,9 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
         <SectionHeader title={t('sectionBackground')} />
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelBackground')}</Label>
+            <Label className="text-xs text-app-text-secondary mb-1 block">
+              {t('labelBackground')}
+            </Label>
             <div className="flex items-center gap-2">
               <div
                 className="w-7 h-7 rounded-lg border border-app-border shrink-0"
@@ -158,14 +160,18 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 maxCm={11}
               />
               <div>
-                <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelFontSize')} (pt)</Label>
+                <Label className="text-xs text-app-text-secondary mb-1 block">
+                  {t('labelFontSize')} (pt)
+                </Label>
                 <Input
                   type="number"
                   value={config.name.fontSize}
                   min={8}
                   max={72}
                   onChange={(e) =>
-                    onChange({ name: { ...config.name, fontSize: parseInt(e.target.value, 10) || 18 } })
+                    onChange({
+                      name: { ...config.name, fontSize: parseInt(e.target.value, 10) || 18 },
+                    })
                   }
                   className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
                 />
@@ -191,9 +197,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
               <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelText')}</Label>
               <Input
                 value={config.tagline.text}
-                onChange={(e) =>
-                  onChange({ tagline: { ...config.tagline, text: e.target.value } })
-                }
+                onChange={(e) => onChange({ tagline: { ...config.tagline, text: e.target.value } })}
                 maxLength={200}
                 className="h-8 text-xs bg-app-elevated/50 border-app-border rounded-lg"
               />
@@ -213,7 +217,9 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 maxCm={11}
               />
               <div>
-                <Label className="text-xs text-app-text-secondary mb-1 block">{t('labelFontSize')} (pt)</Label>
+                <Label className="text-xs text-app-text-secondary mb-1 block">
+                  {t('labelFontSize')} (pt)
+                </Label>
                 <Input
                   type="number"
                   value={config.tagline.fontSize}
@@ -263,10 +269,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
       {/* Verso */}
       <div>
         <SectionHeader title={t('sectionVerso')} />
-        <VersoOptions
-          value={config.verso}
-          onChange={(v) => onChange({ verso: v })}
-        />
+        <VersoOptions value={config.verso} onChange={(v) => onChange({ verso: v })} />
       </div>
     </div>
   );

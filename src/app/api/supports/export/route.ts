@@ -4,14 +4,7 @@ import { exportRequestSchema } from '@/lib/validations/supports.schema';
 import { supportsExportLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import {
-  Document,
-  Page,
-  Text,
-  Image,
-  StyleSheet,
-  renderToBuffer,
-} from '@react-pdf/renderer';
+import { Document, Page, Text, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
 import React from 'react';
 
@@ -41,8 +34,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 }
 
 async function buildQrDataUrl(url: string, style: string): Promise<string> {
-  const dark =
-    style === 'inverted' || style === 'dark' ? '#FFFFFF' : '#000000';
+  const dark = style === 'inverted' || style === 'dark' ? '#FFFFFF' : '#000000';
   const light = style === 'inverted' ? '#000000' : '#FFFFFF';
   return QRCode.toDataURL(url, {
     width: 600,
