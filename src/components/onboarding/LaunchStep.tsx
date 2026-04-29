@@ -5,9 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { HexColorPicker } from 'react-colorful';
 import {
-  Check,
   ExternalLink,
-  Layout,
   Copy,
   CheckCheck,
   Upload,
@@ -19,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { getSegmentFeatures } from '@/lib/segment-features';
@@ -59,13 +58,7 @@ const FORMAT_PRESETS = [
 
 /** Rainbow conic gradient swatch — opens the custom HEX color picker.
  *  Replaces the old "Custom" text button with an intuitive icon-like swatch. */
-function RainbowSwatch({
-  onClick,
-  ariaLabel,
-}: {
-  onClick: () => void;
-  ariaLabel: string;
-}) {
+function RainbowSwatch({ onClick, ariaLabel }: { onClick: () => void; ariaLabel: string }) {
   return (
     <Button
       type="button"
@@ -137,7 +130,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const showQr = variant === 'qr';
   const showSummary = variant === 'summary';
 
-  const menuUrl = data.tenantSlug ? getTenantUrl(data.tenantSlug) : 'https://attabl.com';
+  const menuUrl = getTenantUrl(data.tenantSlug || '');
 
   const features = getSegmentFeatures(data.establishmentType);
   const completedItems = [
@@ -310,15 +303,10 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   return (
     <div className="h-full flex flex-col">
-      <div
-        className="flex-1 min-h-0 overflow-y-auto"
-        data-onboarding-scroll
-      >
+      <div className="flex-1 min-h-0 overflow-hidden" data-onboarding-scroll>
         <div
           className={
-            showQr
-              ? 'px-4 pt-2 pb-1 sm:px-6 lg:px-8'
-              : 'px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5'
+            showQr ? 'px-4 pt-2 pb-1 sm:px-6 lg:px-8' : 'px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5'
           }
         >
           {/* Header — compact for QR variant */}
@@ -348,7 +336,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       className="w-full h-full rounded-xl object-cover"
                     />
                   ) : (
-                    <Layout className="h-7 w-7 text-white" />
+                    <span className="text-xl font-bold text-white select-none">
+                      {(data.tenantName || 'A').charAt(0).toUpperCase()}
+                    </span>
                   )}
                 </div>
                 <div>
@@ -364,18 +354,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 {completedItems.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 py-1">
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                      style={
-                        item.done
-                          ? { backgroundColor: accentColor, color: '#fff' }
-                          : {
-                              backgroundColor: 'var(--app-elevated)',
-                              color: 'var(--app-text-muted)',
-                            }
-                      }
-                    >
-                      <Check className="h-3 w-3" />
-                    </div>
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: item.done ? accentColor : 'var(--app-border)' }}
+                    />
                     <span
                       className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}
                     >
@@ -499,6 +480,40 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     </div>
                   </section>
 
+                  {/* Section: Style QR */}
+                  <section className="py-2">
+                    <h3 className="text-xs font-semibold text-app-text mb-1.5">Style</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          { value: 'classic', label: 'Classique' },
+                          { value: 'branded', label: 'Marque' },
+                          { value: 'inverted', label: 'Inverse' },
+                          { value: 'dark', label: 'Sombre' },
+                        ] as const
+                      ).map((style) => {
+                        const isSelected = data.qrStyle === style.value;
+                        return (
+                          <Button
+                            key={style.value}
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              updateData({ qrStyle: style.value as OnboardingData['qrStyle'] })
+                            }
+                            className={`h-7 px-2.5 rounded-full border text-[11px] font-medium transition-all ${
+                              isSelected
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                            }`}
+                          >
+                            {style.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </section>
+
                   {/* Section 2: Couleurs */}
                   <section className="py-2">
                     <h3 className="text-xs font-semibold text-app-text mb-1.5">Couleurs</h3>
@@ -521,22 +536,29 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               ariaLabel={p.label}
                             />
                           ))}
-                          <RainbowSwatch
-                            onClick={() => setShowFgPicker((v) => !v)}
-                            ariaLabel="Couleur personnalisee du QR"
-                          />
+                          <Popover open={showFgPicker} onOpenChange={setShowFgPicker}>
+                            <PopoverTrigger asChild>
+                              <RainbowSwatch
+                                onClick={() => setShowFgPicker((v) => !v)}
+                                ariaLabel="Couleur personnalisee du QR"
+                              />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                              <HexColorPicker
+                                color={fgColor}
+                                onChange={(c) => updateData({ qrCustomFgColor: c })}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setShowFgPicker(false)}
+                                className="mt-2 h-7 px-3 text-xs font-semibold w-full"
+                              >
+                                {t('colorValidate')}
+                              </Button>
+                            </PopoverContent>
+                          </Popover>
                         </div>
-                        {showFgPicker && (
-                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
-                            <HexColorPicker
-                              color={fgColor}
-                              onChange={(c) => updateData({ qrCustomFgColor: c })}
-                            />
-                            <Button type="button" size="sm" onClick={() => setShowFgPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
-                              {t('colorValidate')}
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       {/* QR background */}
@@ -557,22 +579,29 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               ariaLabel={p.label}
                             />
                           ))}
-                          <RainbowSwatch
-                            onClick={() => setShowBgPicker((v) => !v)}
-                            ariaLabel="Fond personnalise du QR"
-                          />
+                          <Popover open={showBgPicker} onOpenChange={setShowBgPicker}>
+                            <PopoverTrigger asChild>
+                              <RainbowSwatch
+                                onClick={() => setShowBgPicker((v) => !v)}
+                                ariaLabel="Fond personnalise du QR"
+                              />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                              <HexColorPicker
+                                color={bgColor === 'transparent' ? '#ffffff' : bgColor}
+                                onChange={(c) => updateData({ qrCustomBgColor: c })}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setShowBgPicker(false)}
+                                className="mt-2 h-7 px-3 text-xs font-semibold w-full"
+                              >
+                                {t('colorValidate')}
+                              </Button>
+                            </PopoverContent>
+                          </Popover>
                         </div>
-                        {showBgPicker && (
-                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
-                            <HexColorPicker
-                              color={bgColor === 'transparent' ? '#ffffff' : bgColor}
-                              onChange={(c) => updateData({ qrCustomBgColor: c })}
-                            />
-                            <Button type="button" size="sm" onClick={() => setShowBgPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
-                              {t('colorValidate')}
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       {/* Card support background */}
@@ -593,22 +622,29 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               ariaLabel={p.label}
                             />
                           ))}
-                          <RainbowSwatch
-                            onClick={() => setShowCardPicker((v) => !v)}
-                            ariaLabel="Couleur personnalisee du support"
-                          />
+                          <Popover open={showCardPicker} onOpenChange={setShowCardPicker}>
+                            <PopoverTrigger asChild>
+                              <RainbowSwatch
+                                onClick={() => setShowCardPicker((v) => !v)}
+                                ariaLabel="Couleur personnalisee du support"
+                              />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                              <HexColorPicker
+                                color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
+                                onChange={(c) => updateData({ qrCustomCardBgColor: c })}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setShowCardPicker(false)}
+                                className="mt-2 h-7 px-3 text-xs font-semibold w-full"
+                              >
+                                {t('colorValidate')}
+                              </Button>
+                            </PopoverContent>
+                          </Popover>
                         </div>
-                        {showCardPicker && (
-                          <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
-                            <HexColorPicker
-                              color={cardBgColor === 'transparent' ? '#ffffff' : cardBgColor}
-                              onChange={(c) => updateData({ qrCustomCardBgColor: c })}
-                            />
-                            <Button type="button" size="sm" onClick={() => setShowCardPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
-                              {t('colorValidate')}
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       {/* Logo toggle - compact on/off pill */}
@@ -671,7 +707,8 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                                 variant="outline"
                                 onClick={() => {
                                   const idx = QR_SIZES.indexOf(qrCodeSize);
-                                  if (idx < QR_SIZES.length - 1) updateData({ qrCodeSize: QR_SIZES[idx + 1] });
+                                  if (idx < QR_SIZES.length - 1)
+                                    updateData({ qrCodeSize: QR_SIZES[idx + 1] });
                                 }}
                                 disabled={qrCodeSize === '3xl'}
                                 aria-label="Augmenter la taille du QR"
@@ -795,101 +832,99 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       Chevalet = format A6 fixe (105x148mm). */}
                   <section className="py-2">
                     <h3 className="text-xs font-semibold text-app-text mb-1.5">Format</h3>
-                      <div className="flex items-center flex-wrap gap-1.5">
-                        {/* Orientation pill toggle */}
-                        <div className="inline-flex items-center h-8 rounded-full border border-app-border bg-app-elevated overflow-hidden">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => toggleOrientation('portrait')}
-                            className={`h-full px-2.5 rounded-none text-[11px] font-medium ${
-                              orientation === 'portrait'
-                                ? 'bg-accent/10 text-accent'
-                                : 'text-app-text-secondary hover:bg-app-border/30'
-                            } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                          >
-                            Portrait
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => toggleOrientation('landscape')}
-                            className={`h-full px-2.5 rounded-none border-l border-app-border text-[11px] font-medium ${
-                              orientation === 'landscape'
-                                ? 'bg-accent/10 text-accent'
-                                : 'text-app-text-secondary hover:bg-app-border/30'
-                            } focus-visible:ring-0 focus-visible:ring-offset-0`}
-                          >
-                            <RotateCw className="h-3 w-3 mr-1" />
-                            Paysage
-                          </Button>
-                        </div>
-
-                        {/* Format presets */}
-                        {FORMAT_PRESETS.map((preset) => {
-                          const presetW =
-                            orientation === 'landscape' ? preset.height : preset.width;
-                          const presetH =
-                            orientation === 'landscape' ? preset.width : preset.height;
-                          const isActive = widthMm === presetW && heightMm === presetH;
-                          return (
-                            <Button
-                              key={preset.id}
-                              type="button"
-                              variant="outline"
-                              onClick={() => applyFormatPreset(preset)}
-                              className={`h-8 px-2.5 rounded-full border text-[11px] font-medium ${
-                                isActive
-                                  ? 'border-accent bg-accent/10 text-accent'
-                                  : 'border-app-border text-app-text-secondary'
-                              }`}
-                            >
-                              {preset.label}
-                            </Button>
-                          );
-                        })}
-
-                        {/* Inline width x height inputs */}
-                        <div className="flex items-center gap-1 ml-auto">
-                          <Input
-                            type="number"
-                            min={MIN_DIM_MM}
-                            max={MAX_DIM_MM}
-                            value={widthInput}
-                            onChange={(e) => setWidthInput(e.target.value)}
-                            onBlur={() => {
-                              const n = Number(widthInput);
-                              if (!Number.isFinite(n) || n <= 0) {
-                                setWidthInput(String(widthMm));
-                                return;
-                              }
-                              setDimensions(n, heightMm);
-                            }}
-                            aria-label="Largeur en mm"
-                            className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
-                          />
-                          <span className="text-app-text-muted text-[11px]">x</span>
-                          <Input
-                            type="number"
-                            min={MIN_DIM_MM}
-                            max={MAX_DIM_MM}
-                            value={heightInput}
-                            onChange={(e) => setHeightInput(e.target.value)}
-                            onBlur={() => {
-                              const n = Number(heightInput);
-                              if (!Number.isFinite(n) || n <= 0) {
-                                setHeightInput(String(heightMm));
-                                return;
-                              }
-                              setDimensions(widthMm, n);
-                            }}
-                            aria-label="Hauteur en mm"
-                            className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
-                          />
-                          <span className="text-app-text-muted text-[10px] ml-0.5">mm</span>
-                        </div>
+                    <div className="flex items-center flex-wrap gap-1.5">
+                      {/* Orientation pill toggle */}
+                      <div className="inline-flex items-center h-8 rounded-full border border-app-border bg-app-elevated overflow-hidden">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => toggleOrientation('portrait')}
+                          className={`h-full px-2.5 rounded-none text-[11px] font-medium ${
+                            orientation === 'portrait'
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-app-text-secondary hover:bg-app-border/30'
+                          } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                        >
+                          Portrait
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => toggleOrientation('landscape')}
+                          className={`h-full px-2.5 rounded-none border-l border-app-border text-[11px] font-medium ${
+                            orientation === 'landscape'
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-app-text-secondary hover:bg-app-border/30'
+                          } focus-visible:ring-0 focus-visible:ring-offset-0`}
+                        >
+                          <RotateCw className="h-3 w-3 mr-1" />
+                          Paysage
+                        </Button>
                       </div>
-                    </section>
+
+                      {/* Format presets */}
+                      {FORMAT_PRESETS.map((preset) => {
+                        const presetW = orientation === 'landscape' ? preset.height : preset.width;
+                        const presetH = orientation === 'landscape' ? preset.width : preset.height;
+                        const isActive = widthMm === presetW && heightMm === presetH;
+                        return (
+                          <Button
+                            key={preset.id}
+                            type="button"
+                            variant="outline"
+                            onClick={() => applyFormatPreset(preset)}
+                            className={`h-8 px-2.5 rounded-full border text-[11px] font-medium ${
+                              isActive
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-app-border text-app-text-secondary'
+                            }`}
+                          >
+                            {preset.label}
+                          </Button>
+                        );
+                      })}
+
+                      {/* Inline width x height inputs */}
+                      <div className="flex items-center gap-1 ml-auto">
+                        <Input
+                          type="number"
+                          min={MIN_DIM_MM}
+                          max={MAX_DIM_MM}
+                          value={widthInput}
+                          onChange={(e) => setWidthInput(e.target.value)}
+                          onBlur={() => {
+                            const n = Number(widthInput);
+                            if (!Number.isFinite(n) || n <= 0) {
+                              setWidthInput(String(widthMm));
+                              return;
+                            }
+                            setDimensions(n, heightMm);
+                          }}
+                          aria-label="Largeur en mm"
+                          className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
+                        />
+                        <span className="text-app-text-muted text-[11px]">x</span>
+                        <Input
+                          type="number"
+                          min={MIN_DIM_MM}
+                          max={MAX_DIM_MM}
+                          value={heightInput}
+                          onChange={(e) => setHeightInput(e.target.value)}
+                          onBlur={() => {
+                            const n = Number(heightInput);
+                            if (!Number.isFinite(n) || n <= 0) {
+                              setHeightInput(String(heightMm));
+                              return;
+                            }
+                            setDimensions(widthMm, n);
+                          }}
+                          aria-label="Hauteur en mm"
+                          className="h-8 w-14 px-1.5 bg-app-elevated/50 border-app-border rounded-lg text-[11px] tabular-nums text-center"
+                        />
+                        <span className="text-app-text-muted text-[10px] ml-0.5">mm</span>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               )}
 
@@ -904,7 +939,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       value={data.qrCustomName ?? ''}
                       onChange={(e) => updateData({ qrCustomName: e.target.value || undefined })}
                       placeholder={data.tenantName || "Nom de l'etablissement"}
-                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30"
+                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-app-border-hover focus:outline-none"
                       maxLength={60}
                     />
                     <p className="text-[10px] text-app-text-muted mt-1">
@@ -939,7 +974,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       value={data.qrCta}
                       onChange={(e) => updateData({ qrCta: e.target.value })}
                       placeholder={t('qrCtaLabel')}
-                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30"
+                      className="w-full h-8 px-3 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text focus:border-app-border-hover focus:outline-none"
                       maxLength={60}
                     />
                   </section>
@@ -953,7 +988,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       placeholder={t('qrDescriptionLabel')}
                       rows={2}
                       maxLength={120}
-                      className="w-full px-3 py-2 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+                      className="w-full px-3 py-2 text-xs border border-app-border rounded-lg bg-app-elevated/50 text-app-text resize-none focus:border-app-border-hover focus:outline-none"
                     />
                   </section>
 
@@ -988,7 +1023,8 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             variant="outline"
                             onClick={() => {
                               const idx = QR_SIZES.indexOf(qrTextSize);
-                              if (idx < QR_SIZES.length - 1) updateData({ qrTextSize: QR_SIZES[idx + 1] });
+                              if (idx < QR_SIZES.length - 1)
+                                updateData({ qrTextSize: QR_SIZES[idx + 1] });
                             }}
                             disabled={qrTextSize === '3xl'}
                             aria-label="Augmenter la taille du texte"
@@ -1052,10 +1088,31 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                                 ariaLabel={p.label}
                               />
                             ))}
-                            <RainbowSwatch
-                              onClick={() => setShowTextColorPicker((v) => !v)}
-                              ariaLabel="Couleur personnalisee du texte"
-                            />
+                            <Popover
+                              open={showTextColorPicker}
+                              onOpenChange={setShowTextColorPicker}
+                            >
+                              <PopoverTrigger asChild>
+                                <RainbowSwatch
+                                  onClick={() => setShowTextColorPicker((v) => !v)}
+                                  ariaLabel="Couleur personnalisee du texte"
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                                <HexColorPicker
+                                  color={data.qrCustomTextColor || '#1A1A1A'}
+                                  onChange={(c) => updateData({ qrCustomTextColor: c })}
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => setShowTextColorPicker(false)}
+                                  className="mt-2 h-7 px-3 text-xs font-semibold w-full"
+                                >
+                                  {t('colorValidate')}
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                             {data.qrCustomTextColor && (
                               <Button
                                 type="button"
@@ -1068,17 +1125,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               </Button>
                             )}
                           </div>
-                          {showTextColorPicker && (
-                            <div className="mt-2 p-2 rounded-lg border border-app-border bg-app-bg shadow-sm">
-                              <HexColorPicker
-                                color={data.qrCustomTextColor || '#1A1A1A'}
-                                onChange={(c) => updateData({ qrCustomTextColor: c })}
-                              />
-                              <Button type="button" size="sm" onClick={() => setShowTextColorPicker(false)} className="mt-2 h-7 px-3 text-xs font-semibold w-full">
-                                {t('colorValidate')}
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>

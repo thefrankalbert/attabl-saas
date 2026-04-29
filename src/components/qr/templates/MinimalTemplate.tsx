@@ -48,7 +48,10 @@ export function MinimalTemplate({ config, url, tenantName, tableName, isExport }
         </p>
       )}
       {tableName && (
-        <p className="opacity-50" style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}>
+        <p
+          className="opacity-50"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
+        >
           {tableName}
         </p>
       )}
@@ -61,17 +64,26 @@ export function MinimalTemplate({ config, url, tenantName, tableName, isExport }
         </p>
       )}
       {showCta && config.ctaText && (
-        <p className="italic opacity-40" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="italic opacity-40"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           {config.ctaText}
         </p>
       )}
       {config.footerText && (
-        <p className="text-center opacity-30" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="text-center opacity-30"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           {config.footerText}
         </p>
       )}
       {config.showPoweredBy && (
-        <p className="text-center opacity-25" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="text-center opacity-25"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           Powered by Attabl
         </p>
       )}

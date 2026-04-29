@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, X, Clock } from 'lucide-react';
+import { Plus, Minus, X } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface TablesStepProps {
@@ -168,8 +168,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Mode: Skip */}
           {mode === 'skip' && (
-            <div className="rounded-xl border border-dashed border-app-border p-8 text-center">
-              <Clock className="h-10 w-10 text-app-text-muted mx-auto mb-3" />
+            <div className="rounded-xl border border-dashed border-app-border p-6 text-center">
               <p className="text-base text-app-text-secondary font-medium">{t('skipInfo')}</p>
             </div>
           )}
@@ -195,7 +194,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
                       />
                     </div>
-                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0 focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
+                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -358,7 +357,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                           <Label className="text-app-text-secondary text-xs mb-1.5 block">
                             {t('zoneTableCount')}
                           </Label>
-                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
+                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full">
                             <Button
                               variant="ghost"
                               size="icon"

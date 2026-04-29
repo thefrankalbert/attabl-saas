@@ -23,7 +23,7 @@ const SelectTrigger = React.forwardRef<
       'text-sm font-medium text-app-text',
       'ring-offset-app-bg',
       'placeholder:text-app-text-muted',
-      'focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent',
+      'focus:outline-none focus:ring-1 focus:ring-transparent focus:border-app-border-hover',
       'disabled:cursor-not-allowed disabled:opacity-50',
       'transition-colors duration-150',
       '[&>span]:line-clamp-1',
@@ -94,7 +94,7 @@ const SelectContent = React.forwardRef<
         className={cn(
           'p-1',
           position === 'popper' &&
-            'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
+            'max-h-48 overflow-y-auto w-full min-w-[var(--radix-select-trigger-width)]',
         )}
       >
         {children}

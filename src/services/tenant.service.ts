@@ -31,6 +31,14 @@ interface TenantSettings {
   screenLockMode?: 'overlay' | 'password';
   // Custom domain
   customDomain?: string | null;
+  // Type-specific establishment fields
+  starRating?: number | null;
+  hasRestaurant?: boolean | null;
+  hasTerrace?: boolean | null;
+  hasWifi?: boolean | null;
+  hasDelivery?: boolean | null;
+  registerCount?: number | null;
+  totalCapacity?: number | null;
 }
 
 /**
@@ -86,6 +94,14 @@ export function createTenantService(supabase: SupabaseClient) {
           ...(settings.customDomain !== undefined && {
             custom_domain: settings.customDomain || null,
           }),
+          // Type-specific establishment fields
+          star_rating: settings.starRating ?? null,
+          has_restaurant: settings.hasRestaurant ?? null,
+          has_terrace: settings.hasTerrace ?? null,
+          has_wifi: settings.hasWifi ?? null,
+          has_delivery: settings.hasDelivery ?? null,
+          register_count: settings.registerCount ?? null,
+          total_capacity: settings.totalCapacity ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', tenantId);

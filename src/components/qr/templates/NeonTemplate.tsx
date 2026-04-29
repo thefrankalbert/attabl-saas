@@ -75,12 +75,18 @@ export function NeonTemplate({ config, url, tenantName, tableName, isExport }: Q
       )}
       {NeonLine}
       {config.footerText && (
-        <p className="text-center opacity-60" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="text-center opacity-60"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           {config.footerText}
         </p>
       )}
       {config.showPoweredBy && (
-        <p className="text-center opacity-40" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="text-center opacity-40"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           Powered by Attabl
         </p>
       )}

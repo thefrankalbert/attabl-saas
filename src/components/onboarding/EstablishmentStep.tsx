@@ -17,6 +17,22 @@ import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
+const COUNTRY_CURRENCY: Record<string, string> = {
+  'Burkina Faso': 'XOF',
+  Cameroun: 'XAF',
+  Congo: 'XAF',
+  RDC: 'USD',
+  "Cote d'Ivoire": 'XOF',
+  Gabon: 'XAF',
+  Mali: 'XOF',
+  Niger: 'XOF',
+  RCA: 'XAF',
+  Senegal: 'XOF',
+  Tchad: 'XAF',
+  Togo: 'XOF',
+  Benin: 'XOF',
+};
+
 const establishmentTypes = [
   { id: 'restaurant', titleKey: 'typeRestaurant' },
   { id: 'hotel', titleKey: 'typeHotel' },
@@ -65,7 +81,7 @@ function NumberStepper({
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
-      <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-0">
+      <div className="inline-flex items-center h-9 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-0">
         <Button
           variant="ghost"
           size="icon"
@@ -73,7 +89,7 @@ function NumberStepper({
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="h-full w-11 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="h-full w-9 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         >
           <Minus className="h-4 w-4 text-app-text-secondary" />
         </Button>
@@ -110,9 +126,11 @@ export function EstablishmentStep({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <div
+          className={`px-4 sm:px-6 lg:px-8 ${showDetails ? 'py-3 sm:py-4' : 'py-4 sm:py-6 lg:py-8'}`}
+        >
           {/* Header */}
-          <div className="mb-7">
+          <div className={showDetails ? 'mb-4' : 'mb-7'}>
             <h1 className="text-xl font-bold text-app-text mb-1.5">
               {showDetails ? t('detailsStepTitle') : t('establishmentTitle')}
             </h1>
@@ -136,7 +154,7 @@ export function EstablishmentStep({
                   placeholder={t('namePlaceholder')}
                   value={data.tenantName}
                   onChange={(e) => updateData({ tenantName: e.target.value })}
-                  className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+                  className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-app-border-hover"
                 />
               </div>
             </div>
@@ -171,14 +189,14 @@ export function EstablishmentStep({
           )}
 
           {showDetails && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left: Localisation */}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-2 pb-1 border-b border-app-border/50">
                   {t('locationSection')}
                 </p>
 
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {/* Adresse compl\u00e8te */}
                   <div>
                     <Label
@@ -193,7 +211,7 @@ export function EstablishmentStep({
                       placeholder={t('addressPlaceholder')}
                       value={data.address}
                       onChange={(e) => updateData({ address: e.target.value })}
-                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
 
@@ -212,7 +230,7 @@ export function EstablishmentStep({
                         placeholder={t('cityPlaceholder')}
                         value={data.city}
                         onChange={(e) => updateData({ city: e.target.value })}
-                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                        className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
                     <div>
@@ -222,14 +240,38 @@ export function EstablishmentStep({
                       >
                         {t('countryLabel')}
                       </Label>
-                      <Input
-                        id="country"
-                        type="text"
-                        placeholder={t('countryLabel')}
+                      <Select
                         value={data.country}
-                        onChange={(e) => updateData({ country: e.target.value })}
-                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
-                      />
+                        onValueChange={(val) => {
+                          const updates: Partial<OnboardingData> = { country: val };
+                          if (COUNTRY_CURRENCY[val]) updates.currency = COUNTRY_CURRENCY[val];
+                          updateData(updates);
+                        }}
+                      >
+                        <SelectTrigger
+                          id="country"
+                          className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                        >
+                          <SelectValue placeholder={t('countryLabel')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Burkina Faso">Burkina Faso</SelectItem>
+                          <SelectItem value="Cameroun">Cameroun</SelectItem>
+                          <SelectItem value="Congo">Congo</SelectItem>
+                          <SelectItem value="RDC">RDC (Congo Kinshasa)</SelectItem>
+                          <SelectItem value="Cote d'Ivoire">{"Cote d'Ivoire"}</SelectItem>
+                          <SelectItem value="Gabon">Gabon</SelectItem>
+                          <SelectItem value="Guinee">Guinee</SelectItem>
+                          <SelectItem value="Mali">Mali</SelectItem>
+                          <SelectItem value="Mauritanie">Mauritanie</SelectItem>
+                          <SelectItem value="Niger">Niger</SelectItem>
+                          <SelectItem value="RCA">Republique Centrafricaine</SelectItem>
+                          <SelectItem value="Senegal">Senegal</SelectItem>
+                          <SelectItem value="Tchad">Tchad</SelectItem>
+                          <SelectItem value="Togo">Togo</SelectItem>
+                          <SelectItem value="Benin">Benin</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -247,7 +289,7 @@ export function EstablishmentStep({
                       placeholder={t('phonePlaceholder')}
                       value={data.phone}
                       onChange={(e) => updateData({ phone: e.target.value })}
-                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
                 </div>
@@ -255,11 +297,11 @@ export function EstablishmentStep({
 
               {/* Right: Pr\u00e9f\u00e9rences */}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-2 pb-1 border-b border-app-border/50">
                   {t('settingsSection')}
                 </p>
 
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {/* Language + Currency */}
                   <div className="grid grid-cols-2 gap-3">
                     {/* Language */}
@@ -275,16 +317,13 @@ export function EstablishmentStep({
                           router.refresh();
                         }}
                       >
-                        <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectTrigger className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(LOCALE_LABELS).map(([code, { label, flag }]) => (
+                          {Object.entries(LOCALE_LABELS).map(([code, { label }]) => (
                             <SelectItem key={code} value={code}>
-                              <span className="inline-flex items-center gap-2">
-                                <span>{flag}</span>
-                                <span>{label}</span>
-                              </span>
+                              {label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -300,7 +339,7 @@ export function EstablishmentStep({
                         value={data.currency}
                         onValueChange={(val) => updateData({ currency: val })}
                       >
-                        <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectTrigger className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -324,8 +363,8 @@ export function EstablishmentStep({
 
                   {/* Type-specific fields */}
                   {data.establishmentType && (
-                    <div className="pt-3 border-t border-app-border/50">
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4">
+                    <div className="pt-2 border-t border-app-border/50">
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-2">
                         {t('typeSpecificLabel')}
                       </p>
 

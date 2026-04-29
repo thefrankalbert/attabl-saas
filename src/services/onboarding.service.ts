@@ -51,6 +51,14 @@ interface OnboardingCompleteData {
   language?: string;
   tenantSlug?: string;
   menuItems?: MenuItem[];
+  // Type-specific establishment fields
+  starRating?: number;
+  hasRestaurant?: boolean;
+  hasTerrace?: boolean;
+  hasWifi?: boolean;
+  hasDelivery?: boolean;
+  registerCount?: number;
+  totalCapacity?: number;
 }
 
 /**
@@ -225,15 +233,18 @@ export function createOnboardingService(supabase: SupabaseClient) {
         onboarding_completed: true,
         onboarding_completed_at: new Date().toISOString(),
       };
-      if (data.tenantName) {
-        tenantUpdate.name = data.tenantName;
-      }
-      if (data.currency) {
-        tenantUpdate.currency = data.currency;
-      }
-      if (data.language) {
-        tenantUpdate.default_locale = data.language;
-      }
+      if (data.tenantName) tenantUpdate.name = data.tenantName;
+      if (data.currency) tenantUpdate.currency = data.currency;
+      if (data.language) tenantUpdate.default_locale = data.language;
+      // Type-specific fields — only write when defined to avoid overwriting with null
+      if (data.starRating !== undefined) tenantUpdate.star_rating = data.starRating;
+      if (data.hasRestaurant !== undefined) tenantUpdate.has_restaurant = data.hasRestaurant;
+      if (data.hasTerrace !== undefined) tenantUpdate.has_terrace = data.hasTerrace;
+      if (data.hasWifi !== undefined) tenantUpdate.has_wifi = data.hasWifi;
+      if (data.hasDelivery !== undefined) tenantUpdate.has_delivery = data.hasDelivery;
+      if (data.registerCount !== undefined) tenantUpdate.register_count = data.registerCount;
+      if (data.totalCapacity !== undefined) tenantUpdate.total_capacity = data.totalCapacity;
+      if (data.tenantSlug) tenantUpdate.slug = data.tenantSlug;
 
       const now = new Date().toISOString();
       const [tenantResult, progressResult] = await Promise.all([
@@ -412,7 +423,15 @@ export function createOnboardingService(supabase: SupabaseClient) {
             secondary_color,
             description,
             currency,
-            onboarding_completed
+            onboarding_completed,
+            star_rating,
+            has_restaurant,
+            has_terrace,
+            has_wifi,
+            has_delivery,
+            register_count,
+            total_capacity,
+            default_locale
           )
         `,
         )
@@ -452,6 +471,21 @@ export function createOnboardingService(supabase: SupabaseClient) {
         primaryColor: tenant.primary_color || '#CCFF00',
         secondaryColor: tenant.secondary_color || '#000000',
         description: tenant.description || '',
+        starRating:
+          ((tenant as Record<string, unknown>).star_rating as number | undefined) ?? undefined,
+        hasRestaurant:
+          ((tenant as Record<string, unknown>).has_restaurant as boolean | undefined) ?? undefined,
+        hasTerrace:
+          ((tenant as Record<string, unknown>).has_terrace as boolean | undefined) ?? undefined,
+        hasWifi: ((tenant as Record<string, unknown>).has_wifi as boolean | undefined) ?? undefined,
+        hasDelivery:
+          ((tenant as Record<string, unknown>).has_delivery as boolean | undefined) ?? undefined,
+        registerCount:
+          ((tenant as Record<string, unknown>).register_count as number | undefined) ?? undefined,
+        totalCapacity:
+          ((tenant as Record<string, unknown>).total_capacity as number | undefined) ?? undefined,
+        language:
+          ((tenant as Record<string, unknown>).default_locale as string | undefined) || 'fr',
       };
 
       // Merge with draft data (draft takes priority for fields it contains)

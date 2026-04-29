@@ -62,6 +62,14 @@ export const updateTenantSettingsSchema = z.object({
     .max(255, 'Le domaine ne doit pas dépasser 255 caractères')
     .nullable()
     .optional(),
+  // ─── Type-specific establishment fields ───────────────────
+  starRating: z.number().int().min(1).max(5).nullable().optional(),
+  hasRestaurant: z.boolean().nullable().optional(),
+  hasTerrace: z.boolean().nullable().optional(),
+  hasWifi: z.boolean().nullable().optional(),
+  hasDelivery: z.boolean().nullable().optional(),
+  registerCount: z.number().int().min(1).max(100).nullable().optional(),
+  totalCapacity: z.number().int().min(1).max(9999).nullable().optional(),
 });
 
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

@@ -91,6 +91,13 @@ export interface Tenant {
   city?: string;
   country?: string;
   table_count?: number;
+  star_rating?: number | null;
+  has_restaurant?: boolean | null;
+  has_terrace?: boolean | null;
+  has_wifi?: boolean | null;
+  has_delivery?: boolean | null;
+  register_count?: number | null;
+  total_capacity?: number | null;
   onboarding_completed?: boolean;
   // ─── Extras ────────────────────────────────────────────
   description?: string;

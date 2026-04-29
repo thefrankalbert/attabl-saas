@@ -292,7 +292,15 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                             justifyContent: 'center',
                           }}
                         >
-                          {(() => { const CatIcon = cat.Icon; return <CatIcon style={{ width: '14px', height: '14px', color: C.textSecondary }} strokeWidth={1.5} />; })()}
+                          {(() => {
+                            const CatIcon = cat.Icon;
+                            return (
+                              <CatIcon
+                                style={{ width: '14px', height: '14px', color: C.textSecondary }}
+                                strokeWidth={1.5}
+                              />
+                            );
+                          })()}
                         </div>
                         <span
                           style={{

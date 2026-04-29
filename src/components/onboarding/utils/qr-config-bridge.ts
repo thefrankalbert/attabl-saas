@@ -94,7 +94,9 @@ export function onboardingDataToQRConfig(
   };
 }
 
-function sizeMultiplier(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | undefined): number {
+function sizeMultiplier(
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | undefined,
+): number {
   if (size === 'xs') return 0.5;
   if (size === 'sm') return 0.75;
   if (size === 'lg') return 1.3;

@@ -56,6 +56,17 @@ export interface QRDesignConfig {
   templateBgColor: string;
   templateAccentColor: string;
   templateTextColor: string;
+  /** Contrast text color for elements sitting ON the accent color (badges, filled icons).
+   *  Optional to keep type backward-compatible with templates that don't use it. */
+  templateAccentTextColor?: string;
+  /** Per-element size/visibility/position controls. Optional for back-compat. */
+  textScale?: number;
+  showName?: boolean;
+  showCta?: boolean;
+  /** Position of the QR code in the layout, relative to text blocks.
+   *  In portrait: 'start' = top, 'center' = middle, 'end' = bottom.
+   *  In landscape: 'start' = left, 'center' = middle, 'end' = right. */
+  qrPosition?: 'start' | 'center' | 'end';
   gradient: QRGradientConfig;
   backgroundImage: { enabled: boolean; src: string; opacity: number };
   ctaPreset: QRCTAPreset;
@@ -75,6 +86,10 @@ export interface QRTemplateProps {
   tenantName: string;
   tableName?: string;
   logoUrl?: string;
+  /** When true, disables `overflow: hidden` on the template root so html2canvas
+   *  can capture content correctly (it has a known bug clipping canvas children
+   *  inside overflow:hidden roots). */
+  isExport?: boolean;
 }
 
 // Template Defaults

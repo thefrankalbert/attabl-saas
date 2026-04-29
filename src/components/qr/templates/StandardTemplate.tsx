@@ -63,7 +63,10 @@ export function StandardTemplate({
     </div>
   );
 
-  const Footer = (showCta || config.descriptionText || config.footerText || config.showPoweredBy) && (
+  const Footer = (showCta ||
+    config.descriptionText ||
+    config.footerText ||
+    config.showPoweredBy) && (
     <div className="flex flex-col gap-1">
       {showCta && (
         <p

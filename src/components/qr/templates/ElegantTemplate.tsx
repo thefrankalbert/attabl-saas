@@ -4,13 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function ElegantTemplate({
-  config,
-  url,
-  tenantName,
-  tableName,
-  isExport,
-}: QRTemplateProps) {
+export function ElegantTemplate({ config, url, tenantName, tableName, isExport }: QRTemplateProps) {
   const isLandscape = config.templateWidth > config.templateHeight;
   const textScale = config.textScale ?? 1;
   const showCta = config.showCta !== false;
@@ -94,7 +88,10 @@ export function ElegantTemplate({
       )}
       {Decoration}
       {config.footerText && (
-        <p className="text-center opacity-50" style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}>
+        <p
+          className="text-center opacity-50"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
           {config.footerText}
         </p>
       )}

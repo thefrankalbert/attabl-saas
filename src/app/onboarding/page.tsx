@@ -242,7 +242,13 @@ export default function OnboardingPage() {
   const phaseIsComplete = (p: number): boolean => {
     switch (p) {
       case 1:
-        return !!data.tenantName && !!data.establishmentType && !!data.primaryColor;
+        return (
+          !!data.tenantName &&
+          !!data.establishmentType &&
+          !!data.primaryColor &&
+          (data.establishmentType !== 'hotel' ||
+            (data.starRating !== undefined && data.starRating > 0))
+        );
       case 2:
         return true;
       case 3:
@@ -606,18 +612,20 @@ export default function OnboardingPage() {
 
         {/* Right: auto-save status + theme toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          {autoSaveStatus === 'saving' && (
-            <span className="text-[10px] text-app-text-muted flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="hidden sm:inline">{t('autoSaving')}</span>
-            </span>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-accent flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              <span className="hidden sm:inline">{t('autoSaved')}</span>
-            </span>
-          )}
+          <div className="w-20 flex items-center justify-end">
+            {autoSaveStatus === 'saving' && (
+              <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">{t('autoSaving')}</span>
+              </span>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <span className="text-[10px] text-accent flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span className="hidden sm:inline">{t('autoSaved')}</span>
+              </span>
+            )}
+          </div>
           <ThemeToggle />
         </div>
       </header>
@@ -627,7 +635,7 @@ export default function OnboardingPage() {
         {/* Config panel */}
         <div className="flex-1 flex flex-col min-w-0">
           <main
-            className={`flex-1 min-h-0 scroll-smooth ${screenKey === 'qr' ? 'overflow-hidden' : 'overflow-y-auto'}`}
+            className={`flex-1 min-h-0 scroll-smooth ${screenKey === 'qr' || screenKey === 'summary' ? 'overflow-hidden' : 'overflow-y-auto'}`}
             data-onboarding-scroll
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX;
@@ -673,8 +681,8 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Bottom spacer so content doesn't hide behind fixed nav */}
-              <div className="h-20" />
+              {/* Bottom spacer for scroll clearance on mobile */}
+              <div className="h-4" />
             </div>
           </main>
 
@@ -702,16 +710,9 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={completeOnboarding}
                   disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                  className="h-11 rounded-xl text-sm font-bold px-6"
                 >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {t('launchCTA')}
-                      <Rocket className="h-4 w-4" />
-                    </>
-                  )}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t('launchCTA')}
                 </Button>
               ) : (
                 <Button
