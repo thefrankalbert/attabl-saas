@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Zap, Settings, Clock } from 'lucide-react';
+import { Plus, Minus, X } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface TablesStepProps {
@@ -42,7 +42,6 @@ function derivePrefix(name: string): string {
 }
 
 const modeIds: ConfigMode[] = ['complete', 'minimum', 'skip'];
-const modeIcons = [Settings, Zap, Clock] as const;
 
 export function TablesStep({ data, updateData }: TablesStepProps) {
   const t = useTranslations('onboarding');
@@ -128,44 +127,39 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Mode Selector */}
           <div className="mb-6">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
               Mode de configuration
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {modeIds.map((id, idx) => {
+              {modeIds.map((id) => {
                 const isActive = mode === id;
-                const Icon = modeIcons[idx];
                 return (
                   <Button
                     key={id}
                     type="button"
                     variant="outline"
                     onClick={() => handleModeChange(id)}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
+                    className={`flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
                       isActive
                         ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
                     }`}
                   >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
-                          ? 'bg-accent text-accent-text'
-                          : 'bg-app-elevated text-app-text-muted'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p
-                        className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${isActive ? 'border-accent' : 'border-app-border'}`}
+                      >
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                      </div>
+                      <span
+                        className={`font-semibold text-sm ${isActive ? 'text-accent' : 'text-app-text'}`}
                       >
                         {t(modeLabelKeys[id])}
-                      </p>
-                      <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
-                        {t(modeDescKeys[id])}
-                      </p>
+                      </span>
                     </div>
+                    <p className="text-xs text-app-text-muted pl-[22px] leading-relaxed">
+                      {t(modeDescKeys[id])}
+                    </p>
                   </Button>
                 );
               })}
@@ -174,8 +168,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Mode: Skip */}
           {mode === 'skip' && (
-            <div className="rounded-xl border border-dashed border-app-border p-8 text-center">
-              <Clock className="h-10 w-10 text-app-text-muted mx-auto mb-3" />
+            <div className="rounded-xl border border-dashed border-app-border p-6 text-center">
               <p className="text-base text-app-text-secondary font-medium">{t('skipInfo')}</p>
             </div>
           )}
@@ -183,7 +176,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode: Minimum */}
           {mode === 'minimum' && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                 Zones
               </p>
               <div className="space-y-3">
@@ -201,16 +194,36 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
                       />
                     </div>
-                    <div className="w-28">
-                      <Input
-                        type="number"
-                        min="1"
-                        max="100"
-                        placeholder={t('zoneTableCount')}
-                        value={zone.tableCount}
-                        onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                        className="h-11 bg-app-bg rounded-xl border-app-border text-sm text-center"
-                      />
+                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        aria-label="Decrease"
+                        onClick={() =>
+                          updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))
+                        }
+                        disabled={zone.tableCount <= 1}
+                        className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      >
+                        <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
+                      </Button>
+                      <span className="w-12 text-center font-semibold text-sm text-app-text tabular-nums select-none">
+                        {zone.tableCount}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        aria-label="Increase"
+                        onClick={() =>
+                          updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))
+                        }
+                        disabled={zone.tableCount >= 100}
+                        className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      >
+                        <Plus className="h-3.5 w-3.5 text-app-text-secondary" />
+                      </Button>
                     </div>
                     <Button
                       type="button"
@@ -278,7 +291,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode: Complete */}
           {mode === 'complete' && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
                 Zones
               </p>
               <div className="space-y-4">
@@ -344,14 +357,37 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                           <Label className="text-app-text-secondary text-xs mb-1.5 block">
                             {t('zoneTableCount')}
                           </Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={zone.tableCount}
-                            onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
-                          />
+                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              type="button"
+                              aria-label="Decrease"
+                              onClick={() =>
+                                updateZone(index, 'tableCount', Math.max(1, zone.tableCount - 1))
+                              }
+                              disabled={zone.tableCount <= 1}
+                              className="h-full w-10 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            >
+                              <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
+                            </Button>
+                            <span className="flex-1 text-center font-semibold text-sm text-app-text tabular-nums select-none">
+                              {zone.tableCount}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              type="button"
+                              aria-label="Increase"
+                              onClick={() =>
+                                updateZone(index, 'tableCount', Math.min(100, zone.tableCount + 1))
+                              }
+                              disabled={zone.tableCount >= 100}
+                              className="h-full w-10 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            >
+                              <Plus className="h-3.5 w-3.5 text-app-text-secondary" />
+                            </Button>
+                          </div>
                         </div>
                         <div>
                           <Label className="text-app-text-secondary text-xs mb-1.5 block">

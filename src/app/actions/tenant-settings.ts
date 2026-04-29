@@ -63,6 +63,16 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       customDomain: formData.has('customDomain')
         ? (formData.get('customDomain') as string) || null
         : undefined,
+      // Type-specific establishment fields
+      starRating: formData.get('starRating') ? Number(formData.get('starRating')) : null,
+      hasRestaurant: formData.has('hasRestaurant')
+        ? formData.get('hasRestaurant') === 'true'
+        : null,
+      hasTerrace: formData.has('hasTerrace') ? formData.get('hasTerrace') === 'true' : null,
+      hasWifi: formData.has('hasWifi') ? formData.get('hasWifi') === 'true' : null,
+      hasDelivery: formData.has('hasDelivery') ? formData.get('hasDelivery') === 'true' : null,
+      registerCount: formData.get('registerCount') ? Number(formData.get('registerCount')) : null,
+      totalCapacity: formData.get('totalCapacity') ? Number(formData.get('totalCapacity')) : null,
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);

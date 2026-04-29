@@ -252,6 +252,12 @@ export const serverActionLimiter = createLimiter(
   Ratelimit.slidingWindow(30, '1 m'),
 );
 
+/** Supports export (PDF/PNG): 10 requests / minute per IP */
+export const supportsExportLimiter = createLimiter(
+  'supports-export',
+  Ratelimit.slidingWindow(10, '1 m'),
+);
+
 // --- IP extraction helpers ---
 
 /**

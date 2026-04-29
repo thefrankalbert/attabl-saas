@@ -10,6 +10,6 @@ export const languageFallbacks: Record<string, Locale> = {
 };
 
 export const LOCALE_LABELS: Record<Locale, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Français (France)', flag: '🇫🇷' },
-  'en-US': { label: 'English (US)', flag: '🇺🇸' },
+  'fr-FR': { label: 'Français', flag: '🇫🇷' },
+  'en-US': { label: 'English', flag: '🇺🇸' },
 };

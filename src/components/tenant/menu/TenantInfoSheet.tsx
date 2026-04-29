@@ -53,7 +53,7 @@ export function TenantInfoSheet({ tenant, isOpen, onClose, closeLabel }: TenantI
                   alt={tenant.name}
                   width={96}
                   height={96}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-4xl font-bold" style={{ color: C.textMuted }}>

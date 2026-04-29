@@ -37,7 +37,9 @@ const tableZoneSchema = z.object({
 export const onboardingCompleteSchema = z.object({
   data: z.object({
     tenantName: z.string().max(200).optional(),
-    establishmentType: z.enum(['restaurant', 'hotel', 'bar', 'cafe', 'fastfood']).optional(),
+    establishmentType: z
+      .enum(['restaurant', 'hotel', 'bar', 'cafe', 'fastfood', 'other'])
+      .optional(),
     address: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     country: z.string().max(100).optional(),
@@ -59,6 +61,14 @@ export const onboardingCompleteSchema = z.object({
     language: z.string().max(10).optional(),
     tenantSlug: z.string().max(100).optional(),
     menuItems: z.array(menuItemSchema).max(50).optional(),
+    // Type-specific establishment fields
+    starRating: z.number().int().min(1).max(5).optional(),
+    hasRestaurant: z.boolean().optional(),
+    hasTerrace: z.boolean().optional(),
+    hasWifi: z.boolean().optional(),
+    hasDelivery: z.boolean().optional(),
+    registerCount: z.number().int().min(1).max(100).optional(),
+    totalCapacity: z.number().int().min(1).max(9999).optional(),
   }),
 });
 

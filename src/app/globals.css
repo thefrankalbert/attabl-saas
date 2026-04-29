@@ -145,7 +145,7 @@
   --foreground: var(--app-text);
   --border: var(--app-border);
   --input: var(--app-border);
-  --ring: var(--app-accent);
+  --ring: var(--app-border);
 }
 
 /* ===== LIGHT MODE (.light class on <html>) ===== */
@@ -229,7 +229,7 @@
     --foreground: var(--app-text);
     --border: var(--app-border);
     --input: var(--app-border);
-    --ring: var(--app-accent);
+    --ring: var(--app-border);
   }
 }
 
@@ -305,6 +305,22 @@
     background-color: #ffffff !important;
     color: #1a1a1a !important;
   }
+}
+
+/* Suppress accent-colored focus indicators app-wide.
+   Rings: brand lime is too vivid for a focus halo on form fields.
+   Borders: revert to neutral hover border so inputs/textareas don't flash green.
+   focus-within: covers NumberStepper and quantity-input wrappers. */
+:focus-visible,
+:focus,
+:focus-within {
+  --tw-ring-color: transparent !important;
+}
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  border-color: var(--app-border-hover) !important;
 }
 
 html,

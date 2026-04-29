@@ -17,6 +17,7 @@ import {
   History,
   Receipt,
   ScrollText,
+  Printer,
 } from 'lucide-react';
 import type { NavItemPermission } from '@/lib/permissions';
 import type { PermissionCode } from '@/types/permission.types';
@@ -148,6 +149,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         labelKey: 'navSuggestions',
         requiredPermission: 'canManageMenus',
         permissionCode: 'menu.edit',
+      },
+      {
+        path: '/supports',
+        icon: Printer,
+        labelKey: 'navSupports',
+        requiredPermission: 'canManageSettings',
+        permissionCode: 'settings.edit',
       },
     ],
   },

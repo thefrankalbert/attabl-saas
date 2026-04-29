@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Upload, X } from 'lucide-react';
+import { HexColorPicker } from 'react-colorful';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { LogoCropper } from '@/components/onboarding/LogoCropper';
@@ -17,57 +19,12 @@ interface BrandingStepProps {
   updateData: (data: Partial<OnboardingData>) => void;
 }
 
-const colorPresets = [
-  { name: 'Lime', primary: '#CCFF00', secondary: '#000000' },
-  { name: 'Ocean', primary: '#3B82F6', secondary: '#1E3A8A' },
-  { name: 'Ruby', primary: '#EF4444', secondary: '#7F1D1D' },
-  { name: 'Forest', primary: '#22C55E', secondary: '#14532D' },
-  { name: 'Violet', primary: '#A855F7', secondary: '#581C87' },
-  { name: 'Sunset', primary: '#F97316', secondary: '#7C2D12' },
-  { name: 'Gold', primary: '#EAB308', secondary: '#422006' },
-  { name: 'Rose', primary: '#EC4899', secondary: '#831843' },
-  { name: 'Teal', primary: '#14B8A6', secondary: '#134E4A' },
-  { name: 'Slate', primary: '#64748B', secondary: '#0F172A' },
-  { name: 'Coral', primary: '#F97171', secondary: '#FFFFFF' },
-  { name: 'Navy', primary: '#1E40AF', secondary: '#DBEAFE' },
-  { name: 'Mint', primary: '#34D399', secondary: '#FFFFFF' },
-  { name: 'Wine', primary: '#9F1239', secondary: '#FFF1F2' },
-  { name: 'Charcoal', primary: '#374151', secondary: '#F3F4F6' },
-];
-
-const colorGrid = [
-  '#EF4444',
-  '#F97316',
-  '#EAB308',
-  '#22C55E',
-  '#14B8A6',
-  '#3B82F6',
-  '#6366F1',
-  '#A855F7',
-  '#EC4899',
-  '#F43F5E',
-  '#DC2626',
-  '#EA580C',
-  '#CA8A04',
-  '#16A34A',
-  '#0D9488',
-  '#2563EB',
-  '#4F46E5',
-  '#9333EA',
-  '#DB2777',
-  '#E11D48',
-  '#000000',
-  '#374151',
-  '#6B7280',
-  '#9CA3AF',
-  '#FFFFFF',
-];
-
 export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const t = useTranslations('onboarding');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showPickerFor, setShowPickerFor] = useState<'primary' | 'secondary' | null>(null);
+  const [showPrimaryPicker, setShowPrimaryPicker] = useState(false);
+  const [showSecondaryPicker, setShowSecondaryPicker] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,10 +66,6 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
     }
   };
 
-  const isPresetSelected = (preset: (typeof colorPresets)[number]) =>
-    data.primaryColor === preset.primary && data.secondaryColor === preset.secondary;
-  const hasPresetMatch = colorPresets.some(isPresetSelected);
-
   return (
     <div className="h-full flex flex-col">
       {/* Logo Cropper Modal */}
@@ -126,26 +79,25 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           {/* Header */}
-          <div className="mb-4">
-            <h1 className="text-lg font-bold text-app-text mb-1">{t('brandingTitle')}</h1>
+          <div className="mb-7">
+            <h1 className="text-xl font-bold text-app-text mb-1.5">{t('brandingTitle')}</h1>
             <p className="text-app-text-secondary text-sm">{t('brandingSubtitle')}</p>
           </div>
 
-          {/* Two-column: Logo & Description + Colors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Two-column: Identity + Colors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left: Logo & Description */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Identit\u00e9 visuelle
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                {t('identitySection')}
               </p>
 
               {/* Logo Upload */}
-              <div className="mb-4">
-                <Label className="text-sm font-medium text-app-text-secondary mb-3 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-app-text-muted" />
-                  {t('logoLabel') || 'Logo'}
+              <div className="mb-5">
+                <Label className="text-xs font-medium text-app-text-secondary mb-2 block">
+                  {t('logoLabel')}
                 </Label>
                 {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
                 <input
@@ -167,7 +119,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         if (!data.logoUrl) fileInputRef.current?.click();
                       }
                     }}
-                    className="relative w-28 h-28 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
+                    className="relative w-24 h-24 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
                   >
                     {data.logoUrl ? (
                       <>
@@ -194,20 +146,21 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     ) : (
                       <>
                         <Upload className="h-5 w-5 text-app-text-muted mb-1.5" />
-                        <span className="text-[10px] text-app-text-muted text-center px-2">
+                        <span className="text-xs text-app-text-muted text-center px-2">
                           {t('logoUpload')}
                         </span>
                       </>
                     )}
                   </div>
-                  <div className="pt-3">
+                  <div className="flex flex-col gap-1.5 pt-1">
                     <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
                     {data.logoUrl && (
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
+                        size="sm"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-2 text-xs text-accent hover:underline h-auto p-0"
+                        className="text-xs h-8 px-3 rounded-lg w-fit"
                       >
                         {t('logoChange')}
                       </Button>
@@ -220,9 +173,8 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
               <div>
                 <Label
                   htmlFor="description"
-                  className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-2"
+                  className="text-xs font-medium text-app-text-secondary mb-2 block"
                 >
-                  <Type className="h-4 w-4 text-app-text-muted" />
                   {t('descriptionLabel')}
                 </Label>
                 <Textarea
@@ -236,178 +188,126 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   }}
                   rows={3}
                   maxLength={500}
-                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-app-border-hover focus:outline-none transition-colors"
                 />
-                <p className="text-xs text-app-text-muted mt-1.5 text-right">
-                  {t('charCount', { count: data.description.length, max: 500 })}
-                </p>
+                <p className="text-xs text-app-text-muted mt-1.5">{data.description.length}/500</p>
               </div>
             </div>
 
             {/* Right: Colors */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Couleurs
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+                {t('colorsSection')}
               </p>
 
-              {/* Presets */}
-              <div className="mb-4">
-                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
-                  {t('colorPresetsLabel')}
-                </Label>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {colorPresets.map((preset) => {
-                    const isSelected = isPresetSelected(preset);
-                    return (
-                      <Button
-                        key={preset.name}
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          updateData({
-                            primaryColor: preset.primary,
-                            secondaryColor: preset.secondary,
-                          });
-                        }}
-                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all h-auto ${
-                          isSelected
-                            ? 'border-accent bg-accent/5'
-                            : 'border-app-border hover:border-app-border-hover'
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 rounded-lg border border-app-border/50 flex items-center justify-center"
-                          style={{ backgroundColor: preset.secondary }}
+              <div className="space-y-5">
+                {/* Primary Color */}
+                <div>
+                  <Label
+                    htmlFor="primaryColor"
+                    className="text-xs font-medium text-app-text-secondary mb-2 block"
+                  >
+                    {t('primaryColor')}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {/* Current color preview — no border */}
+                    <div
+                      className="w-10 h-10 rounded-xl shrink-0"
+                      style={{ backgroundColor: data.primaryColor }}
+                    />
+                    {/* Hex input */}
+                    <Input
+                      type="text"
+                      id="primaryColor"
+                      value={data.primaryColor}
+                      onChange={(e) => updateData({ primaryColor: e.target.value })}
+                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
+                    />
+                    {/* Rainbow picker — Popover (portal, zero layout shift) */}
+                    <Popover open={showPrimaryPicker} onOpenChange={setShowPrimaryPicker}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          aria-label="Choisir une couleur personnalisee"
+                          title="Couleur personnalisee"
+                          className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
+                          style={{
+                            background:
+                              'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+                          }}
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                        <HexColorPicker
+                          color={data.primaryColor || '#000000'}
+                          onChange={(color) => updateData({ primaryColor: color })}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setShowPrimaryPicker(false)}
+                          className="mt-2 h-8 px-4 text-xs font-semibold w-full"
                         >
-                          <div
-                            className="w-3.5 h-3.5 rounded-md"
-                            style={{ backgroundColor: preset.primary }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-semibold text-app-text-muted truncate w-full text-center">
-                          {preset.name}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Colors */}
-              <div>
-                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
-                  {t('customColorsLabel')}
-                  {!hasPresetMatch && (
-                    <span className="ml-1.5 text-[10px] text-accent">(actif)</span>
-                  )}
-                </Label>
-                <div className="space-y-4">
-                  {/* Primary */}
-                  <div>
-                    <Label
-                      htmlFor="primaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('primaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.primaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.primaryColor}
-                        onChange={(e) => updateData({ primaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
-                      />
-                    </div>
-                    {showPickerFor === 'primary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
-                        {colorGrid.map((color) => (
-                          <Button
-                            key={color}
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              updateData({ primaryColor: color });
-                              setShowPickerFor(null);
-                            }}
-                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
-                              data.primaryColor === color
-                                ? 'border-accent scale-110'
-                                : 'border-transparent hover:border-app-border-hover'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    )}
+                          {t('colorValidate')}
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
                   </div>
+                </div>
 
-                  {/* Secondary */}
-                  <div>
-                    <Label
-                      htmlFor="secondaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('secondaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.secondaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.secondaryColor}
-                        onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
-                      />
-                    </div>
-                    {showPickerFor === 'secondary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
-                        {colorGrid.map((color) => (
-                          <Button
-                            key={color}
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              updateData({ secondaryColor: color });
-                              setShowPickerFor(null);
-                            }}
-                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
-                              data.secondaryColor === color
-                                ? 'border-accent scale-110'
-                                : 'border-transparent hover:border-app-border-hover'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    )}
+                {/* Secondary Color */}
+                <div>
+                  <Label
+                    htmlFor="secondaryColor"
+                    className="text-xs font-medium text-app-text-secondary mb-2 block"
+                  >
+                    Couleur secondaire
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {/* Current color preview — no border */}
+                    <div
+                      className="w-10 h-10 rounded-xl shrink-0"
+                      style={{ backgroundColor: data.secondaryColor }}
+                    />
+                    {/* Hex input */}
+                    <Input
+                      type="text"
+                      id="secondaryColor"
+                      value={data.secondaryColor}
+                      onChange={(e) => updateData({ secondaryColor: e.target.value })}
+                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
+                    />
+                    {/* Rainbow picker — Popover (portal, zero layout shift) */}
+                    <Popover open={showSecondaryPicker} onOpenChange={setShowSecondaryPicker}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          aria-label="Choisir une couleur personnalisee"
+                          title="Couleur personnalisee"
+                          className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
+                          style={{
+                            background:
+                              'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+                          }}
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" side="bottom" align="start">
+                        <HexColorPicker
+                          color={data.secondaryColor || '#000000'}
+                          onChange={(color) => updateData({ secondaryColor: color })}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setShowSecondaryPicker(false)}
+                          className="mt-2 h-8 px-4 text-xs font-semibold w-full"
+                        >
+                          {t('colorValidate')}
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </div>

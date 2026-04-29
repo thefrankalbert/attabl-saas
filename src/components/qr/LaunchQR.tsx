@@ -5,7 +5,6 @@ import { Download, FileImage, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import type { QRDesignConfig } from '@/types/qr-design.types';
-import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 
 interface LaunchQRProps {
@@ -26,7 +25,6 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
   }, []);
 
   const TemplateComponent = TEMPLATE_REGISTRY[config.templateId];
-  const defaults = TEMPLATE_DEFAULTS[config.templateId];
 
   // Scale to fit within the onboarding panel (~300px wide)
   const templateWidthPx = config.templateWidth * 3.78;
@@ -55,8 +53,8 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
           link.click();
         } else {
           const { jsPDF } = await import('jspdf');
-          const pdfWidth = defaults.width;
-          const pdfHeight = defaults.height;
+          const pdfWidth = config.templateWidth;
+          const pdfHeight = config.templateHeight;
 
           const pdf = new jsPDF({
             orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
@@ -74,7 +72,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
         setDownloading(null);
       }
     },
-    [tenantName, defaults.width, defaults.height],
+    [tenantName, config.templateWidth, config.templateHeight],
   );
 
   if (!mounted) {

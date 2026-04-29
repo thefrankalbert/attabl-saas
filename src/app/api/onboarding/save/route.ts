@@ -5,6 +5,7 @@ import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
+import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
   try {
@@ -65,6 +66,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: serviceErrorToStatus(error.code) },
+      );
+    }
     logger.error('Onboarding save error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }

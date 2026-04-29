@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } from 'lucide-react';
+import { Camera, ChevronDown, ChevronRight, Plus, X, Loader2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage, uploadToStorage } from '@/lib/image-compress';
 import { createClient } from '@/lib/supabase/client';
@@ -211,15 +211,12 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
 
           {/* Tip */}
           <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
-            <div className="flex items-start gap-2.5">
-              <UtensilsCrossed className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-              <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
-            </div>
+            <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
           </div>
 
           {/* Categories - Full width */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
               {tSeg(`${family}.catalog`)}
             </p>
 
@@ -346,7 +343,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 onChange={(e) =>
                                   updateArticle(category.id, item.id, 'price', e.target.value)
                                 }
-                                className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                                className="w-24 h-9 bg-app-bg border-app-border rounded-xl text-sm"
                               />
                               <span className="text-xs text-app-text-muted font-medium">
                                 {data.currency || 'EUR'}

@@ -1,10 +1,89 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplateProps) {
+export function CarteTemplate({ config, url, tenantName, tableName, isExport }: QRTemplateProps) {
+  const isLandscape = config.templateWidth > config.templateHeight;
+  const textScale = config.textScale ?? 1;
+  const showName = config.showName !== false;
+  const showCta = config.showCta !== false;
+
+  const Info = (
+    <div className="flex flex-col items-center text-center gap-2">
+      {showName && (
+        <h3
+          className="font-bold"
+          style={{ color: config.templateTextColor, fontSize: `${1 * textScale}rem` }}
+        >
+          {tenantName}
+        </h3>
+      )}
+      {tableName ? (
+        <div
+          className="inline-block px-2.5 py-1 rounded-md text-xs font-bold"
+          style={{
+            backgroundColor: config.templateAccentColor,
+            color: config.templateAccentTextColor ?? config.templateBgColor,
+          }}
+        >
+          {tableName}
+        </div>
+      ) : (
+        <p className="text-xs opacity-50" style={{ color: config.templateTextColor }}>
+          Room Service
+        </p>
+      )}
+      {showCta && config.ctaText && (
+        <p
+          className="font-medium text-center"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
+        >
+          {config.ctaText}
+        </p>
+      )}
+      {config.descriptionText && (
+        <p
+          className="text-center opacity-70"
+          style={{ color: config.templateTextColor, fontSize: `${0.7 * textScale}rem` }}
+        >
+          {config.descriptionText}
+        </p>
+      )}
+      {config.footerText && (
+        <p className="text-[10px] opacity-50" style={{ color: config.templateTextColor }}>
+          {config.footerText}
+        </p>
+      )}
+    </div>
+  );
+
+  const QR = (
+    <div className="shrink-0">
+      <QRCodeCanvas
+        value={url}
+        size={config.qrSize}
+        level={config.errorCorrection}
+        fgColor={config.qrFgColor}
+        bgColor={config.qrBgColor}
+        marginSize={config.marginSize}
+        imageSettings={
+          config.logo.enabled
+            ? {
+                src: config.logo.src,
+                width: config.logo.width,
+                height: config.logo.height,
+                excavate: config.logo.excavate,
+                opacity: config.logo.opacity,
+                crossOrigin: 'anonymous' as const,
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -22,11 +101,10 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
         backgroundPosition: 'center',
         fontFamily: config.fontFamily,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isExport ? 'visible' : 'hidden',
       }}
-      className={`flex items-center gap-5 ${SHADOW_CLASSES[config.shadow]}`}
+      className={`flex items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
     >
-      {/* Background image overlay */}
       {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
         <div
           style={{
@@ -38,72 +116,58 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
         />
       )}
 
-      {/* Left side: Info */}
-      <div className="relative z-10 flex-1">
-        <h3 className="text-base font-bold mb-1" style={{ color: config.templateTextColor }}>
-          {tenantName}
-        </h3>
-
-        {tableName ? (
-          <div
-            className="inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-3"
-            style={{
-              backgroundColor: config.templateAccentColor,
-              color: config.templateBgColor,
-            }}
-          >
-            {tableName}
-          </div>
-        ) : (
-          <p className="text-xs mb-3 opacity-50" style={{ color: config.templateTextColor }}>
-            Room Service
-          </p>
-        )}
-
-        {/* CTA button with arrow */}
-        <div
-          className="inline-block px-3 py-1.5 rounded-lg text-xs font-medium"
-          style={{
-            backgroundColor: config.templateAccentColor,
-            color: config.templateBgColor,
-          }}
-        >
-          {config.ctaText} &rarr;
-        </div>
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p className="mt-2 text-[10px] opacity-50" style={{ color: config.templateTextColor }}>
-            {config.footerText}
-          </p>
-        )}
-      </div>
-
-      {/* Right side: QR code */}
-      <div className="relative z-10 p-2 bg-white rounded-xl shadow-inner">
-        <QRCodeSVG
-          value={url}
-          size={config.qrSize}
-          level={config.errorCorrection}
-          fgColor={config.qrFgColor}
-          bgColor={config.qrBgColor}
-          marginSize={config.marginSize}
-          imageSettings={
-            config.logo.enabled
-              ? {
-                  src: config.logo.src,
-                  width: config.logo.width,
-                  height: config.logo.height,
-                  excavate: config.logo.excavate,
-                  opacity: config.logo.opacity,
-                  crossOrigin: 'anonymous' as const,
-                }
-              : undefined
+      {(() => {
+        const qrPosition = config.qrPosition ?? 'center';
+        if (isLandscape) {
+          if (qrPosition === 'start') {
+            return (
+              <div className="relative z-10 flex items-center gap-5 w-full h-full">
+                {QR}
+                <div className="flex-1 flex items-center justify-center">{Info}</div>
+              </div>
+            );
           }
-        />
-      </div>
+          if (qrPosition === 'center') {
+            return (
+              <div className="relative z-10 flex flex-col items-center justify-center gap-3 w-full h-full">
+                {Info}
+                {QR}
+              </div>
+            );
+          }
+          return (
+            <div className="relative z-10 flex items-center gap-5 w-full h-full">
+              <div className="flex-1 flex items-center justify-center">{Info}</div>
+              {QR}
+            </div>
+          );
+        }
+        // Portrait
+        if (qrPosition === 'start') {
+          return (
+            <div className="relative z-10 flex flex-col items-center justify-center gap-4 w-full h-full">
+              {QR}
+              {Info}
+            </div>
+          );
+        }
+        if (qrPosition === 'end') {
+          return (
+            <div className="relative z-10 flex flex-col items-center justify-center gap-4 w-full h-full">
+              {Info}
+              {QR}
+            </div>
+          );
+        }
+        // center: same as end for Carte (Info on top, QR below) since it has only 2 blocks
+        return (
+          <div className="relative z-10 flex flex-col items-center justify-center gap-4 w-full h-full">
+            {Info}
+            {QR}
+          </div>
+        );
+      })()}
 
-      {/* Powered by Attabl */}
       {config.showPoweredBy && (
         <p
           className="absolute bottom-1 left-0 right-0 text-center text-[10px] opacity-30 z-10"

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { locales, LOCALE_LABELS } from '@/i18n/config';
@@ -174,6 +175,131 @@ export default function SettingsIdentity({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Type-specific establishment details */}
+            {(watchedEstablishmentType === 'restaurant' ||
+              watchedEstablishmentType === 'hotel' ||
+              watchedEstablishmentType === 'bar' ||
+              watchedEstablishmentType === 'cafe' ||
+              watchedEstablishmentType === 'fastfood') && (
+              <div className="space-y-4">
+                <Label className="text-sm font-semibold text-app-text">
+                  {t('characteristics') ?? 'Caracteristiques'}
+                </Label>
+
+                {watchedEstablishmentType === 'restaurant' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="totalCapacity">{t('totalCapacity') ?? 'Capacite totale'}</Label>
+                    <Input
+                      id="totalCapacity"
+                      type="number"
+                      min={1}
+                      className="min-h-[44px]"
+                      {...form.register('totalCapacity', {
+                        setValueAs: (v: string) => (v === '' ? null : Number(v)),
+                      })}
+                    />
+                  </div>
+                )}
+
+                {watchedEstablishmentType === 'hotel' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="starRating">
+                        {t('starRating') ?? 'Classement (etoiles)'}
+                      </Label>
+                      <Select
+                        value={form.watch('starRating')?.toString() ?? ''}
+                        onValueChange={(v) =>
+                          setValue('starRating', Number(v), { shouldDirty: true })
+                        }
+                      >
+                        <SelectTrigger id="starRating" className="min-h-[44px]">
+                          <SelectValue placeholder={t('selectStars') ?? 'Selectionnez'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n} {t('star') ?? 'etoile'}
+                              {n > 1 ? 's' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center justify-between min-h-[44px]">
+                      <Label htmlFor="hasRestaurant">
+                        {t('hasRestaurant') ?? 'Restaurant integre'}
+                      </Label>
+                      <Switch
+                        id="hasRestaurant"
+                        checked={form.watch('hasRestaurant') ?? false}
+                        onCheckedChange={(checked) =>
+                          setValue('hasRestaurant', checked, { shouldDirty: true })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {watchedEstablishmentType === 'bar' && (
+                  <div className="flex items-center justify-between min-h-[44px]">
+                    <Label htmlFor="hasTerrace">{t('hasTerrace') ?? 'Terrasse'}</Label>
+                    <Switch
+                      id="hasTerrace"
+                      checked={form.watch('hasTerrace') ?? false}
+                      onCheckedChange={(checked) =>
+                        setValue('hasTerrace', checked, { shouldDirty: true })
+                      }
+                    />
+                  </div>
+                )}
+
+                {watchedEstablishmentType === 'cafe' && (
+                  <div className="flex items-center justify-between min-h-[44px]">
+                    <Label htmlFor="hasWifi">{t('hasWifi') ?? 'WiFi'}</Label>
+                    <Switch
+                      id="hasWifi"
+                      checked={form.watch('hasWifi') ?? false}
+                      onCheckedChange={(checked) =>
+                        setValue('hasWifi', checked, { shouldDirty: true })
+                      }
+                    />
+                  </div>
+                )}
+
+                {watchedEstablishmentType === 'fastfood' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="registerCount">
+                        {t('registerCount') ?? 'Nombre de caisses'}
+                      </Label>
+                      <Input
+                        id="registerCount"
+                        type="number"
+                        min={1}
+                        className="min-h-[44px]"
+                        {...form.register('registerCount', {
+                          setValueAs: (v: string) => (v === '' ? null : Number(v)),
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between min-h-[44px]">
+                      <Label htmlFor="hasDelivery">
+                        {t('hasDelivery') ?? 'Livraison a domicile'}
+                      </Label>
+                      <Switch
+                        id="hasDelivery"
+                        checked={form.watch('hasDelivery') ?? false}
+                        onCheckedChange={(checked) =>
+                          setValue('hasDelivery', checked, { shouldDirty: true })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, UtensilsCrossed, Rocket, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 
@@ -10,9 +10,9 @@ interface WelcomeStepProps {
 }
 
 const PHASES = [
-  { icon: Building2, label: 'phaseIdentity', desc: 'phaseIdentityDesc', num: '01' },
-  { icon: UtensilsCrossed, label: 'phaseMenu', desc: 'phaseMenuDesc', num: '02' },
-  { icon: Rocket, label: 'phaseLaunch', desc: 'phaseLaunchDesc', num: '03' },
+  { label: 'phaseIdentity', desc: 'phaseIdentityDesc', num: '01' },
+  { label: 'phaseMenu', desc: 'phaseMenuDesc', num: '02' },
+  { label: 'phaseLaunch', desc: 'phaseLaunchDesc', num: '03' },
 ] as const;
 
 export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
@@ -63,15 +63,13 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         <div className="w-full max-w-sm mb-16 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
           <div className="relative flex flex-col gap-0">
             {PHASES.map((phase, i) => {
-              const Icon = phase.icon;
               const isLast = i === PHASES.length - 1;
               return (
                 <div key={i} className="relative flex items-start gap-4">
                   {/* Timeline spine */}
                   <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 relative">
-                      <Icon className="h-[18px] w-[18px] text-app-text-secondary" strokeWidth={2} />
-                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground leading-none">
+                    <div className="w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0">
+                      <span className="text-[11px] font-bold text-muted-foreground leading-none">
                         {phase.num}
                       </span>
                     </div>

@@ -110,16 +110,7 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
     >
       <div
         ref={scrollerRef}
-        className="scrollbar-hide"
-        style={{
-          width: '100%',
-          overflowX: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          paddingLeft: '16px',
-          paddingRight: '16px',
-          gap: '8px',
-        }}
+        className="scrollbar-hide w-full overflow-x-auto flex items-center px-4 gap-2"
       >
         {categories.map((category) => {
           const isActive = activeCategory === category.id;

@@ -26,26 +26,62 @@ export function onboardingDataToQRConfig(
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
   // Resolve QR fg/bg colors
+  // Custom colors (qrCustomFgColor, qrCustomBgColor) take precedence over qrStyle preset.
+  // Use `||` (not `??`) so an empty string from a cleared input falls back to the preset.
   const styleKey = data.qrStyle || 'branded';
   const styleColors = QR_STYLE_COLORS[styleKey] ?? QR_STYLE_COLORS.branded;
-  const qrFg = styleColors.fg === 'primary' ? primary : styleColors.fg;
-  const qrBg = styleColors.bg;
+  const qrFg = data.qrCustomFgColor || (styleColors.fg === 'primary' ? primary : styleColors.fg);
+  const qrBg = data.qrCustomBgColor || styleColors.bg;
+
+  // Resolve dimensions: custom support dimensions take precedence over template defaults.
+  // Use `||` to also fallback when a user clears the input (NaN/0 -> default).
+  const supportWidth = data.qrSupportWidth || defaults.width;
+  const supportHeight = data.qrSupportHeight || defaults.height;
+
+  // Card background: user choice > white default. NEVER force the brand secondary color.
+  // Templates would impose dark/colored cards otherwise (most users want a clean white card).
+  const cardBg = data.qrCustomCardBgColor || '#FFFFFF';
+
+  // Logo on QR: explicit toggle. Default ON only if user has uploaded a logo.
+  // Once user has explicitly set qrShowLogo=false, respect that choice.
+  const logoEnabled = data.qrShowLogo === false ? false : !!data.logoUrl;
+
+  // Text color: explicit user choice wins, otherwise auto-derive from card bg
+  // for readability. Transparent card -> assume light backdrop (paper white).
+  const textColor = data.qrCustomTextColor || (isLightColor(cardBg) ? '#1A1A1A' : '#FFFFFF');
+
+  // Contrast text/icon color for elements sitting ON the accent color (badges, filled icons).
+  // Computed from the accent itself, NOT from cardBg — this prevents invisible badges
+  // when user picks cardBg = brand color (cardBg === accent).
+  const accentTextColor = isLightColor(primary) ? '#1A1A1A' : '#FFFFFF';
+
+  // Per-element size/visibility/position controls (Option A).
+  const qrSizeMultiplier = sizeMultiplier(data.qrCodeSize);
+  const textScale = sizeMultiplier(data.qrTextSize);
+  const showName = data.qrShowName !== false;
+  const showCta = data.qrShowCta !== false;
+  const qrPosition = data.qrPosition ?? 'center';
 
   return {
     ...base,
     templateId,
     qrFgColor: qrFg,
     qrBgColor: qrBg,
-    qrSize: defaults.qrSize,
-    templateWidth: defaults.width,
-    templateHeight: defaults.height,
+    qrSize: Math.round(defaults.qrSize * qrSizeMultiplier),
+    templateWidth: supportWidth,
+    templateHeight: supportHeight,
     templateAccentColor: primary,
-    templateBgColor: secondary,
-    templateTextColor: '#FFFFFF',
+    templateBgColor: cardBg,
+    templateTextColor: textColor,
+    templateAccentTextColor: accentTextColor,
+    textScale,
+    showName,
+    showCta,
+    qrPosition,
     ctaText: data.qrCta || '',
     descriptionText: data.qrDescription || '',
     logo: {
-      enabled: !!data.logoUrl,
+      enabled: logoEnabled,
       src: data.logoUrl || '',
       width: 50,
       height: 50,
@@ -53,7 +89,50 @@ export function onboardingDataToQRConfig(
       opacity: 1,
     },
     shadow: 'none',
-    showPoweredBy: true,
+    showPoweredBy: false,
     fontFamily: 'Geist',
   };
+}
+
+function sizeMultiplier(
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | undefined,
+): number {
+  if (size === 'xs') return 0.5;
+  if (size === 'sm') return 0.75;
+  if (size === 'lg') return 1.3;
+  if (size === 'xl') return 1.6;
+  if (size === '2xl') return 2.0;
+  if (size === '3xl') return 2.5;
+  return 1; // md / undefined
+}
+
+/**
+ * Returns true if a hex color is light (luminance > 0.6).
+ * Used to pick contrasting text color.
+ *
+ * For 'transparent': returns true.
+ *   - Print/PDF export: paper is white -> light backdrop assumption holds
+ *   - App preview sidebar: rendered on var(--app-elevated) (light gray) -> light backdrop holds
+ *   - Edge case: if user later overlays the QR on a dark background image, the dark text
+ *     may have insufficient contrast. This is a documented trade-off; the user has total
+ *     control over their final placement and can pick an explicit card color if needed.
+ *
+ * For invalid/unrecognized formats (rgb(), color names): returns true (safe default - dark text).
+ */
+function isLightColor(hex: string): boolean {
+  if (hex === 'transparent' || !hex.startsWith('#')) return true;
+  const clean = hex.replace('#', '');
+  if (clean.length !== 3 && clean.length !== 6) return true;
+  const expanded =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
+  const r = parseInt(expanded.slice(0, 2), 16) / 255;
+  const g = parseInt(expanded.slice(2, 4), 16) / 255;
+  const b = parseInt(expanded.slice(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.6;
 }

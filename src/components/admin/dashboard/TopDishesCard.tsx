@@ -112,7 +112,7 @@ export function TopDishesCard({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] @lg:w-[140px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-full min-w-0 h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
         <div className="ml-auto inline-flex p-[2px] rounded-md bg-app-bg border border-app-border shrink-0">

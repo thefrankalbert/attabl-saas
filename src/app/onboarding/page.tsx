@@ -22,6 +22,7 @@ import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
 import { PhonePreview } from '@/components/onboarding/PhonePreview';
+import { QRTemplatePreview } from '@/components/onboarding/QRTemplatePreview';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -103,6 +104,29 @@ export interface OnboardingData {
   qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
   qrCta: string;
   qrDescription: string;
+  // Custom QR colors (independent from brand primaryColor)
+  qrCustomFgColor?: string;
+  qrCustomBgColor?: string;
+  // Logo on QR template - explicit user choice (default true if logoUrl exists)
+  qrShowLogo?: boolean;
+  // Per-element controls (Option A: 5-level size + visibility + 3-position layout)
+  qrCodeSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  qrTextSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  qrShowName?: boolean;
+  qrShowCta?: boolean;
+  qrPosition?: 'start' | 'center' | 'end';
+  /** User-picked text color override. Empty/undefined = auto-derived from card bg. */
+  qrCustomTextColor?: string;
+  // Custom card/support background color (override imposed brand secondary color)
+  // Use 'transparent' for no background
+  qrCustomCardBgColor?: string;
+  // Custom support dimensions in mm (A5: 148-210, A4: 210-297)
+  qrSupportWidth?: number;
+  qrSupportHeight?: number;
+  qrOrientation?: 'portrait' | 'landscape';
+  // Uploaded design URL (Supabase Storage)
+  qrUploadedDesignUrl?: string;
+  qrCustomName?: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -218,7 +242,13 @@ export default function OnboardingPage() {
   const phaseIsComplete = (p: number): boolean => {
     switch (p) {
       case 1:
-        return !!data.tenantName && !!data.establishmentType && !!data.primaryColor;
+        return (
+          !!data.tenantName &&
+          !!data.establishmentType &&
+          !!data.primaryColor &&
+          (data.establishmentType !== 'hotel' ||
+            (data.starRating !== undefined && data.starRating > 0))
+        );
       case 2:
         return true;
       case 3:
@@ -582,18 +612,20 @@ export default function OnboardingPage() {
 
         {/* Right: auto-save status + theme toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          {autoSaveStatus === 'saving' && (
-            <span className="text-[10px] text-app-text-muted flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="hidden sm:inline">{t('autoSaving')}</span>
-            </span>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-accent flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              <span className="hidden sm:inline">{t('autoSaved')}</span>
-            </span>
-          )}
+          <div className="w-20 flex items-center justify-end">
+            {autoSaveStatus === 'saving' && (
+              <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">{t('autoSaving')}</span>
+              </span>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <span className="text-[10px] text-accent flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span className="hidden sm:inline">{t('autoSaved')}</span>
+              </span>
+            )}
+          </div>
           <ThemeToggle />
         </div>
       </header>
@@ -603,7 +635,7 @@ export default function OnboardingPage() {
         {/* Config panel */}
         <div className="flex-1 flex flex-col min-w-0">
           <main
-            className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
+            className={`flex-1 min-h-0 scroll-smooth ${screenKey === 'qr' || screenKey === 'summary' ? 'overflow-hidden' : 'overflow-y-auto'}`}
             data-onboarding-scroll
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX;
@@ -649,8 +681,8 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Bottom spacer so content doesn't hide behind fixed nav */}
-              <div className="h-20" />
+              {/* Bottom spacer for scroll clearance on mobile */}
+              <div className="h-4" />
             </div>
           </main>
 
@@ -678,16 +710,9 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={completeOnboarding}
                   disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                  className="h-11 rounded-xl text-sm font-bold px-6"
                 >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {t('launchCTA')}
-                      <Rocket className="h-4 w-4" />
-                    </>
-                  )}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t('launchCTA')}
                 </Button>
               ) : (
                 <Button
@@ -710,9 +735,14 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Phone preview - desktop only */}
+        {/* Right sidebar preview - desktop only */}
+        {/* Shows QR template preview during QR/summary screens, phone mockup otherwise */}
         <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
-          <PhonePreview data={data} phase={phase} />
+          {screenKey === 'qr' || screenKey === 'summary' ? (
+            <QRTemplatePreview data={data} />
+          ) : (
+            <PhonePreview data={data} phase={phase} />
+          )}
         </div>
       </div>
     </div>

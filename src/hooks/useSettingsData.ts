@@ -44,6 +44,14 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     // Idle timeout
     idleTimeoutMinutes: z.number().int().min(5).max(120).nullable().optional(),
     screenLockMode: z.enum(['overlay', 'password']).optional(),
+    // Type-specific establishment fields
+    starRating: z.number().int().min(1).max(5).nullable().optional(),
+    hasRestaurant: z.boolean().nullable().optional(),
+    hasTerrace: z.boolean().nullable().optional(),
+    hasWifi: z.boolean().nullable().optional(),
+    hasDelivery: z.boolean().nullable().optional(),
+    registerCount: z.number().int().min(1).max(100).nullable().optional(),
+    totalCapacity: z.number().int().min(1).max(9999).nullable().optional(),
   });
 }
 
@@ -77,6 +85,13 @@ export interface SettingsTenant {
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
   custom_domain?: string | null;
+  star_rating?: number | null;
+  has_restaurant?: boolean | null;
+  has_terrace?: boolean | null;
+  has_wifi?: boolean | null;
+  has_delivery?: boolean | null;
+  register_count?: number | null;
+  total_capacity?: number | null;
 }
 
 export interface UseSettingsDataReturn {
@@ -136,6 +151,13 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       barDisplayEnabled: tenant.bar_display_enabled ?? false,
       idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
       screenLockMode: tenant.screen_lock_mode ?? 'overlay',
+      starRating: tenant.star_rating ?? null,
+      hasRestaurant: tenant.has_restaurant ?? null,
+      hasTerrace: tenant.has_terrace ?? null,
+      hasWifi: tenant.has_wifi ?? null,
+      hasDelivery: tenant.has_delivery ?? null,
+      registerCount: tenant.register_count ?? null,
+      totalCapacity: tenant.total_capacity ?? null,
     },
   });
 
@@ -269,6 +291,28 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
         formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
       }
       formData.append('screenLockMode', data.screenLockMode || 'overlay');
+      // Type-specific establishment fields
+      if (data.starRating !== null && data.starRating !== undefined) {
+        formData.append('starRating', String(data.starRating));
+      }
+      if (data.hasRestaurant !== null && data.hasRestaurant !== undefined) {
+        formData.append('hasRestaurant', data.hasRestaurant ? 'true' : 'false');
+      }
+      if (data.hasTerrace !== null && data.hasTerrace !== undefined) {
+        formData.append('hasTerrace', data.hasTerrace ? 'true' : 'false');
+      }
+      if (data.hasWifi !== null && data.hasWifi !== undefined) {
+        formData.append('hasWifi', data.hasWifi ? 'true' : 'false');
+      }
+      if (data.hasDelivery !== null && data.hasDelivery !== undefined) {
+        formData.append('hasDelivery', data.hasDelivery ? 'true' : 'false');
+      }
+      if (data.registerCount !== null && data.registerCount !== undefined) {
+        formData.append('registerCount', String(data.registerCount));
+      }
+      if (data.totalCapacity !== null && data.totalCapacity !== undefined) {
+        formData.append('totalCapacity', String(data.totalCapacity));
+      }
 
       const result = await actionUpdateTenantSettings(formData);
 

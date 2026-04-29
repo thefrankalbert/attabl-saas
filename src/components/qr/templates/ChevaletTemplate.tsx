@@ -1,13 +1,97 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
-import { Layout } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }: QRTemplateProps) {
-  // Chevalet uses inverted scheme: accent as main bg, bgColor as text
+export function ChevaletTemplate({
+  config,
+  url,
+  tenantName,
+  tableName,
+  isExport,
+}: QRTemplateProps) {
+  const isLandscape = config.templateWidth > config.templateHeight;
+  const textScale = config.textScale ?? 1;
+  const showName = config.showName !== false;
+  const showCta = config.showCta !== false;
+
+  const Header = (showName || config.descriptionText) && (
+    <div className="text-center">
+      {showName && (
+        <h2
+          className="font-bold"
+          style={{ color: config.templateTextColor, fontSize: `${1.25 * textScale}rem` }}
+        >
+          {tenantName}
+        </h2>
+      )}
+      {config.descriptionText && (
+        <p
+          className="mt-1 opacity-80"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
+        >
+          {config.descriptionText}
+        </p>
+      )}
+    </div>
+  );
+
+  const Badge = tableName && (
+    <div
+      className="px-5 py-1.5 rounded-full text-sm font-bold"
+      style={{
+        backgroundColor: config.templateAccentColor,
+        color: config.templateAccentTextColor ?? config.templateBgColor,
+      }}
+    >
+      {tableName}
+    </div>
+  );
+
+  const QR = (
+    <div className="shrink-0">
+      <QRCodeCanvas
+        value={url}
+        size={config.qrSize}
+        level={config.errorCorrection}
+        fgColor={config.qrFgColor}
+        bgColor={config.qrBgColor}
+        marginSize={config.marginSize}
+        imageSettings={
+          config.logo.enabled
+            ? {
+                src: config.logo.src,
+                width: config.logo.width,
+                height: config.logo.height,
+                excavate: config.logo.excavate,
+                opacity: config.logo.opacity,
+                crossOrigin: 'anonymous' as const,
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
+
+  const Footer = (showCta || config.footerText || config.showPoweredBy) && (
+    <div className="text-center" style={{ color: config.templateTextColor }}>
+      {showCta && (
+        <p className="font-bold mb-1" style={{ fontSize: `${1.125 * textScale}rem` }}>
+          {config.ctaText}
+        </p>
+      )}
+      {config.footerText && (
+        <p className="mt-2 text-center opacity-60" style={{ fontSize: `${0.75 * textScale}rem` }}>
+          {config.footerText}
+        </p>
+      )}
+      {config.showPoweredBy && (
+        <p className="mt-1 text-[10px] text-center opacity-40">Powered by Attabl</p>
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -15,7 +99,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
         height: `${config.templateHeight * 3.78}px`,
         borderRadius: `${config.cornerRadius}px`,
         padding: `${config.padding}px`,
-        backgroundColor: config.gradient.enabled ? undefined : config.templateAccentColor,
+        backgroundColor: config.gradient.enabled ? undefined : config.templateBgColor,
         backgroundImage: config.gradient.enabled
           ? `linear-gradient(${config.gradient.angle}deg, ${config.gradient.colorStart}, ${config.gradient.colorEnd})`
           : config.backgroundImage.enabled && config.backgroundImage.src
@@ -25,11 +109,10 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
         backgroundPosition: 'center',
         fontFamily: config.fontFamily,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isExport ? 'visible' : 'hidden',
       }}
-      className={`flex flex-col items-center ${SHADOW_CLASSES[config.shadow]}`}
+      className={`flex items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
     >
-      {/* Background image overlay */}
       {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
         <div
           style={{
@@ -41,101 +124,72 @@ export function ChevaletTemplate({ config, url, tenantName, tableName, logoUrl }
         />
       )}
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center w-full h-full">
-        {/* Header: Logo or icon */}
-        <div className="text-center mb-4">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={tenantName}
-              className="h-12 w-auto object-contain mx-auto mb-2"
-            />
-          ) : (
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
-              style={{ backgroundColor: config.templateBgColor }}
-            >
-              <Layout className="h-6 w-6" style={{ color: config.templateAccentColor }} />
+      {(() => {
+        const qrPosition = config.qrPosition ?? 'center';
+        if (isLandscape) {
+          if (qrPosition === 'start') {
+            return (
+              <div className="relative z-10 flex items-center justify-center gap-6 w-full h-full">
+                {QR}
+                <div className="flex flex-col items-center justify-center gap-3 flex-1">
+                  {Header}
+                  {Badge}
+                  {Footer}
+                </div>
+              </div>
+            );
+          }
+          if (qrPosition === 'center') {
+            return (
+              <div className="relative z-10 flex flex-col items-center justify-center gap-3 w-full h-full">
+                {Header}
+                {Badge}
+                {QR}
+                {Footer}
+              </div>
+            );
+          }
+          return (
+            <div className="relative z-10 flex items-center justify-center gap-6 w-full h-full">
+              <div className="flex flex-col items-center justify-center gap-3 flex-1">
+                {Header}
+                {Badge}
+                {Footer}
+              </div>
+              {QR}
             </div>
-          )}
-
-          {/* Tenant name (large, bold) */}
-          <h2 className="text-xl font-bold" style={{ color: config.templateBgColor }}>
-            {tenantName}
-          </h2>
-
-          {/* Description text */}
-          {config.descriptionText && (
-            <p className="text-xs mt-1 opacity-80" style={{ color: config.templateBgColor }}>
-              {config.descriptionText}
-            </p>
-          )}
-        </div>
-
-        {/* Table name badge (inverted: bg=bgColor, text=accentColor) */}
-        {tableName && (
-          <div
-            className="mb-3 px-5 py-1.5 rounded-full text-sm font-bold"
-            style={{
-              backgroundColor: config.templateBgColor,
-              color: config.templateAccentColor,
-            }}
-          >
-            {tableName}
+          );
+        }
+        // Portrait
+        if (qrPosition === 'start') {
+          return (
+            <div className="relative z-10 flex flex-col items-center justify-center gap-3 w-full h-full">
+              {QR}
+              {Header}
+              {Badge}
+              {Footer}
+            </div>
+          );
+        }
+        if (qrPosition === 'end') {
+          return (
+            <div className="relative z-10 flex flex-col items-center justify-center gap-3 w-full h-full">
+              {Header}
+              {Badge}
+              {Footer}
+              {QR}
+            </div>
+          );
+        }
+        return (
+          <div className="relative z-10 flex flex-col items-center justify-center gap-3 w-full h-full">
+            {Header}
+            {Badge}
+            {QR}
+            {Footer}
           </div>
-        )}
-
-        {/* QR code in white rounded container (flex-1 to fill space) */}
-        <div className="p-4 bg-white rounded-2xl shadow-lg flex-1 flex items-center">
-          <QRCodeSVG
-            value={url}
-            size={config.qrSize}
-            level={config.errorCorrection}
-            fgColor={config.qrFgColor}
-            bgColor={config.qrBgColor}
-            marginSize={config.marginSize}
-            imageSettings={
-              config.logo.enabled
-                ? {
-                    src: config.logo.src,
-                    width: config.logo.width,
-                    height: config.logo.height,
-                    excavate: config.logo.excavate,
-                    opacity: config.logo.opacity,
-                    crossOrigin: 'anonymous' as const,
-                  }
-                : undefined
-            }
-          />
-        </div>
-
-        {/* CTA area */}
-        <div className="mt-4 text-center" style={{ color: config.templateBgColor }}>
-          <p className="text-lg font-bold mb-1">{config.ctaText}</p>
-          <p className="text-xs opacity-70">Menu digital &bull; Commande rapide</p>
-        </div>
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p
-            className="mt-2 text-xs text-center opacity-60"
-            style={{ color: config.templateBgColor }}
-          >
-            {config.footerText}
-          </p>
-        )}
-
-        {/* Powered by Attabl */}
-        {config.showPoweredBy && (
-          <p
-            className="mt-1 text-[10px] text-center opacity-40"
-            style={{ color: config.templateBgColor }}
-          >
-            Powered by Attabl
-          </p>
-        )}
-      </div>
+        );
+      })()}
     </div>
   );
 }

@@ -520,7 +520,6 @@ Si l'un de ces checks echoue, corriger AVANT de considerer la tache terminee.
 
 Si une tache necessite de modifier un fichier protege ou de casser un pattern critique, demander confirmation a l'utilisateur AVANT de proceder. Ne JAMAIS prendre l'initiative de "refactorer", "nettoyer", ou "ameliorer" du code qui n'est pas directement lie a la tache demandee.
 
-
 ---
 
 ## Copywriting ATTABL - Regles obligatoires
@@ -577,19 +576,23 @@ temps. Ils veulent du concret. Ils apprecient un ton direct et chaleureux, pas c
 ### Frameworks copy a utiliser
 
 **Pour les CTAs :** Action + Benefice + (eventuellement) Friction reduite
+
 - "Lancer mon restaurant - gratuit 14 jours"
 - "Voir comment ca marche"
 - "Creer mon compte en 2 minutes"
 
 **Pour les titres de sections :** Verb fort + Resultat, pas Feature + Description
+
 - "Votre cuisine voit tout. En temps reel." (pas "Gestion des commandes cuisine")
 - "Encaissez mobile money, carte ou cash." (pas "Multi-modes de paiement")
 
 **Pour les descriptions de plans :** Ce que le client gagne, pas ce que le plan contient
+
 - "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie."
 - "Pour ceux qui servent 100+ couverts par jour."
 
 **Pour l'onboarding :** Parler comme un collegue, pas comme un formulaire
+
 - "Comment vous appelez-vous ?" pas "Nom de l'etablissement"
 - "Combien de tables avez-vous ?" pas "Nombre de tables"
 - "On y est presque." pas "Etape 4/5"

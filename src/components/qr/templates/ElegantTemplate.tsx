@@ -1,11 +1,111 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
 import { SHADOW_CLASSES } from '@/types/qr-design.types';
 
-export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }: QRTemplateProps) {
+export function ElegantTemplate({ config, url, tenantName, tableName, isExport }: QRTemplateProps) {
+  const isLandscape = config.templateWidth > config.templateHeight;
+  const textScale = config.textScale ?? 1;
+  const showCta = config.showCta !== false;
+
+  const Decoration = (
+    <div
+      style={{
+        width: '40px',
+        height: '2px',
+        backgroundColor: config.templateAccentColor,
+      }}
+    />
+  );
+
+  const Header = (
+    <div className="flex flex-col items-center gap-2">
+      {Decoration}
+      <h2
+        className="font-bold text-center"
+        style={{ color: config.templateTextColor, fontSize: `${1.5 * textScale}rem` }}
+      >
+        {tenantName}
+      </h2>
+      {config.descriptionText && (
+        <p
+          className="italic text-center opacity-70"
+          style={{ color: config.templateTextColor, fontSize: `${0.75 * textScale}rem` }}
+        >
+          {config.descriptionText}
+        </p>
+      )}
+      {tableName && (
+        <div
+          className="px-5 py-1.5 text-sm font-semibold text-center"
+          style={{
+            border: `1px solid ${config.templateAccentColor}`,
+            borderRadius: '4px',
+            color: config.templateAccentColor,
+          }}
+        >
+          {tableName}
+        </div>
+      )}
+    </div>
+  );
+
+  const QR = (
+    <div className="shrink-0">
+      <QRCodeCanvas
+        value={url}
+        size={config.qrSize}
+        level={config.errorCorrection}
+        fgColor={config.qrFgColor}
+        bgColor={config.qrBgColor}
+        marginSize={config.marginSize}
+        imageSettings={
+          config.logo.enabled
+            ? {
+                src: config.logo.src,
+                width: config.logo.width,
+                height: config.logo.height,
+                excavate: config.logo.excavate,
+                opacity: config.logo.opacity,
+                crossOrigin: 'anonymous' as const,
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
+
+  const Footer = (
+    <div className="flex flex-col items-center gap-2">
+      {showCta && config.ctaText && (
+        <p
+          className="italic text-center"
+          style={{ color: config.templateTextColor, fontSize: `${0.875 * textScale}rem` }}
+        >
+          {config.ctaText}
+        </p>
+      )}
+      {Decoration}
+      {config.footerText && (
+        <p
+          className="text-center opacity-50"
+          style={{ color: config.templateTextColor, fontSize: `${0.625 * textScale}rem` }}
+        >
+          {config.footerText}
+        </p>
+      )}
+      {config.showPoweredBy && (
+        <p
+          className="text-[10px] text-center opacity-30"
+          style={{ color: config.templateTextColor }}
+        >
+          Powered by Attabl
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -23,11 +123,10 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
         backgroundPosition: 'center',
         fontFamily: config.fontFamily,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: isExport ? 'visible' : 'hidden',
       }}
-      className={`flex flex-col items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
+      className={`flex items-center justify-center ${SHADOW_CLASSES[config.shadow]}`}
     >
-      {/* Background image overlay */}
       {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
         <div
           style={{
@@ -39,9 +138,8 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
         />
       )}
 
-      {/* Double border effect using box-shadow */}
       <div
-        className="relative z-10 flex flex-col items-center justify-center w-full h-full"
+        className="relative z-10 flex items-center justify-center w-full h-full"
         style={{
           border: `2px solid ${config.templateAccentColor}`,
           boxShadow: `inset 0 0 0 6px ${config.templateBgColor}, inset 0 0 0 7px ${config.templateAccentColor}66`,
@@ -49,114 +147,20 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
           padding: '16px',
         }}
       >
-        {/* Top decorative line */}
-        <div
-          style={{
-            width: '40px',
-            height: '2px',
-            backgroundColor: config.templateAccentColor,
-            marginBottom: '16px',
-          }}
-        />
-
-        {/* Logo or tenant name in larger font */}
-        {logoUrl ? (
-          <img src={logoUrl} alt={tenantName} className="h-10 w-auto object-contain mb-2" />
-        ) : (
-          <h2
-            className="text-2xl font-bold mb-2 text-center"
-            style={{ color: config.templateTextColor }}
-          >
-            {tenantName}
-          </h2>
-        )}
-
-        {/* Italic description text */}
-        {config.descriptionText && (
-          <p
-            className="text-xs italic text-center mb-3 opacity-70"
-            style={{ color: config.templateTextColor }}
-          >
-            {config.descriptionText}
-          </p>
-        )}
-
-        {/* Table name in elegant badge */}
-        {tableName && (
-          <div
-            className="mb-4 px-5 py-1.5 text-sm font-semibold text-center"
-            style={{
-              border: `1px solid ${config.templateAccentColor}`,
-              borderRadius: '4px',
-              color: config.templateAccentColor,
-            }}
-          >
-            {tableName}
+        {isLandscape ? (
+          <div className="flex items-center justify-center gap-6 w-full h-full">
+            <div className="flex flex-col items-center justify-center gap-3 flex-1">
+              {Header}
+              {Footer}
+            </div>
+            {QR}
           </div>
-        )}
-
-        {/* QR code in subtle container */}
-        <div
-          className="p-3 rounded-lg mb-4"
-          style={{
-            backgroundColor: `${config.templateAccentColor}0A`,
-            border: `1px solid ${config.templateAccentColor}20`,
-          }}
-        >
-          <QRCodeSVG
-            value={url}
-            size={config.qrSize}
-            level={config.errorCorrection}
-            fgColor={config.qrFgColor}
-            bgColor={config.qrBgColor}
-            marginSize={config.marginSize}
-            imageSettings={
-              config.logo.enabled
-                ? {
-                    src: config.logo.src,
-                    width: config.logo.width,
-                    height: config.logo.height,
-                    excavate: config.logo.excavate,
-                    opacity: config.logo.opacity,
-                    crossOrigin: 'anonymous' as const,
-                  }
-                : undefined
-            }
-          />
-        </div>
-
-        {/* CTA in italic style */}
-        <p className="text-sm italic text-center mb-3" style={{ color: config.templateTextColor }}>
-          {config.ctaText}
-        </p>
-
-        {/* Bottom decorative line */}
-        <div
-          style={{
-            width: '40px',
-            height: '2px',
-            backgroundColor: config.templateAccentColor,
-          }}
-        />
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p
-            className="mt-3 text-[10px] text-center opacity-50"
-            style={{ color: config.templateTextColor }}
-          >
-            {config.footerText}
-          </p>
-        )}
-
-        {/* Powered by Attabl */}
-        {config.showPoweredBy && (
-          <p
-            className="mt-1 text-[10px] text-center opacity-30"
-            style={{ color: config.templateTextColor }}
-          >
-            Powered by Attabl
-          </p>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
+            {Header}
+            {QR}
+            {Footer}
+          </div>
         )}
       </div>
     </div>
