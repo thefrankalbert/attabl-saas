@@ -29,25 +29,31 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   },
 });
 
-// Prix des plans (Price IDs Stripe)
+function requireEnv(key: string): string {
+  const v = process.env[key];
+  if (!v) throw new Error(`Missing env var: ${key}`);
+  return v;
+}
+
+// Prix des plans (Price IDs Stripe) - charges depuis les variables d'environnement
 export const STRIPE_PRICES: Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, string>
 > = {
   starter: {
-    monthly: 'price_1TBiOXFJRfQ8oV7tbeMdLfJh',
-    semiannual: 'price_1TBiOdFJRfQ8oV7t8cVwPvKv',
-    yearly: 'price_1TBiOfFJRfQ8oV7tJFAxrX0H',
+    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY'),
+    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL'),
+    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY'),
   },
   pro: {
-    monthly: 'price_1TBiOgFJRfQ8oV7t1sDlMPUd',
-    semiannual: 'price_1TBiOhFJRfQ8oV7tqjY1GmpO',
-    yearly: 'price_1TBiOiFJRfQ8oV7t1cI4W91M',
+    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY'),
+    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL'),
+    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY'),
   },
   business: {
-    monthly: 'price_1TBiOjFJRfQ8oV7tqtXPlGQS',
-    semiannual: 'price_1TBiOlFJRfQ8oV7tFQ0efHSw',
-    yearly: 'price_1TBiO3FJRfQ8oV7tI3oVNuHT',
+    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY'),
+    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL'),
+    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY'),
   },
 };
 
