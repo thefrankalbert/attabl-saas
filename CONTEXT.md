@@ -60,15 +60,16 @@ nouveau dev (ou un agent IA) en 2 minutes.
 
 ### 💳 Stripe — Paiements & abonnements
 
-**Rôle** : abonnements mensuels/annuels (plans Essentiel et Premium), checkout sessions, customer portal, webhooks pour sync `subscription_status`.
+**Rôle** : abonnements mensuels/semestriels/annuels (plans Starter, Pro, Business, Enterprise), checkout sessions, customer portal, webhooks pour sync `subscription_status`.
 
 **Env vars** :
 
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — clé publique
 - `STRIPE_SECRET_KEY` — clé serveur (CRITIQUE)
 - `STRIPE_WEBHOOK_SECRET` — vérification signature webhook
-- `NEXT_PUBLIC_STRIPE_PRICE_ESSENTIEL` / `_YEARLY` — IDs prix Stripe
-- `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM` / `_YEARLY` — idem
+- `NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Starter
+- `NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Pro
+- `NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Business
 
 **Fichiers clés** :
 
