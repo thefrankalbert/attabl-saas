@@ -91,7 +91,9 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
           | 'maxCategories',
         currentCount: number,
       ) => {
-        return currentCount >= limits[limitKey];
+        const limit = limits[limitKey];
+        if (limit === -1) return false;
+        return currentCount >= limit;
       },
       isInTrial: inTrial,
       daysRemaining,
