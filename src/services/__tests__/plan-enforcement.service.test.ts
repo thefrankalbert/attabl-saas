@@ -67,7 +67,7 @@ describe('canAddAdmin', () => {
       subscription_status: 'trial',
       trial_ends_at: new Date(Date.now() + 86400000).toISOString(),
     });
-    // Pro allows 1 admin, so 0 should be fine
+    // Pro allows 2 admins, so 0 should be fine
     const supabase = createMockSupabase({
       admin_users: { count: 0, error: null },
     });
@@ -85,12 +85,12 @@ describe('canAddAdmin', () => {
 });
 
 describe('canAddMenuItem', () => {
-  it('throws when item limit reached (starter = 50)', async () => {
+  it('never throws for starter (maxItems = -1, unlimited)', async () => {
     const supabase = createMockSupabase({
-      menu_items: { count: 50, error: null },
+      menu_items: { count: 10000, error: null },
     });
     const service = createPlanEnforcementService(supabase);
-    await expect(service.canAddMenuItem(makeTenant())).rejects.toThrow(ServiceError);
+    await expect(service.canAddMenuItem(makeTenant())).resolves.toBeUndefined();
   });
 
   it('allows when under limit', async () => {
@@ -113,12 +113,42 @@ describe('canAddVenue', () => {
 });
 
 describe('canAddMenu', () => {
-  it('throws when menu limit reached (starter = 2)', async () => {
+  it('never throws for starter (maxMenus = -1, unlimited)', async () => {
     const supabase = createMockSupabase({
-      menus: { count: 2, error: null },
+      menus: { count: 999, error: null },
     });
     const service = createPlanEnforcementService(supabase);
-    await expect(service.canAddMenu(makeTenant())).rejects.toThrow(ServiceError);
+    await expect(service.canAddMenu(makeTenant())).resolves.toBeUndefined();
+  });
+});
+
+describe('unlimited limits (-1 guard)', () => {
+  it('starter maxItems = -1 -> canAddMenuItem never throws even at 10000 items', async () => {
+    const supabase = createMockSupabase({
+      menu_items: { count: 10000, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddMenuItem(makeTenant())).resolves.toBeUndefined();
+  });
+
+  it('business maxAdmins = -1 -> canAddAdmin never throws', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 500, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(
+      service.canAddAdmin(makeTenant({ subscription_plan: 'business' })),
+    ).resolves.toBeUndefined();
+  });
+
+  it('enterprise -> canAddVenue never throws (maxVenues = -1)', async () => {
+    const supabase = createMockSupabase({
+      venues: { count: 9999, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(
+      service.canAddVenue(makeTenant({ subscription_plan: 'enterprise' })),
+    ).resolves.toBeUndefined();
   });
 });
 

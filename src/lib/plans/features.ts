@@ -47,10 +47,10 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxVenues: 1,
     maxAdmins: 1,
     maxStaff: 3,
-    maxMenus: 2,
-    maxItems: 50,
-    maxCategories: 10,
-    maxMonthlyOrders: 200,
+    maxMenus: -1,
+    maxItems: -1,
+    maxCategories: -1,
+    maxMonthlyOrders: 500,
     canAccessPOS: true,
     canAccessKDS: false,
     canAccessTables: false,
@@ -68,13 +68,13 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessAIAnalytics: false,
   },
   pro: {
-    maxVenues: 1,
-    maxAdmins: 1,
-    maxStaff: 10,
-    maxMenus: 10,
-    maxItems: 500,
-    maxCategories: 50,
-    maxMonthlyOrders: 2000,
+    maxVenues: 2,
+    maxAdmins: 2,
+    maxStaff: 15,
+    maxMenus: -1,
+    maxItems: -1,
+    maxCategories: -1,
+    maxMonthlyOrders: 3000,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -93,11 +93,11 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
   business: {
     maxVenues: 10,
-    maxAdmins: 99,
-    maxStaff: 999,
-    maxMenus: 99,
-    maxItems: 9999,
-    maxCategories: 999,
+    maxAdmins: -1,
+    maxStaff: -1,
+    maxMenus: -1,
+    maxItems: -1,
+    maxCategories: -1,
     maxMonthlyOrders: 20000,
     canAccessPOS: true,
     canAccessKDS: true,
@@ -116,12 +116,12 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessAIAnalytics: true,
   },
   enterprise: {
-    maxVenues: 999,
-    maxAdmins: 999,
-    maxStaff: 999,
-    maxMenus: 99,
-    maxItems: 9999,
-    maxCategories: 999,
+    maxVenues: -1,
+    maxAdmins: -1,
+    maxStaff: -1,
+    maxMenus: -1,
+    maxItems: -1,
+    maxCategories: -1,
     maxMonthlyOrders: -1,
     canAccessPOS: true,
     canAccessKDS: true,
@@ -236,7 +236,9 @@ export function hasReachedLimit(
   trialEndsAt?: string | null,
 ): boolean {
   const limits = getPlanLimits(plan, status, trialEndsAt);
-  return currentCount >= limits[limitKey];
+  const limit = limits[limitKey];
+  if (limit === -1) return false;
+  return currentCount >= limit;
 }
 
 /**
