@@ -2,6 +2,7 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { PushOptIn } from '@/components/admin/PushOptIn';
+import { PaymentMethodsSettings } from '@/components/admin/settings/PaymentMethodsSettings';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,13 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           screen_lock_mode: tenant.screen_lock_mode,
         }}
       />
+
+      <div className="mt-4 shrink-0">
+        <PaymentMethodsSettings
+          tenantId={tenant.id}
+          initialMethods={tenant.enabled_payment_methods ?? ['cash', 'card']}
+        />
+      </div>
 
       <div className="mt-4 shrink-0">
         <PushOptIn tenantId={tenant.id} />

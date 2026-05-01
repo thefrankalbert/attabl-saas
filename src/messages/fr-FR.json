@@ -259,15 +259,18 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Tarifs simples pour la restauration",
-      "metaDescription": "Découvrez nos offres adaptées à chaque établissement. Essentiel dès 39 800 FCFA/mois, Premium dès 79 800 FCFA/mois. Essai gratuit 14 jours.",
+      "metaDescription": "Des prix clairs pour chaque etablissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit sur le plan PRO. Sans carte bancaire."
+        "subtitle": "14 jours d'essai gratuit sur le plan Pro. Sans carte bancaire. Sans engagement."
       },
       "billing": {
         "monthly": "Mensuel",
+        "semiannual": "Semestriel",
+        "semiannualDiscount": "-15%",
         "yearly": "Annuel",
-        "yearlyDiscount": "-20%"
+        "yearlyDiscount": "-20%",
+        "noCommitment": "Sans carte bancaire. Sans engagement."
       },
       "priceSuffix": "XAF/mois",
       "customPrice": "Sur mesure",
@@ -276,7 +279,7 @@
           "badge": "Pour démarrer",
           "title": "STARTER",
           "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
-          "button": "Essayer gratuitement",
+          "button": "Commencer",
           "featuresTitle": "Inclus dans STARTER",
           "benefits": {
             "b1": "Menu QR bilingue (FR/EN)",
@@ -428,12 +431,69 @@
               "whatsapp": "Support WhatsApp",
               "whatsappPro": "24h",
               "whatsappBusiness": "4h prioritaire",
-              "whatsappEnterprise": "1h téléphone",
+              "whatsappEnterprise": "1h telephone prioritaire",
               "manager": "Account manager",
               "sla": "SLA garanti"
             }
+          },
+          "volumes": {
+            "title": "Volumes",
+            "features": {
+              "monthlyOrders": "Commandes / mois",
+              "menus": "Menus",
+              "items": "Articles"
+            }
           }
         }
+      },
+      "tco": {
+        "title": "Pourquoi ATTABL ?",
+        "subtitle": "Cout reel sur 12 mois, tout compris.",
+        "headers": {
+          "feature": "Postes de cout",
+          "attabl": "ATTABL Pro",
+          "toast": "Toast",
+          "square": "Square",
+          "lightspeed": "Lightspeed"
+        },
+        "rows": {
+          "software": {
+            "label": "Logiciel / an",
+            "attabl": "758 400 XAF",
+            "toast": "~1 380 000 XAF",
+            "square": "~840 000 XAF",
+            "lightspeed": "~1 440 000 XAF"
+          },
+          "hardware": {
+            "label": "Materiel requis",
+            "attabl": "Non",
+            "toast": "Non",
+            "square": "~175 000 XAF",
+            "lightspeed": "Non"
+          },
+          "fees": {
+            "label": "Frais / transaction",
+            "attabl": "0%",
+            "toast": "2.49%",
+            "square": "2.6%",
+            "lightspeed": "2.6%"
+          },
+          "commitment": {
+            "label": "Engagement",
+            "attabl": "Mensuel",
+            "toast": "Annuel",
+            "square": "Mensuel",
+            "lightspeed": "Annuel"
+          },
+          "total": {
+            "label": "TOTAL 12 mois",
+            "attabl": "~758 400 XAF",
+            "toast": ">1 380 000 XAF",
+            "square": "~1 015 000 XAF",
+            "lightspeed": ">1 440 000 XAF"
+          }
+        },
+        "note": "Tarifs indicatifs en XAF. Sources : sites officiels des editeurs, avril 2026."
       },
       "faq": {
         "title": "Questions fréquentes",
@@ -452,7 +512,7 @@
           },
           "q4": {
             "question": "Y a-t-il un engagement ?",
-            "answer": "Mensuel = sans engagement. Annuel = -20%."
+            "answer": "Mensuel = sans engagement. Semestriel = -15%. Annuel = -20%."
           },
           "q5": {
             "question": "Comment je paie ?",
@@ -1316,6 +1376,60 @@
       "create": "Créer l'établissement",
       "creationError": "Erreur lors de la création",
       "unknownError": "Erreur inconnue"
+    },
+    "settings": {
+      "paymentMethodsTitle": "Modes de paiement",
+      "paymentMethodsDesc": "Activez les modes de paiement disponibles pour vos clients.",
+      "paymentMethodsSaved": "Modes de paiement enregistres",
+      "paymentMethodsError": "Erreur lors de l'enregistrement des modes de paiement",
+      "savePaymentMethods": "Enregistrer",
+      "paymentMethod": {
+        "cash": {
+          "label": "Especes",
+          "desc": "Paiement en especes a la livraison ou au comptoir"
+        },
+        "card": {
+          "label": "Carte bancaire",
+          "desc": "Paiement par carte de credit ou de debit"
+        },
+        "wave": {
+          "label": "Wave",
+          "desc": "Paiement mobile via l'application Wave Senegal"
+        },
+        "orange_money": {
+          "label": "Orange Money",
+          "desc": "Paiement mobile via Orange Money Afrique de l'Ouest"
+        },
+        "mtn_momo": {
+          "label": "MTN MoMo",
+          "desc": "Paiement mobile via MTN Mobile Money"
+        },
+        "free_money": {
+          "label": "Free Money",
+          "desc": "Paiement mobile via Free Money"
+        }
+      }
+    },
+    "upgradeWall": {
+      "planRequired": "Fonctionnalite Pro",
+      "upgradeCta": "Passer au Pro - 14j gratuits",
+      "trialNote": "Disponible gratuitement pendant votre essai Pro",
+      "kds": {
+        "title": "Ecran cuisine (KDS)",
+        "desc": "Les commandes arrivent directement sur l'ecran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
+      },
+      "inventory": {
+        "title": "Gestion des stocks",
+        "desc": "Suivez vos ingredients en temps reel, recevez des alertes avant les ruptures, et destockez automatiquement apres chaque commande."
+      },
+      "recipes": {
+        "title": "Fiches techniques",
+        "desc": "Calculez le cout reel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activite reelle."
+      },
+      "reports": {
+        "title": "Statistiques avancees",
+        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des decisions basees sur des donnees reelles."
+      }
     }
   },
   "dishes": {
@@ -2895,6 +3009,10 @@
     "orderReadyNotifTitle": "Votre commande est prête !",
     "orderReadyNotifBody": "Commande #{number} - prête à être récupérée",
     "enableNotifications": "Activer les notifications pour savoir quand votre commande est prête",
+    "payOnline": "Payer en ligne",
+    "payWithWave": "Payer avec Wave",
+    "payWithOrangeMoney": "Payer avec Orange Money",
+    "paymentError": "Erreur lors du paiement. Veuillez reessayer.",
     "ordersSection": "Vos commandes",
     "orderHistoryLabel": "Historique des commandes",
     "orderHistorySubtitle": "Consulter mes commandes",

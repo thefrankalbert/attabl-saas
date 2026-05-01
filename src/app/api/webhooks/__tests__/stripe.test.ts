@@ -46,6 +46,10 @@ vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_fake');
 vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_fake');
 
 vi.mock('@/lib/stripe/server', () => ({
+  getStripe: vi.fn().mockReturnValue({
+    webhooks: { constructEvent: mockConstructEvent },
+    subscriptions: { retrieve: mockSubscriptionsRetrieve },
+  }),
   STRIPE_PRICES: {},
   getPlanFromPriceId: vi.fn().mockReturnValue(null),
   getIntervalFromPriceId: vi.fn().mockReturnValue(null),

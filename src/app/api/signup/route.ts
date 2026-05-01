@@ -7,6 +7,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
+import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 
 export async function POST(request: Request) {
   try {
@@ -48,6 +49,24 @@ export async function POST(request: Request) {
     const signupService = createSignupService(supabase);
 
     const result = await signupService.completeEmailSignup(parseResult.data);
+
+    // A/B test: shorten trial to 7d if variant is assigned
+    const cookieHeader = request.headers.get('cookie') ?? '';
+    const trialVariant = parseAbTrialFromCookieHeader(cookieHeader);
+    if (trialVariant === '7d') {
+      const trialEndsAt = new Date(Date.now() + 7 * 86400000).toISOString();
+      const { data: updated, error: trialErr } = await supabase
+        .from('tenants')
+        .update({ trial_ends_at: trialEndsAt })
+        .eq('id', result.tenantId)
+        .select('id');
+      if (trialErr || !updated?.length) {
+        logger.warn('AB test: failed to apply 7d trial', {
+          error: trialErr,
+          tenantId: result.tenantId,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

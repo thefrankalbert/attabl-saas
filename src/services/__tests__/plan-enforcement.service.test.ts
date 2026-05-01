@@ -13,6 +13,7 @@ function chainable(result: { count?: number | null; error?: unknown; data?: unkn
   // Every method returns the same chainable object
   obj.select = vi.fn(() => obj);
   obj.eq = vi.fn(() => obj);
+  obj.in = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   // Make the chain itself thenable (await-able)
   obj.then = (resolve: (v: unknown) => void, reject?: (e: unknown) => void) =>
@@ -102,6 +103,62 @@ describe('canAddMenuItem', () => {
   });
 });
 
+describe('canAddStaff', () => {
+  it('allows when under limit (starter = 3, count = 2)', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 2, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddStaff(makeTenant())).resolves.toBeUndefined();
+  });
+
+  it('throws VALIDATION when limit reached (starter = 3, count = 3)', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 3, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddStaff(makeTenant())).rejects.toThrow(ServiceError);
+  });
+
+  it('pro limit = 15, count = 15 throws', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 15, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddStaff(makeTenant({ subscription_plan: 'pro' }))).rejects.toThrow(
+      ServiceError,
+    );
+  });
+
+  it('business maxStaff = -1 -> never throws even at 500 staff', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 500, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(
+      service.canAddStaff(makeTenant({ subscription_plan: 'business' })),
+    ).resolves.toBeUndefined();
+  });
+
+  it('enterprise maxStaff = -1 -> never throws', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 9999, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(
+      service.canAddStaff(makeTenant({ subscription_plan: 'enterprise' })),
+    ).resolves.toBeUndefined();
+  });
+
+  it('throws INTERNAL on database error', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: null, error: { message: 'DB error' } },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddStaff(makeTenant())).rejects.toThrow('vérification des limites');
+  });
+});
+
 describe('canAddVenue', () => {
   it('throws when venue limit reached (starter = 1)', async () => {
     const supabase = createMockSupabase({
@@ -149,6 +206,30 @@ describe('unlimited limits (-1 guard)', () => {
     await expect(
       service.canAddVenue(makeTenant({ subscription_plan: 'enterprise' })),
     ).resolves.toBeUndefined();
+  });
+
+  it('starter maxCategories = -1 -> canAddCategory never throws', async () => {
+    const supabase = createMockSupabase({
+      categories: { count: 10000, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddCategory(makeTenant())).resolves.toBeUndefined();
+  });
+
+  it('starter maxItems = -1 -> canAddItems batch never throws', async () => {
+    const supabase = createMockSupabase({
+      menu_items: { count: 10000, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddItems(makeTenant(), 500)).resolves.toBeUndefined();
+  });
+
+  it('starter maxCategories = -1 -> canAddCategories batch never throws', async () => {
+    const supabase = createMockSupabase({
+      categories: { count: 10000, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddCategories(makeTenant(), 100)).resolves.toBeUndefined();
   });
 });
 

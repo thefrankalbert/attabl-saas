@@ -259,15 +259,18 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Simple pricing for hospitality",
-      "metaDescription": "Plans for every business. Essential from 39,800 FCFA/month, Premium from 79,800 FCFA/month. 14-day free trial.",
+      "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial on the Pro plan.",
       "hero": {
         "title": "Clear pricing. No surprises.",
-        "subtitle": "14-day free trial on the PRO plan. No credit card required."
+        "subtitle": "14-day free trial on the Pro plan. No credit card. No commitment."
       },
       "billing": {
         "monthly": "Monthly",
+        "semiannual": "Semi-annual",
+        "semiannualDiscount": "-15%",
         "yearly": "Yearly",
-        "yearlyDiscount": "-20%"
+        "yearlyDiscount": "-20%",
+        "noCommitment": "No credit card. No commitment."
       },
       "priceSuffix": "XAF/month",
       "customPrice": "Custom",
@@ -276,7 +279,7 @@
           "badge": "To get started",
           "title": "STARTER",
           "subtitle": "For restaurant owners who want to go digital without the headache.",
-          "button": "Try for free",
+          "button": "Get started",
           "featuresTitle": "Included in STARTER",
           "benefits": {
             "b1": "Bilingual QR menu (FR/EN)",
@@ -432,8 +435,65 @@
               "manager": "Account manager",
               "sla": "SLA guaranteed"
             }
+          },
+          "volumes": {
+            "title": "Volumes",
+            "features": {
+              "monthlyOrders": "Orders / month",
+              "menus": "Menus",
+              "items": "Items"
+            }
           }
         }
+      },
+      "tco": {
+        "title": "Why ATTABL?",
+        "subtitle": "Real cost over 12 months, all included.",
+        "headers": {
+          "feature": "Cost breakdown",
+          "attabl": "ATTABL Pro",
+          "toast": "Toast",
+          "square": "Square",
+          "lightspeed": "Lightspeed"
+        },
+        "rows": {
+          "software": {
+            "label": "Software / year",
+            "attabl": "758,400 XAF",
+            "toast": "~1,380,000 XAF",
+            "square": "~840,000 XAF",
+            "lightspeed": "~1,440,000 XAF"
+          },
+          "hardware": {
+            "label": "Hardware required",
+            "attabl": "None",
+            "toast": "None",
+            "square": "~175,000 XAF",
+            "lightspeed": "None"
+          },
+          "fees": {
+            "label": "Transaction fees",
+            "attabl": "0%",
+            "toast": "2.49%",
+            "square": "2.6%",
+            "lightspeed": "2.6%"
+          },
+          "commitment": {
+            "label": "Commitment",
+            "attabl": "Monthly",
+            "toast": "Annual",
+            "square": "Monthly",
+            "lightspeed": "Annual"
+          },
+          "total": {
+            "label": "TOTAL 12 months",
+            "attabl": "~758,400 XAF",
+            "toast": ">1,380,000 XAF",
+            "square": "~1,015,000 XAF",
+            "lightspeed": ">1,440,000 XAF"
+          }
+        },
+        "note": "Indicative pricing in XAF. Sources: official vendor websites, April 2026."
       },
       "faq": {
         "title": "Frequently asked questions",
@@ -452,7 +512,7 @@
           },
           "q4": {
             "question": "Is there a commitment?",
-            "answer": "Monthly = no commitment. Yearly = -20%."
+            "answer": "Monthly = no commitment. Semi-annual = -15%. Yearly = -20%."
           },
           "q5": {
             "question": "How do I pay?",
@@ -1316,6 +1376,60 @@
       "create": "Create establishment",
       "creationError": "Error during creation",
       "unknownError": "Unknown error"
+    },
+    "settings": {
+      "paymentMethodsTitle": "Payment methods",
+      "paymentMethodsDesc": "Enable the payment methods available to your customers.",
+      "paymentMethodsSaved": "Payment methods saved",
+      "paymentMethodsError": "Error saving payment methods",
+      "savePaymentMethods": "Save",
+      "paymentMethod": {
+        "cash": {
+          "label": "Cash",
+          "desc": "Cash payment on delivery or at the counter"
+        },
+        "card": {
+          "label": "Bank card",
+          "desc": "Credit or debit card payment"
+        },
+        "wave": {
+          "label": "Wave",
+          "desc": "Mobile payment via the Wave Senegal app"
+        },
+        "orange_money": {
+          "label": "Orange Money",
+          "desc": "Mobile payment via Orange Money West Africa"
+        },
+        "mtn_momo": {
+          "label": "MTN MoMo",
+          "desc": "Mobile payment via MTN Mobile Money"
+        },
+        "free_money": {
+          "label": "Free Money",
+          "desc": "Mobile payment via Free Money"
+        }
+      }
+    },
+    "upgradeWall": {
+      "planRequired": "Pro Feature",
+      "upgradeCta": "Upgrade to Pro - 14 days free",
+      "trialNote": "Available for free during your Pro trial",
+      "kds": {
+        "title": "Kitchen Display (KDS)",
+        "desc": "Orders go directly to your kitchen screen. No more paper tickets, no more trips back and forth. Your team prepares faster, your customers wait less."
+      },
+      "inventory": {
+        "title": "Stock Management",
+        "desc": "Track your ingredients in real time. Automatic alerts when you run low. Less waste, fewer out-of-stocks."
+      },
+      "recipes": {
+        "title": "Recipe Cards",
+        "desc": "Calculate the real cost of each dish. Know your margins to the franc. Adjust your prices with confidence."
+      },
+      "reports": {
+        "title": "Advanced Analytics",
+        "desc": "Discover which dishes sell best, your peak hours, your top servers. Data to make better decisions every day."
+      }
     }
   },
   "dishes": {
@@ -2927,7 +3041,11 @@
     "ourMenus": "Our menus",
     "viewCart": "View cart",
     "bannerPromoLabel": "Deal",
-    "dineInTable": "Dine-in - Table {number}"
+    "dineInTable": "Dine-in - Table {number}",
+    "payOnline": "Pay online",
+    "payWithWave": "Pay with Wave",
+    "payWithOrangeMoney": "Pay with Orange Money",
+    "paymentError": "Payment error. Please try again."
   },
   "shared": {
     "fileMustBeImage": "File must be an image",

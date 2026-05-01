@@ -53,32 +53,21 @@ export async function GET(request: Request) {
         // Get restaurant name from admin_users
         const { data: adminUser } = await supabase
           .from('admin_users')
-          .select('full_name, tenant_id')
+          .select('tenant_id')
           .eq('user_id', userId)
           .single();
 
         if (adminUser) {
-          // Get tenant slug for dashboard URL
           const { data: tenant } = await supabase
             .from('tenants')
             .select('slug')
             .eq('id', adminUser.tenant_id)
             .single();
 
-          // Count total restaurants for social proof
-          const { count } = await supabase
-            .from('tenants')
-            .select('id', { count: 'exact', head: true })
-            .eq('is_active', true);
-
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
           const dashboardUrl = tenant ? `${appUrl}/sites/${tenant.slug}/admin` : `${appUrl}/login`;
 
-          await sendWelcomeOnboardingEmail(userEmail, {
-            userName: adminUser.full_name,
-            dashboardUrl,
-            totalRestaurants: count || 0,
-          });
+          await sendWelcomeOnboardingEmail(userEmail, { dashboardUrl });
         }
       }
     } catch (emailErr) {
