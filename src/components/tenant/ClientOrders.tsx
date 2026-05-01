@@ -447,7 +447,7 @@ export default function ClientOrders({
               {/* Mini tracker in collapsed view for active orders only */}
               {!isExpanded && ACTIVE_STATUSES.has(order.status) && (
                 <div className="mt-4">
-                  <OrderTracker status={order.status} createdAt={order.created_at} compact />
+                  <OrderTracker status={order.status} compact />
                 </div>
               )}
             </Button>

@@ -16,26 +16,24 @@ export default async function manifest({
     .eq('slug', site)
     .single();
 
-  const name = tenant?.name || 'Attabl Menu';
-  const shortName = name.length > 12 ? name.substring(0, 12) : name;
-  const themeColor = tenant?.primary_color || '#ffffff';
+  const themeColor = tenant?.primary_color || '#06C167';
 
   return {
-    name: name,
-    short_name: shortName,
-    description: `Menu digital pour ${name}`,
+    name: 'ATTABL',
+    short_name: 'ATTABL',
+    description: 'Scannez, commandez, retrouvez vos restaurants preferes.',
     start_url: `/sites/${site}`,
     display: 'fullscreen',
-    background_color: '#ffffff',
+    background_color: '#000000',
     theme_color: themeColor,
     icons: [
       {
-        src: tenant?.logo_url || '/icon-192.png',
+        src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: tenant?.logo_url || '/icon-512.png',
+        src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
       },

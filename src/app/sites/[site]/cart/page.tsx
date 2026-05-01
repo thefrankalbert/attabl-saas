@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   AlertCircle,
   X,
+  ScanLine,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useCallback, useRef, useMemo } from 'react';
@@ -84,6 +85,11 @@ export default function CartPage() {
   const [promoOpen, setPromoOpen] = useState(false);
 
   const submitLock = useRef(false);
+
+  const [tableNumber] = useState<string | null>(() => {
+    if (!tenantSlug || typeof window === 'undefined') return null;
+    return localStorage.getItem(`attabl_${tenantSlug}_table`);
+  });
 
   // Tip amount computation
   const tipAmount = useMemo(() => {
@@ -266,6 +272,14 @@ export default function CartPage() {
       }}
     >
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        {/* Browse mode banner */}
+        {!tableNumber && (
+          <div className="px-3 py-2 flex items-center gap-2 text-sm rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-600">
+            <ScanLine size={16} className="shrink-0" />
+            <span>{t('browseModeBanner')}</span>
+          </div>
+        )}
+
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
           <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-xl">
@@ -327,7 +341,7 @@ export default function CartPage() {
                   setNotes('');
                 }}
                 className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
-                aria-label={t('ariaClose') || 'Fermer'}
+                aria-label={t('close')}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -410,7 +424,7 @@ export default function CartPage() {
             tipNone: t('tipNone') || 'Aucun',
             tipCustom: t('tipCustom') || 'Autre',
             tipCustomPlaceholder: t('tipCustomPlaceholder'),
-            close: t('ariaClose') || 'Fermer',
+            close: t('close'),
           }}
         />
 
@@ -446,25 +460,32 @@ export default function CartPage() {
         style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 12px)' }}
       >
         <div className="max-w-lg mx-auto pointer-events-auto">
-          <Button
-            onClick={handleSubmitOrder}
-            disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
-            ) : (
-              <>
-                <span>{t('confirmOrder')}</span>
-                <span
-                  aria-hidden="true"
-                  className="inline-block rounded-full bg-white"
-                  style={{ width: 5, height: 5 }}
-                />
-                <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
-              </>
-            )}
-          </Button>
+          {!tableNumber ? (
+            <div className="w-full h-[52px] rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-center gap-2 text-amber-600 text-[14px] font-medium">
+              <ScanLine size={18} />
+              <span>{t('scanToOrder')}</span>
+            </div>
+          ) : (
+            <Button
+              onClick={handleSubmitOrder}
+              disabled={isSubmitting || items.length === 0}
+              className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  <span>{t('confirmOrder')}</span>
+                  <span
+                    aria-hidden="true"
+                    className="inline-block rounded-full bg-white"
+                    style={{ width: 5, height: 5 }}
+                  />
+                  <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
       {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}

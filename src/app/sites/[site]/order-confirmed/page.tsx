@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
-import { Check, Loader2, ArrowLeft, ChefHat, Bell, BellRing, X } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, Bell, BellRing, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
+import OrderTracker from '@/components/tenant/OrderTracker';
 import { logger } from '@/lib/logger';
 
 // ─── Types ───────────────────────────────────────────────
@@ -28,8 +29,6 @@ interface OrderData {
   created_at: string;
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
 }
-
-// ─── Status messages (simple, no pressure on kitchen) ────
 
 // ─── Inner Content (needs Suspense for useSearchParams) ──
 function OrderConfirmedContent() {
@@ -304,8 +303,10 @@ function OrderConfirmedContent() {
             </Button>
           )}
 
-        {/* Simple status message - no detailed tracking visible to customer */}
-        <OrderStatusMessage status={order.status} />
+        {/* Visual order tracker */}
+        <div className="px-2 py-4 rounded-xl bg-white border border-[#EEEEEE]">
+          <OrderTracker status={order.status} />
+        </div>
 
         {/* Order summary card - same style as cart */}
         <section
@@ -403,11 +404,21 @@ function OrderConfirmedContent() {
           </div>
         </section>
 
-        {/* Back to menu */}
+        {/* Primary CTA: track order */}
+        <Link href={`/sites/${tenantSlug}/orders`} className="block">
+          <Button
+            className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98]"
+            style={{ backgroundColor: '#1A1A1A' }}
+          >
+            {t('trackOrder')}
+          </Button>
+        </Link>
+
+        {/* Secondary CTA: back to menu */}
         <Link href={menuPath} className="block">
           <Button
-            className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{ backgroundColor: '#1A1A1A' }}
+            variant="ghost"
+            className="w-full h-12 rounded-xl text-[#737373] font-medium text-sm flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
@@ -417,59 +428,6 @@ function OrderConfirmedContent() {
 
       {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
     </main>
-  );
-}
-
-// ─── Simple status message (no step-by-step tracker) ─────
-
-function OrderStatusMessage({ status }: { status: string }) {
-  const t = useTranslations('tenant');
-
-  const config: Record<string, { message: string; bg: string; color: string }> = {
-    pending: {
-      message: t('orderStatusSent'),
-      bg: '#FFF7ED',
-      color: '#D97706',
-    },
-    confirmed: {
-      message: t('orderStatusConfirmed') || t('orderStatusSent'),
-      bg: '#EFF6FF',
-      color: '#2563EB',
-    },
-    preparing: {
-      message: t('orderStatusInKitchen'),
-      bg: '#EFF6FF',
-      color: '#2563EB',
-    },
-    ready: {
-      message: t('orderStatusReady'),
-      bg: '#F0FDF4',
-      color: '#16A34A',
-    },
-    delivered: {
-      message: t('orderStatusServed'),
-      bg: '#F6F6F6',
-      color: '#B0B0B0',
-    },
-    cancelled: {
-      message: t('statusCancelled'),
-      bg: '#FFEBEE',
-      color: '#FF3008',
-    },
-  };
-
-  const c = config[status] || config.pending;
-
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
-      style={{ backgroundColor: c.bg }}
-    >
-      <ChefHat className="w-5 h-5 shrink-0" style={{ color: c.color }} />
-      <span className="text-sm font-semibold" style={{ color: c.color }}>
-        {c.message}
-      </span>
-    </div>
   );
 }
 

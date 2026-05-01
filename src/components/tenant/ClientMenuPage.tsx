@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { UtensilsCrossed, Clock, Star, TrendingUp, Search } from 'lucide-react';
+import { UtensilsCrossed, Clock, Star, TrendingUp, Search, ScanLine } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -284,6 +284,14 @@ export default function ClientMenuPage({
           onAvatarPress={() => setIsTenantInfoOpen(true)}
         />
 
+        {/* Browse mode banner - no table context */}
+        {!tableNumber && (
+          <div className="px-4 py-2 flex items-center justify-center gap-2 text-sm border-b border-amber-500/20 bg-amber-500/10 text-amber-300">
+            <ScanLine size={16} className="shrink-0" />
+            <span>{t('browseModeBanner')}</span>
+          </div>
+        )}
+
         {/* Closed banner */}
         {!openingState.isOpen && (
           <div className="bg-gray-900 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium">
@@ -541,11 +549,7 @@ export default function ClientMenuPage({
         onClose={() => setIsTenantInfoOpen(false)}
         closeLabel={t('close')}
       />
-      <InstallPrompt
-        appName={tenant.name}
-        logoUrl={tenant.logo_url}
-        hasFloatingCart={totalCartItems > 0}
-      />
+      <InstallPrompt appName="ATTABL" hasFloatingCart={totalCartItems > 0} />
       <ItemDetailSheet
         item={selectedItem}
         isOpen={!!selectedItem}

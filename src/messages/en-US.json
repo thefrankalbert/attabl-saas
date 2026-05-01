@@ -2638,6 +2638,8 @@
     "unlock": "Unlock"
   },
   "tenant": {
+    "browseModeBanner": "You're browsing the menu. Scan the QR code at your table to order.",
+    "scanToOrder": "Scan the QR code at your table to order",
     "closedNow": "Closed now",
     "opensAt": "Opens {time}",
     "navMenu": "Menu",
@@ -3300,12 +3302,12 @@
   },
   "installPrompt": {
     "installApp": "Install {name}",
-    "subtitle": "Quick one-tap access",
+    "subtitle": "All your restaurants, always at hand.",
     "install": "Install",
     "howTo": "How?",
     "close": "Close",
-    "iosStep1": "1. Tap Share",
-    "iosStep2": "2. Select Add to Home Screen",
+    "iosStep1": "Tap \"Install\" below",
+    "iosStep2": "Then select \"Add to Home Screen\"",
     "installOnHomeScreen": "Install {appName} on your home screen"
   },
   "contact": {

@@ -8,9 +8,6 @@ interface OrderProgressBarProps {
   createdAt?: string;
 }
 
-export default function OrderProgressBar({
-  status,
-  createdAt = new Date().toISOString(),
-}: OrderProgressBarProps) {
-  return <OrderTracker status={status} createdAt={createdAt} />;
+export default function OrderProgressBar({ status }: OrderProgressBarProps) {
+  return <OrderTracker status={status} />;
 }

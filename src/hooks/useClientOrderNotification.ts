@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 
 /**
@@ -37,6 +38,7 @@ interface UseClientOrderNotificationReturn {
  * browser Notification API + Supabase Realtime (handled by caller).
  */
 export function useClientOrderNotification(): UseClientOrderNotificationReturn {
+  const t = useTranslations('tenant');
   const [permissionState, setPermissionState] = useState<NotificationPermission | 'unsupported'>(
     () => {
       if (typeof window === 'undefined') return 'unsupported';
@@ -88,49 +90,52 @@ export function useClientOrderNotification(): UseClientOrderNotificationReturn {
     }
   }, []);
 
-  const notifyOrderReady = useCallback((orderNumber: string) => {
-    // 1. Show in-app banner
-    setShowReadyBanner(true);
-    setReadyOrderNumber(orderNumber);
+  const notifyOrderReady = useCallback(
+    (orderNumber: string) => {
+      // 1. Show in-app banner
+      setShowReadyBanner(true);
+      setReadyOrderNumber(orderNumber);
 
-    // 2. Play notification sound
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        logger.warn('Client notification sound play() blocked');
-      });
-    }
-
-    // 3. Vibrate device (mobile)
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate([200, 100, 200]);
-      } catch {
-        // Vibration not available - silently ignore
-      }
-    }
-
-    // 4. Browser notification (if tab is in background or permission granted)
-    if (
-      typeof window !== 'undefined' &&
-      'Notification' in window &&
-      Notification.permission === 'granted'
-    ) {
-      try {
-        const notification = new Notification('Commande prête !', {
-          body: `Votre commande #${orderNumber} est prête.`,
-          icon: '/icons/icon-192x192.png',
-          tag: `order-ready-${orderNumber}`,
-          requireInteraction: false,
+      // 2. Play notification sound
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          logger.warn('Client notification sound play() blocked');
         });
-
-        // Auto-close after 8 seconds
-        setTimeout(() => notification.close(), 8000);
-      } catch {
-        logger.warn('Browser Notification constructor failed');
       }
-    }
-  }, []);
+
+      // 3. Vibrate device (mobile)
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([200, 100, 200]);
+        } catch {
+          // Vibration not available - silently ignore
+        }
+      }
+
+      // 4. Browser notification (if tab is in background or permission granted)
+      if (
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        try {
+          const notification = new Notification(t('orderReadyNotifTitle'), {
+            body: t('orderReadyNotifBody', { number: orderNumber }),
+            icon: '/icons/icon-192x192.png',
+            tag: `order-ready-${orderNumber}`,
+            requireInteraction: false,
+          });
+
+          // Auto-close after 8 seconds
+          setTimeout(() => notification.close(), 8000);
+        } catch {
+          logger.warn('Browser Notification constructor failed');
+        }
+      }
+    },
+    [t],
+  );
 
   const dismissBanner = useCallback(() => {
     setShowReadyBanner(false);

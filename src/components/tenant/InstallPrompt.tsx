@@ -58,7 +58,6 @@ export default function InstallPrompt({
 
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (isStandalone) return;
@@ -161,12 +160,10 @@ export default function InstallPrompt({
           text: t('installOnHomeScreen', { appName }),
           url: window.location.href,
         });
-        return;
       } catch {
-        // User cancelled or share failed - fall back to inline instructions
+        // User cancelled or share failed - instructions already visible
       }
     }
-    setIsExpanded(true);
   }, [appName, t]);
 
   if (!show || isStandalone) return null;
@@ -219,7 +216,7 @@ export default function InstallPrompt({
         </Button>
       </div>
 
-      {isIOS && isExpanded && (
+      {isIOS && (
         <div className="px-3 pb-3 pt-0 border-t border-app-border text-xs space-y-2 text-app-text-secondary">
           <p className="flex items-center gap-2 pt-2">
             <Share size={14} className="shrink-0" /> {t('iosStep1')}

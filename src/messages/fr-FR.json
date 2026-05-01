@@ -2638,6 +2638,8 @@
     "unlock": "Déverrouiller"
   },
   "tenant": {
+    "browseModeBanner": "Vous consultez le menu. Scannez le QR de votre table pour commander.",
+    "scanToOrder": "Scannez le QR de votre table pour commander",
     "closedNow": "Ferme actuellement",
     "opensAt": "Ouvre {time}",
     "navMenu": "Menu",
@@ -3300,12 +3302,12 @@
   },
   "installPrompt": {
     "installApp": "Installer {name}",
-    "subtitle": "Acces rapide en un clic",
+    "subtitle": "Tous vos restaurants, toujours a portee de main.",
     "install": "Installer",
     "howTo": "Comment ?",
     "close": "Fermer",
-    "iosStep1": "1. Appuyez sur Partager",
-    "iosStep2": "2. Sélectionnez Sur l'écran d'accueil",
+    "iosStep1": "Appuyez sur \"Installer\" ci-dessous",
+    "iosStep2": "Puis selectionnez \"Sur l'ecran d'accueil\"",
     "installOnHomeScreen": "Installer {appName} sur votre ecran d'accueil"
   },
   "contact": {
