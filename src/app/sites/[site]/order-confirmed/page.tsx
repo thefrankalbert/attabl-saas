@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
+import { MobilePaymentSection } from '@/components/tenant/MobilePaymentSection';
 import { logger } from '@/lib/logger';
 
 // ─── Types ───────────────────────────────────────────────
@@ -35,7 +36,7 @@ interface OrderData {
 function OrderConfirmedContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const { slug: tenantSlug, tenantId } = useTenant();
+  const { slug: tenantSlug, tenantId, tenant } = useTenant();
   const t = useTranslations('tenant');
   const { formatDisplayPrice } = useDisplayCurrency();
 
@@ -402,6 +403,16 @@ function OrderConfirmedContent() {
             </div>
           </div>
         </section>
+
+        {/* Mobile money payment options */}
+        {tenantSlug && order.status !== 'delivered' && (
+          <MobilePaymentSection
+            orderId={order.id}
+            enabledMethods={tenant?.enabled_payment_methods ?? []}
+            orderTotal={order.total + order.tip_amount}
+            formatPrice={formatDisplayPrice}
+          />
+        )}
 
         {/* Back to menu */}
         <Link href={menuPath} className="block">

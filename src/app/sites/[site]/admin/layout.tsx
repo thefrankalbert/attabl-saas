@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
@@ -20,6 +21,8 @@ import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
 import { getPlanLimits } from '@/lib/plans/features';
 import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
+import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +140,63 @@ export default async function AdminLayout({
     })
     .filter((t): t is { id: string; name: string; slug: string } => t !== null);
 
+  // Fire-and-forget: update last_active_at and check trial email triggers
+  void (async () => {
+    try {
+      const adminClient = createAdminClient();
+      const now = new Date().toISOString();
+
+      await adminClient.from('tenants').update({ last_active_at: now }).eq('id', tenant.id);
+
+      if (tenant.subscription_status === 'trial' && user?.email) {
+        const activationEvents =
+          (tenant.activation_events as Record<string, string> | undefined) ?? {};
+        const dashboardUrl = `https://${tenantSlug}.attabl.com/admin`;
+
+        const { count: ordersCount } = await adminClient
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id)
+          .then((r) => ({ count: r.count ?? 0 }));
+
+        const { data: ownerUser } = await adminClient
+          .from('admin_users')
+          .select('email')
+          .eq('tenant_id', tenant.id)
+          .eq('role', 'owner')
+          .maybeSingle();
+        const ownerEmail = ownerUser?.email ?? user.email;
+
+        const eventKey = determineTrialEventKey({
+          trialEndsAt: tenant.trial_ends_at,
+          lastActiveAt: tenant.last_active_at ?? null,
+          activationEvents,
+        });
+
+        if (eventKey) {
+          // Atomically claim the event slot - only update if key doesn't exist yet
+          const { data: claimed } = await adminClient
+            .from('tenants')
+            .update({ activation_events: { ...activationEvents, [eventKey]: now } })
+            .eq('id', tenant.id)
+            .filter(`activation_events->>${eventKey}`, 'is', null)
+            .select('id');
+          if (claimed?.length) {
+            await sendTrialEmailForKey(eventKey, {
+              adminEmail: ownerEmail,
+              restaurantName: tenant.name,
+              dashboardUrl,
+              trialEndsAt: tenant.trial_ends_at,
+              ordersCount,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('Admin layout: background activity tracking failed', { err });
+    }
+  })();
+
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
@@ -184,6 +244,7 @@ export default async function AdminLayout({
                           }
                         : null
                     }
+                    tenantSlug={tenantSlug}
                   >
                     <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
                       {children}

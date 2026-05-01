@@ -35,27 +35,43 @@ function requireEnv(key: string): string {
   return v;
 }
 
-// Prix des plans (Price IDs Stripe) - charges depuis les variables d'environnement
-export const STRIPE_PRICES: Record<
+type StripePriceMap = Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, string>
-> = {
-  starter: {
-    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY'),
-    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL'),
-    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY'),
+>;
+
+// Lazy-initialized to avoid requireEnv() crash at import time when env vars are absent
+let _stripePricesInstance: StripePriceMap | null = null;
+
+function getStripePricesInstance(): StripePriceMap {
+  if (!_stripePricesInstance) {
+    _stripePricesInstance = {
+      starter: {
+        monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY'),
+        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL'),
+        yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY'),
+      },
+      pro: {
+        monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY'),
+        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL'),
+        yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY'),
+      },
+      business: {
+        monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY'),
+        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL'),
+        yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY'),
+      },
+    };
+  }
+  return _stripePricesInstance;
+}
+
+// Proxy defers requireEnv() calls until first property access (same pattern as `stripe`)
+export const STRIPE_PRICES: StripePriceMap = new Proxy({} as StripePriceMap, {
+  get(_target, prop: string | symbol) {
+    return Reflect.get(getStripePricesInstance(), prop);
   },
-  pro: {
-    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY'),
-    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL'),
-    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY'),
-  },
-  business: {
-    monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY'),
-    semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL'),
-    yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY'),
-  },
-};
+});
 
 // Helper pour obtenir le Price ID correct
 export function getStripePriceId(

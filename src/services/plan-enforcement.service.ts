@@ -21,6 +21,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxAdmins === -1) return;
+
       const { count, error } = await supabase
         .from('admin_users')
         .select('id', { count: 'exact', head: true })
@@ -31,9 +33,40 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxAdmins !== -1 && (count || 0) >= limits.maxAdmins) {
+      if ((count || 0) >= limits.maxAdmins) {
         throw new ServiceError(
           `Limite atteinte : ${limits.maxAdmins} administrateur(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          'VALIDATION',
+        );
+      }
+    },
+
+    /**
+     * Check if tenant can add more staff members (manager, cashier, chef, waiter)
+     */
+    async canAddStaff(tenant: Tenant): Promise<void> {
+      const limits = getPlanLimits(
+        tenant.subscription_plan,
+        tenant.subscription_status,
+        tenant.trial_ends_at,
+      );
+
+      if (limits.maxStaff === -1) return;
+
+      const { count, error } = await supabase
+        .from('admin_users')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true)
+        .in('role', ['manager', 'cashier', 'chef', 'waiter']);
+
+      if (error) {
+        throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
+      }
+
+      if ((count || 0) >= limits.maxStaff) {
+        throw new ServiceError(
+          `Limite atteinte : ${limits.maxStaff} membre(s) d'equipe maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -49,17 +82,18 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxItems === -1) return;
+
       const { count, error } = await supabase
         .from('menu_items')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .eq('is_available', true);
+        .eq('tenant_id', tenant.id);
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxItems !== -1 && (count || 0) >= limits.maxItems) {
+      if ((count || 0) >= limits.maxItems) {
         throw new ServiceError(
           `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
@@ -77,6 +111,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxVenues === -1) return;
+
       const { count, error } = await supabase
         .from('venues')
         .select('id', { count: 'exact', head: true })
@@ -87,7 +123,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxVenues !== -1 && (count || 0) >= limits.maxVenues) {
+      if ((count || 0) >= limits.maxVenues) {
         throw new ServiceError(
           `Limite atteinte : ${limits.maxVenues} établissement(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
@@ -105,6 +141,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxMenus === -1) return;
+
       const { count, error } = await supabase
         .from('menus')
         .select('id', { count: 'exact', head: true })
@@ -115,7 +153,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxMenus !== -1 && (count || 0) >= limits.maxMenus) {
+      if ((count || 0) >= limits.maxMenus) {
         throw new ServiceError(
           `Limite atteinte : ${limits.maxMenus} carte(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
@@ -133,6 +171,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxCategories === -1) return;
+
       const { count, error } = await supabase
         .from('categories')
         .select('id', { count: 'exact', head: true })
@@ -142,7 +182,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxCategories !== -1 && (count || 0) >= limits.maxCategories) {
+      if ((count || 0) >= limits.maxCategories) {
         throw new ServiceError(
           `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
           'VALIDATION',
@@ -160,17 +200,18 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxItems === -1) return;
+
       const { count, error } = await supabase
         .from('menu_items')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .eq('is_available', true);
+        .eq('tenant_id', tenant.id);
 
       if (error) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxItems !== -1 && (count || 0) + batchSize > limits.maxItems) {
+      if ((count || 0) + batchSize > limits.maxItems) {
         const remaining = limits.maxItems - (count || 0);
         throw new ServiceError(
           `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
@@ -189,6 +230,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         tenant.trial_ends_at,
       );
 
+      if (limits.maxCategories === -1) return;
+
       const { count, error } = await supabase
         .from('categories')
         .select('id', { count: 'exact', head: true })
@@ -198,7 +241,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
       }
 
-      if (limits.maxCategories !== -1 && (count || 0) + batchSize > limits.maxCategories) {
+      if ((count || 0) + batchSize > limits.maxCategories) {
         const remaining = limits.maxCategories - (count || 0);
         throw new ServiceError(
           `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
