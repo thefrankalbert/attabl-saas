@@ -53,7 +53,7 @@ export const ROLE_DESCRIPTIONS: Record<
 // ─── Statuts & Enums ─────────────────────────────────────────
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
-export type PaymentMethod = 'cash' | 'card' | 'mobile_money';
+export type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
@@ -102,6 +102,11 @@ export interface Tenant {
   bar_display_enabled?: boolean;
   // ─── Opening hours ─────────────────────────────────────
   opening_hours?: OpeningHoursMap | null;
+  // ─── Payment methods ───────────────────────────────────
+  enabled_payment_methods?: string[];
+  // ─── Behavioral tracking ───────────────────────────────
+  activation_events?: Record<string, string>;
+  last_active_at?: string | null;
 }
 
 export type OpeningHoursDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';

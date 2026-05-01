@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, ReactNode } from 'react';
 import type { Tenant } from '@/types/admin.types';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import {
@@ -13,39 +13,31 @@ import {
   isSubscriptionUsable,
   PLAN_NAMES,
 } from '@/lib/plans/features';
+import { UpgradePromptModal } from '@/components/tenant/UpgradePromptModal';
 
 // --- Types ---
 
+export type GatedFeature = 'kds' | 'inventory' | 'recipes' | 'reports';
+
 interface SubscriptionContextType {
-  /** The stored plan (starter, pro, business, enterprise) */
   plan: SubscriptionPlan;
-  /** The effective plan considering trial status */
   effectivePlan: SubscriptionPlan;
-  /** Subscription status */
   status: SubscriptionStatus | null;
-  /** Computed limits based on effective plan */
   limits: PlanLimits;
-  /** Check if a boolean feature is available */
   canAccess: (feature: FeatureKey) => boolean;
-  /** Check if a numeric limit is reached */
   isLimitReached: (
     limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxStaff' | 'maxCategories',
     currentCount: number,
   ) => boolean;
-  /** Whether the tenant is in active trial */
   isInTrial: boolean;
-  /** Days remaining in trial (0 if not in trial) */
   daysRemaining: number;
-  /** Whether the account is frozen (trial expired, no plan chosen) */
   isFrozen: boolean;
-  /** Whether payment has failed (grace period) */
   isPastDue: boolean;
-  /** Whether subscription is in a usable state */
   isUsable: boolean;
-  /** Human-readable plan name */
   planName: string;
-  /** Human-readable effective plan name */
   effectivePlanName: string;
+  showUpgradeModal: (feature: GatedFeature) => void;
+  hideUpgradeModal: () => void;
 }
 
 // --- Context ---
@@ -57,9 +49,15 @@ const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 interface SubscriptionProviderProps {
   children: ReactNode;
   tenant: Pick<Tenant, 'subscription_plan' | 'subscription_status' | 'trial_ends_at'> | null;
+  tenantSlug?: string;
 }
 
-export function SubscriptionProvider({ children, tenant }: SubscriptionProviderProps) {
+export function SubscriptionProvider({ children, tenant, tenantSlug }: SubscriptionProviderProps) {
+  const [upgradeFeature, setUpgradeFeature] = useState<GatedFeature | null>(null);
+
+  const showUpgradeModal = useCallback((feature: GatedFeature) => setUpgradeFeature(feature), []);
+  const hideUpgradeModal = useCallback(() => setUpgradeFeature(null), []);
+
   const value = useMemo<SubscriptionContextType>(() => {
     const plan = (tenant?.subscription_plan || 'starter') as SubscriptionPlan;
     const status = (tenant?.subscription_status || null) as SubscriptionStatus | null;
@@ -78,7 +76,6 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
       canAccess: (feature: FeatureKey) => {
         const val = limits[feature];
         if (typeof val === 'boolean') return val;
-        // For numeric limits, canAccess returns true (they have the feature, just capped)
         return true;
       },
       isLimitReached: (
@@ -91,7 +88,9 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
           | 'maxCategories',
         currentCount: number,
       ) => {
-        return currentCount >= limits[limitKey];
+        const limit = limits[limitKey];
+        if (limit === -1) return false;
+        return currentCount >= limit;
       },
       isInTrial: inTrial,
       daysRemaining,
@@ -100,10 +99,31 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
       isUsable: isSubscriptionUsable(status),
       planName: PLAN_NAMES[plan],
       effectivePlanName: PLAN_NAMES[effectivePlan],
+      showUpgradeModal,
+      hideUpgradeModal,
     };
-  }, [tenant?.subscription_plan, tenant?.subscription_status, tenant?.trial_ends_at]);
+  }, [
+    tenant?.subscription_plan,
+    tenant?.subscription_status,
+    tenant?.trial_ends_at,
+    showUpgradeModal,
+    hideUpgradeModal,
+  ]);
 
-  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
+  const checkoutUrl = tenantSlug ? `/sites/${tenantSlug}/admin/subscription` : '/pricing';
+
+  return (
+    <SubscriptionContext.Provider value={value}>
+      {children}
+      {upgradeFeature && (
+        <UpgradePromptModal
+          feature={upgradeFeature}
+          checkoutUrl={checkoutUrl}
+          onClose={hideUpgradeModal}
+        />
+      )}
+    </SubscriptionContext.Provider>
+  );
 }
 
 // --- Hook ---
@@ -111,7 +131,6 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
 export function useSubscription(): SubscriptionContextType {
   const context = useContext(SubscriptionContext);
   if (!context) {
-    // Provide safe defaults when used outside provider (e.g., client-facing pages)
     return {
       plan: 'starter',
       effectivePlan: 'starter',
@@ -126,6 +145,8 @@ export function useSubscription(): SubscriptionContextType {
       isUsable: true,
       planName: 'Starter',
       effectivePlanName: 'Starter',
+      showUpgradeModal: () => {},
+      hideUpgradeModal: () => {},
     };
   }
   return context;

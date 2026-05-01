@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect, useSyncExternalStore } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
   Check,
@@ -28,8 +28,15 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { TcoComparisonTable } from '@/components/marketing/TcoComparisonTable';
+import {
+  initAbVariants,
+  subscribeAbVariants,
+  getAbVariantsSnapshot,
+  getAbVariantsServerSnapshot,
+} from '@/lib/ab-testing';
 
-type BillingPeriod = 'monthly' | 'yearly';
+type BillingPeriod = 'monthly' | 'semiannual' | 'yearly';
 
 type ComparisonValue = boolean | { kind: 'unlimited' } | { kind: 'text'; value: string };
 
@@ -41,7 +48,15 @@ interface FeatureRow {
   enterprise: ComparisonValue;
 }
 
-type CategoryKey = 'menu' | 'checkout' | 'kitchen' | 'stock' | 'analytics' | 'team' | 'support';
+type CategoryKey =
+  | 'menu'
+  | 'checkout'
+  | 'kitchen'
+  | 'stock'
+  | 'analytics'
+  | 'team'
+  | 'support'
+  | 'volumes';
 
 const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] = [
   {
@@ -108,23 +123,23 @@ const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] = [
       {
         labelKey: 'establishments',
         starter: { kind: 'text', value: '1' },
-        pro: { kind: 'text', value: '1' },
+        pro: { kind: 'text', value: '2' },
         business: { kind: 'text', value: '10' },
         enterprise: { kind: 'unlimited' },
       },
       {
         labelKey: 'admins',
         starter: { kind: 'text', value: '1' },
-        pro: { kind: 'text', value: '1' },
-        business: { kind: 'text', value: '99' },
-        enterprise: { kind: 'text', value: '99+' },
+        pro: { kind: 'text', value: '2' },
+        business: { kind: 'unlimited' },
+        enterprise: { kind: 'unlimited' },
       },
       {
         labelKey: 'staff',
         starter: { kind: 'text', value: '3' },
-        pro: { kind: 'text', value: '10' },
-        business: { kind: 'text', value: '999' },
-        enterprise: { kind: 'text', value: '999+' },
+        pro: { kind: 'text', value: '15' },
+        business: { kind: 'unlimited' },
+        enterprise: { kind: 'unlimited' },
       },
     ],
   },
@@ -149,6 +164,32 @@ const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] = [
       },
     ],
   },
+  {
+    key: 'volumes',
+    features: [
+      {
+        labelKey: 'monthlyOrders',
+        starter: { kind: 'text', value: '500' },
+        pro: { kind: 'text', value: '3 000' },
+        business: { kind: 'text', value: '20 000' },
+        enterprise: { kind: 'unlimited' },
+      },
+      {
+        labelKey: 'menus',
+        starter: { kind: 'unlimited' },
+        pro: { kind: 'unlimited' },
+        business: { kind: 'unlimited' },
+        enterprise: { kind: 'unlimited' },
+      },
+      {
+        labelKey: 'items',
+        starter: { kind: 'unlimited' },
+        pro: { kind: 'unlimited' },
+        business: { kind: 'unlimited' },
+        enterprise: { kind: 'unlimited' },
+      },
+    ],
+  },
 ];
 
 const FAQ_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'] as const;
@@ -162,7 +203,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         type="button"
         variant="ghost"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left h-auto px-0 justify-between hover:bg-transparent"
+        className="w-full flex items-center justify-between py-5 text-left h-auto px-0 hover:bg-transparent"
       >
         <span className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
           {question}
@@ -230,13 +271,35 @@ export default function PricingPage() {
   const locale = useLocale();
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
+  const abVariants = useSyncExternalStore(
+    subscribeAbVariants,
+    getAbVariantsSnapshot,
+    getAbVariantsServerSnapshot,
+  );
+  const showSemiannual = abVariants.toggle === '3';
+  const effectivePeriod: BillingPeriod =
+    !showSemiannual && period === 'semiannual' ? 'monthly' : period;
+
+  // Initialise AB cookies once on mount; notifies the store, which triggers
+  // useSyncExternalStore to re-read. No setState called here.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    initAbVariants({
+      trial: params.get('ab_trial'),
+      toggle: params.get('ab_toggle'),
+    });
+  }, []);
+
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat(locale).format(price);
   };
 
-  const starterPrice = period === 'yearly' ? 31200 : 39000;
-  const proPrice = period === 'yearly' ? 63200 : 79000;
-  const businessPrice = period === 'yearly' ? 119200 : 149000;
+  const starterPrice =
+    effectivePeriod === 'yearly' ? 31200 : effectivePeriod === 'semiannual' ? 33150 : 39000;
+  const proPrice =
+    effectivePeriod === 'yearly' ? 63200 : effectivePeriod === 'semiannual' ? 67150 : 79000;
+  const businessPrice =
+    effectivePeriod === 'yearly' ? 119200 : effectivePeriod === 'semiannual' ? 126650 : 149000;
 
   const priceSuffix = t('priceSuffix');
 
@@ -313,20 +376,38 @@ export default function PricingPage() {
                 onClick={() => setPeriod('monthly')}
                 className={cn(
                   'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
-                  period === 'monthly'
+                  effectivePeriod === 'monthly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
                 )}
               >
                 {t('billing.monthly')}
               </Button>
+              {showSemiannual && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setPeriod('semiannual')}
+                  className={cn(
+                    'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                    effectivePeriod === 'semiannual'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                      : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
+                  )}
+                >
+                  {t('billing.semiannual')}
+                  <span className="ml-1.5 text-xs text-green-600 font-semibold">
+                    {t('billing.semiannualDiscount')}
+                  </span>
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setPeriod('yearly')}
                 className={cn(
                   'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
-                  period === 'yearly'
+                  effectivePeriod === 'yearly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
                 )}
@@ -337,6 +418,9 @@ export default function PricingPage() {
                 </span>
               </Button>
             </div>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-3">
+              {t('billing.noCommitment')}
+            </p>
           </div>
         </div>
       </section>
@@ -351,8 +435,14 @@ export default function PricingPage() {
             subtitle={t('plans.starter.subtitle')}
             price={{
               current: `${formatPrice(starterPrice)} ${priceSuffix}`,
-              original: period === 'yearly' ? `${formatPrice(39000)} ${priceSuffix}` : undefined,
-              discount: period === 'yearly' ? t('billing.yearlyDiscount') : undefined,
+              original:
+                effectivePeriod !== 'monthly' ? `${formatPrice(39000)} ${priceSuffix}` : undefined,
+              discount:
+                effectivePeriod === 'yearly'
+                  ? t('billing.yearlyDiscount')
+                  : effectivePeriod === 'semiannual'
+                    ? t('billing.semiannualDiscount')
+                    : undefined,
             }}
             benefits={[
               { text: t('plans.starter.benefits.b1'), icon: UtensilsCrossed },
@@ -382,8 +472,14 @@ export default function PricingPage() {
             popular
             price={{
               current: `${formatPrice(proPrice)} ${priceSuffix}`,
-              original: period === 'yearly' ? `${formatPrice(79000)} ${priceSuffix}` : undefined,
-              discount: period === 'yearly' ? t('billing.yearlyDiscount') : undefined,
+              original:
+                effectivePeriod !== 'monthly' ? `${formatPrice(79000)} ${priceSuffix}` : undefined,
+              discount:
+                effectivePeriod === 'yearly'
+                  ? t('billing.yearlyDiscount')
+                  : effectivePeriod === 'semiannual'
+                    ? t('billing.semiannualDiscount')
+                    : undefined,
             }}
             benefits={[
               { text: t('plans.pro.benefits.b1'), icon: Star },
@@ -417,8 +513,14 @@ export default function PricingPage() {
             subtitle={t('plans.business.subtitle')}
             price={{
               current: `${formatPrice(businessPrice)} ${priceSuffix}`,
-              original: period === 'yearly' ? `${formatPrice(149000)} ${priceSuffix}` : undefined,
-              discount: period === 'yearly' ? t('billing.yearlyDiscount') : undefined,
+              original:
+                effectivePeriod !== 'monthly' ? `${formatPrice(149000)} ${priceSuffix}` : undefined,
+              discount:
+                effectivePeriod === 'yearly'
+                  ? t('billing.yearlyDiscount')
+                  : effectivePeriod === 'semiannual'
+                    ? t('billing.semiannualDiscount')
+                    : undefined,
             }}
             benefits={[
               { text: t('plans.business.benefits.b1'), icon: Building2 },
@@ -471,6 +573,9 @@ export default function PricingPage() {
           />
         </div>
       </section>
+
+      {/* TCO Comparison */}
+      <TcoComparisonTable />
 
       {/* Feature Comparison Grid */}
       <section className="bg-neutral-50 dark:bg-neutral-900 py-20">

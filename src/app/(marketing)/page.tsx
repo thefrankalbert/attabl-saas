@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Attabl - Petit comptoir ou grande enseigne. Marquez votre territoire.',
     description:
-      "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Essai gratuit 14 jours.",
+      'Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Essai gratuit 14 jours.',
     type: 'website',
   },
 };
