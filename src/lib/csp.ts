@@ -14,12 +14,12 @@ export function buildCspHeader(nonce: string): string {
   const devScriptExtras = isDev ? " 'unsafe-eval'" : '';
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'${devScriptExtras} https://*.stripe.com https://*.sentry.io`,
+    `script-src 'self' 'nonce-${nonce}'${devScriptExtras} https://*.stripe.com https://*.sentry.io https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net https://images.unsplash.com",
     "font-src 'self'",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io",
-    'frame-src https://*.stripe.com',
+    'frame-src https://*.stripe.com https://challenges.cloudflare.com',
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",
