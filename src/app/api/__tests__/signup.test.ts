@@ -51,6 +51,7 @@ function validBody() {
     restaurantName: 'Le Petit Bistrot',
     email: 'owner@bistrot.com',
     password: 'securePass123',
+    website: '',
   };
 }
 
