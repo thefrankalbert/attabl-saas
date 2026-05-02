@@ -8,6 +8,8 @@ import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
+import { isHoneypotTriggered } from '@/lib/honeypot';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
 export async function POST(request: Request) {
   try {
@@ -32,6 +34,21 @@ export async function POST(request: Request) {
       body = await request.json();
     } catch {
       return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
+    }
+
+    // 2.5 Honeypot check - silent bot rejection
+    if (isHoneypotTriggered(body)) {
+      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
+    }
+
+    // 2.6 Turnstile verification
+    const cfToken =
+      typeof (body as Record<string, unknown>).cfToken === 'string'
+        ? ((body as Record<string, unknown>).cfToken as string)
+        : '';
+    const turnstileOk = await verifyTurnstileToken(cfToken, ip);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
     }
 
     const parseResult = signupSchema.safeParse(body);
