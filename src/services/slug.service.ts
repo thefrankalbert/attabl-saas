@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const RESERVED_SLUGS = new Set([
+export const RESERVED_SLUGS = new Set([
   'admin',
   'api',
   'auth',
@@ -118,6 +118,7 @@ export function createSlugService(supabase: SupabaseClient) {
      * Checks whether a specific slug is available (not taken in the tenants table).
      */
     async checkSlugAvailable(slug: string): Promise<boolean> {
+      if (RESERVED_SLUGS.has(slug)) return false;
       const { data } = await supabase.from('tenants').select('slug').eq('slug', slug).maybeSingle();
 
       return data === null;

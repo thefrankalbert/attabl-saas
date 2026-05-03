@@ -151,5 +151,14 @@ describe('SlugService', () => {
       const available = await service.checkSlugAvailable('kfc-plateau');
       expect(available).toBe(false);
     });
+
+    it('should return false for reserved slugs without querying the database', async () => {
+      const supabase = createMockSupabase(false, null);
+      const service = createSlugService(supabase);
+
+      const available = await service.checkSlugAvailable('admin');
+      expect(available).toBe(false);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
   });
 });

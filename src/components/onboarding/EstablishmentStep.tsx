@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
+import { RESERVED_SLUGS } from '@/services/slug.service';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 type CheckResult = 'idle' | 'available' | 'taken';
@@ -56,7 +57,8 @@ function SlugPreview({
   const [checkResult, setCheckResult] = useState<CheckResult>('idle');
   const abortRef = useRef<AbortController | null>(null);
 
-  const baseSlug = normalizeToSlug(tenantName);
+  let baseSlug = normalizeToSlug(tenantName);
+  if (RESERVED_SLUGS.has(baseSlug)) baseSlug = `${baseSlug}-restaurant`;
   const normalizedNickname = normalizeToSlug(nickname);
   const candidateSlug = normalizedNickname ? `${baseSlug}-${normalizedNickname}` : baseSlug;
   const isActive = candidateSlug.length >= 3;
