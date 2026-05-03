@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { createTableConfigService } from './table-config.service';
+import { createSlugService } from './slug.service';
 import { logger } from '@/lib/logger';
 
 interface TableZoneData {
@@ -50,6 +51,7 @@ interface OnboardingCompleteData {
   currency?: string;
   language?: string;
   tenantSlug?: string;
+  tenantNickname?: string;
   menuItems?: MenuItem[];
 }
 
@@ -93,6 +95,8 @@ interface OnboardingDraft {
   qrDescription?: string;
   // Tenant name (editable during onboarding)
   tenantName?: string;
+  tenantNickname?: string;
+  tenantSlug?: string;
 }
 
 interface OnboardingState {
@@ -205,13 +209,21 @@ export function createOnboardingService(supabase: SupabaseClient) {
           .eq('tenant_id', tenantId);
 
         if (categoryCount && categoryCount > 0) {
-          return { slug: existingTenant.slug || data.tenantSlug };
+          return { slug: existingTenant.slug ?? data.tenantSlug };
         }
         // If onboarding_completed but no categories, fall through to create them
       }
 
+      // Compute authoritative slug server-side — never trust the client-provided value
+      const slugService = createSlugService(supabase);
+      const resolvedSlug = await slugService.generateUniqueSlug(
+        data.tenantName || 'restaurant',
+        data.tenantNickname,
+      );
+
       // 1. Final tenant update + mark progress completed - in parallel
       const tenantUpdate: Record<string, unknown> = {
+        slug: resolvedSlug,
         establishment_type: data.establishmentType,
         address: data.address,
         city: data.city,
@@ -383,7 +395,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
 
       await Promise.all([tablePromise, menuPromise]);
 
-      return { slug: data.tenantSlug };
+      return { slug: resolvedSlug };
     },
 
     /**

@@ -4,18 +4,27 @@ import { createSlugService } from '../slug.service';
 /**
  * Creates a mock Supabase client with configurable responses.
  */
-function createMockSupabase(slugExists: boolean = false) {
+function createMockSupabase(
+  slugExists: boolean = false,
+  maybeSingleResult: { slug: string } | null = null,
+) {
   const mockLike = vi.fn().mockResolvedValue({
     data: slugExists ? [{ slug: 'mon-restaurant' }] : [],
     error: null,
   });
 
-  const mockSelect = vi.fn().mockReturnValue({ like: mockLike });
+  const mockMaybeSingle = vi.fn().mockResolvedValue({
+    data: maybeSingleResult,
+    error: null,
+  });
+
+  const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+  const mockSelect = vi.fn().mockReturnValue({ like: mockLike, eq: mockEq });
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
 
   return {
     from: mockFrom,
-    _mocks: { mockFrom, mockSelect, mockLike },
+    _mocks: { mockFrom, mockSelect, mockLike, mockEq, mockMaybeSingle },
   } as unknown as Parameters<typeof createSlugService>[0];
 }
 
@@ -90,6 +99,66 @@ describe('SlugService', () => {
       await service.generateUniqueSlug('Test');
 
       expect(supabase.from).toHaveBeenCalledWith('tenants');
+    });
+
+    it('should use name-nickname pattern when nickname is provided', async () => {
+      const supabase = createMockSupabase(false);
+      const service = createSlugService(supabase);
+
+      const slug = await service.generateUniqueSlug('KFC', 'plateau');
+      expect(slug).toBe('kfc-plateau');
+    });
+
+    it('should normalize the nickname before appending', async () => {
+      const supabase = createMockSupabase(false);
+      const service = createSlugService(supabase);
+
+      const slug = await service.generateUniqueSlug('KFC', 'Centre Ville');
+      expect(slug).toBe('kfc-centre-ville');
+    });
+
+    it('should skip numeric fallback when nickname is provided', async () => {
+      const supabase = createMockSupabase(true);
+      const service = createSlugService(supabase);
+
+      const slug = await service.generateUniqueSlug('Mon Restaurant', 'dakar');
+      // With nickname, always returns name-nickname regardless of conflict
+      expect(slug).toBe('mon-restaurant-dakar');
+    });
+
+    it('should ignore blank nickname and use numeric fallback', async () => {
+      const supabase = createMockSupabase(true);
+      const service = createSlugService(supabase);
+
+      const slug = await service.generateUniqueSlug('Mon Restaurant', '   ');
+      expect(slug).toBe('mon-restaurant-2');
+    });
+  });
+
+  describe('checkSlugAvailable', () => {
+    it('should return true when slug is not in tenants table', async () => {
+      const supabase = createMockSupabase(false, null);
+      const service = createSlugService(supabase);
+
+      const available = await service.checkSlugAvailable('kfc-plateau');
+      expect(available).toBe(true);
+    });
+
+    it('should return false when slug exists in tenants table', async () => {
+      const supabase = createMockSupabase(false, { slug: 'kfc-plateau' });
+      const service = createSlugService(supabase);
+
+      const available = await service.checkSlugAvailable('kfc-plateau');
+      expect(available).toBe(false);
+    });
+
+    it('should return false for reserved slugs without querying the database', async () => {
+      const supabase = createMockSupabase(false, null);
+      const service = createSlugService(supabase);
+
+      const available = await service.checkSlugAvailable('admin');
+      expect(available).toBe(false);
+      expect(supabase.from).not.toHaveBeenCalled();
     });
   });
 });

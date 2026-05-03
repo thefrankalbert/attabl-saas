@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const RESERVED_SLUGS = new Set([
+export const RESERVED_SLUGS = new Set([
   'admin',
   'api',
   'auth',
@@ -67,14 +67,23 @@ export function createSlugService(supabase: SupabaseClient) {
 
     /**
      * Generates a unique slug by checking the database.
-     * If the base slug already exists, appends a random 3-digit number.
+     * If nickname is provided, slug = normalize(name)-normalize(nickname) — no numeric fallback.
+     * If no nickname and the base slug is taken, appends -2, -3, etc.
      */
-    async generateUniqueSlug(name: string): Promise<string> {
+    async generateUniqueSlug(name: string, nickname?: string): Promise<string> {
       let baseSlug = this.normalizeToSlug(name);
 
       // If the slug is reserved, append a suffix to avoid conflicts with system routes
       if (RESERVED_SLUGS.has(baseSlug)) {
         baseSlug = `${baseSlug}-restaurant`;
+      }
+
+      // When a nickname is provided, use name-nickname as the slug (user chose it explicitly)
+      if (nickname) {
+        const normalizedNickname = this.normalizeToSlug(nickname);
+        if (normalizedNickname) {
+          return `${baseSlug}-${normalizedNickname}`;
+        }
       }
 
       // Check for existing slugs with this base (including numbered variants)
@@ -103,6 +112,16 @@ export function createSlugService(supabase: SupabaseClient) {
 
       // Fallback: use timestamp for guaranteed uniqueness
       return `${baseSlug}-${Date.now().toString(36)}`;
+    },
+
+    /**
+     * Checks whether a specific slug is available (not taken in the tenants table).
+     */
+    async checkSlugAvailable(slug: string): Promise<boolean> {
+      if (RESERVED_SLUGS.has(slug)) return false;
+      const { data } = await supabase.from('tenants').select('slug').eq('slug', slug).maybeSingle();
+
+      return data === null;
     },
   };
 }

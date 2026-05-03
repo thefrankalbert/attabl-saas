@@ -107,6 +107,7 @@ export interface OnboardingData {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
+  tenantNickname: string;
 }
 
 // ─── Step Error Boundary ──────────────────────────────────────────────────────
@@ -185,6 +186,7 @@ export default function OnboardingPage() {
     tenantId: '',
     tenantSlug: '',
     tenantName: '',
+    tenantNickname: '',
   });
 
   // ─── Derived values ────────────────────────────────────────────────────────
@@ -418,16 +420,23 @@ export default function OnboardingPage() {
         body: JSON.stringify({ data }),
       });
 
+      const resData = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        slug?: string;
+        error?: string;
+        details?: string[];
+      };
+
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        if (errData.details && Array.isArray(errData.details)) {
-          throw new Error(`${t('validationFailed')}: ${errData.details.join(', ')}`);
+        if (resData.details && Array.isArray(resData.details)) {
+          throw new Error(`${t('validationFailed')}: ${resData.details.join(', ')}`);
         }
-        throw new Error(errData.error || t('completeError'));
+        throw new Error(resData.error || t('completeError'));
       }
 
       const origin = window.location.origin;
-      window.location.href = `${origin}/sites/${data.tenantSlug}/admin`;
+      const slug = resData.slug ?? data.tenantSlug;
+      window.location.href = `${origin}/sites/${slug}/admin`;
     } catch (err) {
       const message = err instanceof Error ? err.message : t('completeError');
       setError(message);
