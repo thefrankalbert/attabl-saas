@@ -4,7 +4,7 @@
  * All colors reference CSS custom properties or use OKLCH for perceptual uniformity.
  */
 
-// ─── Order Status Configuration ─────────────────────────
+// --- Order Status Configuration -------------------------
 // Uses semantic CSS variables instead of arbitrary Tailwind classes.
 
 export type OrderStatus =
@@ -61,7 +61,7 @@ export const STATUS_STYLES: Record<OrderStatus, StatusStyle> = {
   },
 };
 
-// ─── Chart Colors (OKLCH equidistant) ───────────────────
+// --- Chart Colors (OKLCH equidistant) -------------------
 // Generates N perceptually uniform colors for charts.
 // All at the same lightness and chroma, evenly spaced in hue.
 

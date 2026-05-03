@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { logger } from '@/lib/logger';
 import { Table } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 type ScanStatus = 'loading' | 'scanning' | 'success' | 'error';
 
 export interface QRScanResult {
@@ -26,7 +26,7 @@ interface QRScannerProps {
   tables?: Table[];
 }
 
-// ─── Module preloading ──────────────────────────────────
+// --- Module preloading ----------------------------------
 let html5QrcodeModule: typeof import('html5-qrcode') | null = null;
 export const preloadScanner = () => {
   if (!html5QrcodeModule) {
@@ -36,7 +36,7 @@ export const preloadScanner = () => {
   }
 };
 
-// ─── Parse QR code data ─────────────────────────────────
+// --- Parse QR code data ---------------------------------
 function parseQRData(decodedText: string): QRScanResult {
   const cleanText = decodedText.trim().replace(/\s+/g, '');
 
@@ -67,7 +67,7 @@ function parseQRData(decodedText: string): QRScanResult {
   };
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 export default function QRScanner({
   isOpen,
   onClose,

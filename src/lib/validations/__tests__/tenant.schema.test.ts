@@ -4,7 +4,7 @@ import { updateTenantSettingsSchema } from '../tenant.schema';
 describe('updateTenantSettingsSchema', () => {
   const validInput = {
     name: 'Mon Restaurant',
-    primaryColor: '#CCFF00',
+    primaryColor: '#006AFF',
     secondaryColor: '#000000',
   };
 
@@ -106,7 +106,7 @@ describe('updateTenantSettingsSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  // ─── Idle timeout tests ───────────────────────────────
+  // --- Idle timeout tests -------------------------------
 
   it('should accept valid idle timeout minutes', () => {
     const result = updateTenantSettingsSchema.safeParse({

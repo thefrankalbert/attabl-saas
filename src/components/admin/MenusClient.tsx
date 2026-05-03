@@ -75,7 +75,7 @@ export default function MenusClient({
     loadMenus,
   } = useMenusData({ tenantId, initialMenus, confirm: confirmWithMessage });
 
-  // ─── Selection ────────────────────────────────────────
+  // --- Selection ----------------------------------------
 
   const toggleSelect = useCallback((menuId: string) => {
     setSelectedIds((prev) => {
@@ -92,7 +92,7 @@ export default function MenusClient({
     setSelectedIds(new Set());
   };
 
-  // ─── Modal openers ─────────────────────────────────────
+  // --- Modal openers -------------------------------------
 
   const openNewMenuModal = useCallback((parentId?: string) => {
     if (parentId) {
@@ -112,7 +112,7 @@ export default function MenusClient({
     setShowModal(true);
   }, []);
 
-  // ─── Form submit handler ──────────────────────────────
+  // --- Form submit handler ------------------------------
 
   const handleFormSubmit = async (data: MenuFormData) => {
     try {

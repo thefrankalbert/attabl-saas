@@ -12,11 +12,11 @@ import {
 import { getSoundFile, DEFAULT_SOUND_ID } from '@/lib/sounds/sound-library';
 import { logger } from '@/lib/logger';
 
-// ─── LocalStorage keys ──────────────────────────────────
+// --- LocalStorage keys ----------------------------------
 const LS_KEY = 'attabl_notification_sound';
 const LS_ENABLED_KEY = 'attabl_notification_enabled';
 
-// ─── Shared AudioContext singleton ──────────────────────
+// --- Shared AudioContext singleton ----------------------
 let sharedAudioContext: AudioContext | null = null;
 let audioContextUnlocked = false;
 
@@ -117,7 +117,7 @@ function playFallbackBeep(): void {
   }
 }
 
-// ─── Context types ──────────────────────────────────────
+// --- Context types --------------------------------------
 
 interface SoundContextValue {
   /** Whether sound is enabled */
@@ -138,7 +138,7 @@ interface SoundContextValue {
 
 const SoundContext = createContext<SoundContextValue | null>(null);
 
-// ─── Provider ───────────────────────────────────────────
+// --- Provider -------------------------------------------
 
 interface SoundProviderProps {
   children: ReactNode;
@@ -297,7 +297,7 @@ export function SoundProvider({ children, notificationSoundId, tenantId }: Sound
   );
 }
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook -----------------------------------------------
 
 /**
  * Access the global sound context. Must be used within a SoundProvider.

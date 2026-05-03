@@ -88,7 +88,7 @@ describe('InventoryService', () => {
     service = createInventoryService(asSupabase(supabase));
   });
 
-  // ─── Ingredients ──────────────────────────────────────
+  // --- Ingredients --------------------------------------
 
   describe('getIngredients', () => {
     it('should return list of ingredients for tenant', async () => {
@@ -211,7 +211,7 @@ describe('InventoryService', () => {
     });
   });
 
-  // ─── Recipes ──────────────────────────────────────────
+  // --- Recipes ------------------------------------------
 
   describe('getRecipesForItem', () => {
     it('should return recipes with ingredient details (joined)', async () => {
@@ -286,7 +286,7 @@ describe('InventoryService', () => {
     });
   });
 
-  // ─── Stock Operations ─────────────────────────────────
+  // --- Stock Operations ---------------------------------
 
   describe('destockOrder', () => {
     it('should call RPC destock_order and return count', async () => {
@@ -413,7 +413,7 @@ describe('InventoryService', () => {
     });
   });
 
-  // ─── Stock Status & Movements ─────────────────────────
+  // --- Stock Status & Movements -------------------------
 
   describe('getStockStatus', () => {
     it('should call RPC get_stock_status', async () => {

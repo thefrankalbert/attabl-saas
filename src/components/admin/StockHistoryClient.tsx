@@ -26,7 +26,7 @@ import type { StockMovement, MovementType } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
-// ─── Movement type visual config ─────────────────────────
+// --- Movement type visual config -------------------------
 const MOVEMENT_STYLES: Record<
   MovementType,
   { labelKey: string; icon: typeof Package; bg: string; text: string; dot: string }
@@ -68,7 +68,7 @@ const MOVEMENT_STYLES: Record<
   },
 };
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 interface StockHistoryClientProps {
   tenantId: string;
@@ -266,7 +266,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       <div className="h-full flex flex-col overflow-hidden">
         <AnalyseTabs />
 
-        {/* ── Header row ── */}
+        {/* -- Header row -- */}
         <div className="shrink-0 space-y-4">
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <div className="flex items-center gap-3 shrink-0">
@@ -289,7 +289,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             </div>
           </div>
 
-          {/* ── Filter pills ── */}
+          {/* -- Filter pills -- */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             {movementFilters.map((f) => {
               const isActive = filterType === f.value;
@@ -317,7 +317,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             })}
           </div>
 
-          {/* ── Quick stats strip ── */}
+          {/* -- Quick stats strip -- */}
           <div className="grid grid-cols-3 gap-2">
             <div className="flex items-center gap-2.5 px-3 py-2 bg-status-success-bg border border-status-success/10 rounded-lg">
               <ArrowUpRight className="w-4 h-4 text-status-success shrink-0" />
@@ -355,7 +355,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           </div>
         </div>
 
-        {/* ── Data area ── */}
+        {/* -- Data area -- */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">

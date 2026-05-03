@@ -25,7 +25,7 @@
   --color-app-text-secondary: var(--app-text-secondary);
   --color-app-text-muted: var(--app-text-muted);
 
-  /* Accent (lime/green) */
+  /* Accent (Square Blue) */
   --color-accent: var(--app-accent);
   --color-accent-hover: var(--app-accent-hover);
   --color-accent-muted: var(--app-accent-muted);
@@ -62,7 +62,7 @@
   --color-status-error-bg: var(--app-status-error-bg);
   --color-status-info-bg: var(--app-status-info-bg);
 
-  /* Legacy compat — shadcn/ui + marketing pages still reference these */
+  /* Legacy compat -- shadcn/ui + marketing pages still reference these */
   --color-background: var(--app-bg);
   --color-foreground: var(--app-text);
   --color-muted: var(--app-elevated);
@@ -74,10 +74,21 @@
   --color-brand-green-dark: var(--app-accent-hover);
   --color-brand-green-light: var(--app-accent-muted);
 
-  /* Typography — System font stack */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --font-display:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  /* Square Design System tokens (09-design-system.md) */
+  --square-primary: #006aff;
+  --square-primary-hover: #0055cc;
+  --square-text: #1a1a1a;
+  --square-surface: #f7f6f5;
+  --square-border: #d9d9d9;
+
+  /* Radius scale -- Square: 4px buttons / 8px cards / 12px modals */
+  --radius: 0.25rem;
+  --radius-card: 0.5rem;
+  --radius-card-lg: 0.75rem;
+
+  /* Typography -- Square-aligned font stack (Inter = Square Sans Text VF open-source equivalent) */
+  --font-sans: var(--font-inter), 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: var(--font-sora), 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
 
   /* Accordion animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -118,22 +129,22 @@
   --app-text-secondary: #a8a29e;
   --app-text-muted: #6b6560;
 
-  --app-accent: #c2f542;
-  --app-accent-hover: #d1ff5c;
-  --app-accent-muted: rgba(194, 245, 66, 0.12);
-  --app-accent-text: #0a0a0a;
+  --app-accent: #006aff;
+  --app-accent-hover: #0055cc;
+  --app-accent-muted: rgba(0, 106, 255, 0.12);
+  --app-accent-text: #ffffff;
 
-  /* Accent ramp -- lime #c2f542 */
-  --accent-50: #f7ffe0;
-  --accent-100: #edfbc7;
-  --accent-200: #dcf78f;
-  --accent-300: #c2f542;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #6aa512;
-  --accent-700: #527f0e;
-  --accent-800: #3d5f0a;
-  --accent-900: #273f07;
+  /* Accent ramp -- Square Blue #006AFF */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #4fa3ff;
+  --accent-500: #006aff;
+  --accent-600: #0055cc;
+  --accent-700: #003d99;
+  --accent-800: #002966;
+  --accent-900: #001433;
 
   --app-status-success-bg: rgba(5, 150, 105, 0.15);
   --app-status-warning-bg: rgba(217, 119, 6, 0.15);
@@ -164,22 +175,22 @@
   --app-text-secondary: #57534e;
   --app-text-muted: #a8a29e;
 
-  --app-accent: #65a30d;
-  --app-accent-hover: #4d7c0f;
-  --app-accent-muted: rgba(101, 163, 13, 0.12);
+  --app-accent: #006aff;
+  --app-accent-hover: #0055cc;
+  --app-accent-muted: rgba(0, 106, 255, 0.12);
   --app-accent-text: #ffffff;
 
-  /* Accent ramp (light mode) -- lime */
-  --accent-50: #f7fee7;
-  --accent-100: #ecfccb;
-  --accent-200: #d9f99d;
-  --accent-300: #bef264;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #65a30d;
-  --accent-700: #4d7c0f;
-  --accent-800: #3f6212;
-  --accent-900: #365314;
+  /* Accent ramp (light mode) -- Square Blue #006AFF */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #4fa3ff;
+  --accent-500: #006aff;
+  --accent-600: #0055cc;
+  --accent-700: #003d99;
+  --accent-800: #002966;
+  --accent-900: #001433;
 
   --app-status-success-bg: #ecfdf5;
   --app-status-warning-bg: #fffbeb;
@@ -204,21 +215,21 @@
     --app-text-secondary: #57534e;
     --app-text-muted: #a8a29e;
 
-    --app-accent: #65a30d;
-    --app-accent-hover: #4d7c0f;
-    --app-accent-muted: rgba(101, 163, 13, 0.12);
+    --app-accent: #006aff;
+    --app-accent-hover: #0055cc;
+    --app-accent-muted: rgba(0, 106, 255, 0.12);
     --app-accent-text: #ffffff;
 
-    --accent-50: #f7fee7;
-    --accent-100: #ecfccb;
-    --accent-200: #d9f99d;
-    --accent-300: #bef264;
-    --accent-400: #a3e635;
-    --accent-500: #84cc16;
-    --accent-600: #65a30d;
-    --accent-700: #4d7c0f;
-    --accent-800: #3f6212;
-    --accent-900: #365314;
+    --accent-50: #eff6ff;
+    --accent-100: #dbeafe;
+    --accent-200: #bfdbfe;
+    --accent-300: #93c5fd;
+    --accent-400: #4fa3ff;
+    --accent-500: #006aff;
+    --accent-600: #0055cc;
+    --accent-700: #003d99;
+    --accent-800: #002966;
+    --accent-900: #001433;
 
     --app-status-success-bg: #ecfdf5;
     --app-status-warning-bg: #fffbeb;
@@ -257,12 +268,12 @@
   --app-text-secondary: #737373 !important;
   --app-text-muted: #b0b0b0 !important;
 
-  --app-accent: #06c167 !important;
-  --app-accent-hover: #05a557 !important;
-  --app-accent-muted: #e6f9f0 !important;
+  --app-accent: #006aff !important;
+  --app-accent-hover: #0055cc !important;
+  --app-accent-muted: rgba(0, 106, 255, 0.1) !important;
   --app-accent-text: #ffffff !important;
 
-  --app-status-success-bg: #e6f9f0 !important;
+  --app-status-success-bg: #ecfdf5 !important;
   --app-status-warning-bg: #fff8e1 !important;
   --app-status-error-bg: #ffebee !important;
   --app-status-info-bg: #e6f9f0 !important;
@@ -297,9 +308,9 @@
     --app-text: #1a1a1a !important;
     --app-text-secondary: #737373 !important;
     --app-text-muted: #b0b0b0 !important;
-    --app-accent: #06c167 !important;
-    --app-accent-hover: #05a557 !important;
-    --app-accent-muted: #e6f9f0 !important;
+    --app-accent: #006aff !important;
+    --app-accent-hover: #0055cc !important;
+    --app-accent-muted: rgba(0, 106, 255, 0.1) !important;
     --app-accent-text: #ffffff !important;
     color-scheme: light !important;
     background-color: #ffffff !important;
@@ -321,31 +332,23 @@ body {
     color 0.2s ease;
 }
 
-/* Base Light Mode Utilities */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+/* Square hover overlay pattern -- apply .btn-square on primary buttons */
+.btn-square {
+  position: relative;
+  overflow: hidden;
 }
-
-.animate-gradient-slow {
-  background-size: 200% 200%;
-  animation: gradient-move 8s ease infinite;
+.btn-square::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--square-primary-hover, #0055cc);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
 }
-
-@keyframes gradient-move {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+.btn-square:hover::before,
+.btn-square:focus-visible::before {
+  opacity: 1;
 }
 
 .scroll-mask {

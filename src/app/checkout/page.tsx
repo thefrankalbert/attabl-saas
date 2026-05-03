@@ -89,7 +89,7 @@ function CheckoutContent() {
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function CheckoutPage() {
     <Suspense
       fallback={
         <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
         </div>
       }
     >

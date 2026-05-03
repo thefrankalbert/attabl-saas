@@ -369,13 +369,13 @@ export default function PricingPage() {
             </p>
 
             {/* Billing toggle */}
-            <div className="inline-flex bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 mt-8">
+            <div className="inline-flex bg-neutral-100 dark:bg-neutral-800 rounded-[var(--radius-card)] p-1 mt-8">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setPeriod('monthly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                  'px-5 text-sm font-medium transition-all rounded h-auto min-h-[44px]',
                   effectivePeriod === 'monthly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
@@ -389,7 +389,7 @@ export default function PricingPage() {
                   variant="ghost"
                   onClick={() => setPeriod('semiannual')}
                   className={cn(
-                    'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                    'px-5 text-sm font-medium transition-all rounded h-auto min-h-[44px]',
                     effectivePeriod === 'semiannual'
                       ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                       : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
@@ -406,7 +406,7 @@ export default function PricingPage() {
                 variant="ghost"
                 onClick={() => setPeriod('yearly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
+                  'px-5 text-sm font-medium transition-all rounded h-auto min-h-[44px]',
                   effectivePeriod === 'yearly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',

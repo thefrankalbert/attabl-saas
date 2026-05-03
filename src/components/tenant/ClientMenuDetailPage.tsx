@@ -27,11 +27,11 @@ const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   loading: () => <div className="h-64 animate-pulse rounded-lg bg-[#F6F6F6]" />,
 });
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 // formatPrice is now handled by useDisplayCurrency().formatDisplayPrice
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ClientMenuDetailPageProps {
   tenant: Tenant;
@@ -48,7 +48,7 @@ interface ClientMenuDetailPageProps {
   tables: Table[];
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function ClientMenuDetailPage({
   tenant,
@@ -73,7 +73,7 @@ export default function ClientMenuDetailPage({
   const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  // ─── State ─────────────────────────────────────────────
+  // --- State ---------------------------------------------
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
@@ -133,7 +133,7 @@ export default function ClientMenuDetailPage({
   type DietFilter = 'all' | 'vegetarian' | 'spicy' | 'under';
   const [dietFilter, setDietFilter] = useState<DietFilter>('all');
 
-  // ─── Table from localStorage ────────────────────────────
+  // --- Table from localStorage ----------------------------
   useEffect(() => {
     if (!initialTable && typeof window !== 'undefined') {
       const saved = localStorage.getItem(`attabl_${tenant.slug}_table`);
@@ -141,7 +141,7 @@ export default function ClientMenuDetailPage({
     }
   }, [initialTable, tenant.slug]);
 
-  // ─── Scroll to section on mount ─────────────────────────
+  // --- Scroll to section on mount -------------------------
   useEffect(() => {
     if (!initialSection) return;
 
@@ -169,7 +169,7 @@ export default function ClientMenuDetailPage({
     return () => clearTimeout(t1);
   }, [initialSection, categories]);
 
-  // ─── Realtime subscriptions ────────────────────────────
+  // --- Realtime subscriptions ----------------------------
   const handleRealtimeRefresh = useCallback(() => {
     router.refresh();
   }, [router]);
@@ -197,7 +197,7 @@ export default function ClientMenuDetailPage({
     onChange: handleRealtimeRefresh,
   });
 
-  // ─── Filtering logic ──────────────────────────────────
+  // --- Filtering logic ----------------------------------
 
   // Filter menus by venue
   const filteredMenus = activeVenueId
@@ -305,7 +305,7 @@ export default function ClientMenuDetailPage({
       .slice(0, 8);
   }, [allItems, searchQuery, normalize]);
 
-  // ─── Handlers ──────────────────────────────────────────
+  // --- Handlers ------------------------------------------
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
@@ -373,7 +373,7 @@ export default function ClientMenuDetailPage({
   // instead via the header back button.
   const hideMenuTabsRow = !!initialMenuSlug && filteredMenus.length > 1;
 
-  // ─── Render ────────────────────────────────────────────
+  // --- Render --------------------------------------------
   return (
     <div
       className="flex-1 w-full bg-white"

@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import type { CurrencyCode } from '@/types/admin.types';
 import type { UseFormReturn, FieldErrors } from 'react-hook-form';
 
-// ─── Schema ────────────────────────────────────────────────
+// --- Schema ------------------------------------------------
 
 function createSettingsSchema(messages: { nameMinLength: string; invalidColor: string }) {
   return z.object({
@@ -49,7 +49,7 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
 
 export type SettingsFormValues = z.infer<ReturnType<typeof createSettingsSchema>>;
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 export interface SettingsTenant {
   id: string;
@@ -94,7 +94,7 @@ export interface UseSettingsDataReturn {
   onValidationError: (errors: FieldErrors<SettingsFormValues>) => void;
 }
 
-// ─── Hook ──────────────────────────────────────────────────
+// --- Hook --------------------------------------------------
 
 export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   const t = useTranslations('settings');

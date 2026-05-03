@@ -39,7 +39,7 @@ export default async function ProductShowcase() {
           {products.map((product) => (
             <div
               key={product.key}
-              className={`rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 transition-shadow hover:shadow-lg ${
+              className={`rounded-[var(--radius-card)] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 transition-shadow hover:shadow-lg ${
                 product.span === 2 ? 'md:col-span-2' : ''
               }`}
             >

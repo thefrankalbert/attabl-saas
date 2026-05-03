@@ -5,7 +5,7 @@
  * so that the correct term is displayed per establishment type.
  */
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export type EstablishmentSegment =
   | 'restaurant'
@@ -36,7 +36,7 @@ export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   salon: 'services',
 };
 
-// ─── Term keys ──────────────────────────────────────────
+// --- Term keys ------------------------------------------
 
 /** All available segment term keys */
 const SEGMENT_TERM_KEYS = [
@@ -82,7 +82,7 @@ const TERM_KEYS_BY_FAMILY: Record<
   ]),
 ) as Record<SegmentFamily, Record<SegmentTermKey, string>>;
 
-// ─── Public API ─────────────────────────────────────────
+// --- Public API -----------------------------------------
 
 /**
  * Get the segment family for a given establishment type.

@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { createTableConfigService } from '@/services/table-config.service';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface Zone {
   id: string;
@@ -49,7 +49,7 @@ interface TablesClientProps {
   initialSelectedZoneId: string | null;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function TablesClient({
   tenantId,
@@ -64,7 +64,7 @@ export function TablesClient({
   const tc = useTranslations('common');
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
 
-  // ─── State ──────────────────────────────────────────────
+  // --- State ----------------------------------------------
   const [zones, setZones] = useState<Zone[]>(initialZones);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(initialSelectedZoneId);
   const [tables, setTables] = useState<Table[]>(initialTables);
@@ -88,7 +88,7 @@ export function TablesClient({
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingDisplayName, setEditingDisplayName] = useState('');
 
-  // ─── Data Fetching ────────────────────────────────────
+  // --- Data Fetching ------------------------------------
 
   const loadZones = useCallback(
     async (vId: string) => {
@@ -126,7 +126,7 @@ export function TablesClient({
     [],
   );
 
-  // ─── Zone Handlers ──────────────────────────────────────
+  // --- Zone Handlers --------------------------------------
 
   const handleSelectZone = async (zoneId: string) => {
     setSelectedZoneId(zoneId);
@@ -214,7 +214,7 @@ export function TablesClient({
     }
   };
 
-  // ─── Table Handlers ─────────────────────────────────────
+  // --- Table Handlers -------------------------------------
 
   const handleAddTables = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -337,7 +337,7 @@ export function TablesClient({
     }
   };
 
-  // ─── Render ───────────────────────────────────────────
+  // --- Render -------------------------------------------
 
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
 

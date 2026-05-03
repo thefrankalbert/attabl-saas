@@ -38,7 +38,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const ts = useTranslations('shortcuts');
   const pos = usePOSData(tenantId);
 
-  // ── Contextual keyboard shortcuts ──
+  // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [

@@ -16,7 +16,7 @@ export interface SoundDefinition {
 }
 
 export const SOUND_LIBRARY: SoundDefinition[] = [
-  // ─── Free sounds (Plan Essentiel) ─────────────────────
+  // --- Free sounds (Plan Essentiel) ---------------------
   {
     id: 'classic-bell',
     name: 'Cloche classique',
@@ -42,7 +42,7 @@ export const SOUND_LIBRARY: SoundDefinition[] = [
     duration: 0.5,
   },
 
-  // ─── Premium sounds ───────────────────────────────────
+  // --- Premium sounds -----------------------------------
   {
     id: 'elegant-tone',
     name: 'Ton élégant',

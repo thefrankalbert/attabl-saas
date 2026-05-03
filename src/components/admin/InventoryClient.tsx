@@ -79,7 +79,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
   const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
-  // ─── Realtime: ingredients updates with low-stock alerts ─
+  // --- Realtime: ingredients updates with low-stock alerts -
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `inventory_${tenantId}`,
     table: 'ingredients',

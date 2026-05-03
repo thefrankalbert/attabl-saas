@@ -30,7 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface MenusTableProps {
   tenantSlug: string;
@@ -58,7 +58,7 @@ interface MenuRowProps {
   onAddChild: () => void;
 }
 
-// ─── MenuRow Component ──────────────────────────────────
+// --- MenuRow Component ----------------------------------
 
 function MenuRow({
   menu,
@@ -213,7 +213,7 @@ function MenuRow({
   );
 }
 
-// ─── MenusTable Component ───────────────────────────────
+// --- MenusTable Component -------------------------------
 
 export default function MenusTable({
   tenantSlug,

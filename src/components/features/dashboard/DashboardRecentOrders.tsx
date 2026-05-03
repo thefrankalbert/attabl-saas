@@ -17,7 +17,7 @@ import type { Order } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import type { StockItem } from '@/hooks/useDashboardData';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface DashboardRecentOrdersProps {
   recentOrders: Order[];
@@ -37,7 +37,7 @@ interface DashboardRecentOrdersProps {
   showStock?: boolean;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function DashboardRecentOrders({
   recentOrders,

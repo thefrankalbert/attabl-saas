@@ -10,7 +10,7 @@ import { getHiddenNav } from '@/lib/segment-features';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import type { AdminRole } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface AdminBottomNavProps {
   basePath: string;
@@ -18,7 +18,7 @@ interface AdminBottomNavProps {
   establishmentType?: string;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function AdminBottomNav({ basePath, role, establishmentType }: AdminBottomNavProps) {
   const pathname = usePathname();

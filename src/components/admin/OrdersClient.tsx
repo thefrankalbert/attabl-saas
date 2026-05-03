@@ -156,7 +156,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     },
   });
 
-  // ── Contextual keyboard shortcuts ──
+  // -- Contextual keyboard shortcuts --
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [
       {

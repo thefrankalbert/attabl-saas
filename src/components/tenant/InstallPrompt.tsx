@@ -17,7 +17,7 @@ interface InstallPromptProps {
   hasFloatingCart?: boolean;
 }
 
-// ─── Storage keys ────────────────────────────────────────
+// --- Storage keys ----------------------------------------
 const STORAGE_DISMISSED_AT = 'install_prompt_dismissed_at';
 const STORAGE_DISMISS_COUNT = 'install_prompt_dismiss_count';
 const STORAGE_VISIT_COUNT = 'install_prompt_visit_count';
@@ -25,7 +25,7 @@ const STORAGE_VISIT_COUNT = 'install_prompt_visit_count';
 const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const MAX_DISMISSALS = 3; // Stop showing after 3 dismissals
 
-// ─── Hydration-safe browser detection ────────────────────
+// --- Hydration-safe browser detection --------------------
 const noopSubscribe = () => () => {};
 
 function useIsStandalone(): boolean {
@@ -46,7 +46,7 @@ function useIsIOS(): boolean {
   );
 }
 
-// ─── Component ───────────────────────────────────────────
+// --- Component -------------------------------------------
 export default function InstallPrompt({
   appName = 'Attabl',
   logoUrl,
@@ -63,7 +63,7 @@ export default function InstallPrompt({
   useEffect(() => {
     if (isStandalone) return;
 
-    // ─── Check dismiss limits ──────────────────────────
+    // --- Check dismiss limits --------------------------
     // BUG-36: Reset dismiss counter after 30 days so the prompt can reappear
     const lastDismissedAt = localStorage.getItem(STORAGE_DISMISSED_AT);
     if (lastDismissedAt) {
@@ -80,11 +80,11 @@ export default function InstallPrompt({
     const dismissedAt = localStorage.getItem(STORAGE_DISMISSED_AT);
     if (dismissedAt && Date.now() - parseInt(dismissedAt) < COOLDOWN_MS) return;
 
-    // ─── Track visits for engagement check ─────────────
+    // --- Track visits for engagement check -------------
     const visitCount = parseInt(localStorage.getItem(STORAGE_VISIT_COUNT) || '0') + 1;
     localStorage.setItem(STORAGE_VISIT_COUNT, String(visitCount));
 
-    // ─── Engagement-based trigger ──────────────────────
+    // --- Engagement-based trigger ----------------------
     // QR code users (URL has ?table= param): show immediately
     // 2nd+ visit: show after 1.5s
     // 1st visit: show after scroll
@@ -119,7 +119,7 @@ export default function InstallPrompt({
     };
   }, [isStandalone]);
 
-  // ─── Capture beforeinstallprompt (Android/Desktop) ───
+  // --- Capture beforeinstallprompt (Android/Desktop) ---
   useEffect(() => {
     if (isStandalone) return;
 

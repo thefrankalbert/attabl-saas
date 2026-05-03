@@ -149,7 +149,7 @@ export default function MenuDetailClient({
     }
   };
 
-  // ─── Category CRUD ──────────────────────────────────────
+  // --- Category CRUD --------------------------------------
 
   const openNewCategoryModal = () => {
     setEditingCategory(null);
@@ -240,7 +240,7 @@ export default function MenuDetailClient({
     }
   };
 
-  // ─── Assign existing category ─────────────────────────
+  // --- Assign existing category -------------------------
 
   const handleAssignCategory = async (cat: Category) => {
     setAssigningCategory(true);
@@ -258,7 +258,7 @@ export default function MenuDetailClient({
     }
   };
 
-  // ─── Item operations (optimistic) ───────────────────────
+  // --- Item operations (optimistic) -----------------------
 
   const toggleItemAvailable = async (item: MenuItem) => {
     const newValue = !item.is_available;
@@ -276,7 +276,7 @@ export default function MenuDetailClient({
     }
   };
 
-  // ─── Inline price editing ──────────────────────────────
+  // --- Inline price editing ------------------------------
 
   const startEditingPrice = (item: MenuItem) => {
     setEditingPriceId(item.id);
@@ -302,7 +302,7 @@ export default function MenuDetailClient({
     }
   };
 
-  // ─── Item edit modal ───────────────────────────────────
+  // --- Item edit modal -----------------------------------
 
   const openEditItemModal = (item: MenuItem) => {
     setEditingItem(item);

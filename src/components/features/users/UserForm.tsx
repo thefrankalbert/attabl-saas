@@ -39,7 +39,7 @@ interface UserFormProps {
   onClose: () => void;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function UserForm({
   activeTab,

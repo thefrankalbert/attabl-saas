@@ -70,7 +70,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
-      // ── Fire all queries in parallel with individual error isolation ──
+      // -- Fire all queries in parallel with individual error isolation --
       const [ordersRes, itemsRes, venuesRes, recentRes, stockRes, yesterdayRes, weekRes] =
         await Promise.all([
           // Today's orders for stats
@@ -164,7 +164,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         'categoryBreakdown',
       );
 
-      // ── Build stats from isolated results ──
+      // -- Build stats from isolated results --
       const ordersData = (ordersRes.data || []) as Array<Record<string, unknown>>;
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
@@ -198,7 +198,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
 
       const stockItems = ((stockRes.data as StockItem[]) || []) as StockItem[];
 
-      // ── Trend calculations ──
+      // -- Trend calculations --
       const yesterdayOrders = (yesterdayRes.data || []) as Array<Record<string, unknown>>;
       const yesterdayRevenue = yesterdayOrders
         .filter((o) => o.status === 'delivered')
@@ -216,7 +216,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         );
       }
 
-      // ── Sparklines: group 7-day orders by date ──
+      // -- Sparklines: group 7-day orders by date --
       const weekOrders = (weekRes.data || []) as Array<Record<string, unknown>>;
       const dayBuckets: Record<string, { revenue: number; count: number }> = {};
       for (let i = 0; i < 7; i++) {
@@ -241,7 +241,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       }));
       const itemsSparkline: SparklinePoint[] = []; // No per-day item count available
 
-      // ── Hourly orders: group today's orders by hour ──
+      // -- Hourly orders: group today's orders by hour --
       const hourlyMap: Record<number, number> = {};
       for (let h = 8; h <= 22; h++) hourlyMap[h] = 0;
       for (const o of ordersData) {
@@ -255,7 +255,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         count,
       }));
 
-      // ── Category breakdown (non-critical) ──
+      // -- Category breakdown (non-critical) --
       const categoryMap: Record<string, number> = {};
       const categoryItems = (categoryRes.data || []) as Array<Record<string, unknown>>;
       for (const item of categoryItems) {
@@ -265,7 +265,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
         categoryMap[name] = (categoryMap[name] || 0) + revenue;
       }
-      const DONUT_COLORS = ['#CCFF00', '#F59E0B', '#3B82F6', '#D4D4D8'];
+      const DONUT_COLORS = ['#006AFF', '#F59E0B', '#3B82F6', '#D4D4D8'];
       const sortedCategories = Object.entries(categoryMap).sort(([, a], [, b]) => b - a);
       const top3 = sortedCategories.slice(0, 3);
       const othersValue = sortedCategories.slice(3).reduce((sum, [, v]) => sum + v, 0);

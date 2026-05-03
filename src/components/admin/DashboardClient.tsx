@@ -119,7 +119,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   const greetKey: 'goodMorning' | 'goodAfternoon' | 'goodEvening' =
     hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
-  // ── Metrics row
+  // -- Metrics row
   // Depend on primitive stat values, not the whole `stats` object -
   // TanStack Query returns a fresh reference on every refetch even when
   // values are unchanged, which would defeat the memo otherwise.
@@ -187,7 +187,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     weekBuckets,
   ]);
 
-  // ── Chart data
+  // -- Chart data
   const chartMetric: ChartMetric = metricKey === 'orders' ? 'orders' : 'revenue';
   const chartSeries: SeriesPoint[] = useMemo(() => {
     if (!initialBuckets) return [];
@@ -212,7 +212,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       : current.reduce((s, b) => s + b.count, 0);
   }, [initialBuckets, range, chartMetric]);
 
-  // ── Top dishes
+  // -- Top dishes
   const topDishes: TopDish[] = useMemo(
     () =>
       initialTopDishes.map((d) => {
@@ -243,7 +243,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     return Array.from(seen.entries()).map(([key, label]) => ({ key, label }));
   }, [topDishes]);
 
-  // ── Stock alerts
+  // -- Stock alerts
   const stockAlerts: StockAlert[] = useMemo(
     () =>
       initialStockAlerts.map((a) => ({
@@ -259,7 +259,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     [initialStockAlerts, t],
   );
 
-  // ── Loading
+  // -- Loading
   if (loading) {
     return (
       <div className="flex flex-col gap-5 p-4 @sm:p-6 pb-12 @md:h-full @md:overflow-hidden @md:pb-4 animate-pulse">

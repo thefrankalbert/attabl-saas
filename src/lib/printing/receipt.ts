@@ -40,12 +40,12 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   const serviceLabel = serviceTypeLabels[order.service_type || 'dine_in'] || 'Sur place';
 
-  // ─── Header section (logo or name) ────────────────────
+  // --- Header section (logo or name) --------------------
   const logoHTML = tenant.logo_url
     ? `<img src="${escapeHtml(tenant.logo_url)}" alt="${escapeHtml(tenant.name || '')}" style="max-height:48px;max-width:160px;margin:0 auto 8px;display:block;object-fit:contain;" />`
     : '';
 
-  // ─── Items rows ────────────────────────────────────────
+  // --- Items rows ----------------------------------------
   const itemsHTML = items
     .map((item) => {
       const lineTotal = item.price * item.quantity;
@@ -72,7 +72,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     })
     .join('');
 
-  // ─── Breakdown ─────────────────────────────────────────
+  // --- Breakdown -----------------------------------------
   const subtotal = order.subtotal || order.total_price || order.total || 0;
   const taxAmount = order.tax_amount || 0;
   const serviceCharge = order.service_charge_amount || 0;
@@ -115,7 +115,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     </div>`;
   }
 
-  // ─── Payment method ────────────────────────────────────
+  // --- Payment method ------------------------------------
   const paymentLabels: Record<string, string> = {
     cash: 'Espèces',
     card: 'Carte bancaire',
@@ -125,7 +125,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     ? paymentLabels[order.payment_method] || order.payment_method
     : '';
 
-  // ─── Tenant URL ────────────────────────────────────────
+  // --- Tenant URL ----------------------------------------
   const tenantUrl = tenant.slug ? `${tenant.slug}.attabl.com` : '';
 
   return `<!DOCTYPE html>
@@ -151,7 +151,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       padding: 16px 14px;
     }
 
-    /* ─── Header ─────────────────────────────────── */
+    /* --- Header ----------------------------------- */
     .header {
       text-align: center;
       padding-bottom: 14px;
@@ -169,7 +169,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       line-height: 1.5;
     }
 
-    /* ─── Dividers ────────────────────────────────── */
+    /* --- Dividers ---------------------------------- */
     .divider {
       border: none;
       border-top: 1px solid #e4e4e7;
@@ -180,7 +180,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       margin: 14px 0;
     }
 
-    /* ─── Order info card ─────────────────────────── */
+    /* --- Order info card --------------------------- */
     .info-card {
       background: #fafafa;
       border: 1px solid #f4f4f5;
@@ -211,7 +211,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     }
 
-    /* ─── Items section ───────────────────────────── */
+    /* --- Items section ----------------------------- */
     .items-header {
       font-size: 10px;
       text-transform: uppercase;
@@ -259,7 +259,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       color: #2563eb;
     }
 
-    /* ─── Breakdown ───────────────────────────────── */
+    /* --- Breakdown --------------------------------- */
     .breakdown-row {
       display: flex;
       justify-content: space-between;
@@ -274,7 +274,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       color: #059669;
     }
 
-    /* ─── Total ───────────────────────────────────── */
+    /* --- Total ------------------------------------- */
     .total-section {
       display: flex;
       justify-content: space-between;
@@ -301,7 +301,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       margin-left: 4px;
     }
 
-    /* ─── Payment badge ───────────────────────────── */
+    /* --- Payment badge ----------------------------- */
     .payment-badge {
       display: inline-block;
       font-size: 10px;
@@ -315,7 +315,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       padding: 3px 10px;
     }
 
-    /* ─── Footer ──────────────────────────────────── */
+    /* --- Footer ------------------------------------ */
     .footer {
       text-align: center;
       padding-top: 6px;
@@ -339,7 +339,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       text-transform: uppercase;
     }
 
-    /* ─── Print styles ────────────────────────────── */
+    /* --- Print styles ------------------------------ */
     @media print {
       body { width: 100%; }
       @page { margin: 0; size: 80mm auto; }

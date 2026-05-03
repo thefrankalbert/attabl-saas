@@ -98,7 +98,7 @@ export function ErrorLayout({
                     cell.filled
                       ? isTenant
                         ? 'bg-[#E6F9F0]'
-                        : 'bg-[#CCFF00]/10 dark:bg-[#CCFF00]/15'
+                        : 'bg-accent-muted dark:bg-accent-muted'
                       : isTenant
                         ? 'bg-[#F6F6F6] border border-[#EEEEEE]'
                         : 'bg-neutral-100 border border-neutral-200 dark:bg-white/5 dark:border-white/10',
@@ -108,7 +108,7 @@ export function ErrorLayout({
                     <Icon
                       className={cn(
                         'h-6 w-6 sm:h-8 sm:w-8',
-                        isTenant ? 'text-[#1A1A1A]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
+                        isTenant ? 'text-[#1A1A1A]' : 'text-accent',
                       )}
                     />
                   )}

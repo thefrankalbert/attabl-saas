@@ -4,7 +4,7 @@ import { useDevice } from '@/hooks/useDevice';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface MobileCardConfig<TData> {
   /** Render a single card for a data row */
@@ -26,7 +26,7 @@ interface ResponsiveDataTableProps<TData> {
   columnVisibility?: VisibilityState;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function ResponsiveDataTable<TData>({
   columns,

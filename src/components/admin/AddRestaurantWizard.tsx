@@ -25,7 +25,7 @@ import type {
   CreateRestaurantStep2Input,
 } from '@/lib/validations/restaurant.schema';
 
-// ─── Slug generator ─────────────────────────────────────────
+// --- Slug generator -----------------------------------------
 function nameToSlug(name: string): string {
   return name
     .toLowerCase()
@@ -35,7 +35,7 @@ function nameToSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-// ─── Type keys (mapped to translation keys) ────────────────
+// --- Type keys (mapped to translation keys) ----------------
 const TYPE_KEYS: Record<string, string> = {
   restaurant: 'addRestaurant.typeRestaurant',
   hotel: 'addRestaurant.typeHotel',
@@ -46,7 +46,7 @@ const TYPE_KEYS: Record<string, string> = {
   'quick-service': 'addRestaurant.typeQuickService',
 };
 
-// ─── Plan keys (mapped to translation keys) ─────────────────
+// --- Plan keys (mapped to translation keys) -----------------
 const PLAN_KEYS: Record<string, { label: string; price: string; description: string }> = {
   trial: {
     label: 'addRestaurant.planTrialLabel',
@@ -91,7 +91,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
   // Step 2 data
   const [plan, setPlan] = useState<string>('trial');
 
-  // ─── Validation ──────────────────────────────────────────
+  // --- Validation ------------------------------------------
   const step1Data: CreateRestaurantStep1Input = {
     name,
     type: type as CreateRestaurantStep1Input['type'],
@@ -104,7 +104,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
   };
   const step2Valid = createRestaurantStep2Schema.safeParse(step2Data).success;
 
-  // ─── Auto-slug ───────────────────────────────────────────
+  // --- Auto-slug -------------------------------------------
   const handleNameChange = (value: string) => {
     setName(value);
     if (!slugEdited) {
@@ -117,7 +117,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
     setSlug(value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   };
 
-  // ─── Submit ──────────────────────────────────────────────
+  // --- Submit ----------------------------------------------
   const handleSubmit = async () => {
     setLoading(true);
     setError('');
@@ -186,7 +186,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
         {/* Body */}
         <div className="px-6 py-6">
-          {/* ─── STEP 1: Info ────────────────────────────── */}
+          {/* --- STEP 1: Info ------------------------------ */}
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -238,7 +238,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             </div>
           )}
 
-          {/* ─── STEP 2: Plan ───────────────────────────── */}
+          {/* --- STEP 2: Plan ----------------------------- */}
           {step === 2 && (
             <div className="space-y-3">
               <p className="mb-2 text-sm font-medium text-app-text">
@@ -277,7 +277,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             </div>
           )}
 
-          {/* ─── STEP 3: Summary ────────────────────────── */}
+          {/* --- STEP 3: Summary -------------------------- */}
           {step === 3 && (
             <div className="space-y-4">
               <div className="rounded-xl bg-app-bg p-4">

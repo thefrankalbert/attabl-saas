@@ -52,7 +52,7 @@ export default function POSProductBrowser({
     return map;
   }, [cart]);
 
-  // ─── Item customizer state ─────────────────────────────
+  // --- Item customizer state -----------------------------
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
 
   const handleItemClick = useCallback(

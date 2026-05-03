@@ -124,10 +124,10 @@ export default function POSCart({
   const tc = useTranslations('common');
   const seg = useSegmentTerms();
 
-  // ─── Order notes toggle ─────────────────────────────────
+  // --- Order notes toggle ---------------------------------
   const [showOrderNotes, setShowOrderNotes] = useState(false);
 
-  // ─── Table Picker Dialog ────────────────────────────────
+  // --- Table Picker Dialog --------------------------------
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [pickerZoneId, setPickerZoneId] = useState<string | null>(null);
   const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);

@@ -14,7 +14,7 @@ export type RoleConfigEntry = {
  */
 export function buildRoleConfig(t: (key: string) => string): Record<AdminRole, RoleConfigEntry> {
   return {
-    owner: { label: t('roleOwner'), icon: Crown, color: 'text-lime-700', bg: 'bg-lime-100' },
+    owner: { label: t('roleOwner'), icon: Crown, color: 'text-accent-700', bg: 'bg-accent-100' },
     admin: { label: t('roleAdmin'), icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
     manager: { label: t('roleManager'), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
     cashier: {

@@ -14,7 +14,7 @@ import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 import { MobilePaymentSection } from '@/components/tenant/MobilePaymentSection';
 import { logger } from '@/lib/logger';
 
-// ─── Types ───────────────────────────────────────────────
+// --- Types -----------------------------------------------
 interface OrderData {
   id: string;
   order_number: string;
@@ -30,9 +30,9 @@ interface OrderData {
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
 }
 
-// ─── Status messages (simple, no pressure on kitchen) ────
+// --- Status messages (simple, no pressure on kitchen) ----
 
-// ─── Inner Content (needs Suspense for useSearchParams) ──
+// --- Inner Content (needs Suspense for useSearchParams) --
 function OrderConfirmedContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
@@ -173,7 +173,7 @@ function OrderConfirmedContent() {
     };
   }, [orderId, tenantId]);
 
-  // ─── Success animation overlay ─────────────────────────
+  // --- Success animation overlay -------------------------
   if (showSuccess) {
     return (
       <main
@@ -216,7 +216,7 @@ function OrderConfirmedContent() {
     );
   }
 
-  // ─── Loading ───────────────────────────────────────────
+  // --- Loading -------------------------------------------
   if (loading) {
     return (
       <main className="h-full bg-white flex items-center justify-center">
@@ -225,7 +225,7 @@ function OrderConfirmedContent() {
     );
   }
 
-  // ─── Order not found ──────────────────────────────────
+  // --- Order not found ----------------------------------
   if (!order) {
     return (
       <main
@@ -246,7 +246,7 @@ function OrderConfirmedContent() {
     );
   }
 
-  // ─── Order confirmed view ─────────────────────────────
+  // --- Order confirmed view -----------------------------
   return (
     <main className="h-full bg-white pb-24" style={{ color: '#1A1A1A' }}>
       {/* Header */}
@@ -431,7 +431,7 @@ function OrderConfirmedContent() {
   );
 }
 
-// ─── Simple status message (no step-by-step tracker) ─────
+// --- Simple status message (no step-by-step tracker) -----
 
 function OrderStatusMessage({ status }: { status: string }) {
   const t = useTranslations('tenant');
@@ -484,7 +484,7 @@ function OrderStatusMessage({ status }: { status: string }) {
   );
 }
 
-// ─── Page export with Suspense ───────────────────────────
+// --- Page export with Suspense ---------------------------
 export default function OrderConfirmedPage() {
   return (
     <Suspense

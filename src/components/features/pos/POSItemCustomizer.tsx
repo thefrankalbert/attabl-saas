@@ -36,13 +36,13 @@ export default function POSItemCustomizer({
     [item.modifiers],
   );
 
-  // ─── Variant selection ──────────────────────────────────
+  // --- Variant selection ----------------------------------
   const defaultVariant = variants.find((v) => v.is_default) || variants[0];
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     variants.length > 0 ? (defaultVariant?.id ?? null) : null,
   );
 
-  // ─── Modifier selection (toggle on/off) ─────────────────
+  // --- Modifier selection (toggle on/off) -----------------
   const [selectedModifierIds, setSelectedModifierIds] = useState<Set<string>>(new Set());
 
   const toggleModifier = (modifierId: string) => {
@@ -57,7 +57,7 @@ export default function POSItemCustomizer({
     });
   };
 
-  // ─── Price calculation ──────────────────────────────────
+  // --- Price calculation ----------------------------------
   const selectedVariant: ItemPriceVariant | undefined = variants.find(
     (v) => v.id === selectedVariantId,
   );
@@ -68,7 +68,7 @@ export default function POSItemCustomizer({
   const modifiersTotal = selectedMods.reduce((sum, m) => sum + m.price, 0);
   const totalPrice = basePrice + modifiersTotal;
 
-  // ─── Sorted variants and modifiers ──────────────────────
+  // --- Sorted variants and modifiers ----------------------
   const sortedVariants = useMemo(
     () => [...variants].sort((a, b) => a.display_order - b.display_order),
     [variants],
@@ -79,7 +79,7 @@ export default function POSItemCustomizer({
     [modifiers],
   );
 
-  // ─── Handle add to cart ─────────────────────────────────
+  // --- Handle add to cart ---------------------------------
   const handleAdd = () => {
     const modifierPayload = selectedMods.map((m) => ({
       name: m.name,
@@ -125,7 +125,7 @@ export default function POSItemCustomizer({
 
         {/* ━━━ Scrollable content ━━━ */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* ─── Price Variants ──────────────────────────── */}
+          {/* --- Price Variants ---------------------------- */}
           {sortedVariants.length > 0 && (
             <div>
               <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
@@ -155,7 +155,7 @@ export default function POSItemCustomizer({
             </div>
           )}
 
-          {/* ─── Modifiers ──────────────────────────────── */}
+          {/* --- Modifiers -------------------------------- */}
           {sortedModifiers.length > 0 && (
             <div>
               <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">

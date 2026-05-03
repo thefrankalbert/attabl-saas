@@ -139,14 +139,14 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#CCFF00',
+  themeColor: '#006AFF',
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://attabl.com'),
   title: 'Attabl - Menu digital & gestion pour la restauration',
   description:
-    "La plateforme tout-en-un pour la restauration et l'hôtellerie en Afrique. Menu, commandes, stock, analytics en temps réel.",
+    "Menu QR, commandes, encaissement et cuisine en temps reel. Pour les restaurants et hotels d'Afrique francophone.",
   manifest: '/manifest.json',
   alternates: {
     canonical: '/',

@@ -14,7 +14,7 @@ import path from 'path';
 
 const SRC_DIR = path.resolve(__dirname, '..');
 
-// ── Helpers ────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------
 
 function readFile(relativePath: string): string {
   const fullPath = path.resolve(SRC_DIR, '..', relativePath);
@@ -40,7 +40,7 @@ function findTsxFiles(dir: string, exclude: string[] = []): string[] {
   return results;
 }
 
-// ── 1. Viewport & Scroll Chain ──────────────────────────────────
+// -- 1. Viewport & Scroll Chain ----------------------------------
 
 describe('Viewport & Scroll Chain', () => {
   it('globals.css doit avoir html,body avec height:100% et overflow:hidden', () => {
@@ -77,7 +77,7 @@ describe('Viewport & Scroll Chain', () => {
   });
 });
 
-// ── 2. Securite ──────────────────────────────────────────────────
+// -- 2. Securite --------------------------------------------------
 
 describe('Securite', () => {
   it('admin.ts ne doit pas avoir autoRefreshToken ou persistSession', () => {
@@ -126,7 +126,7 @@ describe('Securite', () => {
   });
 });
 
-// ── 3. Multi-tenant ──────────────────────────────────────────────
+// -- 3. Multi-tenant ----------------------------------------------
 
 describe('Multi-tenant', () => {
   it('rate-limit.ts doit exporter au moins 20 limiters', () => {
@@ -137,7 +137,7 @@ describe('Multi-tenant', () => {
   });
 });
 
-// ── 4. Design System shadcn/ui ──────────────────────────────────
+// -- 4. Design System shadcn/ui ----------------------------------
 
 describe('Design System shadcn/ui', () => {
   it('les composants shadcn/ui de base doivent exister', () => {
@@ -160,7 +160,7 @@ describe('Design System shadcn/ui', () => {
   });
 });
 
-// ── 5. Configuration critique ──────────────────────────────────
+// -- 5. Configuration critique ----------------------------------
 
 describe('Configuration critique', () => {
   it('next.config.mjs doit avoir les headers de securite', () => {

@@ -28,7 +28,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { getSegmentFeatures } from '@/lib/segment-features';
 
-// ─── Phase / sub-screen definitions ────────────────────────────────────────────
+// --- Phase / sub-screen definitions --------------------------------------------
 
 type ScreenKey = 'establishment' | 'branding' | 'details' | 'tables' | 'menu' | 'qr' | 'summary';
 
@@ -67,7 +67,7 @@ function oldStepToPhaseScreen(oldStep: number): { phase: number; subScreen: numb
   }
 }
 
-// ─── Exported data interface (used by child components) ────────────────────────
+// --- Exported data interface (used by child components) ------------------------
 
 export interface OnboardingData {
   // Step 1: Establishment
@@ -110,7 +110,7 @@ export interface OnboardingData {
   tenantNickname: string;
 }
 
-// ─── Step Error Boundary ──────────────────────────────────────────────────────
+// --- Step Error Boundary ------------------------------------------------------
 
 class StepErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
@@ -137,7 +137,7 @@ class StepErrorBoundary extends React.Component<
   }
 }
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// --- Component -----------------------------------------------------------------
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
-    primaryColor: '#4d7c0f',
+    primaryColor: '#006AFF',
     secondaryColor: '#000000',
     description: '',
     menuOption: 'skip',
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
     tenantNickname: '',
   });
 
-  // ─── Derived values ────────────────────────────────────────────────────────
+  // --- Derived values --------------------------------------------------------
 
   // Compute adaptive phases based on establishment type
   const segmentFeatures = getSegmentFeatures(data.establishmentType);
@@ -215,7 +215,7 @@ export default function OnboardingPage() {
 
   const isLastScreen = phase === 3 && subScreen === phases[2].subScreens.length - 1;
 
-  // ─── Step completeness check (adapted for phases) ──────────────────────────
+  // --- Step completeness check (adapted for phases) --------------------------
 
   const phaseIsComplete = (p: number): boolean => {
     switch (p) {
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // ─── Fetch saved state ─────────────────────────────────────────────────────
+  // --- Fetch saved state -----------------------------------------------------
 
   useEffect(() => {
     const fetchOnboardingState = async () => {
@@ -282,7 +282,7 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Auto-save debounced ───────────────────────────────────────────────────
+  // --- Auto-save debounced ---------------------------------------------------
 
   useEffect(() => {
     if (loading || phase === 0 || isLastScreen) return;
@@ -316,7 +316,7 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer);
   }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
 
-  // ─── Save on tab close / navigate away (beacon API for reliability) ──────
+  // --- Save on tab close / navigate away (beacon API for reliability) ------
 
   useEffect(() => {
     if (loading || phase === 0) return;
@@ -340,7 +340,7 @@ export default function OnboardingPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [data, phase, subScreen, loading, apiStep]);
 
-  // ─── Keyboard navigation ──────────────────────────────────────────────────
+  // --- Keyboard navigation --------------------------------------------------
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, subScreen]);
 
-  // ─── Data update callback ─────────────────────────────────────────────────
+  // --- Data update callback -------------------------------------------------
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...newData }));
@@ -367,7 +367,7 @@ export default function OnboardingPage() {
     document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  // ─── Navigation ───────────────────────────────────────────────────────────
+  // --- Navigation -----------------------------------------------------------
 
   const goNext = () => {
     setError(null);
@@ -408,7 +408,7 @@ export default function OnboardingPage() {
     scrollToTop();
   };
 
-  // ─── Complete onboarding ──────────────────────────────────────────────────
+  // --- Complete onboarding --------------------------------------------------
 
   const completeOnboarding = async () => {
     setSaving(true);
@@ -446,7 +446,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // ─── Content rendering ────────────────────────────────────────────────────
+  // --- Content rendering ----------------------------------------------------
 
   const renderScreen = () => {
     if (!screenKey) return null;
@@ -468,7 +468,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // ─── Loading skeleton ─────────────────────────────────────────────────────
+  // --- Loading skeleton -----------------------------------------------------
 
   if (loading) {
     return (
@@ -510,7 +510,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // ─── Welcome screen (phase 0) ─────────────────────────────────────────────
+  // --- Welcome screen (phase 0) ---------------------------------------------
 
   if (phase === 0) {
     return (
@@ -528,7 +528,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // ─── Studio layout (phases 1-3) ───────────────────────────────────────────
+  // --- Studio layout (phases 1-3) -------------------------------------------
 
   const canGoBack = phase > 1 || subScreen > 0;
 
@@ -672,7 +672,7 @@ export default function OnboardingPage() {
                   type="button"
                   variant="ghost"
                   onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
+                  className="flex items-center gap-2 px-4 rounded text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto min-h-[44px]"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>

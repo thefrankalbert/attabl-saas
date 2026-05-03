@@ -19,7 +19,7 @@ import SettingsBilling from '@/components/features/settings/SettingsBilling';
 import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 type SettingsTab = 'identity' | 'branding' | 'billing' | 'sounds' | 'security' | 'contact';
 
@@ -36,7 +36,7 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'contact', labelKey: 'tabContact' },
 ];
 
-// ─── Main Component ────────────────────────────────────────
+// --- Main Component ----------------------------------------
 
 export function SettingsForm({ tenant }: SettingsFormProps) {
   const t = useTranslations('settings');

@@ -18,7 +18,7 @@ interface BrandingStepProps {
 }
 
 const colorPresets = [
-  { name: 'Lime', primary: '#CCFF00', secondary: '#000000' },
+  { name: 'Bleu', primary: '#006AFF', secondary: '#0a0a0a' },
   { name: 'Ocean', primary: '#3B82F6', secondary: '#1E3A8A' },
   { name: 'Ruby', primary: '#EF4444', secondary: '#7F1D1D' },
   { name: 'Forest', primary: '#22C55E', secondary: '#14532D' },

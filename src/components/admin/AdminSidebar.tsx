@@ -30,7 +30,7 @@ import { getSegmentFamily } from '@/lib/segment-terms';
 import { SidebarBrand } from './sidebar/SidebarBrand';
 import { SidebarUsageCard } from './sidebar/SidebarUsageCard';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface TenantSwitchOption {
   id: string;
@@ -57,7 +57,7 @@ interface AdminSidebarProps {
   onToggleCollapsed?: () => void;
 }
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 const ANALYSE_GROUP_ID = 'analyse';
 const POPOVER_ITEM_PATHS = new Set(['/inventory', '/recipes', '/suppliers']);
@@ -76,7 +76,7 @@ function isPathActive(pathname: string, basePath: string, itemPath: string): boo
   return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function AdminSidebar({
   basePath,
@@ -159,7 +159,7 @@ export function AdminSidebar({
         className,
       )}
     >
-      {/* ── Brand + org switcher + collapse toggle ── */}
+      {/* -- Brand + org switcher + collapse toggle -- */}
       <div className="shrink-0 px-3 pt-4 pb-3 flex flex-col gap-3">
         <SidebarBrand
           name={tenant.name}
@@ -232,7 +232,7 @@ export function AdminSidebar({
         )}
       </div>
 
-      {/* ── Scrollable sections ── */}
+      {/* -- Scrollable sections -- */}
       <nav
         className={cn(
           'flex-1 overflow-y-auto flex flex-col gap-5 pb-3',
@@ -260,7 +260,7 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      {/* ── Footer: unified usage + account card + collapse toggle ── */}
+      {/* -- Footer: unified usage + account card + collapse toggle -- */}
       <div className="shrink-0 border-t border-app-border px-3 py-3 flex flex-col gap-2.5">
         <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
           {/*
@@ -461,7 +461,7 @@ export function AdminSidebar({
           variant="ghost"
           onClick={handleToggleCollapsed}
           className={cn(
-            'w-full gap-2 py-1.5 text-app-text-muted opacity-60 hover:opacity-100 h-auto',
+            'w-full gap-2 py-1.5 text-app-text-muted opacity-60 hover:opacity-100 h-auto min-h-[44px]',
             collapsed ? 'justify-center px-0' : 'px-2 justify-start',
           )}
           title={collapsed ? t('expand') : t('collapse')}
@@ -478,7 +478,7 @@ export function AdminSidebar({
   );
 }
 
-// ─── Sidebar Group ──────────────────────────────────────
+// --- Sidebar Group --------------------------------------
 
 interface SidebarGroupProps {
   group: NavGroupConfig;
@@ -519,7 +519,7 @@ function SidebarGroup({ group, basePath, pathname, collapsed, label }: SidebarGr
   );
 }
 
-// ─── Sidebar Link ──────────────────────────────────────
+// --- Sidebar Link --------------------------------------
 
 interface SidebarLinkProps {
   href: string;
@@ -535,7 +535,7 @@ function SidebarLink({ href, active, icon: Icon, labelText, collapsed }: Sidebar
       href={href}
       title={collapsed ? labelText : undefined}
       className={cn(
-        'flex items-center rounded-md text-[13px] transition-colors gap-2.5',
+        'flex items-center rounded-md text-[13px] transition-colors gap-2.5 min-h-[44px]',
         active
           ? 'bg-app-elevated text-app-text'
           : 'text-app-text-secondary hover:bg-app-card hover:text-app-text',

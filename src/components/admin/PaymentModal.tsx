@@ -12,7 +12,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────
+// --- Types --------------------------------------
 
 interface CartDisplayItem {
   name: string;
@@ -50,7 +50,7 @@ const TIP_AMOUNTS = [1000, 2000, 5000] as const;
 // Standard POS keypad: 4 columns -- digits + backspace/clear
 const NUMPAD_KEYS = ['1', '2', '3', '⌫', '4', '5', '6', 'C', '7', '8', '9', '00', '0'] as const;
 
-// ─── Component ──────────────────────────────────
+// --- Component ----------------------------------
 
 export default function PaymentModal({
   onClose,

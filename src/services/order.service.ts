@@ -12,7 +12,7 @@ interface CreateOrderInput {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
-  // ─── Production upgrade ────────────────────────────────
+  // --- Production upgrade --------------------------------
   service_type?: ServiceType;
   room_number?: string;
   delivery_address?: string;

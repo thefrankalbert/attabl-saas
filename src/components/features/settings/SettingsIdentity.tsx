@@ -36,7 +36,7 @@ const ESTABLISHMENT_TYPES = [
   { value: 'other', labelKey: 'typeOther' },
 ] as const;
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsIdentityProps {
   form: UseFormReturn<SettingsFormValues>;
@@ -51,7 +51,7 @@ interface SettingsIdentityProps {
   t: (key: string) => string;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsIdentity({
   form,

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { getUsdXafRate } from '@/lib/exchange-rate';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export type DisplayCurrency = 'XAF' | 'XOF' | 'EUR' | 'USD';
 
@@ -42,7 +42,7 @@ interface CurrencyContextValue {
   supportedCurrencies: DisplayCurrency[];
 }
 
-// ─── Constants ──────────────────────────────────────────
+// --- Constants ------------------------------------------
 
 const STORAGE_KEY = 'attabl_display_currency';
 
@@ -65,7 +65,7 @@ const DEFAULT_RATES_TO_XAF: Record<string, number> = {
   USD: 605,
 };
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 function readStored(fallback: string): DisplayCurrency {
   if (typeof window === 'undefined') return fallback as DisplayCurrency;
@@ -107,7 +107,7 @@ function formatConverted(amount: number, currency: DisplayCurrency): string {
   }
 }
 
-// ─── Context ────────────────────────────────────────────
+// --- Context --------------------------------------------
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 

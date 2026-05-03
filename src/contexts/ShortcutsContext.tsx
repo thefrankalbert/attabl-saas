@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { ShortcutsHelp } from '@/components/features/shortcuts/ShortcutsHelp';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ShortcutsContextValue {
   helpOpen: boolean;
@@ -16,11 +16,11 @@ interface ShortcutsContextValue {
   getAllShortcuts: () => ShortcutDefinition[];
 }
 
-// ─── Context ────────────────────────────────────────────
+// --- Context --------------------------------------------
 
 const ShortcutsContext = createContext<ShortcutsContextValue | null>(null);
 
-// ─── Provider ───────────────────────────────────────────
+// --- Provider -------------------------------------------
 
 interface ShortcutsProviderProps {
   basePath: string;
@@ -40,7 +40,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
   const openHelp = useCallback(() => setHelpOpen(true), []);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
 
-  // ── Global navigation shortcuts (Go-sequences) ──
+  // -- Global navigation shortcuts (Go-sequences) --
   const globalShortcuts = useMemo<ShortcutDefinition[]>(
     () => [
       {
@@ -82,7 +82,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
     [basePath, router, t],
   );
 
-  // ── Registration API ──
+  // -- Registration API --
   const registerShortcuts = useCallback((defs: ShortcutDefinition[]) => {
     for (const def of defs) {
       contextualRef.current.set(def.id, def);
@@ -97,7 +97,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
     };
   }, []);
 
-  // ── Merged shortcuts for the hook ──
+  // -- Merged shortcuts for the hook --
   const allShortcuts = useMemo(() => {
     const contextual = Array.from(contextualRef.current.values());
     return [...globalShortcuts, ...contextual];
@@ -109,7 +109,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
     return [...globalShortcuts, ...contextual];
   }, [globalShortcuts]);
 
-  // ── Mount the keyboard listener ──
+  // -- Mount the keyboard listener --
   useKeyboardShortcuts({
     shortcuts: allShortcuts,
     onOpenHelp: openHelp,
@@ -134,7 +134,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
   );
 }
 
-// ─── Consumer hook ──────────────────────────────────────
+// --- Consumer hook --------------------------------------
 
 export function useShortcuts(): ShortcutsContextValue {
   const ctx = useContext(ShortcutsContext);

@@ -18,7 +18,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface TileConfig {
   id: string;
@@ -29,7 +29,7 @@ interface TileConfig {
   secondaryFeatured?: boolean;
 }
 
-// ─── Tile configurations per establishment type ─────────
+// --- Tile configurations per establishment type ---------
 
 const RESTAURANT_TILES: TileConfig[] = [
   { id: 'pos', icon: Laptop, labelKey: 'navPos', path: '/pos', featured: true },
@@ -146,7 +146,7 @@ const TILE_MAP: Record<string, TileConfig[]> = {
   'quick-service': QUICK_SERVICE_TILES,
 };
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 interface AdminHomeGridProps {
   basePath: string;

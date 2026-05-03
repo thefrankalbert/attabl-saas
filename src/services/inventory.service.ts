@@ -18,7 +18,7 @@ import type {
 
 export function createInventoryService(supabase: SupabaseClient) {
   return {
-    // ─── Ingredients ──────────────────────────────────────
+    // --- Ingredients --------------------------------------
 
     async getIngredients(tenantId: string): Promise<Ingredient[]> {
       const { data, error } = await supabase
@@ -74,7 +74,7 @@ export function createInventoryService(supabase: SupabaseClient) {
       return data as Ingredient;
     },
 
-    // ─── Recipes (Fiches techniques) ──────────────────────
+    // --- Recipes (Fiches techniques) ----------------------
 
     async getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]> {
       // BUG-34: Validate menu_item_id belongs to this tenant before querying recipes
@@ -126,7 +126,7 @@ export function createInventoryService(supabase: SupabaseClient) {
       if (insertError) throw new ServiceError('Erreur sauvegarde recette', 'INTERNAL', insertError);
     },
 
-    // ─── Stock Operations ─────────────────────────────────
+    // --- Stock Operations ---------------------------------
 
     async destockOrder(orderId: string, tenantId: string): Promise<number> {
       const { data, error } = await supabase.rpc('destock_order', {
@@ -188,7 +188,7 @@ export function createInventoryService(supabase: SupabaseClient) {
       if (error) throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
     },
 
-    // ─── Stock Status & Movements ─────────────────────────
+    // --- Stock Status & Movements -------------------------
 
     async getStockStatus(tenantId: string): Promise<StockStatus[]> {
       const { data, error } = await supabase.rpc('get_stock_status', {

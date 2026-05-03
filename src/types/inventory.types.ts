@@ -1,4 +1,4 @@
-// ─── Inventory Engine Types ─────────────────────────────
+// --- Inventory Engine Types -----------------------------
 
 export type IngredientUnit = 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
 
@@ -78,7 +78,7 @@ export interface ItemSuggestion {
   created_at: string;
 }
 
-// ─── Input types for service methods ────────────────────
+// --- Input types for service methods --------------------
 
 export interface CreateIngredientInput {
   name: string;
@@ -112,7 +112,7 @@ export interface AdjustStockInput {
   supplier_id?: string;
 }
 
-// ─── Unit labels for UI ─────────────────────────────────
+// --- Unit labels for UI ---------------------------------
 
 export const INGREDIENT_UNITS: Record<IngredientUnit, { label: string; labelShort: string }> = {
   kg: { label: 'Kilogramme', labelShort: 'kg' },

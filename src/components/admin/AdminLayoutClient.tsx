@@ -12,7 +12,7 @@ import type { AdminRole } from '@/types/admin.types';
 
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
 
-// ─── Inner Layout ───────────────────────────────────────
+// --- Inner Layout ---------------------------------------
 
 interface TenantSwitchOption {
   id: string;
@@ -149,7 +149,7 @@ function AdminLayoutInner({
   );
 }
 
-// ─── Wrapper (provides device context) ──────────────────
+// --- Wrapper (provides device context) ------------------
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;

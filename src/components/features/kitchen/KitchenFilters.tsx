@@ -100,7 +100,7 @@ export default function KitchenFilters({
                 onSearchChange('');
                 setSearchOpen(false);
               }}
-              className="h-8 w-8"
+              className="min-h-[44px] min-w-[44px]"
             >
               <X className="w-3.5 h-3.5" />
             </Button>
@@ -151,7 +151,7 @@ export default function KitchenFilters({
 
       {/* Center: active / completed tabs */}
       {isChefView && (
-        <nav className="flex items-center bg-app-elevated/50 rounded-full p-0.5">
+        <nav className="flex items-center bg-app-elevated/50 rounded-[var(--radius-card)] p-0.5">
           {(
             [
               { mode: 'active' as const, label: t('tabActive'), count: activeCount },
@@ -164,7 +164,7 @@ export default function KitchenFilters({
               variant="ghost"
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium h-auto',
+                'flex items-center gap-1.5 px-4 py-1 rounded text-xs font-medium h-auto min-h-[44px]',
                 viewMode === mode
                   ? 'bg-app-bg text-app-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text-secondary',

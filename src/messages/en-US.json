@@ -573,7 +573,7 @@
       "metaTitle": "Features",
       "metaDescription": "Discover all ATTABL features: digital menu, orders, stock, analytics and more.",
       "heroTitle": "Everything you need",
-      "heroSubtitle": "Everything you need. One single tool.",
+      "heroSubtitle": "QR menus, orders, payments, kitchen. All from your phone.",
       "categories": {
         "menu": {
           "title": "Menu & Orders",
@@ -624,6 +624,7 @@
         "subtitle": "Your guests order from their phone. Your kitchen sees everything in real time. Your numbers land without effort.",
         "ctaPrimary": "Try it free",
         "ctaSecondary": "See how it works",
+        "mobileMoney": "Wave, Orange Money, card or cash. No terminal needed.",
         "segments": {
           "restaurant": "Restaurant",
           "hotel": "Hotel",
@@ -783,7 +784,7 @@
       }
     },
     "header": {
-      "solutions": "Solutions",
+      "solutions": "Industries",
       "features": "Features",
       "pricing": "Pricing",
       "news": "What's new",
@@ -881,9 +882,9 @@
       "metaTitle": "About",
       "metaDescription": "ATTABL helps restaurants, hotels and bars across Africa digitise their menu, orders and management. Our story.",
       "heading": "About ATTABL",
-      "intro": "ATTABL is a SaaS platform designed to digitize the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
+      "intro": "ATTABL is built to digitize the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
       "visionTitle": "Our vision",
-      "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves high-performance digital tools. ATTABL provides a QR code menu, a real-time order system, a touch POS, a kitchen display (KDS), and advanced analytics - all in one platform.",
+      "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves reliable digital tools. ATTABL brings the QR menu, real-time orders, touch POS, KDS, and analytics into one subscription - no hardware required.",
       "techTitle": "Technology",
       "techBody": "Built on the latest technologies (Next.js, React, Supabase, Tailwind CSS), ATTABL is fast, secure and available as a Progressive Web App (PWA) across all devices.",
       "contactButton": "Contact us",

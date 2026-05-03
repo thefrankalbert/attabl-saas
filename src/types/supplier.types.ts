@@ -1,4 +1,4 @@
-// ─── Supplier Types ─────────────────────────────────────
+// --- Supplier Types -------------------------------------
 
 export interface Supplier {
   id: string;

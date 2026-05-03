@@ -110,7 +110,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
       </div>
 
-      {/* ─── Tabs Navigation ─── */}
+      {/* --- Tabs Navigation --- */}
       <Tabs defaultValue="choose" className="flex flex-col flex-1 min-h-0">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
@@ -118,7 +118,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
         </TabsList>
 
-        {/* ─── Tab: Choose ─── */}
+        {/* --- Tab: Choose --- */}
         <TabsContent value="choose" className="flex-1 overflow-auto">
           <div>
             {/* Info Banner */}
@@ -243,7 +243,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           </div>
         </TabsContent>
 
-        {/* ─── Tab: Customize ─── */}
+        {/* --- Tab: Customize --- */}
         <TabsContent value="customize" className="flex-1 overflow-auto">
           <div className="bg-app-card rounded-xl border border-app-border p-6">
             <QRCustomizerLayout
@@ -259,7 +259,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           </div>
         </TabsContent>
 
-        {/* ─── Tab: Download ─── */}
+        {/* --- Tab: Download --- */}
         <TabsContent value="download" className="flex-1 overflow-auto">
           <div>
             {/* Single QR Preview + Download */}
@@ -368,7 +368,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   );
 }
 
-// ─── Batch QR Preview ──────────────────────────────────────
+// --- Batch QR Preview --------------------------------------
 interface BatchQRPreviewProps {
   tables: Table[];
   zones: Zone[];

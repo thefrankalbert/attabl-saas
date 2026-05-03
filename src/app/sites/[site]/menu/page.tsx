@@ -10,7 +10,7 @@ import type { Menu, Category, MenuItem, Venue, Zone, Table } from '@/types/admin
 
 export const revalidate = 30;
 
-// ─── SEO Metadata ─────────────────────────────────────────
+// --- SEO Metadata -----------------------------------------
 export async function generateMetadata({
   params,
 }: {

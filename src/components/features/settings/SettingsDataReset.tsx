@@ -18,7 +18,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 type ResetType = 'orders' | 'statistics' | 'all';
 
@@ -30,7 +30,7 @@ interface ResetOption {
   dangerLevel: 'warning' | 'destructive';
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }) {
   const t = useTranslations('settings');

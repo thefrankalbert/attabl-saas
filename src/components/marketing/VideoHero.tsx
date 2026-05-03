@@ -35,15 +35,19 @@ export default function VideoHero() {
           <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500 dark:text-neutral-400">
             {t('subtitle')}
           </p>
+          <p className="mt-3 text-sm text-neutral-400 dark:text-neutral-500">{t('mobileMoney')}</p>
 
           {/* CTA row */}
-          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg">
               <Link href="/signup">{t('ctaPrimary')}</Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/contact">{t('ctaSecondary')}</Link>
-            </Button>
+            <Link
+              href="/contact"
+              className="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white underline underline-offset-4 transition-colors"
+            >
+              {t('ctaSecondary')}
+            </Link>
           </div>
 
           {/* Segment pills */}
@@ -53,7 +57,7 @@ export default function VideoHero() {
                 key={key}
                 variant="ghost"
                 onClick={() => setActiveSegment(key)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium h-auto ${
+                className={`flex items-center gap-2 rounded px-4 text-sm font-medium h-auto min-h-[44px] ${
                   activeSegment === key
                     ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'

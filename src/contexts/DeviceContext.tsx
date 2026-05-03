@@ -8,7 +8,7 @@ import {
   type LayoutMode,
 } from '@/lib/layout/breakpoints';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface DeviceContextValue {
   device: DeviceType;
@@ -18,11 +18,11 @@ interface DeviceContextValue {
   isDesktop: boolean;
 }
 
-// ─── Context ────────────────────────────────────────────
+// --- Context --------------------------------------------
 
 const DeviceContext = createContext<DeviceContextValue | null>(null);
 
-// ─── External Store (matchMedia) ────────────────────────
+// --- External Store (matchMedia) ------------------------
 
 function createMediaStore(query: string) {
   let listeners: Array<() => void> = [];
@@ -55,7 +55,7 @@ const mobileStore = createMediaStore(MEDIA_QUERIES.mobile);
 const tabletStore = createMediaStore(MEDIA_QUERIES.tablet);
 const desktopStore = createMediaStore(MEDIA_QUERIES.desktop);
 
-// ─── Provider ───────────────────────────────────────────
+// --- Provider -------------------------------------------
 
 export function DeviceProvider({ children }: { children: React.ReactNode }) {
   const isMobile = useSyncExternalStore(
@@ -88,7 +88,7 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
   return <DeviceContext.Provider value={value}>{children}</DeviceContext.Provider>;
 }
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook -----------------------------------------------
 
 export function useDeviceContext(): DeviceContextValue {
   const context = useContext(DeviceContext);

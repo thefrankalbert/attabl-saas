@@ -49,7 +49,7 @@ import type { CurrencyCode } from '@/types/admin.types';
 
 import { CHART_PALETTE } from '@/lib/design-tokens';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ReportsClientProps {
   tenantId: string;
@@ -72,7 +72,7 @@ const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: '90d', labelKey: 'last90Days' },
 ];
 
-// ─── Trend badge ────────────────────────────────────────
+// --- Trend badge ----------------------------------------
 
 function TrendBadge({ value }: { value: number }) {
   if (value === 0) return null;
@@ -92,7 +92,7 @@ function TrendBadge({ value }: { value: number }) {
   );
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
   const t = useTranslations('reports');
@@ -143,7 +143,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     return Math.round(((summary.avgBasket - prev) / prev) * 100);
   }, [summary.avgBasket, previousSummary.avgBasket]);
 
-  // ── Export handlers ─────────────────────────────────────
+  // -- Export handlers -------------------------------------
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -230,7 +230,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     }
   };
 
-  // ── Render ──────────────────────────────────────────────
+  // -- Render ----------------------------------------------
 
   if (error) {
     return (
@@ -263,7 +263,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       <div className="shrink-0 space-y-4">
         <AnalyseTabs />
 
-        {/* ── Export buttons ── */}
+        {/* -- Export buttons -- */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -295,7 +295,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           </Button>
         </div>
 
-        {/* ── Period pills ── */}
+        {/* -- Period pills -- */}
         <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
             <Button
@@ -315,7 +315,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           ))}
         </div>
 
-        {/* ── KPI Cards ── */}
+        {/* -- KPI Cards -- */}
         <div className="grid grid-cols-3 gap-2">
           {/* Revenue */}
           <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
@@ -365,7 +365,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
       </div>
 
-      {/* ── Scrollable content ── */}
+      {/* -- Scrollable content -- */}
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         <div className="space-y-4">
           {/* Chart & Top Items */}

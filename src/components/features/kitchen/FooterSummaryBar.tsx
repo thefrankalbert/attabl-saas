@@ -137,7 +137,7 @@ function FooterSummaryBarInner({
                 }
               }}
               className={cn(
-                'px-3 py-2 min-h-[40px] rounded-md text-xs font-bold uppercase tracking-wider h-auto',
+                'px-3 py-2 min-h-[44px] rounded-md text-xs font-bold uppercase tracking-wider h-auto',
                 isActive ? tab.activeColor : tab.baseColor,
                 !isActive && !isDelayedTab && 'hover:bg-app-elevated/50',
                 isDelayedTab && 'cursor-default animate-pulse',
@@ -158,7 +158,7 @@ function FooterSummaryBarInner({
           onClick={() => onPageChange('prev')}
           disabled={currentPage <= 1}
           aria-label="Previous page"
-          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
+          className="p-1.5 min-h-[44px] min-w-[44px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronUp className="w-4 h-4" />
         </Button>
@@ -171,7 +171,7 @@ function FooterSummaryBarInner({
           onClick={() => onPageChange('next')}
           disabled={currentPage >= totalPages}
           aria-label="Next page"
-          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
+          className="p-1.5 min-h-[44px] min-w-[44px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronDown className="w-4 h-4" />
         </Button>

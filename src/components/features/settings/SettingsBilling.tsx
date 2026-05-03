@@ -14,7 +14,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import type { CurrencyCode } from '@/types/admin.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsBillingProps {
   form: UseFormReturn<SettingsFormValues>;
@@ -27,7 +27,7 @@ const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
   { code: 'USD', labelKey: 'currencyUSD' },
 ];
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsBilling({ form, t }: SettingsBillingProps) {
   const {

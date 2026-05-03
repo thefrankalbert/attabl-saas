@@ -28,7 +28,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-// ─── Generic chainable mock ─────────────────────────────────
+// --- Generic chainable mock ---------------------------------
 //
 // Returns a thenable proxy that records every method call. Each chain
 // method (.select, .eq, .in, .order, .single, .maybeSingle, .is,
@@ -142,7 +142,7 @@ function hasTenantFilter(chain: ChainProxy, tenantId: string): boolean {
   );
 }
 
-// ─── order.service ──────────────────────────────────────────
+// --- order.service ------------------------------------------
 
 describe('order.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -212,7 +212,7 @@ describe('order.service Wave 26 additions', () => {
   });
 });
 
-// ─── category.service ───────────────────────────────────────
+// --- category.service ---------------------------------------
 
 describe('category.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -252,7 +252,7 @@ describe('category.service Wave 26 additions', () => {
   });
 });
 
-// ─── menu.service ───────────────────────────────────────────
+// --- menu.service -------------------------------------------
 
 describe('menu.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -308,7 +308,7 @@ describe('menu.service Wave 26 additions', () => {
   });
 });
 
-// ─── inventory.service ──────────────────────────────────────
+// --- inventory.service --------------------------------------
 
 describe('inventory.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -345,7 +345,7 @@ describe('inventory.service Wave 26 additions', () => {
   });
 });
 
-// ─── suggestion.service ─────────────────────────────────────
+// --- suggestion.service -------------------------------------
 
 describe('suggestion.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -390,7 +390,7 @@ describe('suggestion.service Wave 26 additions', () => {
   });
 });
 
-// ─── table-config.service (Wave 31 hardened to require tenantId) ─
+// --- table-config.service (Wave 31 hardened to require tenantId) -
 
 describe('table-config.service Wave 26+31 additions', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -427,7 +427,7 @@ describe('table-config.service Wave 26+31 additions', () => {
   });
 });
 
-// ─── audit.service.createAuditReadService ───────────────────
+// --- audit.service.createAuditReadService -------------------
 
 describe('audit.service.createAuditReadService', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -478,7 +478,7 @@ describe('audit.service.createAuditReadService', () => {
   });
 });
 
-// ─── service-manager.service ────────────────────────────────
+// --- service-manager.service --------------------------------
 
 describe('service-manager.service', () => {
   beforeEach(() => vi.clearAllMocks());

@@ -9,26 +9,26 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const t = useTranslations('auth.layout');
   return (
     <div className="h-full w-full flex bg-white dark:bg-neutral-950 relative">
-      {/* ── Left - Form panel ─────────────────────────────── */}
+      {/* -- Left - Form panel ------------------------------- */}
       <div className="w-full md:w-[55%] lg:w-[50%] flex flex-col px-6 sm:px-10 lg:px-16 py-8 md:overflow-y-auto">
         <div className="w-full max-w-md m-auto">{children}</div>
       </div>
 
-      {/* ── Right - Showcase panel ────────────────────────── */}
+      {/* -- Right - Showcase panel -------------------------- */}
       <div className="hidden md:flex md:w-[45%] lg:w-[50%] items-center p-4 md:p-5">
         <div className="w-full h-full rounded-2xl bg-neutral-950 flex flex-col justify-between p-8 lg:p-10 overflow-hidden">
-          {/* ── Top: Impact headline ────────────────────── */}
+          {/* -- Top: Impact headline ---------------------- */}
           <div className="shrink-0 mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold leading-tight font-[family-name:var(--font-sora)]">
               <span className="text-white">{t('headlineLine1')}</span>
               <br />
-              <span className="text-[#CCFF00]">{t('headlineLine2')}</span>
+              <span className="text-[#4fa3ff]">{t('headlineLine2')}</span>
               <br />
               <span className="text-neutral-400">{t('headlineLine3')}</span>
             </h2>
           </div>
 
-          {/* ── Impact numbers ──────────────────────────── */}
+          {/* -- Impact numbers ---------------------------- */}
           <div className="shrink-0 mb-8">
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -40,7 +40,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                   key={stat.value}
                   className="bg-white/5 border border-white/10 rounded-xl p-3 text-center"
                 >
-                  <div className="text-lg font-black text-[#CCFF00] tabular-nums leading-none mb-1">
+                  <div className="text-lg font-black text-[#4fa3ff] tabular-nums leading-none mb-1">
                     {stat.value}
                   </div>
                   <div className="text-[10px] text-neutral-400 mt-1">{stat.label}</div>
@@ -49,7 +49,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </div>
           </div>
 
-          {/* ── Dashboard mini preview ─────────────────── */}
+          {/* -- Dashboard mini preview ------------------- */}
           <div className="shrink-0 mb-8">
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               {/* Revenue header */}
@@ -73,14 +73,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 <svg viewBox="0 0 280 32" className="w-full h-6" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="login-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#CCFF00" stopOpacity="0.12" />
-                      <stop offset="100%" stopColor="#CCFF00" stopOpacity="0" />
+                      <stop offset="0%" stopColor="#4fa3ff" stopOpacity="0.12" />
+                      <stop offset="100%" stopColor="#4fa3ff" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <path
                     d="M 0 26 L 40 22 L 80 18 L 120 24 L 160 14 L 200 10 L 240 12 L 280 4"
                     fill="none"
-                    stroke="#CCFF00"
+                    stroke="#4fa3ff"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -146,7 +146,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </div>
           </div>
 
-          {/* ── Bottom: Testimonials ───────────────────── */}
+          {/* -- Bottom: Testimonials --------------------- */}
           <div className="shrink-0">
             <TestimonialCarousel />
           </div>

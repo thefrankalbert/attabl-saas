@@ -1,408 +1,410 @@
-# DESIGN.md — Digital Menu App
+---
+slug: square
+service_name: Square
+site_url: https://squareup.com
+fetched_at: 2026-04-13
+default_theme: light
+brand_color: '#006AFF'
+primary_font: Square Sans Text VF
+font_weight_normal: 400
+token_prefix: --color-*
+---
 
-# Visual Style: UberEats-inspired
-
-# Screen: Home / Main Interface
-
-# Platform: Mobile (iOS & Android)
+# DESIGN.md — Square (Codex Edition)
 
 ---
 
-## Overview
+## 01. Quick Start
 
-A premium digital menu home screen modeled after UberEats.
-Clean, bold, modern. Heavy use of white surfaces with a strong
-green accent. Large food imagery. Clear hierarchy.
-The customer should feel confident and hungry within 2 seconds
-of landing on this screen.
+<!-- SOURCE: manual -->
 
-Mood: Bold. Appetizing. Trustworthy. Fast.
-Inspiration: UberEats home screen (2024–2025 version).
+> 5분 안에 Square처럼 만들기 — 3가지만 하면 80%
+
+```css
+/* 1. 폰트 + weight */
+body {
+  font-family: 'Square Sans Text VF', 'Square Sans Text', Helvetica, Arial, sans-serif;
+  font-weight: 400;
+}
+
+/* 2. 배경 + 텍스트 */
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* 3. Square 블루 */
+:root {
+  --color-theme: #006aff;
+}
+```
+
+**절대 하지 말아야 할 것 하나**: `Cash Sans`를 Square의 메인 UI 폰트로 사용하는 것. `Cash Sans`는 Square의 Cash App 제품라인 전용 폰트다. Square 웹사이트의 메인 UI 폰트는 `Square Sans Text VF`이며, `Cash Sans` 혼용은 완전히 다른 제품의 아이덴티티가 섞이는 결과를 낳는다.
 
 ---
 
-## Colors
+## 02. Provenance
+
+<!-- SOURCE: auto -->
+
+|              |                                                                          |
+| ------------ | ------------------------------------------------------------------------ |
+| Source URL   | `https://squareup.com`                                                   |
+| Fetched      | 2026-04-13                                                               |
+| Extractor    | curl + Chrome UA                                                         |
+| HTML size    | N/A bytes                                                                |
+| CSS files    | Svelte-compiled CSS (`.svelte-*` 해시 클래스) + Square DS 토큰           |
+| Token prefix | `--color-*`, `--action-variant-*`, `--text-variant-*`, `--font-family-*` |
+| Method       | CSS 커스텀 프로퍼티 파싱 + selector_role 확인 · AI 추론 없음             |
+
+---
+
+## 03. Tech Stack
+
+<!-- SOURCE: auto+manual -->
+
+- **Framework**: SvelteKit (`.svelte-*` 해시 클래스 — Svelte 컴파일드 CSS 증거)
+- **Design system**: 자체 DS — Square Sans 폰트 패밀리 + `--color-*` / `--action-variant-*` 토큰 체계
+- **CSS architecture**: Svelte scoped CSS (`.svelte-kyz8oo`, `.svelte-wxk8im` 등 컴포넌트별 해시), CSS 커스텀 프로퍼티 토큰 병용
+- **Default theme**: light (흰 배경 `#FFFFFF`, near-black 텍스트 `#1A1A1A`, 블루 CTA `#006AFF`)
+- **Font loading**: 자체 호스트 `Square Sans Text VF`, `Square Sans Display`, `Square Sans Mono` + `Cash Sans` (Cash App)
+- **Canonical anchor**: `#006AFF` — `.primary.svelte-wxk8im { background-color: var(--color-theme, #006aff) }`, `--action-variant-button-alt-text-color` 양방향 확인
+
+---
+
+## 04. Font Stack
+
+<!-- SOURCE: auto+manual -->
+
+- **Primary/Body font**: `Square Sans Text VF` (64회 + `Square Sans Text` 8회 = 72회 — 압도적 1위)
+- **Display font**: `Square Sans Display` (9회), `Square Sans Display VF` (4회) — 히어로 헤드라인
+- **Mono**: `Square Sans Mono` (4회), `Square Sans Mono VF` (1회) — 코드, 데이터
+- **Cash App 전용**: `Cash Sans` (12회), `Cash Sans Mono` (3회) — Cash App 제품 페이지 전용
+- **레거시/특수**: `Exact Block` (2회 — 장식용 디스플레이), `Noto Sans JP` (1회 — 일본어)
+- **Weight system**: 300, 400, 500, 600, 700
+
+```css
+/* 기본 UI */
+body {
+  font-family:
+    'Square Sans Text VF', 'Square Sans Text', Helvetica, Arial, 'Hiragino Kaku Gothic Pro',
+    'ヒラギノ角ゴ Pro W3', 'メイリオ', meiryo, 'ＭＳ Ｐゴシック', sans-serif;
+  font-weight: 400;
+}
+
+/* 히어로 디스플레이 */
+h1,
+h2 {
+  font-family: 'Square Sans Display VF', 'Square Sans Display', Helvetica, Arial, sans-serif;
+  font-weight: 700;
+}
+
+/* 코드 / 데이터 */
+.mono {
+  font-family: 'Square Sans Mono', monospace;
+  font-weight: 400;
+}
+```
+
+> **주의**: `Cash Sans`(12회)는 Square의 메인 폰트가 아니다. Cash App 제품 섹션 전용. 오픈소스 대체재: `Square Sans Text VF` → `Inter` 또는 `DM Sans`, `Square Sans Display` → `Plus Jakarta Sans`.
+
+---
+
+## 05. Typography Scale
+
+<!-- SOURCE: manual -->
+
+| 역할            | 크기                   | Weight  | 폰트                   |
+| --------------- | ---------------------- | ------- | ---------------------- |
+| Hero Display    | clamp(40px, 6vw, 72px) | 700     | Square Sans Display VF |
+| Section Heading | 28px–40px              | 600–700 | Square Sans Display    |
+| Card Title      | 16px–20px              | 600     | Square Sans Text VF    |
+| Body            | 14px–16px              | 400     | Square Sans Text VF    |
+| Price / Data    | 18px–24px              | 500–600 | Square Sans Text VF    |
+| Code / Terminal | 13px–14px              | 400     | Square Sans Mono       |
+| Caption         | 12px                   | 400     | Square Sans Text VF    |
+| Button          | 15px–16px              | 600     | Square Sans Text VF    |
+
+---
+
+## 06. Colors
+
+<!-- SOURCE: auto+manual -->
 
 ### Brand
 
-- **Primary** (#06C167): UberEats signature green.
-  Used for: active category pills, add buttons, cart button,
-  price highlights, badges, active tab indicator.
-- **Primary Dark** (#05A557): Pressed/hover state of primary.
-- **Primary Light** (#E6F9F0): Tint background for selected
-  states, light badges.
+| Token                                              | Hex       | 역할                           | 출처                     |
+| -------------------------------------------------- | --------- | ------------------------------ | ------------------------ |
+| `--color-theme`                                    | `#006AFF` | 브랜드 블루 — primary CTA 배경 | `.primary.svelte-wxk8im` |
+| `--action-variant-button-alt-text-color`           | `#006AFF` | 버튼 텍스트 (light+dark 동일)  | semantic_vars            |
+| `--action-variant-button-alt-border-color (light)` | `#006AFF` | 버튼 테두리 (라이트 모드)      | semantic_vars            |
 
-### Backgrounds
+### CTA Details
 
-- **App Background** (#FFFFFF): Pure white. The entire app
-  background is white — like UberEats.
-- **Surface** (#FFFFFF): Cards, modals, bottom sheets.
-- **Surface Alt** (#F6F6F6): Search bar background, secondary
-  inputs, inactive pill backgrounds.
-- **Divider** (#EEEEEE): Horizontal rules between sections.
+| Hex       | 역할                              |
+| --------- | --------------------------------- |
+| `#006AFF` | primary 버튼 배경                 |
+| `#0055CC` | primary 버튼 focus/hover 오버레이 |
+| `#FFFFFF` | primary 버튼 텍스트               |
 
-### Text
+### Neutrals
 
-- **Text Primary** (#1A1A1A): All titles, item names,
-  restaurant names. Near-black, never pure black.
-- **Text Secondary** (#737373): Descriptions, subtitles,
-  cuisine type, metadata.
-- **Text Muted** (#B0B0B0): Placeholder text, timestamps,
-  ratings count.
-- **Text On Primary** (#FFFFFF): Text on green buttons/badges.
-
-### Semantic
-
-- **Rating** (#FFB800): Star icons, rating scores.
-- **Promo** (#FF3008): Discount tags, promotional banners
-  (UberEats red for promos).
-- **Success** (#06C167): Same as Primary — order confirmed.
-- **Error** (#FF3008): Out of stock, validation errors.
+| Hex       | 역할                            |
+| --------- | ------------------------------- |
+| `#1A1A1A` | 메인 텍스트 (near-black)        |
+| `#FFFFFF` | 기본 배경                       |
+| `#D9D9D9` | 보더 컬러                       |
+| `#F7F6F5` | 라이트 배경 accent (light mode) |
+| `#1F1F1F` | 다크 배경 accent (dark mode)    |
 
 ---
 
-## Typography
+## 07. Spacing
 
-Font: **Inter**
-Weights used: Regular (400), Medium (500), SemiBold (600), Bold (700).
+<!-- SOURCE: manual -->
 
-### Scale
-
-- **Hero Title** — 26px, Bold (700), Text Primary:
-  Welcome headline at top of screen.
-- **Section Title** — 20px, Bold (700), Text Primary:
-  "Popular near you", "Categories", section headers.
-- **Item Name** — 16px, SemiBold (600), Text Primary:
-  Menu item name on card.
-- **Restaurant Name** — 15px, SemiBold (600), Text Primary.
-- **Description** — 13px, Regular (400), Text Secondary:
-  Item description, always max 2 lines, truncated.
-- **Price** — 15px, Bold (700), Text Primary:
-  Item price. Dark text, not colored.
-- **Label** — 11px, Medium (500), UPPERCASE, letter-spacing 1px:
-  Section labels, filter chips, badge text.
-- **Button Text** — 15px, SemiBold (600), Text On Primary.
-- **Tab Label** — 11px, Medium (500): Bottom nav labels.
-
-### Rules
-
-- Line height: always 1.4x font size.
-- Never use font size below 11px.
-- Item names: max 2 lines. Never truncate price.
-- Descriptions: always numberOfLines={2}.
+| Step | Value |
+| ---- | ----- |
+| xs   | 4px   |
+| sm   | 8px   |
+| md   | 16px  |
+| lg   | 24px  |
+| xl   | 32px  |
+| 2xl  | 48px  |
+| 3xl  | 64px  |
+| 4xl  | 96px  |
 
 ---
 
-## Spacing System
+## 08. Radius
 
-Base unit: 4px.
+<!-- SOURCE: manual -->
 
-- **4px** — Micro gaps (icon to text, badge padding vertical)
-- **8px** — Small gaps (between chips, inner compact padding)
-- **12px** — Card inner padding, gap between list items
-- **16px** — Standard screen horizontal padding (EVERYWHERE)
-- **20px** — Between major sections
-- **24px** — Modal inner padding, hero content padding
-- **32px** — Large section separation
-- **56px** — Bottom floating bar height
-- **80px** — Bottom safe area (above tab bar + floating cart)
+| 역할      | Radius   |
+| --------- | -------- |
+| Button    | 4px–6px  |
+| Card      | 8px–12px |
+| Input     | 4px      |
+| Modal     | 12px     |
+| Badge     | 999px    |
+| Jump Link | 5px      |
 
-Rule: Screen left/right padding is ALWAYS 16px, no exceptions.
-
----
-
-## Border Radius
-
-- **0px** — Hero banner image (full bleed, edge to edge)
-- **8px** — Small tags, allergen badges, promo chips
-- **10px** — Search bar
-- **12px** — Menu item cards, featured cards, item images
-- **16px top-only** — Bottom sheet modals
-- **24px** — Category pill chips
-- **50px** — Round icon buttons, avatar
+> Square의 버튼 radius는 작다 — `4px–6px`. 결제 처리 회사로서 샤프하고 신뢰감 있는 비즈니스 느낌 유지. Wise의 pill(40px)과 완전히 대조적.
 
 ---
 
-## Shadows
+## 09. Shadows
 
-Minimal. Use borders instead of shadows for cards.
+<!-- SOURCE: manual -->
 
-- **Card**: border 1px solid #EEEEEE — no shadow.
-- **Floating Cart Button**:
-  shadowColor #000, offset {0,4}, opacity 0.15, radius 12
-  elevation 8 (Android)
-- **Modal**:
-  shadowColor #000, offset {0,-2}, opacity 0.08, radius 16
-- No other shadows anywhere.
+| 레이어   | CSS                                      |
+| -------- | ---------------------------------------- |
+| Card     | `box-shadow: 0 2px 8px rgba(0,0,0,.08)`  |
+| Dropdown | `box-shadow: 0 4px 16px rgba(0,0,0,.12)` |
+| Modal    | `box-shadow: 0 8px 32px rgba(0,0,0,.16)` |
 
 ---
 
-## Components
+## 10. Motion
 
-### Top Header Bar
+<!-- SOURCE: manual -->
 
-- Background: white.
-- Left: location pin icon (Primary green) + table name
-  (Text Primary, SemiBold 15px) + chevron down.
-- Right: profile avatar (40px circle).
-- Height: 56px.
-- Padding horizontal: 16px.
-- No border, no shadow.
-
-### Search Bar
-
-- Height: 48px.
-- Background: #F6F6F6.
-- Border radius: 10px.
-- No border line.
-- Left: search icon 20px, Text Muted color.
-- Placeholder: "Search for dishes or drinks", Text Muted.
-- Margin: 8px top, 16px horizontal.
-
-### Promotional Banner Carousel
-
-- Full width, height 160px.
-- Border radius: 12px.
-- Horizontal scrolling carousel, auto-scroll every 4 seconds.
-- Each card: background image + gradient overlay
-  (transparent to rgba(0,0,0,0.5)).
-- Text on image: promo label (Label, white) +
-  promo title (20px Bold, white).
-- Dot indicators at bottom center.
-- Margin: 16px horizontal.
-
-### Category Filter Bar
-
-- Horizontal ScrollView, no scroll indicator.
-- Each chip: padding 8px 16px, border radius 24px.
-- Font: 11px Medium UPPERCASE.
-- Inactive: background #F6F6F6, text #737373.
-- Active: background #06C167, text white.
-- Gap between chips: 8px.
-- Left padding: 16px.
-- Bar height: 40px.
-- Margin top: 20px.
-
-### Section Header Row
-
-- Layout: row, space-between.
-- Left: 20px Bold, Text Primary (section title).
-- Right: "See all" — 14px SemiBold, Primary green.
-- Margin: 20px top, 16px horizontal, 12px bottom.
-
-### Menu Item Card (Vertical List — default)
-
-- Background: white.
-- Border: 1px solid #EEEEEE.
-- Border radius: 12px.
-- Margin bottom: 12px.
-- Margin horizontal: 16px.
-- Layout: row.
-  LEFT (flex 1, padding 12px):
-  - Category: 11px Medium UPPERCASE, Text Muted.
-  - Name: 16px SemiBold, Text Primary, max 2 lines.
-  - Description: 13px Regular, Text Secondary, max 2 lines.
-  - Rating row: star icon (FFB800) + score + count.
-  - Price: 15px Bold, Text Primary.
-    RIGHT:
-  - Image: 90x90px, border radius 12px, resizeMode cover.
-  - "+" button: 28px circle, Primary green, white "+",
-    absolute bottom-right of image, offset -8px each.
-
-### Menu Item Card (Horizontal Scroll — Featured)
-
-- Width: 160px fixed.
-- Border: 1px solid #EEEEEE.
-- Border radius: 12px.
-- Image: full width, height 110px, border radius 12px top only.
-- Content padding: 10px.
-- Name: 14px SemiBold, max 2 lines.
-- Price: 13px Bold.
-- "Add" button: full width, height 32px, Primary green,
-  border radius 8px.
-
-### Item Detail Bottom Sheet
-
-- Border radius: 16px top corners only.
-- Background: white.
-- Food image: full width, height 260px, resizeMode cover.
-- Close button: 36px white circle, top-right, absolute.
-- Content padding: 24px.
-  - Category: Label, Primary green, uppercase.
-  - Name: 22px Bold, Text Primary.
-  - Description: 14px Regular, Text Secondary, full text.
-  - Divider: 1px #EEEEEE, margin vertical 16px.
-  - Tags row: chips with 8px radius, #F6F6F6 background.
-  - Divider.
-  - Quantity row (centered):
-    "−" (36px circle, border 1px #EEEEEE) +
-    count (18px Bold) +
-    "+" (36px circle, Primary green).
-  - "Add to cart" button:
-    Full width, 52px height, Primary green (#06C167),
-    border radius 12px, 15px SemiBold white text.
-
-### Floating Cart Bar
-
-- Position: absolute bottom.
-- Background: #1A1A1A (dark, like UberEats).
-- Height: 56px.
-- Border radius: 12px.
-- Margin: 0 16px 16px 16px.
-- Shadow: Floating Cart Button shadow.
-- Layout (padding 16px):
-  Left: white cart icon + green count badge.
-  Center: "View cart" 15px SemiBold white.
-  Right: total price 15px Bold white.
-- Hidden when cart is empty.
-
-### Bottom Tab Bar
-
-- Background: white.
-- Border top: 1px solid #EEEEEE.
-- Height: 60px + safe area bottom.
-- 4 tabs: Home · Cart · Orders · Account.
-- Active: icon + label in #06C167.
-- Inactive: icon + label in #B0B0B0.
-- Cart tab: green dot badge when items > 0.
-- Icons: outline when inactive, filled when active.
-
-### Rating Badge (inline, on cards)
-
-- Star icon: 12px, #FFB800.
-- Score: 13px Medium, Text Primary.
-- Count: 13px Regular, Text Muted.
-- Example: ★ 4.8 (120+)
-
-### Promo Tag
-
-- Background: #FF3008.
-- Text: white, Label size (11px uppercase).
-- Border radius: 8px.
-- Padding: 3px 8px.
-- Example: "20% OFF"
+| 패턴         | Duration | Easing   |
+| ------------ | -------- | -------- |
+| Button hover | 150ms    | ease     |
+| Nav toggle   | 200ms    | ease-out |
+| Card hover   | 180ms    | ease     |
+| Modal open   | 250ms    | ease-out |
 
 ---
 
-## Home Screen Layout (Top to Bottom)
+## 11. Layout Patterns
 
-```
-┌──────────────────────────────────┐
-│  Header: table + avatar          │  56px
-├──────────────────────────────────┤
-│  Search Bar                      │  64px
-├──────────────────────────────────┤
-│  Promo Banner Carousel           │  176px
-├──────────────────────────────────┤
-│  Category Filter Bar             │  60px
-├──────────────────────────────────┤
-│  Section: "Popular"              │
-│    Menu Item Cards (list)        │  variable
-├──────────────────────────────────┤
-│  Section: "Drinks"               │
-│    Horizontal Scroll Cards       │  variable
-├──────────────────────────────────┤
-│  [Bottom padding 80px]           │
-└──────────────────────────────────┘
-  Floating Cart Bar   (absolute)
-  Bottom Tab Bar      (absolute)
+<!-- SOURCE: manual -->
+
+- **히어로**: 흰 배경, 큰 Display 헤드라인, 블루 CTA — 비즈니스 솔루션 소개
+- **Feature 섹션**: 제품 카드 그리드 + 설명. POS 기기, 결제, 대출 등
+- **내비게이션**: DesktopNav 흰 배경, 메뉴 드롭다운 — Svelte 컴포넌트 기반
+- **컨테이너**: `max-width: 1200px; margin: 0 auto; padding: 0 24px`
+- **Dark mode**: `--color-background-accent-color-mode-dark: #1F1F1F` — 다크 모드 지원 (accent 영역)
+
+---
+
+## 12. Components
+
+<!-- SOURCE: auto+manual -->
+
+### Primary CTA Button
+
+```css
+.btn-primary {
+  background: var(--color-theme, #006aff);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 14px 24px;
+  font-family: 'Square Sans Text VF', Helvetica, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 150ms ease;
+  position: relative;
+  overflow: hidden;
+}
+/* hover/focus overlay */
+.btn-primary::before {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: var(--color-theme-focus, #0055cc);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.btn-primary:hover::before {
+  opacity: 1;
+}
 ```
 
----
+### Secondary Button (Alt variant)
 
-## Do's and Don'ts
+```css
+.btn-alt {
+  background: transparent;
+  color: #006aff;
+  border: 2px solid #006aff;
+  border-radius: 4px;
+  padding: 12px 22px;
+  font-family: 'Square Sans Text VF', Helvetica, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+```
 
-### Do
+### Jump Link (Skip nav — 접근성)
 
-- Use Primary green (#06C167) only for active states,
-  add buttons, cart, active tab. Nothing else.
-- Keep ALL backgrounds white or #F6F6F6.
-- Show food image on the RIGHT of list cards.
-- Keep floating cart bar dark (#1A1A1A).
-- Use 1px #EEEEEE borders instead of shadows for cards.
-- Always show rating on every item card.
-- Keep prices in dark text (Text Primary), not green.
-
-### Don't
-
-- Don't use any other color as primary accent.
-- Don't add gradients to card backgrounds.
-- Don't use border radius less than 8px anywhere.
-- Don't bold descriptions — always Regular weight.
-- Don't show floating cart when cart is empty.
-- Don't center-align text in list cards — left-aligned only.
-- Don't use pure black (#000000) anywhere.
-
----
-
-## Motion
-
-- Category pill: instant color change, no transition.
-- Add "+" button: scale 0.85 to 1.0, 120ms.
-- Bottom sheet open: slide up, 280ms, ease-out.
-- Cart badge count: scale-up pulse 1.3 to 1.0, 150ms.
-- Banner carousel: auto-scroll every 4 seconds, smooth.
-
----
-
-## Placeholder Data
-
-```json
-{
-  "restaurant": {
-    "name": "Le Maquis Royal",
-    "table": "Table 4",
-    "banner": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5"
-  },
-  "categories": ["All", "Starters", "Main Course", "Grills", "Drinks", "Desserts"],
-  "items": [
-    {
-      "id": "1",
-      "name": "Poulet braisé sauce tomate",
-      "description": "Grilled chicken with homemade tomato sauce, served with attiéké",
-      "price": 3500,
-      "currency": "FCFA",
-      "rating": 4.8,
-      "ratingCount": 94,
-      "category": "Main Course",
-      "image": "https://images.unsplash.com/photo-1598103442097-8b74394b95c8"
-    },
-    {
-      "id": "2",
-      "name": "Thiéboudienne",
-      "description": "Traditional fish and rice slow cooked with vegetables",
-      "price": 4000,
-      "currency": "FCFA",
-      "rating": 4.9,
-      "ratingCount": 210,
-      "category": "Main Course",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19"
-    },
-    {
-      "id": "3",
-      "name": "Jus de gingembre frais",
-      "description": "Fresh ginger juice with lemon and mint",
-      "price": 800,
-      "currency": "FCFA",
-      "rating": 4.7,
-      "ratingCount": 58,
-      "category": "Drinks",
-      "image": "https://images.unsplash.com/photo-1544145945-f90425340c7e"
-    }
-  ]
+```css
+.jump-link {
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 2px solid #006aff;
+  border-radius: 5px;
+  padding: 10px;
+  font-weight: 600;
 }
 ```
 
 ---
 
-## How to Use This File
+## 13. Content Voice
 
-Place this file at the root of your project as `DESIGN.md`.
+<!-- SOURCE: manual -->
 
-Start EVERY prompt to your AI agent with:
+- **헤드라인**: 비즈니스 성장, 판매 효율. "Grow your business with Square."
+- **수치**: 처리 비율, 소요 시간. "2.6% + 10¢ per swipe"
+- **CTA**: "Get started", "Talk to sales", "See pricing" — 비즈니스 직접적
+- **어조**: 전문적이고 명확. SMB(소상공인) 친화적. 복잡한 금융을 단순하게
 
-"Refer to DESIGN.md for ALL visual decisions.
-Do not invent or guess any color, spacing, font size,
-or border radius. Every token must come from DESIGN.md."
+---
 
-Then describe the screen or component you need.
+## 14. Drop-in CSS
+
+<!-- SOURCE: manual -->
+
+```css
+/* Square Design System — Drop-in */
+:root {
+  --color-theme: #006aff; /* primary CTA */
+  --color-theme-focus: #0055cc; /* hover/focus */
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  --color-border: #d9d9d9;
+  --color-background-accent: #f7f6f5;
+
+  --font-family-base: 'Square Sans Text VF', 'Square Sans Text', Helvetica, Arial, sans-serif;
+  --font-family-display:
+    'Square Sans Display VF', 'Square Sans Display', Helvetica, Arial, sans-serif;
+  --font-family-mono: 'Square Sans Mono', monospace;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-weight: 400;
+  background: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+```
+
+---
+
+## 15. Tailwind Config
+
+<!-- SOURCE: manual -->
+
+```js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        square: {
+          blue: '#006AFF',
+          'blue-hover': '#0055CC',
+          dark: '#1A1A1A',
+          border: '#D9D9D9',
+          accent: '#F7F6F5',
+        },
+      },
+      fontFamily: {
+        sans: ['"Square Sans Text VF"', '"Square Sans Text"', 'Helvetica', 'Arial', 'sans-serif'],
+        display: [
+          '"Square Sans Display VF"',
+          '"Square Sans Display"',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
+        mono: ['"Square Sans Mono"', 'monospace'],
+      },
+      borderRadius: {
+        btn: '4px',
+        card: '8px',
+        lg: '12px',
+      },
+    },
+  },
+};
+```
+
+---
+
+## 16. DO / DON'T
+
+<!-- SOURCE: manual -->
+
+### DO
+
+- `#006AFF` Square 블루를 primary CTA 배경에 — `var(--color-theme, #006AFF)` 패턴
+- 버튼에 `::before` hover overlay 패턴 (`#0055CC`, opacity 0→1)
+- `Square Sans Text VF`로 UI 전체, `Square Sans Display`로 히어로 헤드라인
+- 버튼 radius는 작게 — `4px` (비즈니스/결제 신뢰감)
+- `Square Sans Mono`로 코드/수치 데이터 표시
+
+### DON'T
+
+- `Cash Sans`를 메인 UI 폰트로 사용 — Cash App 전용 폰트
+- pill shape 버튼(`border-radius: 999px`) — Square는 샤프한 비즈니스 느낌
+- 다크 배경을 기본으로 — 라이트가 Square의 주 테마
+- `--color-theme` 없이 하드코딩만 — CSS 변수 패턴 유지
+
+### 자주 하는 오해 vs 실제
+
+| 오해                           | 실제                                                    |
+| ------------------------------ | ------------------------------------------------------- |
+| Cash Sans = Square 메인 폰트   | Cash App 전용. Square 메인은 `Square Sans Text VF`      |
+| Square = 결제 = 검정/흰        | 라이트 테마 + 블루 CTA — `#006AFF`                      |
+| 버튼이 둥글 것                 | `4px` 작은 radius — 비즈니스 샤프함                     |
+| Svelte 해시 클래스 = 의미 없음 | `.primary.svelte-wxk8im`에서 브랜드 컬러 직접 확인 가능 |

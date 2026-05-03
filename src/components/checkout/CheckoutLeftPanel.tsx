@@ -58,8 +58,8 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
     <div className="flex flex-col bg-[#0a0a0a] text-[#f5f5f4] p-8 md:p-12 md:w-[42%] shrink-0 overflow-hidden">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-auto pb-10">
-        <div className="w-8 h-8 rounded-lg bg-[#c2f542] flex items-center justify-center shrink-0">
-          <span className="text-[#0a0a0a] font-black text-sm leading-none">A</span>
+        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+          <span className="text-accent-text font-black text-sm leading-none">A</span>
         </div>
         <span className="text-[#f5f5f4] font-bold text-lg tracking-tight">ATTABL</span>
       </div>
@@ -83,8 +83,8 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
         <ul className="space-y-4">
           {features.map((key) => (
             <li key={key} className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-[#c2f542]/15 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-[#c2f542]" />
+              <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-accent" />
               </div>
               <span className="text-sm text-[#d4d0cc]">
                 {t(`subscription.${key}` as Parameters<typeof t>[0])}

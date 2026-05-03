@@ -18,7 +18,7 @@ import {
 import type { Menu, Venue } from '@/types/admin.types';
 import type { MenuFormData } from '@/hooks/useMenusData';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface MenuFormProps {
   editingMenu: Menu | null;
@@ -29,7 +29,7 @@ interface MenuFormProps {
   onCancel: () => void;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function MenuForm({
   editingMenu,
@@ -94,7 +94,7 @@ export default function MenuForm({
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             placeholder={t('nameFrPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
             required
           />
         </div>
@@ -107,7 +107,7 @@ export default function MenuForm({
             value={formNameEn}
             onChange={(e) => setFormNameEn(e.target.value)}
             placeholder={t('nameEnPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
           />
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function MenuForm({
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
             placeholder={t('descriptionFrPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
           />
         </div>
         <div className="space-y-1.5">
@@ -134,7 +134,7 @@ export default function MenuForm({
             value={formDescriptionEn}
             onChange={(e) => setFormDescriptionEn(e.target.value)}
             placeholder={t('descriptionEnPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
           />
         </div>
       </div>
@@ -150,7 +150,7 @@ export default function MenuForm({
               if (next) setFormVenueId(null);
             }}
           />
-          <Globe className="w-4 h-4 text-lime-600 flex-shrink-0" />
+          <Globe className="w-4 h-4 text-accent flex-shrink-0" />
           <div>
             <Label htmlFor="menu-shared" className="text-app-text font-medium">
               {t('sharedMenu')}

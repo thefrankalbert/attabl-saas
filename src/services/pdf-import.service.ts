@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
-// ─── Types ────────────────────────────────────────────────────
+// --- Types ----------------------------------------------------
 
 export interface PdfExtractedItem {
   category: string;
@@ -25,7 +25,7 @@ export interface PdfImportResult {
   errors: Array<{ index: number; message: string }>;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// --- Helpers --------------------------------------------------
 
 /**
  * Generates a URL-safe slug from a name.
@@ -54,7 +54,7 @@ function cleanJsonResponse(raw: string): string {
   return cleaned.trim();
 }
 
-// ─── Service ──────────────────────────────────────────────────
+// --- Service --------------------------------------------------
 
 /**
  * PDF import service for menu data.

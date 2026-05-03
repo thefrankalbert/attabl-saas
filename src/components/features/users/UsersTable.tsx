@@ -25,7 +25,7 @@ interface UsersTableProps {
   onEditUser?: (user: AdminUser) => void;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function UsersTable({
   users,

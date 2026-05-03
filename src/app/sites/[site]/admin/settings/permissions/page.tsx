@@ -11,7 +11,7 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
   const { site } = await params;
   const supabase = await createClient();
 
-  // ─── Auth check ──────────────────────────────────────
+  // --- Auth check --------------------------------------
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
 
   const tenantId = adminUser.tenant_id as string;
 
-  // ─── Fetch existing role overrides ───────────────────
+  // --- Fetch existing role overrides -------------------
   const { data: rolePerms } = await supabase
     .from('role_permissions')
     .select('*')

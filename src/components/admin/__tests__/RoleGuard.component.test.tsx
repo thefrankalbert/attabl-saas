@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import RoleGuard from '../RoleGuard';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 const mockPermissions = {
   role: 'admin' as const,
@@ -20,7 +20,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('RoleGuard', () => {
   beforeEach(() => {

@@ -96,7 +96,7 @@ function asSupabase(mock: ReturnType<typeof createMockSupabase>): SupabaseClient
   return mock as unknown as SupabaseClient;
 }
 
-// ─── Fixtures ──────────────────────────────────────────────
+// --- Fixtures ----------------------------------------------
 
 const TENANT_ID = 'tenant-123';
 const TABLE_ID = 'table-456';
@@ -119,7 +119,7 @@ const mockAssignment = {
   table: mockTable,
 };
 
-// ─── Tests ─────────────────────────────────────────────────
+// --- Tests -------------------------------------------------
 
 describe('AssignmentService', () => {
   describe('assignServerToTable', () => {

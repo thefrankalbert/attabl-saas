@@ -34,31 +34,31 @@ const brandNames: Record<Segment, string> = {
 
 const gaugeData: Record<Segment, { statKey: StatKey; value: string; color: string }[]> = {
   restaurant: [
-    { statKey: 'revenue', value: '847K', color: '#4ade80' },
+    { statKey: 'revenue', value: '847K', color: '#006AFF' },
     { statKey: 'orders', value: '152', color: '#60a5fa' },
     { statKey: 'articles', value: '48', color: '#f97316' },
     { statKey: 'tables', value: '24', color: '#a78bfa' },
   ],
   hotel: [
-    { statKey: 'revenue', value: '2.8M', color: '#4ade80' },
+    { statKey: 'revenue', value: '2.8M', color: '#006AFF' },
     { statKey: 'checkins', value: '31', color: '#60a5fa' },
     { statKey: 'rooms', value: '42', color: '#f97316' },
     { statKey: 'occupancy', value: '87%', color: '#a78bfa' },
   ],
   quickservice: [
-    { statKey: 'revenue', value: '1.2M', color: '#4ade80' },
+    { statKey: 'revenue', value: '1.2M', color: '#006AFF' },
     { statKey: 'orders', value: '312', color: '#60a5fa' },
     { statKey: 'articles', value: '24', color: '#f97316' },
     { statKey: 'avgTime', value: '4min', color: '#a78bfa' },
   ],
   bar: [
-    { statKey: 'revenue', value: '680K', color: '#4ade80' },
+    { statKey: 'revenue', value: '680K', color: '#006AFF' },
     { statKey: 'orders', value: '189', color: '#60a5fa' },
     { statKey: 'cocktails', value: '35', color: '#f97316' },
     { statKey: 'tables', value: '18', color: '#a78bfa' },
   ],
   fastfood: [
-    { statKey: 'revenue', value: '2.1M', color: '#4ade80' },
+    { statKey: 'revenue', value: '2.1M', color: '#006AFF' },
     { statKey: 'orders', value: '487', color: '#60a5fa' },
     { statKey: 'articles', value: '18', color: '#f97316' },
     { statKey: 'drive', value: '156', color: '#a78bfa' },
@@ -359,7 +359,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-900/10 dark:shadow-black/30',
+        'overflow-hidden rounded-[var(--radius-card-lg)] border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-900/10 dark:shadow-black/30',
         className,
       )}
     >
@@ -473,7 +473,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                     </div>
                   </div>
                   <div className="flex-1 min-h-0">
-                    <MiniAreaChart points={chart.points} color="#4ade80" height={60} />
+                    <MiniAreaChart points={chart.points} color="#006AFF" height={60} />
                   </div>
                   <div className="flex justify-between mt-0.5">
                     {dayKeys.map((d) => (

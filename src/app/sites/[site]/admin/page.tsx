@@ -188,7 +188,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       supabase.from('tables').select('id, status', { count: 'exact' }).eq('tenant_id', tenant.id),
     ]);
 
-    // ─── Today stats ─────────────────────────────────────
+    // --- Today stats -------------------------------------
     const ordersData = ordersRes.data || [];
     initialStats = {
       ordersToday: ordersData.length,
@@ -199,7 +199,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       activeCards: venuesCountRes.count || 0,
     };
 
-    // ─── Trend ───────────────────────────────────────────
+    // --- Trend -------------------------------------------
     const yesterdayOrders = yesterdayRes.data || [];
     const yesterdayRevenue = yesterdayOrders
       .filter((o: Record<string, unknown>) => o.status === 'delivered')
@@ -220,7 +220,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       );
     }
 
-    // ─── Chart buckets ──────────────────────────────────
+    // --- Chart buckets ----------------------------------
     const quarterOrders = (quarterRes.data || []) as Array<{
       total?: number | null;
       tip_amount?: number | null;
@@ -238,7 +238,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     initialRevenueSparkline = last7.map((b) => ({ value: b.revenue }));
     initialOrdersSparkline = last7.map((b) => ({ value: b.count }));
 
-    // ─── Recent orders ──────────────────────────────────
+    // --- Recent orders ----------------------------------
     initialRecentOrders = (recentOrdersRes.data || []).map((order: Record<string, unknown>) => ({
       id: order.id as string,
       tenant_id: tenant.id,
@@ -258,7 +258,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       ),
     }));
 
-    // ─── Top dishes (7d aggregation) ────────────────────
+    // --- Top dishes (7d aggregation) --------------------
     const dishMap = new Map<string, TopDishRecord>();
     for (const row of topDishesRes.data || []) {
       const r = row as Record<string, unknown>;
@@ -296,7 +296,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       .sort((a, b) => b.portions - a.portions)
       .slice(0, 5);
 
-    // ─── Stock alerts ───────────────────────────────────
+    // --- Stock alerts -----------------------------------
     const rawAlerts: StockAlertRecord[] = [];
     for (const row of (lowStockRes.data || []) as Array<Record<string, unknown>>) {
       const name = (row.name as string) || '';
@@ -310,7 +310,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     }
     initialStockAlerts = rawAlerts.sort((a, b) => a.current - b.current).slice(0, 3);
 
-    // ─── Tables ────────────────────────────────────────
+    // --- Tables ----------------------------------------
     const tablesList = (tablesRes.data || []) as Array<{ status?: string }>;
     activeTablesTotal = tablesRes.count ?? tablesList.length;
     activeTablesUsed = tablesList.filter(

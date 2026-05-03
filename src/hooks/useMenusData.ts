@@ -14,7 +14,7 @@ import {
 } from '@/app/actions/menus';
 import type { Menu } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export interface MenuFormData {
   name: string;
@@ -53,7 +53,7 @@ export interface UseMenusDataReturn {
   loadMenus: () => void;
 }
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook -----------------------------------------------
 
 export function useMenusData({
   tenantId,
@@ -75,7 +75,7 @@ export function useMenusData({
     queryClient.invalidateQueries({ queryKey: ['menus', tenantId] });
   };
 
-  // ─── CRUD ───────────────────────────────────────────
+  // --- CRUD -------------------------------------------
 
   const createMenu = async (data: MenuFormData): Promise<Menu | null> => {
     const result = await actionCreateMenu(tenantId, {
@@ -196,7 +196,7 @@ export function useMenusData({
     }
   };
 
-  // ─── Derived data ─────────────────────────────────────
+  // --- Derived data -------------------------------------
 
   const limitReached = checkLimit('maxMenus', menus.length);
 

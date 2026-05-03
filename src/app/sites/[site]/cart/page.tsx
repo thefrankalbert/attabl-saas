@@ -222,7 +222,7 @@ export default function CartPage() {
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A]"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground"
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-6 h-6" />
@@ -230,18 +230,18 @@ export default function CartPage() {
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
-          <div className="w-32 h-32 bg-[#F6F6F6] rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-16 h-16 text-[#B0B0B0]" strokeWidth={1.5} />
+          <div className="w-32 h-32 bg-secondary rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-16 h-16 text-muted-foreground" strokeWidth={1.5} />
           </div>
-          <h2 className="text-[20px] font-bold text-[#1A1A1A] mb-2 text-center">
+          <h2 className="text-[20px] font-bold text-foreground mb-2 text-center">
             {t('emptyCart')}
           </h2>
-          <p className="text-[13px] text-[#737373] text-center mb-8 max-w-[280px]">
+          <p className="text-[13px] text-muted-foreground text-center mb-8 max-w-[280px]">
             {t('emptyCartDesc')}
           </p>
           <Button
             asChild
-            className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+            className="h-[52px] px-8 rounded bg-foreground text-background text-[15px] font-semibold hover:bg-foreground/90"
           >
             <Link href={menuPath}>
               <ArrowLeft className="w-4 h-4" />
@@ -268,13 +268,13 @@ export default function CartPage() {
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-xl">
+          <div className="p-4 bg-red-50 border border-border rounded-[var(--radius-card)]">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#FF3008] shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-semibold text-[#FF3008] text-[13px]">{error}</p>}
+                {error && <p className="font-semibold text-destructive text-[13px]">{error}</p>}
                 {validationErrors.length > 0 && (
-                  <ul className="mt-1 text-[13px] text-[#FF3008] list-disc list-inside">
+                  <ul className="mt-1 text-[13px] text-destructive list-disc list-inside">
                     {validationErrors.map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
@@ -306,17 +306,17 @@ export default function CartPage() {
             <Button
               variant="ghost"
               onClick={() => setNotesOpen(true)}
-              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-foreground py-3 hover:text-foreground/80"
             >
               <ChefHat className="w-4 h-4" />
               <span>{t('cartNotesLabel')}</span>
-              <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
             </Button>
           </section>
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-foreground">
                 {t('cartNotesLabel')}
               </Label>
               <Button
@@ -326,7 +326,7 @@ export default function CartPage() {
                   setNotesOpen(false);
                   setNotes('');
                 }}
-                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+                className="text-muted-foreground hover:text-foreground h-8 w-8"
                 aria-label={t('ariaClose') || 'Fermer'}
               >
                 <X className="w-4 h-4" />
@@ -340,10 +340,10 @@ export default function CartPage() {
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
-                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
+                className="w-full min-h-[80px] bg-secondary border border-border rounded px-3 py-3 text-[14px] font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground resize-none transition-colors"
               />
               <div className="mt-1 flex justify-end">
-                <span className="text-[11px] text-[#B0B0B0]">
+                <span className="text-[11px] text-muted-foreground">
                   {notesLength}/{NOTES_MAX_LENGTH}
                 </span>
               </div>
@@ -449,7 +449,7 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
+            className="w-full h-[52px] rounded bg-foreground text-background font-semibold text-[15px] hover:bg-foreground/90 shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-foreground"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />

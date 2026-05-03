@@ -28,7 +28,7 @@ import {
 } from '@/app/actions/admin';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface UsersClientProps {
   tenantId: string;
@@ -36,7 +36,7 @@ interface UsersClientProps {
   initialUsers: AdminUser[];
 }
 
-// ─── Main Component ────────────────────────────────────────
+// --- Main Component ----------------------------------------
 
 export default function UsersClient({ tenantId, currentUserRole, initialUsers }: UsersClientProps) {
   const t = useTranslations('users');

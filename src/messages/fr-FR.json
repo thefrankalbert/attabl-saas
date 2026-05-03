@@ -573,7 +573,7 @@
       "metaTitle": "Fonctionnalités",
       "metaDescription": "Découvrez toutes les fonctionnalités d'ATTABL : menu digital, commandes, stock, analytics et plus.",
       "heroTitle": "Tout ce dont vous avez besoin",
-      "heroSubtitle": "Tout ce dont vous avez besoin. Un seul outil.",
+      "heroSubtitle": "Menus QR, commandes, encaissement, cuisine. Tout tourne depuis votre telephone.",
       "categories": {
         "menu": {
           "title": "Menu & Commandes",
@@ -624,6 +624,7 @@
         "subtitle": "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Vos chiffres tombent sans effort.",
         "ctaPrimary": "Essayer gratuitement",
         "ctaSecondary": "Voir une demo",
+        "mobileMoney": "Wave, Orange Money, carte ou cash. Aucun terminal requis.",
         "segments": {
           "restaurant": "Restaurant",
           "hotel": "Hôtel",
@@ -675,7 +676,7 @@
         }
       },
       "productShowcase": {
-        "title": "Cinq modules. Un seul outil.",
+        "title": "Cinq modules. Un seul abonnement.",
         "subtitle": "Du premier client au centième, ATTABL grandit avec vous.",
         "revenueLabel": "Revenu mensuel",
         "ordersLabel": "Commandes / jour",
@@ -783,7 +784,7 @@
       }
     },
     "header": {
-      "solutions": "Solutions",
+      "solutions": "Metiers",
       "features": "Fonctionnalités",
       "pricing": "Tarifs",
       "news": "Nouveautés",
@@ -1424,7 +1425,7 @@
       },
       "recipes": {
         "title": "Fiches techniques",
-        "desc": "Calculez le cout reel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activite reelle."
+        "desc": "Calculez le cout reel de chaque plat, suivez vos marges et ajustez vos achats selon votre activite reelle."
       },
       "reports": {
         "title": "Statistiques avancees",

@@ -78,7 +78,7 @@ export function PricingCard({
     >
       {/* Background Gradient for Highlighted Card */}
       {details.highlight && (
-        <div className="absolute -inset-[1px] bg-gradient-to-b from-[#CCFF00] to-transparent rounded-[24px] opacity-100 dark:opacity-100 blur-[2px] pointer-events-none" />
+        <div className="absolute -inset-[1px] bg-gradient-to-b from-[#006AFF] to-transparent rounded-[24px] opacity-100 dark:opacity-100 blur-[2px] pointer-events-none" />
       )}
 
       <div
@@ -86,11 +86,11 @@ export function PricingCard({
           details.highlight
             ? 'bg-white dark:bg-[#121212] border-transparent shadow-none'
             : 'bg-white dark:bg-[#0A0A0A] border-neutral-100 dark:border-white/10 shadow-none'
-        } group-hover:border-[#CCFF00]/30`}
+        } group-hover:border-[#006AFF]/30`}
       >
         {/* Inner Gradient for "Pro" feel on Dark Mode */}
         {details.highlight && (
-          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#CCFF00]/10 to-transparent pointer-events-none hidden dark:block" />
+          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#006AFF]/10 to-transparent pointer-events-none hidden dark:block" />
         )}
 
         <div className="p-8 flex flex-col h-full relative z-10">
@@ -118,7 +118,7 @@ export function PricingCard({
             </div>
             {billingInterval === 'yearly' && (
               <div className="mt-2 text-xs font-bold">
-                <span className="text-green-600 dark:text-[#CCFF00] bg-green-50 dark:bg-[#CCFF00]/10 px-2 py-0.5 rounded">
+                <span className="text-accent bg-accent-muted px-2 py-0.5 rounded">
                   -20% appliqué
                 </span>
                 <span className="text-neutral-400 block mt-1">
@@ -135,7 +135,7 @@ export function PricingCard({
               <div key={i} className="flex items-start gap-3 text-sm text-neutral-400">
                 <Check
                   className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    details.highlight ? 'text-[#CCFF00]' : 'text-neutral-600 dark:text-neutral-600'
+                    details.highlight ? 'text-accent' : 'text-neutral-600 dark:text-neutral-600'
                   }`}
                 />
                 <span className="text-neutral-600 dark:text-neutral-400">{feature}</span>
@@ -149,7 +149,7 @@ export function PricingCard({
             disabled={isLoading || isCurrentPlan}
             className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 focus-visible:ring-0 ${
               details.highlight
-                ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-none'
+                ? 'bg-accent hover:bg-accent-hover text-accent-text shadow-none'
                 : 'bg-black dark:bg-white/10 text-white hover:bg-neutral-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5 shadow-none'
             }`}
           >

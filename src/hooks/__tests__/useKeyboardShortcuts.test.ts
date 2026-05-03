@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useKeyboardShortcuts, type ShortcutDefinition } from '../useKeyboardShortcuts';
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 function fireKey(key: string, opts: Partial<KeyboardEventInit> = {}, target?: HTMLElement) {
   const event = new KeyboardEvent('keydown', {
@@ -24,7 +24,7 @@ function makeShortcut(overrides: Partial<ShortcutDefinition> & { id: string }): 
   };
 }
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('useKeyboardShortcuts', () => {
   const onOpenHelp = vi.fn();

@@ -18,7 +18,7 @@ import type {
   SparklinePoint,
 } from '@/types/admin.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 export interface StockItem {
   id: string;
@@ -54,7 +54,7 @@ export interface UseDashboardDataReturn {
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
 }
 
-// ─── Helpers ───────────────────────────────────────────────
+// --- Helpers -----------------------------------------------
 
 export function timeAgo(
   date: string,
@@ -77,7 +77,7 @@ export function getLast7DaysData(orders: Order[]): number[] {
   return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
 }
 
-// ─── Hook ──────────────────────────────────────────────────
+// --- Hook --------------------------------------------------
 
 export function useDashboardData({
   tenantId,

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
-// ─── Types ────────────────────────────────────────────────────
+// --- Types ----------------------------------------------------
 
 export interface ImportResult {
   categoriesCreated: number;
@@ -31,7 +31,7 @@ interface ParsedRow {
   isFeatured: boolean;
 }
 
-// ─── Column Name Mapping ──────────────────────────────────────
+// --- Column Name Mapping --------------------------------------
 
 /**
  * Normalizes a column header for tolerant matching:
@@ -110,7 +110,7 @@ function mapHeaders(headers: string[]): Map<number, string> {
   return mapping;
 }
 
-// ─── Row Validation Schema ────────────────────────────────────
+// --- Row Validation Schema ------------------------------------
 
 const excelRowSchema = z.object({
   category: z
@@ -132,7 +132,7 @@ const excelRowSchema = z.object({
   isFeatured: z.boolean().default(false),
 });
 
-// ─── Boolean Parsing ──────────────────────────────────────────
+// --- Boolean Parsing ------------------------------------------
 
 /**
  * Parses a cell value into a boolean.
@@ -194,7 +194,7 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-// ─── Service ──────────────────────────────────────────────────
+// --- Service --------------------------------------------------
 
 /**
  * Excel import service for menu data.

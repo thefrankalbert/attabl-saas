@@ -69,8 +69,8 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
         <div
           className="grid size-6 place-items-center rounded-full text-[10px] font-semibold"
           style={{
-            background: 'linear-gradient(135deg, #c2f542, #6aa512)',
-            color: '#0a0a0a',
+            background: '#006AFF',
+            color: '#ffffff',
             fontFamily: 'var(--cc-mono)',
           }}
         >

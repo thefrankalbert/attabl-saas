@@ -43,7 +43,7 @@ export default function MenuCreationWizard({
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [categoryItems, setCategoryItems] = useState<Record<string, WizardItem[]>>({});
 
-  // ─── Reset ─────────────────────────────────────────────
+  // --- Reset ---------------------------------------------
 
   const reset = useCallback(() => {
     setStep('menu');
@@ -59,7 +59,7 @@ export default function MenuCreationWizard({
     onClose();
   }, [onClose, onComplete, reset]);
 
-  // ─── Step 1: Menu form submit ──────────────────────────
+  // --- Step 1: Menu form submit --------------------------
 
   const handleMenuSubmit = async (data: MenuFormData) => {
     const menu = await onCreateMenu(data);
@@ -69,24 +69,24 @@ export default function MenuCreationWizard({
     }
   };
 
-  // ─── Step 2 confirm → categories ──────────────────────
+  // --- Step 2 confirm → categories ----------------------
 
   const goToCategories = () => setStep('categories');
 
-  // ─── Category created callback ─────────────────────────
+  // --- Category created callback -------------------------
 
   const handleCategoryCreated = (category: Category) => {
     setCreatedCategories((prev) => [...prev, category]);
   };
 
-  // ─── Go to items for a category ────────────────────────
+  // --- Go to items for a category ------------------------
 
   const handleAddItems = (category: Category) => {
     setActiveCategory(category);
     setStep('items');
   };
 
-  // ─── Item created callback ─────────────────────────────
+  // --- Item created callback -----------------------------
 
   const handleItemCreated = (item: WizardItem) => {
     if (!activeCategory) return;
@@ -96,14 +96,14 @@ export default function MenuCreationWizard({
     }));
   };
 
-  // ─── Back to categories from items ─────────────────────
+  // --- Back to categories from items ---------------------
 
   const handleBackToCategories = () => {
     setActiveCategory(null);
     setStep('categories');
   };
 
-  // ─── Dynamic title ─────────────────────────────────────
+  // --- Dynamic title -------------------------------------
 
   const getTitle = (): string => {
     switch (step) {

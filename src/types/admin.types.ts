@@ -3,7 +3,7 @@
 
 import type { SubscriptionPlan, SubscriptionStatus, BillingInterval } from '@/types/billing';
 
-// ─── Wizard types ────────────────────────────────────────────
+// --- Wizard types --------------------------------------------
 /** Lightweight item projection used by the menu creation wizard. */
 export interface WizardItem {
   id: string;
@@ -11,7 +11,7 @@ export interface WizardItem {
   price: number;
 }
 
-// ─── Rôles d'administration ────────────────────────────────
+// --- Rôles d'administration --------------------------------
 export type AdminRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'chef' | 'waiter';
 
 export const ROLE_DESCRIPTIONS: Record<
@@ -50,7 +50,7 @@ export const ROLE_DESCRIPTIONS: Record<
   },
 } as const;
 
-// ─── Statuts & Enums ─────────────────────────────────────────
+// --- Statuts & Enums -----------------------------------------
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
 export type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
@@ -59,7 +59,7 @@ export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
 export type CurrencyCode = 'XAF' | 'XOF' | 'EUR' | 'USD';
 
-// ─── Types principaux (avec tenant_id) ─────────────────────
+// --- Types principaux (avec tenant_id) ---------------------
 
 export interface Tenant {
   id: string;
@@ -71,14 +71,14 @@ export interface Tenant {
   font_family?: string;
   is_active: boolean;
   created_at: string;
-  // ─── Subscription fields ──────────────────────────────
+  // --- Subscription fields ------------------------------
   subscription_plan?: SubscriptionPlan;
   subscription_status?: SubscriptionStatus;
   trial_ends_at?: string;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   billing_interval?: BillingInterval;
-  // ─── Business config ──────────────────────────────────
+  // --- Business config ----------------------------------
   currency?: CurrencyCode;
   supported_currencies?: CurrencyCode[];
   tax_rate?: number;
@@ -86,13 +86,13 @@ export interface Tenant {
   enable_tax?: boolean;
   enable_service_charge?: boolean;
   enable_coupons?: boolean;
-  // ─── Establishment ───────────────────────────────────
+  // --- Establishment -----------------------------------
   establishment_type?: string;
   city?: string;
   country?: string;
   table_count?: number;
   onboarding_completed?: boolean;
-  // ─── Extras ────────────────────────────────────────────
+  // --- Extras --------------------------------------------
   description?: string;
   address?: string;
   phone?: string;
@@ -100,11 +100,11 @@ export interface Tenant {
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
   bar_display_enabled?: boolean;
-  // ─── Opening hours ─────────────────────────────────────
+  // --- Opening hours -------------------------------------
   opening_hours?: OpeningHoursMap | null;
-  // ─── Payment methods ───────────────────────────────────
+  // --- Payment methods -----------------------------------
   enabled_payment_methods?: string[];
-  // ─── Behavioral tracking ───────────────────────────────
+  // --- Behavioral tracking -------------------------------
   activation_events?: Record<string, string>;
   last_active_at?: string | null;
 }
@@ -137,12 +137,12 @@ export interface OrderItem {
   price: number;
   menu_item_id?: string;
   notes?: string;
-  // ─── Production upgrade ────────────────────────────────
+  // --- Production upgrade --------------------------------
   customer_notes?: string;
   item_status?: ItemStatus;
   course?: Course;
   modifiers?: Array<{ name: string; price: number }>;
-  // ─── Preparation zone (denormalized from category) ────
+  // --- Preparation zone (denormalized from category) ----
   preparation_zone?: PreparationZone;
 }
 
@@ -162,25 +162,25 @@ export interface Order {
   notes?: string;
   customer_name?: string;
   customer_phone?: string;
-  // ─── Service type & metadata ───────────────────────────
+  // --- Service type & metadata ---------------------------
   service_type?: ServiceType;
   room_number?: string;
   delivery_address?: string;
-  // ─── Financial breakdown ───────────────────────────────
+  // --- Financial breakdown -------------------------------
   subtotal?: number;
   tax_amount?: number;
   service_charge_amount?: number;
   discount_amount?: number;
   tip_amount?: number;
-  // ─── Payment tracking ─────────────────────────────────
+  // --- Payment tracking ---------------------------------
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;
   paid_at?: string;
-  // ─── Currency ─────────────────────────────────────────
+  // --- Currency -----------------------------------------
   display_currency?: CurrencyCode;
-  // ─── Coupon ────────────────────────────────────────────
+  // --- Coupon --------------------------------------------
   coupon_id?: string;
-  // ─── Preparation zone routing ────────────────────────
+  // --- Preparation zone routing ------------------------
   preparation_zone?: OrderPreparationZone;
   // Waiter assignment
   server_id?: string;
@@ -189,7 +189,7 @@ export interface Order {
   server?: { id: string; full_name: string; role: string };
 }
 
-// ─── Menus / Cartes ─────────────────────────────────────────
+// --- Menus / Cartes -----------------------------------------
 
 export interface Menu {
   id: string;
@@ -213,7 +213,7 @@ export interface Menu {
   categories?: Category[];
 }
 
-// ─── Categories ─────────────────────────────────────────────
+// --- Categories ---------------------------------------------
 
 export type PreparationZone = 'kitchen' | 'bar' | 'both';
 export type OrderPreparationZone = 'kitchen' | 'bar' | 'mixed';
@@ -302,7 +302,7 @@ export interface ItemModifier {
   created_at: string;
 }
 
-// ─── Coupons ─────────────────────────────────────────────────
+// --- Coupons -------------------------------------------------
 
 export interface Coupon {
   id: string;
@@ -321,7 +321,7 @@ export interface Coupon {
   updated_at?: string;
 }
 
-// ─── Promotions & Ads ────────────────────────────────────────
+// --- Promotions & Ads ----------------------------------------
 
 export interface Announcement {
   id: string;
@@ -347,7 +347,7 @@ export interface Ad {
   created_at: string;
 }
 
-// ─── Dashboard ───────────────────────────────────────────────
+// --- Dashboard -----------------------------------------------
 
 export interface DashboardStats {
   ordersToday: number;
@@ -388,7 +388,7 @@ export interface PopularItem {
   order_count: number;
 }
 
-// ─── Multi-venue ───────────────────────────────────────────
+// --- Multi-venue -------------------------------------------
 
 export interface Venue {
   id: string;
@@ -440,7 +440,7 @@ export interface TableAssignment {
   table?: Table;
 }
 
-// ─── Settings ──────────────────────────────────────────────
+// --- Settings ----------------------------------------------
 
 export interface Setting {
   id: string;
@@ -462,12 +462,12 @@ export interface SettingsMap {
   order_timeout_minutes: number;
 }
 
-// ─── Utility Types ─────────────────────────────────────────
+// --- Utility Types -----------------------------------------
 export type WithId<T> = T & { id: string };
 export type WithTimestamps<T> = T & { created_at: string; updated_at?: string };
 export type Nullable<T> = T | null;
 
-// ─── API Response Types ────────────────────────────────────
+// --- API Response Types ------------------------------------
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
@@ -481,13 +481,13 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   hasMore: boolean;
 }
 
-// ─── Form Types ────────────────────────────────────────────
+// --- Form Types --------------------------------------------
 export type FormErrors<T> = Partial<Record<keyof T, string>>;
 
-// ─── Language Support ──────────────────────────────────────
+// --- Language Support --------------------------------------
 export type Language = 'fr' | 'en';
 
-// ─── Pricing ───────────────────────────────────────────────
+// --- Pricing -----------------------------------------------
 export interface PricingBreakdown {
   subtotal: number;
   taxAmount: number;

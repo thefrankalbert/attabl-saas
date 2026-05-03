@@ -1,7 +1,7 @@
 /*
  * Command Center shell tokens (scoped to .cc-shell).
  * Layout + spacing from the Dashboard ATTABL.html mockup,
- * accent aligned on the ATTABL brand charter (lime #c2f542).
+ * accent aligned on the ATTABL brand charter (Square Blue #006AFF).
  * Warm off-white / near-black surfaces kept from the mockup.
  *
  * Both themes (light + dark) are selectable via [data-cc-theme="light|dark"]
@@ -12,12 +12,12 @@
   /* Accent = ATTABL brand lime (charter color, see CLAUDE.md).
    * Two-layer definition: one solid token, one alpha-capable variant for
    * the soft and dim chip backgrounds. */
-  --cc-accent: #c2f542;
-  --cc-accent-soft: rgba(194, 245, 66, 0.18);
-  --cc-accent-dim: rgba(194, 245, 66, 0.35);
+  --cc-accent: #006aff;
+  --cc-accent-soft: rgba(0, 106, 255, 0.12);
+  --cc-accent-dim: rgba(0, 106, 255, 0.25);
   /* Accent ink color used when the accent sits on a text context
-   * (delta chip, live dot). Slightly darker lime = WCAG AA contrast. */
-  --cc-accent-ink: #6aa512;
+   * (delta chip, live dot). Slightly darker blue = WCAG AA contrast. */
+  --cc-accent-ink: #0055cc;
 
   --cc-bg: #fafaf7;
   --cc-surface: #ffffff;
@@ -52,10 +52,10 @@
   --cc-text: #efefec;
   --cc-text-2: #8f8f8a;
   --cc-text-3: #5e5e59;
-  /* Dark mode accent = pure lime (brighter ink against dark surfaces) */
-  --cc-accent-ink: #c2f542;
-  --cc-accent-soft: rgba(194, 245, 66, 0.14);
-  --cc-accent-dim: rgba(194, 245, 66, 0.28);
+  /* Dark mode accent = Square Blue (bright against dark surfaces) */
+  --cc-accent-ink: #4fa3ff;
+  --cc-accent-soft: rgba(0, 106, 255, 0.14);
+  --cc-accent-dim: rgba(0, 106, 255, 0.28);
 }
 
 .cc-shell .cc-mono {

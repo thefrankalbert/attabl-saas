@@ -7,7 +7,7 @@
 
 import { type SegmentFamily, getSegmentFamily } from './segment-terms';
 
-// ─── Feature flags per segment family ───────────────────
+// --- Feature flags per segment family -------------------
 
 export interface SegmentFeatureFlags {
   /** Show Kitchen Display System (KDS) */
@@ -53,7 +53,7 @@ const SEGMENT_FEATURES: Record<SegmentFamily, SegmentFeatureFlags> = {
   },
 };
 
-// ─── Public API ─────────────────────────────────────────
+// --- Public API -----------------------------------------
 
 /**
  * Get feature flags for a given establishment type.
