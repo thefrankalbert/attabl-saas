@@ -107,6 +107,7 @@ export interface OnboardingData {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
+  tenantNickname: string;
 }
 
 // ─── Step Error Boundary ──────────────────────────────────────────────────────
@@ -185,6 +186,7 @@ export default function OnboardingPage() {
     tenantId: '',
     tenantSlug: '',
     tenantName: '',
+    tenantNickname: '',
   });
 
   // ─── Derived values ────────────────────────────────────────────────────────

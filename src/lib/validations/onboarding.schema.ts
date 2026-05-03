@@ -58,6 +58,7 @@ export const onboardingCompleteSchema = z.object({
     currency: z.string().max(10).optional(),
     language: z.string().max(10).optional(),
     tenantSlug: z.string().max(100).optional(),
+    tenantNickname: z.string().max(50).optional(),
     menuItems: z.array(menuItemSchema).max(50).optional(),
   }),
 });

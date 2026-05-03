@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,94 @@ import {
 import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
+
+type CheckResult = 'idle' | 'available' | 'taken';
+
+function normalizeToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function SlugPreview({
+  tenantName,
+  nickname,
+  onSlugResolved,
+}: {
+  tenantName: string;
+  nickname: string;
+  onSlugResolved: (slug: string) => void;
+}) {
+  const t = useTranslations('onboarding');
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<CheckResult>('idle');
+  const abortRef = useRef<AbortController | null>(null);
+
+  const baseSlug = normalizeToSlug(tenantName);
+  const normalizedNickname = normalizeToSlug(nickname);
+  const candidateSlug = normalizedNickname ? `${baseSlug}-${normalizedNickname}` : baseSlug;
+  const isActive = candidateSlug.length >= 3;
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const timer = setTimeout(async () => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setIsChecking(true);
+
+      try {
+        const res = await fetch(`/api/slugs/check?slug=${encodeURIComponent(candidateSlug)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          setIsChecking(false);
+          setCheckResult('idle');
+          return;
+        }
+        const json = (await res.json()) as { available: boolean; slug: string };
+        setIsChecking(false);
+        setCheckResult(json.available ? 'available' : 'taken');
+        if (json.available) onSlugResolved(json.slug);
+      } catch {
+        if (!controller.signal.aborted) {
+          setIsChecking(false);
+          setCheckResult('idle');
+        }
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      abortRef.current?.abort();
+    };
+  }, [candidateSlug, isActive, onSlugResolved]);
+
+  if (!baseSlug) return null;
+
+  const displayStatus = !isActive ? 'idle' : isChecking ? 'checking' : checkResult;
+
+  return (
+    <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+      <span className="text-xs text-app-text-muted font-mono bg-app-elevated px-2 py-0.5 rounded">
+        {candidateSlug || '...'}.attabl.com
+      </span>
+      {displayStatus === 'checking' && (
+        <span className="text-[10px] text-app-text-muted">{t('slugChecking')}</span>
+      )}
+      {displayStatus === 'available' && (
+        <span className="text-[10px] text-emerald-500 font-medium">{t('slugAvailable')}</span>
+      )}
+      {displayStatus === 'taken' && (
+        <span className="text-[10px] text-red-400 font-medium">{t('slugTaken')}</span>
+      )}
+    </div>
+  );
+}
 
 const establishmentTypes = [
   { id: 'restaurant', icon: UtensilsCrossed, titleKey: 'typeRestaurant' },
@@ -153,9 +242,34 @@ export function EstablishmentStep({
                 type="text"
                 placeholder={t('namePlaceholder')}
                 value={data.tenantName}
-                onChange={(e) => updateData({ tenantName: e.target.value })}
+                onChange={(e) => updateData({ tenantName: e.target.value, tenantNickname: '' })}
                 className="h-10 rounded-xl border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
               />
+              <SlugPreview
+                tenantName={data.tenantName}
+                nickname={data.tenantNickname}
+                onSlugResolved={(slug) => updateData({ tenantSlug: slug })}
+              />
+            </div>
+          )}
+
+          {showIdentity && data.tenantName && normalizeToSlug(data.tenantName).length >= 3 && (
+            <div className="mb-3">
+              <Label
+                htmlFor="tenantNickname"
+                className="text-xs font-semibold text-app-text mb-1.5 block"
+              >
+                {t('nicknameLabel')}
+              </Label>
+              <Input
+                id="tenantNickname"
+                type="text"
+                placeholder={t('nicknamePlaceholder')}
+                value={data.tenantNickname}
+                onChange={(e) => updateData({ tenantNickname: e.target.value })}
+                className="h-10 rounded-xl border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+              />
+              <p className="text-[10px] text-app-text-muted mt-1">{t('nicknameHint')}</p>
             </div>
           )}
 

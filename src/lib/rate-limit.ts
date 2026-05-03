@@ -259,6 +259,9 @@ export const serverActionLimiter = createLimiter(
   Ratelimit.slidingWindow(30, '1 m'),
 );
 
+/** Slug availability check (onboarding live preview): 60 requests / minute per IP */
+export const slugCheckLimiter = createLimiter('slug-check', Ratelimit.slidingWindow(60, '1 m'));
+
 // --- IP extraction helpers ---
 
 /**
