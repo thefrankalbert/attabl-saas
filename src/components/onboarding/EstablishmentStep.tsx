@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,10 +43,12 @@ function normalizeToSlug(name: string): string {
 function SlugPreview({
   tenantName,
   nickname,
+  currentSlug,
   onSlugResolved,
 }: {
   tenantName: string;
   nickname: string;
+  currentSlug: string;
   onSlugResolved: (slug: string) => void;
 }) {
   const t = useTranslations('onboarding');
@@ -58,9 +60,11 @@ function SlugPreview({
   const normalizedNickname = normalizeToSlug(nickname);
   const candidateSlug = normalizedNickname ? `${baseSlug}-${normalizedNickname}` : baseSlug;
   const isActive = candidateSlug.length >= 3;
+  // Skip DB call if candidate is the user's own existing slug — already valid
+  const isOwnSlug = isActive && candidateSlug === currentSlug;
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || isOwnSlug) return;
 
     const timer = setTimeout(async () => {
       abortRef.current?.abort();
@@ -93,11 +97,17 @@ function SlugPreview({
       clearTimeout(timer);
       abortRef.current?.abort();
     };
-  }, [candidateSlug, isActive, onSlugResolved]);
+  }, [candidateSlug, isActive, isOwnSlug, onSlugResolved]);
 
   if (!baseSlug) return null;
 
-  const displayStatus = !isActive ? 'idle' : isChecking ? 'checking' : checkResult;
+  const displayStatus = !isActive
+    ? 'idle'
+    : isOwnSlug
+      ? 'available'
+      : isChecking
+        ? 'checking'
+        : checkResult;
 
   return (
     <div className="mt-1.5 flex items-center gap-2 flex-wrap">
@@ -215,6 +225,12 @@ export function EstablishmentStep({
   const showIdentity = variant === 'identity';
   const showDetails = variant === 'details';
 
+  // Stable ref — prevents useEffect in SlugPreview from re-running on every render
+  const handleSlugResolved = useCallback(
+    (slug: string) => updateData({ tenantSlug: slug }),
+    [updateData],
+  );
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
@@ -248,7 +264,8 @@ export function EstablishmentStep({
               <SlugPreview
                 tenantName={data.tenantName}
                 nickname={data.tenantNickname}
-                onSlugResolved={(slug) => updateData({ tenantSlug: slug })}
+                currentSlug={data.tenantSlug}
+                onSlugResolved={handleSlugResolved}
               />
             </div>
           )}
