@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus, Loader2, Trash2, Pencil, Check, X, Grid3x3, MapPin } from 'lucide-react';
+import { Plus, Loader2, Trash2, Pencil, Check, X, TableProperties, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -486,7 +486,7 @@ export function TablesClient({
               {/* Zone header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Grid3x3 className="w-5 h-5 text-app-text-muted" />
+                  <TableProperties className="w-5 h-5 text-app-text-muted" />
                   <h2 className="text-lg font-semibold text-app-text">{selectedZone.name}</h2>
                   <span className="text-xs text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-full font-mono">
                     {selectedZone.prefix}
@@ -617,7 +617,7 @@ export function TablesClient({
               ) : (
                 <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
                   <div className="w-16 h-16 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Grid3x3 className="w-8 h-8 text-app-text-muted" />
+                    <TableProperties className="w-8 h-8 text-app-text-muted" />
                   </div>
                   <h3 className="text-lg font-bold text-app-text">{t('noTableTitle')}</h3>
                   <p className="text-sm text-app-text-secondary mt-2">{t('noTableDesc')}</p>

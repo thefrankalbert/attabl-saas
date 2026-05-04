@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Tag, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
+import { Plus, Trash2, BadgePercent, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 import CouponForm from '@/components/admin/CouponForm';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
@@ -93,7 +93,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       <div className="shrink-0">
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <Tag className="w-6 h-6" />
+            <BadgePercent className="w-6 h-6" />
             {t('title')}
             <span className="text-base font-normal text-app-text-secondary">
               ({coupons.length})
@@ -137,7 +137,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 <div className="@md:grid @md:grid-cols-[1fr_120px_120px_120px_100px_80px] @md:gap-4 @md:items-center space-y-3 @md:space-y-0">
                   {/* Code */}
                   <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />
+                    <BadgePercent className="h-4 w-4 text-app-text-muted flex-shrink-0" />
                     <span className="font-bold font-mono text-sm tracking-wider">
                       {coupon.code}
                     </span>

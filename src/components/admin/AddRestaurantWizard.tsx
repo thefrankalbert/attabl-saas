@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, ArrowLeft, ArrowRight, Check, X, Building2, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Check, X, Store, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import {
@@ -161,7 +161,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         <div className="border-b border-app-border px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-accent p-2">
-              <Building2 className="h-5 w-5 text-accent-text" />
+              <Store className="h-5 w-5 text-accent-text" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-app-text">{t('addRestaurant.title')}</h2>

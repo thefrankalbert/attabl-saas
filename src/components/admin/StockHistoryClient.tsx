@@ -7,7 +7,7 @@ import {
   Search,
   ArrowUpRight,
   ArrowDownRight,
-  Package,
+  PackageCheck,
   Truck,
   RefreshCw,
   ClipboardList,
@@ -29,7 +29,7 @@ import AnalyseTabs from '@/components/admin/AnalyseTabs';
 // --- Movement type visual config -------------------------
 const MOVEMENT_STYLES: Record<
   MovementType,
-  { labelKey: string; icon: typeof Package; bg: string; text: string; dot: string }
+  { labelKey: string; icon: typeof PackageCheck; bg: string; text: string; dot: string }
 > = {
   order_destock: {
     labelKey: 'filterOrders',
@@ -40,14 +40,14 @@ const MOVEMENT_STYLES: Record<
   },
   manual_add: {
     labelKey: 'filterAdditions',
-    icon: Package,
+    icon: PackageCheck,
     bg: MOVEMENT_TOKENS.manual_add.bg,
     text: MOVEMENT_TOKENS.manual_add.text,
     dot: 'bg-status-success',
   },
   manual_remove: {
     labelKey: 'filterWithdrawals',
-    icon: Package,
+    icon: PackageCheck,
     bg: MOVEMENT_TOKENS.manual_remove.bg,
     text: MOVEMENT_TOKENS.manual_remove.text,
     dot: 'bg-status-error',
@@ -380,7 +380,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 renderCard: (movement) => {
                   const style = MOVEMENT_STYLES[movement.movement_type];
                   const isPositive = movement.quantity > 0;
-                  const Icon = style?.icon || Package;
+                  const Icon = style?.icon || PackageCheck;
                   return (
                     <div className="bg-app-card border border-app-border/60 rounded-xl p-3.5 space-y-2.5">
                       {/* Top: ingredient + quantity */}

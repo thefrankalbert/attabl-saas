@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
-import { BarChart3, Package, QrCode } from 'lucide-react';
+import { BarChart3, PackageCheck, QrCode } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
 import { formatCurrency, getCurrencyConfig } from '@/lib/utils/currency';
@@ -347,7 +347,7 @@ export default function DashboardClient(props: DashboardClientProps) {
             href={`${adminBase}/stock-history`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
           >
-            <Package className="w-3.5 h-3.5" />
+            <PackageCheck className="w-3.5 h-3.5" />
             {t('stockHistoryLabel')}
           </Link>
         </div>

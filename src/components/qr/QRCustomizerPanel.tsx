@@ -3,7 +3,7 @@
 import { useCallback, useRef } from 'react';
 import {
   Layout,
-  QrCode,
+  ScanQrCode,
   Palette,
   Type,
   Settings2,
@@ -193,7 +193,7 @@ export function QRCustomizerPanel({
             <span className="hidden sm:inline">Template</span>
           </TabsTrigger>
           <TabsTrigger value="qrcode" className="flex items-center gap-1.5 text-xs">
-            <QrCode className="h-3.5 w-3.5" />
+            <ScanQrCode className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">QR Code</span>
           </TabsTrigger>
           <TabsTrigger value="design" className="flex items-center gap-1.5 text-xs">

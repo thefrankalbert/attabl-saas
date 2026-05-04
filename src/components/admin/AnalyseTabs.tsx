@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BarChart3, History, Receipt, ScrollText } from 'lucide-react';
+import { BarChart3, CalendarClock, Receipt, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ANALYSE_TABS = [
   { path: '/reports', labelKey: 'tabReports', icon: BarChart3 },
-  { path: '/stock-history', labelKey: 'tabStockHistory', icon: History },
+  { path: '/stock-history', labelKey: 'tabStockHistory', icon: CalendarClock },
   { path: '/invoices', labelKey: 'tabInvoices', icon: Receipt },
   { path: '/audit-logs', labelKey: 'tabAuditLogs', icon: ScrollText },
 ] as const;

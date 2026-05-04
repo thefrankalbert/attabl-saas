@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Crown, Zap, Building2, Check, Loader2, CalendarDays } from 'lucide-react';
+import { Crown, Zap, BadgeCheck, Check, Loader2, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PLAN_NAMES } from '@/lib/plans/features';
@@ -52,7 +52,7 @@ const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
 const PLAN_ICON_MAP: Record<SelfServicePlan, typeof Zap> = {
   starter: Zap,
   pro: Crown,
-  business: Building2,
+  business: BadgeCheck,
 };
 
 const BILLING_INTERVALS: BillingInterval[] = ['monthly', 'yearly', 'semiannual'];

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import KDSTicket from '@/components/features/kitchen/KDSTicket';
@@ -30,7 +30,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 px-6 text-center col-span-full">
       <div className="w-14 h-14 rounded-xl bg-app-elevated/30 flex items-center justify-center mb-4">
-        <ClipboardList className="w-7 h-7 text-app-text-secondary" />
+        <ClipboardCheck className="w-7 h-7 text-app-text-secondary" />
       </div>
       <p className="text-sm font-medium text-app-text-secondary">{t('emptyActive')}</p>
     </div>
