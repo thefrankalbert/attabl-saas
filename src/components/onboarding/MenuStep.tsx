@@ -210,9 +210,9 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
           </div>
 
           {/* Tip */}
-          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="mb-6 p-4 rounded-xl bg-app-elevated border border-app-border">
             <div className="flex items-start gap-2.5">
-              <UtensilsCrossed className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+              <UtensilsCrossed className="h-4 w-4 text-app-text-secondary mt-0.5 shrink-0" />
               <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
             </div>
           </div>

@@ -56,7 +56,7 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
                   color: 'var(--app-text)',
                   padding: '10px 14px',
                 }}
-                formatter={(value: number | undefined) => [fmtCompact(value ?? 0), '']}
+                formatter={(value) => [fmtCompact(typeof value === 'number' ? value : 0), '']}
               />
             </PieChart>
           </ResponsiveContainer>

@@ -31,7 +31,7 @@ export function UpgradeBanner({
   const { planName } = useSubscription();
   const upgradeUrl = `/sites/${slug}/admin/subscription`;
 
-  const defaultMessage = `${feature} est disponible avec le plan Premium.`;
+  const defaultMessage = `${feature} est disponible avec le plan Pro.`;
 
   if (compact) {
     return (
@@ -44,7 +44,7 @@ export function UpgradeBanner({
           href={upgradeUrl}
           className="text-amber-700 font-semibold hover:underline whitespace-nowrap flex items-center gap-1"
         >
-          Passer au Premium
+          Passer au Pro
           <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
@@ -64,7 +64,7 @@ export function UpgradeBanner({
             <Crown className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-bold text-app-text">Fonctionnalite Premium</h3>
+            <h3 className="font-bold text-app-text">Fonctionnalite Pro</h3>
             <p className="text-xs text-app-text-secondary">
               Votre plan actuel : <span className="font-semibold">{planName}</span>
             </p>
@@ -79,7 +79,7 @@ export function UpgradeBanner({
         >
           <Link href={upgradeUrl}>
             <Crown className="w-4 h-4" />
-            Passer au Premium
+            Passer au Pro
             <ArrowRight className="w-4 h-4" />
           </Link>
         </Button>

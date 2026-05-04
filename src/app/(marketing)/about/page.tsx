@@ -31,7 +31,7 @@ export default async function AboutPage() {
         <p>{t('techBody')}</p>
 
         <div className="mt-12 flex gap-4">
-          <Button asChild>
+          <Button asChild variant="pill">
             <Link href="/contact">{t('contactButton')}</Link>
           </Button>
           <Button asChild variant="outline">

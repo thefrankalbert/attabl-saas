@@ -361,7 +361,7 @@ export default function PricingPage() {
       <section className="bg-white dark:bg-neutral-950 pt-20 lg:pt-28 pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white">
+            <h1 className="font-[family-name:var(--font-serif)] text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white">
               {t('hero.title')}
             </h1>
             <p className="text-lg text-neutral-500 dark:text-neutral-400 mt-4">

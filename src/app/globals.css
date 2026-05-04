@@ -74,21 +74,29 @@
   --color-brand-green-dark: var(--app-accent-hover);
   --color-brand-green-light: var(--app-accent-muted);
 
-  /* Square Design System tokens (09-design-system.md) */
+  /* ATTABL brand tokens (Square-inspired language, ATTABL identity) */
   --square-primary: #006aff;
   --square-primary-hover: #0055cc;
   --square-text: #1a1a1a;
   --square-surface: #f7f6f5;
   --square-border: #d9d9d9;
 
-  /* Radius scale -- Square: 4px buttons / 8px cards / 12px modals */
-  --radius: 0.25rem;
-  --radius-card: 0.5rem;
-  --radius-card-lg: 0.75rem;
+  /* Warm accent — food/hospitality warmth for tenant client */
+  --color-attabl-warm: var(--attabl-warm);
+  --color-attabl-warm-hover: var(--attabl-warm-hover);
+  --color-attabl-warm-muted: var(--attabl-warm-muted);
 
-  /* Typography -- Square-aligned font stack (Inter = Square Sans Text VF open-source equivalent) */
+  /* Radius scale -- pill CTAs / rounded UI / soft cards */
+  --radius: 0.5rem;
+  --radius-card: 0.875rem;
+  --radius-card-lg: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* Typography -- ATTABL font stack */
   --font-sans: var(--font-inter), 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-display: var(--font-sora), 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:
+    var(--font-dm-serif-display), var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
 
   /* Accordion animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -134,7 +142,7 @@
   --app-accent-muted: rgba(0, 106, 255, 0.12);
   --app-accent-text: #ffffff;
 
-  /* Accent ramp -- Square Blue #006AFF */
+  /* Accent ramp -- ATTABL Blue #006AFF */
   --accent-50: #eff6ff;
   --accent-100: #dbeafe;
   --accent-200: #bfdbfe;
@@ -146,17 +154,49 @@
   --accent-800: #002966;
   --accent-900: #001433;
 
+  /* Warm accent tokens (food/hospitality warmth, tenant client) */
+  --attabl-warm: #f97316;
+  --attabl-warm-hover: #ea6e0a;
+  --attabl-warm-muted: rgba(249, 115, 22, 0.12);
+
   --app-status-success-bg: rgba(5, 150, 105, 0.15);
   --app-status-warning-bg: rgba(217, 119, 6, 0.15);
   --app-status-error-bg: rgba(220, 38, 38, 0.15);
   --app-status-info-bg: rgba(37, 99, 235, 0.15);
 
-  /* shadcn/ui compat vars */
+  /* shadcn/ui compat vars — full semantic token mapping */
   --background: var(--app-bg);
   --foreground: var(--app-text);
+  --card: var(--app-card);
+  --card-foreground: var(--app-text);
+  --popover: var(--app-elevated);
+  --popover-foreground: var(--app-text);
+  --primary: var(--app-accent);
+  --primary-foreground: var(--app-accent-text);
+  --secondary: var(--app-elevated);
+  --secondary-foreground: var(--app-text);
+  --muted: var(--app-hover);
+  --muted-foreground: var(--app-text-secondary);
+  --accent: var(--app-hover);
+  --accent-foreground: var(--app-text);
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
   --border: var(--app-border);
   --input: var(--app-border);
   --ring: var(--app-accent);
+  --sidebar: var(--app-card);
+  --sidebar-foreground: var(--app-text);
+  --sidebar-primary: var(--app-accent);
+  --sidebar-primary-foreground: var(--app-accent-text);
+  --sidebar-accent: var(--app-hover);
+  --sidebar-accent-foreground: var(--app-text);
+  --sidebar-border: var(--app-border);
+  --sidebar-ring: var(--app-accent);
+  --chart-1: #006aff;
+  --chart-2: #00d4aa;
+  --chart-3: #f59e0b;
+  --chart-4: #ec4899;
+  --chart-5: #8b5cf6;
 }
 
 /* ===== LIGHT MODE (.light class on <html>) ===== */
@@ -180,7 +220,7 @@
   --app-accent-muted: rgba(0, 106, 255, 0.12);
   --app-accent-text: #ffffff;
 
-  /* Accent ramp (light mode) -- Square Blue #006AFF */
+  /* Accent ramp (light mode) -- ATTABL Blue #006AFF */
   --accent-50: #eff6ff;
   --accent-100: #dbeafe;
   --accent-200: #bfdbfe;
@@ -192,10 +232,49 @@
   --accent-800: #002966;
   --accent-900: #001433;
 
+  /* Warm accent tokens */
+  --attabl-warm: #f97316;
+  --attabl-warm-hover: #ea6e0a;
+  --attabl-warm-muted: rgba(249, 115, 22, 0.12);
+
   --app-status-success-bg: #ecfdf5;
   --app-status-warning-bg: #fffbeb;
   --app-status-error-bg: #fef2f2;
   --app-status-info-bg: #eff6ff;
+
+  /* shadcn/ui compat vars — full semantic token mapping */
+  --background: var(--app-bg);
+  --foreground: var(--app-text);
+  --card: var(--app-card);
+  --card-foreground: var(--app-text);
+  --popover: var(--app-elevated);
+  --popover-foreground: var(--app-text);
+  --primary: var(--app-accent);
+  --primary-foreground: var(--app-accent-text);
+  --secondary: var(--app-elevated);
+  --secondary-foreground: var(--app-text);
+  --muted: var(--app-hover);
+  --muted-foreground: var(--app-text-secondary);
+  --accent: var(--app-hover);
+  --accent-foreground: var(--app-text);
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --ring: var(--app-accent);
+  --sidebar: var(--app-card);
+  --sidebar-foreground: var(--app-text);
+  --sidebar-primary: var(--app-accent);
+  --sidebar-primary-foreground: var(--app-accent-text);
+  --sidebar-accent: var(--app-hover);
+  --sidebar-accent-foreground: var(--app-text);
+  --sidebar-border: var(--app-border);
+  --sidebar-ring: var(--app-accent);
+  --chart-1: #006aff;
+  --chart-2: #00d4aa;
+  --chart-3: #f59e0b;
+  --chart-4: #ec4899;
+  --chart-5: #8b5cf6;
 }
 
 /* CSS fallback for system light preference before JS loads (prevents FOUC) */
@@ -236,11 +315,39 @@
     --app-status-error-bg: #fef2f2;
     --app-status-info-bg: #eff6ff;
 
+    /* shadcn/ui compat vars — full semantic token mapping */
     --background: var(--app-bg);
     --foreground: var(--app-text);
+    --card: var(--app-card);
+    --card-foreground: var(--app-text);
+    --popover: var(--app-elevated);
+    --popover-foreground: var(--app-text);
+    --primary: var(--app-accent);
+    --primary-foreground: var(--app-accent-text);
+    --secondary: var(--app-elevated);
+    --secondary-foreground: var(--app-text);
+    --muted: var(--app-hover);
+    --muted-foreground: var(--app-text-secondary);
+    --accent: var(--app-hover);
+    --accent-foreground: var(--app-text);
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
     --border: var(--app-border);
     --input: var(--app-border);
     --ring: var(--app-accent);
+    --sidebar: var(--app-card);
+    --sidebar-foreground: var(--app-text);
+    --sidebar-primary: var(--app-accent);
+    --sidebar-primary-foreground: var(--app-accent-text);
+    --sidebar-accent: var(--app-hover);
+    --sidebar-accent-foreground: var(--app-text);
+    --sidebar-border: var(--app-border);
+    --sidebar-ring: var(--app-accent);
+    --chart-1: #006aff;
+    --chart-2: #00d4aa;
+    --chart-3: #f59e0b;
+    --chart-4: #ec4899;
+    --chart-5: #8b5cf6;
   }
 }
 
@@ -332,23 +439,33 @@ body {
     color 0.2s ease;
 }
 
-/* Square hover overlay pattern -- apply .btn-square on primary buttons */
+/* ATTABL hover overlay pattern -- apply .btn-attabl on primary buttons */
+/* .btn-square kept for backward compat */
+.btn-attabl,
 .btn-square {
   position: relative;
   overflow: hidden;
 }
+.btn-attabl::before,
 .btn-square::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--square-primary-hover, #0055cc);
+  background: var(--app-accent-hover, #0055cc);
   opacity: 0;
   transition: opacity 150ms ease;
   pointer-events: none;
 }
+.btn-attabl:hover::before,
+.btn-attabl:focus-visible::before,
 .btn-square:hover::before,
 .btn-square:focus-visible::before {
   opacity: 1;
+}
+
+/* CTA pill button -- border-radius: var(--radius-pill) */
+.btn-attabl-pill {
+  border-radius: 9999px;
 }
 
 .scroll-mask {

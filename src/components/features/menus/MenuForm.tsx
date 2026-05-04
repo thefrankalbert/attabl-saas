@@ -150,7 +150,7 @@ export default function MenuForm({
               if (next) setFormVenueId(null);
             }}
           />
-          <Globe className="w-4 h-4 text-accent flex-shrink-0" />
+          <Globe className="w-4 h-4 text-app-text-secondary flex-shrink-0" />
           <div>
             <Label htmlFor="menu-shared" className="text-app-text font-medium">
               {t('sharedMenu')}

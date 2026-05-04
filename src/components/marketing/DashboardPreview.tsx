@@ -378,7 +378,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         {/* Sidebar */}
         <div className="hidden sm:flex w-14 flex-col items-center gap-1.5 border-r border-app-border bg-app-card py-3 px-1">
           <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent-muted">
-            <span className="text-[10px] font-black text-accent">A</span>
+            <span className="text-[10px] font-black text-app-text-muted">A</span>
           </div>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div

@@ -598,7 +598,7 @@ export default function OnboardingPage() {
             </span>
           )}
           {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-accent flex items-center gap-1">
+            <span className="text-[10px] text-app-text-secondary flex items-center gap-1">
               <Check className="w-3 h-3" />
               <span className="hidden sm:inline">{t('autoSaved')}</span>
             </span>

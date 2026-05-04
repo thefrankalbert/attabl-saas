@@ -416,9 +416,9 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Naming hint */}
           {mode !== 'skip' && (
-            <div className="mt-8 p-4 rounded-xl bg-accent/5 border border-accent/20">
+            <div className="mt-8 p-4 rounded-xl bg-app-elevated border border-app-border">
               <p className="text-xs text-app-text-secondary">
-                <span className="font-semibold text-accent">{t('tipPrefix')}</span>{' '}
+                <span className="font-semibold text-app-text">{t('tipPrefix')}</span>{' '}
                 {zones[0]?.prefix || 'XXX'}-1, {zones[0]?.prefix || 'XXX'}-2, ...
               </p>
             </div>

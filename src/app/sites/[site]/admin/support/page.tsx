@@ -79,8 +79,8 @@ export default function SupportPage() {
         <div className="container mx-auto max-w-3xl py-8 px-4 space-y-8">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-muted flex items-center justify-center">
-              <LifeBuoy className="w-5 h-5 text-accent" />
+            <div className="w-10 h-10 rounded-xl bg-app-elevated flex items-center justify-center">
+              <LifeBuoy className="w-5 h-5 text-app-text-secondary" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-app-text">Support & Aide</h1>
@@ -105,8 +105,8 @@ export default function SupportPage() {
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-accent-muted flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-accent" />
+                        <div className="w-8 h-8 rounded-lg bg-app-elevated flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-app-text-secondary" />
                         </div>
                         <CardTitle className="flex items-center gap-1.5">
                           {link.title}
@@ -139,11 +139,11 @@ export default function SupportPage() {
 
           {/* Contact Support */}
           <section>
-            <Card className="border-accent/20 bg-accent-muted/30">
+            <Card className="border-app-border bg-app-elevated">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-accent-muted flex items-center justify-center shrink-0">
-                    <Mail className="w-6 h-6 text-accent" />
+                  <div className="w-12 h-12 rounded-xl bg-app-hover flex items-center justify-center shrink-0">
+                    <Mail className="w-6 h-6 text-app-text-secondary" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-base font-semibold text-app-text">

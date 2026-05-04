@@ -136,7 +136,7 @@ export default function Header() {
             >
               {t('login')}
             </Link>
-            <Button asChild className="hidden md:flex">
+            <Button asChild variant="pill" className="hidden md:flex">
               <Link href="/signup">{t('getStarted')}</Link>
             </Button>
 
@@ -274,7 +274,7 @@ export default function Header() {
                 </span>
                 <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors" />
               </div>
-              <Button asChild className="w-full">
+              <Button asChild variant="pill" className="w-full">
                 <Link href="/signup" onClick={() => setMobileOpen(false)}>
                   {t('getStartedFree')}
                 </Link>

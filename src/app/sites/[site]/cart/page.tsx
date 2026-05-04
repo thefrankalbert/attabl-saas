@@ -449,7 +449,7 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded bg-foreground text-background font-semibold text-[15px] hover:bg-foreground/90 shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-foreground"
+            className="w-full h-[52px] rounded-full bg-attabl-warm text-white font-semibold text-[15px] hover:bg-attabl-warm-hover shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-attabl-warm"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />

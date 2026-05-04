@@ -36,7 +36,7 @@ export default function FeaturesPage() {
     <>
       <section className="py-20 lg:py-28 bg-white dark:bg-neutral-950">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold font-[family-name:var(--font-serif)] text-neutral-900 dark:text-white mb-6">
             {t('heroTitle')}
           </h1>
           <p className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400">

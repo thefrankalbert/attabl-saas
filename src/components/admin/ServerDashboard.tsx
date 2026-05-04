@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useOrders } from '@/hooks/queries/useOrders';
 import { useReleaseAssignment, useClaimOrder } from '@/hooks/mutations/useAssignment';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { UserCheck, ShoppingBag, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -104,82 +105,86 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
               const tableOrders = myOrders.filter((o: Order) => o.table_id === assignment.table_id);
               const isExpanded = expandedTableId === assignment.table_id;
               return (
-                <div
+                <Collapsible
                   key={assignment.id}
+                  open={isExpanded}
+                  onOpenChange={(open) => setExpandedTableId(open ? assignment.table_id : null)}
                   className="rounded-lg border border-app-border bg-app-card overflow-hidden"
                 >
-                  <div
-                    className="p-4 cursor-pointer hover:bg-app-bg transition-colors touch-manipulation"
-                    onClick={() => setExpandedTableId(isExpanded ? null : assignment.table_id)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono font-bold text-app-text">
-                        {assignment.table?.display_name ??
-                          assignment.table?.table_number ??
-                          'Table'}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          releaseAssignment.mutate(assignment.id);
-                        }}
-                        className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-red-500 min-h-[44px] min-w-[44px] justify-center touch-manipulation h-auto"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        {t('release')}
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-app-text-secondary">
-                      <span>{t('activeOrders', { count: tableOrders.length })}</span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                      />
-                    </div>
-                  </div>
-
-                  {isExpanded && tableOrders.length > 0 && (
-                    <div className="border-t border-app-border bg-app-bg p-3 space-y-2">
-                      {tableOrders.map((order: Order) => (
-                        <div
-                          key={order.id}
-                          className="bg-app-card rounded-lg p-3 border border-app-border"
+                  <CollapsibleTrigger asChild>
+                    <div className="p-4 cursor-pointer hover:bg-app-bg transition-colors touch-manipulation">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono font-bold text-app-text">
+                          {assignment.table?.display_name ??
+                            assignment.table?.table_number ??
+                            'Table'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            releaseAssignment.mutate(assignment.id);
+                          }}
+                          className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-red-500 min-h-[44px] min-w-[44px] justify-center touch-manipulation h-auto"
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold text-app-text-secondary uppercase">
-                              #{order.id.slice(0, 8)}
-                            </span>
-                            <span
-                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                order.status === 'pending'
-                                  ? 'bg-amber-500/10 text-amber-500'
-                                  : order.status === 'preparing'
-                                    ? 'bg-purple-500/10 text-purple-500'
-                                    : order.status === 'ready'
-                                      ? 'bg-emerald-500/10 text-emerald-500'
-                                      : 'bg-app-elevated text-app-text-secondary'
-                              }`}
-                            >
-                              {order.status}
-                            </span>
-                          </div>
-                          <div className="text-sm text-app-text">
-                            {formatCurrency(order.total_price + (order.tip_amount || 0), currency)}
-                            <span className="text-app-text-muted ml-2">
-                              ({order.items?.length ?? 0}{' '}
-                              {t('items', { count: order.items?.length ?? 0 })})
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                          <LogOut className="w-3.5 h-3.5" />
+                          {t('release')}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-app-text-secondary">
+                        <span>{t('activeOrders', { count: tableOrders.length })}</span>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        />
+                      </div>
                     </div>
-                  )}
-                  {isExpanded && tableOrders.length === 0 && (
-                    <div className="border-t border-app-border bg-app-bg p-4 text-center text-sm text-app-text-muted">
-                      {t('noActiveOrders')}
-                    </div>
-                  )}
-                </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    {tableOrders.length > 0 ? (
+                      <div className="border-t border-app-border bg-app-bg p-3 space-y-2">
+                        {tableOrders.map((order: Order) => (
+                          <div
+                            key={order.id}
+                            className="bg-app-card rounded-lg p-3 border border-app-border"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold text-app-text-secondary uppercase">
+                                #{order.id.slice(0, 8)}
+                              </span>
+                              <span
+                                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                  order.status === 'pending'
+                                    ? 'bg-amber-500/10 text-amber-500'
+                                    : order.status === 'preparing'
+                                      ? 'bg-purple-500/10 text-purple-500'
+                                      : order.status === 'ready'
+                                        ? 'bg-emerald-500/10 text-emerald-500'
+                                        : 'bg-app-elevated text-app-text-secondary'
+                                }`}
+                              >
+                                {order.status}
+                              </span>
+                            </div>
+                            <div className="text-sm text-app-text">
+                              {formatCurrency(
+                                order.total_price + (order.tip_amount || 0),
+                                currency,
+                              )}
+                              <span className="text-app-text-muted ml-2">
+                                ({order.items?.length ?? 0}{' '}
+                                {t('items', { count: order.items?.length ?? 0 })})
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-t border-app-border bg-app-bg p-4 text-center text-sm text-app-text-muted">
+                        {t('noActiveOrders')}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           </div>

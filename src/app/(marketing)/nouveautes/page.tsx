@@ -112,7 +112,7 @@ export default function NouveautesPage() {
             {t('ctaTitle')}
           </h2>
           <p className="mb-10 text-lg text-neutral-600 dark:text-neutral-400">{t('ctaSubtitle')}</p>
-          <Button asChild size="lg">
+          <Button asChild size="lg" variant="pill">
             <Link href="/signup">{t('ctaButton')}</Link>
           </Button>
         </div>

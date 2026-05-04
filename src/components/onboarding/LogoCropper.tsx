@@ -6,6 +6,7 @@ import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { X, Check, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { compressImage } from '@/lib/image-compress';
 
 interface LogoCropperProps {
@@ -146,15 +147,13 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            {/* eslint-disable-next-line react/forbid-elements -- <input type="range"> is the native zoom slider for image cropping; shadcn Slider would require rewiring the zoom controls */}
-            <input
-              type="range"
+            <Slider
               min={1}
               max={3}
               step={0.05}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 accent-accent"
+              value={[zoom]}
+              onValueChange={([val]) => setZoom(val)}
+              className="flex-1"
             />
             <Button
               type="button"

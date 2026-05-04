@@ -186,7 +186,7 @@ export function TopDishesCard({
                   <div className="text-[10px] text-app-text-muted">{rangeBadge}</div>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-[3px] rounded border bg-accent-muted text-accent border-[rgba(194,245,66,0.25)]">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-[3px] rounded border bg-app-elevated text-app-text-muted border-app-border">
                     {d.categoryLabel}
                   </span>
                 </div>

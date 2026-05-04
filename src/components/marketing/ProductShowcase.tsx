@@ -27,7 +27,7 @@ export default async function ProductShowcase() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="mb-16 text-center">
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
+          <h2 className="font-[family-name:var(--font-serif)] text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
             {t('title')}
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-neutral-500 dark:text-neutral-400">

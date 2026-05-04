@@ -478,7 +478,7 @@ export default function ItemDetailSheet({
               <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-app-text hover:bg-black"
+                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-full text-[15px] bg-attabl-warm hover:bg-attabl-warm-hover"
               >
                 {showSuccess ? (
                   <motion.div

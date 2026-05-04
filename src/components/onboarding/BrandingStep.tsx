@@ -298,7 +298,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                 <Label className="text-xs font-semibold text-app-text mb-2.5 block">
                   {t('customColorsLabel')}
                   {!hasPresetMatch && (
-                    <span className="ml-1.5 text-[10px] text-accent">(actif)</span>
+                    <span className="ml-1.5 text-[10px] text-app-text-muted">(actif)</span>
                   )}
                 </Label>
                 <div className="space-y-4">

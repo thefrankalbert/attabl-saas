@@ -66,7 +66,7 @@ function createMockSupabase(overrides?: {
   const user = overrides?.authUser ?? { id: 'user-1' };
   const tenant = overrides?.tenant ?? {
     id: 'tenant-1',
-    subscription_plan: 'premium',
+    subscription_plan: 'pro',
     subscription_status: 'active',
     trial_ends_at: null,
   };

@@ -214,8 +214,8 @@ function AuthForm({ mode }: AuthFormProps) {
         </Link>
 
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
-            <MailCheck className="h-8 w-8 text-accent" />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-app-elevated">
+            <MailCheck className="h-8 w-8 text-app-text-secondary" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-app-text mb-3">
             {tConfirm('title')}
@@ -312,7 +312,7 @@ function AuthForm({ mode }: AuthFormProps) {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <Alert className="bg-accent/10 text-accent border-accent/20 rounded-xl">
+          <Alert className="bg-app-elevated text-app-text border-app-border rounded-xl">
             <MailCheck className="h-4 w-4" />
             <AlertDescription className="text-sm">
               {tForm('emailConfirmedSuccess')}

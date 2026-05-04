@@ -27,7 +27,7 @@ export default function VideoHero() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Centered text */}
         <div className="text-center">
-          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
+          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-serif)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
             <span className="block">{t('titleLine1')}</span>
             <span className="block">{t('titleLine2')}</span>
             <span className="block">{t('titleLine3')}</span>
@@ -39,7 +39,7 @@ export default function VideoHero() {
 
           {/* CTA row */}
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="pill">
               <Link href="/signup">{t('ctaPrimary')}</Link>
             </Button>
             <Link

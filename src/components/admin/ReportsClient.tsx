@@ -318,9 +318,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         {/* -- KPI Cards -- */}
         <div className="grid grid-cols-3 gap-2">
           {/* Revenue */}
-          <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
+          <div className="px-3 py-2.5 bg-app-elevated border border-app-border rounded-lg">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 text-accent shrink-0" />
+              <DollarSign className="w-4 h-4 text-app-text-secondary shrink-0" />
               <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
                 {t('revenueLabel')}
               </p>
@@ -416,14 +416,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         fontSize: 12,
                       }}
                       labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                      formatter={(
-                        value: number | undefined,
-                        _name: string | undefined,
-                        item: { payload?: DailyStats },
-                      ) => [
-                        `${fmt(value ?? 0)} - ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
-                        t('revenueLabel'),
-                      ]}
+                      formatter={(value, _name, item) => {
+                        const v = typeof value === 'number' ? value : 0;
+                        const stats = (item as { payload?: DailyStats }).payload;
+                        return [
+                          `${fmt(v)} - ${t('ordersCountShort', { count: stats?.orders ?? 0 })}`,
+                          t('revenueLabel'),
+                        ];
+                      }}
                       cursor={{ fill: 'var(--app-accent-muted)' }}
                     />
                     <Bar
@@ -559,9 +559,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         color: 'var(--app-text)',
                         fontSize: 12,
                       }}
-                      formatter={(value: number | undefined, name: string | undefined) => [
-                        fmt(value ?? 0),
-                        name ?? '',
+                      formatter={(value, name) => [
+                        fmt(typeof value === 'number' ? value : 0),
+                        typeof name === 'string' ? name : '',
                       ]}
                     />
                     <Legend
@@ -616,8 +616,8 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                           fontSize: 12,
                         }}
                         labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                        formatter={(value: number | undefined) => [
-                          `${value ?? 0}`,
+                        formatter={(value) => [
+                          `${typeof value === 'number' ? value : 0}`,
                           t('ordersCount'),
                         ]}
                       />

@@ -34,14 +34,14 @@ export async function SegmentLandingPage({ segmentKey, icons }: SegmentLandingPa
       {/* Hero */}
       <section className="py-20 lg:py-28 bg-white dark:bg-neutral-950">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 dark:text-white tracking-tight">
+          <h1 className="font-[family-name:var(--font-serif)] text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 dark:text-white tracking-tight">
             {t('heroTitle')}
           </h1>
           <p className="text-lg sm:text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mt-6">
             {t('heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="pill">
               <Link href="/signup">{tShared('ctaPrimary')}</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
@@ -84,7 +84,7 @@ export async function SegmentLandingPage({ segmentKey, icons }: SegmentLandingPa
           <p className="text-lg text-neutral-500 dark:text-neutral-400 mt-4">
             {tShared('ctaSubtitle')}
           </p>
-          <Button asChild size="lg" className="mt-8">
+          <Button asChild size="lg" variant="pill" className="mt-8">
             <Link href="/signup">{tShared('ctaPrimary')}</Link>
           </Button>
         </div>

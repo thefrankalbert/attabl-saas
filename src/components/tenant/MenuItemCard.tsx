@@ -399,7 +399,7 @@ export default function MenuItemCard({
               }}
               disabled={isAdding}
               aria-label={tt('addShort')}
-              className="w-7 h-7 rounded-full bg-app-text hover:bg-black active:scale-85"
+              className="w-7 h-7 rounded-full bg-attabl-warm hover:bg-attabl-warm-hover active:scale-85"
             >
               <Plus className="w-4 h-4 text-white" />
             </Button>

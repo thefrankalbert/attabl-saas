@@ -92,10 +92,9 @@ export function FeaturedItemCard({
             onAdd();
           }}
           aria-label={t('addShort')}
-          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7 active:scale-95 transition-transform"
-          style={{ background: C.primary }}
+          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7 active:scale-95 transition-transform bg-attabl-warm hover:bg-attabl-warm-hover text-white"
         >
-          <Plus size={14} color={C.textOnPrimary} strokeWidth={2.5} aria-hidden />
+          <Plus size={14} strokeWidth={2.5} aria-hidden />
         </Button>
       </div>
       <div className="p-3 pt-4 flex flex-col gap-1">

@@ -26,6 +26,7 @@ import { createClient } from '@/lib/supabase/client';
 import { createMenuService } from '@/services/menu.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -463,173 +464,182 @@ export default function MenuDetailClient({
                 const catItems = getItemsForCategory(cat.id);
                 const isCatActive = cat.is_active ?? true;
                 return (
-                  <div key={cat.id} className={cn('space-y-2', !isCatActive && 'opacity-50')}>
+                  <Collapsible
+                    key={cat.id}
+                    open={expandedCategories.has(cat.id)}
+                    onOpenChange={(open) =>
+                      setExpandedCategories((prev) => {
+                        const next = new Set(prev);
+                        if (open) next.add(cat.id);
+                        else next.delete(cat.id);
+                        return next;
+                      })
+                    }
+                    className={cn('space-y-2', !isCatActive && 'opacity-50')}
+                  >
                     {/* Category header - click to expand/collapse */}
-                    <div
-                      className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
-                      onClick={() =>
-                        setExpandedCategories((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(cat.id)) next.delete(cat.id);
-                          else next.add(cat.id);
-                          return next;
-                        })
-                      }
-                    >
-                      <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-                        <ChevronDown
-                          className={cn(
-                            'w-4 h-4 text-app-text-secondary transition-transform duration-200',
-                            !expandedCategories.has(cat.id) && '-rotate-90',
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-app-text text-sm">{cat.name}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-                        <Utensils className="w-3.5 h-3.5" />
-                        <span className="font-medium">
-                          {t('dishCount', { count: catItems.length })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleCategoryActive(cat)}
-                          className="text-xs h-8"
-                          title={isCatActive ? t('categoryVisible') : t('categoryHidden')}
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer">
+                        <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+                          <ChevronDown
+                            className={cn(
+                              'w-4 h-4 text-app-text-secondary transition-transform duration-200',
+                              !expandedCategories.has(cat.id) && '-rotate-90',
+                            )}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
+                          <Utensils className="w-3.5 h-3.5" />
+                          <span className="font-medium">
+                            {t('dishCount', { count: catItems.length })}
+                          </span>
+                        </div>
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {isCatActive ? (
-                            <Eye className="w-3.5 h-3.5" />
-                          ) : (
-                            <EyeOff className="w-3.5 h-3.5" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditCategoryModal(cat)}
-                          className="text-xs h-8"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteCategory(cat)}
-                          title="Supprimer"
-                          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleCategoryActive(cat)}
+                            className="text-xs h-8"
+                            title={isCatActive ? t('categoryVisible') : t('categoryHidden')}
+                          >
+                            {isCatActive ? (
+                              <Eye className="w-3.5 h-3.5" />
+                            ) : (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditCategoryModal(cat)}
+                            className="text-xs h-8"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteCategory(cat)}
+                            title="Supprimer"
+                            className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    </CollapsibleTrigger>
 
                     {/* Items in this category - collapsible */}
-                    {catItems.length > 0 && expandedCategories.has(cat.id) && (
-                      <div className="ml-6 space-y-1">
-                        {catItems.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-3 p-3 bg-app-bg rounded-lg hover:bg-app-bg/80 transition-colors group/item"
-                          >
-                            {item.image_url ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="w-8 h-8 rounded object-cover shrink-0"
-                              />
-                            ) : (
-                              <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
-                            )}
-                            <span className="flex-1 text-sm text-app-text font-medium break-words">
-                              {item.name}
-                            </span>
+                    {catItems.length > 0 && (
+                      <CollapsibleContent>
+                        <div className="ml-6 space-y-1">
+                          {catItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3 p-3 bg-app-bg rounded-lg hover:bg-app-bg/80 transition-colors group/item"
+                            >
+                              {item.image_url ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={item.image_url}
+                                  alt={item.name}
+                                  className="w-8 h-8 rounded object-cover shrink-0"
+                                />
+                              ) : (
+                                <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
+                              )}
+                              <span className="flex-1 text-sm text-app-text font-medium break-words">
+                                {item.name}
+                              </span>
 
-                            {/* Inline price editing */}
-                            {editingPriceId === item.id ? (
-                              <Input
-                                ref={priceInputRef}
-                                type="number"
-                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30 h-auto shadow-none"
-                                value={editingPriceValue}
-                                onChange={(e) => setEditingPriceValue(e.target.value)}
-                                onBlur={() => saveInlinePrice(item)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') saveInlinePrice(item);
-                                  if (e.key === 'Escape') setEditingPriceId(null);
-                                }}
-                                min={0}
-                              />
-                            ) : (
+                              {/* Inline price editing */}
+                              {editingPriceId === item.id ? (
+                                <Input
+                                  ref={priceInputRef}
+                                  type="number"
+                                  className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30 h-auto shadow-none"
+                                  value={editingPriceValue}
+                                  onChange={(e) => setEditingPriceValue(e.target.value)}
+                                  onBlur={() => saveInlinePrice(item)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveInlinePrice(item);
+                                    if (e.key === 'Escape') setEditingPriceId(null);
+                                  }}
+                                  min={0}
+                                />
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => startEditingPrice(item)}
+                                  className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline h-auto px-1 py-0"
+                                  title={t('editItem')}
+                                >
+                                  {t('priceFcfa', { count: item.price })}
+                                </Button>
+                              )}
+
+                              {(item.modifiers?.length ?? 0) > 0 && (
+                                <span className="text-[10px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
+                                  {item.modifiers!.length} mod.
+                                </span>
+                              )}
+
+                              {/* Action buttons */}
                               <Button
                                 variant="ghost"
-                                onClick={() => startEditingPrice(item)}
-                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline h-auto px-1 py-0"
+                                size="icon"
+                                aria-label="Edit"
+                                onClick={() => openEditItemModal(item)}
                                 title={t('editItem')}
                               >
-                                {t('priceFcfa', { count: item.price })}
+                                <Edit2 className="w-4 h-4" />
                               </Button>
-                            )}
-
-                            {(item.modifiers?.length ?? 0) > 0 && (
-                              <span className="text-[10px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
-                                {item.modifiers!.length} mod.
-                              </span>
-                            )}
-
-                            {/* Action buttons */}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Edit"
-                              onClick={() => openEditItemModal(item)}
-                              title={t('editItem')}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Settings"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingModifiersItem(item);
-                              }}
-                              title={t('manageModifiers')}
-                            >
-                              <Settings2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => toggleItemAvailable(item)}
-                              className={cn(
-                                'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
-                                item.is_available
-                                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                  : 'bg-app-bg text-app-text-secondary border-app-border',
-                              )}
-                            >
-                              {item.is_available ? (
-                                <>
-                                  <Check className="w-3 h-3 inline mr-0.5" />
-                                  {t('stockLabel')}
-                                </>
-                              ) : (
-                                <>
-                                  <X className="w-3 h-3 inline mr-0.5" />
-                                  {t('exhaustedLabel')}
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Settings"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingModifiersItem(item);
+                                }}
+                                title={t('manageModifiers')}
+                              >
+                                <Settings2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => toggleItemAvailable(item)}
+                                className={cn(
+                                  'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
+                                  item.is_available
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : 'bg-app-bg text-app-text-secondary border-app-border',
+                                )}
+                              >
+                                {item.is_available ? (
+                                  <>
+                                    <Check className="w-3 h-3 inline mr-0.5" />
+                                    {t('stockLabel')}
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-3 h-3 inline mr-0.5" />
+                                    {t('exhaustedLabel')}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
                     )}
-                  </div>
+                  </Collapsible>
                 );
               })}
             </div>
