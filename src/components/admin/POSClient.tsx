@@ -212,14 +212,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     onChange={(e) => pos.setNotesText(e.target.value)}
                   />
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      variant="ghost"
-                      className="rounded-xl"
-                      onClick={() => pos.setEditingNotes(null)}
-                    >
+                    <Button variant="ghost" onClick={() => pos.setEditingNotes(null)}>
                       {tc('cancel')}
                     </Button>
-                    <Button variant="default" className="rounded-xl" onClick={pos.saveNotes}>
+                    <Button variant="default" onClick={pos.saveNotes}>
                       {tc('save')}
                     </Button>
                   </div>

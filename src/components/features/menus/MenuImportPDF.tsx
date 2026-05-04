@@ -317,7 +317,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
           <div className="space-y-2">
             <p className="text-sm font-medium text-app-text">{t('pdfPreview')}</p>
             <p className="text-xs text-app-text-secondary">{t('pdfPreviewDesc')}</p>
-            <p className="text-xs text-accent font-medium">
+            <p className="text-xs text-app-text-secondary font-medium">
               {t('pdfExtracted', { count: extractedItems.length })}
             </p>
           </div>
@@ -331,7 +331,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-app-text-muted bg-app-elevated px-1.5 py-0.5 rounded">
                       {item.category}
                     </span>
                   </div>
@@ -438,7 +438,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
 
           {/* Close button */}
           <div className="flex justify-end pt-4 border-t border-app-border">
-            <Button variant="default" onClick={onCancel} className="rounded-xl">
+            <Button variant="default" onClick={onCancel}>
               {t('cancel')}
             </Button>
           </div>

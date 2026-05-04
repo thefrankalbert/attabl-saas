@@ -23,7 +23,7 @@ export default async function NotFound() {
         title={t('notFoundTitle')}
         description={t('notFoundDescription')}
         actions={
-          <Button asChild className="gap-2 h-11 rounded-xl">
+          <Button asChild size="lg" className="gap-2">
             <Link href="/">
               <ArrowLeft className="h-4 w-4" />
               {t('backToHome')}

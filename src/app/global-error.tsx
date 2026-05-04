@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
+import { Button } from '@/components/ui/button';
 
 export default function GlobalError({
   error,
@@ -88,23 +89,9 @@ export default function GlobalError({
               Une erreur inattendue est survenue. Nos equipes ont ete alertees. Vous pouvez
               reessayer ou revenir plus tard.
             </p>
-            {/* eslint-disable-next-line react/forbid-elements */}
-            <button
-              onClick={reset}
-              style={{
-                backgroundColor: '#006AFF',
-                color: '#ffffff',
-                border: 'none',
-                padding: '14px 28px',
-                borderRadius: '12px',
-                fontSize: '0.9375rem',
-                cursor: 'pointer',
-                fontWeight: 700,
-                width: '100%',
-              }}
-            >
+            <Button type="button" onClick={reset} size="lg" className="w-full">
               Reessayer
-            </button>
+            </Button>
           </div>
         </div>
       </body>

@@ -52,12 +52,13 @@ export default function Error({
           <>
             <Button
               onClick={reset}
-              className="gap-2 h-11 rounded-xl bg-accent text-accent-text hover:bg-accent-hover"
+              size="lg"
+              className="gap-2 bg-accent text-accent-text hover:bg-accent-hover"
             >
               <RefreshCw className="w-4 h-4" />
               {t('retry')}
             </Button>
-            <Button asChild variant="outline" className="gap-2 h-11 rounded-xl">
+            <Button asChild variant="outline" size="lg" className="gap-2">
               <Link href="/">
                 <Home className="w-4 h-4" />
                 {t('backToHome')}
