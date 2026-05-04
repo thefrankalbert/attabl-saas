@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Banknote, BarChart3, CreditCard, Package, QrCode, Users } from 'lucide-react';
+import { WalletCards, BarChart3, CreditCard, Package, QrCode, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type CardKey = 'menu' | 'pos' | 'payments' | 'analytics' | 'stock' | 'team';
@@ -7,7 +7,7 @@ type CardKey = 'menu' | 'pos' | 'payments' | 'analytics' | 'stock' | 'team';
 const cardDefs: { key: CardKey; icon: LucideIcon }[] = [
   { key: 'menu', icon: QrCode },
   { key: 'pos', icon: CreditCard },
-  { key: 'payments', icon: Banknote },
+  { key: 'payments', icon: WalletCards },
   { key: 'analytics', icon: BarChart3 },
   { key: 'stock', icon: Package },
   { key: 'team', icon: Users },

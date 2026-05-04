@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Printer,
-  UtensilsCrossed,
+  ForkKnife,
   Package,
   Truck,
   BellRing,
@@ -18,7 +18,7 @@ import {
   LayoutGrid,
   MapPin,
   StickyNote,
-  Tag,
+  BadgePercent,
   X,
   Loader2,
 } from 'lucide-react';
@@ -155,7 +155,7 @@ export default function POSCart({
       {
         value: 'dine_in',
         label: t('serviceOnSite'),
-        icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
+        icon: <ForkKnife className="w-3.5 h-3.5" />,
       },
       { value: 'takeaway', label: t('serviceTakeaway'), icon: <Package className="w-3.5 h-3.5" /> },
       { value: 'delivery', label: t('serviceDelivery'), icon: <Truck className="w-3.5 h-3.5" /> },
@@ -373,7 +373,7 @@ export default function POSCart({
               {appliedCoupon ? (
                 <div className="flex items-center gap-1 animate-in fade-in">
                   <div className="flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
-                    <Tag className="w-2.5 h-2.5 shrink-0" />
+                    <BadgePercent className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate">{appliedCoupon.code}</span>
                     <span className="text-green-500 shrink-0">
                       -
@@ -414,7 +414,7 @@ export default function POSCart({
                     {couponLoading ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
                     ) : (
-                      <Tag className="w-3 h-3" />
+                      <BadgePercent className="w-3 h-3" />
                     )}
                   </Button>
                 </div>

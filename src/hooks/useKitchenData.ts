@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Bell, Utensils, CheckCircle2 } from 'lucide-react';
+import { BellElectric, CookingPot, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -87,13 +87,13 @@ const COLUMN_STYLES = {
     dot: 'bg-amber-400/60',
     countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
-    emptyIcon: Bell,
+    emptyIcon: BellElectric,
   },
   preparing: {
     dot: 'bg-blue-400/60',
     countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
-    emptyIcon: Utensils,
+    emptyIcon: CookingPot,
   },
   ready: {
     dot: 'bg-emerald-400/60',

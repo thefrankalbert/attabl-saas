@@ -2,7 +2,15 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Coins, CreditCard, Banknote, X, ArrowLeft, Delete } from 'lucide-react';
+import {
+  Loader2,
+  WalletMinimal,
+  CreditCard,
+  CircleDollarSign,
+  X,
+  ArrowLeft,
+  Delete,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -371,9 +379,9 @@ export default function PaymentModal({
           <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
             {(
               [
-                { key: 'cash' as const, icon: Banknote, label: t('cash') },
+                { key: 'cash' as const, icon: CircleDollarSign, label: t('cash') },
                 { key: 'card' as const, icon: CreditCard, label: t('card') },
-                { key: 'mobile_money' as const, icon: Coins, label: t('mobile') },
+                { key: 'mobile_money' as const, icon: WalletMinimal, label: t('mobile') },
               ] as const
             ).map((pm) => (
               <Button
@@ -515,7 +523,7 @@ export default function PaymentModal({
                 {method === 'card' ? (
                   <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-app-text-secondary" />
                 ) : (
-                  <Coins className="w-6 h-6 sm:w-8 sm:h-8 text-app-text-secondary" />
+                  <WalletMinimal className="w-6 h-6 sm:w-8 sm:h-8 text-app-text-secondary" />
                 )}
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-app-text tabular-nums mb-1">

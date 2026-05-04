@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useOrders } from '@/hooks/queries/useOrders';
 import { useReleaseAssignment, useClaimOrder } from '@/hooks/mutations/useAssignment';
-import { UserCheck, ShoppingCart, LogOut, ChevronDown } from 'lucide-react';
+import { UserCheck, ShoppingBag, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/currency';
 import { createClient } from '@/lib/supabase/client';
@@ -189,7 +189,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
       {/* Unassigned Orders */}
       <div>
         <h2 className="text-lg font-semibold text-app-text mb-3 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-app-text-secondary" />
+          <ShoppingBag className="w-5 h-5 text-app-text-secondary" />
           {t('unassignedOrders', { count: unassignedOrders.length })}
         </h2>
         {unassignedOrders.length === 0 ? (

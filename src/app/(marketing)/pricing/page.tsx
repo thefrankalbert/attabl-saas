@@ -9,7 +9,7 @@ import {
   Crown,
   Minus,
   Zap,
-  Building2,
+  Handshake,
   Phone,
   Users,
   BarChart3,
@@ -508,7 +508,7 @@ export default function PricingPage() {
 
           {/* BUSINESS */}
           <SinglePricingCard
-            badge={{ icon: Building2, text: t('plans.business.badge') }}
+            badge={{ icon: Handshake, text: t('plans.business.badge') }}
             title={t('plans.business.title')}
             subtitle={t('plans.business.subtitle')}
             price={{
@@ -523,7 +523,7 @@ export default function PricingPage() {
                     : undefined,
             }}
             benefits={[
-              { text: t('plans.business.benefits.b1'), icon: Building2 },
+              { text: t('plans.business.benefits.b1'), icon: Handshake },
               { text: t('plans.business.benefits.b2'), icon: UtensilsCrossed },
               { text: t('plans.business.benefits.b3'), icon: BarChart3 },
               { text: t('plans.business.benefits.b4'), icon: Phone },
@@ -552,7 +552,7 @@ export default function PricingPage() {
             subtitle={t('plans.enterprise.subtitle')}
             price={{ current: t('customPrice') }}
             benefits={[
-              { text: t('plans.enterprise.benefits.b1'), icon: Building2 },
+              { text: t('plans.enterprise.benefits.b1'), icon: Handshake },
               { text: t('plans.enterprise.benefits.b2'), icon: Shield },
               { text: t('plans.enterprise.benefits.b3'), icon: Users },
               { text: t('plans.enterprise.benefits.b4'), icon: Phone },

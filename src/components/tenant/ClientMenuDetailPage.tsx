@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -660,7 +660,7 @@ export default function ClientMenuDetailPage({
             href={`/sites/${tenant.slug}/cart`}
             className="inline-flex items-center gap-2.5 px-4 no-underline bg-[#1A1A1A] rounded-full h-12 text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] max-w-[calc(100%-32px)]"
           >
-            <ShoppingCart className="w-5 h-5 flex-shrink-0 text-white" />
+            <ShoppingBag className="w-5 h-5 flex-shrink-0 text-white" />
             <span className="text-[14px] font-semibold text-white whitespace-nowrap">
               {t('viewCart')}
             </span>

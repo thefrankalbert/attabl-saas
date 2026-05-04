@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Plus, Loader2, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
+import { Plus, Loader2, Trash2, Megaphone, CalendarCheck, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
@@ -191,7 +191,7 @@ export default function AnnouncementsClient({
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-app-text-muted shrink-0">
-                  <Calendar className="w-3 h-3" />
+                  <CalendarCheck className="w-3 h-3" />
                   <span>{new Date(ann.start_date).toLocaleDateString(locale)}</span>
                   {ann.end_date && (
                     <span>- {new Date(ann.end_date).toLocaleDateString(locale)}</span>

@@ -1,20 +1,20 @@
 import {
   LayoutDashboard,
   ShoppingBag,
-  ClipboardList,
+  NotebookPen,
   UtensilsCrossed,
   BookOpen,
-  Package,
+  PackageCheck,
   BookOpenCheck,
   Truck,
   Megaphone,
-  Tag,
+  BadgePercent,
   Lightbulb,
   Laptop,
   ChefHat,
   UserCheck,
   BarChart3,
-  History,
+  CalendarClock,
   Receipt,
   ScrollText,
 } from 'lucide-react';
@@ -75,12 +75,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
   {
     id: 'organization',
     titleKey: 'groupOrganization',
-    icon: ClipboardList,
+    icon: NotebookPen,
     sectionKey: 'catalog',
     items: [
       {
         path: '/menus',
-        icon: ClipboardList,
+        icon: NotebookPen,
         labelKey: 'navMenus',
         requiredPermission: 'canManageMenus',
         permissionCode: 'menu.view',
@@ -101,7 +101,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       },
       {
         path: '/inventory',
-        icon: Package,
+        icon: PackageCheck,
         labelKey: 'navInventory',
         requiredPermission: 'canViewStocks',
         permissionCode: 'inventory.view',
@@ -137,7 +137,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       },
       {
         path: '/coupons',
-        icon: Tag,
+        icon: BadgePercent,
         labelKey: 'navCoupons',
         requiredPermission: 'canManageSettings',
         permissionCode: 'settings.edit',
@@ -197,7 +197,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       },
       {
         path: '/stock-history',
-        icon: History,
+        icon: CalendarClock,
         labelKey: 'navStockHistory',
         requiredPermission: 'canViewStocks',
         permissionCode: 'inventory.view',

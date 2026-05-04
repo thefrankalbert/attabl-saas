@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Plus, FileSpreadsheet, FileText, Search, Trash2 } from 'lucide-react';
+import { Plus, FileSpreadsheet, NotebookTabs, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
@@ -173,7 +173,7 @@ export default function MenusClient({
                 size="sm"
                 className="gap-1.5 shrink-0"
               >
-                <FileText className="w-4 h-4" />
+                <NotebookTabs className="w-4 h-4" />
                 <span className="hidden @sm:inline">{t('importPdf')}</span>
               </Button>
               <Button

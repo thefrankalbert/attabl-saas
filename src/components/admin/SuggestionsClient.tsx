@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Lightbulb, Plus, Trash2, Search, Wand2, CheckSquare, Square, XCircle } from 'lucide-react';
+import {
+  Lightbulb,
+  Plus,
+  Trash2,
+  Search,
+  Sparkles,
+  CheckSquare,
+  Square,
+  XCircle,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -274,7 +283,7 @@ export default function SuggestionsClient({
                   className="gap-2 h-9"
                   disabled={generating || menuItems.length === 0}
                 >
-                  <Wand2 className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                   {generating ? tc('loading') : t('autoGenerate')}
                 </Button>
               )}

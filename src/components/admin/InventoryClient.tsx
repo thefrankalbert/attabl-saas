@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Package, Plus, Search } from 'lucide-react';
+import { PackageCheck, Plus, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
@@ -334,7 +334,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 {/* Title */}
                 <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                  <Package className="w-5 h-5" />
+                  <PackageCheck className="w-5 h-5" />
                   {t('inventory')}
                   <span className="text-sm font-normal text-app-text-muted">
                     ({ingredients.length})
