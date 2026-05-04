@@ -42,9 +42,12 @@ export function assignToggleVariant(id: string): ToggleVariant {
 
 export function getClientCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
+  for (const cookie of document.cookie.split('; ')) {
+    const eq = cookie.indexOf('=');
+    if (eq === -1) continue;
+    if (cookie.slice(0, eq) === name) return decodeURIComponent(cookie.slice(eq + 1));
+  }
+  return null;
 }
 
 export function setClientCookie(name: string, value: string, days: number): void {
