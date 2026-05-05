@@ -99,6 +99,22 @@ interface OnboardingDraft {
   qrStyle?: string;
   qrCta?: string;
   qrDescription?: string;
+  qrShowLogo?: boolean;
+  qrSupportWidth?: number;
+  qrSupportHeight?: number;
+  qrOrientation?: string;
+  qrCustomName?: string;
+  qrPosition?: string;
+  qrShowName?: boolean;
+  qrShowCta?: boolean;
+  qrCustomFgColor?: string;
+  qrCustomBgColor?: string;
+  qrCustomTextColor?: string;
+  qrCustomCardBgColor?: string;
+  qrUploadedDesignUrl?: string;
+  qrRectoVerso?: boolean;
+  qrVersoType?: string;
+  qrVersoUploadUrl?: string;
   // Tenant name (editable during onboarding)
   tenantName?: string;
 }
@@ -343,52 +359,60 @@ export function createOnboardingService(supabase: SupabaseClient) {
           itemsByCategory.set(catName, existing);
         }
 
+        // Pre-compute start display_order per category to avoid shared mutable counter
+        // across concurrent Promise.all callbacks (race condition).
+        const categoryEntries = Array.from(itemsByCategory.entries());
+        const categoryStartOrders = new Map<string, number>();
+        let nextOrder = 1;
+        for (const [catName, items] of categoryEntries) {
+          categoryStartOrders.set(catName, nextOrder);
+          nextOrder += items.length;
+        }
+
         // Create all categories in parallel, then their items
-        let itemDisplayOrder = 1;
         await Promise.all(
-          Array.from(itemsByCategory.entries()).map(
-            async ([categoryName, items], categoryIndex) => {
-              const { data: category, error: catError } = await supabase
-                .from('categories')
-                .insert({
-                  tenant_id: tenantId,
-                  menu_id: menuId,
-                  name: categoryName,
-                  is_active: true,
-                  sort_order: categoryIndex + 1,
-                  display_order: categoryIndex + 1,
-                })
-                .select()
-                .single();
+          categoryEntries.map(async ([categoryName, items], categoryIndex) => {
+            const { data: category, error: catError } = await supabase
+              .from('categories')
+              .insert({
+                tenant_id: tenantId,
+                menu_id: menuId,
+                name: categoryName,
+                is_active: true,
+                sort_order: categoryIndex + 1,
+                display_order: categoryIndex + 1,
+              })
+              .select()
+              .single();
 
-              if (catError || !category) {
-                logger.error('Failed to create category during onboarding', catError, {
-                  categoryName,
-                  tenantId,
-                });
-                return;
-              }
+            if (catError || !category) {
+              logger.error('Failed to create category during onboarding', catError, {
+                categoryName,
+                tenantId,
+              });
+              return;
+            }
 
-              const { error: itemsError } = await supabase.from('menu_items').insert(
-                items.map((item) => ({
-                  tenant_id: tenantId,
-                  category_id: category.id,
-                  name: item.name,
-                  price: item.price || 0,
-                  image_url: item.imageUrl || null,
-                  is_available: true,
-                  display_order: itemDisplayOrder++,
-                })),
-              );
+            const startOrder = categoryStartOrders.get(categoryName) ?? nextOrder;
+            const { error: itemsError } = await supabase.from('menu_items').insert(
+              items.map((item, i) => ({
+                tenant_id: tenantId,
+                category_id: category.id,
+                name: item.name,
+                price: item.price || 0,
+                image_url: item.imageUrl || null,
+                is_available: true,
+                display_order: startOrder + i,
+              })),
+            );
 
-              if (itemsError) {
-                logger.error('Failed to create menu items during onboarding', itemsError, {
-                  categoryName,
-                  tenantId,
-                });
-              }
-            },
-          ),
+            if (itemsError) {
+              logger.error('Failed to create menu items during onboarding', itemsError, {
+                categoryName,
+                tenantId,
+              });
+            }
+          }),
         );
       })();
 

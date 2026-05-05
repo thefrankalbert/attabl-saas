@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import {
   Palette,
@@ -127,6 +127,11 @@ export interface OnboardingData {
   // Uploaded design URL (Supabase Storage)
   qrUploadedDesignUrl?: string;
   qrCustomName?: string;
+  qrUploadScale?: number;
+  qrUnit?: 'cm' | 'mm' | 'px';
+  qrRectoVerso?: boolean;
+  qrVersoType?: 'logo' | 'custom' | 'blank';
+  qrVersoUploadUrl?: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -186,7 +191,7 @@ export default function OnboardingPage() {
     phone: '',
     tableCount: 10,
     language: 'fr-FR',
-    currency: 'EUR',
+    currency: 'FCFA',
     starRating: undefined,
     hasRestaurant: undefined,
     hasTerrace: undefined,
@@ -206,6 +211,8 @@ export default function OnboardingPage() {
     qrStyle: 'branded',
     qrCta: 'Scannez pour commander',
     qrDescription: '',
+    qrSupportWidth: 217,
+    qrSupportHeight: 110,
     tenantId: '',
     tenantSlug: '',
     tenantName: '',
@@ -215,19 +222,23 @@ export default function OnboardingPage() {
 
   // Compute adaptive phases based on establishment type
   const segmentFeatures = getSegmentFeatures(data.establishmentType);
-  const phases: PhaseDefinition[] = [
-    {
-      labelKey: 'phaseIdentity',
-      icon: Palette,
-      subScreens: ['establishment', 'branding', 'details'],
-    },
-    {
-      labelKey: 'phaseMenu',
-      icon: UtensilsCrossed,
-      subScreens: segmentFeatures.showTables ? ['tables', 'menu'] : ['menu'],
-    },
-    { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
-  ];
+  const showTables = segmentFeatures.showTables;
+  const phases = useMemo<PhaseDefinition[]>(
+    () => [
+      {
+        labelKey: 'phaseIdentity',
+        icon: Palette,
+        subScreens: ['establishment', 'branding', 'details'],
+      },
+      {
+        labelKey: 'phaseMenu',
+        icon: UtensilsCrossed,
+        subScreens: showTables ? ['tables', 'menu'] : ['menu'],
+      },
+      { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
+    ],
+    [showTables],
+  );
 
   const currentPhase = phase >= 1 && phase <= 3 ? phases[phase - 1] : null;
   const screenKey: ScreenKey | null = currentPhase
@@ -370,20 +381,34 @@ export default function OnboardingPage() {
 
   // ─── Keyboard navigation ──────────────────────────────────────────────────
 
+  // Refs hold the latest goNext/goPrev so the keyboard effect never captures stale closures.
+  // Assignments happen after those functions are defined (further below in this component).
+  const goNextRef = useRef<() => void>(() => {});
+  const goPrevRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'ArrowRight' && phase >= 1 && !isLastScreen) {
-        goNext();
+        goNextRef.current();
       }
       if (e.key === 'ArrowLeft' && (phase > 1 || (phase === 1 && subScreen > 0))) {
-        goPrev();
+        goPrevRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, subScreen]);
+  }, [phase, subScreen, isLastScreen]);
+
+  // ─── Guard: clamp subScreen when phases change (e.g. establishmentType flip removes a screen) ──
+
+  useEffect(() => {
+    if (phase < 1 || phase > 3) return;
+    const phaseScreens = phases[phase - 1]?.subScreens;
+    if (phaseScreens && subScreen >= phaseScreens.length) {
+      setSubScreen(0);
+    }
+  }, [phases, phase, subScreen]);
 
   // ─── Data update callback ─────────────────────────────────────────────────
 
@@ -426,6 +451,10 @@ export default function OnboardingPage() {
     }
     scrollToTop();
   };
+
+  // Keep refs current so the keyboard effect always calls the latest version.
+  goNextRef.current = goNext;
+  goPrevRef.current = goPrev;
 
   const goToPhase = (targetPhase: number) => {
     if (targetPhase >= phase) return; // only allow going to completed phases
@@ -635,7 +664,7 @@ export default function OnboardingPage() {
         {/* Config panel */}
         <div className="flex-1 flex flex-col min-w-0">
           <main
-            className={`flex-1 min-h-0 scroll-smooth ${screenKey === 'qr' || screenKey === 'summary' ? 'overflow-hidden' : 'overflow-y-auto'}`}
+            className="flex-1 min-h-0 overflow-hidden scroll-smooth"
             data-onboarding-scroll
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX;
@@ -651,11 +680,7 @@ export default function OnboardingPage() {
             {/* Animated content */}
             <div
               key={`${phase}-${subScreen}`}
-              className={
-                direction === 'forward'
-                  ? 'animate-in slide-in-from-right-4 fade-in duration-200'
-                  : 'animate-in slide-in-from-left-4 fade-in duration-200'
-              }
+              className={`h-full ${direction === 'forward' ? 'animate-in slide-in-from-right-4 fade-in duration-200' : 'animate-in slide-in-from-left-4 fade-in duration-200'}`}
             >
               <StepErrorBoundary key={`eb-${phase}-${subScreen}`}>
                 {renderScreen()}
@@ -695,7 +720,7 @@ export default function OnboardingPage() {
                   type="button"
                   variant="ghost"
                   onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
+                  className="flex items-center gap-2 px-4 py-2 rounded text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
@@ -710,7 +735,7 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={completeOnboarding}
                   disabled={saving}
-                  className="h-11 rounded-xl text-sm font-bold px-6"
+                  className="h-11 rounded text-sm font-bold px-6"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t('launchCTA')}
                 </Button>
@@ -719,7 +744,7 @@ export default function OnboardingPage() {
                   variant="default"
                   onClick={goNext}
                   disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                  className="h-11 rounded gap-2 text-sm font-bold px-6"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -735,15 +760,16 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right sidebar preview - desktop only */}
-        {/* Shows QR template preview during QR/summary screens, phone mockup otherwise */}
-        <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
-          {screenKey === 'qr' || screenKey === 'summary' ? (
-            <QRTemplatePreview data={data} />
-          ) : (
-            <PhonePreview data={data} phase={phase} />
-          )}
-        </div>
+        {/* Right sidebar preview - desktop only, hidden on summary screen */}
+        {screenKey !== 'summary' && (
+          <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
+            {screenKey === 'qr' ? (
+              <QRTemplatePreview data={data} />
+            ) : (
+              <PhonePreview data={data} phase={phase} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Camera, ChevronDown, ChevronRight, Plus, X, Loader2 } from 'lucide-react';
+import { Camera, ChevronDown, ChevronRight, Minus, Plus, X, Loader2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage, uploadToStorage } from '@/lib/image-compress';
 import { createClient } from '@/lib/supabase/client';
 import { getSegmentFamily } from '@/lib/segment-terms';
+
+const PRICE_STEP = 100;
 
 interface MenuStepProps {
   data: OnboardingData;
@@ -191,9 +193,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       const publicUrl = await uploadToStorage(compressed, 'menu-items', supabase);
       updateArticle(categoryId, itemId, 'imageUrl', publicUrl);
     } catch {
-      // Fallback to object URL if upload fails
-      const url = URL.createObjectURL(file);
-      updateArticle(categoryId, itemId, 'imageUrl', url);
+      // Upload failed — do not store a local object URL (would leak and not persist)
     } finally {
       setUploadingItemId(null);
     }
@@ -210,7 +210,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
           </div>
 
           {/* Tip */}
-          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="mb-6 p-4 rounded-lg bg-accent/5 border border-accent/20">
             <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
           </div>
 
@@ -227,7 +227,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                 return (
                   <div
                     key={category.id}
-                    className="rounded-xl border border-app-border overflow-hidden"
+                    className="rounded-lg border border-app-border overflow-hidden"
                   >
                     {/* Category Header */}
                     <div className="flex items-center gap-3 p-4 bg-app-elevated/50">
@@ -250,7 +250,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                        className="flex-1 h-10 bg-app-bg border-app-border rounded-xl text-sm font-semibold"
+                        className="flex-1 h-10 bg-app-bg border-app-border rounded text-sm font-semibold"
                       />
 
                       <span className="text-xs text-app-text-muted whitespace-nowrap px-2.5 py-1 bg-app-bg border border-app-border rounded-full font-medium">
@@ -275,7 +275,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         {category.items.map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
+                            className="flex items-center gap-2.5 p-2 rounded-lg bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
                           >
                             {/* Photo upload */}
                             <div className="relative shrink-0">
@@ -293,7 +293,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 }}
                               />
                               {uploadingItemId === item.id ? (
-                                <div className="w-9 h-9 rounded-xl border border-app-border flex items-center justify-center">
+                                <div className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center">
                                   <Loader2 className="h-3.5 w-3.5 text-app-text-muted animate-spin" />
                                 </div>
                               ) : item.imageUrl ? (
@@ -301,7 +301,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                   <img
                                     src={item.imageUrl}
                                     alt=""
-                                    className="w-9 h-9 rounded-xl object-cover"
+                                    className="w-9 h-9 rounded-lg object-cover"
                                   />
                                   <Button
                                     type="button"
@@ -319,7 +319,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               ) : (
                                 <Label
                                   htmlFor={`photo-${item.id}`}
-                                  className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
+                                  className="w-9 h-9 rounded-lg border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
                                 >
                                   <Camera className="h-3.5 w-3.5 text-app-text-muted" />
                                 </Label>
@@ -331,22 +331,66 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               onChange={(e) =>
                                 updateArticle(category.id, item.id, 'name', e.target.value)
                               }
-                              className="flex-1 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+                              className="flex-1 h-9 bg-app-bg border-app-border rounded text-sm"
                             />
-                            <div className="flex items-center gap-1.5">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder={t('articlePrice')}
-                                value={item.price}
-                                onChange={(e) =>
-                                  updateArticle(category.id, item.id, 'price', e.target.value)
-                                }
-                                className="w-24 h-9 bg-app-bg border-app-border rounded-xl text-sm"
-                              />
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="inline-flex items-center h-9 rounded border border-app-border bg-app-elevated overflow-hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  type="button"
+                                  aria-label="Decrease price"
+                                  onClick={() =>
+                                    updateArticle(
+                                      category.id,
+                                      item.id,
+                                      'price',
+                                      String(
+                                        Math.max(0, (parseFloat(item.price) || 0) - PRICE_STEP),
+                                      ),
+                                    )
+                                  }
+                                  disabled={(parseFloat(item.price) || 0) <= 0}
+                                  className="h-full w-8 rounded-none border-r border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                >
+                                  <Minus className="h-3 w-3 text-app-text-secondary" />
+                                </Button>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={item.price}
+                                  onChange={(e) => {
+                                    const str = e.target.value.replace(/\D/g, '');
+                                    updateArticle(category.id, item.id, 'price', str);
+                                  }}
+                                  onBlur={() => {
+                                    if (!item.price || isNaN(parseFloat(item.price))) {
+                                      updateArticle(category.id, item.id, 'price', '0');
+                                    }
+                                  }}
+                                  className="w-16 h-full text-center font-semibold text-xs text-app-text tabular-nums border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 rounded-none"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  type="button"
+                                  aria-label="Increase price"
+                                  onClick={() =>
+                                    updateArticle(
+                                      category.id,
+                                      item.id,
+                                      'price',
+                                      String((parseFloat(item.price) || 0) + PRICE_STEP),
+                                    )
+                                  }
+                                  className="h-full w-8 rounded-none border-l border-app-border hover:bg-app-border/30 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                >
+                                  <Plus className="h-3 w-3 text-app-text-secondary" />
+                                </Button>
+                              </div>
                               <span className="text-xs text-app-text-muted font-medium">
-                                {data.currency || 'EUR'}
+                                {data.currency || 'FCFA'}
                               </span>
                             </div>
                             <Button
@@ -367,7 +411,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                             type="button"
                             variant="outline"
                             onClick={() => addArticle(category.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             {t('addArticle')}
@@ -389,7 +433,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                   type="button"
                   variant="outline"
                   onClick={addCategory}
-                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                  className="flex items-center gap-2 px-4 py-3 w-full rounded border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                 >
                   <Plus className="h-4 w-4" />
                   {t('addCategory')}

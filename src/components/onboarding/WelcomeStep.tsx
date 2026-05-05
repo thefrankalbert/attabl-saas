@@ -9,12 +9,6 @@ interface WelcomeStepProps {
   onStart: () => void;
 }
 
-const PHASES = [
-  { label: 'phaseIdentity', desc: 'phaseIdentityDesc', num: '01' },
-  { label: 'phaseMenu', desc: 'phaseMenuDesc', num: '02' },
-  { label: 'phaseLaunch', desc: 'phaseLaunchDesc', num: '03' },
-] as const;
-
 export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
   const t = useTranslations('onboarding');
 
@@ -55,44 +49,12 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         <h1 className="text-3xl sm:text-[2.5rem] font-bold text-foreground mb-4 leading-[1.15] tracking-tight opacity-0 animate-[fadeSlideIn_0.7s_0.2s_ease-out_forwards]">
           {t('welcomeTitle', { name: tenantName || '' })}
         </h1>
-        <p className="text-sm sm:text-[15px] text-muted-foreground mb-16 max-w-sm leading-relaxed opacity-0 animate-[fadeSlideIn_0.7s_0.35s_ease-out_forwards]">
+        <p className="text-sm sm:text-[15px] text-muted-foreground mb-10 max-w-sm leading-relaxed opacity-0 animate-[fadeSlideIn_0.7s_0.35s_ease-out_forwards]">
           {t('studioSubtitle')}
         </p>
 
-        {/* Phase journey -- vertical card-style timeline */}
-        <div className="w-full max-w-sm mb-16 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
-          <div className="relative flex flex-col gap-0">
-            {PHASES.map((phase, i) => {
-              const isLast = i === PHASES.length - 1;
-              return (
-                <div key={i} className="relative flex items-start gap-4">
-                  {/* Timeline spine */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0">
-                      <span className="text-[11px] font-bold text-muted-foreground leading-none">
-                        {phase.num}
-                      </span>
-                    </div>
-                    {!isLast && <div className="w-px h-full min-h-[20px] bg-border" />}
-                  </div>
-
-                  {/* Phase content */}
-                  <div className={`pt-2 pb-6 ${isLast ? 'pb-0' : ''}`}>
-                    <p className="text-[13px] font-semibold text-foreground leading-none mb-1">
-                      {t(phase.label)}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {t(phase.desc)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* CTA */}
-        <div className="flex flex-col items-center gap-5 opacity-0 animate-[fadeSlideIn_0.7s_0.65s_ease-out_forwards]">
+        <div className="flex flex-col items-center gap-5 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
           <Button
             variant="default"
             onClick={onStart}
@@ -101,12 +63,6 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
             {t('welcomeCTA')}
             <ArrowRight className="h-4 w-4" />
           </Button>
-
-          {/* Trial reminder */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
-          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,47 @@ interface ZoneData {
 }
 
 type ConfigMode = 'complete' | 'minimum' | 'skip';
+
+function TableCountInput({
+  value,
+  min,
+  max,
+  onCommit,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onCommit: (val: number) => void;
+}) {
+  const [raw, setRaw] = useState(String(value));
+  useEffect(() => {
+    setRaw(String(value));
+  }, [value]);
+
+  const commit = (str: string) => {
+    const n = parseInt(str, 10);
+    const clamped = isNaN(n) ? min : Math.min(max, Math.max(min, n));
+    setRaw(String(clamped));
+    onCommit(clamped);
+  };
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={raw}
+      onChange={(e) => {
+        const str = e.target.value.replace(/\D/g, '');
+        setRaw(str);
+        const n = parseInt(str, 10);
+        if (!isNaN(n)) onCommit(n);
+      }}
+      onBlur={() => commit(raw)}
+      className="h-full text-center font-semibold text-sm text-app-text tabular-nums border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 rounded-none"
+    />
+  );
+}
 
 const capacityOptions = [2, 4, 6, 8, 10, 12];
 
@@ -128,7 +169,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode Selector */}
           <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
-              Mode de configuration
+              {t('tablesConfigMode')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {modeIds.map((id) => {
@@ -139,7 +180,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     type="button"
                     variant="outline"
                     onClick={() => handleModeChange(id)}
-                    className={`flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
+                    className={`flex flex-col items-start gap-2 p-4 rounded border text-left transition-all duration-200 h-auto whitespace-normal ${
                       isActive
                         ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
@@ -168,7 +209,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Mode: Skip */}
           {mode === 'skip' && (
-            <div className="rounded-xl border border-dashed border-app-border p-6 text-center">
+            <div className="rounded-lg border border-dashed border-app-border p-6 text-center">
               <p className="text-base text-app-text-secondary font-medium">{t('skipInfo')}</p>
             </div>
           )}
@@ -177,13 +218,13 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {mode === 'minimum' && (
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Zones
+                {t('tablesZonesSection')}
               </p>
               <div className="space-y-3">
                 {zones.map((zone, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-app-elevated/40 border border-app-border"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-app-elevated/40 border border-app-border"
                   >
                     <div className="flex-1">
                       <Input
@@ -191,10 +232,10 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         placeholder={t('zoneNamePlaceholder')}
                         value={zone.name}
                         onChange={(e) => updateZone(index, 'name', e.target.value)}
-                        className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
+                        className="h-11 bg-app-bg rounded border-app-border text-sm"
                       />
                     </div>
-                    <div className="inline-flex items-center h-11 rounded-xl border border-app-border bg-app-elevated overflow-hidden shrink-0">
+                    <div className="inline-flex items-center h-11 rounded border border-app-border bg-app-elevated overflow-hidden shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -208,9 +249,14 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                       >
                         <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
                       </Button>
-                      <span className="w-12 text-center font-semibold text-sm text-app-text tabular-nums select-none">
-                        {zone.tableCount}
-                      </span>
+                      <div className="w-12">
+                        <TableCountInput
+                          value={zone.tableCount}
+                          min={1}
+                          max={100}
+                          onCommit={(n) => updateZone(index, 'tableCount', n)}
+                        />
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -231,7 +277,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                       size="icon"
                       onClick={() => removeZone(index)}
                       disabled={zones.length === 1}
-                      className={`p-2.5 rounded-xl transition-colors h-10 w-10 ${
+                      className={`p-2.5 rounded transition-colors h-10 w-10 ${
                         zones.length === 1
                           ? 'text-app-text-muted cursor-not-allowed'
                           : 'text-app-text-muted hover:text-red-500 hover:bg-red-500/10'
@@ -248,7 +294,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     type="button"
                     variant="outline"
                     onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                    className="flex items-center gap-2 px-4 py-3 w-full rounded border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                   >
                     <Plus className="h-4 w-4" />
                     {t('addZone')}
@@ -257,7 +303,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
                 {/* Preview */}
                 {zones.some((z) => z.name && z.tableCount > 0) && (
-                  <div className="mt-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
+                  <div className="mt-6 p-4 rounded-lg bg-app-elevated/40 border border-app-border">
                     <p className="text-xs font-semibold text-app-text-muted mb-3">
                       {t('tipPrefix')}
                     </p>
@@ -292,18 +338,18 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {mode === 'complete' && (
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Zones
+                {t('tablesZonesSection')}
               </p>
               <div className="space-y-4">
                 {zones.map((zone, index) => (
                   <div
                     key={index}
-                    className="rounded-xl border border-app-border bg-app-elevated/30 overflow-hidden"
+                    className="rounded-lg border border-app-border bg-app-elevated/30 overflow-hidden"
                   >
                     {/* Zone header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
                       <span className="text-xs font-bold text-app-text-muted uppercase tracking-wider">
-                        Zone {index + 1}
+                        {t('tablesZoneLabel', { n: index + 1 })}
                       </span>
                       <Button
                         type="button"
@@ -334,7 +380,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                             placeholder={t('zoneNamePlaceholder')}
                             value={zone.name}
                             onChange={(e) => updateZone(index, 'name', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
+                            className="h-10 bg-app-bg rounded border-app-border text-sm"
                           />
                         </div>
                         <div>
@@ -347,7 +393,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                             maxLength={5}
                             value={zone.prefix}
                             onChange={(e) => updateZone(index, 'prefix', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border font-mono uppercase text-sm"
+                            className="h-10 bg-app-bg rounded border-app-border font-mono uppercase text-sm"
                           />
                         </div>
                       </div>
@@ -357,7 +403,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                           <Label className="text-app-text-secondary text-xs mb-1.5 block">
                             {t('zoneTableCount')}
                           </Label>
-                          <div className="flex items-center h-10 rounded-xl border border-app-border bg-app-elevated overflow-hidden w-full">
+                          <div className="flex items-center h-10 rounded border border-app-border bg-app-elevated overflow-hidden w-full">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -371,9 +417,14 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                             >
                               <Minus className="h-3.5 w-3.5 text-app-text-secondary" />
                             </Button>
-                            <span className="flex-1 text-center font-semibold text-sm text-app-text tabular-nums select-none">
-                              {zone.tableCount}
-                            </span>
+                            <div className="flex-1">
+                              <TableCountInput
+                                value={zone.tableCount}
+                                min={1}
+                                max={100}
+                                onCommit={(n) => updateZone(index, 'tableCount', n)}
+                              />
+                            </div>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -397,7 +448,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                             value={String(zone.defaultCapacity ?? 2)}
                             onValueChange={(val) => updateZone(index, 'defaultCapacity', val)}
                           >
-                            <SelectTrigger className="h-10 bg-app-bg rounded-xl border-app-border text-sm">
+                            <SelectTrigger className="h-10 bg-app-bg rounded border-app-border text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -440,7 +491,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     type="button"
                     variant="outline"
                     onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+                    className="flex items-center gap-2 px-4 py-3 w-full rounded border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                   >
                     <Plus className="h-4 w-4" />
                     {t('addZone')}
@@ -452,7 +503,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
           {/* Naming hint */}
           {mode !== 'skip' && (
-            <div className="mt-8 p-4 rounded-xl bg-accent/5 border border-accent/20">
+            <div className="mt-8 p-4 rounded-lg bg-accent/5 border border-accent/20">
               <p className="text-xs text-app-text-secondary">
                 <span className="font-semibold text-accent">{t('tipPrefix')}</span>{' '}
                 {zones[0]?.prefix || 'XXX'}-1, {zones[0]?.prefix || 'XXX'}-2, ...

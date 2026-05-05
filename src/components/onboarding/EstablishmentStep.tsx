@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,19 +19,19 @@ import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 const COUNTRY_CURRENCY: Record<string, string> = {
-  'Burkina Faso': 'XOF',
-  Cameroun: 'XAF',
-  Congo: 'XAF',
+  'Burkina Faso': 'FCFA',
+  Cameroun: 'FCFA',
+  Congo: 'FCFA',
   RDC: 'USD',
-  "Cote d'Ivoire": 'XOF',
-  Gabon: 'XAF',
-  Mali: 'XOF',
-  Niger: 'XOF',
-  RCA: 'XAF',
-  Senegal: 'XOF',
-  Tchad: 'XAF',
-  Togo: 'XOF',
-  Benin: 'XOF',
+  "Cote d'Ivoire": 'FCFA',
+  Gabon: 'FCFA',
+  Mali: 'FCFA',
+  Niger: 'FCFA',
+  RCA: 'FCFA',
+  Senegal: 'FCFA',
+  Tchad: 'FCFA',
+  Togo: 'FCFA',
+  Benin: 'FCFA',
 };
 
 const establishmentTypes = [
@@ -78,10 +79,22 @@ function NumberStepper({
   max: number;
   onChange: (val: number) => void;
 }) {
+  const [raw, setRaw] = useState(String(value));
+  useEffect(() => {
+    setRaw(String(value));
+  }, [value]);
+
+  const commit = (str: string) => {
+    const n = parseInt(str, 10);
+    const clamped = isNaN(n) ? min : Math.min(max, Math.max(min, n));
+    setRaw(String(clamped));
+    onChange(clamped);
+  };
+
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
-      <div className="inline-flex items-center h-9 rounded-xl border border-app-border bg-app-elevated overflow-hidden focus-within:ring-0">
+      <div className="inline-flex items-center h-9 rounded border border-app-border bg-app-elevated overflow-hidden focus-within:ring-0">
         <Button
           variant="ghost"
           size="icon"
@@ -93,9 +106,20 @@ function NumberStepper({
         >
           <Minus className="h-4 w-4 text-app-text-secondary" />
         </Button>
-        <span className="w-14 text-center font-semibold text-base text-app-text tabular-nums select-none">
-          {value}
-        </span>
+        <Input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={raw}
+          onChange={(e) => {
+            const str = e.target.value.replace(/\D/g, '');
+            setRaw(str);
+            const n = parseInt(str, 10);
+            if (!isNaN(n)) onChange(n);
+          }}
+          onBlur={() => commit(raw)}
+          className="w-14 h-full text-center font-semibold text-base text-app-text tabular-nums border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 rounded-none"
+        />
         <Button
           variant="ghost"
           size="icon"
@@ -154,7 +178,7 @@ export function EstablishmentStep({
                   placeholder={t('namePlaceholder')}
                   value={data.tenantName}
                   onChange={(e) => updateData({ tenantName: e.target.value })}
-                  className="h-12 rounded-xl border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-app-border-hover"
+                  className="h-12 rounded border-app-border bg-app-elevated/50 text-base px-4 focus-visible:border-app-border-hover"
                 />
               </div>
             </div>
@@ -174,7 +198,7 @@ export function EstablishmentStep({
                       type="button"
                       variant="outline"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`h-10 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                      className={`h-10 px-3 rounded border text-xs font-semibold transition-all ${
                         isSelected
                           ? 'border-accent bg-accent/10 text-accent'
                           : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
@@ -211,7 +235,7 @@ export function EstablishmentStep({
                       placeholder={t('addressPlaceholder')}
                       value={data.address}
                       onChange={(e) => updateData({ address: e.target.value })}
-                      className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-9 rounded border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
 
@@ -230,7 +254,7 @@ export function EstablishmentStep({
                         placeholder={t('cityPlaceholder')}
                         value={data.city}
                         onChange={(e) => updateData({ city: e.target.value })}
-                        className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                        className="h-9 rounded border-app-border bg-app-elevated/50 text-sm"
                       />
                     </div>
                     <div>
@@ -250,7 +274,7 @@ export function EstablishmentStep({
                       >
                         <SelectTrigger
                           id="country"
-                          className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                          className="h-9 rounded border-app-border bg-app-elevated/50 text-sm"
                         >
                           <SelectValue placeholder={t('countryLabel')} />
                         </SelectTrigger>
@@ -289,7 +313,7 @@ export function EstablishmentStep({
                       placeholder={t('phonePlaceholder')}
                       value={data.phone}
                       onChange={(e) => updateData({ phone: e.target.value })}
-                      className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      className="h-9 rounded border-app-border bg-app-elevated/50 text-sm"
                     />
                   </div>
                 </div>
@@ -317,7 +341,7 @@ export function EstablishmentStep({
                           router.refresh();
                         }}
                       >
-                        <SelectTrigger className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectTrigger className="h-9 rounded border-app-border bg-app-elevated/50 text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -339,7 +363,7 @@ export function EstablishmentStep({
                         value={data.currency}
                         onValueChange={(val) => updateData({ currency: val })}
                       >
-                        <SelectTrigger className="h-9 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectTrigger className="h-9 rounded border-app-border bg-app-elevated/50 text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -407,7 +431,7 @@ export function EstablishmentStep({
                                   type="button"
                                   variant="outline"
                                   onClick={() => updateData({ starRating: star })}
-                                  className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all p-0 ${
+                                  className={`w-10 h-10 rounded border text-lg flex items-center justify-center transition-all p-0 ${
                                     (data.starRating || 0) >= star
                                       ? 'border-amber-400 bg-amber-400/10 text-amber-400'
                                       : 'border-app-border text-app-text-muted hover:border-app-border-hover'

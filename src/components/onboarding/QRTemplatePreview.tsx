@@ -4,21 +4,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Download, FileImage, Loader2 } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
 import { getTenantUrl } from '@/lib/constants';
+import { dataUrlToDpiBlob, PRINT_DPI, PRINT_SCALE } from '@/lib/png-dpi';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface QRTemplatePreviewProps {
   data: OnboardingData;
+  compact?: boolean;
 }
 
 const MM_PER_PX = 3.78;
 const MAX_PREVIEW_HEIGHT_PX = 380;
 const MAX_PREVIEW_WIDTH_PX = 280;
-const EXPORT_SCALE = 4;
+const EXPORT_SCALE = PRINT_SCALE;
+// Bare QR code export: 1200px at 300 DPI ≈ 10cm square — ready for any design layout
+const QR_ONLY_PX = 1200;
 // Wait long enough for QRCodeCanvas internal useEffect + logo image load
 // before triggering html2canvas. Empirically 500ms covers most logo CDNs.
 const EXPORT_RENDER_WAIT_MS = 500;
@@ -46,13 +51,15 @@ function toExportSafeUrl(url: string | undefined): string | undefined {
   }
 }
 
-export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
+export function QRTemplatePreview({ data, compact = false }: QRTemplatePreviewProps) {
   const t = useTranslations('onboarding');
   const exportRef = useRef<HTMLDivElement>(null);
+  const qrOnlyRef = useRef<HTMLDivElement>(null);
   // exportingFormat is non-null only DURING an export. The clone is rendered
   // only when this is set; this avoids any DOM blocking when not exporting.
   const [exportingFormat, setExportingFormat] = useState<'pdf' | 'png' | null>(null);
   const [downloading, setDownloading] = useState<'pdf' | 'png' | null>(null);
+  const [exportingQrOnly, setExportingQrOnly] = useState(false);
 
   const templateId = data.qrTemplate ?? 'standard';
   const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
@@ -73,6 +80,25 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
 
   const hasUpload = !!data.qrUploadedDesignUrl;
   const orientation = data.qrOrientation ?? 'portrait';
+
+  const templateLabel = (() => {
+    switch (templateId) {
+      case 'standard':
+        return t('qrTemplateStandard');
+      case 'chevalet':
+        return t('qrTemplateChevalet');
+      case 'carte':
+        return t('qrTemplateCarte');
+      case 'minimal':
+        return t('qrTemplateMinimal');
+      case 'elegant':
+        return t('qrTemplateElegant');
+      case 'neon':
+        return t('qrTemplateNeon');
+      default:
+        return templateId;
+    }
+  })();
 
   // Capture the clone once it has mounted and rendered.
   useEffect(() => {
@@ -98,10 +124,14 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
         const slug = tenantName.toLowerCase().replace(/\s/g, '-');
 
         if (exportingFormat === 'png') {
+          const blob = dataUrlToDpiBlob(canvas.toDataURL('image/png'), PRINT_DPI);
+          const blobUrl = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.download = `qr-${slug}.png`;
-          link.href = canvas.toDataURL('image/png');
+          link.href = blobUrl;
           link.click();
+          // Defer revoke: the browser needs to initiate the download before the URL is freed.
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         } else {
           const { jsPDF } = await import('jspdf');
           const pdf = new jsPDF({
@@ -126,6 +156,35 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
       cancelled = true;
     };
   }, [exportingFormat, tenantName, widthMm, heightMm]);
+
+  // Bare QR code export — captures the offscreen QRCodeCanvas directly (no html2canvas needed)
+  useEffect(() => {
+    if (!exportingQrOnly || !qrOnlyRef.current) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await new Promise<void>((r) => setTimeout(r, EXPORT_RENDER_WAIT_MS));
+        if (cancelled || !qrOnlyRef.current) return;
+        const canvas = qrOnlyRef.current.querySelector('canvas');
+        if (!canvas) return;
+        const slug = tenantName.toLowerCase().replace(/\s/g, '-');
+        const blob = dataUrlToDpiBlob(canvas.toDataURL('image/png'), PRINT_DPI);
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `qr-seul-${slug}.png`;
+        link.href = blobUrl;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+      } catch {
+        // Export failed silently
+      } finally {
+        if (!cancelled) setExportingQrOnly(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [exportingQrOnly, tenantName, config.qrFgColor, config.qrBgColor]);
 
   const handleDownload = (format: 'pdf' | 'png') => {
     if (downloading) return;
@@ -178,11 +237,92 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
     );
   };
 
+  if (compact) {
+    return (
+      <div className="flex flex-col items-start gap-2">
+        {exportingFormat && (
+          <div
+            ref={exportRef}
+            style={{
+              position: 'fixed',
+              top: '-99999px',
+              left: '-99999px',
+              width: `${widthPx}px`,
+              height: `${heightPx}px`,
+              pointerEvents: 'none',
+            }}
+          >
+            {renderTemplate(true)}
+          </div>
+        )}
+        {exportingQrOnly && (
+          <div
+            ref={qrOnlyRef}
+            style={{ position: 'fixed', top: '-99999px', left: '-99999px', pointerEvents: 'none' }}
+          >
+            <QRCodeCanvas
+              value={url}
+              size={QR_ONLY_PX}
+              fgColor={config.qrFgColor}
+              bgColor={config.qrBgColor}
+              level="H"
+            />
+          </div>
+        )}
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            type="button"
+            onClick={() => handleDownload('pdf')}
+            disabled={downloading !== null || exportingQrOnly}
+            className="h-8 px-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded text-[11px] font-medium"
+          >
+            {downloading === 'pdf' ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3 mr-1" />
+            )}
+            PDF
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleDownload('png')}
+            disabled={downloading !== null || exportingQrOnly}
+            variant="outline"
+            className="h-8 px-3 rounded text-[11px] font-medium"
+          >
+            {downloading === 'png' ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <FileImage className="h-3 w-3 mr-1" />
+            )}
+            PNG
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              if (!exportingQrOnly) setExportingQrOnly(true);
+            }}
+            disabled={downloading !== null || exportingQrOnly}
+            variant="outline"
+            className="h-8 px-3 rounded text-[11px] font-medium"
+          >
+            {exportingQrOnly ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <FileImage className="h-3 w-3 mr-1" />
+            )}
+            {t('qrDownloadQrOnly')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-start px-6 py-6 gap-3">
       <div className="text-center">
         <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted">
-          {t('qrPreviewLabel') || 'Apercu en temps reel'}
+          {t('qrPreviewLabel')}
         </p>
       </div>
 
@@ -225,25 +365,37 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
           {renderTemplate(true)}
         </div>
       )}
+      {exportingQrOnly && (
+        <div
+          ref={qrOnlyRef}
+          style={{ position: 'fixed', top: '-99999px', left: '-99999px', pointerEvents: 'none' }}
+        >
+          <QRCodeCanvas
+            value={url}
+            size={QR_ONLY_PX}
+            fgColor={config.qrFgColor}
+            bgColor={config.qrBgColor}
+            level="H"
+          />
+        </div>
+      )}
 
       <div className="text-center">
         <p className="text-xs font-semibold text-app-text">
-          {hasUpload
-            ? t('qrUploadedDesign') || 'Design personnalise'
-            : t(`qrTemplate${templateId.charAt(0).toUpperCase()}${templateId.slice(1)}`) ||
-              templateId}
+          {hasUpload ? t('qrUploadedDesign') : templateLabel}
         </p>
         <p className="text-[11px] text-app-text-muted mt-0.5 tabular-nums">
           {widthMm} x {heightMm} mm
-          {orientation === 'landscape' ? ' - Paysage' : ' - Portrait'}
+          {' - '}
+          {orientation === 'landscape' ? t('qrOrientationLandscape') : t('qrOrientationPortrait')}
         </p>
       </div>
 
-      <div className="flex gap-1.5 mt-1">
+      <div className="flex flex-wrap gap-1.5 mt-1 justify-center">
         <Button
           type="button"
           onClick={() => handleDownload('pdf')}
-          disabled={downloading !== null}
+          disabled={downloading !== null || exportingQrOnly}
           className="h-8 px-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-[11px] font-medium"
         >
           {downloading === 'pdf' ? (
@@ -256,7 +408,7 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
         <Button
           type="button"
           onClick={() => handleDownload('png')}
-          disabled={downloading !== null}
+          disabled={downloading !== null || exportingQrOnly}
           variant="outline"
           className="h-8 px-3 rounded-full text-[11px] font-medium"
         >
@@ -266,6 +418,22 @@ export function QRTemplatePreview({ data }: QRTemplatePreviewProps) {
             <FileImage className="h-3 w-3 mr-1" />
           )}
           PNG
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            if (!exportingQrOnly) setExportingQrOnly(true);
+          }}
+          disabled={downloading !== null || exportingQrOnly}
+          variant="outline"
+          className="h-8 px-3 rounded-full text-[11px] font-medium"
+        >
+          {exportingQrOnly ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <FileImage className="h-3 w-3 mr-1" />
+          )}
+          {t('qrDownloadQrOnly')}
         </Button>
       </div>
     </div>
