@@ -4,6 +4,11 @@ import { logger } from '@/lib/logger';
 import { verifyOrangeMoneyCallback } from '@/lib/orange-money/client';
 
 export async function POST(request: Request) {
+  // Disabled until Orange Money API credentials are configured
+  if (!process.env.ORANGE_MONEY_MERCHANT_KEY) {
+    return NextResponse.json({ error: 'Not available' }, { status: 503 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

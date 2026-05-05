@@ -3,10 +3,17 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { paymentInitiationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOrangeMoneyPayment } from '@/lib/orange-money/client';
+import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: orderId } = await params;
+  if (!process.env.ORANGE_MONEY_MERCHANT_KEY) {
+    return NextResponse.json({ error: 'Not available' }, { status: 503 });
+  }
 
+  const originError = verifyOrigin(request);
+  if (originError) return originError;
+
+  const { id: orderId } = await params;
   const ip = getClientIp(request);
   const { success: allowed } = await paymentInitiationLimiter.check(ip);
   if (!allowed) {

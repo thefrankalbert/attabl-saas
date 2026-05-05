@@ -288,10 +288,8 @@ export default function OnboardingPage() {
   // without triggering saves on nav-only changes.
   useEffect(() => {
     phaseRef.current = phase;
-  }, [phase]);
-  useEffect(() => {
     subScreenRef.current = subScreen;
-  }, [subScreen]);
+  }, [phase, subScreen]);
 
   // --- Auto-save debounced ---------------------------------------------------
   // Deps intentionally exclude phase/subScreen: nav-only changes (forward/back)

@@ -3,8 +3,12 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { paymentInitiationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createWaveCheckout } from '@/lib/wave/client';
+import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const originError = verifyOrigin(request);
+  if (originError) return originError;
+
   const { id: orderId } = await params;
 
   const ip = getClientIp(request);
