@@ -47,7 +47,7 @@ export async function generateMetadata({
 }
 
 function toClientCategory(cat: Category): ClientCategory {
-  const iconKey = deriveCategoryIconKey(cat.name);
+  const iconKey = cat.icon ?? deriveCategoryIconKey(cat.name);
   const colors = getCategoryColors(iconKey);
   return {
     id: cat.id,

@@ -2498,7 +2498,8 @@
     "featuredOnHomeLimit": "Recommended limit of {count} categories reached. Only the first {count} will be shown.",
     "isActive": "Category active",
     "isActiveDesc": "Hide this category on the client menu without deleting it.",
-    "categoryLinkedToMenu": "This category is linked to a menu and cannot be deleted."
+    "categoryLinkedToMenu": "This category is linked to a menu and cannot be deleted.",
+    "icon": "Icon"
   },
   "items": {
     "title": "Dishes & Items",

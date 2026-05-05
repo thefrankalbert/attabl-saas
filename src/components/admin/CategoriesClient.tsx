@@ -47,7 +47,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import { CategoryIconPicker } from '@/components/admin/CategoryIconPicker';
 import { cn } from '@/lib/utils';
+import { suggestIconForName, getLucideIcon } from '@/lib/config/lucide-food-icons';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import {
@@ -195,6 +197,7 @@ export default function CategoriesClient({
   const [isFeaturedOnHome, setIsFeaturedOnHome] = useState<boolean>(false);
   const [menuId, setMenuId] = useState<string>(menus[0]?.id || '');
   const [isActive, setIsActive] = useState<boolean>(true);
+  const [iconName, setIconName] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -327,6 +330,7 @@ export default function CategoriesClient({
     setPreparationZone('kitchen');
     setIsFeaturedOnHome(false);
     setIsActive(true);
+    setIconName(null);
     setMenuId(menus[0]?.id || '');
     setShowModal(true);
   };
@@ -339,6 +343,7 @@ export default function CategoriesClient({
     setPreparationZone(cat.preparation_zone || 'kitchen');
     setIsFeaturedOnHome(cat.is_featured_on_home === true);
     setIsActive(cat.is_active !== false);
+    setIconName(cat.icon ?? null);
     setMenuId(cat.menu_id || menus[0]?.id || '');
     setShowModal(true);
   };
@@ -355,6 +360,7 @@ export default function CategoriesClient({
         preparation_zone: preparationZone,
         is_featured_on_home: isFeaturedOnHome,
         is_active: isActive,
+        icon: iconName || null,
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
@@ -522,7 +528,13 @@ export default function CategoriesClient({
                 <Input
                   id="cat-name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (!iconName) {
+                      const suggested = suggestIconForName(e.target.value);
+                      if (suggested) setIconName(suggested);
+                    }
+                  }}
                   placeholder={t('nameFrPlaceholder')}
                   className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                   required
@@ -611,6 +623,26 @@ export default function CategoriesClient({
                 </div>
                 <Switch id="cat-active" checked={isActive} onCheckedChange={setIsActive} />
               </div>
+            </div>
+
+            {/* Icon picker */}
+            <div className="space-y-1.5 rounded-lg border border-app-border p-3">
+              <div className="flex items-center gap-2 mb-2">
+                {iconName &&
+                  (() => {
+                    const Icon = getLucideIcon(iconName);
+                    return <Icon className="w-4 h-4 text-accent shrink-0" />;
+                  })()}
+                <Label className="text-app-text">{t('icon')}</Label>
+              </div>
+              <CategoryIconPicker
+                value={iconName}
+                usedIcons={categories
+                  .filter((c) => !editingCategory || c.id !== editingCategory.id)
+                  .map((c) => c.icon)
+                  .filter((i): i is string => !!i)}
+                onChange={setIconName}
+              />
             </div>
 
             {/* Preparation zone selector */}
