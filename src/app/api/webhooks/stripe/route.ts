@@ -1,18 +1,10 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
-import { getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
+import { getStripe, getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
 import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
-
-function getStripeClient(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
-  }
-  return new Stripe(key);
-}
 
 function getWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -52,6 +44,8 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
       return 'cancelled';
     case 'unpaid':
       return 'past_due';
+    case 'paused':
+      return 'paused';
     default:
       logger.warn('Unknown Stripe status, defaulting to active', { stripeStatus });
       return 'active';
@@ -59,10 +53,10 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
 }
 
 export async function POST(request: Request) {
-  let stripe: Stripe;
+  let stripe: ReturnType<typeof getStripe>;
   let webhookSecret: string;
   try {
-    stripe = getStripeClient();
+    stripe = getStripe();
     webhookSecret = getWebhookSecret();
   } catch (err) {
     logger.error('Stripe webhook env vars missing', err);

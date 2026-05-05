@@ -46,6 +46,7 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
     <div>
       <CategoriesClient
         tenantId={tenant.id}
+        tenantSlug={tenantSlug}
         initialCategories={formatted}
         menus={(menus || []) as Pick<Menu, 'id' | 'name'>[]}
       />

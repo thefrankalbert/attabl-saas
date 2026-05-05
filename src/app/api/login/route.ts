@@ -5,6 +5,8 @@ import { loginSchema } from '@/lib/validations/auth.schema';
 import { loginLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { getTranslations } from 'next-intl/server';
+import { isHoneypotTriggered } from '@/lib/honeypot';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +31,21 @@ export async function POST(request: Request) {
       body = await request.json();
     } catch {
       return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
+    }
+
+    // 1.5 Honeypot check - silent bot rejection
+    if (isHoneypotTriggered(body)) {
+      return NextResponse.json({ error: t('invalidLoginFields') }, { status: 400 });
+    }
+
+    // 1.6 Turnstile verification
+    const cfToken =
+      typeof (body as Record<string, unknown>).cfToken === 'string'
+        ? ((body as Record<string, unknown>).cfToken as string)
+        : '';
+    const turnstileOk = await verifyTurnstileToken(cfToken, ip);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: t('invalidLoginFields') }, { status: 400 });
     }
 
     const parseResult = loginSchema.safeParse(body);

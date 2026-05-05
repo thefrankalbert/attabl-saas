@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { CACHE_TAG_TENANT_CONFIG, tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
@@ -96,6 +96,8 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       .single();
     if (tenantSlug?.slug) {
       revalidateTag(tenantConfigTag(tenantSlug.slug), 'max');
+      revalidatePath(`/sites/${tenantSlug.slug}`);
+      revalidatePath(`/sites/${tenantSlug.slug}/menu`);
     }
     // Also revalidate global tag as fallback for any non-scoped consumers
     revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');

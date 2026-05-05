@@ -286,6 +286,99 @@ export function createEmailService() {
 
       return send(to, `Alerte stock : ${count} produit(s) - ${data.restaurantName}`, html, text);
     },
+
+    async sendFirstOrderTriggerEmail(
+      to: string,
+      data: { restaurantName: string; dashboardUrl: string },
+    ): Promise<EmailResult> {
+      const safeName = escapeHtml(data.restaurantName);
+      const safeUrl = sanitizeUrl(data.dashboardUrl);
+      const html = wrap(
+        'Bravo pour votre premiere commande ! Decouvrez 3 fonctionnalites Pro.',
+        card(
+          `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">Bravo ! Premiere commande recue.</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Votre menu digital fonctionne. Voici 3 fonctionnalites Pro qui changeront votre quotidien :</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#111827;"><strong>1. Ecran cuisine (KDS)</strong> - Les commandes arrivent directement a la cuisine. Fini les tickets papier.</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#111827;"><strong>2. Suivi des stocks</strong> - Vos ingredients se destockent automatiquement apres chaque commande.</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#111827;"><strong>3. Stats avancees</strong> - Voyez quels plats se vendent, a quelle heure, pour combien.</p>
+          ${cta(safeUrl, 'Voir mon tableau de bord')}`,
+        ),
+      );
+      const text = `Bravo ${data.restaurantName} !\n\nPremiere commande recue. Voici 3 fonctionnalites Pro pour aller plus loin :\n1. Ecran cuisine (KDS)\n2. Suivi des stocks automatique\n3. Stats avancees\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+      return send(to, `Bravo ${data.restaurantName} - Premiere commande !`, html, text);
+    },
+
+    async sendTenthOrderTriggerEmail(
+      to: string,
+      data: { restaurantName: string; dashboardUrl: string },
+    ): Promise<EmailResult> {
+      const safeName = escapeHtml(data.restaurantName);
+      const safeUrl = sanitizeUrl(data.dashboardUrl);
+      const html = wrap(
+        '10 commandes ! Le KDS vous ferait gagner 30 secondes par commande.',
+        card(
+          `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">10 commandes. Vous avez la cadence.</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">A ce rythme, le KDS (ecran cuisine) vous ferait gagner 30 secondes par commande. Sur 10 commandes par jour, c'est 5 minutes recuperees. Par jour. Tous les jours.</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Les commandes arrivent directement sur l'ecran cuisine. Vos cuisiniers ne lisent plus les tickets papier. Moins d'erreurs, service plus rapide.</p>
+          ${cta(safeUrl, 'Decouvrir le KDS')}`,
+        ),
+      );
+      const text = `${data.restaurantName} - 10 commandes !\n\nLe KDS vous ferait gagner 30 secondes par commande. Decouvrez-le : ${data.dashboardUrl}\n\n${FOOTER}`;
+      return send(
+        to,
+        `${data.restaurantName} - Le KDS peut vous faire gagner 30s/commande`,
+        html,
+        text,
+      );
+    },
+
+    async sendTrialIdleEmail(
+      to: string,
+      data: { restaurantName: string; dashboardUrl: string },
+    ): Promise<EmailResult> {
+      const safeName = escapeHtml(data.restaurantName);
+      const safeUrl = sanitizeUrl(data.dashboardUrl);
+      const html = wrap(
+        'Votre essai gratuit est actif. On est la si vous avez besoin.',
+        card(
+          `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">On est la si vous avez besoin.</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Votre essai gratuit est actif. Si quelque chose bloque - la configuration, les menus, les QR codes - repondez directement a cet email. On repond vite.</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">Sinon, votre tableau de bord vous attend.</p>
+          ${cta(safeUrl, 'Reprendre ou poser une question')}`,
+        ),
+      );
+      const text = `${data.restaurantName} - On est la si vous avez besoin.\n\nVotre essai est actif. Une question ? Repondez directement a cet email.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+      return send(to, `${data.restaurantName} - On peut vous aider ?`, html, text);
+    },
+
+    async sendTrialEndgameEmail(
+      to: string,
+      data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
+    ): Promise<EmailResult> {
+      const safeName = escapeHtml(data.restaurantName);
+      const safeUrl = sanitizeUrl(data.dashboardUrl);
+      const hasOrders = data.ordersCount >= 5;
+      const subject = hasOrders
+        ? `${data.restaurantName} - Votre essai se termine dans ${data.daysLeft}j`
+        : `${data.restaurantName} - Ne perdez pas votre menu (${data.daysLeft}j restants)`;
+      const body = hasOrders
+        ? `<p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Vous avez ${data.ordersCount} commandes. Votre menu digital fonctionne. Ne perdez pas l'elan : passez en Pro pour continuer sans interruption.</p>`
+        : `<p style="margin:0 0 16px;font-size:15px;color:#4b5563;">Votre essai se termine dans ${data.daysLeft} jour(s). Votre menu et vos configurations sont prets - il suffit d'activer votre abonnement pour ne pas perdre votre travail.</p>`;
+      const html = wrap(
+        `Il reste ${data.daysLeft} jour(s) sur votre essai gratuit.`,
+        card(
+          `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">Il reste ${data.daysLeft} jour(s).</p>
+          ${body}
+          ${cta(safeUrl, 'Activer mon abonnement')}`,
+        ),
+      );
+      const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+      return send(to, subject, html, text);
+    },
   };
 }
 
@@ -307,12 +400,7 @@ export const sendPasswordResetEmail = async (
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,
-  data: {
-    userName?: string;
-    restaurantName?: string;
-    dashboardUrl: string;
-    totalRestaurants: number;
-  },
+  data: { dashboardUrl: string },
 ): Promise<boolean> =>
   (await _svc.sendWelcomeEmail(to, { confirmationUrl: data.dashboardUrl })).success;
 
@@ -381,3 +469,23 @@ export const sendStockAlertEmail = async (
     })
   ).success;
 };
+
+export const sendFirstOrderTriggerEmail = async (
+  to: string,
+  data: { restaurantName: string; dashboardUrl: string },
+): Promise<boolean> => (await _svc.sendFirstOrderTriggerEmail(to, data)).success;
+
+export const sendTenthOrderTriggerEmail = async (
+  to: string,
+  data: { restaurantName: string; dashboardUrl: string },
+): Promise<boolean> => (await _svc.sendTenthOrderTriggerEmail(to, data)).success;
+
+export const sendTrialIdleEmail = async (
+  to: string,
+  data: { restaurantName: string; dashboardUrl: string },
+): Promise<boolean> => (await _svc.sendTrialIdleEmail(to, data)).success;
+
+export const sendTrialEndgameEmail = async (
+  to: string,
+  data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
+): Promise<boolean> => (await _svc.sendTrialEndgameEmail(to, data)).success;

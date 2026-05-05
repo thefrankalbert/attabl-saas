@@ -43,7 +43,7 @@ export function ErrorLayout({
   return (
     <div
       className={cn(
-        'h-full min-h-dvh w-full flex items-center justify-center p-6 sm:p-10',
+        'h-full w-full flex items-center justify-center p-6 sm:p-10',
         isTenant ? 'bg-white' : 'bg-white dark:bg-neutral-950',
       )}
     >
@@ -55,8 +55,10 @@ export function ErrorLayout({
           {code && (
             <p
               className={cn(
-                'font-[family-name:var(--font-sora)] text-7xl sm:text-8xl font-black tracking-tight leading-none',
-                isTenant ? 'text-[#1A1A1A]' : 'text-neutral-900 dark:text-white',
+                'text-7xl sm:text-8xl font-black tracking-tight leading-none',
+                isTenant
+                  ? 'text-[var(--color-ink)]'
+                  : 'font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white',
               )}
             >
               {code}
@@ -66,7 +68,7 @@ export function ErrorLayout({
             className={cn(
               'mt-4 text-2xl sm:text-3xl font-bold tracking-tight',
               isTenant
-                ? 'text-[#1A1A1A]'
+                ? 'text-[var(--color-ink)]'
                 : 'font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white',
             )}
           >
@@ -75,7 +77,7 @@ export function ErrorLayout({
           <p
             className={cn(
               'mt-3 text-sm sm:text-base leading-relaxed',
-              isTenant ? 'text-[#737373]' : 'text-neutral-600 dark:text-neutral-400',
+              isTenant ? 'text-[var(--color-ink-muted)]' : 'text-neutral-600 dark:text-neutral-400',
             )}
           >
             {description}
@@ -97,10 +99,10 @@ export function ErrorLayout({
                     'aspect-square rounded-full flex items-center justify-center',
                     cell.filled
                       ? isTenant
-                        ? 'bg-[#E6F9F0]'
+                        ? 'bg-[var(--color-brand-light)]'
                         : 'bg-[#CCFF00]/10 dark:bg-[#CCFF00]/15'
                       : isTenant
-                        ? 'bg-[#F6F6F6] border border-[#EEEEEE]'
+                        ? 'bg-[var(--color-surface-alt)] border border-[var(--color-divider)]'
                         : 'bg-neutral-100 border border-neutral-200 dark:bg-white/5 dark:border-white/10',
                   )}
                 >
@@ -108,7 +110,7 @@ export function ErrorLayout({
                     <Icon
                       className={cn(
                         'h-6 w-6 sm:h-8 sm:w-8',
-                        isTenant ? 'text-[#1A1A1A]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
+                        isTenant ? 'text-[var(--color-ink)]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
                       )}
                     />
                   )}

@@ -2,9 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientOrders from '@/components/tenant/ClientOrders';
-import BottomNav from '@/components/tenant/BottomNav';
+import OrdersTabs from '@/components/tenant/OrdersTabs';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+
 export default async function OrdersPage({
   params,
   searchParams,
@@ -23,23 +25,31 @@ export default async function OrdersPage({
   const supabase = await createClient();
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('*')
+    .select('id, currency')
     .eq('slug', tenantSlug)
     .single();
 
   if (!tenant) return notFound();
 
+  const t = await getTranslations('tenant');
+
   return (
     <div className="h-full bg-white text-[#1A1A1A]">
-      {/* Header: sticky back button, same bg as page, no title */}
-      <div className="sticky top-0 z-40 bg-white">
-        <div className="max-w-lg mx-auto px-3 py-2">
+      {/* Sticky header: back + tabs */}
+      <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
+        <div className="max-w-lg mx-auto px-3 pt-2 pb-0 flex items-center gap-3">
           <Link
-            href={showHistory ? `/sites/${tenantSlug}/settings` : `/sites/${tenantSlug}`}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F6F6F6] text-[#1A1A1A]"
+            href={`/sites/${tenantSlug}`}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F6F6F6] text-[#1A1A1A] shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
+          <OrdersTabs
+            tenantSlug={tenantSlug}
+            showHistory={showHistory}
+            activeLabel={t('ordersActive')}
+            historyLabel={t('ordersHistory')}
+          />
         </div>
       </div>
 
@@ -51,8 +61,6 @@ export default async function OrdersPage({
           showHistory={showHistory}
         />
       </main>
-
-      <BottomNav tenantSlug={tenantSlug} />
     </div>
   );
 }

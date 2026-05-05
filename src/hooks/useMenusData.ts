@@ -13,6 +13,7 @@ import {
   actionReorderMenus,
 } from '@/app/actions/menus';
 import type { Menu } from '@/types/admin.types';
+import { revalidateMenuCache } from '@/lib/revalidate';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ export type ConfirmFn = (message: string) => Promise<boolean>;
 
 interface UseMenusDataParams {
   tenantId: string;
+  tenantSlug: string;
   initialMenus: Menu[];
   /** No-window.confirm fallback. */
   confirm: ConfirmFn;
@@ -57,6 +59,7 @@ export interface UseMenusDataReturn {
 
 export function useMenusData({
   tenantId,
+  tenantSlug,
   initialMenus,
   confirm,
 }: UseMenusDataParams): UseMenusDataReturn {
@@ -95,6 +98,7 @@ export function useMenusData({
     }
     toast({ title: t('menuCreated') });
     loadMenus();
+    revalidateMenuCache(tenantSlug);
     return (result.data as Menu) ?? null;
   };
 
@@ -116,6 +120,7 @@ export function useMenusData({
     }
     toast({ title: t('menuUpdated') });
     loadMenus();
+    revalidateMenuCache(tenantSlug);
   };
 
   const deleteMenu = async (menu: Menu) => {
@@ -130,6 +135,7 @@ export function useMenusData({
       }
       toast({ title: t('menuDeleted') });
       loadMenus();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     }
@@ -155,6 +161,7 @@ export function useMenusData({
       toast({ title: t('menuDeleted') });
     }
     loadMenus();
+    revalidateMenuCache(tenantSlug);
   };
 
   const toggleActive = async (menu: Menu) => {
@@ -168,6 +175,7 @@ export function useMenusData({
         return;
       }
       loadMenus();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -188,6 +196,8 @@ export function useMenusData({
         // Rollback on server error
         queryClient.setQueryData(['menus', tenantId], previous);
         toast({ title: result.error, variant: 'destructive' });
+      } else {
+        revalidateMenuCache(tenantSlug);
       }
     } catch {
       // Rollback on network/unexpected error
