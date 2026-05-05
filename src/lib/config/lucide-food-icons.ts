@@ -51,7 +51,7 @@ export const FOOD_ICONS: FoodIcon[] = [
   {
     name: 'Salad',
     component: Salad,
-    keywords: ['salade', 'salad', 'entree', 'starter', 'vegetarien', 'vegan', 'crudites', 'frais'],
+    keywords: ['salade', 'salad', 'entree', 'starter', 'crudites'],
   },
   {
     name: 'UtensilsCrossed',
@@ -96,7 +96,7 @@ export const FOOD_ICONS: FoodIcon[] = [
   {
     name: 'Egg',
     component: Egg,
-    keywords: ['oeuf', 'egg', 'brunch', 'petit dejeuner', 'breakfast', 'omelette'],
+    keywords: ['oeuf', 'egg', 'brunch', 'omelette'],
   },
   {
     name: 'Croissant',
@@ -206,7 +206,7 @@ export const FOOD_ICONS: FoodIcon[] = [
   {
     name: 'Flame',
     component: Flame,
-    keywords: ['feu', 'flame', 'bbq', 'grille', 'piment', 'epice'],
+    keywords: ['feu', 'flame', 'grille', 'piment', 'epice'],
   },
   {
     name: 'ChefHat',
