@@ -19,7 +19,7 @@ export function onboardingDataToQRConfig(
   templateOverride?: QRTemplateId,
 ): QRDesignConfig {
   const templateId: QRTemplateId = templateOverride ?? (data.qrTemplate as QRTemplateId);
-  const primary = data.primaryColor || '#CCFF00';
+  const primary = data.primaryColor || '#006AFF';
   const secondary = data.secondaryColor || '#000000';
 
   const base = createDefaultQRDesignConfig(primary, secondary);
@@ -91,6 +91,15 @@ export function onboardingDataToQRConfig(
     shadow: 'none',
     showPoweredBy: false,
     fontFamily: 'Geist',
+    qrStyle: data.qrStyle ?? base.qrStyle,
+    qrOrientation: data.qrOrientation ?? base.qrOrientation,
+    qrUnit: data.qrUnit ?? base.qrUnit,
+    qrUploadedDesignUrl: data.qrUploadedDesignUrl,
+    qrCustomName: data.qrCustomName,
+    qrUploadScale: data.qrUploadScale,
+    qrRectoVerso: data.qrRectoVerso,
+    qrVersoType: data.qrVersoType,
+    qrVersoUploadUrl: data.qrVersoUploadUrl,
   };
 }
 

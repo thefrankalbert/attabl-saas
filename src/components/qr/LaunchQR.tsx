@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
+import { dataUrlToDpiBlob, PRINT_DPI, PRINT_SCALE } from '@/lib/png-dpi';
 
 interface LaunchQRProps {
   config: QRDesignConfig;
@@ -39,7 +40,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
         const html2canvas = (await import('html2canvas')).default;
 
         const canvas = await html2canvas(templateRef.current, {
-          scale: 3,
+          scale: PRINT_SCALE,
           useCORS: true,
           backgroundColor: null,
         });
@@ -47,10 +48,13 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
         const slug = tenantName.toLowerCase().replace(/\s/g, '-');
 
         if (format === 'png') {
+          const blob = dataUrlToDpiBlob(canvas.toDataURL('image/png'), PRINT_DPI);
+          const blobUrl = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.download = `qr-${slug}.png`;
-          link.href = canvas.toDataURL('image/png');
+          link.href = blobUrl;
           link.click();
+          URL.revokeObjectURL(blobUrl);
         } else {
           const { jsPDF } = await import('jspdf');
           const pdfWidth = config.templateWidth;

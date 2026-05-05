@@ -43,11 +43,13 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
   };
 
   const handleCropComplete = (publicUrl: string) => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     updateData({ logoUrl: publicUrl });
     setCropSrc(null);
   };
 
   const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
   };
 
@@ -79,18 +81,18 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <div className="px-5 py-5 sm:px-6 sm:py-6">
           {/* Header */}
-          <div className="mb-7">
+          <div className="mb-6">
             <h1 className="text-xl font-bold text-app-text mb-1.5">{t('brandingTitle')}</h1>
-            <p className="text-app-text-secondary text-sm">{t('brandingSubtitle')}</p>
+            <p className="text-sm text-app-text-secondary">{t('brandingSubtitle')}</p>
           </div>
 
           {/* Two-column: Identity + Colors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left: Logo & Description */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2.5 border-b border-app-border/50">
                 {t('identitySection')}
               </p>
 
@@ -119,7 +121,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         if (!data.logoUrl) fileInputRef.current?.click();
                       }
                     }}
-                    className="relative w-24 h-24 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
+                    className="relative w-20 h-20 shrink-0 border-2 border-dashed border-app-border rounded-lg flex flex-col items-center justify-center gap-1.5 bg-app-elevated cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors overflow-hidden"
                   >
                     {data.logoUrl ? (
                       <>
@@ -145,26 +147,27 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       </>
                     ) : (
                       <>
-                        <Upload className="h-5 w-5 text-app-text-muted mb-1.5" />
-                        <span className="text-xs text-app-text-muted text-center px-2">
-                          {t('logoUpload')}
+                        <Upload className="h-5 w-5 text-app-text-muted" />
+                        <span className="text-[10px] text-app-text-muted text-center px-2 leading-tight">
+                          PNG · JPG
                         </span>
                       </>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
-                    {data.logoUrl && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-xs h-8 px-3 rounded-lg w-fit"
-                      >
-                        {t('logoChange')}
-                      </Button>
-                    )}
+                  <div className="flex flex-col gap-2 pt-0.5">
+                    <p className="text-xs text-app-text-muted leading-relaxed">
+                      {t('logoMaxSize')}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs h-8 px-3 rounded w-fit gap-1.5"
+                    >
+                      <Upload className="h-3 w-3" />
+                      {data.logoUrl ? t('logoChange') : t('logoAdd')}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -186,9 +189,9 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                       updateData({ description: e.target.value });
                     }
                   }}
-                  rows={3}
+                  rows={4}
                   maxLength={500}
-                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-app-border-hover focus:outline-none transition-colors"
+                  className="w-full resize-none text-sm"
                 />
                 <p className="text-xs text-app-text-muted mt-1.5">{data.description.length}/500</p>
               </div>
@@ -196,11 +199,11 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
 
             {/* Right: Colors */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2 border-b border-app-border/50">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted mb-4 pb-2.5 border-b border-app-border/50">
                 {t('colorsSection')}
               </p>
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {/* Primary Color */}
                 <div>
                   <Label
@@ -210,32 +213,14 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {t('primaryColor')}
                   </Label>
                   <div className="flex items-center gap-2">
-                    {/* Current color preview — no border */}
-                    <div
-                      className="w-10 h-10 rounded-xl shrink-0"
-                      style={{ backgroundColor: data.primaryColor }}
-                    />
-                    {/* Hex input */}
-                    <Input
-                      type="text"
-                      id="primaryColor"
-                      value={data.primaryColor}
-                      onChange={(e) => updateData({ primaryColor: e.target.value })}
-                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
-                    />
-                    {/* Rainbow picker — Popover (portal, zero layout shift) */}
                     <Popover open={showPrimaryPicker} onOpenChange={setShowPrimaryPicker}>
                       <PopoverTrigger asChild>
                         <Button
                           type="button"
                           variant="ghost"
-                          aria-label="Choisir une couleur personnalisee"
-                          title="Couleur personnalisee"
-                          className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
-                          style={{
-                            background:
-                              'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
-                          }}
+                          aria-label={t('colorPickerPrimary')}
+                          className="w-9 h-9 rounded shrink-0 p-0 border border-black/10 hover:opacity-80 hover:bg-transparent transition-opacity"
+                          style={{ backgroundColor: data.primaryColor }}
                         />
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-2" side="bottom" align="start">
@@ -253,6 +238,13 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         </Button>
                       </PopoverContent>
                     </Popover>
+                    <Input
+                      type="text"
+                      id="primaryColor"
+                      value={data.primaryColor}
+                      onChange={(e) => updateData({ primaryColor: e.target.value })}
+                      className="h-9 bg-app-elevated/50 border-app-border rounded font-mono uppercase text-xs flex-1"
+                    />
                   </div>
                 </div>
 
@@ -262,35 +254,17 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     htmlFor="secondaryColor"
                     className="text-xs font-medium text-app-text-secondary mb-2 block"
                   >
-                    Couleur secondaire
+                    {t('secondaryColor')}
                   </Label>
                   <div className="flex items-center gap-2">
-                    {/* Current color preview — no border */}
-                    <div
-                      className="w-10 h-10 rounded-xl shrink-0"
-                      style={{ backgroundColor: data.secondaryColor }}
-                    />
-                    {/* Hex input */}
-                    <Input
-                      type="text"
-                      id="secondaryColor"
-                      value={data.secondaryColor}
-                      onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                      className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs flex-1"
-                    />
-                    {/* Rainbow picker — Popover (portal, zero layout shift) */}
                     <Popover open={showSecondaryPicker} onOpenChange={setShowSecondaryPicker}>
                       <PopoverTrigger asChild>
                         <Button
                           type="button"
                           variant="ghost"
-                          aria-label="Choisir une couleur personnalisee"
-                          title="Couleur personnalisee"
-                          className="w-10 h-10 rounded-xl p-0 overflow-hidden shrink-0 transition-opacity hover:opacity-80"
-                          style={{
-                            background:
-                              'conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
-                          }}
+                          aria-label={t('colorPickerSecondary')}
+                          className="w-9 h-9 rounded shrink-0 p-0 border border-black/10 hover:opacity-80 hover:bg-transparent transition-opacity"
+                          style={{ backgroundColor: data.secondaryColor }}
                         />
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-2" side="bottom" align="start">
@@ -308,6 +282,13 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         </Button>
                       </PopoverContent>
                     </Popover>
+                    <Input
+                      type="text"
+                      id="secondaryColor"
+                      value={data.secondaryColor}
+                      onChange={(e) => updateData({ secondaryColor: e.target.value })}
+                      className="h-9 bg-app-elevated/50 border-app-border rounded font-mono uppercase text-xs flex-1"
+                    />
                   </div>
                 </div>
               </div>

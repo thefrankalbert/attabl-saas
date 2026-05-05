@@ -80,6 +80,17 @@ const CTA_PRESET_ENTRIES = (Object.entries(CTA_PRESETS) as [QRCTAPreset, string]
   ([key]) => key !== 'custom',
 );
 
+const STYLE_OPTIONS: {
+  value: 'classic' | 'branded' | 'inverted' | 'dark';
+  label: string;
+  bg: string;
+}[] = [
+  { value: 'classic', label: 'Classique', bg: '#FFFFFF' },
+  { value: 'branded', label: 'Marque', bg: '#FFFFFF' },
+  { value: 'inverted', label: 'Inverse', bg: '#000000' },
+  { value: 'dark', label: 'Sombre', bg: '#1a1a1a' },
+];
+
 // ─── Slider Helper ────────────────────────────────────
 
 interface SliderFieldProps {
@@ -181,13 +192,35 @@ export function QRCustomizerPanel({
     [updateLogo],
   );
 
+  // ─── Design file upload ──────────────────────────────
+  const designFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDesignFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result;
+        if (typeof dataUrl === 'string') {
+          updateField('qrUploadedDesignUrl', dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      e.target.value = '';
+    },
+    [updateField],
+  );
+
   // ─── Render ─────────────────────────────────────────
 
   return (
     <div className="bg-app-card rounded-xl border border-app-border p-4">
       <Tabs defaultValue="template">
         {/* Tab triggers */}
-        <TabsList className="grid w-full grid-cols-5 mb-4">
+        <TabsList className="grid w-full grid-cols-6 mb-4">
           <TabsTrigger value="template" className="flex items-center gap-1.5 text-xs">
             <Layout className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Template</span>
@@ -207,6 +240,10 @@ export function QRCustomizerPanel({
           <TabsTrigger value="advanced" className="flex items-center gap-1.5 text-xs">
             <Settings2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Avanc\u00e9</span>
+          </TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-1.5 text-xs">
+            <Upload className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Fichier</span>
           </TabsTrigger>
         </TabsList>
 
@@ -487,6 +524,59 @@ export function QRCustomizerPanel({
             </div>
           </Section>
 
+          {/* Style visuel */}
+          <FeatureGate feature="canAccessQrCustomization">
+            <Section title="Style visuel">
+              <div className="grid grid-cols-4 gap-2">
+                {STYLE_OPTIONS.map((opt) => {
+                  const isSelected = (config.qrStyle ?? 'classic') === opt.value;
+                  return (
+                    <Button
+                      key={opt.value}
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateField('qrStyle', opt.value)}
+                      className={`flex flex-col items-center gap-1 px-2 py-2 h-auto rounded text-xs font-medium transition-all ${
+                        isSelected
+                          ? 'border-accent bg-accent/10 text-accent'
+                          : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                      }`}
+                    >
+                      <span
+                        className="w-5 h-5 rounded-sm border border-app-border/40 shrink-0"
+                        style={{ background: opt.bg }}
+                      />
+                      {opt.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </Section>
+          </FeatureGate>
+
+          {/* Orientation */}
+          <FeatureGate feature="canAccessQrCustomization">
+            <Section title="Orientation">
+              <div className="flex gap-2">
+                {(['portrait', 'landscape'] as const).map((o) => (
+                  <Button
+                    key={o}
+                    type="button"
+                    variant="outline"
+                    onClick={() => updateField('qrOrientation', o)}
+                    className={`flex-1 px-3 py-2 h-auto rounded text-xs font-medium transition-all ${
+                      (config.qrOrientation ?? 'portrait') === o
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                    }`}
+                  >
+                    {o === 'portrait' ? 'Portrait' : 'Paysage'}
+                  </Button>
+                ))}
+              </div>
+            </Section>
+          </FeatureGate>
+
           {/* Dimensions */}
           <FeatureGate feature="canAccessQrCustomization">
             <Section title="Dimensions">
@@ -518,6 +608,26 @@ export function QRCustomizerPanel({
                   step={5}
                   onChange={(v) => updateField('qrSize', v)}
                 />
+                <div className="space-y-2">
+                  <Label className="text-xs text-app-text-muted">Unite</Label>
+                  <div className="flex gap-2">
+                    {(['mm', 'cm', 'px'] as const).map((u) => (
+                      <Button
+                        key={u}
+                        type="button"
+                        variant="outline"
+                        onClick={() => updateField('qrUnit', u)}
+                        className={`flex-1 px-2 py-1.5 h-auto rounded text-xs font-medium transition-all ${
+                          (config.qrUnit ?? 'mm') === u
+                            ? 'border-accent bg-accent/10 text-accent'
+                            : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                        }`}
+                      >
+                        {u}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </Section>
           </FeatureGate>
@@ -620,6 +730,32 @@ export function QRCustomizerPanel({
               </FeatureGate>
             </div>
           </Section>
+
+          {/* Nom affiche */}
+          <FeatureGate feature="canAccessQrCustomization">
+            <Section title="Nom affiche">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-app-text">Afficher le nom</Label>
+                  <Switch
+                    checked={config.showName ?? true}
+                    onCheckedChange={(checked) => updateField('showName', checked)}
+                  />
+                </div>
+                {(config.showName ?? true) && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-app-text-muted">Nom personnalise</Label>
+                    <Input
+                      value={config.qrCustomName ?? ''}
+                      onChange={(e) => updateField('qrCustomName', e.target.value || undefined)}
+                      placeholder="Nom de votre etablissement"
+                      className="text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            </Section>
+          </FeatureGate>
 
           {/* Description */}
           <FeatureGate feature="canAccessQrCustomization">
@@ -772,6 +908,119 @@ export function QRCustomizerPanel({
                     checked={!config.showPoweredBy}
                     onCheckedChange={(checked) => updateField('showPoweredBy', !checked)}
                   />
+                </div>
+              </Section>
+            </div>
+          </FeatureGate>
+        </TabsContent>
+
+        {/* ────────────────────────── Tab 6: Upload ──────────────────────────── */}
+        <TabsContent value="upload" className="space-y-6">
+          <FeatureGate feature="canAccessQrCustomization">
+            <div className="space-y-6">
+              {/* Design personnalise */}
+              <Section title="Design personnalise">
+                <div className="space-y-4">
+                  {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
+                  <input
+                    ref={designFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDesignFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => designFileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Choisir un fichier
+                  </Button>
+
+                  {config.qrUploadedDesignUrl && (
+                    <div className="relative rounded-xl border border-app-border p-2 bg-app-elevated">
+                      <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={config.qrUploadedDesignUrl}
+                          alt="Apercu du design"
+                          className="h-10 w-10 rounded-lg object-contain bg-app-card border border-app-border"
+                        />
+                        <span className="text-xs text-app-text-muted break-all flex-1">
+                          {config.qrUploadedDesignUrl.startsWith('data:')
+                            ? 'Image importee'
+                            : config.qrUploadedDesignUrl}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => updateField('qrUploadedDesignUrl', undefined)}
+                          className="p-1 h-auto w-auto text-app-text-muted hover:text-red-500 hover:bg-red-500/10"
+                          aria-label="Supprimer le design"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <SliderField
+                    label="Echelle"
+                    value={Math.round((config.qrUploadScale ?? 1) * 100)}
+                    unit="%"
+                    min={50}
+                    max={200}
+                    step={5}
+                    onChange={(v) => updateField('qrUploadScale', v / 100)}
+                  />
+                </div>
+              </Section>
+
+              {/* Recto-verso */}
+              <Section title="Recto-verso">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-app-text">Activer le recto-verso</Label>
+                    <Switch
+                      checked={config.qrRectoVerso ?? false}
+                      onCheckedChange={(checked) => updateField('qrRectoVerso', checked)}
+                    />
+                  </div>
+
+                  {config.qrRectoVerso && (
+                    <div className="space-y-4 pl-1">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-app-text-muted">Contenu du verso</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(
+                            [
+                              { value: 'logo', label: 'Logo' },
+                              { value: 'custom', label: 'Fichier' },
+                              { value: 'blank', label: 'Blanc' },
+                            ] as const
+                          ).map(({ value, label }) => (
+                            <Button
+                              key={value}
+                              type="button"
+                              variant="outline"
+                              onClick={() => updateField('qrVersoType', value)}
+                              className={`px-2 py-1.5 rounded-lg text-xs font-medium h-auto transition-all ${
+                                (config.qrVersoType ?? 'logo') === value
+                                  ? 'border-accent bg-accent/10 text-accent'
+                                  : 'border-app-border text-app-text-secondary hover:border-app-border-hover hover:text-app-text'
+                              }`}
+                            >
+                              {label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Section>
             </div>

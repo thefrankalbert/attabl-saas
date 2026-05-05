@@ -76,6 +76,15 @@ export interface QRDesignConfig {
   showPoweredBy: boolean;
   fontFamily: string;
   exportFormat: QRExportFormat;
+  qrStyle?: 'classic' | 'branded' | 'inverted' | 'dark';
+  qrOrientation?: 'portrait' | 'landscape';
+  qrUploadedDesignUrl?: string;
+  qrCustomName?: string;
+  qrUploadScale?: number;
+  qrUnit?: 'cm' | 'mm' | 'px';
+  qrRectoVerso?: boolean;
+  qrVersoType?: 'logo' | 'custom' | 'blank';
+  qrVersoUploadUrl?: string;
 }
 
 // Template Props
@@ -245,5 +254,14 @@ export function createDefaultQRDesignConfig(
     showPoweredBy: true,
     fontFamily: 'Geist',
     exportFormat: 'pdf',
+    qrStyle: 'classic',
+    qrOrientation: 'portrait',
+    qrUploadedDesignUrl: undefined,
+    qrCustomName: undefined,
+    qrUploadScale: 1,
+    qrUnit: 'mm',
+    qrRectoVerso: false,
+    qrVersoType: 'logo',
+    qrVersoUploadUrl: undefined,
   };
 }

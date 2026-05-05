@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { forwardRef, useMemo } from 'react';
@@ -39,7 +40,7 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
     <div className="bg-app-elevated rounded-2xl p-8 flex items-center justify-center min-h-[400px]">
       {/* Dot pattern background */}
       <div
-        className="relative flex items-center justify-center w-full h-full"
+        className="relative flex flex-col items-center justify-center gap-3 w-full h-full"
         style={{
           backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
           backgroundSize: '16px 16px',
@@ -53,14 +54,42 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
             transformOrigin: 'center',
           }}
         >
-          <TemplateComponent
-            config={config}
-            url={url}
-            tenantName={tenantName}
-            tableName={tableName}
-            logoUrl={logoUrl}
-          />
+          {config.qrUploadedDesignUrl ? (
+            <div
+              style={{
+                width: `${config.templateWidth * 3.78}px`,
+                height: `${config.templateHeight * 3.78}px`,
+                background: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
+              <img
+                src={config.qrUploadedDesignUrl}
+                alt=""
+                style={{
+                  transform: `scale(${config.qrUploadScale ?? 1})`,
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          ) : (
+            <TemplateComponent
+              config={config}
+              url={url}
+              tenantName={tenantName}
+              tableName={tableName}
+              logoUrl={logoUrl}
+            />
+          )}
         </div>
+        <p className="text-[10px] text-app-text-muted text-center break-all max-w-full px-2 font-mono">
+          {url}
+        </p>
       </div>
     </div>
   );

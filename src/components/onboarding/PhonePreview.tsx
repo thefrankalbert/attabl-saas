@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import type { LucideIcon } from 'lucide-react';
 import {
   ChevronDown,
@@ -14,8 +15,10 @@ import {
   Leaf,
   MapPin,
   Plus,
+  QrCode,
   Search,
   ShoppingBag,
+  Star,
   User,
   Utensils,
   Wine,
@@ -23,7 +26,7 @@ import {
 
 import type { OnboardingData } from '@/app/onboarding/page';
 
-// ─── Icon mapping (mirrors CategoryGrid categories) ────────────────────────
+// ─── Icon mapping (mirrors category-icons config) ───────────────────────────
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   entree: Leaf,
@@ -93,27 +96,34 @@ interface PhonePreviewProps {
   phase: number;
 }
 
-// ─── Tokens (mirrors menu-tokens.ts) ────────────────────────────────────────
+// ─── Tokens (mirrors menu-tokens.ts exactly) ────────────────────────────────
 
 const C = {
   bg: '#FFFFFF',
-  surface: '#F6F6F6',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F6F6F6',
   divider: '#EEEEEE',
-  text: '#1A1A1A',
+  textPrimary: '#1A1A1A',
   textSecondary: '#737373',
   textMuted: '#B0B0B0',
+  primary: '#1A1A1A',
   cartBg: '#1A1A1A',
-  cartText: '#FFFFFF',
   iconInactive: '#B0B0B0',
-  skeletonBase: '#E5E7EB',
+  rating: '#FFB800',
   skeletonAlt: '#F3F4F6',
 };
+
+// Scale factor: preview phone 256px / real max-w 430px
+const S = 256 / 430;
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
-  const { logoUrl, tenantName, menuItems, currency, primaryColor } = data;
-  const accentColor = primaryColor || C.cartBg;
+  const t = useTranslations('onboarding');
+  const { logoUrl, tenantName, menuItems, currency } = data;
+
+  const initial = (tenantName || 'M').charAt(0).toUpperCase();
+  const locationName = tenantName || t('phoneSurPlace');
 
   const categories = useMemo(() => {
     if (!menuItems || menuItems.length === 0) return [];
@@ -129,10 +139,10 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
     return cats;
   }, [menuItems]);
 
-  const displayItems = useMemo(() => (menuItems ?? []).slice(0, 5), [menuItems]);
-
+  const displayItems = useMemo(() => (menuItems ?? []).slice(0, 4), [menuItems]);
   const hasMenu = phase >= 2 && menuItems && menuItems.length > 0;
-  const initial = (tenantName || 'M').charAt(0).toUpperCase();
+
+  const navH = Math.round(60 * S);
 
   return (
     <div className="relative flex items-center justify-center">
@@ -148,38 +158,78 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
         >
           {/* ── Scrollable content ──────────────────── */}
           <div className="flex-1 overflow-y-auto [scrollbar-width:none]">
-            {/* Safe area top (dynamic island) */}
-            <div className="h-[30px]" />
+            {/* Safe area top */}
+            <div style={{ height: '30px' }} />
 
-            {/* ─── HEADER ─── location left / logo right */}
+            {/* ─── 1. HEADER ─── two-line: "VOUS ETES A" + name ─── */}
             <div
               style={{
+                height: Math.round(64 * S) + 'px',
+                paddingLeft: '10px',
+                paddingRight: '10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                height: '33px',
-                paddingLeft: '12px',
-                paddingRight: '12px',
+                backgroundColor: C.bg,
               }}
             >
-              {/* Location picker */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <MapPin style={{ width: '9px', height: '9px', color: C.text }} strokeWidth={2} />
-                <span style={{ fontSize: '8px', fontWeight: 600, color: C.text }}>Sur place</span>
-                <ChevronDown
-                  style={{ width: '8px', height: '8px', color: C.text }}
-                  strokeWidth={2}
-                />
-              </div>
-
-              {/* Restaurant logo avatar */}
               <div
                 style={{
-                  width: '26px',
-                  height: '26px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1px',
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {/* Row 1: pin icon + "VOUS ETES A" */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <MapPin
+                    style={{ width: '6px', height: '6px', flexShrink: 0 }}
+                    fill={C.textMuted}
+                    stroke="none"
+                  />
+                  <span
+                    style={{
+                      fontSize: '5px',
+                      fontWeight: 600,
+                      color: C.textMuted,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {t('phoneYouAreAt')}
+                  </span>
+                </div>
+                {/* Row 2: restaurant name + chevron */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span
+                    style={{
+                      fontSize: Math.round(15 * S) + 'px',
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '110px',
+                    }}
+                  >
+                    {locationName}
+                  </span>
+                  <ChevronDown
+                    style={{ width: '7px', height: '7px', color: C.textPrimary, flexShrink: 0 }}
+                    strokeWidth={2}
+                  />
+                </div>
+              </div>
+
+              {/* Avatar — bg always surfaceAlt */}
+              <div
+                style={{
+                  width: Math.round(40 * S) + 'px',
+                  height: Math.round(40 * S) + 'px',
                   borderRadius: '50%',
-                  backgroundColor: C.surface,
-                  border: `1px solid ${C.divider}`,
+                  backgroundColor: C.surfaceAlt,
                   overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
@@ -196,9 +246,9 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                 ) : (
                   <span
                     style={{
-                      fontSize: '11px',
+                      fontSize: '10px',
                       fontWeight: 700,
-                      color: C.text,
+                      color: C.textMuted,
                       lineHeight: 1,
                     }}
                   >
@@ -208,104 +258,273 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               </div>
             </div>
 
-            {/* ─── SEARCH BAR ─── */}
+            {/* ─── 2. SEARCH BAR ─── with QR scanner button on right ─── */}
             <div
               style={{
-                paddingLeft: '12px',
-                paddingRight: '12px',
-                paddingBottom: '10px',
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                marginTop: '4px',
               }}
             >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  height: '28px',
-                  backgroundColor: C.surface,
-                  borderRadius: '8px',
-                  paddingLeft: '10px',
-                  paddingRight: '10px',
+                  gap: '5px',
+                  height: Math.round(48 * S) + 'px',
+                  backgroundColor: C.surfaceAlt,
+                  borderRadius: '7px',
+                  paddingLeft: '9px',
+                  paddingRight: '6px',
                 }}
               >
                 <Search
-                  style={{ width: '10px', height: '10px', color: C.textMuted }}
+                  style={{ width: '10px', height: '10px', color: C.textMuted, flexShrink: 0 }}
                   strokeWidth={2}
                 />
-                <span
+                <span style={{ fontSize: '7px', color: C.textMuted, fontWeight: 400, flex: 1 }}>
+                  {t('phoneSearchPlaceholder')}
+                </span>
+                {/* QR dark square button */}
+                <div
                   style={{
-                    fontSize: '8px',
-                    color: C.textMuted,
-                    fontWeight: 500,
+                    width: Math.round(32 * S) + 'px',
+                    height: Math.round(32 * S) + 'px',
+                    backgroundColor: C.cartBg,
+                    borderRadius: '5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
-                  Chercher un plat...
-                </span>
+                  <QrCode
+                    style={{ width: '9px', height: '9px', color: '#FFFFFF' }}
+                    strokeWidth={1.5}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* ─── CATEGORY GRID ─── 4 colonnes, tuiles carrées */}
+            {/* ─── 3. PROMO BANNER ─── */}
             <div
               style={{
-                paddingLeft: '12px',
-                paddingRight: '12px',
-                paddingBottom: '8px',
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                marginTop: '10px',
               }}
             >
-              {hasMenu && categories.length > 0 ? (
-                <>
-                  <p
+              <div
+                style={{
+                  height: Math.round(160 * S) + 'px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  background: 'linear-gradient(135deg, #111827 0%, #1a3a2a 60%, #0d1f17 100%)',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%)',
+                  }}
+                />
+                <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px' }}>
+                  <span
                     style={{
-                      fontSize: '8px',
-                      fontWeight: 700,
-                      color: C.text,
-                      marginBottom: '6px',
+                      fontSize: '5px',
+                      fontWeight: 600,
+                      color: '#86EFAC',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      display: 'block',
+                      marginBottom: '2px',
                     }}
                   >
-                    Catégories
+                    {t('phoneBannerLabel')}
+                  </span>
+                  <p
+                    style={{
+                      fontSize: Math.round(20 * S) + 'px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      margin: '0 0 2px',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {t('phoneBannerTitle')}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '6px',
+                      color: 'rgba(255,255,255,0.55)',
+                      margin: '0 0 5px',
+                    }}
+                  >
+                    {t('phoneBannerSubtitle')}
                   </p>
                   <div
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(4, 1fr)',
-                      gap: '5px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      backgroundColor: 'rgba(255,255,255,0.12)',
+                      borderRadius: '999px',
+                      paddingLeft: '6px',
+                      paddingRight: '7px',
+                      paddingTop: '2px',
+                      paddingBottom: '2px',
                     }}
                   >
-                    {categories.slice(0, 8).map((cat) => (
+                    <div
+                      style={{
+                        width: '4px',
+                        height: '4px',
+                        borderRadius: '50%',
+                        backgroundColor: '#86EFAC',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ fontSize: '5px', color: '#FFFFFF', fontWeight: 500 }}>
+                      {t('phoneBannerOpen')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── 4. ANNOUNCEMENT CARD (mint green) ─── */}
+            <div
+              style={{
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                marginTop: '8px',
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: '#D1FAE5',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '6px',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontSize: Math.round(14 * S) + 'px',
+                      fontWeight: 700,
+                      color: '#064E3B',
+                      margin: '0 0 2px',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {t('phoneAnnounceSample')}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '6px',
+                      color: '#065F46',
+                      margin: 0,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {t('phoneAnnounceBody')}
+                  </p>
+                </div>
+                <div
+                  style={{
+                    flexShrink: 0,
+                    backgroundColor: '#064E3B',
+                    borderRadius: '5px',
+                    paddingLeft: '7px',
+                    paddingRight: '7px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '6px',
+                      fontWeight: 600,
+                      color: '#FFFFFF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {t('phoneAnnounceCta')} &gt;
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── 5. CATEGORIES ─── with "Tout voir >" in header ─── */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                paddingTop: '10px',
+                paddingBottom: '6px',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: Math.round(20 * S) + 'px',
+                  fontWeight: 700,
+                  color: C.textPrimary,
+                }}
+              >
+                {t('phoneCategoriesLabel')}
+              </span>
+              <span style={{ fontSize: '6px', fontWeight: 600, color: C.primary }}>
+                {t('phoneSeeAll')} &gt;
+              </span>
+            </div>
+
+            {/* CategoryGrid: grid-cols-4 */}
+            <div style={{ paddingLeft: '10px', paddingRight: '10px' }}>
+              {hasMenu && categories.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {categories.slice(0, 8).map((cat) => {
+                    const CatIcon = cat.Icon;
+                    return (
                       <div
                         key={cat.name}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '2px',
+                          gap: '3px',
                         }}
                       >
                         <div
                           style={{
                             width: '100%',
                             aspectRatio: '1',
-                            backgroundColor: C.surface,
+                            backgroundColor: C.surfaceAlt,
                             borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}
                         >
-                          {(() => {
-                            const CatIcon = cat.Icon;
-                            return (
-                              <CatIcon
-                                style={{ width: '14px', height: '14px', color: C.textSecondary }}
-                                strokeWidth={1.5}
-                              />
-                            );
-                          })()}
+                          <CatIcon
+                            style={{ width: '14px', height: '14px', color: C.textSecondary }}
+                            strokeWidth={1.5}
+                          />
                         </div>
                         <span
                           style={{
                             fontSize: '6px',
-                            color: C.textSecondary,
+                            color: C.textPrimary,
                             textAlign: 'center',
                             lineHeight: 1.2,
                             width: '100%',
@@ -317,184 +536,102 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                           {cat.name}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </>
+                    );
+                  })}
+                </div>
               ) : (
-                /* Skeleton catégories */
-                <>
-                  <div
-                    style={{
-                      height: '8px',
-                      width: '48px',
-                      backgroundColor: C.skeletonBase,
-                      borderRadius: '999px',
-                      marginBottom: '6px',
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(4, 1fr)',
-                      gap: '5px',
-                    }}
-                  >
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i}>
-                        <div
-                          style={{
-                            width: '100%',
-                            aspectRatio: '1',
-                            backgroundColor: C.skeletonAlt,
-                            borderRadius: '8px',
-                            marginBottom: '3px',
-                          }}
-                        />
-                        <div
-                          style={{
-                            height: '5px',
-                            backgroundColor: C.skeletonAlt,
-                            borderRadius: '999px',
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </>
+                /* Skeleton category grid */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i}>
+                      <div
+                        style={{
+                          width: '100%',
+                          aspectRatio: '1',
+                          backgroundColor: C.skeletonAlt,
+                          borderRadius: '8px',
+                          marginBottom: '3px',
+                        }}
+                      />
+                      <div
+                        style={{
+                          height: '5px',
+                          backgroundColor: C.skeletonAlt,
+                          borderRadius: '999px',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* ─── CATEGORY NAV PILLS (sticky dans l'app réelle) ─── */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                paddingLeft: '12px',
-                paddingRight: '12px',
-                paddingTop: '4px',
-                paddingBottom: '8px',
-                overflowX: 'auto',
-                scrollbarWidth: 'none',
-                borderBottom: `1px solid ${C.divider}`,
-                marginBottom: '8px',
-              }}
-            >
-              {hasMenu && categories.length > 0
-                ? categories.slice(0, 6).map((cat, i) => (
-                    <div
-                      key={cat.name}
-                      style={{
-                        flexShrink: 0,
-                        backgroundColor: i === 0 ? accentColor : C.surface,
-                        borderRadius: '999px',
-                        paddingLeft: '7px',
-                        paddingRight: '7px',
-                        paddingTop: '3px',
-                        paddingBottom: '3px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '7px',
-                          fontWeight: 600,
-                          color: i === 0 ? C.cartText : C.textSecondary,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {cat.name}
-                      </span>
-                    </div>
-                  ))
-                : /* Skeleton pills */
-                  [52, 40, 56, 36].map((w, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        flexShrink: 0,
-                        width: `${w}px`,
-                        height: '18px',
-                        backgroundColor: i === 0 ? C.skeletonBase : C.skeletonAlt,
-                        borderRadius: '999px',
-                      }}
-                    />
-                  ))}
-            </div>
+            {/* ─── 6. POPULAR ITEMS ─── with "Tout voir >" in header ─── */}
+            {hasMenu && displayItems.length > 0 && (
+              <>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingLeft: '10px',
+                    paddingRight: '10px',
+                    paddingTop: '10px',
+                    paddingBottom: '6px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: Math.round(20 * S) + 'px',
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                    }}
+                  >
+                    {t('phonePopularLabel')}
+                  </span>
+                  <span style={{ fontSize: '6px', fontWeight: 600, color: C.primary }}>
+                    {t('phoneSeeAll')} &gt;
+                  </span>
+                </div>
 
-            {/* ─── ITEMS LIST ─── image droite / texte gauche (MenuItemCard) */}
-            <div style={{ paddingLeft: '12px', paddingRight: '12px' }}>
-              {hasMenu
-                ? displayItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '8px',
-                        paddingBottom: '10px',
-                        marginBottom: '8px',
-                        borderBottom:
-                          idx < displayItems.length - 1 ? `1px solid ${C.divider}` : 'none',
-                      }}
-                    >
-                      {/* Texte — gauche */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p
-                          style={{
-                            fontSize: '9px',
-                            fontWeight: 700,
-                            color: C.text,
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            marginBottom: '2px',
-                          }}
-                        >
-                          {item.name}
-                        </p>
-                        {item.category && (
-                          <p
-                            style={{
-                              fontSize: '7px',
-                              color: C.textSecondary,
-                              lineHeight: 1.3,
-                              marginBottom: '4px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {item.category}
-                          </p>
-                        )}
-                        <p
-                          style={{
-                            fontSize: '9px',
-                            fontWeight: 700,
-                            color: C.text,
-                          }}
-                        >
-                          {item.price.toLocaleString()}&nbsp;{currency || 'FCFA'}
-                        </p>
-                      </div>
-
-                      {/* Image — droite (w-90px → 53px scaled) */}
+                {/* Horizontal scroll of FeaturedItemCards */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '6px',
+                    overflowX: 'auto',
+                    paddingLeft: '10px',
+                    paddingRight: '10px',
+                    paddingBottom: '4px',
+                    scrollbarWidth: 'none',
+                  }}
+                >
+                  {displayItems.map((item, idx) => {
+                    const cardW = Math.round(180 * S);
+                    const imgH = Math.round(140 * S);
+                    return (
                       <div
+                        key={idx}
                         style={{
-                          position: 'relative',
+                          width: cardW + 'px',
                           flexShrink: 0,
-                          width: '53px',
-                          height: '53px',
+                          borderRadius: '8px',
+                          overflow: 'visible',
+                          border: `1px solid ${C.divider}`,
+                          backgroundColor: C.surface,
+                          display: 'flex',
+                          flexDirection: 'column',
                         }}
                       >
+                        {/* Image area */}
                         <div
                           style={{
-                            width: '53px',
-                            height: '53px',
-                            borderRadius: '10px',
+                            width: '100%',
+                            height: imgH + 'px',
+                            backgroundColor: C.surfaceAlt,
+                            borderRadius: '8px 8px 0 0',
                             overflow: 'hidden',
-                            backgroundColor: C.surface,
+                            position: 'relative',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -504,208 +641,219 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                           ) : (
                             <Utensils
-                              style={{
-                                width: '18px',
-                                height: '18px',
-                                color: C.textMuted,
-                              }}
+                              style={{ width: '14px', height: '14px', color: C.textMuted }}
                               strokeWidth={1.5}
                             />
                           )}
-                        </div>
-                        {/* Bouton (+) noir */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: '-3px',
-                            right: '-3px',
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '50%',
-                            backgroundColor: C.cartBg,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Plus
+                          {/* Plus button */}
+                          <div
                             style={{
-                              width: '10px',
-                              height: '10px',
-                              color: C.cartText,
+                              position: 'absolute',
+                              bottom: '-4px',
+                              right: '4px',
+                              width: Math.round(28 * S) + 'px',
+                              height: Math.round(28 * S) + 'px',
+                              borderRadius: '50%',
+                              backgroundColor: C.cartBg,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
-                            strokeWidth={2.5}
-                          />
+                          >
+                            <Plus
+                              style={{ width: '7px', height: '7px', color: '#FFFFFF' }}
+                              strokeWidth={2.5}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Text area */}
+                        <div style={{ padding: '6px 6px 5px' }}>
+                          <p
+                            style={{
+                              fontSize: Math.round(14 * S) + 'px',
+                              fontWeight: 600,
+                              color: C.textPrimary,
+                              margin: '0 0 2px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {item.name}
+                          </p>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                              marginBottom: '2px',
+                            }}
+                          >
+                            <Star
+                              style={{ width: '7px', height: '7px' }}
+                              fill={C.rating}
+                              stroke="none"
+                            />
+                            <span
+                              style={{ fontSize: '6px', fontWeight: 500, color: C.textPrimary }}
+                            >
+                              4.8
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              fontSize: Math.round(15 * S) + 'px',
+                              fontWeight: 700,
+                              color: C.textPrimary,
+                              margin: 0,
+                            }}
+                          >
+                            {item.price.toLocaleString()}&nbsp;{currency || 'FCFA'}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))
-                : /* Skeleton items */
-                  [1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '8px',
-                        paddingBottom: '10px',
-                        marginBottom: '8px',
-                        borderBottom: `1px solid ${C.divider}`,
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            height: '8px',
-                            width: `${50 + i * 18}%`,
-                            backgroundColor: C.skeletonBase,
-                            borderRadius: '4px',
-                            marginBottom: '4px',
-                          }}
-                        />
-                        <div
-                          style={{
-                            height: '6px',
-                            width: '70%',
-                            backgroundColor: C.skeletonAlt,
-                            borderRadius: '4px',
-                            marginBottom: '5px',
-                          }}
-                        />
-                        <div
-                          style={{
-                            height: '8px',
-                            width: '38%',
-                            backgroundColor: C.skeletonBase,
-                            borderRadius: '4px',
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          flexShrink: 0,
-                          width: '53px',
-                          height: '53px',
-                          borderRadius: '10px',
-                          backgroundColor: C.skeletonAlt,
-                        }}
-                      />
-                    </div>
-                  ))}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
-            {/* Spacer bottom (cart bar + bottom nav) */}
-            <div className="h-[90px]" />
+            {/* Spacer above bottom nav */}
+            <div style={{ height: navH + 8 + 'px' }} />
           </div>
 
-          {/* ─── FLOATING CART BAR ─── noir, rounded-full (FloatingCartBar.tsx) */}
-          {hasMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                left: '10px',
-                right: '10px',
-                bottom: '44px',
-                height: '30px',
-                backgroundColor: accentColor,
-                borderRadius: '999px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '5px',
-                zIndex: 30,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
-              }}
-            >
-              <ShoppingBag
-                style={{ width: '11px', height: '11px', color: C.cartText }}
-                strokeWidth={2}
-              />
-              <span
-                style={{
-                  fontSize: '8px',
-                  fontWeight: 600,
-                  color: C.cartText,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Voir le panier
-              </span>
-              {/* Separator dot */}
-              <span
-                style={{
-                  width: '3px',
-                  height: '3px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255,255,255,0.5)',
-                  display: 'inline-block',
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  fontSize: '8px',
-                  fontWeight: 700,
-                  color: C.cartText,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {displayItems.length}&nbsp;•&nbsp;{(displayItems[0]?.price ?? 0).toLocaleString()}
-                &nbsp;{currency || 'FCFA'}
-              </span>
-            </div>
-          )}
-
-          {/* ─── BOTTOM NAV ─── 4 tabs (BottomNav.tsx) */}
+          {/* ─── BOTTOM NAV ─── 5 tabs: Home / Orders / [Cart FAB] / Menu / Account ─── */}
           <div
             style={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              height: '40px',
+              height: navH + 'px',
               backgroundColor: C.bg,
               borderTop: `1px solid ${C.divider}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-around',
-              paddingLeft: '8px',
-              paddingRight: '8px',
+              paddingLeft: '4px',
+              paddingRight: '4px',
               zIndex: 40,
             }}
           >
-            <Home style={{ width: '16px', height: '16px', color: C.text }} strokeWidth={2} />
-            <ShoppingBag
-              style={{ width: '16px', height: '16px', color: C.iconInactive }}
-              strokeWidth={2}
-            />
-            <Clock
-              style={{ width: '16px', height: '16px', color: C.iconInactive }}
-              strokeWidth={2}
-            />
-            <User
-              style={{ width: '16px', height: '16px', color: C.iconInactive }}
-              strokeWidth={2}
-            />
+            {/* Accueil */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1px',
+                flex: 1,
+              }}
+            >
+              <Home
+                style={{ width: '13px', height: '13px', color: C.textPrimary }}
+                strokeWidth={2}
+              />
+              <span style={{ fontSize: '5px', fontWeight: 500, color: C.textPrimary }}>
+                {t('phoneNavHome')}
+              </span>
+            </div>
+
+            {/* Commandes */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1px',
+                flex: 1,
+              }}
+            >
+              <Clock
+                style={{ width: '13px', height: '13px', color: C.iconInactive }}
+                strokeWidth={2}
+              />
+              <span style={{ fontSize: '5px', fontWeight: 500, color: C.iconInactive }}>
+                {t('phoneNavOrders')}
+              </span>
+            </div>
+
+            {/* Center Cart FAB */}
+            <div
+              style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+              <div
+                style={{
+                  width: navH - 6 + 'px',
+                  height: navH - 6 + 'px',
+                  borderRadius: '50%',
+                  backgroundColor: C.cartBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                }}
+              >
+                <ShoppingBag
+                  style={{ width: '12px', height: '12px', color: '#FFFFFF' }}
+                  strokeWidth={2}
+                />
+              </div>
+            </div>
+
+            {/* Menu */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1px',
+                flex: 1,
+              }}
+            >
+              <Utensils
+                style={{ width: '13px', height: '13px', color: C.iconInactive }}
+                strokeWidth={2}
+              />
+              <span style={{ fontSize: '5px', fontWeight: 500, color: C.iconInactive }}>
+                {t('phoneNavMenu')}
+              </span>
+            </div>
+
+            {/* Compte */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1px',
+                flex: 1,
+              }}
+            >
+              <User
+                style={{ width: '13px', height: '13px', color: C.iconInactive }}
+                strokeWidth={2}
+              />
+              <span style={{ fontSize: '5px', fontWeight: 500, color: C.iconInactive }}>
+                {t('phoneNavAccount')}
+              </span>
+            </div>
           </div>
 
           {/* Home indicator bar */}
           <div
             style={{
               position: 'absolute',
-              bottom: '5px',
+              bottom: '4px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '48px',
-              height: '3px',
+              width: '40px',
+              height: '2px',
               borderRadius: '999px',
               backgroundColor: 'rgba(0,0,0,0.12)',
               zIndex: 50,

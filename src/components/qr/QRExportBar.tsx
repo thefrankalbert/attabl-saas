@@ -5,6 +5,7 @@ import { Download, Printer, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { FeatureGate } from '@/components/qr/FeatureGate';
+import { dataUrlToDpiBlob, PRINT_DPI, PRINT_SCALE } from '@/lib/png-dpi';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
 // ─── Types ─────────────────────────────────────────────
@@ -51,7 +52,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       const jsPDF = await getJsPDF();
 
       const canvas = await html2canvas(el, {
-        scale: 3,
+        scale: PRINT_SCALE,
         useCORS: true,
         backgroundColor: null,
       });
@@ -86,16 +87,18 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       const html2canvas = await getHtml2Canvas();
 
       const canvas = await html2canvas(el, {
-        scale: 3,
+        scale: PRINT_SCALE,
         useCORS: true,
         backgroundColor: null,
       });
 
-      const dataUrl = canvas.toDataURL('image/png');
+      const blob = dataUrlToDpiBlob(canvas.toDataURL('image/png'), PRINT_DPI);
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = buildFilename(tenantSlug, 'png');
-      link.href = dataUrl;
+      link.href = blobUrl;
       link.click();
+      URL.revokeObjectURL(blobUrl);
     } catch (err) {
       logger.error('[QRExportBar] PNG export failed', err);
     } finally {
