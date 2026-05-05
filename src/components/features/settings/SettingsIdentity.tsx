@@ -19,6 +19,7 @@ import {
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { locales, LOCALE_LABELS } from '@/i18n/config';
+import { actionSetLocale } from '@/app/actions/locale';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
@@ -130,8 +131,8 @@ export default function SettingsIdentity({
     }
   };
 
-  const handleLocaleChange = (newLocale: string) => {
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+  const handleLocaleChange = async (newLocale: string) => {
+    await actionSetLocale(newLocale);
     router.refresh();
   };
 

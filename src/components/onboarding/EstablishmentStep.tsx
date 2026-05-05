@@ -28,6 +28,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
 import { RESERVED_SLUGS, normalizeToSlug } from '@/services/slug.service';
+import { actionSetLocale } from '@/app/actions/locale';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 type CheckResult = 'idle' | 'available' | 'taken';
@@ -425,8 +426,7 @@ export function EstablishmentStep({
                       value={data.language}
                       onValueChange={(val) => {
                         updateData({ language: val });
-                        document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Strict;Secure`;
-                        router.refresh();
+                        void actionSetLocale(val).then(() => router.refresh());
                       }}
                     >
                       <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">

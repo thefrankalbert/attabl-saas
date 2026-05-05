@@ -23,6 +23,11 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+const mockActionSetLocale = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/app/actions/locale', () => ({
+  actionSetLocale: (locale: string) => mockActionSetLocale(locale),
+}));
+
 vi.mock('@/contexts/CartContext', () => ({
   useCart: () => ({ totalItems: 0 }),
 }));
@@ -72,6 +77,7 @@ let localStorageStore: Record<string, string> = {};
 beforeEach(() => {
   mockPush.mockClear();
   mockSetDisplayCurrency.mockClear();
+  mockActionSetLocale.mockClear();
   mockDisplayCurrency = 'XAF';
   mockLocale = 'fr-FR';
   localStorageStore = {};
@@ -137,28 +143,18 @@ describe('ClientSettings', () => {
     expect(screen.getByText('currentLanguage')).toBeInTheDocument();
   });
 
-  it('sets cookie and reloads when clicking EN', () => {
+  it('calls actionSetLocale and reloads when clicking EN', async () => {
     const reloadMock = vi.fn();
     Object.defineProperty(window, 'location', {
       value: { reload: reloadMock },
       writable: true,
     });
 
-    // Intercept document.cookie setter
-    let cookieSet = '';
-    Object.defineProperty(document, 'cookie', {
-      set: (val: string) => {
-        cookieSet = val;
-      },
-      get: () => cookieSet,
-      configurable: true,
-    });
-
     renderSettings();
     fireEvent.click(screen.getByText('EN'));
 
-    expect(cookieSet).toContain('NEXT_LOCALE=en-US');
-    expect(reloadMock).toHaveBeenCalled();
+    await vi.waitFor(() => expect(mockActionSetLocale).toHaveBeenCalledWith('en-US'));
+    await vi.waitFor(() => expect(reloadMock).toHaveBeenCalled());
   });
 
   // --- Currency Selector ------------------------------

@@ -24,6 +24,7 @@ import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyCon
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import BottomNav from './BottomNav';
+import { actionSetLocale } from '@/app/actions/locale';
 
 // Types
 
@@ -175,8 +176,7 @@ export default function ClientSettings({
 
   const setLanguage = useCallback((l: string) => {
     const newLocale = l === 'fr' ? 'fr-FR' : 'en-US';
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Strict;Secure`;
-    window.location.reload();
+    void actionSetLocale(newLocale).then(() => window.location.reload());
   }, []);
 
   const handleCurrencyChange = useCallback(

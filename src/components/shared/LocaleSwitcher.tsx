@@ -11,13 +11,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { locales, LOCALE_LABELS } from '@/i18n/config';
+import { actionSetLocale } from '@/app/actions/locale';
 
 export function LocaleSwitcher() {
   const locale = useLocale();
   const router = useRouter();
 
-  const handleChange = (newLocale: string) => {
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Strict;Secure`;
+  const handleChange = async (newLocale: string) => {
+    await actionSetLocale(newLocale);
     router.refresh();
   };
 
