@@ -13,11 +13,6 @@ type ActionResponse = {
   deletedCount?: number;
 };
 
-/**
- * Deletes orders by their IDs.
- * Verifies the current user is an admin for the tenant owning the orders.
- * Deletes associated order_items first, then the orders themselves.
- */
 export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResponse> {
   const parsed = deleteOrdersSchema.safeParse(orderIds);
   if (!parsed.success) {
@@ -68,18 +63,7 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   const foundIds = orders.map((o) => o.id);
 
-  // Step 1: Delete order_items for these orders
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .delete()
-    .in('order_id', foundIds);
-
-  if (itemsError) {
-    logger.error('Failed to delete order_items', itemsError, { orderIds: foundIds });
-    return { error: `Failed to delete order items: ${itemsError.message}` };
-  }
-
-  // Step 2: Delete the orders
+  // Single delete — FK ON DELETE CASCADE propagates to order_items atomically
   const { error: deleteError } = await supabase.from('orders').delete().in('id', foundIds);
 
   if (deleteError) {
