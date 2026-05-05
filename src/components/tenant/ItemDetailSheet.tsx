@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useScrollLock } from 'usehooks-ts';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -96,16 +97,11 @@ export default function ItemDetailSheet({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // --- Body scroll lock --------------------------------------------------
+  const { lock, unlock } = useScrollLock({ autoLock: false });
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+    if (isOpen) lock();
+    else unlock();
+  }, [isOpen, lock, unlock]);
 
   // --- Live price calculation --------------------------------------------
   const currentPrice = useMemo(() => {
