@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useIdleTimer } from 'react-idle-timer';
 
 interface UseIdleTimeoutOptions {
   timeoutMinutes: number | null;
@@ -15,64 +16,53 @@ export function useIdleTimeout({
 }: UseIdleTimeoutOptions) {
   const [isWarning, setIsWarning] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
-  const lastActivityRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onLockRef = useRef(onLock);
 
-  // Keep onLock ref in sync without re-creating effects
   useEffect(() => {
     onLockRef.current = onLock;
   }, [onLock]);
 
-  const resetTimer = useCallback(() => {
-    lastActivityRef.current = Date.now();
-    setIsWarning(false);
-    setRemainingSeconds(0);
+  const clearCountdown = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
-  useEffect(() => {
-    if (!timeoutMinutes || timeoutMinutes <= 0) return;
+  useEffect(() => clearCountdown, [clearCountdown]);
 
-    // Initialize activity timestamp on mount
-    lastActivityRef.current = Date.now();
-
-    const timeoutMs = timeoutMinutes * 60 * 1000;
-    const warningMs = warningSeconds * 1000;
-
-    const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'] as const;
-
-    const handleActivity = () => {
-      lastActivityRef.current = Date.now();
+  const { reset: timerReset, getRemainingTime } = useIdleTimer({
+    timeout: (timeoutMinutes ?? 30) * 60 * 1000,
+    promptBeforeIdle: warningSeconds * 1000,
+    disabled: !timeoutMinutes || timeoutMinutes <= 0,
+    throttle: 500,
+    onPrompt() {
+      setIsWarning(true);
+      clearCountdown();
+      intervalRef.current = setInterval(() => {
+        setRemainingSeconds(Math.ceil(getRemainingTime() / 1000));
+      }, 1000);
+    },
+    onIdle() {
+      clearCountdown();
       setIsWarning(false);
       setRemainingSeconds(0);
-    };
+      onLockRef.current();
+    },
+    onActive() {
+      clearCountdown();
+      setIsWarning(false);
+      setRemainingSeconds(0);
+    },
+  });
 
-    ACTIVITY_EVENTS.forEach((event) => {
-      document.addEventListener(event, handleActivity, { passive: true });
-    });
-
-    const intervalId = setInterval(() => {
-      const elapsed = Date.now() - lastActivityRef.current;
-      const remaining = timeoutMs - elapsed;
-
-      if (remaining <= 0) {
-        clearInterval(intervalId);
-        onLockRef.current();
-        return;
-      }
-
-      if (remaining <= warningMs) {
-        setIsWarning(true);
-        setRemainingSeconds(Math.ceil(remaining / 1000));
-      }
-    }, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-      ACTIVITY_EVENTS.forEach((event) => {
-        document.removeEventListener(event, handleActivity);
-      });
-    };
-  }, [timeoutMinutes, warningSeconds]);
+  const resetTimer = useCallback(() => {
+    timerReset();
+    clearCountdown();
+    setIsWarning(false);
+    setRemainingSeconds(0);
+  }, [timerReset, clearCountdown]);
 
   return { isWarning, remainingSeconds, resetTimer };
 }

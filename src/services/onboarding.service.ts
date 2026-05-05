@@ -201,8 +201,17 @@ export function createOnboardingService(supabase: SupabaseClient) {
         .eq('id', tenantId)
         .single();
 
-      if (existingTenant?.onboarding_completed) {
-        // Check if menu items were actually created
+      const isRetry = existingTenant?.onboarding_completed === true;
+
+      if (isRetry) {
+        const hasValidMenuItems = data.menuItems?.some((item) => item.name?.trim());
+
+        // Menu was skipped or no valid items — return immediately with existing slug
+        if (!hasValidMenuItems) {
+          return { slug: existingTenant.slug ?? data.tenantSlug };
+        }
+
+        // Menu items exist — check if categories were already created
         const { count: categoryCount } = await supabase
           .from('categories')
           .select('id', { count: 'exact', head: true })
@@ -211,15 +220,19 @@ export function createOnboardingService(supabase: SupabaseClient) {
         if (categoryCount && categoryCount > 0) {
           return { slug: existingTenant.slug ?? data.tenantSlug };
         }
-        // If onboarding_completed but no categories, fall through to create them
+        // Fall through: completed but menu creation failed — retry below
       }
 
-      // Compute authoritative slug server-side — never trust the client-provided value
+      // Compute authoritative slug server-side — reuse existing slug on retry
+      // to avoid overwriting tenants.slug with a new value on each call.
       const slugService = createSlugService(supabase);
-      const resolvedSlug = await slugService.generateUniqueSlug(
-        data.tenantName || 'restaurant',
-        data.tenantNickname,
-      );
+      const resolvedSlug =
+        isRetry && existingTenant?.slug
+          ? existingTenant.slug
+          : await slugService.generateUniqueSlug(
+              data.tenantName || 'restaurant',
+              data.tenantNickname,
+            );
 
       // 1. Final tenant update + mark progress completed - in parallel
       const tenantUpdate: Record<string, unknown> = {
@@ -277,7 +290,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         .from('venues')
         .select('id')
         .eq('tenant_id', tenantId)
-        .single();
+        .maybeSingle();
 
       if (existingVenue) {
         venueId = existingVenue.id;
@@ -344,52 +357,60 @@ export function createOnboardingService(supabase: SupabaseClient) {
           itemsByCategory.set(catName, existing);
         }
 
+        // Pre-compute display_order start per category to avoid shared-counter race in Promise.all
+        const categoryEntries = Array.from(itemsByCategory.entries());
+        let nextOrder = 1;
+        const startOrderByIndex = categoryEntries.map(([, items]) => {
+          const start = nextOrder;
+          nextOrder += items.length;
+          return start;
+        });
+
         // Create all categories in parallel, then their items
-        let itemDisplayOrder = 1;
         await Promise.all(
-          Array.from(itemsByCategory.entries()).map(
-            async ([categoryName, items], categoryIndex) => {
-              const { data: category, error: catError } = await supabase
-                .from('categories')
-                .insert({
-                  tenant_id: tenantId,
-                  menu_id: menuId,
-                  name: categoryName,
-                  is_active: true,
-                  sort_order: categoryIndex + 1,
-                  display_order: categoryIndex + 1,
-                })
-                .select()
-                .single();
+          categoryEntries.map(async ([categoryName, items], categoryIndex) => {
+            const startOrder = startOrderByIndex[categoryIndex];
 
-              if (catError || !category) {
-                logger.error('Failed to create category during onboarding', catError, {
-                  categoryName,
-                  tenantId,
-                });
-                return;
-              }
+            const { data: category, error: catError } = await supabase
+              .from('categories')
+              .insert({
+                tenant_id: tenantId,
+                menu_id: menuId,
+                name: categoryName,
+                is_active: true,
+                sort_order: categoryIndex + 1,
+                display_order: categoryIndex + 1,
+              })
+              .select()
+              .single();
 
-              const { error: itemsError } = await supabase.from('menu_items').insert(
-                items.map((item) => ({
-                  tenant_id: tenantId,
-                  category_id: category.id,
-                  name: item.name,
-                  price: item.price || 0,
-                  image_url: item.imageUrl || null,
-                  is_available: true,
-                  display_order: itemDisplayOrder++,
-                })),
-              );
+            if (catError || !category) {
+              logger.error('Failed to create category during onboarding', catError, {
+                categoryName,
+                tenantId,
+              });
+              return;
+            }
 
-              if (itemsError) {
-                logger.error('Failed to create menu items during onboarding', itemsError, {
-                  categoryName,
-                  tenantId,
-                });
-              }
-            },
-          ),
+            const { error: itemsError } = await supabase.from('menu_items').insert(
+              items.map((item, itemIndex) => ({
+                tenant_id: tenantId,
+                category_id: category.id,
+                name: item.name,
+                price: item.price || 0,
+                image_url: item.imageUrl || null,
+                is_available: true,
+                display_order: startOrder + itemIndex,
+              })),
+            );
+
+            if (itemsError) {
+              logger.error('Failed to create menu items during onboarding', itemsError, {
+                categoryName,
+                tenantId,
+              });
+            }
+          }),
         );
       })();
 
