@@ -11,19 +11,19 @@ import {
   Shield,
   Info,
   X,
-  DollarSign,
+  Coins,
   ArrowLeft,
-  Clock,
+  ClipboardList,
   Mail,
   MapPin,
   Phone,
   HelpCircle,
+  ScanLine,
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import BottomNav from './BottomNav';
 
 // Types
 
@@ -289,7 +289,7 @@ export default function ClientSettings({
             style={{ border: '1px solid rgb(238, 238, 238)' }}
           >
             <SettingsRow
-              icon={<Clock className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              icon={<ClipboardList className="w-[18px] h-[18px]" strokeWidth={1.5} />}
               iconBg="rgb(246, 246, 246)"
               iconColor="rgb(26, 26, 26)"
               label={t('orderHistoryLabel')}
@@ -298,7 +298,7 @@ export default function ClientSettings({
             />
             <SectionDivider />
             <SettingsRow
-              icon={<MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              icon={<ScanLine className="w-[18px] h-[18px]" strokeWidth={1.5} />}
               iconBg="rgb(246, 246, 246)"
               iconColor="rgb(115, 115, 115)"
               label={t('currentTableLabel')}
@@ -386,7 +386,7 @@ export default function ClientSettings({
                   className="w-9 h-9 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: 'rgb(246, 246, 246)' }}
                 >
-                  <DollarSign
+                  <Coins
                     className="w-[18px] h-[18px]"
                     style={{ color: 'rgb(26, 26, 26)' }}
                     strokeWidth={1.5}
@@ -567,9 +567,6 @@ export default function ClientSettings({
           </p>
         </div>
       </div>
-
-      {/* Bottom Nav */}
-      <BottomNav tenantSlug={tenantSlug} />
 
       {/* Privacy Modal */}
       {showPrivacyModal && (

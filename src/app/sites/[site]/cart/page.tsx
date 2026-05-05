@@ -21,7 +21,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import BottomNav from '@/components/tenant/BottomNav';
 import { useCartSuggestions, type UpsellItem } from '@/hooks/useCartSuggestions';
 import { CartItemsList, getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { UpsellSection } from '@/components/tenant/cart/UpsellSection';
@@ -160,7 +159,7 @@ export default function CartPage() {
 
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-tenant-slug': tenantSlug || '' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableNumber,
           items: items.map((item) => ({
@@ -249,13 +248,13 @@ export default function CartPage() {
             </Link>
           </Button>
         </div>
-        {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
       </main>
     );
   }
 
   // Main cart
   const notesLength = notes?.length ?? 0;
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <main
@@ -265,6 +264,27 @@ export default function CartPage() {
         paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))',
       }}
     >
+      {/* Cart header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
+        <div className="max-w-lg mx-auto h-14 px-4 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A] shrink-0"
+            aria-label={t('ariaGoBack')}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+          <h1 className="text-[17px] font-bold text-[#1A1A1A] flex-1">
+            {t('navCart')}
+            <span className="text-[15px] font-normal text-[#B0B0B0] ml-1.5">
+              &middot; {itemCount}
+            </span>
+          </h1>
+        </div>
+      </div>
+
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
@@ -326,7 +346,7 @@ export default function CartPage() {
                   setNotesOpen(false);
                   setNotes('');
                 }}
-                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+                className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
                 aria-label={t('ariaClose') || 'Fermer'}
               >
                 <X className="w-4 h-4" />
@@ -467,7 +487,6 @@ export default function CartPage() {
           </Button>
         </div>
       </div>
-      {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
     </main>
   );
 }

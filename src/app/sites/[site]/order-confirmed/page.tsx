@@ -9,7 +9,6 @@ import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { Check, Loader2, ArrowLeft, ChefHat, Bell, BellRing, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import BottomNav from '@/components/tenant/BottomNav';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 import { MobilePaymentSection } from '@/components/tenant/MobilePaymentSection';
 import { logger } from '@/lib/logger';
@@ -341,7 +340,7 @@ function OrderConfirmedContent() {
                 <span className="text-sm font-bold w-6 text-center" style={{ color: '#1A1A1A' }}>
                   {item.quantity}
                 </span>
-                <span className="flex-1 text-sm" style={{ color: '#1A1A1A' }}>
+                <span className="flex-1 min-w-0 text-sm break-words" style={{ color: '#1A1A1A' }}>
                   {item.name}
                 </span>
                 <span className="text-sm font-bold whitespace-nowrap" style={{ color: '#1A1A1A' }}>
@@ -415,18 +414,17 @@ function OrderConfirmedContent() {
         )}
 
         {/* Back to menu */}
-        <Link href={menuPath} className="block">
-          <Button
-            className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{ backgroundColor: '#1A1A1A' }}
-          >
+        <Button
+          asChild
+          className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          style={{ backgroundColor: '#1A1A1A' }}
+        >
+          <Link href={menuPath}>
             <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
-
-      {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
     </main>
   );
 }

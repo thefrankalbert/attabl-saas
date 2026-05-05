@@ -73,7 +73,7 @@ export default function MenusClient({
     toggleActive,
     reorder,
     loadMenus,
-  } = useMenusData({ tenantId, initialMenus, confirm: confirmWithMessage });
+  } = useMenusData({ tenantId, tenantSlug, initialMenus, confirm: confirmWithMessage });
 
   // ─── Selection ────────────────────────────────────────
 

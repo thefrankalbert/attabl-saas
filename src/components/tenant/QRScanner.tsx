@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Camera, CameraOff, CheckCircle2, Hash, RotateCcw } from 'lucide-react';
+import { Scanner, type IDetectedBarcode } from '@yudiel/react-qr-scanner';
+import { X, Camera, CameraOff, CheckCircle2, RotateCcw, ScanLine } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { logger } from '@/lib/logger';
-import { Table } from '@/types/admin.types';
+import type { Table } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ---
 type ScanStatus = 'loading' | 'scanning' | 'success' | 'error';
 
 export interface QRScanResult {
@@ -22,31 +23,18 @@ interface QRScannerProps {
   isOpen: boolean;
   onClose: () => void;
   onScan: (result: QRScanResult) => void;
-  onManualEntry?: () => void;
   tables?: Table[];
 }
 
-// ─── Module preloading ──────────────────────────────────
-let html5QrcodeModule: typeof import('html5-qrcode') | null = null;
-export const preloadScanner = () => {
-  if (!html5QrcodeModule) {
-    import('html5-qrcode').then((mod) => {
-      html5QrcodeModule = mod;
-    });
-  }
-};
-
-// ─── Parse QR code data ─────────────────────────────────
+// --- Parse QR code data ---
 function parseQRData(decodedText: string): QRScanResult {
   const cleanText = decodedText.trim().replace(/\s+/g, '');
 
-  // Case 1: URL - extract ?table= or ?t= and ?menu= parameters
   if (cleanText.startsWith('http://') || cleanText.startsWith('https://')) {
     try {
       const scannedUrl = new URL(cleanText);
       const tableParam = scannedUrl.searchParams.get('table') || scannedUrl.searchParams.get('t');
       const menuParam = scannedUrl.searchParams.get('menu');
-
       return {
         tableNumber: tableParam || null,
         menuSlug: menuParam || null,
@@ -58,7 +46,6 @@ function parseQRData(decodedText: string): QRScanResult {
     }
   }
 
-  // Case 2: Plain text - treat as table number directly
   return {
     tableNumber: cleanText || null,
     menuSlug: null,
@@ -67,44 +54,75 @@ function parseQRData(decodedText: string): QRScanResult {
   };
 }
 
-// ─── Component ──────────────────────────────────────────
-export default function QRScanner({
-  isOpen,
-  onClose,
-  onScan,
-  onManualEntry,
-  tables,
-}: QRScannerProps) {
+// --- Component ---
+export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScannerProps) {
   const t = useTranslations('qrScanner');
-  const scannerRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<InstanceType<typeof import('html5-qrcode').Html5Qrcode> | null>(
-    null,
-  );
+  const manualInputRef = useRef<HTMLInputElement>(null);
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasScannedRef = useRef(false);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
-  // Process the decoded QR text
-  const processQRCode = useCallback(
-    (decodedText: string) => {
-      const result = parseQRData(decodedText);
+  // Reset on open/close
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: isOpen is an external prop boundary; full multi-field reset required on each open/close cycle; component persists across open/close so useState initializer is insufficient (2026-05-05) */
+  useEffect(() => {
+    if (!isOpen) {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+        successTimeoutRef.current = null;
+      }
+      setScanStatus('loading');
+      setMatchedTable(null);
+      hasScannedRef.current = false;
+      return;
+    }
+    hasScannedRef.current = false;
+    setScanStatus('loading');
+    setMatchedTable(null);
+  }, [isOpen]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-      // Try to match table from the tables prop
+  // loading -> scanning transition (gives camera time to init)
+  useEffect(() => {
+    if (!isOpen || scanStatus !== 'loading') return;
+    const timer = setTimeout(() => setScanStatus('scanning'), 600);
+    return () => clearTimeout(timer);
+  }, [isOpen, scanStatus]);
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+    };
+  }, []);
+
+  const submitManualTable = useCallback(() => {
+    const value = manualInputRef.current?.value.trim();
+    if (value) {
+      onScan({ tableNumber: value, menuSlug: null, rawData: value, isUrl: false });
+      onClose();
+    }
+  }, [onScan, onClose]);
+
+  const handleScan = useCallback(
+    (detectedCodes: IDetectedBarcode[]) => {
+      if (hasScannedRef.current || detectedCodes.length === 0) return;
+      hasScannedRef.current = true;
+
+      const result = parseQRData(detectedCodes[0].rawValue);
+
       if (result.tableNumber && tables && tables.length > 0) {
+        const normalizedScanned = result.tableNumber.toLowerCase();
         const found = tables.find(
-          (t) =>
-            t.table_number === result.tableNumber ||
-            t.table_number === result.tableNumber?.toUpperCase() ||
-            t.display_name === result.tableNumber,
+          (tbl) =>
+            tbl.table_number.toLowerCase() === normalizedScanned ||
+            tbl.display_name.toLowerCase() === normalizedScanned,
         );
-        if (found) {
-          setMatchedTable(found.table_number);
-        }
+        if (found) setMatchedTable(found.table_number);
       }
 
-      // Brief delay to show success animation, then callback
-      setTimeout(() => {
+      setScanStatus('success');
+      successTimeoutRef.current = setTimeout(() => {
         onScan(result);
         onClose();
       }, 800);
@@ -112,233 +130,178 @@ export default function QRScanner({
     [onScan, onClose, tables],
   );
 
-  // Start/stop scanner when modal opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      if (html5QrCodeRef.current) {
-        try {
-          html5QrCodeRef.current.stop().catch(() => {});
-        } catch {
-          // stop() throws synchronously if scanner was never started
-        }
-        html5QrCodeRef.current = null;
-      }
-      setScanStatus('loading');
-      setMatchedTable(null);
-      return;
+  const handleError = useCallback((error: unknown) => {
+    const errStr = error instanceof Error ? error.message : String(error);
+    if (errStr.includes('NotAllowedError') || errStr.includes('Permission denied')) {
+      logger.warn('Camera permission denied');
+    } else {
+      logger.error('Camera error', error);
     }
-
-    hasScannedRef.current = false;
-    setScanStatus('loading');
-
-    const loadScanner = async () => {
-      try {
-        const qrModule = html5QrcodeModule || (await import('html5-qrcode'));
-        html5QrcodeModule = qrModule;
-
-        if (!scannerRef.current || !isOpen) return;
-
-        const qrCode = new qrModule.Html5Qrcode(scannerRef.current.id);
-        html5QrCodeRef.current = qrCode;
-
-        await qrCode.start(
-          { facingMode: 'environment' },
-          {
-            fps: 15,
-            qrbox: { width: 220, height: 220 },
-            aspectRatio: 1,
-          },
-          (decodedText: string) => {
-            if (hasScannedRef.current || !html5QrCodeRef.current) return;
-            hasScannedRef.current = true;
-            setScanStatus('success');
-
-            const currentScanner = html5QrCodeRef.current;
-            html5QrCodeRef.current = null;
-
-            currentScanner
-              .stop()
-              .then(() => processQRCode(decodedText))
-              .catch(() => processQRCode(decodedText));
-          },
-          () => {}, // Ignore continuous parse errors
-        );
-
-        setScanStatus('scanning');
-      } catch (err) {
-        logger.error('Camera error', err);
-        html5QrCodeRef.current = null;
-        setScanStatus('error');
-      }
-    };
-
-    loadScanner();
-
-    return () => {
-      if (html5QrCodeRef.current) {
-        try {
-          html5QrCodeRef.current.stop().catch(() => {});
-        } catch {
-          // stop() throws synchronously if scanner was never started
-        }
-        html5QrCodeRef.current = null;
-      }
-    };
-  }, [isOpen, processQRCode, retryCount]);
+    setScanStatus('error');
+  }, []);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
-        <h2 className="text-white font-semibold text-lg">{t('title')}</h2>
+    <div className="fixed inset-0 z-50 bg-black overflow-hidden">
+      {/* Camera feed — fills entire screen; library renders video in JSX, CSS works normally */}
+      {scanStatus !== 'error' && (
+        <Scanner
+          onScan={handleScan}
+          onError={handleError}
+          paused={scanStatus === 'success'}
+          constraints={{ facingMode: 'environment' }}
+          formats={['qr_code']}
+          components={{ finder: false, torch: false, onOff: false, zoom: false }}
+          styles={{
+            container: { position: 'absolute', inset: 0, padding: 0 },
+            video: { width: '100%', height: '100%', objectFit: 'cover' },
+          }}
+        />
+      )}
+
+      {/* Viewfinder overlay */}
+      {(scanStatus === 'scanning' || scanStatus === 'success') && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div
+            className="w-60 h-60"
+            style={{
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.62)',
+              borderRadius: 4,
+              position: 'relative',
+            }}
+          >
+            {/* Corner brackets */}
+            <div className="absolute -top-px -left-px w-7 h-7 border-t-2 border-l-2 border-white rounded-tl" />
+            <div className="absolute -top-px -right-px w-7 h-7 border-t-2 border-r-2 border-white rounded-tr" />
+            <div className="absolute -bottom-px -left-px w-7 h-7 border-b-2 border-l-2 border-white rounded-bl" />
+            <div className="absolute -bottom-px -right-px w-7 h-7 border-b-2 border-r-2 border-white rounded-br" />
+
+            {/* Scan line */}
+            {scanStatus === 'scanning' && (
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent animate-[scan_2s_ease-in-out_infinite]" />
+            )}
+
+            {/* Success overlay */}
+            {scanStatus === 'success' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/15 rounded animate-[fadeIn_0.3s_ease-out]">
+                <CheckCircle2 className="w-14 h-14 text-white" />
+                {matchedTable && (
+                  <p className="text-white font-bold text-base mt-2 px-3 text-center">
+                    {t('tableMatched', { table: matchedTable })}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Status text */}
+          <div className="mt-6 text-center px-8">
+            {scanStatus === 'scanning' && <p className="text-white/80 text-sm">{t('placeQR')}</p>}
+            {scanStatus === 'success' && (
+              <p className="text-white text-sm font-semibold">{t('success')}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Header — always on top */}
+      <div
+        className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5"
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)', paddingBottom: '16px' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+            <ScanLine className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-white font-bold text-base tracking-tight">{t('title')}</h2>
+        </div>
         <Button
           variant="ghost"
           size="icon"
           aria-label={t('close')}
           onClick={onClose}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20"
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 pointer-events-auto"
         >
-          <X className="w-5 h-5 text-white" />
+          <X className="w-4 h-4 text-white" />
         </Button>
       </div>
 
-      {/* Scanner Container */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Loading state */}
+      {scanStatus === 'loading' && (
         <div
-          id="qr-reader"
-          ref={scannerRef}
-          className="w-full h-full"
-          style={{
-            opacity: scanStatus === 'scanning' || scanStatus === 'success' ? 1 : 0,
-            transition: 'opacity 0.2s ease',
-          }}
-        />
-
-        {/* Scanner Frame Overlay */}
-        {scanStatus !== 'error' && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-56 h-56">
-                {/* Corner frames */}
-                <div className="absolute -top-1 -left-1 w-8 h-8 border-t-3 border-l-3 border-amber-500 rounded-tl-lg" />
-                <div className="absolute -top-1 -right-1 w-8 h-8 border-t-3 border-r-3 border-amber-500 rounded-tr-lg" />
-                <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-3 border-l-3 border-amber-500 rounded-bl-lg" />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-3 border-r-3 border-amber-500 rounded-br-lg" />
-
-                {/* Scanning line animation */}
-                {scanStatus === 'scanning' && (
-                  <div className="absolute top-0 left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent animate-[scan_2s_ease-in-out_infinite]" />
-                )}
-
-                {/* Success indicator */}
-                {scanStatus === 'success' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-amber-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
-                    <CheckCircle2 className="w-12 h-12 text-amber-500" />
-                    {matchedTable && (
-                      <p className="text-amber-500 font-bold text-lg mt-2">
-                        {t('tableMatched', { table: matchedTable })}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+          className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center"
+          style={{ top: 'calc(64px + env(safe-area-inset-top, 0px))' }}
+        >
+          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
+            <Camera className="w-8 h-8 text-white/40 animate-pulse" />
           </div>
-        )}
-      </div>
+          <p className="mt-4 text-white/50 text-sm">{t('activating')}</p>
+        </div>
+      )}
 
-      {/* Bottom Info */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-safe bg-gradient-to-t from-black/80 to-transparent">
-        <div className="text-center">
-          {scanStatus === 'loading' && (
-            <div className="flex flex-col items-center gap-3">
-              <Camera className="w-6 h-6 text-white/60 animate-pulse" />
-              <p className="text-white/70 text-sm">{t('activating')}</p>
+      {/* Error state */}
+      {scanStatus === 'error' && (
+        <div
+          className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center px-6"
+          style={{ top: 'calc(64px + env(safe-area-inset-top, 0px))' }}
+        >
+          <div className="w-full max-w-xs flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+              <CameraOff className="w-7 h-7 text-white/30" />
             </div>
-          )}
+            <div className="text-center">
+              <p className="text-white text-base font-semibold">{t('cameraUnavailable')}</p>
+              <p className="text-white/40 text-xs mt-1 leading-relaxed">{t('cameraHint')}</p>
+            </div>
 
-          {scanStatus === 'scanning' && <p className="text-white/70 text-sm">{t('placeQR')}</p>}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                hasScannedRef.current = false;
+                setScanStatus('loading');
+              }}
+              className="w-full h-11 bg-white/10 text-white rounded-[var(--radius-card)] text-sm font-medium hover:bg-white/20 flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {t('retry')}
+            </Button>
 
-          {scanStatus === 'success' && (
-            <p className="text-amber-500 text-sm font-semibold">{t('success')}</p>
-          )}
-
-          {scanStatus === 'error' && (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                <CameraOff className="w-7 h-7 text-white/40" />
-              </div>
-              <div>
-                <p className="text-white/80 text-sm font-medium">{t('cameraUnavailable')}</p>
-                <p className="text-white/40 text-xs mt-1">{t('cameraHint')}</p>
-              </div>
-              <div className="flex gap-3 mt-1">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setScanStatus('loading');
-                    setRetryCount((c) => c + 1);
-                  }}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 flex items-center gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  {t('retry') || 'Reessayer'}
-                </Button>
-                {onManualEntry && (
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      onClose();
-                      onManualEntry();
-                    }}
-                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-white/90"
-                  >
-                    <Hash className="w-4 h-4" />
-                    {t('enterManually')}
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  onClick={onClose}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20"
-                >
-                  {t('close')}
-                </Button>
-              </div>
-              {/* Manual table number input fallback */}
-              <div className="mt-4 w-full max-w-xs mx-auto">
-                <p className="text-sm text-center mb-2" style={{ color: '#737373' }}>
-                  {t('manualTableEntry') || 'Ou saisissez votre numero de table :'}
-                </p>
+            <div className="w-full">
+              <p className="text-xs text-center text-white/40 mb-2.5">{t('manualTableEntry')}</p>
+              <div className="flex gap-2">
                 <Input
+                  ref={manualInputRef}
                   type="text"
-                  placeholder="Ex: 12"
-                  className="text-center bg-white/10 text-white border-white/20 placeholder:text-white/30"
+                  inputMode="numeric"
+                  placeholder={t('inputPlaceholder')}
+                  className="flex-1 text-center bg-white/10 text-white border-white/20 placeholder:text-white/30 rounded-[var(--radius-card)]"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const value = (e.target as HTMLInputElement).value.trim();
-                      if (value) {
-                        onScan({
-                          tableNumber: value,
-                          menuSlug: null,
-                          rawData: value,
-                          isUrl: false,
-                        });
-                        onClose();
-                      }
-                    }
+                    if (e.key === 'Enter') submitManualTable();
                   }}
                 />
+                <Button
+                  type="button"
+                  onClick={submitManualTable}
+                  className="min-h-[44px] bg-white text-[var(--color-ink)] font-semibold rounded-[var(--radius-card)] px-4 hover:bg-white/90"
+                >
+                  {t('confirmTable')}
+                </Button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Scan animation keyframes */}
-      <style jsx>{`
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="text-white/30 text-xs hover:text-white/50 min-h-[44px]"
+            >
+              {t('close')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
         @keyframes scan {
           0%,
           100% {
@@ -346,14 +309,14 @@ export default function QRScanner({
             opacity: 0.5;
           }
           50% {
-            transform: translateY(210px);
+            transform: translateY(238px);
             opacity: 1;
           }
         }
         @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: scale(0.8);
+            transform: scale(0.9);
           }
           to {
             opacity: 1;

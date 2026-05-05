@@ -78,7 +78,7 @@ export function PromoSection({
             size="icon"
             onClick={onRemove}
             aria-label={labels.ariaRemovePromo}
-            className="p-2 min-h-[36px] min-w-[36px] text-[#737373] hover:text-[#FF3008]"
+            className="p-2 min-h-[44px] min-w-[44px] text-[#737373] hover:text-[#FF3008]"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -118,7 +118,7 @@ export function PromoSection({
             setPromoInput('');
             setPromoError(null);
           }}
-          className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+          className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
         >
           <X className="w-4 h-4" />
         </Button>

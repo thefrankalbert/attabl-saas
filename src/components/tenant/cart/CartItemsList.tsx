@@ -113,7 +113,7 @@ export function CartItemsList({
                     size="icon"
                     onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                     aria-label={labels.decrease}
-                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
+                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[44px] min-w-[44px]"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
@@ -125,7 +125,7 @@ export function CartItemsList({
                     size="icon"
                     onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                     aria-label={labels.increase}
-                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
+                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[44px] min-w-[44px]"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -153,7 +153,7 @@ export function CartItemsList({
                   variant="outline"
                   size="icon"
                   onClick={() => removeFromCart(itemKey)}
-                  className="absolute -bottom-2 -right-2 z-10 w-7 h-7 rounded-full bg-white border-[#EEEEEE] text-[#B0B0B0] hover:text-[#FF3008]"
+                  className="absolute -bottom-2 -right-2 z-10 w-7 h-7 min-h-[44px] min-w-[44px] rounded-full bg-white border-[#EEEEEE] text-[#B0B0B0] hover:text-[#FF3008]"
                   aria-label={labels.remove}
                 >
                   <Trash2 className="w-3.5 h-3.5" />

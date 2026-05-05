@@ -46,7 +46,7 @@ export const createOrderSchema = z.object({
     .min(1, 'Le panier ne peut pas être vide')
     .max(50, 'Maximum 50 articles par commande'),
   notes: z.string().max(500, 'Les notes ne doivent pas dépasser 500 caractères').optional(),
-  tableNumber: z.string().max(10).optional(),
+  tableNumber: z.string().max(50).optional(),
   customerName: z.string().max(100).optional(),
   customerPhone: z.string().max(20).optional(),
   // ─── Production upgrade ──────────────────────────────

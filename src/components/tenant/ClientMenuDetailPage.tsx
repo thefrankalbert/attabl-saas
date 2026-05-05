@@ -2,25 +2,22 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import BottomNav from '@/components/tenant/BottomNav';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
 import TablePicker from '@/components/tenant/TablePicker';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
-import SearchOverlay from '@/components/tenant/SearchOverlay';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
@@ -42,8 +39,9 @@ interface ClientMenuDetailPageProps {
   initialTable?: string;
   initialVenueSlug?: string;
   initialSection?: string;
+  initialItemId?: string;
   categories: Category[];
-  itemsByCategory: { id: string; name: string; items: MenuItem[] }[];
+  itemsByCategory: { id: string; name: string; name_en?: string; items: MenuItem[] }[];
   zones: Zone[];
   tables: Table[];
 }
@@ -59,6 +57,7 @@ export default function ClientMenuDetailPage({
   initialTable,
   initialVenueSlug,
   initialSection,
+  initialItemId,
   categories,
   itemsByCategory,
   zones,
@@ -69,16 +68,12 @@ export default function ClientMenuDetailPage({
   const lang = locale.startsWith('en') ? 'en' : 'fr';
   const router = useRouter();
   const { toast } = useToast();
-  const { items: cartItems, grandTotal } = useCartData();
-  const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
-  const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const { resolveAndFormatPrice } = useDisplayCurrency();
 
   // ─── State ─────────────────────────────────────────────
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [, setTableNumber] = useState<string | null>(initialTable || null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Menu navigation state - auto-select menu containing the target section
@@ -129,15 +124,12 @@ export default function ClientMenuDetailPage({
   // Realtime availability
   const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
 
-  // Filter chips (client-side)
-  type DietFilter = 'all' | 'vegetarian' | 'spicy' | 'under';
-  const [dietFilter, setDietFilter] = useState<DietFilter>('all');
+  const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
 
-  // ─── Table from localStorage ────────────────────────────
+  // ─── Persist table from URL param to localStorage ───────
   useEffect(() => {
-    if (!initialTable && typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`attabl_${tenant.slug}_table`);
-      if (saved) setTableNumber(saved);
+    if (initialTable) {
+      localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
     }
   }, [initialTable, tenant.slug]);
 
@@ -159,15 +151,30 @@ export default function ClientMenuDetailPage({
     };
 
     // Try after initial render, retry if element not yet in DOM
+    let t2: ReturnType<typeof setTimeout> | null = null;
     const t1 = setTimeout(() => {
       if (!scrollToCategory()) {
-        const t2 = setTimeout(scrollToCategory, 600);
-        return () => clearTimeout(t2);
+        t2 = setTimeout(scrollToCategory, 600);
       }
     }, 300);
 
-    return () => clearTimeout(t1);
+    return () => {
+      clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+    };
   }, [initialSection, categories]);
+
+  // ─── Open item detail from URL param ──────────────────
+  useEffect(() => {
+    if (!initialItemId) return;
+    for (const group of itemsByCategory) {
+      const found = group.items.find((i) => i.id === initialItemId);
+      if (found) {
+        setSelectedItem(found);
+        return;
+      }
+    }
+  }, [initialItemId, itemsByCategory]);
 
   // ─── Realtime subscriptions ────────────────────────────
   const handleRealtimeRefresh = useCallback(() => {
@@ -210,7 +217,7 @@ export default function ClientMenuDetailPage({
       setActiveMenuSlug(filteredMenus[0].slug);
       setActiveSubMenuId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: reset menu only when venue changes, not on every filteredMenus/activeMenuSlug mutation (2026-05-04)
   }, [activeVenueId]);
 
   const activeMenu = filteredMenus.find((m) => m.slug === activeMenuSlug) || null;
@@ -233,32 +240,6 @@ export default function ClientMenuDetailPage({
         return activeMenuIds.includes(category.menu_id);
       });
 
-  // Compute "under" threshold as median price of current (menu-filtered) items
-  const underThreshold = useMemo(() => {
-    const allPrices = menuFilteredByCategory
-      .flatMap((c) => c.items.map((i) => i.price))
-      .filter((p): p is number => typeof p === 'number' && p > 0)
-      .sort((a, b) => a - b);
-    if (allPrices.length === 0) return 0;
-    return allPrices[Math.floor(allPrices.length / 2)];
-  }, [menuFilteredByCategory]);
-
-  // Apply diet filter chips
-  const filteredItemsByCategory = useMemo(() => {
-    if (dietFilter === 'all') return menuFilteredByCategory;
-    return menuFilteredByCategory
-      .map((cat) => ({
-        ...cat,
-        items: cat.items.filter((item) => {
-          if (dietFilter === 'vegetarian') return !!item.is_vegetarian;
-          if (dietFilter === 'spicy') return !!item.is_spicy;
-          if (dietFilter === 'under') return item.price > 0 && item.price <= underThreshold;
-          return true;
-        }),
-      }))
-      .filter((cat) => cat.items.length > 0);
-  }, [menuFilteredByCategory, dietFilter, underThreshold]);
-
   // Filter categories for CategoryNav - must match menuFilteredByCategory logic
   const filteredCategories = !hasMultipleMenus
     ? categories
@@ -275,11 +256,11 @@ export default function ClientMenuDetailPage({
   // Build category item counts for nav pills
   const categoryItemCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const cat of filteredItemsByCategory) {
+    for (const cat of menuFilteredByCategory) {
       counts[cat.id] = cat.items.length;
     }
     return counts;
-  }, [filteredItemsByCategory]);
+  }, [menuFilteredByCategory]);
 
   // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
   const normalize = useCallback(
@@ -308,7 +289,6 @@ export default function ClientMenuDetailPage({
   // ─── Handlers ──────────────────────────────────────────
 
   const handleTableSelect = (table: Table) => {
-    setTableNumber(table.table_number);
     localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
       title: t('tableSelected'),
@@ -328,7 +308,6 @@ export default function ClientMenuDetailPage({
       if (matchedTable) {
         handleTableSelect(matchedTable);
       } else {
-        setTableNumber(result.tableNumber);
         localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
           title: t('tableIdentified'),
@@ -373,127 +352,110 @@ export default function ClientMenuDetailPage({
   // instead via the header back button.
   const hideMenuTabsRow = !!initialMenuSlug && filteredMenus.length > 1;
 
-  // ─── Render ────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────
   return (
     <div
       className="flex-1 w-full bg-white"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ═══ HEADER + SEARCH (same row) ═══ */}
-      <div className="px-3 py-2 flex items-center gap-2 bg-white">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push(`/sites/${tenant.slug}`)}
-          className="w-9 h-9 rounded-full bg-app-elevated flex-shrink-0"
-          aria-label={t('ariaGoBack')}
-        >
-          <ChevronLeft className="w-5 h-5 text-[#1A1A1A]" />
-        </Button>
-        <div className="relative flex-1 min-w-0">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#B0B0B0]">
-            <Search className="w-4 h-4" strokeWidth={1.5} />
-          </div>
-          <Input
-            type="text"
-            placeholder={t('searchMenu')}
-            className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0 bg-[#F6F6F6] rounded-[10px] h-10 text-[#1A1A1A]"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* ═══ SEARCH RESULTS DROPDOWN ═══ */}
-      <div className="px-4 bg-white">
-        {/* Inline search results */}
-        {searchQuery.length >= 2 && searchResults.length === 0 && (
-          <p className="text-center text-sm py-8 text-[#B0B0B0]">
-            {t('noSearchResults', { query: searchQuery })}
-          </p>
-        )}
-        {searchQuery.length >= 2 && searchResults.length > 0 && (
-          <div className="mt-2 rounded-xl overflow-hidden z-50 relative bg-white border border-[#EEEEEE] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-            <div className="p-2">
-              <h3 className="px-3 py-2 text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px]">
-                {t('dishesFound')}
-              </h3>
-              {searchResults.map((item) => (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedItem(item);
-                    setSearchQuery('');
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto hover:bg-[#F6F6F6]"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[#1A1A1A]">
-                      {lang === 'en' && item.name_en ? item.name_en : item.name}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold flex-shrink-0 text-[#1A1A1A]">
-                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-[#B0B0B0]" />
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ═══ VENUE FILTER PILLS ═══ */}
-      {venues && venues.length > 1 && !hideVenueRow && (
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide bg-white">
+      {/* ═══ HEADER (two rows) ═══ */}
+      <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
+        {/* Row 1: navigation + identity + cart */}
+        <div className="px-3 pt-2 pb-1.5 flex items-center gap-2">
           <Button
             variant="ghost"
-            onClick={() => setActiveVenueId(null)}
-            className={cn(
-              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
-              !activeVenueId ? 'bg-[#1A1A1A] text-white' : 'bg-[#F6F6F6] text-[#737373]',
-            )}
+            size="icon"
+            onClick={() => router.push(`/sites/${tenant.slug}`)}
+            className="w-9 h-9 rounded-full bg-app-elevated flex-shrink-0"
+            aria-label={t('ariaGoBack')}
           >
-            {t('allFilter')}
+            <ChevronLeft className="w-5 h-5 text-[#1A1A1A]" />
           </Button>
-          {venues.map((venue) => (
-            <Button
-              key={venue.id}
-              variant="ghost"
-              onClick={() => setActiveVenueId(venue.id)}
-              className={cn(
-                'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
-                activeVenueId === venue.id
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F6F6F6] text-[#737373]',
-              )}
-            >
-              {venue.name}
-            </Button>
-          ))}
+          <h1 className="flex-1 text-center text-[15px] font-bold text-[#1A1A1A] truncate">
+            {tenant.name}
+          </h1>
+          <div className="w-9 flex-shrink-0" />
         </div>
-      )}
+        {/* Row 2: composite search bar (selector prefix + search input) */}
+        <div className="px-3 pb-2">
+          <div className="flex items-center bg-[#F6F6F6] rounded-[10px] h-9 overflow-hidden">
+            {((!hideVenueRow && venues.length > 1) ||
+              (filteredMenus.length > 1 && !hideMenuTabsRow)) && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsMenuSheetOpen(true)}
+                  className="flex items-center gap-1 h-full pl-3 pr-2 flex-shrink-0 rounded-none hover:bg-transparent focus-visible:ring-0"
+                  aria-haspopup="dialog"
+                  aria-label={t('sheetMenuTitle')}
+                >
+                  <span className="text-[12px] font-medium text-[#1A1A1A] truncate max-w-[80px]">
+                    {filteredMenus.length > 1 && !hideMenuTabsRow && activeMenu
+                      ? activeMenu.name
+                      : activeVenueId
+                        ? (venues.find((v) => v.id === activeVenueId)?.name ?? t('allFilter'))
+                        : t('allFilter')}
+                  </span>
+                  <ChevronDown className="w-3 h-3 flex-shrink-0 text-[#1A1A1A]" />
+                </Button>
+                <div className="w-px h-4 bg-[#DDDDDD] flex-shrink-0" />
+              </>
+            )}
+            <div className="relative flex-1 min-w-0">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#B0B0B0]">
+                <Search className="w-4 h-4" strokeWidth={1.5} />
+              </div>
+              <Input
+                type="text"
+                placeholder={t('searchMenu')}
+                className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0 bg-transparent rounded-none h-9 text-[#1A1A1A]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* ═══ MENU TABS (multiple menus) ═══ */}
-      {filteredMenus.length > 1 && !hideMenuTabsRow && (
-        <div className="px-4 mb-3">
-          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide" data-tab-pane>
-            {filteredMenus.map((menu) => (
-              <Button
-                key={menu.slug}
-                variant="ghost"
-                onClick={() => handleMenuChange(menu.slug)}
-                className={cn(
-                  'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto text-[11px] font-medium uppercase tracking-[1px]',
-                  activeMenuSlug === menu.slug
-                    ? 'bg-[#1A1A1A] text-white'
-                    : 'bg-[#F6F6F6] text-[#737373]',
-                )}
-              >
-                {menu.name}
-              </Button>
-            ))}
+      {/* ═══ SEARCH RESULTS OVERLAY ═══ */}
+      {searchQuery.length >= 2 && (
+        <div className="fixed inset-x-0 top-[94px] bottom-0 z-[35] bg-white overflow-y-auto">
+          <div className="px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+            {searchResults.length === 0 && (
+              <p className="text-center text-sm py-8 text-[#B0B0B0]">
+                {t('noSearchResults', { query: searchQuery })}
+              </p>
+            )}
+            {searchResults.length > 0 && (
+              <div className="rounded-xl overflow-hidden bg-white border border-[#EEEEEE] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+                <div className="p-2">
+                  <h3 className="px-3 py-2 text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px]">
+                    {t('dishesFound')}
+                  </h3>
+                  {searchResults.map((item) => (
+                    <Button
+                      key={item.id}
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setSearchQuery('');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto hover:bg-[#F6F6F6]"
+                    >
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <p className="text-sm font-bold text-[#1A1A1A] truncate">
+                          {lang === 'en' && item.name_en ? item.name_en : item.name}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold flex-shrink-0 text-[#1A1A1A]">
+                        {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#B0B0B0]" />
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -550,61 +512,24 @@ export default function ClientMenuDetailPage({
           </div>
         )}
 
-      {/* ═══ FILTER CHIPS (diet / price) - hidden on carte-detail view ═══
-          Rule: on a specific ?menu=X view we keep a SINGLE navigation row
-          (CategoryNav). Diet filters stay accessible via the search overlay. */}
-      {!initialMenuSlug && (
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide bg-white">
-          {(
-            [
-              { key: 'all', label: t('filterAll') },
-              { key: 'vegetarian', label: t('filterVegetarian') },
-              { key: 'spicy', label: t('filterSpicy') },
-              {
-                key: 'under',
-                label: t('filterUnder', {
-                  price:
-                    underThreshold > 0 ? formatDisplayPrice(underThreshold, tenant.currency) : '',
-                }),
-              },
-            ] as { key: DietFilter; label: string }[]
-          ).map((chip) => {
-            const isActive = dietFilter === chip.key;
-            return (
-              <Button
-                key={chip.key}
-                variant="ghost"
-                onClick={() => setDietFilter(chip.key)}
-                className={cn(
-                  'flex-shrink-0 whitespace-nowrap h-auto px-4 py-2 rounded-[24px] text-[11px] font-medium uppercase tracking-[1px] leading-[1.4]',
-                  isActive ? 'bg-[#1A1A1A] text-white' : 'bg-[#F6F6F6] text-[#737373]',
-                )}
-              >
-                {chip.label}
-              </Button>
-            );
-          })}
-        </div>
-      )}
-
       {/* ═══ CATEGORY NAVIGATION (sticky breadcrumb) ═══ */}
       {filteredCategories && filteredCategories.length > 0 && (
         <CategoryNav
           categories={filteredCategories}
           itemCounts={categoryItemCounts}
-          topOffset={0}
+          topOffset={94}
         />
       )}
 
       {/* ═══ MENU ITEMS LIST ═══ */}
-      {filteredItemsByCategory.length > 0 ? (
+      {menuFilteredByCategory.length > 0 ? (
         <div className="mt-4">
-          {filteredItemsByCategory.map(
+          {menuFilteredByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[112px]">
-                  {/* Sticky section header - sits below sticky category nav */}
-                  <div className="sticky top-12 z-20 bg-white border-b border-[#EEEEEE] px-4 pt-4 pb-[14px]">
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[150px]">
+                  {/* Sticky section header - sits below sticky search header (56px) + category nav (48px) */}
+                  <div className="sticky top-[142px] z-20 bg-white border-b border-[#EEEEEE] px-4 pt-4 pb-[14px]">
                     <h2 className="text-[20px] font-bold text-[#1A1A1A] leading-[1.4]">
                       {category.name}
                     </h2>
@@ -635,9 +560,7 @@ export default function ClientMenuDetailPage({
                   </div>
 
                   {/* Spacer between sections */}
-                  {catIndex < filteredItemsByCategory.length - 1 && (
-                    <div className="h-5 bg-white" />
-                  )}
+                  {catIndex < menuFilteredByCategory.length - 1 && <div className="h-5 bg-white" />}
                 </section>
               ),
           )}
@@ -647,34 +570,6 @@ export default function ClientMenuDetailPage({
           <div className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto bg-white border border-[#EEEEEE]">
             <p className="font-medium text-[#B0B0B0]">{t('noMenuAvailable')}</p>
           </div>
-        </div>
-      )}
-
-      {/* ═══ FLOATING CART BAR (compact, fit-content, centered) ═══ */}
-      {totalCartItems > 0 && (
-        <div
-          className="fixed left-0 right-0 z-40 flex justify-center px-4"
-          style={{ bottom: 'calc(60px + env(safe-area-inset-bottom, 0px) + 16px)' }}
-        >
-          <Link
-            href={`/sites/${tenant.slug}/cart`}
-            className="inline-flex items-center gap-2.5 px-4 no-underline bg-[#1A1A1A] rounded-full h-12 text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] max-w-[calc(100%-32px)]"
-          >
-            <ShoppingCart className="w-5 h-5 flex-shrink-0 text-white" />
-            <span className="text-[14px] font-semibold text-white whitespace-nowrap">
-              {t('viewCart')}
-            </span>
-            <span className="text-[14px] font-bold text-white whitespace-nowrap">
-              {totalCartItems}
-            </span>
-            <span
-              aria-hidden="true"
-              className="inline-block rounded-full bg-white w-[5px] h-[5px]"
-            />
-            <span className="text-[14px] font-bold text-white whitespace-nowrap">
-              {formatDisplayPrice(grandTotal, tenant.currency)}
-            </span>
-          </Link>
         </div>
       )}
 
@@ -702,19 +597,83 @@ export default function ClientMenuDetailPage({
         currency={tenant.currency}
       />
 
-      <SearchOverlay
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        items={allItems}
-        restaurantId={tenant.id}
-        currency={tenant.currency}
-        onOpenDetail={(item) => {
-          setIsSearchOpen(false);
-          setSelectedItem(item);
-        }}
-      />
-
-      <BottomNav tenantSlug={tenant.slug} />
+      <Sheet open={isMenuSheetOpen} onOpenChange={setIsMenuSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader className="text-left mb-4">
+            <SheetTitle>{t('sheetMenuTitle')}</SheetTitle>
+          </SheetHeader>
+          {filteredMenus.length > 1 && !hideMenuTabsRow && (
+            <div className="mb-4">
+              <p className="text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px] mb-2">
+                {t('sheetMenuSection')}
+              </p>
+              <div className="flex flex-col gap-1">
+                {filteredMenus.map((menu) => (
+                  <Button
+                    key={menu.slug}
+                    variant="ghost"
+                    onClick={() => {
+                      handleMenuChange(menu.slug);
+                      setIsMenuSheetOpen(false);
+                    }}
+                    className={cn(
+                      'justify-between h-11 px-3 rounded-xl',
+                      activeMenuSlug === menu.slug
+                        ? 'bg-[#F6F6F6] font-semibold text-[#1A1A1A]'
+                        : 'text-[#737373]',
+                    )}
+                  >
+                    <span className="truncate">{menu.name}</span>
+                    {activeMenuSlug === menu.slug && <Check className="w-4 h-4 flex-shrink-0" />}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {venues.length > 1 && !hideVenueRow && (
+            <div>
+              <p className="text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px] mb-2">
+                {t('sheetVenueSection')}
+              </p>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setActiveVenueId(null);
+                    setIsMenuSheetOpen(false);
+                  }}
+                  className={cn(
+                    'justify-between h-11 px-3 rounded-xl',
+                    !activeVenueId ? 'bg-[#F6F6F6] font-semibold text-[#1A1A1A]' : 'text-[#737373]',
+                  )}
+                >
+                  {t('allFilter')}
+                  {!activeVenueId && <Check className="w-4 h-4" />}
+                </Button>
+                {venues.map((venue) => (
+                  <Button
+                    key={venue.id}
+                    variant="ghost"
+                    onClick={() => {
+                      setActiveVenueId(venue.id);
+                      setIsMenuSheetOpen(false);
+                    }}
+                    className={cn(
+                      'justify-between h-11 px-3 rounded-xl',
+                      activeVenueId === venue.id
+                        ? 'bg-[#F6F6F6] font-semibold text-[#1A1A1A]'
+                        : 'text-[#737373]',
+                    )}
+                  >
+                    <span className="truncate">{venue.name}</span>
+                    {activeVenueId === venue.id && <Check className="w-4 h-4 flex-shrink-0" />}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
