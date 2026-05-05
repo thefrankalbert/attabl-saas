@@ -53,15 +53,20 @@ const PLAN_KEYS: Record<string, { label: string; price: string; description: str
     price: 'addRestaurant.planTrialPrice',
     description: 'addRestaurant.planTrialDesc',
   },
-  essentiel: {
-    label: 'addRestaurant.planEssentielLabel',
-    price: 'addRestaurant.planEssentielPrice',
-    description: 'addRestaurant.planEssentielDesc',
+  starter: {
+    label: 'addRestaurant.planStarterLabel',
+    price: 'addRestaurant.planStarterPrice',
+    description: 'addRestaurant.planStarterDesc',
   },
-  premium: {
-    label: 'addRestaurant.planPremiumLabel',
-    price: 'addRestaurant.planPremiumPrice',
-    description: 'addRestaurant.planPremiumDesc',
+  pro: {
+    label: 'addRestaurant.planProLabel',
+    price: 'addRestaurant.planProPrice',
+    description: 'addRestaurant.planProDesc',
+  },
+  business: {
+    label: 'addRestaurant.planBusinessLabel',
+    price: 'addRestaurant.planBusinessPrice',
+    description: 'addRestaurant.planBusinessDesc',
   },
 };
 

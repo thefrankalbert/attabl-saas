@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +60,9 @@ function AuthForm({ mode }: AuthFormProps) {
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const [cfToken, setCfToken] = useState('');
+  const turnstileSiteKey = useMemo(() => process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '', []);
 
   useEffect(() => {
     return () => {
@@ -104,6 +108,8 @@ function AuthForm({ mode }: AuthFormProps) {
             email,
             password,
             plan: 'starter',
+            website: honeypotRef.current?.value ?? '',
+            cfToken,
           }),
         });
 
@@ -120,7 +126,12 @@ function AuthForm({ mode }: AuthFormProps) {
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({
+            email,
+            password,
+            website: honeypotRef.current?.value ?? '',
+            cfToken,
+          }),
         });
 
         const data = await response.json();
@@ -343,6 +354,16 @@ function AuthForm({ mode }: AuthFormProps) {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="absolute -top-[9999px] -left-[9999px] overflow-hidden" aria-hidden="true">
+          <Input
+            ref={honeypotRef}
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            defaultValue=""
+          />
+        </div>
         <div className="space-y-1.5">
           <Label
             htmlFor="email"
@@ -439,10 +460,20 @@ function AuthForm({ mode }: AuthFormProps) {
           </motion.div>
         )}
 
+        {turnstileSiteKey && (
+          <Turnstile
+            siteKey={turnstileSiteKey}
+            onSuccess={setCfToken}
+            onExpire={() => setCfToken('')}
+            onError={() => setCfToken('')}
+            options={{ theme: 'auto', size: 'normal' }}
+          />
+        )}
+
         <Button
           type="submit"
           className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-xl transition-all active:scale-[0.98]"
-          disabled={loading}
+          disabled={loading || (!!turnstileSiteKey && !cfToken)}
         >
           {loading ? (
             <>

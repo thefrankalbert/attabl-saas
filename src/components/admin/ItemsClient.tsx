@@ -59,6 +59,7 @@ import { ItemFormModal, type FormStep } from './items/ItemFormModal';
 
 interface ItemsClientProps {
   tenantId: string;
+  tenantSlug: string;
   initialItems: MenuItem[];
   initialCategories: Category[];
   currency?: CurrencyCode;
@@ -67,6 +68,7 @@ interface ItemsClientProps {
 
 export default function ItemsClient({
   tenantId,
+  tenantSlug,
   initialItems,
   initialCategories,
   currency = 'XAF',
@@ -222,7 +224,7 @@ export default function ItemsClient({
       setShowModal(false);
       loadItems();
       router.refresh();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch (err: unknown) {
       const pgErr = err as { message?: string; code?: string; details?: string; hint?: string };
       logger.error('Failed to save menu item', pgErr.message || err, {
@@ -250,7 +252,7 @@ export default function ItemsClient({
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     } finally {
@@ -264,7 +266,7 @@ export default function ItemsClient({
       await menuItemService.toggleAvailable(item.id, !item.is_available, tenantId);
       loadItems();
       router.refresh();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -277,7 +279,7 @@ export default function ItemsClient({
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
       router.refresh();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -359,7 +361,7 @@ export default function ItemsClient({
                   }
                   loadItems();
                   router.refresh();
-                  revalidateMenuCache();
+                  revalidateMenuCache(tenantSlug);
                 }}
               >
                 Toggle availability

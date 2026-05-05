@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useFavorites } from '@/hooks/useFavorites';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -56,7 +57,7 @@ export default function MenuItemCard({
     );
 
   // Initialize defaults
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: sets option/variant defaults from item props on mount; useEffect avoids stale closure vs useState initializer (2026-05-04) */
   useEffect(() => {
     if (item.options?.length) {
       const defaultOption = item.options.find((o) => o.is_default) || item.options[0];
@@ -167,7 +168,7 @@ export default function MenuItemCard({
   // Compute "new" flag: created within the last 14 days.
   // Date.now() is impure so we compute once on mount via useEffect.
   const [isNew, setIsNew] = useState(false);
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: Date.now() is impure and must run client-side to avoid hydration mismatch; cannot use useState initializer (2026-05-04) */
   useEffect(() => {
     if (!item.created_at) return;
     const created = new Date(item.created_at).getTime();
@@ -301,30 +302,39 @@ export default function MenuItemCard({
                   )}
                 />
               </Button>
-              {showVariantDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-app-border py-1 z-20 min-w-[160px]">
-                  {item.price_variants?.map((variant) => (
-                    <Button
-                      key={variant.id}
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedVariant(variant);
-                        setShowVariantDropdown(false);
-                      }}
-                      className={cn(
-                        'w-full px-3 py-2.5 text-left text-sm h-auto rounded-none',
-                        selectedVariant?.id === variant.id
-                          ? 'font-bold bg-app-elevated text-[#1A1A1A]'
-                          : 'text-app-text-secondary',
-                      )}
-                    >
-                      {getVariantName(variant)} -{' '}
-                      {resolveAndFormatPrice(variant.price, variant.prices, currency)}
-                    </Button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showVariantDropdown && (
+                  <motion.div
+                    className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-app-border py-1 z-20 min-w-[160px]"
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+                    style={{ transformOrigin: 'top left' }}
+                  >
+                    {item.price_variants?.map((variant) => (
+                      <Button
+                        key={variant.id}
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedVariant(variant);
+                          setShowVariantDropdown(false);
+                        }}
+                        className={cn(
+                          'w-full px-3 py-2.5 text-left text-sm h-auto rounded-none',
+                          selectedVariant?.id === variant.id
+                            ? 'font-bold bg-app-elevated text-[#1A1A1A]'
+                            : 'text-app-text-secondary',
+                        )}
+                      >
+                        {getVariantName(variant)} -{' '}
+                        {resolveAndFormatPrice(variant.price, variant.prices, currency)}
+                      </Button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -345,13 +355,14 @@ export default function MenuItemCard({
           toggleFavorite(item.id);
         }}
         className={cn(
-          'absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur hover:bg-white',
-          'shadow-sm transition-transform active:scale-90',
+          'absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur [@media(hover:hover)]:hover:bg-white',
+          'shadow-sm transition-transform duration-150 ease-out active:scale-[0.88]',
         )}
       >
         <Heart
           size={16}
-          className={cn('transition-colors', isFav ? 'fill-red-500 text-red-500' : 'text-gray-400')}
+          fill={isFav ? 'currentColor' : 'none'}
+          className={cn('transition-colors', isFav ? 'text-red-500' : 'text-gray-400')}
         />
       </Button>
 
@@ -369,7 +380,7 @@ export default function MenuItemCard({
                 fill
                 sizes="90px"
                 className={cn(
-                  'object-cover transition-opacity duration-300',
+                  'object-cover transition-opacity duration-200',
                   imageLoaded ? 'opacity-100' : 'opacity-0',
                 )}
                 onLoad={() => setImageLoaded(true)}
@@ -399,7 +410,7 @@ export default function MenuItemCard({
               }}
               disabled={isAdding}
               aria-label={tt('addShort')}
-              className="w-7 h-7 rounded-full bg-app-text hover:bg-black active:scale-85"
+              className="w-7 h-7 rounded-full bg-app-text hover:bg-black active:scale-[0.97] transition-transform duration-150 ease-out"
             >
               <Plus className="w-4 h-4 text-white" />
             </Button>

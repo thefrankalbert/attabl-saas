@@ -30,6 +30,7 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
     <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
       <AnnouncementsClient
         tenantId={tenant.id}
+        tenantSlug={tenantSlug}
         initialAnnouncements={(announcements as Announcement[]) || []}
       />
     </div>

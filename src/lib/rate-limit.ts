@@ -116,6 +116,13 @@ export const oauthSignupLimiter = createLimiter(
 /** Orders: 20 requests / minute per IP */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
 
+/** Payment initiation (Wave, Orange Money): 5 requests / minute per IP. Fail-closed. */
+export const paymentInitiationLimiter = createLimiter(
+  'payment-init',
+  Ratelimit.slidingWindow(5, '1 m'),
+  true,
+);
+
 /** Checkout: 5 requests / 10 minutes per IP. Fail-closed: block if Redis is down
  * in production to prevent unbounded checkout sessions during an outage. */
 export const checkoutLimiter = createLimiter('checkout', Ratelimit.slidingWindow(5, '10 m'), true);

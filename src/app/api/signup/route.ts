@@ -7,6 +7,9 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
+import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
+import { isHoneypotTriggered } from '@/lib/honeypot';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +36,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
     }
 
+    // 2.5 Honeypot check - silent bot rejection
+    if (isHoneypotTriggered(body)) {
+      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
+    }
+
+    // 2.6 Turnstile verification
+    const cfToken =
+      typeof (body as Record<string, unknown>).cfToken === 'string'
+        ? ((body as Record<string, unknown>).cfToken as string)
+        : '';
+    const turnstileOk = await verifyTurnstileToken(cfToken, ip);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
+    }
+
     const parseResult = signupSchema.safeParse(body);
     if (!parseResult.success) {
       const rawMessage = parseResult.error.issues[0]?.message ?? t('invalidDataFallback');
@@ -48,6 +66,24 @@ export async function POST(request: Request) {
     const signupService = createSignupService(supabase);
 
     const result = await signupService.completeEmailSignup(parseResult.data);
+
+    // A/B test: shorten trial to 7d if variant is assigned
+    const cookieHeader = request.headers.get('cookie') ?? '';
+    const trialVariant = parseAbTrialFromCookieHeader(cookieHeader);
+    if (trialVariant === '7d') {
+      const trialEndsAt = new Date(Date.now() + 7 * 86400000).toISOString();
+      const { data: updated, error: trialErr } = await supabase
+        .from('tenants')
+        .update({ trial_ends_at: trialEndsAt })
+        .eq('id', result.tenantId)
+        .select('id');
+      if (trialErr || !updated?.length) {
+        logger.warn('AB test: failed to apply 7d trial', {
+          error: trialErr,
+          tenantId: result.tenantId,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

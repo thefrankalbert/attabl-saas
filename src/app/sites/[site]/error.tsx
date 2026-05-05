@@ -32,23 +32,18 @@ export default function TenantError({
       code="500"
       brand={
         <div className="flex items-center gap-3">
-          <div className="rounded-xl p-2.5" style={{ backgroundColor: '#06C167' }}>
+          <div className="rounded-[var(--radius-card)] p-2.5 bg-[var(--color-brand)]">
             <UtensilsCrossed className="h-6 w-6 text-white" />
           </div>
-          <span className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
-            ATTABL
-          </span>
+          <span className="text-2xl font-bold text-[var(--color-ink)]">ATTABL</span>
         </div>
       }
       title={t('errorTitle')}
       description={t('errorHint')}
       debug={
         process.env.NODE_ENV === 'development' ? (
-          <div
-            className="p-3 rounded-xl text-left border border-[#EEEEEE]"
-            style={{ backgroundColor: '#FEF2F2' }}
-          >
-            <p className="text-xs font-mono break-all" style={{ color: '#DC2626' }}>
+          <div className="p-3 rounded-[var(--radius-card)] text-left border border-[var(--color-divider)] bg-red-50">
+            <p className="text-xs font-mono break-all text-[var(--color-status-error)]">
               {error.message}
             </p>
           </div>
@@ -58,8 +53,7 @@ export default function TenantError({
         <>
           <Button
             onClick={reset}
-            className="gap-2 h-12 rounded-xl text-white font-semibold px-6"
-            style={{ backgroundColor: '#1A1A1A' }}
+            className="gap-2 h-11 rounded-[var(--radius-card)] bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink-2)] font-semibold px-6"
           >
             <RefreshCw className="w-4 h-4" />
             {t('retry')}
@@ -67,8 +61,7 @@ export default function TenantError({
           <Button
             asChild
             variant="ghost"
-            className="gap-2 h-12 rounded-xl"
-            style={{ color: '#737373' }}
+            className="gap-2 h-11 rounded-[var(--radius-card)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
           >
             <Link href={site ? `/sites/${site}/menu` : '/'}>
               <ArrowLeft className="w-4 h-4" />

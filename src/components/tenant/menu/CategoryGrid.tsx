@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import type { Category } from '@/types/admin.types';
 import { MENU_COLORS as C, tr } from '@/lib/tenant/menu-tokens';
@@ -26,7 +27,7 @@ export function CategoryGrid({
 
   return (
     <div className="px-4">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {visible.map((cat) => {
           const label = tr(lang, cat.name, cat.name_en);
           return (
@@ -34,24 +35,22 @@ export function CategoryGrid({
               key={cat.id}
               variant="ghost"
               onClick={() => onSelect(cat)}
-              className="flex flex-col items-center gap-1.5 px-0 py-0 h-auto"
+              className="flex flex-col items-center gap-1.5 px-0 py-0 h-auto active:scale-[0.97] transition-transform duration-150"
             >
               <div
                 className="w-full aspect-square rounded-xl flex items-center justify-center"
                 style={{ background: C.surfaceAlt }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={getCategoryIcon(cat.name)}
                   alt={label}
-                  width={56}
-                  height={56}
-                  style={{ width: 56, height: 56, objectFit: 'contain' }}
-                  loading="lazy"
+                  width={48}
+                  height={48}
+                  style={{ objectFit: 'contain' }}
                 />
               </div>
               <span
-                className="text-[11px] font-medium text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
+                className="text-xs font-medium text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
                 style={{ color: C.textPrimary }}
               >
                 {label}

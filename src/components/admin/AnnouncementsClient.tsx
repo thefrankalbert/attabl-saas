@@ -17,14 +17,17 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
 import { createAnnouncementService } from '@/services/announcement.service';
+import { revalidateMenuCache } from '@/lib/revalidate';
 
 interface AnnouncementsClientProps {
   tenantId: string;
+  tenantSlug: string;
   initialAnnouncements: Announcement[];
 }
 
 export default function AnnouncementsClient({
   tenantId,
+  tenantSlug,
   initialAnnouncements,
 }: AnnouncementsClientProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
@@ -91,6 +94,7 @@ export default function AnnouncementsClient({
         toast({ title: t('announcementCreated') });
       }
 
+      revalidateMenuCache(tenantSlug);
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
@@ -132,6 +136,7 @@ export default function AnnouncementsClient({
       await announcementService.deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
       toast({ title: t('announcementDeletedConfirm') });
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -144,6 +149,7 @@ export default function AnnouncementsClient({
       setAnnouncements((prev) =>
         prev.map((a) => (a.id === announcement.id ? (data as Announcement) : a)),
       );
+      revalidateMenuCache(tenantSlug);
       toast({
         title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
       });

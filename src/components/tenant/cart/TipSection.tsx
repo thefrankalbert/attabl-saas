@@ -69,7 +69,7 @@ export function TipSection({
             setTipPreset(0);
             setCustomTipInput('');
           }}
-          className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+          className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
           aria-label={labels.close}
         >
           <X className="w-4 h-4" />

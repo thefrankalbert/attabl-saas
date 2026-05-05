@@ -13,6 +13,7 @@ import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
 import { verifyOrigin } from '@/lib/csrf';
+import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
 
 // Fallback translations for API routes where locale may not be resolved
 const FALLBACK_ERRORS: Record<string, string> = {
@@ -220,7 +221,56 @@ export async function POST(request: Request) {
       }
     });
 
-    // 10. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
+    // 10. Behavioral email triggers (fire-and-forget)
+    void (async () => {
+      try {
+        const [countResult, ownerResult, tenantExtResult] = await Promise.all([
+          adminSupabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('tenant_id', tenantId),
+          adminSupabase
+            .from('admin_users')
+            .select('email')
+            .eq('tenant_id', tenantId)
+            .eq('role', 'owner')
+            .maybeSingle(),
+          adminSupabase
+            .from('tenants')
+            .select('name, activation_events')
+            .eq('id', tenantId)
+            .single(),
+        ]);
+
+        const ordersCount = countResult.count ?? 0;
+        const adminEmail = ownerResult.data?.email;
+        if (!adminEmail) return;
+
+        const restaurantName = (tenantExtResult.data?.name as string | undefined) ?? tenantSlug;
+        const activationEvents =
+          (tenantExtResult.data?.activation_events as Record<string, string> | undefined) ?? {};
+        const dashboardUrl = `https://${tenantSlug}.attabl.com/admin`;
+
+        const eventKey = determineOrderEventKey({ ordersCount, activationEvents });
+        if (eventKey) {
+          const now = new Date().toISOString();
+          // Atomically claim the event slot - only update if key doesn't exist yet
+          const { data: claimed } = await adminSupabase
+            .from('tenants')
+            .update({ activation_events: { ...activationEvents, [eventKey]: now } })
+            .eq('id', tenantId)
+            .filter(`activation_events->>${eventKey}`, 'is', null)
+            .select('id');
+          if (claimed?.length) {
+            await sendOrderEmailForKey(eventKey, { adminEmail, restaurantName, dashboardUrl });
+          }
+        }
+      } catch (triggerErr) {
+        logger.warn('Order trigger email check failed (non-blocking)', { err: triggerErr });
+      }
+    })();
+
+    // 11. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
       'canAccessInventory',
       tenant?.subscription_plan as SubscriptionPlan | null,

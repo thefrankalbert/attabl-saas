@@ -96,7 +96,7 @@ export function UpsellSection({
                       <Button
                         size="icon"
                         onClick={() => onAdd(item)}
-                        className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] hover:bg-black active:scale-90"
+                        className="absolute bottom-2 right-2 z-10 min-h-[44px] min-w-[44px] rounded-full bg-[#1A1A1A] hover:bg-black active:scale-90"
                         aria-label={labels.ariaAdd(item.name)}
                       >
                         <Plus className="w-4 h-4 text-white" />
