@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useInterval } from 'usehooks-ts';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
@@ -96,7 +97,7 @@ export default function ClientOrders({
   const [loading, setLoading] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [, setTick] = useState(0); // force re-render for countdown
+  const [, setTick] = useState(0);
   const supabaseRef = useRef(createClient());
   const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const t = useTranslations('tenant');
@@ -211,16 +212,17 @@ export default function ClientOrders({
 
   // --- Countdown timer: edit window + ETA ------------------
 
-  useEffect(() => {
-    const hasEditable = orders.some(
-      (o) => EDITABLE_STATUSES.has(o.status) && isWithinEditWindow(o.created_at),
-    );
-    const hasActive = orders.some((o) => ACTIVE_STATUSES.has(o.status));
-    if (!hasEditable && !hasActive) return;
+  const hasTimeSensitiveOrders = useMemo(
+    () =>
+      orders.some(
+        (o) =>
+          (EDITABLE_STATUSES.has(o.status) && isWithinEditWindow(o.created_at)) ||
+          ACTIVE_STATUSES.has(o.status),
+      ),
+    [orders],
+  );
 
-    const interval = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(interval);
-  }, [orders]);
+  useInterval(() => setTick((n) => n + 1), hasTimeSensitiveOrders ? 1000 : null);
 
   // --- Track initial statuses for transition detection ------
 
