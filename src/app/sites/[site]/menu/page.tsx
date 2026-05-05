@@ -47,6 +47,7 @@ export default async function MenuDetailPage({
     t?: string;
     v?: string;
     section?: string;
+    item?: string;
   }>;
 }) {
   const { site } = await params;
@@ -55,6 +56,7 @@ export default async function MenuDetailPage({
   const initialMenuSlug = resolvedSearchParams.menu || undefined;
   const initialVenueSlug = resolvedSearchParams.v || undefined;
   const initialSection = resolvedSearchParams.section || undefined;
+  const initialItemId = resolvedSearchParams.item || undefined;
   const messages = await getMessages();
 
   const headersList = await headers();
@@ -171,6 +173,7 @@ export default async function MenuDetailPage({
         initialTable={initialTable}
         initialVenueSlug={initialVenueSlug}
         initialSection={initialSection}
+        initialItemId={initialItemId}
         categories={categories}
         itemsByCategory={itemsByCategory}
         zones={zones}

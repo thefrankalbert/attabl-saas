@@ -1,4 +1,4 @@
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { getAuthenticatedUser, AuthError } from '@/lib/auth/get-session';
 import { NextResponse } from 'next/server';
@@ -27,6 +27,21 @@ export async function POST(request: Request) {
     throw err;
   }
 
+  let slug: string | undefined;
+  try {
+    const body = (await request.json()) as unknown;
+    if (body && typeof body === 'object' && 'slug' in body) {
+      const s = (body as Record<string, unknown>).slug;
+      if (typeof s === 'string' && s.length > 0 && s.length < 100) slug = s;
+    }
+  } catch {
+    // body is optional
+  }
+
   revalidateTag(CACHE_TAG_MENUS, 'max');
+  if (slug) {
+    revalidatePath(`/sites/${slug}`);
+    revalidatePath(`/sites/${slug}/menu`);
+  }
   return NextResponse.json({ revalidated: true });
 }

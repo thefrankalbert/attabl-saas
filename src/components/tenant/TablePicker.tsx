@@ -36,7 +36,7 @@ export default function TablePicker({
   }, [selectedZone, tables]);
 
   // Initialize with first zone
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: initializes zone/table derived state when dialog opens or selection changes; no external system, but pattern is unavoidable without lifting state (2026-05-04) */
   useEffect(() => {
     if (isOpen && zones.length > 0 && !selectedZone) {
       setSelectedZone(zones[0]);

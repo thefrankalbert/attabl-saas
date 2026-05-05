@@ -67,6 +67,7 @@ import { createCategoryService } from '@/services/category.service';
 
 interface CategoriesClientProps {
   tenantId: string;
+  tenantSlug: string;
   initialCategories: Category[];
   menus: Pick<Menu, 'id' | 'name'>[];
 }
@@ -170,6 +171,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
 
 export default function CategoriesClient({
   tenantId,
+  tenantSlug,
   initialCategories,
   menus,
 }: CategoriesClientProps) {
@@ -186,6 +188,7 @@ export default function CategoriesClient({
   const [preparationZone, setPreparationZone] = useState<PreparationZone>('kitchen');
   const [isFeaturedOnHome, setIsFeaturedOnHome] = useState<boolean>(false);
   const [menuId, setMenuId] = useState<string>(menus[0]?.id || '');
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -252,7 +255,7 @@ export default function CategoriesClient({
           .map(({ id, display_order }) => ({ id, display_order }));
         const service = createCategoryService(supabase);
         await service.reorderCategories(tenantId, updates);
-        revalidateMenuCache();
+        revalidateMenuCache(tenantSlug);
       } catch (err: unknown) {
         // Rollback on error
         queryClient.setQueryData(['categories', tenantId, true], previous);
@@ -262,7 +265,7 @@ export default function CategoriesClient({
         setIsReordering(false);
       }
     },
-    [categories, supabase, tenantId, queryClient, toast, tc, isReordering],
+    [categories, supabase, tenantId, tenantSlug, queryClient, toast, tc, isReordering],
   );
 
   const featuredCount = categories.filter((c) => c.is_featured_on_home === true).length;
@@ -275,6 +278,7 @@ export default function CategoriesClient({
     setDisplayOrder(categories.length);
     setPreparationZone('kitchen');
     setIsFeaturedOnHome(false);
+    setIsActive(true);
     setMenuId(menus[0]?.id || '');
     setShowModal(true);
   };
@@ -286,6 +290,7 @@ export default function CategoriesClient({
     setDisplayOrder(cat.display_order || 0);
     setPreparationZone(cat.preparation_zone || 'kitchen');
     setIsFeaturedOnHome(cat.is_featured_on_home === true);
+    setIsActive(cat.is_active !== false);
     setMenuId(cat.menu_id || menus[0]?.id || '');
     setShowModal(true);
   };
@@ -301,6 +306,7 @@ export default function CategoriesClient({
         display_order: Number(displayOrder) || 0,
         preparation_zone: preparationZone,
         is_featured_on_home: isFeaturedOnHome,
+        is_active: isActive,
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
@@ -314,7 +320,7 @@ export default function CategoriesClient({
       }
       setShowModal(false);
       loadCategories();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -353,7 +359,7 @@ export default function CategoriesClient({
       await categoryService.deleteCategory(deleteTarget.id);
       toast({ title: t('categoryDeleted') });
       loadCategories();
-      revalidateMenuCache();
+      revalidateMenuCache(tenantSlug);
     } catch {
       toast({ title: tc('deleteError'), variant: 'destructive' });
     } finally {
@@ -537,6 +543,19 @@ export default function CategoriesClient({
                     {t('featuredOnHomeLimit', { count: FEATURED_LIMIT })}
                   </p>
                 )}
+            </div>
+
+            {/* Active toggle */}
+            <div className="space-y-1.5 rounded-lg border border-app-border p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="cat-active" className="text-app-text">
+                    {t('isActive')}
+                  </Label>
+                  <p className="text-xs text-app-text-muted mt-1">{t('isActiveDesc')}</p>
+                </div>
+                <Switch id="cat-active" checked={isActive} onCheckedChange={setIsActive} />
+              </div>
             </div>
 
             {/* Preparation zone selector */}

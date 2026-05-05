@@ -18,10 +18,12 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
@@ -29,12 +31,33 @@ import OrderTracker from './OrderTracker';
 
 // --- Types --------------------------------------------------
 
+interface RawOrderItemRow {
+  item_name: string;
+  item_name_en?: string | null;
+  quantity: number;
+  price_at_order: number;
+  menu_item_id?: string | null;
+  menu_items?: { image_url?: string | null } | null;
+}
+
+interface RawOrderRow {
+  id: string;
+  order_number: string;
+  status: string;
+  total: number;
+  table_number: string | null;
+  created_at: string;
+  service_type: string | null;
+  order_items: RawOrderItemRow[] | null;
+}
+
 interface OrderItem {
   name: string;
   name_en?: string;
   quantity: number;
   price: number;
   menu_item_id?: string;
+  image_url?: string | null;
 }
 
 interface OrderRecord {
@@ -78,6 +101,19 @@ function getStoredOrderIds(tenantSlug: string): string[] {
 
 function isWithinEditWindow(createdAt: string): boolean {
   return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
+}
+
+const ETA_WINDOW_MS: Record<string, number> = {
+  pending: 20 * 60 * 1000,
+  confirmed: 15 * 60 * 1000,
+  preparing: 10 * 60 * 1000,
+};
+
+function getEtaMinutes(status: string, createdAt: string): number | null {
+  const window = ETA_WINDOW_MS[status];
+  if (!window) return null;
+  const elapsed = Date.now() - new Date(createdAt).getTime();
+  return Math.max(0, Math.ceil((window - elapsed) / 60_000));
 }
 
 function shortOrderNumber(order: Pick<OrderRecord, 'order_number' | 'id'>): string {
@@ -128,7 +164,7 @@ export default function ClientOrders({
     supabase
       .from('orders')
       .select(
-        'id, order_number, status, total, table_number, created_at, service_type, order_items(item_name, item_name_en, quantity, price_at_order, menu_item_id)',
+        'id, order_number, status, total, table_number, created_at, service_type, order_items(item_name, item_name_en, quantity, price_at_order, menu_item_id, menu_items(image_url))',
       )
       .eq('tenant_id', tenantId)
       .in('id', storedIds)
@@ -138,25 +174,24 @@ export default function ClientOrders({
         if (error) {
           logger.error('Failed to load orders', error);
         } else {
-          const mapped = (data || []).map((row: Record<string, unknown>) => ({
-            ...row,
-            items: (
-              (row.order_items as Array<{
-                item_name: string;
-                item_name_en?: string;
-                quantity: number;
-                price_at_order: number;
-                menu_item_id?: string;
-              }>) || []
-            ).map((oi) => ({
+          const mapped: OrderRecord[] = ((data as RawOrderRow[]) || []).map((row) => ({
+            id: row.id,
+            order_number: row.order_number,
+            status: row.status,
+            total: row.total,
+            table_number: row.table_number,
+            created_at: row.created_at,
+            service_type: row.service_type,
+            items: (row.order_items || []).map((oi) => ({
               name: oi.item_name,
-              name_en: oi.item_name_en,
+              name_en: oi.item_name_en ?? undefined,
               quantity: oi.quantity,
               price: oi.price_at_order,
-              menu_item_id: oi.menu_item_id,
+              menu_item_id: oi.menu_item_id ?? undefined,
+              image_url: oi.menu_items?.image_url ?? null,
             })),
           }));
-          setOrders(mapped as OrderRecord[]);
+          setOrders(mapped);
         }
         setLoading(false);
       });
@@ -207,7 +242,8 @@ export default function ClientOrders({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeOrderIds.length, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-subscribe only when active order count changes, not on every order object mutation (2026-05-04)
+  }, [activeOrderIds.length, tenantId]);
 
   // --- Countdown timer: edit window + ETA ------------------
 
@@ -319,6 +355,13 @@ export default function ClientOrders({
     [orders, showHistory],
   );
 
+  const activeStatusLabel: Record<string, string> = {
+    pending: t('statusPending'),
+    confirmed: t('statusConfirmed'),
+    preparing: t('trackerPreparing'),
+    ready: t('statusReady'),
+  };
+
   // --- Loading state ----------------------------------------
 
   if (loading) {
@@ -363,7 +406,7 @@ export default function ClientOrders({
     >
       {/* Order ready banner (active mode only) */}
       {!showHistory && showReadyBanner && (
-        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-app-text">
+        <div className="text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-app-text">
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -394,61 +437,105 @@ export default function ClientOrders({
         return (
           <div
             key={order.id}
-            className="rounded-xl overflow-hidden bg-white border border-app-border"
+            className={cn(
+              'rounded-xl overflow-hidden bg-white border border-app-border',
+              !isTerminal && 'shadow-[var(--shadow-card)]',
+            )}
           >
-            {/* Collapsed header */}
+            {/* Tappable header */}
             <Button
               type="button"
               variant="ghost"
               onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-              className="w-full text-left p-4 h-auto whitespace-normal rounded-none"
+              className="w-full p-0 h-auto rounded-none flex-col items-stretch justify-start gap-0 hover:bg-transparent active:bg-app-elevated"
               aria-expanded={isExpanded}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="whitespace-nowrap text-base font-semibold text-app-text">
+              {!isTerminal ? (
+                <>
+                  {/* Active — Row 1: order# (secondary) + status text (hero, black) */}
+                  <div className="px-4 pt-4 pb-0 flex items-start justify-between gap-3">
+                    <span className="text-[17px] font-bold text-app-text leading-tight">
+                      {activeStatusLabel[order.status] ?? order.status}
+                    </span>
+                    <span className="text-[12px] font-medium text-app-text-secondary shrink-0 pt-0.5">
                       {shortOrderNumber(order)}
                     </span>
-                    <BadgeStatus status={order.status} />
                   </div>
 
-                  {/* Meta row: table + ETA */}
-                  <div className="mt-1.5 flex items-center gap-3 flex-wrap text-[13px] text-app-text-secondary">
-                    {order.table_number && order.service_type === 'dine-in' && (
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5" />
+                  {/* Active — Row 2: ETA (muted, no chip) */}
+                  {order.status !== 'ready' &&
+                    (() => {
+                      const mins = getEtaMinutes(order.status, order.created_at);
+                      if (mins === null) return null;
+                      return (
+                        <div className="px-4 pt-1 pb-0">
+                          <span className="text-[13px] text-app-text-secondary">
+                            {mins <= 1 ? t('etaReady') : t('etaMinutes', { min: mins })}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                  {/* Active — Row 3: tracker with labels (collapsed only) */}
+                  {!isExpanded && (
+                    <div className="px-4 pt-4 pb-1">
+                      <OrderTracker status={order.status} createdAt={order.created_at} />
+                    </div>
+                  )}
+
+                  {/* Active — Row 4: table info + total + chevron */}
+                  <div className="px-4 pt-3 pb-4 flex items-center justify-between gap-2">
+                    {order.table_number && order.service_type === 'dine-in' ? (
+                      <span className="inline-flex items-center gap-1 text-[12px] text-app-text-secondary">
+                        <Users className="w-3 h-3" />
                         {t('tableLabel', { num: order.table_number })}
                       </span>
+                    ) : (
+                      <span />
                     )}
-                    {isTerminal && (
-                      <span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[15px] font-bold text-app-text">
+                        {formatDisplayPrice(order.total, currency)}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          'w-4 h-4 transition-transform text-app-text-muted',
+                          isExpanded && 'rotate-180',
+                        )}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Terminal — Row 1: order# + price */}
+                  <div className="px-4 pt-4 pb-0 flex items-center justify-between">
+                    <span className="text-[14px] font-semibold text-app-text">
+                      {shortOrderNumber(order)}
+                    </span>
+                    <span className="text-[15px] font-bold text-app-text">
+                      {formatDisplayPrice(order.total, currency)}
+                    </span>
+                  </div>
+
+                  {/* Terminal — Row 2: status badge + date + chevron */}
+                  <div className="px-4 pt-2 pb-4 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <BadgeStatus status={order.status} />
+                      <span className="text-[12px] text-app-text-secondary truncate">
                         {format(new Date(order.created_at), 'dd MMM, HH:mm', {
                           locale: dateLocale,
                         })}
                       </span>
-                    )}
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        'w-4 h-4 shrink-0 transition-transform text-app-text-muted',
+                        isExpanded && 'rotate-180',
+                      )}
+                    />
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[15px] font-bold text-app-text">
-                    {formatDisplayPrice(order.total, currency)}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      'w-4 h-4 transition-transform text-app-text-muted',
-                      isExpanded && 'rotate-180',
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Mini tracker in collapsed view for active orders only */}
-              {!isExpanded && ACTIVE_STATUSES.has(order.status) && (
-                <div className="mt-4">
-                  <OrderTracker status={order.status} createdAt={order.created_at} compact />
-                </div>
+                </>
               )}
             </Button>
 
@@ -460,7 +547,6 @@ export default function ClientOrders({
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
                 >
                   <div className="border-t border-app-border">
                     {/* Items with thumbnails */}
@@ -470,15 +556,25 @@ export default function ClientOrders({
                           key={`${item.menu_item_id || item.name}-${idx}`}
                           className={cn(
                             'px-4 py-3 flex items-center gap-3',
-                            idx < order.items.length - 1 && 'border-b border-[rgb(238,238,238)]',
+                            idx < order.items.length - 1 && 'border-b border-app-border',
                           )}
                         >
-                          {/* Thumbnail placeholder 48x48 */}
+                          {/* Thumbnail 48x48 */}
                           <div
-                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-app-elevated border border-app-border"
+                            className="shrink-0 rounded-xl overflow-hidden w-12 h-12 bg-app-elevated border border-app-border flex items-center justify-center"
                             aria-hidden
                           >
-                            <ShoppingBag className="w-5 h-5 text-app-text-muted" />
+                            {item.image_url ? (
+                              <Image
+                                src={item.image_url}
+                                alt=""
+                                width={48}
+                                height={48}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ShoppingBag className="w-5 h-5 text-app-text-muted" />
+                            )}
                           </div>
 
                           <div className="flex-1 min-w-0">
@@ -598,14 +694,16 @@ function OrdersSkeleton() {
 function BadgeStatus({ status }: { status: string }) {
   const t = useTranslations('tenant');
 
-  const badgeStyles: Record<string, { bg: string; color: string }> = {
-    pending: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
-    confirmed: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
-    preparing: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
-    ready: { bg: 'rgb(246, 246, 246)', color: 'rgb(26, 26, 26)' },
-    delivered: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
-    served: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
-    cancelled: { bg: 'rgb(255, 235, 238)', color: 'rgb(255, 48, 8)' },
+  type BadgeVariant = 'warning' | 'info' | 'success' | 'destructive' | 'secondary';
+
+  const variantMap: Record<string, BadgeVariant> = {
+    pending: 'warning',
+    confirmed: 'info',
+    preparing: 'warning',
+    ready: 'success',
+    delivered: 'secondary',
+    served: 'secondary',
+    cancelled: 'destructive',
   };
 
   const labels: Record<string, string> = {
@@ -618,18 +716,8 @@ function BadgeStatus({ status }: { status: string }) {
     cancelled: t('statusCancelled'),
   };
 
-  const label = labels[status] || t('statusPending');
-  const colors = badgeStyles[status] || badgeStyles.pending;
+  const label = labels[status] ?? t('statusPending');
+  const variant: BadgeVariant = variantMap[status] ?? 'secondary';
 
-  return (
-    <span
-      className="px-2.5 py-1 rounded-lg text-[11px] leading-[15px] font-medium"
-      style={{
-        backgroundColor: colors.bg,
-        color: colors.color,
-      }}
-    >
-      {label}
-    </span>
-  );
+  return <Badge variant={variant}>{label}</Badge>;
 }

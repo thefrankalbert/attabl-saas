@@ -11,6 +11,7 @@ const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
   usePathname: () => '/sites/test-restaurant/settings',
+  useSearchParams: () => ({ get: vi.fn().mockReturnValue(null) }),
 }));
 
 let mockLocale = 'fr-FR';

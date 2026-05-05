@@ -131,10 +131,10 @@ describe('createOrderSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject tableNumber exceeding 10 characters', () => {
+  it('should reject tableNumber exceeding 50 characters', () => {
     const result = createOrderSchema.safeParse({
       items: [validItem],
-      tableNumber: 'a'.repeat(11),
+      tableNumber: 'a'.repeat(51),
     });
     expect(result.success).toBe(false);
   });

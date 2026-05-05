@@ -25,7 +25,7 @@
   --color-app-text-secondary: var(--app-text-secondary);
   --color-app-text-muted: var(--app-text-muted);
 
-  /* Accent (lime/green) */
+  /* Accent (Square Blue) */
   --color-accent: var(--app-accent);
   --color-accent-hover: var(--app-accent-hover);
   --color-accent-muted: var(--app-accent-muted);
@@ -82,6 +82,42 @@
   /* Accordion animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  /* ===== CLIENT UI TOKENS (refonte 2026-05) ===== */
+  /* Brand */
+  --color-brand: #06c167;
+  --color-brand-dark: #05a557;
+  --color-brand-light: #e6f9f0;
+
+  /* Surfaces */
+  --color-bg: #ffffff;
+  --color-surface-alt: #f6f6f6;
+  --color-divider: #eeeeee;
+
+  /* Text */
+  --color-ink: #1a1a1a;
+  --color-ink-2: #404040;
+  --color-ink-muted: #737373;
+  --color-ink-soft: #b0b0b0;
+
+  /* Status */
+  --color-rating: #ffb800;
+  --color-promo: #ff3008;
+
+  /* Client extras */
+  --color-warning-bg: #fff7e5;
+  --color-warning-border: #ffe9b0;
+  --color-warning-fg: #7a4f00;
+  --color-ivory: #faf6ec;
+  --color-ivory-fg: #9c8b68;
+
+  /* Radius */
+  --radius-pill: 24px;
+  --radius-card: 12px;
+  --radius-search: 10px;
+  --radius-modal: 16px;
+  --radius-tag: 8px;
+  --radius-button-round: 50px;
 }
 
 @keyframes accordion-down {
@@ -118,19 +154,19 @@
   --app-text-secondary: #a8a29e;
   --app-text-muted: #6b6560;
 
-  --app-accent: #c2f542;
-  --app-accent-hover: #d1ff5c;
+  --app-accent: #006aff;
+  --app-accent-hover: #0055cc;
   --app-accent-muted: rgba(194, 245, 66, 0.12);
   --app-accent-text: #0a0a0a;
 
-  /* Accent ramp -- lime #c2f542 */
+  /* Accent ramp -- Square Blue #006AFF */
   --accent-50: #f7ffe0;
   --accent-100: #edfbc7;
   --accent-200: #dcf78f;
-  --accent-300: #c2f542;
+  --accent-300: #006aff;
   --accent-400: #a3e635;
   --accent-500: #84cc16;
-  --accent-600: #6aa512;
+  --accent-600: #0055cc;
   --accent-700: #527f0e;
   --accent-800: #3d5f0a;
   --accent-900: #273f07;
@@ -165,11 +201,11 @@
   --app-text-muted: #a8a29e;
 
   --app-accent: #65a30d;
-  --app-accent-hover: #4d7c0f;
+  --app-accent-hover: #0055cc;
   --app-accent-muted: rgba(101, 163, 13, 0.12);
   --app-accent-text: #ffffff;
 
-  /* Accent ramp (light mode) -- lime */
+  /* Accent ramp (light mode) -- Square Blue */
   --accent-50: #f7fee7;
   --accent-100: #ecfccb;
   --accent-200: #d9f99d;
@@ -177,7 +213,7 @@
   --accent-400: #a3e635;
   --accent-500: #84cc16;
   --accent-600: #65a30d;
-  --accent-700: #4d7c0f;
+  --accent-700: #0055cc;
   --accent-800: #3f6212;
   --accent-900: #365314;
 
@@ -205,7 +241,7 @@
     --app-text-muted: #a8a29e;
 
     --app-accent: #65a30d;
-    --app-accent-hover: #4d7c0f;
+    --app-accent-hover: #0055cc;
     --app-accent-muted: rgba(101, 163, 13, 0.12);
     --app-accent-text: #ffffff;
 
@@ -216,7 +252,7 @@
     --accent-400: #a3e635;
     --accent-500: #84cc16;
     --accent-600: #65a30d;
-    --accent-700: #4d7c0f;
+    --accent-700: #0055cc;
     --accent-800: #3f6212;
     --accent-900: #365314;
 
@@ -257,8 +293,8 @@
   --app-text-secondary: #737373 !important;
   --app-text-muted: #b0b0b0 !important;
 
-  --app-accent: #06c167 !important;
-  --app-accent-hover: #05a557 !important;
+  --app-accent: #006aff !important;
+  --app-accent-hover: #0055cc !important;
   --app-accent-muted: #e6f9f0 !important;
   --app-accent-text: #ffffff !important;
 
@@ -270,6 +306,31 @@
   --color-danger: #ff3008 !important;
   --color-danger-hover: #e02b07 !important;
   --color-allergen: #ffb800 !important;
+
+  /* Also override Tailwind @theme-generated --color-app-* tokens.
+     Tailwind v4 generates bg-app-bg → var(--color-app-bg) which is defined
+     at :root as var(--app-bg). The two-level var() chain does not always
+     pick up !important overrides from ancestor elements in all browsers.
+     Explicitly overriding the --color-app-* tokens ensures Tailwind utilities
+     (bg-app-bg, text-app-text, border-app-border, etc.) resolve correctly
+     inside the tenant client scope. */
+  --color-app-bg: #ffffff !important;
+  --color-app-card: #ffffff !important;
+  --color-app-elevated: #f6f6f6 !important;
+  --color-app-hover: #f6f6f6 !important;
+  --color-app-border: #eeeeee !important;
+  --color-app-border-hover: #dddddd !important;
+  --color-app-text: #1a1a1a !important;
+  --color-app-text-secondary: #737373 !important;
+  --color-app-text-muted: #b0b0b0 !important;
+  --color-accent: #006aff !important;
+  --color-accent-hover: #0055cc !important;
+  --color-accent-muted: rgba(0, 106, 255, 0.1) !important;
+  --color-accent-text: #ffffff !important;
+  --color-status-success-bg: #e6f9f0 !important;
+  --color-status-warning-bg: #fff8e1 !important;
+  --color-status-error-bg: #ffebee !important;
+  --color-status-info-bg: #e6f9f0 !important;
 
   color-scheme: light !important;
   background-color: #ffffff !important;
@@ -297,10 +358,23 @@
     --app-text: #1a1a1a !important;
     --app-text-secondary: #737373 !important;
     --app-text-muted: #b0b0b0 !important;
-    --app-accent: #06c167 !important;
-    --app-accent-hover: #05a557 !important;
+    --app-accent: #006aff !important;
+    --app-accent-hover: #0055cc !important;
     --app-accent-muted: #e6f9f0 !important;
     --app-accent-text: #ffffff !important;
+    --color-app-bg: #ffffff !important;
+    --color-app-card: #ffffff !important;
+    --color-app-elevated: #f6f6f6 !important;
+    --color-app-hover: #f6f6f6 !important;
+    --color-app-border: #eeeeee !important;
+    --color-app-border-hover: #dddddd !important;
+    --color-app-text: #1a1a1a !important;
+    --color-app-text-secondary: #737373 !important;
+    --color-app-text-muted: #b0b0b0 !important;
+    --color-accent: #006aff !important;
+    --color-accent-hover: #0055cc !important;
+    --color-accent-muted: rgba(0, 106, 255, 0.1) !important;
+    --color-accent-text: #ffffff !important;
     color-scheme: light !important;
     background-color: #ffffff !important;
     color: #1a1a1a !important;
@@ -530,7 +604,7 @@ body {
   animation: adminFlashIn 1.6s ease-out;
 }
 
-/* Soft lime pulse used by the live indicator dots */
+/* Soft accent pulse used by the live indicator dots */
 @keyframes adminLimePulse {
   0%,
   100% {
@@ -554,4 +628,39 @@ body {
 }
 .admin-shell .admin-thin-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--app-border-hover);
+}
+
+/* ===== CLIENT UI ANIMATIONS (order tracker, pulse) ===== */
+@keyframes attabl-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes attabl-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.animate-attabl-pulse {
+  animation: attabl-pulse 1.6s ease-in-out infinite;
+}
+.animate-attabl-ping {
+  animation: attabl-ping 1.5s ease-out infinite;
+}
+
+/* Hide scrollbar — horizontal scroll chips */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  scrollbar-width: none;
 }
