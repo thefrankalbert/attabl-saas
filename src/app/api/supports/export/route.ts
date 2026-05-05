@@ -20,8 +20,24 @@ const styles = StyleSheet.create({
   },
 });
 
+// Allowlist of hostnames from which the server may fetch images (SSRF guard).
+// To add a CDN or custom domain: push its hostname into this array.
+const ALLOWED_IMAGE_HOSTS: string[] = [];
+try {
+  ALLOWED_IMAGE_HOSTS.push(new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname);
+} catch {
+  logger.warn('NEXT_PUBLIC_SUPABASE_URL missing or malformed — logo fetch disabled in PDF export');
+}
+
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
   try {
+    const parsed = new URL(url);
+    if (!ALLOWED_IMAGE_HOSTS.includes(parsed.hostname)) {
+      logger.warn('fetchImageAsDataUrl blocked: hostname not in allowlist', {
+        hostname: parsed.hostname,
+      });
+      return null;
+    }
     const res = await fetch(url);
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();

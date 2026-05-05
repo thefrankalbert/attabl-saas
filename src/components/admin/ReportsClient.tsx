@@ -416,12 +416,8 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         fontSize: 12,
                       }}
                       labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                      formatter={(
-                        value: number | undefined,
-                        _name: string | undefined,
-                        item: { payload?: DailyStats },
-                      ) => [
-                        `${fmt(value ?? 0)} - ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
+                      formatter={(value, _name, item) => [
+                        `${fmt((value as number) ?? 0)} - ${t('ordersCountShort', { count: (item as { payload?: DailyStats }).payload?.orders ?? 0 })}`,
                         t('revenueLabel'),
                       ]}
                       cursor={{ fill: 'var(--app-accent-muted)' }}
@@ -559,9 +555,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         color: 'var(--app-text)',
                         fontSize: 12,
                       }}
-                      formatter={(value: number | undefined, name: string | undefined) => [
-                        fmt(value ?? 0),
-                        name ?? '',
+                      formatter={(value, name) => [
+                        fmt((value as number) ?? 0),
+                        (name as string) ?? '',
                       ]}
                     />
                     <Legend
@@ -616,10 +612,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                           fontSize: 12,
                         }}
                         labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                        formatter={(value: number | undefined) => [
-                          `${value ?? 0}`,
-                          t('ordersCount'),
-                        ]}
+                        formatter={(value) => [`${(value as number) ?? 0}`, t('ordersCount')]}
                       />
                       <Bar
                         dataKey="orders"

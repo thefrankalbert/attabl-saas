@@ -407,6 +407,20 @@ Si un de ces scripts change de format, mettre a jour cette section en meme temps
 - Preferer : reverter un fichier precis (`git restore path`), annuler une hunk (`git restore -p`), corriger en avant.
 - Ne jamais reset plus d'1 commit sans instruction explicite de l'utilisateur.
 
+### 9. INTERDIT ABSOLU : `git checkout -- <path>`
+
+`git checkout -- <fichier>` et `git checkout -- .` sont BANNIS sans exception :
+
+- Ecrasent silencieusement tous les changements non-commites SANS avertissement ni confirmation
+- En worktree : meme danger, affecte l'arbre de travail courant (pas seulement la branche principale)
+- Incident 2026-05-04 : `git checkout -- src/` a detruit toute la migration Square Blue non-commitee
+
+Procedure obligatoire avant tout rollback de fichier :
+
+1. `git status` + `git diff` pour mesurer l'impact
+2. Si des changements non-commites existent : `git stash` OU `git commit` AVANT de rollback
+3. Utiliser `git restore <fichier>` a la place (semantique explicite, meme danger - etape 1 obligatoire)
+
 ---
 
 ## REGLES ANTI-REGRESSION - OBLIGATOIRES
