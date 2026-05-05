@@ -17,10 +17,8 @@ import {
   Sora,
 } from 'next/font/google';
 import './globals.css';
-import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
-import ScrollRestoration from '@/components/shared/ScrollRestoration';
 import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
@@ -197,9 +195,6 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Suspense fallback={null}>
-              <ScrollRestoration />
-            </Suspense>
             {children}
             <Toaster />
             <AgentationOverlay />
