@@ -154,6 +154,8 @@ export default function OnboardingPage() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const touchStartX = useRef(0);
   const lastSavedPayload = useRef<string>('');
+  const phaseRef = useRef(phase);
+  const subScreenRef = useRef(subScreen);
 
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
@@ -282,17 +284,29 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep nav refs in sync so the auto-save callback always reads current values
+  // without triggering saves on nav-only changes.
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+  useEffect(() => {
+    subScreenRef.current = subScreen;
+  }, [subScreen]);
+
   // --- Auto-save debounced ---------------------------------------------------
+  // Deps intentionally exclude phase/subScreen: nav-only changes (forward/back)
+  // must not trigger saves. Nav position is captured via refs at fire time so
+  // the persisted draft always records where the user is when data was saved.
 
   useEffect(() => {
-    if (loading || phase === 0 || isLastScreen) return;
+    if (loading || phaseRef.current === 0 || isLastScreen) return;
     setAutoSaveStatus('idle');
     const timer = setTimeout(async () => {
       // Deduplicate: skip save if payload hasn't changed since last save
       const draftPayload = {
         ...data,
-        _phase: phase,
-        _subScreen: subScreen,
+        _phase: phaseRef.current,
+        _subScreen: subScreenRef.current,
       };
       const payloadJson = JSON.stringify({ step: apiStep, data: draftPayload });
       if (payloadJson === lastSavedPayload.current) return;
@@ -314,7 +328,7 @@ export default function OnboardingPage() {
       }
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
+  }, [data, loading, apiStep, isLastScreen]);
 
   // --- Save on tab close / navigate away (beacon API for reliability) ------
 
