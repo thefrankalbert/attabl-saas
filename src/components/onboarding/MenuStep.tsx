@@ -3,6 +3,7 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -178,7 +179,10 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
   };
 
   const handleItemPhotoUpload = async (categoryId: string, itemId: string, file: File) => {
-    if (file.size > 15 * 1024 * 1024) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('uploadError'));
+      return;
+    }
     setUploadingItemId(itemId);
     try {
       const compressed = await compressImage(file, {
@@ -191,9 +195,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       const publicUrl = await uploadToStorage(compressed, 'menu-items', supabase);
       updateArticle(categoryId, itemId, 'imageUrl', publicUrl);
     } catch {
-      // Fallback to object URL if upload fails
-      const url = URL.createObjectURL(file);
-      updateArticle(categoryId, itemId, 'imageUrl', url);
+      toast.error(t('uploadError'));
     } finally {
       setUploadingItemId(null);
     }
