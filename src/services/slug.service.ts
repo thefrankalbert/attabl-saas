@@ -42,6 +42,20 @@ export const RESERVED_SLUGS = new Set([
 ]);
 
 /**
+ * Normalizes a name into a URL-safe slug.
+ * Exported standalone so UI components (slug preview) use the same logic
+ * as the server-side slug generation — preview == actual.
+ */
+export function normalizeToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
  * Slug generation service.
  *
  * Extracted from signup/signup-oauth routes to eliminate duplication.
@@ -49,21 +63,7 @@ export const RESERVED_SLUGS = new Set([
  */
 export function createSlugService(supabase: SupabaseClient) {
   return {
-    /**
-     * Normalizes a name into a URL-safe slug.
-     * - Lowercases
-     * - Removes accents (NFD normalization)
-     * - Replaces non-alphanumeric chars with hyphens
-     * - Trims leading/trailing hyphens
-     */
-    normalizeToSlug(name: string): string {
-      return name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove accents
-        .replace(/[^a-z0-9]+/g, '-') // Replace special chars with hyphens
-        .replace(/^-+|-+$/g, ''); // Trim leading/trailing hyphens
-    },
+    normalizeToSlug,
 
     /**
      * Generates a unique slug by checking the database.
@@ -71,7 +71,7 @@ export function createSlugService(supabase: SupabaseClient) {
      * If no nickname and the base slug is taken, appends -2, -3, etc.
      */
     async generateUniqueSlug(name: string, nickname?: string): Promise<string> {
-      let baseSlug = this.normalizeToSlug(name);
+      let baseSlug = normalizeToSlug(name);
 
       // If the slug is reserved, append a suffix to avoid conflicts with system routes
       if (RESERVED_SLUGS.has(baseSlug)) {
@@ -80,7 +80,7 @@ export function createSlugService(supabase: SupabaseClient) {
 
       // When a nickname is provided, use name-nickname as the slug (user chose it explicitly)
       if (nickname) {
-        const normalizedNickname = this.normalizeToSlug(nickname);
+        const normalizedNickname = normalizeToSlug(nickname);
         if (normalizedNickname) {
           return `${baseSlug}-${normalizedNickname}`;
         }

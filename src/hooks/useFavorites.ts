@@ -1,70 +1,32 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useMemo } from 'react';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-type Listener = () => void;
-
-const listeners = new Set<Listener>();
-
-function subscribe(cb: Listener): () => void {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
+interface FavoritesStore {
+  byTenant: Record<string, string[]>;
+  toggle: (tenantId: string, id: string) => void;
 }
 
-function notify(): void {
-  listeners.forEach((l) => l());
-}
+const EMPTY: string[] = [];
 
-const storageKey = (tenantId: string): string => `attabl:favorites:${tenantId}`;
-
-const EMPTY_SNAPSHOT: ReadonlySet<string> = new Set<string>();
-
-const snapshotCache = new Map<string, Set<string>>();
-
-function readFavorites(tenantId: string): Set<string> {
-  if (typeof window === 'undefined') return new Set<string>();
-  try {
-    const raw = window.localStorage.getItem(storageKey(tenantId));
-    if (!raw) return new Set<string>();
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set<string>();
-    return new Set<string>(parsed.filter((x): x is string => typeof x === 'string'));
-  } catch {
-    return new Set<string>();
-  }
-}
-
-function getSnapshot(tenantId: string): Set<string> {
-  const fresh = readFavorites(tenantId);
-  const cached = snapshotCache.get(tenantId);
-  if (cached && cached.size === fresh.size) {
-    let identical = true;
-    for (const id of fresh) {
-      if (!cached.has(id)) {
-        identical = false;
-        break;
-      }
-    }
-    if (identical) return cached;
-  }
-  snapshotCache.set(tenantId, fresh);
-  return fresh;
-}
-
-function getServerSnapshot(): ReadonlySet<string> {
-  return EMPTY_SNAPSHOT;
-}
-
-function writeFavorites(tenantId: string, next: Set<string>): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(storageKey(tenantId), JSON.stringify([...next]));
-  } catch {
-    // localStorage full or blocked - silent fail
-  }
-}
+const useFavoritesStore = create<FavoritesStore>()(
+  persist(
+    (set) => ({
+      byTenant: {},
+      toggle(tenantId, id) {
+        set((state) => {
+          const ids = new Set(state.byTenant[tenantId] ?? []);
+          if (ids.has(id)) ids.delete(id);
+          else ids.add(id);
+          return { byTenant: { ...state.byTenant, [tenantId]: [...ids] } };
+        });
+      },
+    }),
+    { name: 'attabl:favorites' },
+  ),
+);
 
 export interface UseFavoritesResult {
   favorites: ReadonlySet<string>;
@@ -73,20 +35,11 @@ export interface UseFavoritesResult {
 }
 
 export function useFavorites(tenantId: string): UseFavoritesResult {
-  const favorites = useSyncExternalStore(subscribe, () => getSnapshot(tenantId), getServerSnapshot);
+  const ids = useFavoritesStore((state) => state.byTenant[tenantId] ?? EMPTY);
+  const storeToggle = useFavoritesStore((state) => state.toggle);
 
-  const toggle = useCallback(
-    (id: string) => {
-      const current = readFavorites(tenantId);
-      if (current.has(id)) current.delete(id);
-      else current.add(id);
-      writeFavorites(tenantId, current);
-      snapshotCache.set(tenantId, current);
-      notify();
-    },
-    [tenantId],
-  );
-
+  const favorites = useMemo(() => new Set<string>(ids), [ids]);
+  const toggle = useCallback((id: string) => storeToggle(tenantId, id), [storeToggle, tenantId]);
   const isFavorite = useCallback((id: string) => favorites.has(id), [favorites]);
 
   return { favorites, isFavorite, toggle };

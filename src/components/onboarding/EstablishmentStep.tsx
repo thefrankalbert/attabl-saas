@@ -27,19 +27,10 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
-import { RESERVED_SLUGS } from '@/services/slug.service';
+import { RESERVED_SLUGS, normalizeToSlug } from '@/services/slug.service';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 type CheckResult = 'idle' | 'available' | 'taken';
-
-function normalizeToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function SlugPreview({
   tenantName,
