@@ -12,6 +12,7 @@ import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
+import { normalizeSearch } from '@/lib/utils/search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import BottomNav from '@/components/tenant/BottomNav';
@@ -281,29 +282,19 @@ export default function ClientMenuDetailPage({
     return counts;
   }, [filteredItemsByCategory]);
 
-  // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
-  const normalize = useCallback(
-    (text: string) =>
-      text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, ''),
-    [],
-  );
-
   // Search results
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
-    const q = normalize(searchQuery);
+    const q = normalizeSearch(searchQuery);
     return allItems
       .filter((item) => {
-        const name = normalize(item.name || '');
-        const nameEn = normalize(item.name_en || '');
-        const desc = normalize(item.description || '');
+        const name = normalizeSearch(item.name || '');
+        const nameEn = normalizeSearch(item.name_en || '');
+        const desc = normalizeSearch(item.description || '');
         return name.includes(q) || nameEn.includes(q) || desc.includes(q);
       })
       .slice(0, 8);
-  }, [allItems, searchQuery, normalize]);
+  }, [allItems, searchQuery]);
 
   // --- Handlers ------------------------------------------
 

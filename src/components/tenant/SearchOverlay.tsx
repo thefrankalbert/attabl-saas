@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { MenuItem } from '@/types/admin.types';
+import { normalizeSearch } from '@/lib/utils/search';
 import MenuItemCard from './MenuItemCard';
 
 interface SearchOverlayProps {
@@ -42,22 +43,15 @@ export default function SearchOverlay({
     }
   }, [isOpen]);
 
-  // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
-  const normalize = (text: string) =>
-    text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    const q = normalize(query);
+    const q = normalizeSearch(query);
     return items.filter(
       (item) =>
-        normalize(item.name).includes(q) ||
-        normalize(item.name_en || '').includes(q) ||
-        normalize(item.description || '').includes(q) ||
-        normalize(item.description_en || '').includes(q),
+        normalizeSearch(item.name).includes(q) ||
+        normalizeSearch(item.name_en || '').includes(q) ||
+        normalizeSearch(item.description || '').includes(q) ||
+        normalizeSearch(item.description_en || '').includes(q),
     );
   }, [query, items]);
 
