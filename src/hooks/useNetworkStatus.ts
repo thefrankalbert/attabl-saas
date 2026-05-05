@@ -1,34 +1,42 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useSyncExternalStore, useState, useRef, useEffect } from 'react';
+
+function subscribeToNetworkEvents(callback: () => void): () => void {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+function getOnlineSnapshot(): boolean {
+  return navigator.onLine;
+}
+
+function getOnlineServerSnapshot(): boolean {
+  return true;
+}
 
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState(() =>
-    typeof window !== 'undefined' ? navigator.onLine : true,
+  const isOnline = useSyncExternalStore(
+    subscribeToNetworkEvents,
+    getOnlineSnapshot,
+    getOnlineServerSnapshot,
   );
   const [wasOffline, setWasOffline] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleOnline = () => {
-      setIsOnline(true);
+    function handleBackOnline() {
       setWasOffline(true);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setWasOffline(false), 5000);
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+    }
+    window.addEventListener('online', handleBackOnline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleBackOnline);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
