@@ -51,7 +51,8 @@ export function useSessionState<T>(key: string, defaultValue: T): [T, Dispatch<S
   const storageKey = `attabl:admin:${key}`;
   const defaultRef = useRef(defaultValue);
 
-  const [state, setStateInternal] = useState<T>(() => readStorage(storageKey, defaultValue));
+  // Always start from defaultValue to match SSR; hydrate from sessionStorage after mount.
+  const [state, setStateInternal] = useState<T>(defaultValue);
 
   const setState: Dispatch<SetStateAction<T>> = useCallback(
     (action: SetStateAction<T>) => {

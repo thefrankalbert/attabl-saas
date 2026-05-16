@@ -40,9 +40,25 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => mockSupabase),
 }));
 
+const mockResolveSessionAdminUser = vi.fn().mockResolvedValue({
+  ok: true,
+  userId: 'user-1',
+  adminUser: { tenant_id: 'tenant-1', role: 'owner' },
+});
+
+vi.mock('@/lib/auth/session-admin-user', () => ({
+  resolveSessionAdminUser: (...args: unknown[]) => mockResolveSessionAdminUser(...args),
+}));
+
 describe('POST /api/onboarding/complete', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockResolveSessionAdminUser.mockResolvedValue({
+      ok: true,
+      userId: 'user-1',
+      adminUser: { tenant_id: 'tenant-1', role: 'owner' },
+    });
 
     mockRateLimitCheck.mockResolvedValue({ success: true });
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -76,9 +92,10 @@ describe('POST /api/onboarding/complete', () => {
   }
 
   it('returns 401 when user is not authenticated', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({
-      data: { user: null },
-      error: null,
+    mockResolveSessionAdminUser.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      error: 'Non authentifie',
     });
 
     const { POST } = await import('@/app/api/onboarding/complete/route');
@@ -86,24 +103,14 @@ describe('POST /api/onboarding/complete', () => {
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(401);
-    expect(json.error).toBe('Non authentifié');
+    expect(json.error).toBe('Non authentifie');
   });
 
   it('returns 404 when authenticated user has no tenant', async () => {
-    mockSupabase.from.mockImplementation((table: string) => {
-      if (table === 'admin_users') {
-        const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
-          const c: Record<string, ReturnType<typeof vi.fn>> = {};
-          c.single = vi.fn().mockResolvedValue({
-            data: null,
-            error: { message: 'not found' },
-          });
-          c.eq = vi.fn().mockImplementation(() => c);
-          return c;
-        };
-        return { select: vi.fn(() => chain()) };
-      }
-      return { select: vi.fn() };
+    mockResolveSessionAdminUser.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      error: 'Tenant non trouve',
     });
 
     const { POST } = await import('@/app/api/onboarding/complete/route');
@@ -111,24 +118,14 @@ describe('POST /api/onboarding/complete', () => {
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(404);
-    expect(json.error).toBe('Tenant non trouvé');
+    expect(json.error).toBe('Tenant non trouve');
   });
 
   it('returns 403 when user is not owner', async () => {
-    mockSupabase.from.mockImplementation((table: string) => {
-      if (table === 'admin_users') {
-        const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
-          const c: Record<string, ReturnType<typeof vi.fn>> = {};
-          c.single = vi.fn().mockResolvedValue({
-            data: { tenant_id: 'tenant-1', role: 'manager' },
-            error: null,
-          });
-          c.eq = vi.fn().mockImplementation(() => c);
-          return c;
-        };
-        return { select: vi.fn(() => chain()) };
-      }
-      return { select: vi.fn() };
+    mockResolveSessionAdminUser.mockResolvedValueOnce({
+      ok: true,
+      userId: 'user-1',
+      adminUser: { tenant_id: 'tenant-1', role: 'manager' },
     });
 
     const { POST } = await import('@/app/api/onboarding/complete/route');

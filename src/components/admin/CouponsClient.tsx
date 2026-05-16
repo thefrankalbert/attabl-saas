@@ -36,6 +36,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   const [, setLoading] = useState(false);
   const { toast } = useToast();
   const t = useTranslations('coupons');
+  const tc = useTranslations('common');
   const locale = useLocale();
 
   const refetch = useCallback(async () => {
@@ -289,7 +290,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
             <AlertDialogDescription>{t('deleteConfirmCoupon')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (couponPendingDelete) {

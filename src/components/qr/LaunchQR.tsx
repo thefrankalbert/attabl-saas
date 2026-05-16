@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { Download, FileImage, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
@@ -18,12 +18,12 @@ interface LaunchQRProps {
 export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
   const t = useTranslations('onboarding');
   const [downloading, setDownloading] = useState<'pdf' | 'png' | null>(null);
-  const [mounted, setMounted] = useState(false);
   const templateRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const TemplateComponent = TEMPLATE_REGISTRY[config.templateId];
   const defaults = TEMPLATE_DEFAULTS[config.templateId];
@@ -39,12 +39,9 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
 
       try {
         const html2canvas = (await import('html2canvas')).default;
+        const { captureElementToCanvas } = await import('@/lib/qr/capture-template');
 
-        const canvas = await html2canvas(templateRef.current, {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: null,
-        });
+        const canvas = await captureElementToCanvas(templateRef.current, html2canvas);
 
         const slug = tenantName.toLowerCase().replace(/\s/g, '-');
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId, useMemo } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -29,6 +29,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
+import { ListPagination } from '@/components/admin/ListPagination';
+
+const LIST_PAGE_SIZE = 25;
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -101,7 +104,7 @@ function MenuRow({
     >
       {/* Selection checkbox */}
       <Checkbox
-        aria-label={`${t('select') || 'Select'} ${menu.name}`}
+        aria-label={`${t('select')} ${menu.name}`}
         checked={isSelected}
         onCheckedChange={() => onToggleSelect()}
         className="shrink-0 cursor-pointer"
@@ -249,6 +252,15 @@ export default function MenusTable({
     return menus.filter((m) => m.name.toLowerCase().includes(q));
   }, [menus, searchQuery]);
 
+  const [listPage, setListPage] = useState(0);
+  const maxPage = Math.max(0, Math.ceil(allFilteredMenus.length / LIST_PAGE_SIZE) - 1);
+  const effectivePage = Math.min(listPage, maxPage);
+
+  const pageMenus = useMemo(() => {
+    const start = effectivePage * LIST_PAGE_SIZE;
+    return allFilteredMenus.slice(start, start + LIST_PAGE_SIZE);
+  }, [allFilteredMenus, effectivePage]);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
@@ -287,24 +299,32 @@ export default function MenusTable({
 
       {/* Single SortableContext for all menus -- flat list */}
       {allFilteredMenus.length > 0 && (
-        <SortableContext
-          items={allFilteredMenus.map((m) => m.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {allFilteredMenus.map((menu) => (
-            <MenuRow
-              key={menu.id}
-              menu={menu}
-              tenantSlug={tenantSlug}
-              isSelected={selectedIds.has(menu.id)}
-              onToggleSelect={() => onToggleSelect(menu.id)}
-              onEdit={() => onEdit(menu)}
-              onDelete={() => onDelete(menu)}
-              onToggle={() => onToggle(menu)}
-              onAddChild={() => onAddChild(menu.id)}
-            />
-          ))}
-        </SortableContext>
+        <>
+          <SortableContext
+            items={pageMenus.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {pageMenus.map((menu) => (
+              <MenuRow
+                key={menu.id}
+                menu={menu}
+                tenantSlug={tenantSlug}
+                isSelected={selectedIds.has(menu.id)}
+                onToggleSelect={() => onToggleSelect(menu.id)}
+                onEdit={() => onEdit(menu)}
+                onDelete={() => onDelete(menu)}
+                onToggle={() => onToggle(menu)}
+                onAddChild={() => onAddChild(menu.id)}
+              />
+            ))}
+          </SortableContext>
+          <ListPagination
+            page={effectivePage}
+            pageSize={LIST_PAGE_SIZE}
+            totalCount={allFilteredMenus.length}
+            onPageChange={setListPage}
+          />
+        </>
       )}
 
       {/* Empty state */}

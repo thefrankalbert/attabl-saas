@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
@@ -24,8 +25,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
     // 2. Validate input with Zod
     let body: unknown;
     try {
@@ -45,34 +44,21 @@ export async function POST(request: Request) {
 
     const { data } = parseResult.data;
 
-    // 3. Authenticate
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // 3. Authenticate and resolve tenant (service role lookup scoped to session user)
+    const session = await resolveSessionAdminUser({ requireActive: true });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
-    // 4. Get the user's tenant
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select('tenant_id, role')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
-
-    if (adminUserError || !adminUser) {
-      return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
-    }
-
-    if (!isRoleAllowed(adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+    if (!isRoleAllowed(session.adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 
-    // 5. Complete onboarding via service
+    const supabase = await createClient();
+
+    // 4. Complete onboarding via service
     const onboardingService = createOnboardingService(supabase);
-    const result = await onboardingService.completeOnboarding(adminUser.tenant_id, data);
+    const result = await onboardingService.completeOnboarding(session.adminUser.tenant_id, data);
 
     revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
     revalidateTag(CACHE_TAG_MENUS, 'max');

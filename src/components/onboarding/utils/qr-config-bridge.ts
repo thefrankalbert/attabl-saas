@@ -31,9 +31,12 @@ export function onboardingDataToQRConfig(
   const qrFg = styleColors.fg === 'primary' ? primary : styleColors.fg;
   const qrBg = styleColors.bg;
 
+  const logoEnabled = !!data.logoUrl;
+
   return {
     ...base,
     templateId,
+    errorCorrection: logoEnabled ? 'H' : base.errorCorrection,
     qrFgColor: qrFg,
     qrBgColor: qrBg,
     qrSize: defaults.qrSize,

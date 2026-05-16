@@ -140,6 +140,19 @@ export function createSignupService(supabase: SupabaseClient) {
       });
 
       if (authError) {
+        const msg = authError.message?.toLowerCase() ?? '';
+        if (
+          msg.includes('already') ||
+          msg.includes('registered') ||
+          msg.includes('exists') ||
+          authError.status === 422
+        ) {
+          throw new ServiceError(
+            'Cette adresse email est deja utilisee. Connectez-vous ou reinitialisez votre mot de passe.',
+            'CONFLICT',
+            authError,
+          );
+        }
         throw new ServiceError(`Erreur Auth: ${authError.message}`, 'VALIDATION', authError);
       }
 

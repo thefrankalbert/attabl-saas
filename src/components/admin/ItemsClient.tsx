@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import {
@@ -56,6 +56,9 @@ import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 import { createMenuItemService } from '@/services/menu-item.service';
 import { ItemDetailPanel } from './items/ItemDetailPanel';
 import { ItemFormModal, type FormStep } from './items/ItemFormModal';
+import { ListPagination } from '@/components/admin/ListPagination';
+
+const LIST_PAGE_SIZE = 25;
 
 interface ItemsClientProps {
   tenantId: string;
@@ -84,6 +87,7 @@ export default function ItemsClient({
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [listPage, setListPage] = useState(0);
 
   // Form state
   const [name, setName] = useState('');
@@ -135,6 +139,14 @@ export default function ItemsClient({
     availableFilter: filterAvailable,
     withCategory: true,
   });
+
+  const maxPage = Math.max(0, Math.ceil(items.length / LIST_PAGE_SIZE) - 1);
+  const effectivePage = Math.min(listPage, maxPage);
+
+  const pageItems = useMemo(() => {
+    const start = effectivePage * LIST_PAGE_SIZE;
+    return items.slice(start, start + LIST_PAGE_SIZE);
+  }, [items, effectivePage]);
 
   const loadItems = () => {
     queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
@@ -296,7 +308,13 @@ export default function ItemsClient({
             </h1>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <Select
+                value={filterCategory}
+                onValueChange={(value) => {
+                  setListPage(0);
+                  setFilterCategory(value);
+                }}
+              >
                 <SelectTrigger className="h-9 w-full @sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
@@ -309,7 +327,13 @@ export default function ItemsClient({
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={filterAvailable} onValueChange={setFilterAvailable}>
+              <Select
+                value={filterAvailable}
+                onValueChange={(value) => {
+                  setListPage(0);
+                  setFilterAvailable(value);
+                }}
+              >
                 <SelectTrigger className="h-9 w-full @sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('all')} />
                 </SelectTrigger>
@@ -403,7 +427,7 @@ export default function ItemsClient({
                   {tc('selectAll') || 'Select all'}
                 </span>
               </div>
-              {items.map((item) => (
+              {pageItems.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
@@ -513,6 +537,12 @@ export default function ItemsClient({
                   </DropdownMenu>
                 </div>
               ))}
+              <ListPagination
+                page={effectivePage}
+                pageSize={LIST_PAGE_SIZE}
+                totalCount={items.length}
+                onPageChange={setListPage}
+              />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">

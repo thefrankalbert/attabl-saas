@@ -105,7 +105,7 @@ describe('SignupService', () => {
       expect(supabase.from).toHaveBeenCalledWith('tenants');
     });
 
-    it('should throw VALIDATION when auth user creation fails', async () => {
+    it('should throw CONFLICT when auth user email already exists', async () => {
       const supabase = createMockSupabase({ authCreateError: true });
       const service = createSignupService(supabase);
 
@@ -116,7 +116,7 @@ describe('SignupService', () => {
           password: 'password123',
         }),
       ).rejects.toMatchObject({
-        code: 'VALIDATION',
+        code: 'CONFLICT',
       });
     });
 

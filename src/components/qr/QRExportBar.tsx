@@ -4,6 +4,7 @@ import { useState, useCallback, type RefObject } from 'react';
 import { Download, Printer, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
+import { captureElementToCanvas } from '@/lib/qr/capture-template';
 import { FeatureGate } from '@/components/qr/FeatureGate';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
@@ -50,11 +51,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       const html2canvas = await getHtml2Canvas();
       const jsPDF = await getJsPDF();
 
-      const canvas = await html2canvas(el, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: null,
-      });
+      const canvas = await captureElementToCanvas(el, html2canvas);
 
       const imgData = canvas.toDataURL('image/png');
       const pdfWidth = config.templateWidth;
@@ -85,11 +82,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     try {
       const html2canvas = await getHtml2Canvas();
 
-      const canvas = await html2canvas(el, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: null,
-      });
+      const canvas = await captureElementToCanvas(el, html2canvas);
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
