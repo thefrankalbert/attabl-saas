@@ -3,9 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { paymentInitiationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createWaveCheckout } from '@/lib/wave/client';
+import { parseRouteUuid } from '@/lib/validations/common.schema';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: orderId } = await params;
+  const { id: rawOrderId } = await params;
+  const parsedOrderId = parseRouteUuid(rawOrderId);
+  if (!parsedOrderId.ok) {
+    return NextResponse.json({ error: parsedOrderId.error }, { status: 400 });
+  }
+  const orderId = parsedOrderId.id;
 
   const ip = getClientIp(request);
   const { success: allowed } = await paymentInitiationLimiter.check(ip);
@@ -72,6 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .update({
         payment_method: 'wave',
         wave_checkout_id: checkoutId,
+        payment_initiated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
       .eq('tenant_id', tenant.id)

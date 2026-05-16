@@ -6,6 +6,8 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { ASSIGNMENT_MANAGER_ROLES, isRoleAllowed } from '@/lib/admin-roles';
+import { parseRouteUuid } from '@/lib/validations/common.schema';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -47,7 +49,16 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .single();
     if (!adminUser) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
 
-    const { id } = await params;
+    if (!isRoleAllowed(adminUser.role, ASSIGNMENT_MANAGER_ROLES)) {
+      return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
+    const { id: rawId } = await params;
+    const parsedId = parseRouteUuid(rawId);
+    if (!parsedId.ok) {
+      return NextResponse.json({ error: parsedId.error }, { status: 400 });
+    }
+    const id = parsedId.id;
     const service = createAssignmentService(supabase);
     await service.releaseAssignment(id, tenant.id);
     return NextResponse.json({ success: true });

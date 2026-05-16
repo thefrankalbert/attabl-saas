@@ -6,6 +6,8 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { parseRouteUuid } from '@/lib/validations/common.schema';
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const originErr = verifyOrigin(request);
@@ -51,7 +53,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id: rawId } = await params;
+    const parsedId = parseRouteUuid(rawId);
+    if (!parsedId.ok) {
+      return NextResponse.json({ error: parsedId.error }, { status: 400 });
+    }
+    const id = parsedId.id;
 
     // Use admin_users.id (not auth user.id) since orders.server_id references admin_users(id)
     const service = createAssignmentService(supabase);

@@ -379,6 +379,13 @@ export function createOrderService(supabase: SupabaseClient) {
       });
 
       if (error) {
+        if (error.message?.includes('TABLE_ACTIVE_ORDER')) {
+          throw new ServiceError(
+            'Une commande est deja en cours sur cette table',
+            'CONFLICT',
+            error,
+          );
+        }
         logger.error('Atomic order creation failed', error);
         throw new ServiceError('Erreur lors de la creation de la commande', 'INTERNAL', error);
       }

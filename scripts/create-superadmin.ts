@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-// Manual env var loading to avoid dotenv dependency
 const loadEnv = () => {
   try {
     const envPath = path.join(process.cwd(), '.env.local');
@@ -24,44 +23,43 @@ const loadEnv = () => {
   }
 };
 
-const env = loadEnv();
+const env = { ...loadEnv(), ...process.env };
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
+const email = env.SUPERADMIN_EMAIL;
+const password = env.SUPERADMIN_PASSWORD;
+const restaurantName = env.SUPERADMIN_RESTAURANT_NAME ?? 'La Grande Table';
+const slug = env.SUPERADMIN_TENANT_SLUG ?? 'la-grande-table';
+
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing Supabase credentials in .env.local');
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+  process.exit(1);
+}
+
+if (!email || !password) {
+  console.error(
+    'Missing SUPERADMIN_EMAIL or SUPERADMIN_PASSWORD in .env.local (required, never hardcode credentials)',
+  );
   process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function createSuperAdmin() {
-  console.log('🚀 Creating Super Admin Access...');
-
-  const email = 'superadmin@attabl.com';
-  const password = 'REDACTED-OLD-SUPERADMIN-PW';
-  const restaurantName = 'La Grande Table';
-  const slug = 'la-grande-table';
-
-  // 1. Create or Get User
-  console.log(`Checking user ${email}...`);
-  // Try to get user first by email (admin.listUsers might be needed but expensive, let's just try create)
-  // Actually simpler to delete if exists or just sign in?
-  // We will use admin.createUser which will fail if exists, then we catch
+  console.log('Creating Super Admin access...');
 
   let userId: string | null = null;
 
-  // First, try to find user
   const {
     data: { users },
-    error: listError,
   } = await supabase.auth.admin.listUsers();
   const existingUser = users?.find((u) => u.email === email);
 
   if (existingUser) {
     console.log('User already exists, resetting password...');
     userId = existingUser.id;
-    await supabase.auth.admin.updateUserById(userId, { password: password });
+    await supabase.auth.admin.updateUserById(userId, { password });
   } else {
     console.log('Creating new user...');
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -79,7 +77,6 @@ async function createSuperAdmin() {
 
   if (!userId) throw new Error('Failed to get User ID');
 
-  // 2. Create Tenant
   console.log(`Ensuring tenant ${slug}...`);
   const { data: existingTenant } = await supabase
     .from('tenants')
@@ -109,7 +106,6 @@ async function createSuperAdmin() {
     tenantId = newTenant.id;
   }
 
-  // 3. Link Admin User
   console.log('Linking admin role...');
   const { data: existingLink } = await supabase
     .from('admin_users')
@@ -134,7 +130,6 @@ async function createSuperAdmin() {
     }
   }
 
-  // 4. Create Venue
   const { data: existingVenue } = await supabase
     .from('venues')
     .select('id')
@@ -151,13 +146,13 @@ async function createSuperAdmin() {
     });
   }
 
-  console.log('\n✅ SUPER ADMIN CREATED SUCCESSFULLY');
+  console.log('\nSuper admin ready');
   console.log('-----------------------------------');
   console.log(
     `URL:      https://${slug}.attabl.com/admin (or http://${slug}.localhost:3000/admin)`,
   );
   console.log(`Email:    ${email}`);
-  console.log(`Password: ${password}`);
+  console.log('Password: (from SUPERADMIN_PASSWORD in .env.local)');
   console.log('-----------------------------------');
 }
 

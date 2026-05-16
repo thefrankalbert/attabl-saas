@@ -40,11 +40,15 @@ import { ServiceError } from '@/services/errors';
 // Helpers
 // ---------------------------------------------------------------------------
 
+const ASSIGNMENT_ID = '550e8400-e29b-41d4-a716-446655440001';
+
 function buildRequest(): Request {
-  return new Request('http://localhost:3000/api/assignments/assign-1', { method: 'DELETE' });
+  return new Request(`http://localhost:3000/api/assignments/${ASSIGNMENT_ID}`, {
+    method: 'DELETE',
+  });
 }
 
-function buildParams(id = 'assign-1'): { params: Promise<{ id: string }> } {
+function buildParams(id = ASSIGNMENT_ID): { params: Promise<{ id: string }> } {
   return { params: Promise.resolve({ id }) };
 }
 
@@ -140,6 +144,30 @@ describe('DELETE /api/assignments/[id]', () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toContain('Tenant non identifi');
+  });
+
+  it('returns 403 when user role cannot release assignments', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase({ adminUser: { role: 'waiter' } });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await DELETE(buildRequest(), buildParams());
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(403);
+    expect(json.error).toBe('Permissions insuffisantes');
+  });
+
+  it('returns 400 when assignment id is not a valid UUID', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await DELETE(buildRequest(), buildParams('not-a-uuid'));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain('invalide');
   });
 
   it('returns success when assignment is released', async () => {

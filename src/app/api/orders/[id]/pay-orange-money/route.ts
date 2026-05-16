@@ -3,9 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { paymentInitiationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOrangeMoneyPayment } from '@/lib/orange-money/client';
+import { parseRouteUuid } from '@/lib/validations/common.schema';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: orderId } = await params;
+  const { id: rawOrderId } = await params;
+  const parsedOrderId = parseRouteUuid(rawOrderId);
+  if (!parsedOrderId.ok) {
+    return NextResponse.json({ error: parsedOrderId.error }, { status: 400 });
+  }
+  const orderId = parsedOrderId.id;
 
   const ip = getClientIp(request);
   const { success: allowed } = await paymentInitiationLimiter.check(ip);
@@ -82,6 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         payment_method: 'orange_money',
         orange_money_pay_token: payToken,
         orange_money_notif_token: notifToken,
+        payment_initiated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
       .eq('tenant_id', tenant.id)
