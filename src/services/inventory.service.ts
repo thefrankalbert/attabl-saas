@@ -134,7 +134,12 @@ export function createInventoryService(supabase: SupabaseClient) {
         p_tenant_id: tenantId,
       });
 
-      if (error) throw new ServiceError('Erreur déstockage commande', 'INTERNAL', error);
+      if (error) {
+        if (error.message?.includes('INSUFFICIENT_STOCK')) {
+          throw new ServiceError('Stock insuffisant pour cette commande', 'CONFLICT', error);
+        }
+        throw new ServiceError('Erreur déstockage commande', 'INTERNAL', error);
+      }
       const count = (data as number) ?? 0;
       if (count === 0) {
         logger.warn('destockOrder returned 0 items updated', { orderId, tenantId });

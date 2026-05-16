@@ -7,6 +7,7 @@ import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
+import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 
 export async function POST(request: Request) {
   try {
@@ -56,12 +57,17 @@ export async function POST(request: Request) {
     // 4. Get the user's tenant
     const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
-      .select('tenant_id')
+      .select('tenant_id, role')
       .eq('user_id', user.id)
+      .eq('is_active', true)
       .single();
 
     if (adminUserError || !adminUser) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+    }
+
+    if (!isRoleAllowed(adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+      return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
 
     // 5. Complete onboarding via service

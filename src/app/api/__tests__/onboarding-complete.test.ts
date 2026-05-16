@@ -51,16 +51,16 @@ describe('POST /api/onboarding/complete', () => {
     });
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'admin_users') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({
-                data: { tenant_id: 'tenant-1' },
-                error: null,
-              }),
-            })),
-          })),
+        const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
+          const c: Record<string, ReturnType<typeof vi.fn>> = {};
+          c.single = vi.fn().mockResolvedValue({
+            data: { tenant_id: 'tenant-1', role: 'owner' },
+            error: null,
+          });
+          c.eq = vi.fn().mockImplementation(() => c);
+          return c;
         };
+        return { select: vi.fn(() => chain()) };
       }
       return { select: vi.fn() };
     });
@@ -92,16 +92,16 @@ describe('POST /api/onboarding/complete', () => {
   it('returns 404 when authenticated user has no tenant', async () => {
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'admin_users') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({
-                data: null,
-                error: { message: 'not found' },
-              }),
-            })),
-          })),
+        const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
+          const c: Record<string, ReturnType<typeof vi.fn>> = {};
+          c.single = vi.fn().mockResolvedValue({
+            data: null,
+            error: { message: 'not found' },
+          });
+          c.eq = vi.fn().mockImplementation(() => c);
+          return c;
         };
+        return { select: vi.fn(() => chain()) };
       }
       return { select: vi.fn() };
     });
@@ -112,6 +112,32 @@ describe('POST /api/onboarding/complete', () => {
 
     expect(response.status).toBe(404);
     expect(json.error).toBe('Tenant non trouvé');
+  });
+
+  it('returns 403 when user is not owner', async () => {
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'admin_users') {
+        const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
+          const c: Record<string, ReturnType<typeof vi.fn>> = {};
+          c.single = vi.fn().mockResolvedValue({
+            data: { tenant_id: 'tenant-1', role: 'manager' },
+            error: null,
+          });
+          c.eq = vi.fn().mockImplementation(() => c);
+          return c;
+        };
+        return { select: vi.fn(() => chain()) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const { POST } = await import('@/app/api/onboarding/complete/route');
+    const response = await POST(createRequest({ data: { restaurantName: 'Demo' } }));
+    const json = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(403);
+    expect(json.error).toBe('Permissions insuffisantes');
+    expect(mockCompleteOnboarding).not.toHaveBeenCalled();
   });
 
   it('returns success when auth and tenant checks pass', async () => {
