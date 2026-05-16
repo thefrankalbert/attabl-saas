@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { logger } from '@/lib/logger';
 import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
@@ -39,29 +40,14 @@ export async function POST(request: Request) {
 
     const { step, data } = parseResult.data;
 
-    // 3. Authenticate
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    const session = await resolveSessionAdminUser({ requireActive: true });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
-    // 4. Get the user's tenant
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (adminUserError || !adminUser) {
-      return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
-    }
-
-    // 5. Save step via service (pass full data as draft for complete restoration)
+    // 4. Save step via service (pass full data as draft for complete restoration)
     const onboardingService = createOnboardingService(supabase);
-    await onboardingService.saveStep(adminUser.tenant_id, step, data, data);
+    await onboardingService.saveStep(session.adminUser.tenant_id, step, data, data);
 
     return NextResponse.json({ success: true });
   } catch (error) {

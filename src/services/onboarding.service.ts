@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { ServiceError } from './errors';
 import { createTableConfigService } from './table-config.service';
 import { logger } from '@/lib/logger';
@@ -391,8 +392,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
      * Merges tenant fields with the saved draft for maximum data recovery.
      */
     async getState(userId: string): Promise<OnboardingState> {
-      // Get the user's tenant via admin_users join
-      const { data: adminUser } = await supabase
+      // Lookup via service role (RLS can block admin_users during onboarding)
+      const lookupClient = createAdminClient();
+      const { data: adminUser } = await lookupClient
         .from('admin_users')
         .select(
           `
@@ -417,7 +419,8 @@ export function createOnboardingService(supabase: SupabaseClient) {
         `,
         )
         .eq('user_id', userId)
-        .single();
+        .eq('is_active', true)
+        .maybeSingle();
 
       if (!adminUser || !adminUser.tenants) {
         throw new ServiceError('Tenant non trouvé', 'NOT_FOUND');
