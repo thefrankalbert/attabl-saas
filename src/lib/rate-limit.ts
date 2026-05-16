@@ -123,6 +123,9 @@ export const paymentInitiationLimiter = createLimiter(
   true,
 );
 
+/** Payment webhooks (Wave, Orange Money): 120 requests / minute per IP. */
+export const webhookLimiter = createLimiter('webhooks', Ratelimit.slidingWindow(120, '1 m'));
+
 /** Checkout: 5 requests / 10 minutes per IP. Fail-closed: block if Redis is down
  * in production to prevent unbounded checkout sessions during an outage. */
 export const checkoutLimiter = createLimiter('checkout', Ratelimit.slidingWindow(5, '10 m'), true);

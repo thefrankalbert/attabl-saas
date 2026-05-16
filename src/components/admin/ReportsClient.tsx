@@ -416,14 +416,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         fontSize: 12,
                       }}
                       labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                      formatter={(
-                        value: number | undefined,
-                        _name: string | undefined,
-                        item: { payload?: DailyStats },
-                      ) => [
-                        `${fmt(value ?? 0)} - ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
-                        t('revenueLabel'),
-                      ]}
+                      formatter={(value, _name, item) => {
+                        const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                        const payload = item as { payload?: DailyStats };
+                        return [
+                          `${fmt(Number.isFinite(numericValue) ? numericValue : 0)} - ${t('ordersCountShort', { count: payload.payload?.orders ?? 0 })}`,
+                          t('revenueLabel'),
+                        ];
+                      }}
                       cursor={{ fill: 'var(--app-accent-muted)' }}
                     />
                     <Bar
@@ -559,10 +559,13 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         color: 'var(--app-text)',
                         fontSize: 12,
                       }}
-                      formatter={(value: number | undefined, name: string | undefined) => [
-                        fmt(value ?? 0),
-                        name ?? '',
-                      ]}
+                      formatter={(value, name) => {
+                        const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                        return [
+                          fmt(Number.isFinite(numericValue) ? numericValue : 0),
+                          typeof name === 'string' ? name : '',
+                        ];
+                      }}
                     />
                     <Legend
                       verticalAlign="bottom"
@@ -616,10 +619,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                           fontSize: 12,
                         }}
                         labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                        formatter={(value: number | undefined) => [
-                          `${value ?? 0}`,
-                          t('ordersCount'),
-                        ]}
+                        formatter={(value) => {
+                          const numericValue =
+                            typeof value === 'number' ? value : Number(value ?? 0);
+                          return [
+                            `${Number.isFinite(numericValue) ? numericValue : 0}`,
+                            t('ordersCount'),
+                          ];
+                        }}
                       />
                       <Bar
                         dataKey="orders"

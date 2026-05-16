@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id, total, payment_status')
+    .select('id, total, payment_status, wave_checkout_id')
     .eq('id', orderId)
     .eq('tenant_id', tenant.id)
     .single();
@@ -53,6 +53,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Commande deja payee' }, { status: 409 });
   }
 
+  if (order.payment_status === 'pending' && order.wave_checkout_id) {
+    return NextResponse.json({ error: 'Paiement deja en cours' }, { status: 409 });
+  }
+
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const { checkoutId, checkoutUrl } = await createWaveCheckout({
@@ -62,6 +66,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       successUrl: `${appUrl}/sites/${tenantSlug}/order-confirmed?orderId=${orderId}&payment=success`,
       errorUrl: `${appUrl}/sites/${tenantSlug}/order-confirmed?orderId=${orderId}&payment=error`,
     });
+
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        payment_method: 'wave',
+        wave_checkout_id: checkoutId,
+      })
+      .eq('id', orderId)
+      .eq('tenant_id', tenant.id)
+      .eq('payment_status', 'pending')
+      .is('wave_checkout_id', null);
+
+    if (updateError) {
+      logger.error('Wave: failed to set payment session', { updateError, orderId });
+      return NextResponse.json({ error: 'Erreur initialisation paiement' }, { status: 500 });
+    }
 
     logger.info('Wave checkout created', { orderId, checkoutId });
     return NextResponse.json({ checkoutUrl });

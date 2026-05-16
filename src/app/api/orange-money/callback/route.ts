@@ -1,12 +1,35 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
-import { verifyOrangeMoneyCallback } from '@/lib/orange-money/client';
+import { webhookLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  getOrangeMoneyTransactionStatus,
+  verifyOrangeMoneyCallback,
+  verifyOrangeMoneyNotifToken,
+  verifyOrangeMoneyWebhookSignature,
+} from '@/lib/orange-money/client';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { success: allowed } = await webhookLimiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    );
+  }
+
+  const rawBody = await request.text();
+  const signatureHeader = request.headers.get('x-orange-signature');
+
+  if (!verifyOrangeMoneyWebhookSignature(rawBody, signatureHeader)) {
+    logger.warn('Orange Money callback: invalid signature');
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody) as unknown;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
@@ -16,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  const { status, orderId, txnid, amount } = body;
+  const { status, orderId, txnid, amount, notif_token: notifToken } = body;
 
   const supabase = createAdminClient();
 
@@ -25,10 +48,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
-  // Verify order exists and was genuinely initiated via Orange Money
   const { data: order } = await supabase
     .from('orders')
-    .select('id, total, payment_status, payment_method')
+    .select(
+      'id, total, payment_status, payment_method, orange_money_pay_token, orange_money_notif_token',
+    )
     .eq('id', orderId)
     .single();
 
@@ -49,7 +73,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Payment method mismatch' }, { status: 400 });
   }
 
-  // Verify amount matches (anti-manipulation)
+  const storedNotifToken = order.orange_money_notif_token as string | null;
+  if (!storedNotifToken || !verifyOrangeMoneyNotifToken(notifToken, storedNotifToken)) {
+    logger.warn('Orange Money callback: notif_token mismatch', { orderId, txnid });
+    return NextResponse.json({ error: 'Invalid notification token' }, { status: 401 });
+  }
+
   const callbackAmount = Math.round(parseFloat(amount));
   const orderTotal = Math.round(Number(order.total));
   if (callbackAmount !== orderTotal) {
@@ -62,7 +91,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
   }
 
-  // Idempotency: only record SUCCESS events to avoid blocking retries of failed transactions
+  const payToken = order.orange_money_pay_token as string | null;
+  if (!payToken) {
+    logger.warn('Orange Money callback: missing pay_token on order', { orderId, txnid });
+    return NextResponse.json({ error: 'Payment session not found' }, { status: 400 });
+  }
+
+  try {
+    const remoteStatus = await getOrangeMoneyTransactionStatus({
+      payToken,
+      orderId,
+      amount: orderTotal,
+    });
+
+    if (remoteStatus.status.toUpperCase() !== 'SUCCESS') {
+      logger.warn('Orange Money callback: remote status not successful', {
+        orderId,
+        txnid,
+        remoteStatus: remoteStatus.status,
+      });
+      return NextResponse.json({ error: 'Payment not confirmed' }, { status: 400 });
+    }
+  } catch (err) {
+    logger.error('Orange Money callback: status verification failed', { err, orderId, txnid });
+    return NextResponse.json({ error: 'Payment verification failed' }, { status: 502 });
+  }
+
   const { error: insertError } = await supabase.from('orange_money_events').insert({
     id: txnid,
     status,
@@ -83,7 +137,8 @@ export async function POST(request: Request) {
       payment_method: 'orange_money',
       paid_at: new Date().toISOString(),
     })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .eq('payment_status', 'pending');
 
   if (updateError) {
     logger.error('Orange Money callback: failed to mark order paid', { updateError, orderId });

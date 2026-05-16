@@ -37,7 +37,10 @@ export default function DashboardHourlyBar({ data, t }: DashboardHourlyBarProps)
                 color: 'var(--app-text)',
                 padding: '10px 14px',
               }}
-              formatter={(value: number | undefined) => [value ?? 0, t('ordersPerHour')]}
+              formatter={(value) => {
+                const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                return [Number.isFinite(numericValue) ? numericValue : 0, t('ordersPerHour')];
+              }}
               labelStyle={{ color: 'var(--app-text-muted)', fontSize: '11px', marginBottom: '4px' }}
               cursor={{ fill: 'var(--app-accent)', opacity: 0.08 }}
             />

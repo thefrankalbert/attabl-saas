@@ -1,8 +1,10 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import { logger } from '@/lib/logger';
 
 const OM_AUTH_URL = 'https://api.orange.com/oauth/v3/token';
 const OM_ENV = process.env.ORANGE_MONEY_ENV ?? 'dev';
 const OM_PAYMENT_URL = `https://api.orange.com/orange-money-webpay/${OM_ENV}/v1/webpayment`;
+const OM_TRANSACTION_STATUS_URL = `https://api.orange.com/orange-money-webpay/${OM_ENV}/v1/transactionstatus`;
 
 function requireOrangeMoneyEnv(): {
   clientId: string;
@@ -47,6 +49,7 @@ export interface OrangeMoneyPaymentData {
   amount: string;
   payment_url: string;
   pay_token: string;
+  notif_token?: string;
 }
 
 export async function createOrangeMoneyPayment(params: {
@@ -56,7 +59,7 @@ export async function createOrangeMoneyPayment(params: {
   notifUrl: string;
   returnUrl: string;
   cancelUrl: string;
-}): Promise<{ paymentUrl: string; payToken: string }> {
+}): Promise<{ paymentUrl: string; payToken: string; notifToken: string }> {
   const { clientId, clientSecret, merchantKey } = requireOrangeMoneyEnv();
   const accessToken = await getAccessToken(clientId, clientSecret);
 
@@ -91,6 +94,7 @@ export async function createOrangeMoneyPayment(params: {
   const data = (await response.json()) as {
     status: number;
     message: string;
+    notif_token?: string;
     data: OrangeMoneyPaymentData;
   };
 
@@ -99,9 +103,15 @@ export async function createOrangeMoneyPayment(params: {
     throw new Error(`Orange Money payment failed: ${data.message}`);
   }
 
+  const notifToken = data.data.notif_token ?? data.notif_token ?? '';
+  if (!notifToken) {
+    logger.warn('Orange Money payment missing notif_token', { orderId: params.orderId });
+  }
+
   return {
     paymentUrl: data.data.payment_url,
     payToken: data.data.pay_token,
+    notifToken,
   };
 }
 
@@ -110,6 +120,7 @@ export interface OrangeMoneyCallbackPayload {
   txnid: string;
   orderId: string;
   amount: string;
+  notif_token: string;
   subscriberMsisdn?: string;
   errorcode?: string;
   errormessage?: string;
@@ -122,6 +133,97 @@ export function verifyOrangeMoneyCallback(body: unknown): body is OrangeMoneyCal
     typeof b.status === 'string' &&
     typeof b.orderId === 'string' &&
     typeof b.txnid === 'string' &&
-    typeof b.amount === 'string'
+    typeof b.amount === 'string' &&
+    typeof b.notif_token === 'string'
   );
+}
+
+export function verifyOrangeMoneyNotifToken(receivedToken: string, expectedToken: string): boolean {
+  if (!receivedToken || !expectedToken) {
+    return false;
+  }
+
+  const received = Buffer.from(receivedToken);
+  const expected = Buffer.from(expectedToken);
+  if (received.length !== expected.length) {
+    return false;
+  }
+
+  return timingSafeEqual(received, expected);
+}
+
+export async function getOrangeMoneyTransactionStatus(params: {
+  payToken: string;
+  orderId: string;
+  amount: number;
+}): Promise<{ status: string; txnId?: string }> {
+  const { clientId, clientSecret, merchantKey } = requireOrangeMoneyEnv();
+  const accessToken = await getAccessToken(clientId, clientSecret);
+
+  const response = await fetch(OM_TRANSACTION_STATUS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      merchant_key: merchantKey,
+      order_id: params.orderId,
+      amount: String(params.amount),
+      pay_token: params.payToken,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    logger.error('Orange Money transaction status failed', undefined, {
+      status: response.status,
+      body,
+      orderId: params.orderId,
+    });
+    throw new Error(`Orange Money status error: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    status?: number;
+    message?: string;
+    data?: { status?: string; txn_id?: string; txnid?: string };
+  };
+
+  const remoteStatus = payload.data?.status ?? payload.message ?? '';
+  const txnId = payload.data?.txn_id ?? payload.data?.txnid;
+
+  return { status: remoteStatus, txnId };
+}
+
+/**
+ * Optional HMAC verification when ORANGE_MONEY_WEBHOOK_SECRET is configured.
+ * Header name: x-orange-signature (hex HMAC-SHA256 of raw body).
+ */
+export function verifyOrangeMoneyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+): boolean {
+  const secret = process.env.ORANGE_MONEY_WEBHOOK_SECRET;
+  if (!secret) {
+    return true;
+  }
+
+  if (!signatureHeader) {
+    return false;
+  }
+
+  const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
+  const received = signatureHeader
+    .trim()
+    .toLowerCase()
+    .replace(/^sha256=/, '');
+
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const receivedBuf = Buffer.from(received, 'hex');
+  if (expectedBuf.length !== receivedBuf.length || expectedBuf.length === 0) {
+    return false;
+  }
+
+  return timingSafeEqual(expectedBuf, receivedBuf);
 }
