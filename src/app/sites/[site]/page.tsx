@@ -121,6 +121,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
         'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
       )
       .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
       .eq('is_featured', true)
       .eq('is_available', true)
       .order('display_order', { ascending: true })
@@ -132,6 +133,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
         'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
       )
       .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
       .eq('is_available', true)
       .order('created_at', { ascending: false })
       .limit(6),
@@ -168,6 +170,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
       .from('menu_items')
       .select('id, category_id, name, description, price')
       .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
       .eq('is_available', true)
       .order('name', { ascending: true })
       .limit(150),

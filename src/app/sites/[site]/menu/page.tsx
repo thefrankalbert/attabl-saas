@@ -111,6 +111,7 @@ export default async function MenuDetailPage({
       `,
       )
       .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
       .eq('is_available', true)
       .order('created_at', { ascending: true }),
 

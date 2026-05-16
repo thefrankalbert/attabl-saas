@@ -89,6 +89,7 @@ export async function POST(request: Request) {
           'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
         )
         .eq('tenant_id', tenant_id)
+        .is('deleted_at', null)
         .in('id', itemIds),
       adminSupabase
         .from('tenants')

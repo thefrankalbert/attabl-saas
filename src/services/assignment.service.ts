@@ -74,18 +74,31 @@ export function createAssignmentService(supabase: SupabaseClient) {
       return data.server as unknown as AdminUser;
     },
 
-    async getActiveAssignments(tenantId: string): Promise<TableAssignment[]> {
-      const { data, error } = await supabase
+    async getActiveAssignments(
+      tenantId: string,
+      options?: { page?: number; pageSize?: number },
+    ): Promise<{ assignments: TableAssignment[]; total: number }> {
+      const page = options?.page ?? 1;
+      const pageSize = options?.pageSize ?? 50;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from('table_assignments')
         .select(
           '*, server:admin_users(id, full_name, role), table:tables(id, display_name, table_number, zone_id)',
+          { count: 'exact' },
         )
         .eq('tenant_id', tenantId)
         .is('ended_at', null)
-        .order('started_at', { ascending: false });
+        .order('started_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw new ServiceError('Erreur de chargement', 'INTERNAL');
-      return (data as TableAssignment[]) ?? [];
+      return {
+        assignments: (data as TableAssignment[]) ?? [],
+        total: count ?? 0,
+      };
     },
 
     async claimOrder(orderId: string, serverId: string, tenantId: string): Promise<void> {

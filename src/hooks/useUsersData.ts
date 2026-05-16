@@ -155,9 +155,11 @@ export function useUsersData({
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des invitations');
       }
-      const data: unknown = await response.json();
-      if (Array.isArray(data)) {
-        setPendingInvitations(data as Invitation[]);
+      const data = (await response.json()) as {
+        invitations?: Invitation[];
+      };
+      if (Array.isArray(data.invitations)) {
+        setPendingInvitations(data.invitations);
       }
     } catch (e: unknown) {
       logger.error('Failed to fetch invitations', e instanceof Error ? e.message : String(e));
@@ -167,9 +169,11 @@ export function useUsersData({
   }, []);
 
   useEffect(() => {
-    if (canManageUsers) {
+    if (!canManageUsers) return undefined;
+    const timeoutId = setTimeout(() => {
       void fetchInvitations();
-    }
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [canManageUsers, fetchInvitations]);
 
   // Handle invitation send

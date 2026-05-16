@@ -257,6 +257,7 @@ export interface MenuItem {
   category_id: string;
   category?: Category;
   display_order?: number;
+  deleted_at?: string | null;
   created_at: string;
   options?: ItemOption[];
   price_variants?: ItemPriceVariant[];

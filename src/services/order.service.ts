@@ -116,6 +116,7 @@ export function createOrderService(supabase: SupabaseClient) {
           .from('menu_items')
           .select('id, name, price, is_available, category_id')
           .eq('tenant_id', tenantId)
+          .is('deleted_at', null)
           .in('id', itemIds),
         supabase
           .from('item_modifiers')

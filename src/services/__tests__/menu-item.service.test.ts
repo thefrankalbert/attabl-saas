@@ -16,7 +16,8 @@ function makeInsertMock(result: { data: unknown; error: unknown }) {
 }
 
 function makeChainMock(result: { error: unknown }) {
-  const eqMock2 = vi.fn().mockResolvedValue(result);
+  const isMock = vi.fn().mockResolvedValue(result);
+  const eqMock2 = vi.fn().mockReturnValue({ is: isMock });
   const eqMock1 = vi.fn().mockReturnValue({ eq: eqMock2 });
   const opMock = vi.fn().mockReturnValue({ eq: eqMock1 });
   const fromMock = vi.fn().mockReturnValue({
@@ -100,9 +101,33 @@ describe('createMenuItemService.updateMenuItem', () => {
 });
 
 describe('createMenuItemService.deleteMenuItem', () => {
+  it('soft-deletes by updating deleted_at instead of hard delete', async () => {
+    const isMock = vi.fn().mockResolvedValue({ error: null });
+    const eqTenantMock = vi.fn().mockReturnValue({ is: isMock });
+    const eqIdMock = vi.fn().mockReturnValue({ eq: eqTenantMock });
+    const updateMock = vi.fn().mockReturnValue({ eq: eqIdMock });
+    const fromMock = vi.fn().mockReturnValue({ update: updateMock });
+    const service = createMenuItemService({ from: fromMock } as unknown as SupabaseClient);
+
+    await service.deleteMenuItem('item-1', 'tenant-1');
+
+    expect(fromMock).toHaveBeenCalledWith('menu_items');
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deleted_at: expect.any(String),
+        is_available: false,
+      }),
+    );
+    expect(isMock).toHaveBeenCalledWith('deleted_at', null);
+  });
+
   it('throws ServiceError on DB error', async () => {
-    const { from } = makeChainMock({ error: { message: 'fail' } });
-    const service = createMenuItemService({ from } as unknown as SupabaseClient);
+    const isMock = vi.fn().mockResolvedValue({ error: { message: 'fail' } });
+    const eqTenantMock = vi.fn().mockReturnValue({ is: isMock });
+    const eqIdMock = vi.fn().mockReturnValue({ eq: eqTenantMock });
+    const updateMock = vi.fn().mockReturnValue({ eq: eqIdMock });
+    const fromMock = vi.fn().mockReturnValue({ update: updateMock });
+    const service = createMenuItemService({ from: fromMock } as unknown as SupabaseClient);
 
     await expect(service.deleteMenuItem('item-1', 'tenant-1')).rejects.toBeInstanceOf(ServiceError);
   });
