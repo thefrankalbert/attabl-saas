@@ -24,6 +24,7 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
       .from('menu_items')
       .select('*, categories(id, name)')
       .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
       .order('name'),
     supabase.from('categories').select('*').eq('tenant_id', tenant.id).order('display_order'),
   ]);

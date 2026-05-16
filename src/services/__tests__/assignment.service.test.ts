@@ -67,7 +67,9 @@ function createMockSupabase() {
             }),
           }),
           is: vi.fn().mockReturnValue({
-            order: chain.resolve,
+            order: vi.fn().mockReturnValue({
+              range: chain.resolve,
+            }),
           }),
         }),
       }),
@@ -229,12 +231,13 @@ describe('AssignmentService', () => {
       supabase._getChain('table_assignments').resolve.mockResolvedValue({
         data: [mockAssignment],
         error: null,
+        count: 1,
       });
 
       const service = createAssignmentService(asSupabase(supabase));
       const result = await service.getActiveAssignments(TENANT_ID);
 
-      expect(result).toEqual([mockAssignment]);
+      expect(result.assignments).toEqual([mockAssignment]);
     });
   });
 

@@ -13,6 +13,7 @@ function chainable(result: { count?: number | null; error?: unknown; data?: unkn
   // Every method returns the same chainable object
   obj.select = vi.fn(() => obj);
   obj.eq = vi.fn(() => obj);
+  obj.is = vi.fn(() => obj);
   obj.in = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   // Make the chain itself thenable (await-able)

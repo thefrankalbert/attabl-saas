@@ -234,15 +234,25 @@ export function createInvitationService(supabase: SupabaseClient) {
       return invitation as Invitation;
     },
 
-    async getPendingInvitations(tenantId: string): Promise<Invitation[]> {
-      const { data, error } = await supabase
+    async getPendingInvitations(
+      tenantId: string,
+      options?: { page?: number; pageSize?: number },
+    ): Promise<{ invitations: Invitation[]; total: number }> {
+      const page = options?.page ?? 1;
+      const pageSize = options?.pageSize ?? 25;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from('invitations')
         .select(
           'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+          { count: 'exact' },
         )
         .eq('tenant_id', tenantId)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) {
         throw new ServiceError(`Erreur chargement: ${error.message}`, 'INTERNAL', error);
@@ -260,12 +270,11 @@ export function createInvitationService(supabase: SupabaseClient) {
         }
       }
 
-      // Batch-update all expired invitations in a single query instead of N updates
       if (expiredIds.length > 0) {
         await supabase.from('invitations').update({ status: 'expired' }).in('id', expiredIds);
       }
 
-      return valid;
+      return { invitations: valid, total: count ?? valid.length };
     },
   };
 }

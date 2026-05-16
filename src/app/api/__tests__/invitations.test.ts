@@ -185,7 +185,7 @@ function setupMockAdminClient(overrides?: {
 
   vi.mocked(createAdminClient).mockReturnValue(adminClient as never);
   vi.mocked(createInvitationService).mockReturnValue({
-    getPendingInvitations: vi.fn().mockResolvedValue(invitations),
+    getPendingInvitations: vi.fn().mockResolvedValue({ invitations, total: invitations.length }),
     createInvitation: vi.fn().mockResolvedValue(invitation),
     cancelInvitation: vi.fn().mockResolvedValue(undefined),
     resendInvitation: vi.fn().mockResolvedValue(invitation),

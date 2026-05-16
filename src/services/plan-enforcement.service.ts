@@ -87,7 +87,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
       const { count, error } = await supabase
         .from('menu_items')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id);
+        .eq('tenant_id', tenant.id)
+        .is('deleted_at', null);
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
@@ -205,7 +206,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
       const { count, error } = await supabase
         .from('menu_items')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id);
+        .eq('tenant_id', tenant.id)
+        .is('deleted_at', null);
 
       if (error) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
@@ -269,7 +271,8 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         supabase
           .from('menu_items')
           .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId),
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null),
         supabase
           .from('venues')
           .select('id', { count: 'exact', head: true })

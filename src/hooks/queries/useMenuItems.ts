@@ -32,7 +32,8 @@ export function useMenuItems(
       let query = supabase
         .from('menu_items')
         .select(withCategory ? `${baseSelect}, categories(id, name)` : baseSelect)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null);
 
       if (availableOnly) {
         query = query.eq('is_available', true);
