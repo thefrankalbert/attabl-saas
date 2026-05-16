@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { webhookLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyWaveWebhook } from '@/lib/wave/client';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { success: allowed } = await webhookLimiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    );
+  }
+
   const rawBody = await request.text();
   const signatureHeader = request.headers.get('x-wave-signature') ?? '';
 
@@ -28,7 +38,6 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
 
-  // Idempotency: if event id already exists, skip processing
   const { error: insertError } = await supabase.from('wave_events').insert({
     id: eventId,
     type: eventType,
@@ -48,6 +57,26 @@ export async function POST(request: Request) {
     const orderId = data.client_reference as string | undefined;
 
     if (orderId) {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, payment_status, payment_method, wave_checkout_id')
+        .eq('id', orderId)
+        .single();
+
+      if (!order) {
+        logger.warn('Wave webhook: order not found', { orderId, eventId });
+        return NextResponse.json({ received: true });
+      }
+
+      if (order.payment_method !== 'wave') {
+        logger.warn('Wave webhook: payment method mismatch', {
+          orderId,
+          eventId,
+          actualMethod: order.payment_method,
+        });
+        return NextResponse.json({ received: true });
+      }
+
       const { error: updateError } = await supabase
         .from('orders')
         .update({
@@ -56,7 +85,7 @@ export async function POST(request: Request) {
           paid_at: new Date().toISOString(),
         })
         .eq('id', orderId)
-        .neq('payment_status', 'paid');
+        .eq('payment_status', 'pending');
 
       if (updateError) {
         logger.error('Wave webhook: failed to mark order paid', { updateError, orderId });

@@ -56,7 +56,10 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
                   color: 'var(--app-text)',
                   padding: '10px 14px',
                 }}
-                formatter={(value: number | undefined) => [fmtCompact(value ?? 0), '']}
+                formatter={(value) => {
+                  const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                  return [fmtCompact(Number.isFinite(numericValue) ? numericValue : 0), ''];
+                }}
               />
             </PieChart>
           </ResponsiveContainer>

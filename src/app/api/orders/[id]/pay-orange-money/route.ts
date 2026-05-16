@@ -43,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id, total, payment_status')
+    .select('id, total, payment_status, orange_money_pay_token')
     .eq('id', orderId)
     .eq('tenant_id', tenant.id)
     .single();
@@ -56,9 +56,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Commande deja payee' }, { status: 409 });
   }
 
+  if (order.payment_status === 'pending' && order.orange_money_pay_token) {
+    return NextResponse.json({ error: 'Paiement deja en cours' }, { status: 409 });
+  }
+
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const { paymentUrl } = await createOrangeMoneyPayment({
+    const { paymentUrl, payToken, notifToken } = await createOrangeMoneyPayment({
       amount: order.total as number,
       currency: (tenant.currency as string) || 'XOF',
       orderId,
@@ -67,15 +71,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       cancelUrl: `${appUrl}/sites/${tenantSlug}/order-confirmed?orderId=${orderId}&payment=cancel`,
     });
 
-    // Mark payment method at initiation so the callback can verify it was genuinely initiated
+    if (!notifToken) {
+      logger.error('Orange Money: missing notif_token from provider', { orderId });
+      return NextResponse.json({ error: 'Erreur initialisation paiement' }, { status: 502 });
+    }
+
     const { error: methodUpdateError } = await supabase
       .from('orders')
-      .update({ payment_method: 'orange_money' })
+      .update({
+        payment_method: 'orange_money',
+        orange_money_pay_token: payToken,
+        orange_money_notif_token: notifToken,
+      })
       .eq('id', orderId)
-      .eq('payment_status', 'pending');
+      .eq('tenant_id', tenant.id)
+      .eq('payment_status', 'pending')
+      .is('orange_money_pay_token', null);
 
     if (methodUpdateError) {
-      logger.error('Orange Money: failed to set payment_method', { methodUpdateError, orderId });
+      logger.error('Orange Money: failed to set payment session', { methodUpdateError, orderId });
       return NextResponse.json({ error: 'Erreur initialisation paiement' }, { status: 500 });
     }
 

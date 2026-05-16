@@ -7,21 +7,21 @@ const mockCompleteOnboarding = vi.fn();
 const mockRevalidateTag = vi.fn();
 
 vi.mock('@/lib/rate-limit', () => ({
-  onboardingCompleteLimiter: { check: (...args: unknown[]) => mockRateLimitCheck(...args) },
-  getClientIp: (...args: unknown[]) => mockGetClientIp(...args),
+  onboardingCompleteLimiter: { check: mockRateLimitCheck },
+  getClientIp: mockGetClientIp,
 }));
 
 vi.mock('@/lib/csrf', () => ({
-  verifyOrigin: (...args: unknown[]) => mockVerifyOrigin(...args),
+  verifyOrigin: mockVerifyOrigin,
 }));
 
 vi.mock('next/cache', () => ({
-  revalidateTag: (...args: unknown[]) => mockRevalidateTag(...args),
+  revalidateTag: mockRevalidateTag,
 }));
 
 vi.mock('@/services/onboarding.service', () => ({
   createOnboardingService: vi.fn(() => ({
-    completeOnboarding: (...args: unknown[]) => mockCompleteOnboarding(...args),
+    completeOnboarding: mockCompleteOnboarding,
   })),
 }));
 
