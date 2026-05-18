@@ -57,3 +57,9 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/swe-worker-*.js
 .gstack/
+
+# Local CI / agent output logs (repo root)
+/build*.log
+/build_*.log
+/ci_*.log
+/test_*.log

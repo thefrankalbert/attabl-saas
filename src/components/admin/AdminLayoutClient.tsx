@@ -58,6 +58,7 @@ function AdminLayoutInner({
   const pathname = usePathname();
   const isHome = isAdminHome(pathname, basePath);
   const immersive = isImmersivePage(pathname);
+  const showBottomNav = (isMobile || isTablet) && !isHome && !immersive;
 
   // Sidebar collapsed state - persisted to localStorage, respected across navigations
   // Use false as SSR default to avoid hydration mismatch, then sync from localStorage after mount
@@ -74,18 +75,21 @@ function AdminLayoutInner({
     } catch {
       // localStorage unavailable
     }
-    setSidebarCollapsed(initial);
+    queueMicrotask(() => setSidebarCollapsed(initial));
   }, []);
 
   // Auto-collapse on tablet portrait, but only on initial mount / device change
   // NEVER auto-expand - user's explicit choice is always respected
   useEffect(() => {
-    if (isTablet && !sidebarCollapsed) {
+    if (!isTablet || sidebarCollapsed) return;
+    queueMicrotask(() => {
       setSidebarCollapsed(true);
       try {
         localStorage.setItem(SIDEBAR_STORAGE_KEY, 'true');
-      } catch {}
-    }
+      } catch {
+        // localStorage unavailable
+      }
+    });
     // Only run when device type changes (tablet vs desktop), not on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTablet]);
@@ -132,12 +136,13 @@ function AdminLayoutInner({
           className={cn(
             'flex-1 min-h-0 @container overflow-y-auto flex flex-col',
             isDevMode && 'pt-6',
+            showBottomNav && 'pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]',
           )}
         >
           <div className="max-w-screen-2xl mx-auto flex-1 min-h-0 flex flex-col">{children}</div>
         </main>
 
-        {(isMobile || isTablet) && !isHome && (
+        {showBottomNav && (
           <AdminBottomNav
             basePath={basePath}
             role={role}
