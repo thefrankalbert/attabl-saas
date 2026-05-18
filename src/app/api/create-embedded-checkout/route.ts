@@ -1,11 +1,92 @@
 import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
-import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
+import { resolveCheckoutTenant } from '@/lib/stripe/checkout-tenant';
+import { toCheckoutApiError } from '@/lib/stripe/checkout-errors';
+import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
+
+type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
+
+function resolvePriceId(plan: SelfServicePlan, billingInterval: BillingInterval): string {
+  try {
+    return getStripePriceId(plan, billingInterval);
+  } catch (configError) {
+    logger.error('Embedded checkout: missing Stripe price configuration', configError, {
+      plan,
+      billingInterval,
+    });
+    throw configError;
+  }
+}
+
+function buildTrialDays(tenantData: {
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+}): number | undefined {
+  if (tenantData.subscription_status !== 'trial' || !tenantData.trial_ends_at) {
+    return undefined;
+  }
+  const remaining = Math.ceil(
+    (new Date(tenantData.trial_ends_at).getTime() - Date.now()) / 86400000,
+  );
+  return remaining > 0 ? remaining : undefined;
+}
+
+async function createEmbeddedSession(params: {
+  priceId: string;
+  tenantId: string;
+  plan: SelfServicePlan;
+  billingInterval: BillingInterval;
+  customerId: string | null;
+  customerEmail: string;
+  trialDays?: number;
+}) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
+
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    ui_mode: 'embedded',
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [{ price: params.priceId, quantity: 1 }],
+    metadata: {
+      tenant_id: params.tenantId,
+      plan: params.plan,
+      billing_interval: params.billingInterval,
+    },
+    return_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    subscription_data: {
+      ...(params.trialDays ? { trial_period_days: params.trialDays } : {}),
+      metadata: {
+        tenant_id: params.tenantId,
+        plan: params.plan,
+        billing_interval: params.billingInterval,
+      },
+    },
+  };
+
+  if (params.customerId) {
+    sessionParams.customer = params.customerId;
+  } else {
+    sessionParams.customer_email = params.customerEmail;
+  }
+
+  return withStripeBreaker(() => stripe.checkout.sessions.create(sessionParams));
+}
+
+function isMissingStripeCustomer(error: unknown): boolean {
+  return (
+    error instanceof Stripe.errors.StripeInvalidRequestError &&
+    error.code === 'resource_missing' &&
+    error.param === 'customer'
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -21,54 +102,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
+    const resolved = await resolveCheckoutTenant();
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
     }
 
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select(
-        'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status)',
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (adminUserError || !adminUser?.tenant_id) {
-      logger.error('Embedded checkout: tenant not found for user', adminUserError, {
-        userId: user.id,
-      });
-      return NextResponse.json(
-        { error: 'Tenant non trouve pour cet utilisateur' },
-        { status: 404 },
-      );
-    }
-
-    const tenantId = adminUser.tenant_id;
-
-    if (!user.email) {
-      return NextResponse.json(
-        { error: 'Aucune adresse email associee a ce compte' },
-        { status: 400 },
-      );
-    }
-
-    const tenantData = adminUser.tenants as unknown as {
-      name: string;
-      stripe_customer_id: string | null;
-      stripe_subscription_id: string | null;
-      trial_ends_at: string | null;
-      subscription_status: string | null;
-    } | null;
-
+    const tenantData = resolved.tenant.tenants;
     if (tenantData?.stripe_subscription_id) {
       return NextResponse.json(
         {
@@ -93,54 +132,55 @@ export async function POST(request: Request) {
     }
 
     const { plan, billingInterval } = parseResult.data;
-    const priceId = getStripePriceId(plan, billingInterval);
-
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
-
-    const trialDays = (() => {
-      if (tenantData?.subscription_status !== 'trial' || !tenantData?.trial_ends_at)
-        return undefined;
-      const remaining = Math.ceil(
-        (new Date(tenantData.trial_ends_at).getTime() - Date.now()) / 86400000,
-      );
-      return remaining > 0 ? remaining : undefined;
-    })();
-
+    const priceId = resolvePriceId(plan, billingInterval);
+    const trialDays = tenantData ? buildTrialDays(tenantData) : undefined;
     const existingCustomerId = tenantData?.stripe_customer_id ?? null;
-    const customerParams: { customer: string } | { customer_email: string } = existingCustomerId
-      ? { customer: existingCustomerId }
-      : { customer_email: user.email };
 
-    const session = await withStripeBreaker(() =>
-      stripe.checkout.sessions.create({
-        ui_mode: 'embedded',
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        ...customerParams,
-        metadata: {
-          tenant_id: tenantId,
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await createEmbeddedSession({
+        priceId,
+        tenantId: resolved.tenant.tenant_id,
+        plan,
+        billingInterval,
+        customerId: existingCustomerId,
+        customerEmail: resolved.email,
+        trialDays,
+      });
+    } catch (stripeError) {
+      if (existingCustomerId && isMissingStripeCustomer(stripeError)) {
+        logger.warn('Embedded checkout: stale stripe_customer_id, retrying with email', {
+          tenantId: resolved.tenant.tenant_id,
+          customerId: existingCustomerId,
+        });
+        session = await createEmbeddedSession({
+          priceId,
+          tenantId: resolved.tenant.tenant_id,
           plan,
-          billing_interval: billingInterval,
-        },
-        return_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        subscription_data: {
-          ...(trialDays ? { trial_period_days: trialDays } : {}),
-          metadata: {
-            tenant_id: tenantId,
-            plan,
-            billing_interval: billingInterval,
-          },
-        },
-      }),
-    );
+          billingInterval,
+          customerId: null,
+          customerEmail: resolved.email,
+          trialDays,
+        });
+      } else {
+        throw stripeError;
+      }
+    }
+
+    if (!session.client_secret) {
+      logger.error('Embedded checkout: session created without client_secret', undefined, {
+        sessionId: session.id,
+      });
+      return NextResponse.json(
+        { error: 'Session Stripe invalide (client_secret manquant)' },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({ clientSecret: session.client_secret });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error('Stripe embedded checkout error', error, { message: msg });
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    logger.error('Stripe embedded checkout error', error);
+    const { status, body } = toCheckoutApiError(error);
+    return NextResponse.json(body, { status });
   }
 }

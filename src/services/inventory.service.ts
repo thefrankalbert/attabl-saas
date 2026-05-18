@@ -5,6 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
+import { withActiveMenuItems } from '@/lib/menu-items-query';
 import type {
   Ingredient,
   Recipe,
@@ -78,12 +79,9 @@ export function createInventoryService(supabase: SupabaseClient) {
 
     async getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]> {
       // BUG-34: Validate menu_item_id belongs to this tenant before querying recipes
-      const { data: menuItem } = await supabase
-        .from('menu_items')
-        .select('id')
-        .eq('id', menuItemId)
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
+      const { data: menuItem } = await withActiveMenuItems(
+        supabase.from('menu_items').select('id').eq('id', menuItemId).eq('tenant_id', tenantId),
+      ).maybeSingle();
 
       if (!menuItem) {
         throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
@@ -100,6 +98,44 @@ export function createInventoryService(supabase: SupabaseClient) {
     },
 
     async setRecipe(tenantId: string, menuItemId: string, lines: RecipeLineInput[]): Promise<void> {
+      const { data: menuItem } = await withActiveMenuItems(
+        supabase.from('menu_items').select('id').eq('id', menuItemId).eq('tenant_id', tenantId),
+      ).maybeSingle();
+
+      if (!menuItem) {
+        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+      }
+
+      const ingredientIds = lines.map((l) => l.ingredient_id);
+      if (new Set(ingredientIds).size !== ingredientIds.length) {
+        throw new ServiceError('Ingredient en double dans la fiche', 'VALIDATION');
+      }
+
+      for (const line of lines) {
+        if (!line.ingredient_id) {
+          throw new ServiceError('Ingredient manquant', 'VALIDATION');
+        }
+        if (!(Number(line.quantity_needed) > 0)) {
+          throw new ServiceError('Quantite invalide pour un ingredient', 'VALIDATION');
+        }
+      }
+
+      if (lines.length > 0) {
+        const { data: ingredients, error: ingError } = await supabase
+          .from('ingredients')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .in('id', ingredientIds);
+
+        if (ingError) {
+          throw new ServiceError('Erreur validation ingredients', 'INTERNAL', ingError);
+        }
+        if ((ingredients?.length ?? 0) !== ingredientIds.length) {
+          throw new ServiceError('Un ou plusieurs ingredients sont invalides', 'VALIDATION');
+        }
+      }
+
       // Delete existing recipe lines for this item
       const { error: deleteError } = await supabase
         .from('recipes')
@@ -245,11 +281,12 @@ export function createInventoryService(supabase: SupabaseClient) {
       recipeItemIds: Set<string>;
     }> {
       const [itemsRes, recipesRes] = await Promise.all([
-        supabase
-          .from('menu_items')
-          .select('id, name, category_id, is_available')
-          .eq('tenant_id', tenantId)
-          .order('name'),
+        withActiveMenuItems(
+          supabase
+            .from('menu_items')
+            .select('id, name, category_id, is_available')
+            .eq('tenant_id', tenantId),
+        ).order('name'),
         supabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
       ]);
 

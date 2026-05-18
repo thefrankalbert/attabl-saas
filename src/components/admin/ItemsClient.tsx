@@ -59,6 +59,7 @@ import { ItemFormModal, type FormStep } from './items/ItemFormModal';
 import { ListPagination } from '@/components/admin/ListPagination';
 
 const LIST_PAGE_SIZE = 25;
+const AVAILABLE_FILTERS = ['all', 'available', 'unavailable'] as const;
 
 interface ItemsClientProps {
   tenantId: string;
@@ -133,12 +134,35 @@ export default function ItemsClient({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [closePanel]);
 
-  // TanStack Query for menu items with category join
-  const { data: items = initialItems, isLoading: loading } = useMenuItems(tenantId, {
-    categoryId: filterCategory,
-    availableFilter: filterAvailable,
+  const categoryFilterValue =
+    filterCategory === 'all' || categories.some((c) => c.id === filterCategory)
+      ? filterCategory
+      : 'all';
+
+  const availableFilterValue = (AVAILABLE_FILTERS as readonly string[]).includes(filterAvailable)
+    ? filterAvailable
+    : 'all';
+
+  const isDefaultFilters = categoryFilterValue === 'all' && availableFilterValue === 'all';
+
+  const {
+    data: queryItems,
+    isLoading: loading,
+    isError,
+  } = useMenuItems(tenantId, {
+    categoryId: categoryFilterValue,
+    availableFilter: availableFilterValue,
     withCategory: true,
+    withVariants: false,
+    initialData: isDefaultFilters ? initialItems : undefined,
   });
+
+  const items = useMemo(
+    () => queryItems ?? (isDefaultFilters ? initialItems : []),
+    [queryItems, isDefaultFilters, initialItems],
+  );
+
+  const hasActiveFilters = !isDefaultFilters;
 
   const maxPage = Math.max(0, Math.ceil(items.length / LIST_PAGE_SIZE) - 1);
   const effectivePage = Math.min(listPage, maxPage);
@@ -147,6 +171,25 @@ export default function ItemsClient({
     const start = effectivePage * LIST_PAGE_SIZE;
     return items.slice(start, start + LIST_PAGE_SIZE);
   }, [items, effectivePage]);
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setListPage(Math.max(0, Math.min(page, maxPage)));
+    },
+    [maxPage],
+  );
+
+  const clearFilters = useCallback(() => {
+    setFilterCategory('all');
+    setFilterAvailable('all');
+    setListPage(0);
+  }, [setFilterCategory, setFilterAvailable]);
+
+  useEffect(() => {
+    if (isError) {
+      toast({ title: tc('loadingError'), variant: 'destructive' });
+    }
+  }, [isError, toast, tc]);
 
   const loadItems = () => {
     queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
@@ -309,7 +352,7 @@ export default function ItemsClient({
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select
-                value={filterCategory}
+                value={categoryFilterValue}
                 onValueChange={(value) => {
                   setListPage(0);
                   setFilterCategory(value);
@@ -328,7 +371,7 @@ export default function ItemsClient({
                 </SelectContent>
               </Select>
               <Select
-                value={filterAvailable}
+                value={availableFilterValue}
                 onValueChange={(value) => {
                   setListPage(0);
                   setFilterAvailable(value);
@@ -355,7 +398,7 @@ export default function ItemsClient({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 @sm:mt-6">
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
@@ -398,7 +441,7 @@ export default function ItemsClient({
 
           {/* Items List */}
           {loading && items.length === 0 ? (
-            <div className="space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
@@ -407,148 +450,163 @@ export default function ItemsClient({
               ))}
             </div>
           ) : items.length > 0 ? (
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-              {/* Select all header */}
-              <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
-                <Checkbox
-                  aria-label={tc('selectAll') || 'Select all'}
-                  checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
-                  onCheckedChange={(checked) => {
-                    const next = new Set(selectedIds);
-                    if (checked) {
-                      items.forEach((i) => next.add(i.id));
-                    } else {
-                      items.forEach((i) => next.delete(i.id));
-                    }
-                    setSelectedIds(next);
-                  }}
-                />
-                <span className="text-xs text-app-text-muted">
-                  {tc('selectAll') || 'Select all'}
-                </span>
-              </div>
-              {pageItems.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  className="flex flex-wrap @md:flex-nowrap items-center gap-2 @sm:gap-3 md:gap-4 px-3 @sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
-                >
-                  <Checkbox
-                    aria-label={`${tc('select') || 'Select'} ${item.name}`}
-                    checked={selectedIds.has(item.id)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set(selectedIds);
-                      if (checked) next.add(item.id);
-                      else next.delete(item.id);
-                      setSelectedIds(next);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="shrink-0"
-                  />
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      width={48}
-                      height={48}
-                      className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg object-cover border border-app-border shrink-0"
+            <>
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+                <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+                  {/* Select all header */}
+                  <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
+                    <Checkbox
+                      aria-label={tc('selectAll') || 'Select all'}
+                      checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(selectedIds);
+                        if (checked) {
+                          items.forEach((i) => next.add(i.id));
+                        } else {
+                          items.forEach((i) => next.delete(i.id));
+                        }
+                        setSelectedIds(next);
+                      }}
                     />
-                  ) : (
-                    <div className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg bg-app-bg flex items-center justify-center shrink-0">
-                      <ImageIcon className="w-4 h-4 @sm:w-5 @sm:h-5 text-app-text-muted" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-app-text text-sm break-words">{item.name}</p>
-                    <p className="text-xs text-app-text-muted mt-0.5">
-                      {item.category?.name || t('uncategorized')}
-                    </p>
+                    <span className="text-xs text-app-text-muted">
+                      {tc('selectAll') || 'Select all'}
+                    </span>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-app-text text-sm tabular-nums">
-                      {formatCurrency(item.price, currency)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleAvailable(item);
-                    }}
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
-                      item.is_available
-                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                        : 'bg-app-bg text-app-text-secondary border-app-border',
-                    )}
-                  >
-                    {item.is_available ? (
-                      <>
-                        <Check className="w-3 h-3 inline mr-1" />
-                        {t('stock')}
-                      </>
-                    ) : (
-                      <>
-                        <X className="w-3 h-3 inline mr-1" />
-                        {t('exhausted')}
-                      </>
-                    )}
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="More options"
+                  {pageItems.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className="flex flex-wrap @md:flex-nowrap items-center gap-2 @sm:gap-3 md:gap-4 px-3 @sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                    >
+                      <Checkbox
+                        aria-label={`${tc('select') || 'Select'} ${item.name}`}
+                        checked={selectedIds.has(item.id)}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(selectedIds);
+                          if (checked) next.add(item.id);
+                          else next.delete(item.id);
+                          setSelectedIds(next);
+                        }}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-auto w-auto p-1.5 text-app-text-muted"
+                        className="shrink-0"
+                      />
+                      {item.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={48}
+                          height={48}
+                          className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg object-cover border border-app-border shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 @sm:w-12 @sm:h-12 rounded-lg bg-app-bg flex items-center justify-center shrink-0">
+                          <ImageIcon className="w-4 h-4 @sm:w-5 @sm:h-5 text-app-text-muted" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-app-text text-sm break-words">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-app-text-muted mt-0.5">
+                          {item.category?.name || t('uncategorized')}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-app-text text-sm tabular-nums">
+                          {formatCurrency(item.price, currency)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleAvailable(item);
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
+                          item.is_available
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                            : 'bg-app-bg text-app-text-secondary border-app-border',
+                        )}
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        {item.is_available ? (
+                          <>
+                            <Check className="w-3 h-3 inline mr-1" />
+                            {t('stock')}
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-3 h-3 inline mr-1" />
+                            {t('exhausted')}
+                          </>
+                        )}
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(item);
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFeatured(item);
-                        }}
-                      >
-                        <Star className="w-4 h-4 mr-2" />{' '}
-                        {item.is_featured ? t('removedFromFeatured') : t('addedToFeatured')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item);
-                        }}
-                        className="text-status-error"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="More options"
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-auto w-auto p-1.5 text-app-text-muted"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(item);
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFeatured(item);
+                            }}
+                          >
+                            <Star className="w-4 h-4 mr-2" />{' '}
+                            {item.is_featured ? t('removedFromFeatured') : t('addedToFeatured')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(item);
+                            }}
+                            className="text-status-error"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
               <ListPagination
                 page={effectivePage}
                 pageSize={LIST_PAGE_SIZE}
                 totalCount={items.length}
-                onPageChange={setListPage}
+                onPageChange={handlePageChange}
               />
-            </div>
+            </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
               <Package className="w-10 h-10 text-app-text-muted mb-3" />
-              <p className="text-sm font-medium text-app-text-secondary mb-1">{t('noItems')}</p>
-              <p className="text-xs text-app-text-muted mb-4">{t('noItemsDesc')}</p>
+              <p className="text-sm font-medium text-app-text-secondary mb-1">
+                {hasActiveFilters ? t('noItemsFilter') : t('noItems')}
+              </p>
+              <p className="text-xs text-app-text-muted mb-4">
+                {hasActiveFilters ? t('noItemsFilterDesc') : t('noItemsDesc')}
+              </p>
+              {hasActiveFilters ? (
+                <Button onClick={clearFilters} variant="outline" size="sm" className="mb-2">
+                  {tc('clearFilters')}
+                </Button>
+              ) : null}
               <Button onClick={openNewModal} size="sm">
                 <Plus className="w-4 h-4 mr-1" /> {seg.addItem}
               </Button>

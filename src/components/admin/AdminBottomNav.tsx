@@ -49,7 +49,7 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
 
   return (
     <nav
-      className="shrink-0 bg-app-card border-t border-app-border transition-colors duration-200"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-app-card border-t border-app-border transition-colors duration-200"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-14">

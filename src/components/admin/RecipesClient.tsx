@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { BookOpenCheck, Search, Plus, Trash2, Check } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useIngredients } from '@/hooks/queries';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -18,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
+import { ServiceError } from '@/services/errors';
 import type { Recipe, RecipeLineInput } from '@/types/inventory.types';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 
@@ -33,6 +38,7 @@ interface MenuItem {
 }
 
 interface RecipeLine {
+  lineId: string;
   ingredient_id: string;
   ingredient_name: string;
   unit: string;
@@ -40,29 +46,41 @@ interface RecipeLine {
   notes: string;
 }
 
+const EMPTY_RECIPE_IDS = new Set<string>();
+
+function newLineId(): string {
+  return `line-${crypto.randomUUID()}`;
+}
+
+function parseQuantity(value: number | string): number {
+  if (value === '' || value === null || value === undefined) return 0;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRecipe, setFilterRecipe] = useState<'all' | 'with' | 'without'>('all');
 
-  // Recipe editing
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [recipeLines, setRecipeLines] = useState<RecipeLine[]>([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Track which items have recipes
-  const [itemsWithRecipes, setItemsWithRecipes] = useState<Set<string>>(new Set());
-
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
-  const supabase = createClient();
-  const inventoryService = createInventoryService(supabase);
+  const params = useParams();
+  const siteSlug = typeof params?.site === 'string' ? params.site : '';
+  const queryClient = useQueryClient();
+  const { can } = usePermissions();
+  const canEdit = can('canManageStocks');
 
-  // TanStack Query for ingredients
+  const supabase = createClient();
+  const inventoryService = useMemo(() => createInventoryService(supabase), [supabase]);
+
   const { data: ingredients = [] } = useIngredients(tenantId);
 
-  // TanStack Query for menu items and recipes
   const { data: recipeData, isLoading: loading } = useQuery({
     queryKey: ['recipes-data', tenantId],
     queryFn: async () => {
@@ -74,21 +92,15 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   });
 
   const menuItems = recipeData?.menuItems ?? [];
+  const itemsWithRecipes = recipeData?.recipeIds ?? EMPTY_RECIPE_IDS;
 
-  // Sync recipeIds from query into local Set state
-  useEffect(() => {
-    if (recipeData?.recipeIds) {
-      setItemsWithRecipes(recipeData.recipeIds);
-    }
-  }, [recipeData?.recipeIds]);
-
-  // Load recipe for selected item
   const loadRecipe = useCallback(
     async (menuItemId: string) => {
       setLoadingRecipe(true);
       try {
         const recipes = await inventoryService.getRecipesForItem(menuItemId, tenantId);
         const lines: RecipeLine[] = recipes.map((r: Recipe) => ({
+          lineId: newLineId(),
           ingredient_id: r.ingredient_id,
           ingredient_name: r.ingredient?.name || tc('unknown'),
           unit: r.ingredient?.unit || '',
@@ -96,14 +108,14 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           notes: r.notes || '',
         }));
         setRecipeLines(lines);
-      } catch {
-        toast({ title: t('loadingRecipeError'), variant: 'destructive' });
+      } catch (err) {
+        const message = err instanceof ServiceError ? err.message : t('loadingRecipeError');
+        toast({ title: message, variant: 'destructive' });
       } finally {
         setLoadingRecipe(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tenantId, inventoryService, toast],
+    [tenantId, inventoryService, toast, t, tc],
   );
 
   const handleSelectItem = (itemId: string) => {
@@ -116,33 +128,48 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     loadRecipe(itemId);
   };
 
+  const usedIngredientIds = useMemo(
+    () => new Set(recipeLines.map((line) => line.ingredient_id)),
+    [recipeLines],
+  );
+
   const addLine = () => {
+    if (!canEdit) return;
     if (ingredients.length === 0) {
       toast({ title: t('addProductsFirst'), variant: 'destructive' });
       return;
     }
-    const firstIngredient = ingredients[0];
+    const nextIngredient = ingredients.find((ing) => !usedIngredientIds.has(ing.id));
+    if (!nextIngredient) {
+      toast({ title: t('recipeAllIngredientsUsed'), variant: 'destructive' });
+      return;
+    }
     setRecipeLines((prev) => [
       ...prev,
       {
-        ingredient_id: firstIngredient.id,
-        ingredient_name: firstIngredient.name,
-        unit: firstIngredient.unit,
-        quantity_needed: 0,
+        lineId: newLineId(),
+        ingredient_id: nextIngredient.id,
+        ingredient_name: nextIngredient.name,
+        unit: nextIngredient.unit,
+        quantity_needed: '',
         notes: '',
       },
     ]);
   };
 
-  const updateLine = (index: number, field: string, value: string | number | '') => {
+  const updateLine = (lineId: string, field: string, value: string | number | '') => {
     setRecipeLines((prev) =>
-      prev.map((line, i) => {
-        if (i !== index) return line;
+      prev.map((line) => {
+        if (line.lineId !== lineId) return line;
         if (field === 'ingredient_id') {
-          const ing = ingredients.find((ig) => ig.id === value);
+          const ingredientId = value as string;
+          if (prev.some((l) => l.lineId !== lineId && l.ingredient_id === ingredientId)) {
+            return line;
+          }
+          const ing = ingredients.find((ig) => ig.id === ingredientId);
           return {
             ...line,
-            ingredient_id: value as string,
+            ingredient_id: ingredientId,
             ingredient_name: ing?.name || '',
             unit: ing?.unit || '',
           };
@@ -152,43 +179,62 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     );
   };
 
-  const removeLine = (index: number) => {
-    setRecipeLines((prev) => prev.filter((_, i) => i !== index));
+  const removeLine = (lineId: string) => {
+    if (!canEdit) return;
+    setRecipeLines((prev) => prev.filter((line) => line.lineId !== lineId));
   };
 
   const handleSave = async () => {
-    if (!selectedItemId) return;
+    if (!selectedItemId || !canEdit) return;
+
+    const linesToSave = recipeLines.filter((line) => parseQuantity(line.quantity_needed) > 0);
+
+    if (recipeLines.length > 0 && linesToSave.length === 0) {
+      toast({ title: t('recipeQtyRequired'), variant: 'destructive' });
+      return;
+    }
+
+    const ingredientIds = linesToSave.map((line) => line.ingredient_id);
+    if (new Set(ingredientIds).size !== ingredientIds.length) {
+      toast({ title: t('recipeDuplicateIngredient'), variant: 'destructive' });
+      return;
+    }
+
+    const payload: RecipeLineInput[] = linesToSave.map((line) => ({
+      ingredient_id: line.ingredient_id,
+      quantity_needed: parseQuantity(line.quantity_needed),
+      notes: line.notes.trim() || undefined,
+    }));
+
     setSaving(true);
     try {
-      const lines: RecipeLineInput[] = recipeLines
-        .filter((l) => Number(l.quantity_needed) > 0)
-        .map((l) => ({
-          ingredient_id: l.ingredient_id,
-          quantity_needed: Number(l.quantity_needed) || 0,
-          notes: l.notes || undefined,
-        }));
-
-      await inventoryService.setRecipe(tenantId, selectedItemId, lines);
+      await inventoryService.setRecipe(tenantId, selectedItemId, payload);
       toast({ title: t('recipeSaved') });
 
-      // Update itemsWithRecipes
-      setItemsWithRecipes((prev) => {
-        const next = new Set(prev);
-        if (lines.length > 0) {
-          next.add(selectedItemId);
-        } else {
-          next.delete(selectedItemId);
-        }
-        return next;
-      });
-    } catch {
-      toast({ title: t('recipeSaveError'), variant: 'destructive' });
+      queryClient.setQueryData(
+        ['recipes-data', tenantId],
+        (prev: { menuItems: MenuItem[]; recipeIds: Set<string> } | undefined) => {
+          if (!prev) return prev;
+          const recipeIds = new Set(prev.recipeIds);
+          if (payload.length > 0) {
+            recipeIds.add(selectedItemId);
+          } else {
+            recipeIds.delete(selectedItemId);
+          }
+          return { ...prev, recipeIds };
+        },
+      );
+
+      await queryClient.invalidateQueries({ queryKey: ['recipes-data', tenantId] });
+      await loadRecipe(selectedItemId);
+    } catch (err) {
+      const message = err instanceof ServiceError ? err.message : t('recipeSaveError');
+      toast({ title: message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
-  // Filtered items
   const filteredItems = menuItems.filter((item) => {
     if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterRecipe === 'with' && !itemsWithRecipes.has(item.id)) return false;
@@ -197,6 +243,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   });
 
   const selectedItem = menuItems.find((m) => m.id === selectedItemId);
+  const inventoryHref = siteSlug ? `/sites/${siteSlug}/admin/inventory` : '/admin/inventory';
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -206,7 +253,6 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         </div>
       ) : (
         <>
-          {/* Header + Filters - single line on desktop */}
           <div className="shrink-0 space-y-3">
             <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
               <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
@@ -242,12 +288,25 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 ))}
               </div>
             </div>
+
+            {ingredients.length === 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-secondary">
+                <span>{t('addProductsFirst')}</span>
+                {siteSlug && (
+                  <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                    <Link href={inventoryHref}>{t('goToInventory')}</Link>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {!canEdit && (
+              <p className="text-sm text-app-text-secondary">{t('recipeReadOnlyHint')}</p>
+            )}
           </div>
 
-          {/* Layout: Items list + Recipe editor */}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 pb-4">
             <div className="flex flex-col @lg:flex-row gap-6">
-              {/* Items List */}
               <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
                 <div className="max-h-[400px] @md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
@@ -297,7 +356,6 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 </div>
               </div>
 
-              {/* Recipe Editor Panel */}
               <div className="@md:w-80 @lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
                 {selectedItemId && selectedItem ? (
                   <div className="flex flex-col h-full">
@@ -311,60 +369,91 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                       <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
                     ) : (
                       <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[300px] @md:max-h-[400px]">
-                        {recipeLines.map((line, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-start gap-2 p-3 bg-app-bg rounded-lg border border-app-border"
-                          >
-                            <div className="flex-1 space-y-2">
-                              <Select
-                                value={line.ingredient_id}
-                                onValueChange={(val) => updateLine(idx, 'ingredient_id', val)}
-                              >
-                                <SelectTrigger className="w-full h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ingredients.map((ing) => (
-                                    <SelectItem key={ing.id} value={ing.id}>
-                                      {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <div className="flex gap-2">
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  placeholder={t('qtyPlaceholder')}
-                                  value={line.quantity_needed || ''}
-                                  onChange={(e) =>
-                                    updateLine(
-                                      idx,
-                                      'quantity_needed',
-                                      e.target.value === '' ? '' : parseFloat(e.target.value),
-                                    )
-                                  }
-                                  className="h-8 text-sm flex-1"
-                                />
-                                <span className="text-xs text-app-text-secondary self-center w-10">
-                                  {INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
-                                    ?.labelShort || line.unit}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Delete"
-                              onClick={() => removeLine(idx)}
-                              title="Supprimer"
-                              className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
+                        {recipeLines.map((line) => {
+                          const availableIngredients = ingredients.filter(
+                            (ing) =>
+                              ing.id === line.ingredient_id || !usedIngredientIds.has(ing.id),
+                          );
+
+                          return (
+                            <div
+                              key={line.lineId}
+                              className="flex items-start gap-2 p-3 bg-app-bg rounded-lg border border-app-border"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
+                              <div className="flex-1 space-y-2">
+                                <Select
+                                  value={line.ingredient_id}
+                                  onValueChange={(val) => {
+                                    const alreadyUsed = recipeLines.some(
+                                      (l) => l.lineId !== line.lineId && l.ingredient_id === val,
+                                    );
+                                    if (alreadyUsed) {
+                                      toast({
+                                        title: t('recipeDuplicateIngredient'),
+                                        variant: 'destructive',
+                                      });
+                                      return;
+                                    }
+                                    updateLine(line.lineId, 'ingredient_id', val);
+                                  }}
+                                  disabled={!canEdit}
+                                >
+                                  <SelectTrigger className="w-full h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableIngredients.map((ing) => (
+                                      <SelectItem key={ing.id} value={ing.id}>
+                                        {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
+                                    placeholder={t('qtyPlaceholder')}
+                                    value={line.quantity_needed === 0 ? '' : line.quantity_needed}
+                                    onChange={(e) =>
+                                      updateLine(
+                                        line.lineId,
+                                        'quantity_needed',
+                                        e.target.value === '' ? '' : parseFloat(e.target.value),
+                                      )
+                                    }
+                                    disabled={!canEdit}
+                                    className="h-8 text-sm flex-1"
+                                  />
+                                  <span className="text-xs text-app-text-secondary self-center w-10">
+                                    {INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
+                                      ?.labelShort || line.unit}
+                                  </span>
+                                </div>
+                                <Textarea
+                                  placeholder={t('notesOptional')}
+                                  value={line.notes}
+                                  onChange={(e) => updateLine(line.lineId, 'notes', e.target.value)}
+                                  disabled={!canEdit}
+                                  rows={2}
+                                  className="text-sm min-h-0 resize-none"
+                                />
+                              </div>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={tc('delete')}
+                                  onClick={() => removeLine(line.lineId)}
+                                  className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
 
                         {recipeLines.length === 0 && (
                           <p className="text-sm text-app-text-secondary text-center py-4">
@@ -372,31 +461,34 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           </p>
                         )}
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={addLine}
-                          className="w-full gap-2"
-                          disabled={ingredients.length === 0}
-                        >
-                          <Plus className="w-4 h-4" />
-                          {t('addIngredient')}
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={addLine}
+                            className="w-full gap-2"
+                            disabled={ingredients.length === 0}
+                          >
+                            <Plus className="w-4 h-4" />
+                            {t('addIngredient2')}
+                          </Button>
+                        )}
                       </div>
                     )}
 
-                    {/* Save button */}
-                    <div className="px-4 py-3 border-t border-app-border bg-app-bg">
-                      <Button
-                        onClick={handleSave}
-                        disabled={saving}
-                        variant="default"
-                        className="w-full gap-2"
-                      >
-                        <Check className="w-4 h-4" />
-                        {saving ? t('saving') : tc('save')}
-                      </Button>
-                    </div>
+                    {canEdit && (
+                      <div className="px-4 py-3 border-t border-app-border bg-app-bg">
+                        <Button
+                          onClick={handleSave}
+                          disabled={saving}
+                          variant="default"
+                          className="w-full gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          {saving ? t('saving') : tc('save')}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center p-12 text-app-text-secondary">

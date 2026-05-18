@@ -1,10 +1,114 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Category } from '@/types/admin.types';
+
 type MenuItemsFilterQuery = {
   is: (column: string, value: null) => unknown;
 };
+
+/** PostgREST embed: alias required (see menu.service.ts). */
+export const MENU_ITEM_CATEGORY_SELECT = 'category:categories(id, name)';
+
+export function buildMenuItemsSelect(options: {
+  withCategory?: boolean;
+  withVariants?: boolean;
+}): string {
+  const parts = ['*'];
+  if (options.withVariants) {
+    parts.push('item_price_variants(*)', 'item_modifiers(*)');
+  }
+  if (options.withCategory) {
+    parts.push(MENU_ITEM_CATEGORY_SELECT);
+  }
+  return parts.join(', ');
+}
 
 /**
  * Restricts menu_items queries to rows that are not soft-deleted.
  */
 export function withActiveMenuItems<T extends MenuItemsFilterQuery>(query: T): T {
   return query.is('deleted_at', null) as T;
+}
+
+export function isMissingDeletedAtColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { message?: string; details?: string; hint?: string; code?: string };
+  const text = `${err.message ?? ''} ${err.details ?? ''} ${err.hint ?? ''}`.toLowerCase();
+  return text.includes('deleted_at') || err.code === '42703';
+}
+
+export function mapMenuItemRow(
+  item: Record<string, unknown>,
+  options?: { withCategory?: boolean; withVariants?: boolean },
+): Record<string, unknown> {
+  const category = item.category ?? item.categories;
+  return {
+    ...item,
+    ...(options?.withVariants
+      ? {
+          price_variants: item.item_price_variants ?? [],
+          modifiers: item.item_modifiers ?? [],
+        }
+      : {}),
+    ...(options?.withCategory ? { category } : {}),
+  };
+}
+
+export type MenuItemsListFilters = {
+  categoryId?: string;
+  availableOnly?: boolean;
+  availableFilter?: string;
+};
+
+/**
+ * Runs menu_items list query; retries without deleted_at if column is missing (pre-migration DB).
+ */
+export async function fetchMenuItemsList(
+  supabase: SupabaseClient,
+  tenantId: string,
+  selectClause: string,
+  filters: MenuItemsListFilters,
+  mapOptions?: { withCategory?: boolean; withVariants?: boolean },
+): Promise<{ data: Record<string, unknown>[]; error: unknown | null }> {
+  const run = async (excludeDeleted: boolean) => {
+    let query = supabase.from('menu_items').select(selectClause).eq('tenant_id', tenantId);
+
+    if (excludeDeleted) {
+      query = withActiveMenuItems(query);
+    }
+
+    if (filters.availableOnly) {
+      query = query.eq('is_available', true);
+    }
+
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      query = query.eq('category_id', filters.categoryId);
+    }
+
+    if (filters.availableFilter && filters.availableFilter !== 'all') {
+      query = query.eq('is_available', filters.availableFilter === 'available');
+    }
+
+    return query.order('name');
+  };
+
+  let result = await run(true);
+  if (result.error && isMissingDeletedAtColumnError(result.error)) {
+    result = await run(false);
+  }
+
+  if (result.error) {
+    return { data: [], error: result.error };
+  }
+
+  const rows = ((result.data || []) as unknown as Record<string, unknown>[]).map((row) =>
+    mapMenuItemRow(row, mapOptions),
+  );
+
+  return { data: rows, error: null };
+}
+
+/** Normalize category on a menu item row from Supabase. */
+export function getMenuItemCategory(item: Record<string, unknown>): Category | undefined {
+  const category = item.category ?? item.categories;
+  return category as Category | undefined;
 }

@@ -3,6 +3,12 @@ import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
 import ItemsClient from '@/components/admin/ItemsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import {
+  buildMenuItemsSelect,
+  fetchMenuItemsList,
+  getMenuItemCategory,
+} from '@/lib/menu-items-query';
+import { logger } from '@/lib/logger';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -19,25 +25,26 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
   }
 
   const supabase = await createClient();
-  const [itemsRes, categoriesRes] = await Promise.all([
-    supabase
-      .from('menu_items')
-      .select('*, categories(id, name)')
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .order('name'),
+  const selectClause = buildMenuItemsSelect({ withCategory: true, withVariants: false });
+
+  const [itemsResult, categoriesRes] = await Promise.all([
+    fetchMenuItemsList(supabase, tenant.id, selectClause, {}, { withCategory: true }),
     supabase.from('categories').select('*').eq('tenant_id', tenant.id).order('display_order'),
   ]);
 
-  const items: MenuItem[] = (itemsRes.data || []).map((item: Record<string, unknown>) => ({
+  if (itemsResult.error) {
+    logger.error('Failed to load menu items for admin items page', itemsResult.error);
+  }
+
+  const items: MenuItem[] = itemsResult.data.map((item) => ({
     ...item,
-    category: item.categories as Category,
+    category: getMenuItemCategory(item),
   })) as MenuItem[];
 
   const currency = (tenant.currency as CurrencyCode) || 'XAF';
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
       <ItemsClient
         tenantId={tenant.id}
         tenantSlug={tenantSlug}

@@ -21,7 +21,6 @@ const PAYMENT_METHOD_KEYS = [
 type PaymentMethodKey = (typeof PAYMENT_METHOD_KEYS)[number];
 
 interface PaymentMethodsSettingsProps {
-  tenantId: string;
   initialMethods: string[];
 }
 
@@ -55,13 +54,9 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
   };
 
   return (
-    <section className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 sm:p-6">
-      <h2 className="text-sm font-semibold text-neutral-900 dark:text-white mb-1">
-        {t('paymentMethodsTitle')}
-      </h2>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-5">
-        {t('paymentMethodsDesc')}
-      </p>
+    <section className="rounded-xl border border-app-border bg-app-card p-4 @sm:p-5">
+      <h2 className="text-sm font-semibold text-app-text mb-1">{t('paymentMethodsTitle')}</h2>
+      <p className="text-xs text-app-text-secondary mb-5">{t('paymentMethodsDesc')}</p>
 
       <div className="space-y-4">
         {PAYMENT_METHOD_KEYS.map((method) => (
@@ -69,11 +64,11 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
             <div className="flex-1 min-w-0">
               <Label
                 htmlFor={`pm-${method}`}
-                className="text-sm font-medium text-neutral-900 dark:text-white cursor-pointer"
+                className="text-sm font-medium text-app-text cursor-pointer"
               >
                 {t(`paymentMethod.${method}.label`)}
               </Label>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-app-text-secondary mt-0.5">
                 {t(`paymentMethod.${method}.desc`)}
               </p>
             </div>

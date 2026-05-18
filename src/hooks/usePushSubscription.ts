@@ -5,6 +5,16 @@ import { logger } from '@/lib/logger';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
+/** next-pwa does not emit public/sw.js in development (see next.config.mjs). */
+const PUSH_SW_ENABLED = process.env.NODE_ENV === 'production';
+
+function isPushCapableBrowser(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    PUSH_SW_ENABLED && 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY
+  );
+}
+
 interface UsePushSubscriptionOptions {
   tenantId: string;
   enabled?: boolean;
@@ -26,29 +36,35 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check current subscription status on mount
+  // Register SW and read push subscription (production only - sw.js is build-generated)
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined') return;
+    if (!enabled || !isPushCapableBrowser()) {
+      return;
+    }
 
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY;
-    setIsSupported(supported);
+    let cancelled = false;
 
-    if (!supported) return;
-
-    navigator.serviceWorker.ready.then((registration) => {
-      registration.pushManager.getSubscription().then((subscription) => {
+    void (async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        if (cancelled) return;
+        const subscription = await registration.pushManager.getSubscription();
+        if (cancelled) return;
+        setIsSupported(true);
         setIsSubscribed(!!subscription);
-      });
-    });
-  }, [enabled]);
+      } catch (err) {
+        logger.warn('Push notifications unavailable', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (!cancelled) {
+          setIsSupported(false);
+        }
+      }
+    })();
 
-  // Register service worker on mount
-  useEffect(() => {
-    if (!enabled || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
-
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      logger.error('SW registration failed', err);
-    });
+    return () => {
+      cancelled = true;
+    };
   }, [enabled]);
 
   const subscribe = useCallback(async () => {

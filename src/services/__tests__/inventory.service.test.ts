@@ -231,9 +231,10 @@ describe('InventoryService', () => {
       supabase.from = vi.fn().mockImplementation((table: string) => {
         callCount++;
         if (callCount === 1) {
-          // First call: menu_items validation with maybeSingle
+          // First call: menu_items validation with maybeSingle (non-deleted items only)
           const maybeSingleFn = vi.fn().mockResolvedValue({ data: { id: 'mi-1' }, error: null });
-          const eqTenant = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const isFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const eqTenant = vi.fn().mockReturnValue({ is: isFn });
           const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
           const selectFn = vi.fn().mockReturnValue({ eq: eqId });
           return { select: selectFn };
@@ -254,35 +255,66 @@ describe('InventoryService', () => {
   });
 
   describe('setRecipe', () => {
-    it('should delete existing and insert new lines', async () => {
-      // The service calls .from('recipes').delete().eq(...).eq(...)
-      // then .from('recipes').insert(rows)
+    it('should validate menu item and ingredients, then delete and insert lines', async () => {
       const lines: RecipeLineInput[] = [
         { ingredient_id: 'ing-1', quantity_needed: 0.5, notes: 'sifted' },
         { ingredient_id: 'ing-2', quantity_needed: 0.1 },
       ];
 
-      // Track calls in order
       let callCount = 0;
-      supabase.from = vi.fn().mockImplementation(() => {
+      supabase.from = vi.fn().mockImplementation((table: string) => {
         callCount++;
-        if (callCount === 1) {
-          // First call: delete chain
+        if (table === 'menu_items') {
+          const maybeSingleFn = vi.fn().mockResolvedValue({ data: { id: 'mi-1' }, error: null });
+          const isFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const eqTenant = vi.fn().mockReturnValue({ is: isFn });
+          const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+          return { select: vi.fn().mockReturnValue({ eq: eqId }) };
+        }
+        if (table === 'ingredients') {
+          const inFn = vi.fn().mockResolvedValue({
+            data: [{ id: 'ing-1' }, { id: 'ing-2' }],
+            error: null,
+          });
+          const eqActive = vi.fn().mockReturnValue({ in: inFn });
+          const eqTenant = vi.fn().mockReturnValue({ eq: eqActive });
+          return { select: vi.fn().mockReturnValue({ eq: eqTenant }) };
+        }
+        if (callCount === 3) {
           const eqTenant = vi.fn().mockResolvedValue({ error: null });
           const eqMenuItem = vi.fn().mockReturnValue({ eq: eqTenant });
-          const deleteFn = vi.fn().mockReturnValue({ eq: eqMenuItem });
-          return { delete: deleteFn };
+          return { delete: vi.fn().mockReturnValue({ eq: eqMenuItem }) };
         }
-        // Second call: insert
-        const insertFn = vi.fn().mockResolvedValue({ error: null });
-        return { insert: insertFn };
+        return { insert: vi.fn().mockResolvedValue({ error: null }) };
       });
 
       await service.setRecipe('t1', 'mi-1', lines);
 
-      expect(supabase.from).toHaveBeenCalledTimes(2);
-      expect(supabase.from).toHaveBeenNthCalledWith(1, 'recipes');
-      expect(supabase.from).toHaveBeenNthCalledWith(2, 'recipes');
+      expect(supabase.from).toHaveBeenCalledWith('menu_items');
+      expect(supabase.from).toHaveBeenCalledWith('ingredients');
+      expect(supabase.from).toHaveBeenCalledWith('recipes');
+    });
+
+    it('should reject duplicate ingredients', async () => {
+      const lines: RecipeLineInput[] = [
+        { ingredient_id: 'ing-1', quantity_needed: 0.5 },
+        { ingredient_id: 'ing-1', quantity_needed: 0.1 },
+      ];
+
+      supabase.from = vi.fn().mockImplementation((table: string) => {
+        if (table === 'menu_items') {
+          const maybeSingleFn = vi.fn().mockResolvedValue({ data: { id: 'mi-1' }, error: null });
+          const isFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const eqTenant = vi.fn().mockReturnValue({ is: isFn });
+          const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+          return { select: vi.fn().mockReturnValue({ eq: eqId }) };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      });
+
+      await expect(service.setRecipe('t1', 'mi-1', lines)).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
     });
   });
 

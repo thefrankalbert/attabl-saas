@@ -13,12 +13,14 @@ import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import type { CurrencyCode } from '@/types/admin.types';
+import { PaymentMethodsSettings } from '@/components/admin/settings/PaymentMethodsSettings';
 
 // ─── Types ─────────────────────────────────────────────────
 
 interface SettingsBillingProps {
   form: UseFormReturn<SettingsFormValues>;
   t: (key: string) => string;
+  initialPaymentMethods: string[];
 }
 
 const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
@@ -29,7 +31,7 @@ const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────
 
-export default function SettingsBilling({ form, t }: SettingsBillingProps) {
+export default function SettingsBilling({ form, t, initialPaymentMethods }: SettingsBillingProps) {
   const {
     register,
     watch,
@@ -270,6 +272,8 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
           </Label>
         </div>
       </div>
+
+      <PaymentMethodsSettings initialMethods={initialPaymentMethods} />
     </TabsContent>
   );
 }
