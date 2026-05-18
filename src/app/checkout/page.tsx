@@ -23,28 +23,21 @@ function isValidInterval(value: string | null): value is BillingInterval {
   return VALID_INTERVALS.includes(value as BillingInterval);
 }
 
-function CheckoutContent() {
-  const searchParams = useSearchParams();
+function CheckoutWithPlan({
+  plan,
+  interval,
+}: {
+  plan: SelfServicePlan;
+  interval: BillingInterval;
+}) {
   const router = useRouter();
   const t = useTranslations('checkout');
-
-  const planParam = searchParams.get('plan');
-  const intervalParam = searchParams.get('interval');
-
-  const plan = isValidPlan(planParam) ? planParam : null;
-  const interval = isValidInterval(intervalParam) ? intervalParam : 'monthly';
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!plan) {
-      setError('invalid_plan');
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     async function fetchClientSecret() {
@@ -66,7 +59,11 @@ function CheckoutContent() {
         }
 
         if (!res.ok) {
-          setError(data.error ?? 'server_error');
+          const message =
+            (typeof data.detail === 'string' && data.detail) ||
+            (typeof data.error === 'string' && data.error) ||
+            'server_error';
+          setError(message);
           return;
         }
 
@@ -84,7 +81,7 @@ function CheckoutContent() {
     return () => {
       cancelled = true;
     };
-  }, [plan, interval, router]);
+  }, [plan, interval, router, t]);
 
   if (loading) {
     return (
@@ -94,7 +91,7 @@ function CheckoutContent() {
     );
   }
 
-  if (error || !clientSecret || !plan) {
+  if (error || !clientSecret) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a0a] px-4 gap-4">
         <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -121,6 +118,38 @@ function CheckoutContent() {
       </div>
     </div>
   );
+}
+
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const t = useTranslations('checkout');
+
+  const planParam = searchParams.get('plan');
+  const intervalParam = searchParams.get('interval');
+
+  const plan = isValidPlan(planParam) ? planParam : null;
+  const interval = isValidInterval(intervalParam) ? intervalParam : 'monthly';
+
+  if (!plan) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a0a] px-4 gap-4">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+          <AlertCircle className="w-6 h-6 text-red-400" />
+        </div>
+        <h2 className="text-lg font-semibold text-[#f5f5f4]">{t('page.errorTitle')}</h2>
+        <p className="text-sm text-[#a8a29e] text-center max-w-xs">{t('page.errorDescription')}</p>
+        <Button
+          variant="outline"
+          onClick={() => window.history.back()}
+          className="mt-2 border-[rgba(255,255,255,0.12)] text-[#f5f5f4] hover:bg-[rgba(255,255,255,0.06)]"
+        >
+          {t('page.retry')}
+        </Button>
+      </div>
+    );
+  }
+
+  return <CheckoutWithPlan plan={plan} interval={interval} />;
 }
 
 export default function CheckoutPage() {
