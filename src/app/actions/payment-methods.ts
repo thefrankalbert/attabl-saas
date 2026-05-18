@@ -6,8 +6,6 @@ import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant } from '@/lib/auth/get-session';
 import { z } from 'zod';
 
-const VALID_PAYMENT_METHODS = ['cash', 'card', 'wave', 'orange_money', 'mtn_momo', 'free_money'];
-
 const updatePaymentMethodsSchema = z.object({
   methods: z
     .array(z.enum(['cash', 'card', 'wave', 'orange_money', 'mtn_momo', 'free_money']))
@@ -42,5 +40,3 @@ export async function actionUpdatePaymentMethods(
     return { success: false, error: 'Erreur serveur' };
   }
 }
-
-export { VALID_PAYMENT_METHODS };

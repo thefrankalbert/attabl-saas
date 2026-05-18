@@ -18,6 +18,7 @@ import SettingsBranding from '@/components/features/settings/SettingsBranding';
 import SettingsBilling from '@/components/features/settings/SettingsBilling';
 import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
+import { PushOptIn } from '@/components/admin/PushOptIn';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ type SettingsTab = 'identity' | 'branding' | 'billing' | 'sounds' | 'security' |
 
 interface SettingsFormProps {
   tenant: SettingsTenant;
+  initialPaymentMethods: string[];
 }
 
 const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
@@ -38,7 +40,7 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
 
 // ─── Main Component ────────────────────────────────────────
 
-export function SettingsForm({ tenant }: SettingsFormProps) {
+export function SettingsForm({ tenant, initialPaymentMethods }: SettingsFormProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
 
@@ -122,15 +124,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             <SettingsBranding form={form} t={t} />
 
             {/* Billing tab */}
-            <SettingsBilling form={form} t={t} />
+            <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
 
             {/* Sounds tab */}
-            <TabsContent value="sounds" className="mt-0">
+            <TabsContent value="sounds" className="mt-0 space-y-6">
               <SoundSettings
                 currentSoundId={selectedSoundId}
                 onSoundChange={setSelectedSoundId}
                 tenantId={tenant.id}
               />
+              <PushOptIn tenantId={tenant.id} />
             </TabsContent>
 
             {/* Security tab */}

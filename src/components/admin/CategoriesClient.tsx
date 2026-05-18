@@ -225,6 +225,13 @@ export default function CategoriesClient({
     return categories.slice(start, start + LIST_PAGE_SIZE);
   }, [categories, effectivePage]);
 
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setListPage(Math.max(0, Math.min(page, maxPage)));
+    },
+    [maxPage],
+  );
+
   const loadCategories = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
   }, [queryClient, tenantId]);
@@ -394,10 +401,9 @@ export default function CategoriesClient({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
-          {/* List */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 @sm:mt-6">
           {loading ? (
-            <div className="space-y-1">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
@@ -407,58 +413,60 @@ export default function CategoriesClient({
             </div>
           ) : categories.length > 0 ? (
             <>
-              <DndContext
-                id={dndId}
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={pageCategories.map((cat) => cat.id)}
-                  strategy={verticalListSortingStrategy}
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide rounded-xl border border-app-border bg-app-card">
+                <DndContext
+                  id={dndId}
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
                 >
-                  {pageCategories.map((cat) => (
-                    <SortableRow
-                      key={cat.id}
-                      cat={cat}
-                      onEdit={openEditModal}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </SortableContext>
-                <DragOverlay>
-                  {activeDragId
-                    ? (() => {
-                        const cat = categories.find((c) => c.id === activeDragId);
-                        if (!cat) return null;
-                        return (
-                          <div className="flex items-center gap-4 px-4 py-3 bg-app-bg border-b border-accent shadow-sm">
-                            <GripVertical className="w-4 h-4 text-app-text-secondary" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-app-text text-sm">{cat.name}</p>
+                  <SortableContext
+                    items={pageCategories.map((cat) => cat.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {pageCategories.map((cat) => (
+                      <SortableRow
+                        key={cat.id}
+                        cat={cat}
+                        onEdit={openEditModal}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </SortableContext>
+                  <DragOverlay>
+                    {activeDragId
+                      ? (() => {
+                          const cat = categories.find((c) => c.id === activeDragId);
+                          if (!cat) return null;
+                          return (
+                            <div className="flex items-center gap-4 px-4 py-3 bg-app-bg border-b border-accent shadow-sm">
+                              <GripVertical className="w-4 h-4 text-app-text-secondary" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-app-text text-sm">{cat.name}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
+                                <Utensils className="w-3.5 h-3.5" />
+                                <span className="font-medium">
+                                  {t('dishCount', { count: cat.items_count || 0 })}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-                              <Utensils className="w-3.5 h-3.5" />
-                              <span className="font-medium">
-                                {t('dishCount', { count: cat.items_count || 0 })}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })()
-                    : null}
-                </DragOverlay>
-              </DndContext>
+                          );
+                        })()
+                      : null}
+                  </DragOverlay>
+                </DndContext>
+              </div>
               <ListPagination
                 page={effectivePage}
                 pageSize={LIST_PAGE_SIZE}
                 totalCount={categories.length}
-                onPageChange={setListPage}
+                onPageChange={handlePageChange}
               />
             </>
           ) : (
-            <div className="p-12 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
               <div className="w-14 h-14 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
