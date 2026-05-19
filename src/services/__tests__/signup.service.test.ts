@@ -169,6 +169,60 @@ describe('SignupService', () => {
       ).not.toHaveBeenCalled();
     });
 
+    it('returns existing tenant when admin_users already exists', async () => {
+      const supabase = createMockSupabase();
+      const service = createSignupService(supabase);
+
+      const fromMock = supabase.from as ReturnType<typeof vi.fn>;
+      fromMock.mockImplementation((table: string) => {
+        if (table === 'admin_users') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  order: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      maybeSingle: vi.fn().mockResolvedValue({
+                        data: {
+                          tenant_id: 'tenant-existing',
+                          tenants: { slug: 'existing-slug' },
+                        },
+                        error: null,
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            like: vi.fn().mockResolvedValue({ data: [], error: null }),
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { id: 'x' }, error: null }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+        };
+      });
+
+      const result = await service.ensureTenantForOnboarding({
+        userId: 'user-1',
+        email: 'owner@example.com',
+        restaurantName: 'Test',
+      });
+
+      expect(result).toEqual({ tenantId: 'tenant-existing', slug: 'existing-slug' });
+    });
+
     it('should rollback tenant when admin user creation fails', async () => {
       const supabase = createMockSupabase({ adminInsertError: true });
       const service = createSignupService(supabase);

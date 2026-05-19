@@ -46,7 +46,7 @@ const TENANT_SELECT =
  * Each slug gets its own unstable_cache instance with tenant-scoped tags,
  * so revalidating one tenant's config does not flush all tenants.
  */
-type CachedTenantFn = (slug: string) => Promise<Tenant>;
+type CachedTenantFn = (slug: string) => Promise<Tenant | null>;
 
 const tenantCacheMap = new Map<string, CachedTenantFn>();
 
@@ -54,7 +54,7 @@ function getOrCreateTenantCache(slug: string) {
   let cached = tenantCacheMap.get(slug);
   if (!cached) {
     cached = unstable_cache(
-      async (s: string) => {
+      async (s: string): Promise<Tenant | null> => {
         const supabase = createCacheClient();
 
         for (let attempt = 0; attempt < 2; attempt++) {
@@ -62,9 +62,11 @@ function getOrCreateTenantCache(slug: string) {
             .from('tenants')
             .select(TENANT_SELECT)
             .eq('slug', s)
-            .single();
+            .maybeSingle();
 
-          if (!error) return data;
+          if (!error) {
+            return data;
+          }
 
           if (attempt === 0) {
             logger.warn('getCachedTenant: retrying after transient failure', { slug: s });

@@ -37,6 +37,25 @@ const SKIP_AUTH_MARKETING_PREFIXES = [
   '/quick-service',
 ];
 
+/** Routes under src/app/ only - must not rewrite to /sites/[slug]/ on tenant subdomains */
+const APP_ROOT_ONLY_PREFIXES = [
+  '/onboarding',
+  '/login',
+  '/signup',
+  '/checkout',
+  '/auth',
+  '/reset-password',
+  '/forgot-password',
+  '/unauthorized',
+  '/admin/tenants',
+];
+
+function isAppRootOnlyPath(pathname: string): boolean {
+  return APP_ROOT_ONLY_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 /**
  * Vérifie si un chemin sur le domaine principal peut être servi sans aucun appel auth.
  * Cela couvre les pages marketing, les pages auth (login/signup), les webhooks et le monitoring.
@@ -91,7 +110,7 @@ export async function proxy(request: NextRequest) {
       // Set x-tenant-slug on REQUEST headers so server components can read it
       request.headers.set('x-tenant-slug', tenantSlug);
 
-      if (pathname.startsWith('/api/')) {
+      if (pathname.startsWith('/api/') || isAppRootOnlyPath(pathname)) {
         const response = NextResponse.next({
           request: { headers: request.headers },
         });
@@ -261,6 +280,16 @@ export async function proxy(request: NextRequest) {
     // Don't rewrite - just set the x-tenant-slug header so the API can identify the tenant
     if (pathname.startsWith('/api/')) {
       request.headers.set('x-tenant-slug', subdomain);
+      const response = NextResponse.next({
+        request: { headers: request.headers },
+      });
+      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      return response;
+    }
+
+    if (isAppRootOnlyPath(pathname)) {
       const response = NextResponse.next({
         request: { headers: request.headers },
       });

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Rocket } from 'lucide-react';
+import { getMainAppPath } from '@/lib/app-url';
 
 const DISMISS_KEY = 'attabl_onboarding_dismissed';
 
@@ -25,6 +26,11 @@ export function OnboardingResumeDialog() {
   });
 
   const handleResume = () => {
+    const onboardingUrl = getMainAppPath('/onboarding');
+    if (typeof window !== 'undefined' && window.location.origin !== new URL(onboardingUrl).origin) {
+      window.location.assign(onboardingUrl);
+      return;
+    }
     router.push('/onboarding');
   };
 

@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { getSegmentFeatures } from '@/lib/segment-features';
+import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 
 // ─── Phase / sub-screen definitions ────────────────────────────────────────────
 
@@ -153,6 +154,9 @@ export default function OnboardingPage() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const touchStartX = useRef(0);
   const lastSavedPayload = useRef<string>('');
+  const autoSaveErrorShown = useRef(false);
+  /** Skip native "leave site?" dialog when redirecting after successful completion */
+  const skipUnloadWarningRef = useRef(false);
 
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
@@ -284,7 +288,6 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (loading || phase === 0 || isLastScreen) return;
-    setAutoSaveStatus('idle');
     const timer = setTimeout(async () => {
       // Deduplicate: skip save if payload hasn't changed since last save
       const draftPayload = {
@@ -304,14 +307,30 @@ export default function OnboardingPage() {
         });
         if (res.ok) {
           lastSavedPayload.current = payloadJson;
+          autoSaveErrorShown.current = false;
           setAutoSaveStatus('saved');
           setTimeout(() => setAutoSaveStatus('idle'), 2000);
+          return;
+        }
+
+        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!autoSaveErrorShown.current) {
+          autoSaveErrorShown.current = true;
+          toast({
+            title: t('saveError'),
+            description: errBody.error || undefined,
+            variant: 'destructive',
+          });
+        }
+        if (res.status === 401 || res.status === 403) {
+          lastSavedPayload.current = payloadJson;
         }
       } catch {
         setAutoSaveStatus('idle');
       }
     }, 2000);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast/t stable enough for error path
   }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
 
   // ─── Save on tab close / navigate away (beacon API for reliability) ──────
@@ -319,8 +338,8 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (loading || phase === 0) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Warn user about unsaved data when they have progressed past welcome
-      if (phase > 0) {
+      // Warn when leaving mid-flow, but not after "Lancer mon etablissement" (redirect)
+      if (phase > 0 && !skipUnloadWarningRef.current) {
         e.preventDefault();
       }
       // Persist draft via beacon regardless
@@ -329,31 +348,17 @@ export default function OnboardingPage() {
         _phase: phase,
         _subScreen: subScreen,
       };
-      const blob = new Blob([JSON.stringify({ step: apiStep, data: draftPayload })], {
-        type: 'application/json',
+      const body = JSON.stringify({ step: apiStep, data: draftPayload });
+      void fetch('/api/onboarding/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true,
       });
-      navigator.sendBeacon('/api/onboarding/save', blob);
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [data, phase, subScreen, loading, apiStep]);
-
-  // ─── Keyboard navigation ──────────────────────────────────────────────────
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'ArrowRight' && phase >= 1 && !isLastScreen) {
-        goNext();
-      }
-      if (e.key === 'ArrowLeft' && (phase > 1 || (phase === 1 && subScreen > 0))) {
-        goPrev();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, subScreen]);
 
   // ─── Data update callback ─────────────────────────────────────────────────
 
@@ -397,6 +402,23 @@ export default function OnboardingPage() {
     scrollToTop();
   };
 
+  // ─── Keyboard navigation ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'ArrowRight' && phase >= 1 && !isLastScreen) {
+        goNext();
+      }
+      if (e.key === 'ArrowLeft' && (phase > 1 || (phase === 1 && subScreen > 0))) {
+        goPrev();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, subScreen, isLastScreen]);
+
   const goToPhase = (targetPhase: number) => {
     if (targetPhase >= phase) return; // only allow going to completed phases
     setError(null);
@@ -418,16 +440,27 @@ export default function OnboardingPage() {
         body: JSON.stringify({ data }),
       });
 
+      const result = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        details?: string[];
+        slug?: string;
+      };
+
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        if (errData.details && Array.isArray(errData.details)) {
-          throw new Error(`${t('validationFailed')}: ${errData.details.join(', ')}`);
+        if (result.details && Array.isArray(result.details)) {
+          throw new Error(`${t('validationFailed')}: ${result.details.join(', ')}`);
         }
-        throw new Error(errData.error || t('completeError'));
+        throw new Error(result.error || t('completeError'));
       }
 
+      const slug = (result.slug || data.tenantSlug || '').trim();
+      if (!slug || isReservedSiteSlug(slug)) {
+        throw new Error(t('completeError'));
+      }
+
+      skipUnloadWarningRef.current = true;
       const origin = window.location.origin;
-      window.location.href = `${origin}/sites/${data.tenantSlug}/admin`;
+      window.location.href = `${origin}/sites/${slug}/admin`;
     } catch (err) {
       const message = err instanceof Error ? err.message : t('completeError');
       setError(message);

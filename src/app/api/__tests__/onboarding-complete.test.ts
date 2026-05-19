@@ -106,19 +106,19 @@ describe('POST /api/onboarding/complete', () => {
     expect(json.error).toBe('Non authentifie');
   });
 
-  it('returns 404 when authenticated user has no tenant', async () => {
+  it('returns 403 when authenticated user has no tenant', async () => {
     mockResolveSessionAdminUser.mockResolvedValueOnce({
       ok: false,
-      status: 404,
-      error: 'Tenant non trouve',
+      status: 403,
+      error: 'Compte etablissement introuvable',
     });
 
     const { POST } = await import('@/app/api/onboarding/complete/route');
     const response = await POST(createRequest({ data: { restaurantName: 'Demo' } }));
     const json = (await response.json()) as { error: string };
 
-    expect(response.status).toBe(404);
-    expect(json.error).toBe('Tenant non trouve');
+    expect(response.status).toBe(403);
+    expect(json.error).toBe('Compte etablissement introuvable');
   });
 
   it('returns 403 when user is not owner', async () => {

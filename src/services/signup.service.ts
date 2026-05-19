@@ -29,7 +29,7 @@ interface EmailSignupInput {
 interface OAuthSignupInput {
   userId: string;
   email: string;
-  restaurantName: string;
+  restaurantName?: string;
   phone?: string;
   plan?: string;
 }
@@ -272,13 +272,18 @@ export function createSignupService(supabase: SupabaseClient) {
         throw new ServiceError('Email invalide', 'VALIDATION');
       }
 
+      const oauthRestaurantName =
+        input.restaurantName?.trim() ||
+        input.email.split('@')[0]?.replace(/[._-]/g, ' ').trim() ||
+        'Mon Etablissement';
+
       // 1. Generate unique slug
-      const slug = await slugService.generateUniqueSlug(input.restaurantName);
+      const slug = await slugService.generateUniqueSlug(oauthRestaurantName);
 
       // 2. Create tenant
       const tenant = await this.createTenantWithTrial({
         slug,
-        name: input.restaurantName,
+        name: oauthRestaurantName,
         plan: input.plan || 'starter',
       });
 
@@ -318,6 +323,98 @@ export function createSignupService(supabase: SupabaseClient) {
       await this.createDefaultVenue(tenant.id);
 
       return { slug: tenant.slug, tenantId: tenant.id };
+    },
+
+    /**
+     * Ensures an authenticated user has a tenant + admin_users row before onboarding.
+     * Covers login after a partial signup (auth exists, tenant link missing) and OAuth
+     * callback failures that left an orphan restaurant_groups / tenants row.
+     */
+    async ensureTenantForOnboarding(input: OAuthSignupInput): Promise<SignupResult> {
+      const restaurantName =
+        input.restaurantName?.trim() ||
+        input.email.split('@')[0]?.replace(/[._-]/g, ' ').trim() ||
+        'Mon Etablissement';
+
+      const { data: existingAdmin } = await supabase
+        .from('admin_users')
+        .select('tenant_id, tenants(slug)')
+        .eq('user_id', input.userId)
+        .eq('is_active', true)
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingAdmin?.tenant_id) {
+        const tenantRow = Array.isArray(existingAdmin.tenants)
+          ? existingAdmin.tenants[0]
+          : existingAdmin.tenants;
+        const slug =
+          tenantRow && typeof tenantRow === 'object' && 'slug' in tenantRow
+            ? String((tenantRow as { slug: string }).slug)
+            : '';
+        return { tenantId: existingAdmin.tenant_id, slug };
+      }
+
+      const emailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
+      const fullName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) || input.email;
+
+      const { data: existingGroup } = await supabase
+        .from('restaurant_groups')
+        .select('id')
+        .eq('owner_user_id', input.userId)
+        .maybeSingle();
+
+      if (existingGroup) {
+        const { data: orphanTenant } = await supabase
+          .from('tenants')
+          .select('id, slug')
+          .eq('group_id', existingGroup.id)
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        let tenantId = orphanTenant?.id;
+        let slug = orphanTenant?.slug;
+
+        if (!tenantId) {
+          const created = await this.createTenantWithTrial({
+            slug: await slugService.generateUniqueSlug(restaurantName),
+            name: restaurantName,
+            plan: input.plan || 'starter',
+          });
+          tenantId = created.id;
+          slug = created.slug;
+          await supabase.from('tenants').update({ group_id: existingGroup.id }).eq('id', tenantId);
+        }
+
+        await this.createAdminUser({
+          tenantId,
+          userId: input.userId,
+          email: input.email,
+          fullName,
+          phone: input.phone,
+        });
+
+        try {
+          await this.createDefaultVenue(tenantId);
+        } catch (venueError) {
+          logger.warn(
+            'Default venue already exists or could not be created during onboarding recovery',
+            {
+              tenantId,
+              error: String(venueError),
+            },
+          );
+        }
+
+        return { tenantId, slug: slug ?? '' };
+      }
+
+      return this.completeOAuthSignup({
+        ...input,
+        restaurantName,
+      });
     },
   };
 }

@@ -384,7 +384,15 @@ export function createOnboardingService(supabase: SupabaseClient) {
 
       await Promise.all([tablePromise, menuPromise]);
 
-      return { slug: data.tenantSlug };
+      const { data: tenantRow } = await supabase
+        .from('tenants')
+        .select('slug')
+        .eq('id', tenantId)
+        .maybeSingle();
+
+      return {
+        slug: tenantRow?.slug ?? existingTenant?.slug ?? data.tenantSlug,
+      };
     },
 
     /**
@@ -420,6 +428,8 @@ export function createOnboardingService(supabase: SupabaseClient) {
         )
         .eq('user_id', userId)
         .eq('is_active', true)
+        .order('id', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!adminUser || !adminUser.tenants) {

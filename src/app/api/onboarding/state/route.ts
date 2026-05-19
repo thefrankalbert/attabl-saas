@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { logger } from '@/lib/logger';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
@@ -26,6 +27,14 @@ export async function GET(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    const session = await resolveSessionAdminUser({
+      requireActive: true,
+      provisionIfMissing: true,
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: session.status });
     }
 
     // 2. Get state via service
