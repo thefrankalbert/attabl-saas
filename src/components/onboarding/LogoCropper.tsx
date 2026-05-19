@@ -90,10 +90,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
       onComplete(url);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
-      if (onError) {
-        onError(message);
-      }
-      onComplete(imageSrc);
+      onError?.(message);
     } finally {
       setApplying(false);
     }

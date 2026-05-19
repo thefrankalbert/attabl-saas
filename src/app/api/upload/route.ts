@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 
@@ -48,26 +48,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify authentication
-    const supabase = await createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify tenant membership - reject orphaned/unlinked accounts
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single();
-
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const session = await resolveSessionAdminUser({
+      requireActive: true,
+      provisionIfMissing: true,
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: session.status });
     }
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -96,7 +82,7 @@ export async function POST(request: Request) {
 
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     // Scope uploads to tenant directory for isolation
-    const fileName = `${adminUser.tenant_id}/${crypto.randomUUID()}_${Date.now()}.${ext}`;
+    const fileName = `${session.adminUser.tenant_id}/${crypto.randomUUID()}_${Date.now()}.${ext}`;
 
     // Use admin client to bypass RLS
     const admin = createAdminClient();

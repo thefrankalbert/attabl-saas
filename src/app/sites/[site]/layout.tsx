@@ -5,6 +5,8 @@ import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { TenantBrandProvider } from '@/components/theme/TenantBrandProvider';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { getCachedTenant } from '@/lib/cache';
+import { isReservedSiteSlug } from '@/lib/tenant-slugs';
+import { redirectFromReservedSiteSlug } from '@/lib/tenant-routing';
 import { getFontById } from '@/lib/config/fonts';
 import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
 import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
@@ -33,6 +35,10 @@ export default async function SiteLayout({
   const { site } = await params;
 
   const tenant = await getCachedTenant(site);
+
+  if (!tenant && isReservedSiteSlug(site)) {
+    await redirectFromReservedSiteSlug();
+  }
 
   const tenantId = tenant?.id || null;
 

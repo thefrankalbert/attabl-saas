@@ -45,7 +45,10 @@ export async function POST(request: Request) {
     const { data } = parseResult.data;
 
     // 3. Authenticate and resolve tenant (service role lookup scoped to session user)
-    const session = await resolveSessionAdminUser({ requireActive: true });
+    const session = await resolveSessionAdminUser({
+      requireActive: true,
+      provisionIfMissing: true,
+    });
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: session.status });
     }
