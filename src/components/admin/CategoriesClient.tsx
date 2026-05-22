@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useId, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
@@ -65,6 +66,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
 import { createCategoryService } from '@/services/category.service';
 import { ListPagination } from '@/components/admin/ListPagination';
+import type { ServerListPagination } from '@/lib/pagination';
 
 const LIST_PAGE_SIZE = 25;
 
@@ -73,6 +75,7 @@ interface CategoriesClientProps {
   tenantSlug: string;
   initialCategories: Category[];
   menus: Pick<Menu, 'id' | 'name'>[];
+  serverListPagination?: ServerListPagination;
 }
 
 type CategoryWithCount = Category & { items_count?: number };
@@ -177,7 +180,10 @@ export default function CategoriesClient({
   tenantSlug,
   initialCategories,
   menus,
+  serverListPagination,
 }: CategoriesClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const dndId = useId();
   const t = useTranslations('categories');
   const tc = useTranslations('common');
@@ -196,6 +202,7 @@ export default function CategoriesClient({
   const [isReordering, setIsReordering] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [listPage, setListPage] = useState(0);
+  const useServerPagination = !!serverListPagination;
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -211,30 +218,51 @@ export default function CategoriesClient({
   );
 
   // TanStack Query for categories with item count
-  const { data: categories = initialCategories as CategoryWithCount[], isLoading } = useCategories(
-    tenantId,
-    { withItemCount: true },
-  );
-  const loading = isLoading && categories.length === 0;
+  const { data: queryCategories = initialCategories as CategoryWithCount[], isLoading } =
+    useCategories(tenantId, { withItemCount: true, enabled: !useServerPagination });
+  const categories = useServerPagination
+    ? (initialCategories as CategoryWithCount[])
+    : queryCategories;
+  const loading = !useServerPagination && isLoading && categories.length === 0;
 
-  const maxPage = Math.max(0, Math.ceil(categories.length / LIST_PAGE_SIZE) - 1);
-  const effectivePage = Math.min(listPage, maxPage);
+  const pageSize = useServerPagination ? serverListPagination.pageSize : LIST_PAGE_SIZE;
+  const totalCount = useServerPagination ? serverListPagination.total : categories.length;
+  const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
+  const effectivePage = useServerPagination
+    ? Math.min(serverListPagination.page - 1, maxPage)
+    : Math.min(listPage, maxPage);
 
   const pageCategories = useMemo(() => {
+    if (useServerPagination) {
+      return categories;
+    }
     const start = effectivePage * LIST_PAGE_SIZE;
     return categories.slice(start, start + LIST_PAGE_SIZE);
-  }, [categories, effectivePage]);
+  }, [categories, effectivePage, useServerPagination]);
 
   const handlePageChange = useCallback(
     (page: number) => {
+      if (useServerPagination) {
+        const params = new URLSearchParams();
+        if (page > 0) {
+          params.set('page', String(page + 1));
+        }
+        const qs = params.toString();
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+        return;
+      }
       setListPage(Math.max(0, Math.min(page, maxPage)));
     },
-    [maxPage],
+    [useServerPagination, router, pathname, maxPage],
   );
 
   const loadCategories = useCallback(() => {
+    if (useServerPagination) {
+      router.refresh();
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
-  }, [queryClient, tenantId]);
+  }, [queryClient, tenantId, useServerPagination, router]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveDragId(String(event.active.id));
@@ -460,8 +488,8 @@ export default function CategoriesClient({
               </div>
               <ListPagination
                 page={effectivePage}
-                pageSize={LIST_PAGE_SIZE}
-                totalCount={categories.length}
+                pageSize={pageSize}
+                totalCount={totalCount}
                 onPageChange={handlePageChange}
               />
             </>

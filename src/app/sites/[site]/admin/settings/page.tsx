@@ -5,12 +5,17 @@ import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+import { parseSettingsTab } from '@/lib/settings-tabs';
+
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function SettingsPage({ params }: SettingsPageProps) {
+export default async function SettingsPage({ params, searchParams }: SettingsPageProps) {
   const { site } = await params;
+  const sp = await searchParams;
+  const initialTab = parseSettingsTab(sp.tab);
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -21,6 +26,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto">
       <SettingsForm
+        initialTab={initialTab}
         initialPaymentMethods={tenant.enabled_payment_methods ?? ['cash', 'card']}
         tenant={{
           id: tenant.id,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createOrderSchema, orderItemSchema } from '../order.schema';
+import { createOrderSchema, orderItemSchema, orderPreviewSchema } from '../order.schema';
 
 describe('orderItemSchema', () => {
   const validItem = {
@@ -71,6 +71,22 @@ describe('orderItemSchema', () => {
       selectedVariant: { name_fr: 'Grande', price: -5 },
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('orderPreviewSchema', () => {
+  it('accepts items only', () => {
+    const result = orderPreviewSchema.safeParse({
+      items: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
   });
 });
 

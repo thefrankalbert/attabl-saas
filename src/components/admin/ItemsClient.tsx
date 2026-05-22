@@ -15,7 +15,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -57,6 +57,7 @@ import { createMenuItemService } from '@/services/menu-item.service';
 import { ItemDetailPanel } from './items/ItemDetailPanel';
 import { ItemFormModal, type FormStep } from './items/ItemFormModal';
 import { ListPagination } from '@/components/admin/ListPagination';
+import type { ServerListPagination } from '@/lib/pagination';
 
 const LIST_PAGE_SIZE = 25;
 const AVAILABLE_FILTERS = ['all', 'available', 'unavailable'] as const;
@@ -68,6 +69,7 @@ interface ItemsClientProps {
   initialCategories: Category[];
   currency?: CurrencyCode;
   supportedCurrencies?: CurrencyCode[];
+  serverListPagination?: ServerListPagination;
 }
 
 export default function ItemsClient({
@@ -77,7 +79,9 @@ export default function ItemsClient({
   initialCategories,
   currency = 'XAF',
   supportedCurrencies = [],
+  serverListPagination,
 }: ItemsClientProps) {
+  const pathname = usePathname();
   const secondaryCurrencies = supportedCurrencies.filter((c) => c !== currency);
   const [categories] = useState<Category[]>(initialCategories);
   const [showModal, setShowModal] = useState(false);
@@ -144,6 +148,7 @@ export default function ItemsClient({
     : 'all';
 
   const isDefaultFilters = categoryFilterValue === 'all' && availableFilterValue === 'all';
+  const useServerPagination = !!serverListPagination && isDefaultFilters;
 
   const {
     data: queryItems,
@@ -155,28 +160,47 @@ export default function ItemsClient({
     withCategory: true,
     withVariants: false,
     initialData: isDefaultFilters ? initialItems : undefined,
+    enabled: !useServerPagination,
   });
 
-  const items = useMemo(
-    () => queryItems ?? (isDefaultFilters ? initialItems : []),
-    [queryItems, isDefaultFilters, initialItems],
-  );
+  const items = useMemo(() => {
+    if (useServerPagination) {
+      return initialItems;
+    }
+    return queryItems ?? (isDefaultFilters ? initialItems : []);
+  }, [queryItems, isDefaultFilters, initialItems, useServerPagination]);
 
   const hasActiveFilters = !isDefaultFilters;
 
-  const maxPage = Math.max(0, Math.ceil(items.length / LIST_PAGE_SIZE) - 1);
-  const effectivePage = Math.min(listPage, maxPage);
+  const pageSize = useServerPagination ? serverListPagination.pageSize : LIST_PAGE_SIZE;
+  const totalCount = useServerPagination ? serverListPagination.total : items.length;
+  const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
+  const effectivePage = useServerPagination
+    ? Math.min(serverListPagination.page - 1, maxPage)
+    : Math.min(listPage, maxPage);
 
   const pageItems = useMemo(() => {
+    if (useServerPagination) {
+      return items;
+    }
     const start = effectivePage * LIST_PAGE_SIZE;
     return items.slice(start, start + LIST_PAGE_SIZE);
-  }, [items, effectivePage]);
+  }, [items, effectivePage, useServerPagination]);
 
   const handlePageChange = useCallback(
     (page: number) => {
+      if (useServerPagination) {
+        const params = new URLSearchParams();
+        if (page > 0) {
+          params.set('page', String(page + 1));
+        }
+        const qs = params.toString();
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+        return;
+      }
       setListPage(Math.max(0, Math.min(page, maxPage)));
     },
-    [maxPage],
+    [useServerPagination, router, pathname, maxPage],
   );
 
   const clearFilters = useCallback(() => {
@@ -192,6 +216,10 @@ export default function ItemsClient({
   }, [isError, toast, tc]);
 
   const loadItems = () => {
+    if (useServerPagination) {
+      router.refresh();
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
   };
 
@@ -588,8 +616,8 @@ export default function ItemsClient({
               </div>
               <ListPagination
                 page={effectivePage}
-                pageSize={LIST_PAGE_SIZE}
-                totalCount={items.length}
+                pageSize={pageSize}
+                totalCount={totalCount}
                 onPageChange={handlePageChange}
               />
             </>

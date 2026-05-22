@@ -55,6 +55,8 @@ import { ServiceError } from '@/services/errors';
 // Helpers
 // ---------------------------------------------------------------------------
 
+const TEST_INVITATION_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
 function buildGetRequest(): Request {
   return new Request('http://localhost:3000/api/invitations', { method: 'GET' });
 }
@@ -68,14 +70,18 @@ function buildPostRequest(body?: unknown): Request {
 }
 
 function buildDeleteRequest(): Request {
-  return new Request('http://localhost:3000/api/invitations/inv-1', { method: 'DELETE' });
+  return new Request(`http://localhost:3000/api/invitations/${TEST_INVITATION_ID}`, {
+    method: 'DELETE',
+  });
 }
 
 function buildResendRequest(): Request {
-  return new Request('http://localhost:3000/api/invitations/inv-1/resend', { method: 'POST' });
+  return new Request(`http://localhost:3000/api/invitations/${TEST_INVITATION_ID}/resend`, {
+    method: 'POST',
+  });
 }
 
-function buildParams(id = 'inv-1'): { params: Promise<{ id: string }> } {
+function buildParams(id = TEST_INVITATION_ID): { params: Promise<{ id: string }> } {
   return { params: Promise.resolve({ id }) };
 }
 
@@ -154,10 +160,16 @@ function setupMockAdminClient(overrides?: {
   tenant?: Record<string, unknown>;
 }) {
   const invitations = overrides?.invitations ?? [
-    { id: 'inv-1', email: 'new@test.com', role: 'admin', status: 'pending', token: 'secret' },
+    {
+      id: TEST_INVITATION_ID,
+      email: 'new@test.com',
+      role: 'admin',
+      status: 'pending',
+      token: 'secret',
+    },
   ];
   const invitation = overrides?.invitation ?? {
-    id: 'inv-1',
+    id: TEST_INVITATION_ID,
     email: 'new@test.com',
     role: 'admin',
     status: 'pending',

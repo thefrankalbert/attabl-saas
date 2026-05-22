@@ -18,6 +18,13 @@ export interface PaginationMeta {
   hasMore: boolean;
 }
 
+/** Server-rendered list pages pass this to client components (page is 1-based). */
+export interface ServerListPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export function parsePaginationFromUrl(url: string): PaginationParams {
   const searchParams = new URL(url).searchParams;
   return paginationQuerySchema.parse({

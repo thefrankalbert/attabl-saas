@@ -36,6 +36,23 @@ interface CreateOrderResult {
   total: number;
 }
 
+export type OrderPreviewIssue = {
+  itemId: string;
+  message: string;
+  /** Client should remove this line from the cart (deleted or unavailable item). */
+  removeFromCart: boolean;
+};
+
+export type OrderPreviewResult = {
+  valid: boolean;
+  issues: OrderPreviewIssue[];
+  invalidItemIds: string[];
+  validatedSubtotal: number;
+  verifiedPrices: Map<string, number>;
+  categoryIds: string[];
+  itemCategoryMap: Map<string, string>;
+};
+
 interface TenantValidationResult {
   id: string;
   currency: string | null;
@@ -92,22 +109,13 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Validates order items against the database:
-     * - Each item exists
-     * - Each item is available
-     * - Client price matches server price (1% tolerance)
-     *
-     * Returns the server-verified total (never trust client totals).
+     * Pre-validates cart items without creating an order.
+     * Returns structured issues so the client can drop stale lines before checkout.
      */
-    async validateOrderItems(
+    async previewOrderItems(
       tenantId: string,
       items: OrderItemInput[],
-    ): Promise<{
-      validatedTotal: number;
-      verifiedPrices: Map<string, number>;
-      categoryIds: string[];
-      itemCategoryMap: Map<string, string>;
-    }> {
+    ): Promise<OrderPreviewResult> {
       const itemIds = items.map((item) => item.id);
 
       // Run all three independent queries in parallel (biggest latency win)
@@ -156,25 +164,41 @@ export function createOrderService(supabase: SupabaseClient) {
 
       const menuItemsMap = new Map(menuItems?.map((item) => [item.id, item]) || []);
 
-      const validationErrors: string[] = [];
+      const issues: OrderPreviewIssue[] = [];
+      const invalidItemIds: string[] = [];
       let calculatedTotal = 0;
       const verifiedPrices = new Map<string, number>();
 
       for (const item of items) {
-        // BUG-33: Reject negative or zero quantities
         if (item.quantity < 1) {
-          throw new ServiceError(`Quantite invalide pour "${item.name}"`, 'VALIDATION');
+          issues.push({
+            itemId: item.id,
+            message: `Quantite invalide pour "${item.name}"`,
+            removeFromCart: true,
+          });
+          invalidItemIds.push(item.id);
+          continue;
         }
 
         const menuItem = menuItemsMap.get(item.id);
 
         if (!menuItem) {
-          validationErrors.push(`Article "${item.name}" non trouvé`);
+          issues.push({
+            itemId: item.id,
+            message: `Article "${item.name}" non trouve`,
+            removeFromCart: true,
+          });
+          invalidItemIds.push(item.id);
           continue;
         }
 
         if (menuItem.is_available === false) {
-          validationErrors.push(`"${menuItem.name}" n'est plus disponible`);
+          issues.push({
+            itemId: item.id,
+            message: `"${menuItem.name}" n'est plus disponible`,
+            removeFromCart: true,
+          });
+          invalidItemIds.push(item.id);
           continue;
         }
 
@@ -186,16 +210,21 @@ export function createOrderService(supabase: SupabaseClient) {
           if (serverVariantPrice !== undefined) {
             expectedPrice = serverVariantPrice;
           } else {
-            validationErrors.push(
-              `Variante "${item.selectedVariant.name_fr}" non trouvée pour "${menuItem.name}"`,
-            );
+            issues.push({
+              itemId: item.id,
+              message: `Variante "${item.selectedVariant.name_fr}" non trouvee pour "${menuItem.name}"`,
+              removeFromCart: false,
+            });
             continue;
           }
         }
 
-        // 1% tolerance for rounding
         if (Math.abs(item.price - expectedPrice) > 1) {
-          validationErrors.push(`Prix de "${menuItem.name}" a changé`);
+          issues.push({
+            itemId: item.id,
+            message: `Prix de "${menuItem.name}" a change`,
+            removeFromCart: false,
+          });
         }
 
         // Verify modifier prices server-side
@@ -208,35 +237,29 @@ export function createOrderService(supabase: SupabaseClient) {
               // Use server price, not client price
               modifiersTotal += serverPrice;
             } else {
-              // Modifier not found in DB - reject
-              validationErrors.push(
-                `Modificateur "${mod.name}" non trouvé pour "${menuItem.name}"`,
-              );
+              issues.push({
+                itemId: item.id,
+                message: `Modificateur "${mod.name}" non trouve pour "${menuItem.name}"`,
+                removeFromCart: false,
+              });
             }
           }
         }
 
-        // Use server-verified prices for total calculation
-        verifiedPrices.set(item.id, expectedPrice);
-        calculatedTotal += (expectedPrice + modifiersTotal) * item.quantity;
-      }
-
-      if (validationErrors.length > 0) {
-        throw new ServiceError(
-          'Certains articles ne sont plus valides',
-          'VALIDATION',
-          validationErrors,
+        const itemHasBlockingIssue = issues.some(
+          (issue) => issue.itemId === item.id && !issue.removeFromCart,
         );
+        const itemRemoved = invalidItemIds.includes(item.id);
+        if (!itemRemoved && !itemHasBlockingIssue) {
+          verifiedPrices.set(item.id, expectedPrice);
+          calculatedTotal += (expectedPrice + modifiersTotal) * item.quantity;
+        }
       }
 
-      if (calculatedTotal <= 0) {
-        throw new ServiceError('Le total de la commande doit être supérieur à 0', 'VALIDATION');
-      }
-
-      // Collect category IDs and build item->category map for preparation zone routing
       const categoryIds = new Set<string>();
       const itemCategoryMap = new Map<string, string>();
       for (const item of items) {
+        if (invalidItemIds.includes(item.id)) continue;
         const menuItem = menuItemsMap.get(item.id);
         if (menuItem?.category_id) {
           categoryIds.add(menuItem.category_id);
@@ -244,11 +267,47 @@ export function createOrderService(supabase: SupabaseClient) {
         }
       }
 
+      const valid = issues.length === 0 && calculatedTotal > 0 && invalidItemIds.length === 0;
+
       return {
-        validatedTotal: calculatedTotal,
+        valid,
+        issues,
+        invalidItemIds,
+        validatedSubtotal: calculatedTotal,
         verifiedPrices,
         categoryIds: Array.from(categoryIds),
         itemCategoryMap,
+      };
+    },
+
+    /**
+     * Validates order items against the database (throws on invalid cart).
+     */
+    async validateOrderItems(
+      tenantId: string,
+      items: OrderItemInput[],
+    ): Promise<{
+      validatedTotal: number;
+      verifiedPrices: Map<string, number>;
+      categoryIds: string[];
+      itemCategoryMap: Map<string, string>;
+    }> {
+      const preview = await this.previewOrderItems(tenantId, items);
+
+      if (!preview.valid) {
+        const messages = preview.issues.map((issue) => issue.message);
+        throw new ServiceError(
+          'Certains articles ne sont plus valides',
+          'VALIDATION',
+          messages.length > 0 ? messages : ['Panier invalide'],
+        );
+      }
+
+      return {
+        validatedTotal: preview.validatedSubtotal,
+        verifiedPrices: preview.verifiedPrices,
+        categoryIds: preview.categoryIds,
+        itemCategoryMap: preview.itemCategoryMap,
       };
     },
 

@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     if (orderId) {
       const { data: order } = await supabase
         .from('orders')
-        .select('id, payment_status, payment_method, wave_checkout_id')
+        .select('id, tenant_id, payment_status, payment_method, wave_checkout_id')
         .eq('id', orderId)
         .single();
 
@@ -85,6 +85,7 @@ export async function POST(request: Request) {
           paid_at: new Date().toISOString(),
         })
         .eq('id', orderId)
+        .eq('tenant_id', order.tenant_id)
         .eq('payment_status', 'pending');
 
       if (updateError) {

@@ -10,8 +10,12 @@ type CategoryWithCount = Category & { items_count?: number };
  * Fetch categories for a tenant, ordered by display_order.
  * Optionally includes item count (matching CategoriesClient query).
  */
-export function useCategories(tenantId: string, options?: { withItemCount?: boolean }) {
+export function useCategories(
+  tenantId: string,
+  options?: { withItemCount?: boolean; enabled?: boolean },
+) {
   const withItemCount = options?.withItemCount ?? false;
+  const enabled = options?.enabled ?? !!tenantId;
 
   return useQuery<CategoryWithCount[]>({
     queryKey: ['categories', tenantId, withItemCount],
@@ -37,7 +41,7 @@ export function useCategories(tenantId: string, options?: { withItemCount?: bool
       // Supabase join type gap
       return (data as unknown as CategoryWithCount[]) ?? [];
     },
-    enabled: !!tenantId,
+    enabled,
     staleTime: 10 * 60 * 1000,
   });
 }

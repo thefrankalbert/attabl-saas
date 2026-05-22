@@ -148,6 +148,25 @@ describe('OrderService', () => {
     });
   });
 
+  describe('previewOrderItems', () => {
+    it('returns invalidItemIds when menu item is missing', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+      mockNoModifiers(supabase);
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = makeItem({ id: 'item-999', name: 'Ghost Item', price: 10, quantity: 1 });
+
+      const preview = await service.previewOrderItems('tenant-123', items);
+      expect(preview.valid).toBe(false);
+      expect(preview.invalidItemIds).toEqual(['item-999']);
+      expect(preview.issues[0]?.removeFromCart).toBe(true);
+    });
+  });
+
   describe('validateOrderItems', () => {
     it('should calculate total correctly for valid items', async () => {
       const supabase = createMockSupabase();

@@ -21,6 +21,7 @@ export function useMenuItems(
     /** Load price variants and modifiers (POS). Admin list can skip for a lighter query. */
     withVariants?: boolean;
     initialData?: MenuItemWithCategory[];
+    enabled?: boolean;
   },
 ) {
   const availableOnly = options?.availableOnly ?? false;
@@ -54,7 +55,7 @@ export function useMenuItems(
       if (error) throw error;
       return data as unknown as MenuItemWithCategory[];
     },
-    enabled: !!tenantId,
+    enabled: options?.enabled ?? !!tenantId,
     staleTime: 3 * 60 * 1000,
     initialData: options?.initialData,
   });

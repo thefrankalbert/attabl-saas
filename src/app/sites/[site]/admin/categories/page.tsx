@@ -3,12 +3,24 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import CategoriesClient from '@/components/admin/CategoriesClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import {
+  paginationQuerySchema,
+  toSupabaseRange,
+  type ServerListPagination,
+} from '@/lib/pagination';
 import type { Category, Menu } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CategoriesPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function CategoriesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ page?: string; pageSize?: string }>;
+}) {
   const { site } = await params;
+  const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -18,14 +30,21 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
     return <TenantNotFound />;
   }
 
+  const { page, pageSize } = paginationQuerySchema.parse({
+    page: sp.page,
+    pageSize: sp.pageSize,
+  });
+  const { from, to } = toSupabaseRange(page, pageSize);
+
   const supabase = await createClient();
 
-  const [{ data: categories }, { data: menus }] = await Promise.all([
+  const [{ data: categories, count }, { data: menus }] = await Promise.all([
     supabase
       .from('categories')
-      .select('*, menu_items(id)')
+      .select('*, menu_items(id)', { count: 'exact' })
       .eq('tenant_id', tenant.id)
-      .order('display_order', { ascending: true }),
+      .order('display_order', { ascending: true })
+      .range(from, to),
     supabase
       .from('menus')
       .select('id, name')
@@ -42,6 +61,12 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
       }) as Category & { items_count: number },
   );
 
+  const serverListPagination: ServerListPagination = {
+    page,
+    pageSize,
+    total: count ?? formatted.length,
+  };
+
   return (
     <div className="h-full flex flex-col min-h-0 overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
       <CategoriesClient
@@ -49,6 +74,7 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
         tenantSlug={tenantSlug}
         initialCategories={formatted}
         menus={(menus || []) as Pick<Menu, 'id' | 'name'>[]}
+        serverListPagination={serverListPagination}
       />
     </div>
   );
