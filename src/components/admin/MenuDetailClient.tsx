@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useTransition } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -23,7 +24,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { createMenuService } from '@/services/menu.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,8 @@ import {
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
 import { createCategoryService } from '@/services/category.service';
 import { createMenuItemService } from '@/services/menu-item.service';
+import { ListPagination } from '@/components/admin/ListPagination';
+import type { ServerListPagination } from '@/lib/pagination';
 
 interface MenuDetailClientProps {
   tenantId: string;
@@ -57,6 +59,7 @@ interface MenuDetailClientProps {
   categories: Category[];
   availableCategories: Category[];
   items: MenuItem[];
+  categoryPagination: ServerListPagination;
 }
 
 export default function MenuDetailClient({
@@ -66,14 +69,40 @@ export default function MenuDetailClient({
   categories: initialCategories,
   availableCategories: initialAvailableCategories,
   items: initialItems,
+  categoryPagination,
 }: MenuDetailClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isRefreshing, startRefreshTransition] = useTransition();
   const [menu, setMenu] = useState<Menu>(initialMenu);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [availableCategories, setAvailableCategories] = useState<Category[]>(
     initialAvailableCategories,
   );
   const [items, setItems] = useState<MenuItem[]>(initialItems);
-  const [loading, setLoading] = useState(false);
+  const [serverBundleKey, setServerBundleKey] = useState({
+    menu: initialMenu,
+    categories: initialCategories,
+    availableCategories: initialAvailableCategories,
+    items: initialItems,
+  });
+  if (
+    initialMenu !== serverBundleKey.menu ||
+    initialCategories !== serverBundleKey.categories ||
+    initialAvailableCategories !== serverBundleKey.availableCategories ||
+    initialItems !== serverBundleKey.items
+  ) {
+    setServerBundleKey({
+      menu: initialMenu,
+      categories: initialCategories,
+      availableCategories: initialAvailableCategories,
+      items: initialItems,
+    });
+    setMenu(initialMenu);
+    setCategories(initialCategories);
+    setAvailableCategories(initialAvailableCategories);
+    setItems(initialItems);
+  }
   const [expandedCategories, setExpandedCategories] = useSessionState<Set<string>>(
     'menuDetail:expandedCategories',
     new Set(),
@@ -115,21 +144,29 @@ export default function MenuDetailClient({
   const tCat = useTranslations('categories');
   const supabase = createClient();
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const service = createMenuService(supabase);
-      const bundle = await service.getMenuDetailBundle(tenantId, menu.id);
-      setMenu(bundle.menu as Menu);
-      setCategories(bundle.categories as Category[]);
-      setAvailableCategories(bundle.availableCategories as Category[]);
-      setItems(bundle.items as MenuItem[]);
-    } catch {
-      toast({ title: t('loadingError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, menu.id, toast, t]);
+  const { pageSize, total: totalCategories } = categoryPagination;
+  const maxCategoryPage = Math.max(0, Math.ceil(totalCategories / pageSize) - 1);
+  const effectiveCategoryPage = Math.min(categoryPagination.page - 1, maxCategoryPage);
+
+  const handleCategoryPageChange = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams();
+      if (page > 0) {
+        params.set('page', String(page + 1));
+      }
+      const qs = params.toString();
+      startRefreshTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+      });
+    },
+    [router, pathname],
+  );
+
+  const refreshList = useCallback(() => {
+    startRefreshTransition(() => {
+      router.refresh();
+    });
+  }, [router]);
 
   const toggleMenuActive = async () => {
     const prev = menu.is_active;
@@ -188,7 +225,7 @@ export default function MenuDetailClient({
         toast({ title: t('categoryCreated') });
       }
       setShowCategoryModal(false);
-      loadData();
+      refreshList();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -214,7 +251,7 @@ export default function MenuDetailClient({
       const categoryService = createCategoryService(supabase);
       await categoryService.deleteCategory(deleteTarget.id);
       toast({ title: t('categoryDeleted') });
-      loadData();
+      refreshList();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     } finally {
@@ -250,7 +287,7 @@ export default function MenuDetailClient({
       toast({ title: t('categoryAssigned') });
       setShowAssignDropdown(false);
       revalidateMenuCache();
-      loadData();
+      refreshList();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -448,7 +485,7 @@ export default function MenuDetailClient({
             </div>
           </div>
 
-          {loading ? (
+          {isRefreshing ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
                 <div
@@ -632,6 +669,12 @@ export default function MenuDetailClient({
                   </div>
                 );
               })}
+              <ListPagination
+                page={effectiveCategoryPage}
+                pageSize={pageSize}
+                totalCount={totalCategories}
+                onPageChange={handleCategoryPageChange}
+              />
             </div>
           ) : (
             <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
@@ -784,7 +827,7 @@ export default function MenuDetailClient({
             menuItemId={editingModifiersItem.id}
             menuItemName={editingModifiersItem.name}
             modifiers={editingModifiersItem.modifiers || []}
-            onUpdate={loadData}
+            onUpdate={refreshList}
             onClose={() => setEditingModifiersItem(null)}
           />
         )}

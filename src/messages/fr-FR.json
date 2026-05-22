@@ -2970,6 +2970,7 @@
     "orderNotFound": "Commande introuvable",
     "orderReadyTitle": "Commande Prête",
     "orderError": "Impossible d'envoyer votre commande. Veuillez reessayer.",
+    "cartStaleItems": "Certains plats ne sont plus disponibles. Votre panier a ete mis a jour.",
     "cartNotesLabel": "Note pour la cuisine (facultatif)",
     "cartNotesPlaceholder": "Ex: sans oignon, bien cuit, allergies...",
     "promoApplied": "Code applique avec succes",

@@ -6,6 +6,7 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
+import { parseRouteUuid } from '@/lib/validations/common.schema';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -29,7 +30,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id: rawId } = await params;
+    const parsedId = parseRouteUuid(rawId);
+    if (!parsedId.ok) {
+      return NextResponse.json({ error: parsedId.error }, { status: 400 });
+    }
+    const id = parsedId.id;
 
     // Fetch the invitation to get its tenant_id
     const adminClient = createAdminClient();

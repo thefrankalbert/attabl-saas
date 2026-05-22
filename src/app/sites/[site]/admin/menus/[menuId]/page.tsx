@@ -4,22 +4,38 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/admin/MenuDetailClient';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
+import {
+  DEFAULT_PAGE_SIZE,
+  paginationQuerySchema,
+  toSupabaseRange,
+  type ServerListPagination,
+} from '@/lib/pagination';
 import type { Category, MenuItem } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
+const MENU_CATEGORIES_PAGE_SIZE = DEFAULT_PAGE_SIZE;
+
 interface MenuDetailPageProps {
   params: Promise<{ site: string; menuId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
+export default async function MenuDetailPage({ params, searchParams }: MenuDetailPageProps) {
   const { site, menuId } = await params;
+  const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) redirectToLogin();
+
+  const { page } = paginationQuerySchema.parse({
+    page: sp.page,
+    pageSize: MENU_CATEGORIES_PAGE_SIZE,
+  });
+  const { from, to } = toSupabaseRange(page, MENU_CATEGORIES_PAGE_SIZE);
 
   const supabase = await createClient();
 
@@ -32,14 +48,14 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
 
   if (!menu) notFound();
 
-  const { data: categories } = await supabase
+  const { data: categories, count: categoriesCount } = await supabase
     .from('categories')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('tenant_id', tenant.id)
     .eq('menu_id', menuId)
-    .order('display_order', { ascending: true });
+    .order('display_order', { ascending: true })
+    .range(from, to);
 
-  // Fetch categories not assigned to this menu (unassigned or belonging to other menus)
   const { data: availableCategories } = await supabase
     .from('categories')
     .select('*')
@@ -61,6 +77,12 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
     items = (itemsData || []) as MenuItem[];
   }
 
+  const categoryPagination: ServerListPagination = {
+    page,
+    pageSize: MENU_CATEGORIES_PAGE_SIZE,
+    total: categoriesCount ?? categories?.length ?? 0,
+  };
+
   return (
     <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
       <MenuDetailClient
@@ -70,6 +92,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
         categories={categories || []}
         availableCategories={availableCategories || []}
         items={items}
+        categoryPagination={categoryPagination}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category } from '@/types/admin.types';
+import { toSupabaseRange } from '@/lib/pagination';
 
 type MenuItemsFilterQuery = {
   is: (column: string, value: null) => unknown;
@@ -62,15 +63,24 @@ export type MenuItemsListFilters = {
 /**
  * Runs menu_items list query; retries without deleted_at if column is missing (pre-migration DB).
  */
+export type MenuItemsListPagination = {
+  page: number;
+  pageSize: number;
+};
+
 export async function fetchMenuItemsList(
   supabase: SupabaseClient,
   tenantId: string,
   selectClause: string,
   filters: MenuItemsListFilters,
   mapOptions?: { withCategory?: boolean; withVariants?: boolean },
-): Promise<{ data: Record<string, unknown>[]; error: unknown | null }> {
+  pagination?: MenuItemsListPagination,
+): Promise<{ data: Record<string, unknown>[]; error: unknown | null; total: number }> {
   const run = async (excludeDeleted: boolean) => {
-    let query = supabase.from('menu_items').select(selectClause).eq('tenant_id', tenantId);
+    let query = supabase
+      .from('menu_items')
+      .select(selectClause, pagination ? { count: 'exact' } : undefined)
+      .eq('tenant_id', tenantId);
 
     if (excludeDeleted) {
       query = withActiveMenuItems(query);
@@ -88,6 +98,11 @@ export async function fetchMenuItemsList(
       query = query.eq('is_available', filters.availableFilter === 'available');
     }
 
+    if (pagination) {
+      const { from, to } = toSupabaseRange(pagination.page, pagination.pageSize);
+      query = query.range(from, to);
+    }
+
     return query.order('name');
   };
 
@@ -97,14 +112,14 @@ export async function fetchMenuItemsList(
   }
 
   if (result.error) {
-    return { data: [], error: result.error };
+    return { data: [], error: result.error, total: 0 };
   }
 
   const rows = ((result.data || []) as unknown as Record<string, unknown>[]).map((row) =>
     mapMenuItemRow(row, mapOptions),
   );
 
-  return { data: rows, error: null };
+  return { data: rows, error: null, total: result.count ?? rows.length };
 }
 
 /** Normalize category on a menu item row from Supabase. */

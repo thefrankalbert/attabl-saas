@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
-import { useSessionState } from '@/hooks/useSessionState';
+import type { SettingsTab } from '@/lib/settings-tabs';
 
 // Feature components
 import SettingsIdentity from '@/components/features/settings/SettingsIdentity';
@@ -22,11 +23,10 @@ import { PushOptIn } from '@/components/admin/PushOptIn';
 
 // ─── Types ─────────────────────────────────────────────────
 
-type SettingsTab = 'identity' | 'branding' | 'billing' | 'sounds' | 'security' | 'contact';
-
 interface SettingsFormProps {
   tenant: SettingsTenant;
   initialPaymentMethods: string[];
+  initialTab: SettingsTab;
 }
 
 const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
@@ -40,20 +40,24 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
 
 // ─── Main Component ────────────────────────────────────────
 
-export function SettingsForm({ tenant, initialPaymentMethods }: SettingsFormProps) {
+export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: SettingsFormProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
-
-  const [activeTab, setActiveTab] = useSessionState<SettingsTab>('settings:activeTab', 'identity');
+  const router = useRouter();
+  const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleTabChange = useCallback(
     (value: string) => {
-      setActiveTab(value as SettingsTab);
-      // Reset scroll to top so each tab starts from the beginning
+      const params = new URLSearchParams();
+      if (value !== 'identity') {
+        params.set('tab', value);
+      }
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     },
-    [setActiveTab],
+    [router, pathname],
   );
 
   const {
@@ -78,7 +82,7 @@ export function SettingsForm({ tenant, initialPaymentMethods }: SettingsFormProp
         className="flex flex-col h-full min-h-0"
       >
         <Tabs
-          value={activeTab}
+          value={initialTab}
           onValueChange={handleTabChange}
           className="flex flex-col flex-1 min-h-0"
         >

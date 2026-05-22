@@ -1,6 +1,6 @@
 'use client';
 
-import { useCart } from '@/contexts/CartContext';
+import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import {
@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { useTranslations, useLocale } from 'next-intl';
@@ -29,6 +29,21 @@ import { TipSection, type TipPreset } from '@/components/tenant/cart/TipSection'
 import { OrderSummary } from '@/components/tenant/cart/OrderSummary';
 
 const NOTES_MAX_LENGTH = 200;
+
+function mapCartItemsForOrderApi(items: CartItem[]) {
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    name_en: item.name_en ?? undefined,
+    price: item.price,
+    quantity: item.quantity,
+    category_name: item.category_name ?? undefined,
+    selectedOption: item.selectedOption ?? undefined,
+    selectedVariant: item.selectedVariant ?? undefined,
+    modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : undefined,
+    customerNotes: item.customerNotes || undefined,
+  }));
+}
 
 export default function CartPage() {
   const {
@@ -65,7 +80,8 @@ export default function CartPage() {
   // States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [previewErrors, setPreviewErrors] = useState<string[]>([]);
+  const validationErrors = items.length === 0 ? [] : previewErrors;
 
   // Tip
   const [tipPreset, setTipPreset] = useState<TipPreset>(0);
@@ -83,6 +99,57 @@ export default function CartPage() {
   const [promoOpen, setPromoOpen] = useState(false);
 
   const submitLock = useRef(false);
+
+  const applyPreviewResult = useCallback(
+    (data: {
+      valid?: boolean;
+      issues?: Array<{ message: string; removeFromCart?: boolean; itemId?: string }>;
+      invalidItemIds?: string[];
+      error?: string;
+    }) => {
+      if (data.invalidItemIds?.length) {
+        for (const itemId of data.invalidItemIds) {
+          removeFromCart(itemId);
+        }
+      }
+      if (data.issues?.length) {
+        setPreviewErrors(data.issues.map((issue) => issue.message));
+      } else if (!data.error) {
+        setPreviewErrors([]);
+      }
+      return data.valid === true;
+    },
+    [removeFromCart],
+  );
+
+  useEffect(() => {
+    if (items.length === 0) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/orders/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: mapCartItemsForOrderApi(items) }),
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) return;
+        applyPreviewResult(data);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        logger.error('Cart preview error:', err);
+      }
+    }, 600);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [items, applyPreviewResult]);
 
   // Tip amount computation
   const tipAmount = useMemo(() => {
@@ -152,28 +219,36 @@ export default function CartPage() {
     submitLock.current = true;
     setIsSubmitting(true);
     setError(null);
-    setValidationErrors([]);
+    setPreviewErrors([]);
 
     try {
       const tableNumber = localStorage.getItem(`attabl_${tenantSlug}_table`) || undefined;
+      const orderItems = mapCartItemsForOrderApi(items);
+
+      const previewResponse = await fetch('/api/orders/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: orderItems }),
+      });
+      const previewData = await previewResponse.json();
+      if (!previewResponse.ok) {
+        setError(previewData.error || t('orderError'));
+        if (previewData.details && Array.isArray(previewData.details)) {
+          setPreviewErrors(previewData.details);
+        }
+        return;
+      }
+      if (!applyPreviewResult(previewData)) {
+        setError(t('cartStaleItems'));
+        return;
+      }
 
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableNumber,
-          items: items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            name_en: item.name_en ?? undefined,
-            price: item.price,
-            quantity: item.quantity,
-            category_name: item.category_name ?? undefined,
-            selectedOption: item.selectedOption ?? undefined,
-            selectedVariant: item.selectedVariant ?? undefined,
-            modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : undefined,
-            customerNotes: item.customerNotes || undefined,
-          })),
+          items: orderItems,
           notes: notes || undefined,
           display_currency: displayCurrency,
           tip_amount: tipAmount > 0 ? tipAmount : undefined,
@@ -185,7 +260,7 @@ export default function CartPage() {
 
       if (!response.ok) {
         if (data.details && Array.isArray(data.details)) {
-          setValidationErrors(data.details);
+          setPreviewErrors(data.details);
         }
         setError(data.error || t('orderError'));
         return;

@@ -9,12 +9,20 @@ import {
   getMenuItemCategory,
 } from '@/lib/menu-items-query';
 import { logger } from '@/lib/logger';
+import { paginationQuerySchema, type ServerListPagination } from '@/lib/pagination';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ItemsPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function ItemsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ page?: string; pageSize?: string }>;
+}) {
   const { site } = await params;
+  const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -24,11 +32,23 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
     return <TenantNotFound />;
   }
 
+  const { page, pageSize } = paginationQuerySchema.parse({
+    page: sp.page,
+    pageSize: sp.pageSize,
+  });
+
   const supabase = await createClient();
   const selectClause = buildMenuItemsSelect({ withCategory: true, withVariants: false });
 
   const [itemsResult, categoriesRes] = await Promise.all([
-    fetchMenuItemsList(supabase, tenant.id, selectClause, {}, { withCategory: true }),
+    fetchMenuItemsList(
+      supabase,
+      tenant.id,
+      selectClause,
+      {},
+      { withCategory: true },
+      { page, pageSize },
+    ),
     supabase.from('categories').select('*').eq('tenant_id', tenant.id).order('display_order'),
   ]);
 
@@ -43,6 +63,12 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
 
   const currency = (tenant.currency as CurrencyCode) || 'XAF';
 
+  const serverListPagination: ServerListPagination = {
+    page,
+    pageSize,
+    total: itemsResult.total,
+  };
+
   return (
     <div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
       <ItemsClient
@@ -52,6 +78,7 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
         initialCategories={(categoriesRes.data || []) as Category[]}
         currency={currency}
         supportedCurrencies={[currency]}
+        serverListPagination={serverListPagination}
       />
     </div>
   );

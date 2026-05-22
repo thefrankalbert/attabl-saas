@@ -105,5 +105,12 @@ export const createPOSOrderSchema = z.object({
 export type CreatePOSOrderInput = z.infer<typeof createPOSOrderSchema>;
 export type POSOrderItemInput = z.infer<typeof posOrderItemSchema>;
 
+/** Cart pre-validation before POST /api/orders (same item shape, no checkout fields). */
+export const orderPreviewSchema = z.object({
+  items: createOrderSchema.shape.items,
+});
+
+export type OrderPreviewInput = z.infer<typeof orderPreviewSchema>;
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type OrderItemInput = z.infer<typeof orderItemSchema>;

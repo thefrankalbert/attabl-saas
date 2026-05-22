@@ -2970,6 +2970,7 @@
     "orderNotFound": "Order not found",
     "orderReadyTitle": "Order Ready",
     "orderError": "We couldn't send your order. Please try again.",
+    "cartStaleItems": "Some dishes are no longer available. Your cart was updated.",
     "cartNotesLabel": "Note for the kitchen (optional)",
     "cartNotesPlaceholder": "E.g. no onions, well done, allergies...",
     "promoApplied": "Code applied successfully",
