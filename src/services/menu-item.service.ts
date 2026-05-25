@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { withActiveMenuItems } from '@/lib/menu-items-query';
+import { deleteMenuItemScoped, updateMenuItemScoped } from '@/lib/menu-items-query';
 import { ServiceError } from './errors';
 
 /**
@@ -37,9 +37,7 @@ export function createMenuItemService(supabase: SupabaseClient) {
       tenantId: string,
       payload: Record<string, unknown>,
     ): Promise<void> {
-      const { error } = await withActiveMenuItems(
-        supabase.from('menu_items').update(payload).eq('id', itemId).eq('tenant_id', tenantId),
-      );
+      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, payload);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du plat', 'INTERNAL', error);
@@ -50,13 +48,7 @@ export function createMenuItemService(supabase: SupabaseClient) {
      * Soft-delete a menu item (preserves order_items history).
      */
     async deleteMenuItem(itemId: string, tenantId: string): Promise<void> {
-      const { error } = await withActiveMenuItems(
-        supabase
-          .from('menu_items')
-          .update({ deleted_at: new Date().toISOString(), is_available: false })
-          .eq('id', itemId)
-          .eq('tenant_id', tenantId),
-      );
+      const { error } = await deleteMenuItemScoped(supabase, itemId, tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression du plat', 'INTERNAL', error);
@@ -67,13 +59,9 @@ export function createMenuItemService(supabase: SupabaseClient) {
      * Toggle the is_available flag on a menu item.
      */
     async toggleAvailable(itemId: string, isAvailable: boolean, tenantId: string): Promise<void> {
-      const { error } = await withActiveMenuItems(
-        supabase
-          .from('menu_items')
-          .update({ is_available: isAvailable })
-          .eq('id', itemId)
-          .eq('tenant_id', tenantId),
-      );
+      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, {
+        is_available: isAvailable,
+      });
 
       if (error) {
         throw new ServiceError('Erreur lors du changement de disponibilite', 'INTERNAL', error);
@@ -84,13 +72,9 @@ export function createMenuItemService(supabase: SupabaseClient) {
      * Toggle the is_featured flag on a menu item.
      */
     async toggleFeatured(itemId: string, isFeatured: boolean, tenantId: string): Promise<void> {
-      const { error } = await withActiveMenuItems(
-        supabase
-          .from('menu_items')
-          .update({ is_featured: isFeatured })
-          .eq('id', itemId)
-          .eq('tenant_id', tenantId),
-      );
+      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, {
+        is_featured: isFeatured,
+      });
 
       if (error) {
         throw new ServiceError('Erreur lors du changement de mise en avant', 'INTERNAL', error);
@@ -101,9 +85,7 @@ export function createMenuItemService(supabase: SupabaseClient) {
      * Update the price of a menu item.
      */
     async updatePrice(itemId: string, price: number, tenantId: string): Promise<void> {
-      const { error } = await withActiveMenuItems(
-        supabase.from('menu_items').update({ price }).eq('id', itemId).eq('tenant_id', tenantId),
-      );
+      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, { price });
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du prix', 'INTERNAL', error);

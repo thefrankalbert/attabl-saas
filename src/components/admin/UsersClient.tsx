@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ import UsersTable from '@/components/features/users/UsersTable';
 import UserForm from '@/components/features/users/UserForm';
 import PendingInvitations from '@/components/features/users/PendingInvitations';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { ListPagination } from '@/components/admin/ListPagination';
+import type { ServerListPagination } from '@/lib/pagination';
 import {
   actionUpdateAdminUser,
   actionResetUserPassword,
@@ -34,15 +37,50 @@ interface UsersClientProps {
   tenantId: string;
   currentUserRole: AdminRole;
   initialUsers: AdminUser[];
+  serverListPagination?: ServerListPagination;
 }
 
 // ─── Main Component ────────────────────────────────────────
 
-export default function UsersClient({ tenantId, currentUserRole, initialUsers }: UsersClientProps) {
+export default function UsersClient({
+  tenantId,
+  currentUserRole,
+  initialUsers,
+  serverListPagination,
+}: UsersClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations('users');
   const tc = useTranslations('common');
   const { toast } = useToast();
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
+  const useServerPagination = !!serverListPagination;
+
+  const handlePageChange = useCallback(
+    (pageIndex: number) => {
+      if (!useServerPagination) {
+        return;
+      }
+      const params = new URLSearchParams();
+      if (pageIndex > 0) {
+        params.set('page', String(pageIndex + 1));
+      }
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    },
+    [useServerPagination, router, pathname],
+  );
+
+  const listPage = useMemo(() => {
+    if (!serverListPagination) {
+      return 0;
+    }
+    const maxPage = Math.max(
+      0,
+      Math.ceil(serverListPagination.total / serverListPagination.pageSize) - 1,
+    );
+    return Math.min(serverListPagination.page - 1, maxPage);
+  }, [serverListPagination]);
 
   // Wrap the hook-local dialog to expose the narrow "message -> Promise<boolean>"
   // shape that useUsersData expects, without leaking shadcn internals into the hook.
@@ -152,6 +190,15 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
             onDeleteUser={data.handleDeleteUser}
             onEditUser={data.canManageUsers ? openEditModal : undefined}
           />
+
+          {useServerPagination && serverListPagination && (
+            <ListPagination
+              page={listPage}
+              pageSize={serverListPagination.pageSize}
+              totalCount={serverListPagination.total}
+              onPageChange={handlePageChange}
+            />
+          )}
 
           {/* Pending Invitations Section */}
           {data.canManageUsers && (

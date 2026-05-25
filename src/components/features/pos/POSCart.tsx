@@ -9,6 +9,7 @@ import {
   Trash2,
   ShoppingBag,
   ArrowRight,
+  Check,
   Printer,
   UtensilsCrossed,
   Package,
@@ -506,21 +507,23 @@ export default function POSCart({
         <div className="grid grid-cols-7 gap-2">
           <Button
             variant="outline"
-            className="col-span-2 h-10 rounded-xl gap-1.5"
+            className="col-span-2 min-h-[48px] rounded-xl gap-1.5 touch-manipulation"
             disabled={cart.length === 0}
             onClick={onPrintOrder}
             title={seg.sentToProduction}
           >
             <Printer className="w-4 h-4" />
-            <span className="hidden lg:inline text-xs">{t('printShort')}</span>
+            <span className="hidden @sm:inline text-xs">{t('printShort')}</span>
           </Button>
           <Button
             variant="default"
-            className="col-span-5 h-10 text-sm font-bold"
+            className="col-span-5 min-h-[48px] rounded-xl text-sm font-bold touch-manipulation bg-emerald-600 hover:bg-emerald-700 text-white"
             disabled={cart.length === 0}
             onClick={onCheckout}
           >
-            {t('checkout')} <ArrowRight className="ml-1.5 w-4 h-4" />
+            <Check className="w-4 h-4 shrink-0" />
+            <span className="truncate">{t('validatePayment')}</span>
+            <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80" />
           </Button>
         </div>
       </div>

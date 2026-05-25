@@ -9,6 +9,7 @@ import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
+import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import { canAccessFeature } from '@/lib/plans/features';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
@@ -83,14 +84,12 @@ export async function POST(request: Request) {
     // 5. Fetch menu items AND tenant config in PARALLEL (independent queries)
     const itemIds = items.map((item) => item.menu_item_id);
     const [menuResult, tenantResult] = await Promise.all([
-      adminSupabase
-        .from('menu_items')
-        .select(
-          'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
-        )
-        .eq('tenant_id', tenant_id)
-        .is('deleted_at', null)
-        .in('id', itemIds),
+      fetchMenuItemsByIds(
+        adminSupabase,
+        tenant_id,
+        itemIds,
+        'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
+      ),
       adminSupabase
         .from('tenants')
         .select(
@@ -114,7 +113,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const menuItemsMap = new Map(menuItems?.map((mi) => [mi.id, mi]) || []);
+    type PosMenuRow = {
+      id: string;
+      name: string;
+      name_en: string | null;
+      price: number;
+      is_available: boolean;
+      category_id: string | null;
+      item_price_variants?: { variant_name_fr: string; price: number }[];
+    };
+
+    const menuItemsMap = new Map(
+      (menuItems || []).map((mi) => {
+        const row = mi as unknown as PosMenuRow;
+        return [row.id, row] as const;
+      }),
+    );
 
     // Check all items exist and are available
     const missingItems: string[] = [];
@@ -123,7 +137,7 @@ export async function POST(request: Request) {
       if (!mi) {
         missingItems.push(item.menu_item_id);
       } else if (mi.is_available === false) {
-        missingItems.push(mi.name);
+        missingItems.push(String(mi.name ?? item.menu_item_id));
       }
     }
     if (missingItems.length > 0) {
@@ -136,7 +150,7 @@ export async function POST(request: Request) {
     // Build the service-compatible item array, resolving variant prices
     const serviceItems = items.map((item) => {
       const mi = menuItemsMap.get(item.menu_item_id)!;
-      let price = mi.price;
+      let price = Number(mi.price) || 0;
 
       if (item.selected_variant && mi.item_price_variants) {
         const variants = mi.item_price_variants as { variant_name_fr: string; price: number }[];
@@ -147,9 +161,9 @@ export async function POST(request: Request) {
       }
 
       return {
-        id: mi.id,
-        name: mi.name,
-        name_en: mi.name_en || undefined,
+        id: String(mi.id),
+        name: String(mi.name),
+        name_en: (mi.name_en as string | null) || undefined,
         price,
         quantity: item.quantity,
         modifiers: item.modifiers || undefined,
@@ -164,7 +178,11 @@ export async function POST(request: Request) {
     const [validationResult, zoneResult] = await Promise.all([
       orderService.validateOrderItems(tenant_id, serviceItems),
       orderService.determinePreparationZone(tenant_id, [
-        ...new Set(menuItems?.map((mi) => mi.category_id).filter(Boolean) || []),
+        ...new Set(
+          (menuItems || [])
+            .map((mi) => mi.category_id as string | null | undefined)
+            .filter((id): id is string => Boolean(id)),
+        ),
       ]),
     ]);
 

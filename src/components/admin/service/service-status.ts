@@ -38,10 +38,20 @@ export function buildTableVMs(
   orders: Order[],
 ): ServiceTableVM[] {
   const assignmentByTable = new Map(assignments.map((a) => [a.table_id, a]));
+  const tableIdByLabel = new Map<string, string>();
+  for (const zone of zones) {
+    for (const table of zone.tables) {
+      tableIdByLabel.set(table.table_number, table.id);
+      if (table.display_name) {
+        tableIdByLabel.set(table.display_name, table.id);
+      }
+    }
+  }
   const orderByTable = new Map<string, Order>();
   for (const o of orders) {
     if (o.status === 'delivered' || o.status === 'cancelled') continue;
-    if (o.table_id) orderByTable.set(o.table_id, o);
+    const tableKey = o.table_id ?? tableIdByLabel.get(o.table_number);
+    if (tableKey) orderByTable.set(tableKey, o);
   }
 
   const out: ServiceTableVM[] = [];

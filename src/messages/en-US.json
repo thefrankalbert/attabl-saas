@@ -2302,7 +2302,9 @@
     "publish": "Publish",
     "fieldsRequired": "Title and start date required",
     "announcementCreated": "Announcement created!",
-    "deleteConfirm": "Delete this announcement?",
+    "deleteConfirm": "Delete this announcement? This cannot be undone.",
+    "deleteAnnouncement": "Delete announcement",
+    "deleteAction": "Delete",
     "announcementDeletedConfirm": "Announcement deleted",
     "announcementEnabled": "Enabled",
     "announcementDisabled": "Disabled",
@@ -2600,7 +2602,11 @@
     "received": "Received",
     "customTip": "Custom",
     "numpadClear": "Clear",
-    "numpadBackspace": "Backspace"
+    "numpadBackspace": "Backspace",
+    "exactAmount": "Exact amount",
+    "validatePayment": "Validate payment",
+    "amountRemaining": "Still due: {amount}",
+    "quickAdd": "+{amount}"
   },
   "qrCodes": {
     "title": "QR Codes",

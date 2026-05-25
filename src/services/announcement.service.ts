@@ -50,10 +50,14 @@ export function createAnnouncementService(supabase: SupabaseClient) {
     },
 
     /**
-     * Delete an announcement by ID.
+     * Delete an announcement scoped to tenant.
      */
-    async deleteAnnouncement(announcementId: string): Promise<void> {
-      const { error } = await supabase.from('announcements').delete().eq('id', announcementId);
+    async deleteAnnouncement(announcementId: string, tenantId: string): Promise<void> {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', announcementId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError("Erreur lors de la suppression de l'annonce", 'INTERNAL', error);

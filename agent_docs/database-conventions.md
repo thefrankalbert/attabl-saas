@@ -64,6 +64,7 @@
 
 ```bash
 pnpm db:migrate   # Appliquer les migrations via Supabase CLI
+pnpm db:types     # Regenerer src/types/database.generated.ts (projet Supabase lie)
 supabase start    # Demarrer Supabase en local
 supabase db push  # Pousser les migrations vers le projet distant
 ```

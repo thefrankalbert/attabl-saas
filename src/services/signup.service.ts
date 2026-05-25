@@ -46,8 +46,45 @@ interface SignupResult {
  * Both routes shared identical logic for: slug generation, tenant creation,
  * admin user creation, and default venue creation (~60 duplicated lines).
  */
+interface ProvisionSignupRpcResult {
+  tenantId: string;
+  slug: string;
+  groupId?: string;
+}
+
 export function createSignupService(supabase: SupabaseClient) {
   const slugService = createSlugService(supabase);
+
+  async function provisionSignupTenant(input: {
+    slug: string;
+    name: string;
+    plan: string;
+    userId: string;
+    email: string;
+    fullName: string;
+    phone?: string;
+  }): Promise<SignupResult> {
+    const { data, error } = await supabase.rpc('provision_signup_tenant', {
+      p_slug: input.slug,
+      p_name: input.name,
+      p_plan: input.plan,
+      p_user_id: input.userId,
+      p_email: input.email,
+      p_full_name: input.fullName,
+      p_phone: input.phone ?? null,
+    });
+
+    if (error) {
+      throw new ServiceError(`Erreur provisionnement: ${error.message}`, 'INTERNAL', error);
+    }
+
+    const row = data as ProvisionSignupRpcResult | null;
+    if (!row?.tenantId || !row?.slug) {
+      throw new ServiceError('Erreur provisionnement: reponse invalide', 'INTERNAL');
+    }
+
+    return { tenantId: row.tenantId, slug: row.slug };
+  }
 
   return {
     /**
@@ -161,72 +198,23 @@ export function createSignupService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la création du compte', 'INTERNAL');
       }
 
-      // 3. Create tenant (rollback: delete auth user if fails)
-      let tenant: { id: string; slug: string };
+      const emailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
+      const initialName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) || input.email;
+
+      let tenant: SignupResult;
       try {
-        tenant = await this.createTenantWithTrial({
+        tenant = await provisionSignupTenant({
           slug,
           name: input.restaurantName,
           plan: input.plan || 'starter',
-        });
-      } catch (err) {
-        await supabase.auth.admin.deleteUser(userId);
-        throw err;
-      }
-
-      // 3b. Create restaurant group and link tenant
-      const { data: group } = await supabase
-        .from('restaurant_groups')
-        .insert({ owner_user_id: userId, name: 'Mon Groupe' })
-        .select('id')
-        .single();
-
-      if (group) {
-        await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
-      }
-
-      // 4. Create admin user (rollback: delete group + tenant + auth user if fails)
-      // Use email prefix as initial name - user sets real name during onboarding
-      const emailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
-      const initialName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) || input.email;
-      try {
-        await this.createAdminUser({
-          tenantId: tenant.id,
           userId,
           email: input.email,
           fullName: initialName,
           phone: input.phone,
         });
       } catch (err) {
-        if (group) {
-          await supabase.from('restaurant_groups').delete().eq('id', group.id);
-        }
-        await supabase.from('tenants').delete().eq('id', tenant.id);
         await supabase.auth.admin.deleteUser(userId);
         throw err;
-      }
-
-      // 5. Create default venue (with rollback on failure)
-      try {
-        await this.createDefaultVenue(tenant.id);
-      } catch (venueError) {
-        logger.error('Failed to create default venue, rolling back signup', venueError);
-        // Rollback: delete admin_user, restaurant_group, tenant, auth user
-        try {
-          await supabase.from('admin_users').delete().eq('user_id', userId);
-          if (group) {
-            await supabase.from('restaurant_groups').delete().eq('id', group.id);
-          }
-          await supabase.from('tenants').delete().eq('id', tenant.id);
-          await supabase.auth.admin.deleteUser(userId);
-        } catch (rollbackError) {
-          logger.error('Signup rollback also failed', rollbackError);
-        }
-        throw new ServiceError(
-          'Erreur lors de la creation de la venue par defaut',
-          'INTERNAL',
-          venueError,
-        );
       }
 
       // 6. Generate confirmation link and send welcome email
@@ -254,7 +242,7 @@ export function createSignupService(supabase: SupabaseClient) {
         logger.error('Failed to send confirmation email', emailErr);
       }
 
-      return { slug: tenant.slug, tenantId: tenant.id };
+      return { slug: tenant.slug, tenantId: tenant.tenantId };
     },
 
     /**
@@ -280,49 +268,19 @@ export function createSignupService(supabase: SupabaseClient) {
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(oauthRestaurantName);
 
-      // 2. Create tenant
-      const tenant = await this.createTenantWithTrial({
-        slug,
-        name: oauthRestaurantName,
-        plan: input.plan || 'starter',
-      });
-
-      // 2b. Create restaurant group and link tenant
-      const { data: group } = await supabase
-        .from('restaurant_groups')
-        .insert({ owner_user_id: input.userId, name: 'Mon Groupe' })
-        .select('id')
-        .single();
-
-      if (group) {
-        await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
-      }
-
-      // 3. Create admin user (rollback: delete group + tenant if fails)
-      // Use email prefix as initial name - user sets real name during onboarding
       const oauthEmailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
       const oauthInitialName =
         oauthEmailPrefix.charAt(0).toUpperCase() + oauthEmailPrefix.slice(1) || input.email;
-      try {
-        await this.createAdminUser({
-          tenantId: tenant.id,
-          userId: input.userId,
-          email: input.email,
-          fullName: oauthInitialName,
-          phone: input.phone,
-        });
-      } catch (err) {
-        if (group) {
-          await supabase.from('restaurant_groups').delete().eq('id', group.id);
-        }
-        await supabase.from('tenants').delete().eq('id', tenant.id);
-        throw err;
-      }
 
-      // 4. Create default venue (best-effort)
-      await this.createDefaultVenue(tenant.id);
-
-      return { slug: tenant.slug, tenantId: tenant.id };
+      return provisionSignupTenant({
+        slug,
+        name: oauthRestaurantName,
+        plan: input.plan || 'starter',
+        userId: input.userId,
+        email: input.email,
+        fullName: oauthInitialName,
+        phone: input.phone,
+      });
     },
 
     /**

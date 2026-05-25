@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { isMissingRelationError } from '@/lib/supabase/schema-errors';
 import type { TableAssignment } from '@/types/admin.types';
 
 export function useAssignments(tenantId: string) {
@@ -17,10 +18,19 @@ export function useAssignments(tenantId: string) {
         .eq('tenant_id', tenantId)
         .is('ended_at', null)
         .order('started_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        if (isMissingRelationError(error, 'table_assignments')) {
+          return [];
+        }
+        throw error;
+      }
       return (data as TableAssignment[]) ?? [];
     },
     enabled: !!tenantId,
     staleTime: 0,
+    retry: (failureCount, error) => {
+      if (isMissingRelationError(error, 'table_assignments')) return false;
+      return failureCount < 2;
+    },
   });
 }

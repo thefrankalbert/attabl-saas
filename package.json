@@ -17,6 +17,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:responsive": "playwright test tests/e2e/responsive.spec.ts",
     "db:migrate": "supabase db push",
+    "db:types": "supabase gen types typescript --linked > src/types/database.generated.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -112,6 +113,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "@vitest/coverage-v8": "^4.1.5",
     "agentation": "^3.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
