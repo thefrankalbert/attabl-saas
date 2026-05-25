@@ -3,12 +3,24 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import UsersClient from '@/components/admin/UsersClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import {
+  paginationQuerySchema,
+  toSupabaseRange,
+  type ServerListPagination,
+} from '@/lib/pagination';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function UsersPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function UsersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ page?: string; pageSize?: string }>;
+}) {
   const { site } = await params;
+  const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -40,19 +52,32 @@ export default async function UsersPage({ params }: { params: Promise<{ site: st
     return <div>Accès refusé</div>;
   }
 
-  // 2. Fetch Users List
-  const { data: users } = await supabase
+  const { page, pageSize } = paginationQuerySchema.parse({
+    page: sp.page,
+    pageSize: sp.pageSize,
+  });
+  const { from, to } = toSupabaseRange(page, pageSize);
+
+  const { data: users, count } = await supabase
     .from('admin_users')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('tenant_id', tenant.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  const serverListPagination: ServerListPagination = {
+    page,
+    pageSize,
+    total: count ?? users?.length ?? 0,
+  };
 
   return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto h-full flex flex-col min-h-0">
       <UsersClient
         tenantId={tenant.id}
         currentUserRole={currentUserData.role as AdminRole}
         initialUsers={(users as AdminUser[]) || []}
+        serverListPagination={serverListPagination}
       />
     </div>
   );

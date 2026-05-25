@@ -329,16 +329,19 @@ export default function ItemsClient({
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    const target = deleteTarget;
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.deleteMenuItem(deleteTarget.id, tenantId);
+      await menuItemService.deleteMenuItem(target.id, tenantId);
       toast({ title: t('itemDeleted') });
+      setDeleteTarget(null);
       loadItems();
       router.refresh();
       revalidateMenuCache(tenantSlug);
-    } catch {
-      toast({ title: t('deleteError'), variant: 'destructive' });
-    } finally {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t('deleteError');
+      logger.error('Failed to delete menu item', err, { itemId: target.id, tenantId });
+      toast({ title: message, variant: 'destructive' });
       setDeleteTarget(null);
     }
   };
@@ -711,7 +714,10 @@ export default function ItemsClient({
             <AlertDialogFooter>
               <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
               <AlertDialogAction
-                onClick={confirmDelete}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void confirmDelete();
+                }}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 {tc('delete')}

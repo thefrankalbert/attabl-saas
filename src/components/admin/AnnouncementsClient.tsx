@@ -11,9 +11,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import AdminModal from '@/components/admin/AdminModal';
 import { DatePickerField } from '@/components/ui/date-picker-field';
-import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
 import { createAnnouncementService } from '@/services/announcement.service';
@@ -32,9 +41,9 @@ export default function AnnouncementsClient({
 }: AnnouncementsClientProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementPendingDelete, setAnnouncementPendingDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -119,27 +128,29 @@ export default function AnnouncementsClient({
     setIsModalOpen(true);
   };
 
-  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
-
-  const handleDelete = async (id: string) => {
-    const ok = await confirm({
-      title: t('deleteAnnouncement') || tc('delete'),
-      description: t('deleteConfirm'),
-      confirmLabel: tc('delete'),
-      cancelLabel: tc('cancel'),
-      destructive: true,
-    });
-    if (!ok) return;
-
+  const performDelete = async (id: string) => {
     try {
       const announcementService = createAnnouncementService(supabase);
-      await announcementService.deleteAnnouncement(id);
+      await announcementService.deleteAnnouncement(id, tenantId);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+      if (editingAnnouncement?.id === id) {
+        setIsModalOpen(false);
+        resetForm();
+      }
       toast({ title: t('announcementDeletedConfirm') });
       revalidateMenuCache(tenantSlug);
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    } catch (e: unknown) {
+      logger.error('Failed to delete announcement', e, { announcementId: id, tenantId });
+      toast({
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('errorGeneric'),
+        variant: 'destructive',
+      });
     }
+  };
+
+  const requestDelete = (id: string) => {
+    setAnnouncementPendingDelete(id);
   };
 
   const toggleActive = async (announcement: Announcement) => {
@@ -214,13 +225,14 @@ export default function AnnouncementsClient({
                   {ann.is_active ? t('statusActive') : t('statusInactive')}
                 </span>
                 <div
-                  className="flex items-center gap-1 @lg:opacity-0 @lg:group-hover:opacity-100 transition-opacity shrink-0"
+                  className="flex items-center gap-1 shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
+                    title={ann.is_active ? t('hide') : t('show')}
                     onClick={() => toggleActive(ann)}
                   >
                     {ann.is_active ? (
@@ -233,8 +245,9 @@ export default function AnnouncementsClient({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
-                    title="Supprimer"
-                    onClick={() => handleDelete(ann.id)}
+                    title={t('deleteAction')}
+                    aria-label={t('deleteAction')}
+                    onClick={() => requestDelete(ann.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -306,18 +319,63 @@ export default function AnnouncementsClient({
             </Label>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleSave} disabled={loading} variant="default">
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingAnnouncement ? tc('save') : t('publish')}
-            </Button>
+          <div
+            className={cn(
+              'pt-4 flex gap-2',
+              editingAnnouncement ? 'justify-between' : 'justify-end',
+            )}
+          >
+            {editingAnnouncement && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-status-error hover:text-status-error hover:bg-status-error-bg gap-1.5"
+                onClick={() => requestDelete(editingAnnouncement.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('deleteAction')}
+              </Button>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                {t('cancel')}
+              </Button>
+              <Button onClick={handleSave} disabled={loading} variant="default">
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editingAnnouncement ? tc('save') : t('publish')}
+              </Button>
+            </div>
           </div>
         </div>
       </AdminModal>
-      {ConfirmDialog}
+
+      <AlertDialog
+        open={announcementPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setAnnouncementPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteAnnouncement')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('deleteConfirm')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (announcementPendingDelete) {
+                  void performDelete(announcementPendingDelete);
+                  setAnnouncementPendingDelete(null);
+                }
+              }}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {t('deleteAction')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2302,7 +2302,9 @@
     "publish": "Publier",
     "fieldsRequired": "Titre et date de début requis",
     "announcementCreated": "Annonce créée !",
-    "deleteConfirm": "Supprimer cette annonce ?",
+    "deleteConfirm": "Supprimer cette annonce ? Cette action est irreversible.",
+    "deleteAnnouncement": "Supprimer l'annonce",
+    "deleteAction": "Supprimer",
     "announcementDeletedConfirm": "Annonce supprimée",
     "announcementEnabled": "Activée",
     "announcementDisabled": "Désactivée",
@@ -2600,7 +2602,11 @@
     "received": "Reçu",
     "customTip": "Personnalisé",
     "numpadClear": "Effacer",
-    "numpadBackspace": "Retour arrière"
+    "numpadBackspace": "Retour arrière",
+    "exactAmount": "Montant exact",
+    "validatePayment": "Valider l'encaissement",
+    "amountRemaining": "Il manque {amount}",
+    "quickAdd": "+{amount}"
   },
   "qrCodes": {
     "title": "QR Codes",

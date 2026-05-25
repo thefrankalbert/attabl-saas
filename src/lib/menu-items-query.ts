@@ -30,6 +30,52 @@ export function withActiveMenuItems<T extends MenuItemsFilterQuery>(query: T): T
   return query.is('deleted_at', null) as T;
 }
 
+/**
+ * Updates a menu_item scoped by id + tenant_id.
+ * Retries without deleted_at filter/payload when the soft-delete column is missing.
+ */
+export async function updateMenuItemScoped(
+  supabase: SupabaseClient,
+  itemId: string,
+  tenantId: string,
+  payload: Record<string, unknown>,
+): Promise<{ error: unknown | null }> {
+  const attempt = async (filterActive: boolean, body: Record<string, unknown>) => {
+    let query = supabase.from('menu_items').update(body).eq('id', itemId).eq('tenant_id', tenantId);
+
+    if (filterActive) {
+      query = withActiveMenuItems(query);
+    }
+
+    return query;
+  };
+
+  let result = await attempt(true, payload);
+  if (result.error && isMissingDeletedAtColumnError(result.error)) {
+    const legacyPayload = { ...payload };
+    delete legacyPayload.deleted_at;
+    if (Object.keys(legacyPayload).length > 0) {
+      result = await attempt(false, legacyPayload);
+    }
+  }
+
+  return { error: result.error };
+}
+
+/**
+ * Soft-deletes a menu item, or marks unavailable if deleted_at column is missing.
+ */
+export async function deleteMenuItemScoped(
+  supabase: SupabaseClient,
+  itemId: string,
+  tenantId: string,
+): Promise<{ error: unknown | null }> {
+  return updateMenuItemScoped(supabase, itemId, tenantId, {
+    deleted_at: new Date().toISOString(),
+    is_available: false,
+  });
+}
+
 export function isMissingDeletedAtColumnError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const err = error as { message?: string; details?: string; hint?: string; code?: string };
@@ -126,4 +172,44 @@ export async function fetchMenuItemsList(
 export function getMenuItemCategory(item: Record<string, unknown>): Category | undefined {
   const category = item.category ?? item.categories;
   return category as Category | undefined;
+}
+
+/**
+ * Fetches menu_items by id for order/POS validation.
+ * Retries without deleted_at when the soft-delete migration is not applied yet.
+ */
+export async function fetchMenuItemsByIds(
+  supabase: SupabaseClient,
+  tenantId: string,
+  itemIds: string[],
+  selectClause: string,
+): Promise<{ data: Record<string, unknown>[] | null; error: unknown | null }> {
+  if (itemIds.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const run = (excludeDeleted: boolean) => {
+    let query = supabase.from('menu_items').select(selectClause).eq('tenant_id', tenantId);
+
+    if (excludeDeleted) {
+      query = withActiveMenuItems(query);
+    }
+
+    return query.in('id', itemIds);
+  };
+
+  let result = await run(true);
+  if (result.error && isMissingDeletedAtColumnError(result.error)) {
+    result = await run(false);
+  }
+
+  if (result.error) {
+    return { data: null, error: result.error };
+  }
+
+  const rows = ((result.data || []) as unknown as Record<string, unknown>[]).map((row) =>
+    mapMenuItemRow(row),
+  );
+
+  return { data: rows, error: null };
 }

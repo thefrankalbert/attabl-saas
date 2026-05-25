@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useFormatter } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -51,15 +52,25 @@ import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { useDevice } from '@/hooks/useDevice';
 import { actionDeleteOrders } from '@/app/actions/orders';
 import { logger } from '@/lib/logger';
+import { ListPagination } from '@/components/admin/ListPagination';
+import type { ServerListPagination } from '@/lib/pagination';
 
 interface OrdersClientProps {
   tenantId: string;
   initialOrders: Order[];
   /** @deprecated Sound is now managed globally via SoundContext */
   notificationSoundId?: string;
+  serverListPagination?: ServerListPagination;
 }
 
-export default function OrdersClient({ tenantId, initialOrders }: OrdersClientProps) {
+export default function OrdersClient({
+  tenantId,
+  initialOrders,
+  serverListPagination,
+}: OrdersClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const useServerPagination = !!serverListPagination;
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
@@ -83,8 +94,33 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [page, setPage] = useState(0);
-  const PAGE_SIZE = 50;
+  const [clientPage, setClientPage] = useState(0);
+  const PAGE_SIZE = serverListPagination?.pageSize ?? 50;
+  const page = useServerPagination
+    ? Math.max(
+        0,
+        Math.min(
+          serverListPagination.page - 1,
+          Math.ceil(serverListPagination.total / PAGE_SIZE) - 1,
+        ),
+      )
+    : clientPage;
+
+  const handleOrdersPageChange = useCallback(
+    (pageIndex: number) => {
+      if (useServerPagination) {
+        const params = new URLSearchParams();
+        if (pageIndex > 0) {
+          params.set('page', String(pageIndex + 1));
+        }
+        const qs = params.toString();
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+        return;
+      }
+      setClientPage(pageIndex);
+    },
+    [useServerPagination, router, pathname],
+  );
 
   const { data: tenantSettings } = useTenantSettings(tenantId);
 
@@ -800,28 +836,36 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           )}
         </div>
 
-        {/* Pagination controls */}
-        <div className="flex items-center justify-center gap-2 py-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-          >
-            {tc('previous') || 'Precedent'}
-          </Button>
-          <span className="text-xs text-app-text-muted">
-            {t('pageOf', { page: page + 1 }) || `Page ${page + 1}`}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={orders.length < PAGE_SIZE}
-          >
-            {tc('next') || 'Suivant'}
-          </Button>
-        </div>
+        {useServerPagination && serverListPagination ? (
+          <ListPagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            totalCount={serverListPagination.total}
+            onPageChange={handleOrdersPageChange}
+          />
+        ) : (
+          <div className="flex items-center justify-center gap-2 py-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOrdersPageChange(Math.max(0, page - 1))}
+              disabled={page === 0}
+            >
+              {tc('previous') || 'Precedent'}
+            </Button>
+            <span className="text-xs text-app-text-muted">
+              {t('pageOf', { page: page + 1 }) || `Page ${page + 1}`}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOrdersPageChange(page + 1)}
+              disabled={orders.length < PAGE_SIZE}
+            >
+              {tc('next') || 'Suivant'}
+            </Button>
+          </div>
+        )}
 
         {/* Detail Modal */}
         <AdminModal

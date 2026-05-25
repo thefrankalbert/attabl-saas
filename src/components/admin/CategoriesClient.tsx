@@ -384,18 +384,6 @@ export default function CategoriesClient({
       return;
     }
 
-    // Check if category is linked to any menu
-    const service = createCategoryService(supabase);
-    const isLinked = await service.isCategoryLinkedToMenu(cat.id, tenantId);
-
-    if (isLinked) {
-      toast({
-        title: t('categoryLinkedToMenu') || 'Cette categorie est liee a un menu',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setDeleteTarget({ id: cat.id, name: cat.name });
   };
 

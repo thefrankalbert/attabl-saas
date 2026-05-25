@@ -164,37 +164,29 @@ export function createInvitationService(supabase: SupabaseClient) {
         userId = authUser.user.id;
       }
 
-      const { error: adminError } = await supabase.from('admin_users').insert({
-        user_id: userId,
-        tenant_id: invitation.tenant_id,
-        email: invitation.email,
-        full_name: input.fullName || invitation.email,
-        role: invitation.role,
-        is_active: true,
-        custom_permissions: invitation.custom_permissions,
-        created_by: invitation.invited_by,
+      const { data, error } = await supabase.rpc('accept_invitation_membership', {
+        p_invitation_id: invitation.id,
+        p_user_id: userId,
+        p_full_name: input.fullName || invitation.email,
       });
 
-      if (adminError) {
+      if (error) {
+        const msg = error.message ?? '';
+        if (msg.includes('INVITATION_EXPIRED')) {
+          throw new ServiceError('Cette invitation a expire', 'VALIDATION', error);
+        }
+        if (msg.includes('INVITATION_NOT_FOUND')) {
+          throw new ServiceError('Invitation introuvable ou deja utilisee', 'NOT_FOUND', error);
+        }
         throw new ServiceError(
-          `Erreur ajout au restaurant: ${adminError.message}`,
+          `Erreur ajout au restaurant: ${msg || 'Erreur inconnue'}`,
           'INTERNAL',
-          adminError,
+          error,
         );
       }
 
-      await supabase
-        .from('invitations')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', invitation.id);
-
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('slug')
-        .eq('id', invitation.tenant_id)
-        .single();
-
-      return { tenantSlug: tenant?.slug || '' };
+      const row = data as { tenantSlug?: string } | null;
+      return { tenantSlug: row?.tenantSlug ?? '' };
     },
 
     async cancelInvitation(invitationId: string): Promise<void> {

@@ -70,9 +70,21 @@ function createMockSupabase(
     };
   });
 
-  return { from, auth, _mockDeleteUser: mockDeleteUser } as unknown as Parameters<
-    typeof createSignupService
-  >[0] & { _mockDeleteUser: ReturnType<typeof vi.fn> };
+  const mockRpc = vi.fn().mockResolvedValue({
+    data: { tenantId: 'tenant-xyz', slug: 'mon-restaurant', groupId: 'group-abc-123' },
+    error: null,
+  });
+
+  return {
+    from,
+    auth,
+    rpc: mockRpc,
+    _mockDeleteUser: mockDeleteUser,
+    _mockRpc: mockRpc,
+  } as unknown as Parameters<typeof createSignupService>[0] & {
+    _mockDeleteUser: ReturnType<typeof vi.fn>;
+    _mockRpc: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe('SignupService', () => {
@@ -101,8 +113,10 @@ describe('SignupService', () => {
         password: 'securepass123',
       });
 
-      // Verify the tenant was created (via from('tenants'))
-      expect(supabase.from).toHaveBeenCalledWith('tenants');
+      expect(supabase._mockRpc).toHaveBeenCalledWith(
+        'provision_signup_tenant',
+        expect.objectContaining({ p_plan: 'starter' }),
+      );
     });
 
     it('should throw CONFLICT when auth user email already exists', async () => {
@@ -120,8 +134,9 @@ describe('SignupService', () => {
       });
     });
 
-    it('should rollback auth user when tenant creation fails', async () => {
-      const supabase = createMockSupabase({ tenantInsertError: true });
+    it('should rollback auth user when tenant provision RPC fails', async () => {
+      const supabase = createMockSupabase();
+      supabase._mockRpc.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
       const service = createSignupService(supabase);
 
       await expect(
@@ -132,7 +147,6 @@ describe('SignupService', () => {
         }),
       ).rejects.toThrow(ServiceError);
 
-      // Verify auth user was deleted (rollback)
       expect(supabase._mockDeleteUser).toHaveBeenCalledWith('user-abc-123');
     });
   });
@@ -223,8 +237,9 @@ describe('SignupService', () => {
       expect(result).toEqual({ tenantId: 'tenant-existing', slug: 'existing-slug' });
     });
 
-    it('should rollback tenant when admin user creation fails', async () => {
-      const supabase = createMockSupabase({ adminInsertError: true });
+    it('should throw when provision RPC fails for OAuth signup', async () => {
+      const supabase = createMockSupabase();
+      supabase._mockRpc.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
       const service = createSignupService(supabase);
 
       await expect(
@@ -234,9 +249,6 @@ describe('SignupService', () => {
           restaurantName: 'Test',
         }),
       ).rejects.toThrow(ServiceError);
-
-      // Verify tenant was deleted (rollback)
-      expect(supabase.from).toHaveBeenCalledWith('tenants');
     });
   });
 });

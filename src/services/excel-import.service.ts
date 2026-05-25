@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-import';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -182,18 +183,6 @@ function parseNumericCell(value: unknown): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
-/**
- * Generates a URL-safe slug from a name.
- */
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 // ─── Service ──────────────────────────────────────────────────
 
 /**
@@ -361,148 +350,39 @@ export function createExcelImportService(supabase: SupabaseClient) {
       menuId: string,
       rows: ParsedRow[],
     ): Promise<ImportResult> {
-      const result: ImportResult = {
-        categoriesCreated: 0,
-        categoriesExisting: 0,
-        itemsCreated: 0,
-        itemsSkipped: 0,
-        errors: [],
-      };
-
       const grouped = this.groupByCategory(rows);
-
-      // Get the max display_order for categories in this menu
-      const { data: maxCatOrder } = await supabase
-        .from('categories')
-        .select('display_order')
-        .eq('tenant_id', tenantId)
-        .eq('menu_id', menuId)
-        .order('display_order', { ascending: false })
-        .limit(1)
-        .single();
-
-      let nextCategoryOrder = (maxCatOrder?.display_order ?? -1) + 1;
+      const bulkGrouped = new Map<
+        string,
+        { categoryEn: string | null; items: MenuBulkImportRow[] }
+      >();
 
       for (const [categoryName, group] of grouped) {
-        // Check if category already exists for this tenant + menu
-        const { data: existingCategory, error: catLookupError } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('tenant_id', tenantId)
-          .eq('menu_id', menuId)
-          .eq('name', categoryName)
-          .single();
-
-        if (catLookupError && catLookupError.code !== 'PGRST116') {
-          // PGRST116 = "no rows returned" - expected when category doesn't exist
-          logger.error('Error looking up category', catLookupError, {
-            categoryName,
-            tenantId,
-          });
-          // Record error for all items in this category
-          for (const item of group.items) {
-            result.errors.push({
-              row: item.rowNumber,
-              message: `Failed to look up category "${categoryName}"`,
-            });
-            result.itemsSkipped += 1;
-          }
-          continue;
-        }
-
-        let categoryId: string;
-
-        if (existingCategory) {
-          categoryId = existingCategory.id;
-          result.categoriesExisting += 1;
-        } else {
-          // Create the category
-          const { data: newCategory, error: catCreateError } = await supabase
-            .from('categories')
-            .insert({
-              tenant_id: tenantId,
-              menu_id: menuId,
-              name: categoryName,
-              name_en: group.categoryEn || null,
-              display_order: nextCategoryOrder,
-              is_active: true,
-            })
-            .select('id')
-            .single();
-
-          if (catCreateError || !newCategory) {
-            logger.error('Error creating category', catCreateError, {
-              categoryName,
-              tenantId,
-            });
-            for (const item of group.items) {
-              result.errors.push({
-                row: item.rowNumber,
-                message: `Failed to create category "${categoryName}"`,
-              });
-              result.itemsSkipped += 1;
-            }
-            continue;
-          }
-
-          categoryId = newCategory.id;
-          nextCategoryOrder += 1;
-          result.categoriesCreated += 1;
-        }
-
-        // Count existing items in this category to determine insertion order
-        const { count: existingCount } = await supabase
-          .from('menu_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('category_id', categoryId);
-
-        let nextItemOrder = existingCount ?? 0;
-
-        // Insert menu items for this category
-        for (const item of group.items) {
-          const { error: itemError } = await supabase.from('menu_items').insert({
-            tenant_id: tenantId,
-            category_id: categoryId,
+        bulkGrouped.set(categoryName, {
+          categoryEn: group.categoryEn,
+          items: group.items.map((item) => ({
+            rowKey: item.rowNumber,
+            category: item.category,
+            categoryEn: item.categoryEn,
             name: item.name,
-            name_en: item.nameEn || null,
-            description: item.description || null,
-            description_en: item.descriptionEn || null,
+            nameEn: item.nameEn,
+            description: item.description,
+            descriptionEn: item.descriptionEn,
             price: item.price,
-            is_available: item.isAvailable,
-            is_featured: item.isFeatured,
-            slug: slugify(item.name),
-            display_order: nextItemOrder,
-          });
-
-          if (itemError) {
-            logger.error('Error inserting menu item', itemError, {
-              itemName: item.name,
-              row: item.rowNumber,
-            });
-            result.errors.push({
-              row: item.rowNumber,
-              message: `Failed to insert item "${item.name}": ${itemError.message}`,
-            });
-            result.itemsSkipped += 1;
-          } else {
-            nextItemOrder += 1;
-            result.itemsCreated += 1;
-          }
-        }
+            isAvailable: item.isAvailable,
+            isFeatured: item.isFeatured,
+          })),
+        });
       }
 
-      logger.info('Excel import completed', {
-        tenantId,
-        menuId,
-        categoriesCreated: result.categoriesCreated,
-        categoriesExisting: result.categoriesExisting,
-        itemsCreated: result.itemsCreated,
-        itemsSkipped: result.itemsSkipped,
-        errorCount: result.errors.length,
-      });
+      const bulk = await bulkImportMenuRows(supabase, tenantId, menuId, bulkGrouped);
 
-      return result;
+      return {
+        categoriesCreated: bulk.categoriesCreated,
+        categoriesExisting: bulk.categoriesExisting,
+        itemsCreated: bulk.itemsCreated,
+        itemsSkipped: bulk.itemsSkipped,
+        errors: bulk.errors.map((e) => ({ row: e.key, message: e.message })),
+      };
     },
 
     /**

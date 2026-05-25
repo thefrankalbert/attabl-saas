@@ -3,6 +3,7 @@ import type { OrderItemInput } from '@/lib/validations/order.schema';
 import type { ServiceType, OrderPreparationZone, PreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 
 interface CreateOrderInput {
   tenantId: string;
@@ -120,12 +121,12 @@ export function createOrderService(supabase: SupabaseClient) {
 
       // Run all three independent queries in parallel (biggest latency win)
       const [menuItemsRes, modifiersRes, variantsRes] = await Promise.all([
-        supabase
-          .from('menu_items')
-          .select('id, name, price, is_available, category_id')
-          .eq('tenant_id', tenantId)
-          .is('deleted_at', null)
-          .in('id', itemIds),
+        fetchMenuItemsByIds(
+          supabase,
+          tenantId,
+          itemIds,
+          'id, name, price, is_available, category_id',
+        ),
         supabase
           .from('item_modifiers')
           .select('id, menu_item_id, name, price')
@@ -162,7 +163,18 @@ export function createOrderService(supabase: SupabaseClient) {
         variantsByItem.get(v.menu_item_id)!.set(v.variant_name_fr.toLowerCase(), v.price);
       }
 
-      const menuItemsMap = new Map(menuItems?.map((item) => [item.id, item]) || []);
+      const menuItemsMap = new Map(
+        (menuItems || []).map((item) => {
+          const row = item as {
+            id: string;
+            name: string;
+            price: number;
+            is_available: boolean;
+            category_id: string | null;
+          };
+          return [row.id, row] as const;
+        }),
+      );
 
       const issues: OrderPreviewIssue[] = [];
       const invalidItemIds: string[] = [];
@@ -528,17 +540,47 @@ export function createOrderService(supabase: SupabaseClient) {
     /**
      * Return the current (not delivered, not cancelled) order for a
      * specific table, if any. Used by ServiceManager table detail panel.
+     * Resolves table_number from tables.id (orders.table_id may be absent on older DBs).
      */
     async getCurrentOrderForTable(tenantId: string, tableId: string): Promise<unknown | null> {
-      const { data, error } = await supabase
+      const { data: tableRow, error: tableError } = await supabase
+        .from('tables')
+        .select('table_number, display_name')
+        .eq('id', tableId)
+        .maybeSingle();
+
+      if (tableError) {
+        throw new ServiceError(
+          'Erreur chargement table pour commande courante',
+          'INTERNAL',
+          tableError,
+        );
+      }
+      if (!tableRow) return null;
+
+      const tableNumbers = Array.from(
+        new Set(
+          [tableRow.table_number, tableRow.display_name].filter(
+            (value): value is string => typeof value === 'string' && value.length > 0,
+          ),
+        ),
+      );
+      if (tableNumbers.length === 0) return null;
+
+      let query = supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('tenant_id', tenantId)
-        .eq('table_id', tableId)
         .not('status', 'in', '(delivered,cancelled)')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+
+      query =
+        tableNumbers.length === 1
+          ? query.eq('table_number', tableNumbers[0])
+          : query.in('table_number', tableNumbers);
+
+      const { data, error } = await query.maybeSingle();
       if (error) {
         throw new ServiceError(
           'Erreur chargement commande courante pour cette table',
