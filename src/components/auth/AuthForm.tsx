@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 
 // Google Icon SVG
 const GoogleIcon = () => (
@@ -100,23 +101,34 @@ function AuthForm({ mode }: AuthFormProps) {
     try {
       if (mode === 'signup') {
         // Signup flow - restaurant name is collected during onboarding
+        const hpValue = honeypotRef.current?.value?.trim() ?? '';
+        const signupBody: Record<string, string> = {
+          restaurantName: 'Mon Etablissement',
+          email,
+          password,
+          plan: 'starter',
+          cfToken,
+        };
+        if (hpValue) signupBody[HONEYPOT_FIELD] = hpValue;
+
         const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            restaurantName: 'Mon Établissement',
-            email,
-            password,
-            plan: 'starter',
-            website: honeypotRef.current?.value ?? '',
-            cfToken,
-          }),
+          body: JSON.stringify(signupBody),
         });
 
-        const data = await response.json();
+        const data = (await response.json()) as { error?: string; code?: string };
 
         if (!response.ok) {
-          throw new Error(data.error || tErr('signupGeneric'));
+          const apiError =
+            data.code === 'EMAIL_ALREADY_REGISTERED' || response.status === 409
+              ? tErr('emailAlreadyRegistered')
+              : data.code === 'CAPTCHA_FAILED'
+                ? tErr('captchaFailed')
+                : typeof data.error === 'string' && data.error.length > 0
+                  ? data.error
+                  : tErr('signupGeneric');
+          throw new Error(apiError);
         }
 
         // Account created - show confirmation message
@@ -129,12 +141,12 @@ function AuthForm({ mode }: AuthFormProps) {
           body: JSON.stringify({
             email,
             password,
-            website: honeypotRef.current?.value ?? '',
+            [HONEYPOT_FIELD]: honeypotRef.current?.value ?? '',
             cfToken,
           }),
         });
 
-        const data = await response.json();
+        const data = (await response.json()) as { error?: string; redirect?: string };
 
         if (!response.ok) {
           if (data.error === 'email_not_confirmed') {
@@ -358,10 +370,12 @@ function AuthForm({ mode }: AuthFormProps) {
           <Input
             ref={honeypotRef}
             type="text"
-            name="website"
+            name={HONEYPOT_FIELD}
             tabIndex={-1}
             autoComplete="off"
+            readOnly
             defaultValue=""
+            onFocus={(e) => e.currentTarget.removeAttribute('readonly')}
           />
         </div>
         <div className="space-y-1.5">

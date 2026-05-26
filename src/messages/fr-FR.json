@@ -1062,6 +1062,8 @@
       "backToLogin": "Retour à la connexion"
     },
     "errors": {
+      "emailAlreadyRegistered": "Un compte existe deja avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
+      "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
       "signupGeneric": "Erreur lors de l'inscription",
       "resendGeneric": "Erreur lors de l'envoi",
       "loginGeneric": "Erreur de connexion",
@@ -3574,7 +3576,8 @@
     "noEstablishment": "Aucun etablissement associe a ce compte",
     "invalidLoginFields": "Email ou mot de passe invalide.",
     "signupConfirmation": "Un email de confirmation a ete envoye. Veuillez verifier votre boite mail.",
-    "emailAlreadyRegistered": "Cette adresse email est deja utilisee. Connectez-vous ou reinitialisez votre mot de passe.",
+    "emailAlreadyRegistered": "Un compte existe deja avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
+    "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
     "invalidDataFallback": "Donnees invalides"
   },
   "segment": {

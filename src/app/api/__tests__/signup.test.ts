@@ -40,6 +40,7 @@ vi.mock('next-intl/server', () => ({
 }));
 
 // Import the route handler AFTER mocks are in place
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 import { POST } from '@/app/api/signup/route';
 
 // ---------------------------------------------------------------------------
@@ -51,7 +52,7 @@ function validBody() {
     restaurantName: 'Le Petit Bistrot',
     email: 'owner@bistrot.com',
     password: 'securePass123',
-    website: '',
+    [HONEYPOT_FIELD]: '',
   };
 }
 
@@ -109,16 +110,17 @@ describe('POST /api/signup', () => {
   });
 
   // 4. ServiceError maps to correct HTTP status
-  it('maps ServiceError CONFLICT to 409', async () => {
+  it('maps ServiceError CONFLICT to 409 with emailAlreadyRegistered message', async () => {
     mockCompleteEmailSignup.mockRejectedValueOnce(
-      new ServiceError('Email already registered', 'CONFLICT'),
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
     );
 
     const res = await POST(makeRequest(validBody()));
 
     expect(res.status).toBe(409);
     const json = (await res.json()) as { error: string };
-    expect(json.error).toBe('Email already registered');
+    expect(json.error).toBe('emailAlreadyRegistered');
+    expect((json as { code?: string }).code).toBe('EMAIL_ALREADY_REGISTERED');
   });
 
   // 5. Successful signup -> returns slug + tenantId

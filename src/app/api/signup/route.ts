@@ -8,15 +8,15 @@ import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
-import { isHoneypotTriggered } from '@/lib/honeypot';
+import { HONEYPOT_FIELD, isDevAuthBypassEnabled, isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 
 export async function POST(request: Request) {
+  const t = await getTranslations('errors');
+
   try {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
-
-    const t = await getTranslations('errors');
 
     // 1. Rate limiting
     const ip = getClientIp(request);
@@ -36,29 +36,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
     }
 
-    // 2.5 Honeypot check - silent bot rejection
-    if (isHoneypotTriggered(body)) {
-      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
+    // 2.5 Honeypot check - silent bot rejection (skipped in local dev when bypass enabled)
+    if (!isDevAuthBypassEnabled() && isHoneypotTriggered(body)) {
+      return NextResponse.json(
+        { error: t('invalidDataFallback'), code: 'HONEYPOT' },
+        { status: 400 },
+      );
     }
 
     // 2.6 Turnstile verification
-    const cfToken =
-      typeof (body as Record<string, unknown>).cfToken === 'string'
-        ? ((body as Record<string, unknown>).cfToken as string)
-        : '';
+    const bodyRecord = body as Record<string, unknown>;
+    const cfToken = typeof bodyRecord.cfToken === 'string' ? bodyRecord.cfToken : '';
     const turnstileOk = await verifyTurnstileToken(cfToken, ip);
     if (!turnstileOk) {
-      return NextResponse.json({ error: t('invalidDataFallback') }, { status: 400 });
+      const hasTurnstileSecret = Boolean(process.env.TURNSTILE_SECRET_KEY?.trim());
+      return NextResponse.json(
+        {
+          error: hasTurnstileSecret ? t('captchaFailed') : t('invalidDataFallback'),
+          code: 'CAPTCHA_FAILED',
+        },
+        { status: 400 },
+      );
     }
 
-    const parseResult = signupSchema.safeParse(body);
+    const {
+      cfToken: _cf,
+      website: _legacyHp,
+      [HONEYPOT_FIELD]: _hp,
+      ...signupPayload
+    } = bodyRecord;
+    void _cf;
+    void _legacyHp;
+    void _hp;
+
+    const parseResult = signupSchema.safeParse(signupPayload);
     if (!parseResult.success) {
       const rawMessage = parseResult.error.issues[0]?.message ?? t('invalidDataFallback');
       const firstError =
         rawMessage.includes('received undefined') || rawMessage.includes('required')
           ? 'Donnees invalides ou manquantes'
           : rawMessage;
-      return NextResponse.json({ error: firstError }, { status: 400 });
+      return NextResponse.json({ error: firstError, code: 'VALIDATION' }, { status: 400 });
     }
 
     // 3. Execute signup via service
@@ -94,8 +112,18 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
+      const errorMessage =
+        error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED'
+          ? t('emailAlreadyRegistered')
+          : error.message;
       return NextResponse.json(
-        { error: error.message },
+        {
+          error: errorMessage,
+          code:
+            error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED'
+              ? 'EMAIL_ALREADY_REGISTERED'
+              : error.code,
+        },
         { status: serviceErrorToStatus(error.code) },
       );
     }
