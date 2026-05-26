@@ -18,6 +18,7 @@ describe('verifyTurnstileToken', () => {
 
   it('returns true when Cloudflare responds success: true', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret');
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'test-site-key');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -31,6 +32,7 @@ describe('verifyTurnstileToken', () => {
 
   it('returns false when Cloudflare responds success: false', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret');
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'test-site-key');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -44,6 +46,7 @@ describe('verifyTurnstileToken', () => {
 
   it('returns false when Cloudflare API returns non-ok status', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret');
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'test-site-key');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -57,6 +60,7 @@ describe('verifyTurnstileToken', () => {
 
   it('returns false when fetch throws (network error)', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret');
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'test-site-key');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
     const { verifyTurnstileToken } = await import('@/lib/turnstile');
     expect(await verifyTurnstileToken('token')).toBe(false);
@@ -64,6 +68,7 @@ describe('verifyTurnstileToken', () => {
 
   it('passes IP to Cloudflare when provided', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret');
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'test-site-key');
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true }),

@@ -21,7 +21,7 @@ function createMockSupabase(
         .fn()
         .mockResolvedValue(
           options.authCreateError
-            ? { data: null, error: { message: 'Email already exists' } }
+            ? { data: null, error: { code: 'email_exists', message: 'User already registered' } }
             : { data: { user: { id: 'user-abc-123' } }, error: null },
         ),
       deleteUser: mockDeleteUser,
@@ -131,6 +131,7 @@ describe('SignupService', () => {
         }),
       ).rejects.toMatchObject({
         code: 'CONFLICT',
+        message: 'EMAIL_ALREADY_REGISTERED',
       });
     });
 

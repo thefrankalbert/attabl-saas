@@ -3,6 +3,7 @@ import { createSlugService } from './slug.service';
 import { ServiceError } from './errors';
 import { sendWelcomeConfirmationEmail } from './email.service';
 import { logger } from '@/lib/logger';
+import { isEmailAlreadyRegisteredAuthError } from '@/lib/auth/is-email-already-registered';
 
 interface CreateTenantInput {
   slug: string;
@@ -177,18 +178,8 @@ export function createSignupService(supabase: SupabaseClient) {
       });
 
       if (authError) {
-        const msg = authError.message?.toLowerCase() ?? '';
-        if (
-          msg.includes('already') ||
-          msg.includes('registered') ||
-          msg.includes('exists') ||
-          authError.status === 422
-        ) {
-          throw new ServiceError(
-            'Cette adresse email est deja utilisee. Connectez-vous ou reinitialisez votre mot de passe.',
-            'CONFLICT',
-            authError,
-          );
+        if (isEmailAlreadyRegisteredAuthError(authError)) {
+          throw new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT', authError);
         }
         throw new ServiceError(`Erreur Auth: ${authError.message}`, 'VALIDATION', authError);
       }

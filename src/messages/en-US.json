@@ -1062,6 +1062,8 @@
       "backToLogin": "Back to sign in"
     },
     "errors": {
+      "emailAlreadyRegistered": "An account already exists with this email. Sign in or use Forgot password.",
+      "captchaFailed": "Bot verification failed. Reload the page and try again.",
       "signupGeneric": "Sign-up failed",
       "resendGeneric": "Send failed",
       "loginGeneric": "Sign-in failed",
@@ -3574,7 +3576,8 @@
     "noEstablishment": "No establishment linked to this account",
     "invalidLoginFields": "Invalid email or password.",
     "signupConfirmation": "A confirmation email has been sent. Please check your inbox.",
-    "emailAlreadyRegistered": "This email is already in use. Sign in or reset your password.",
+    "emailAlreadyRegistered": "An account already exists with this email. Sign in or use Forgot password.",
+    "captchaFailed": "Bot verification failed. Reload the page and try again.",
     "invalidDataFallback": "Invalid data"
   },
   "segment": {
