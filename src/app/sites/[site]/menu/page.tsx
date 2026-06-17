@@ -10,7 +10,7 @@ import type { Menu, Category, MenuItem, Venue, Zone, Table } from '@/types/admin
 
 export const revalidate = 30;
 
-// ─── SEO Metadata ─────────────────────────────────────────
+// - SEO Metadata -
 export async function generateMetadata({
   params,
 }: {
@@ -105,8 +105,10 @@ export default async function MenuDetailPage({
       .select(
         `
         id, tenant_id, category_id, name, name_en, description, description_en,
-        price, image_url, is_available, is_featured, allergens, calories, created_at,
+        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
         category:categories(id, tenant_id, name, name_en, created_at),
+        options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
+        price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
         modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
       `,
       )

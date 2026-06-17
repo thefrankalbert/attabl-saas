@@ -42,12 +42,12 @@ export function OrderSummary({
   labels,
 }: OrderSummaryProps) {
   return (
-    <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+    <section className="rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white px-4 py-3.5">
       <div className="space-y-2.5">
         {/* Subtotal */}
         <div className="flex justify-between items-center">
           <span className="text-[13px] font-normal text-[#737373]">{labels.subtotal}</span>
-          <span className="text-[15px] font-bold text-[#1A1A1A]">
+          <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
             {formatDisplayPrice(subtotal, currencyCode)}
           </span>
         </div>
@@ -58,7 +58,7 @@ export function OrderSummary({
             <span className="text-[13px] font-normal text-[#737373]">
               {labels.tax} ({taxRate}%)
             </span>
-            <span className="text-[15px] font-bold text-[#1A1A1A]">
+            <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
               {formatDisplayPrice(taxAmount, currencyCode)}
             </span>
           </div>
@@ -70,7 +70,7 @@ export function OrderSummary({
             <span className="text-[13px] font-normal text-[#737373]">
               {labels.serviceCharge} ({serviceChargeRate}%)
             </span>
-            <span className="text-[15px] font-bold text-[#1A1A1A]">
+            <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
               {formatDisplayPrice(serviceChargeAmount, currencyCode)}
             </span>
           </div>
@@ -80,7 +80,7 @@ export function OrderSummary({
         {discountAmount > 0 && (
           <div className="flex justify-between items-center">
             <span className="text-[13px] font-normal text-[#737373]">{labels.discount}</span>
-            <span className="text-[15px] font-bold text-[#1A1A1A]">
+            <span className="text-[13px] font-medium tabular-nums text-[var(--color-brand-dark)]">
               -{formatDisplayPrice(discountAmount, currencyCode)}
             </span>
           </div>
@@ -90,17 +90,19 @@ export function OrderSummary({
         {tipAmount > 0 && (
           <div className="flex justify-between items-center">
             <span className="text-[13px] font-normal text-[#737373]">{labels.tip}</span>
-            <span className="text-[15px] font-bold text-[#1A1A1A]">
+            <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
               {formatDisplayPrice(tipAmount, currencyCode)}
             </span>
           </div>
         )}
 
         {/* Divider */}
-        <div className="border-t border-[#EEEEEE] pt-3 mt-1">
+        <div className="mt-1 border-t border-[var(--color-divider)] pt-3">
           <div className="flex justify-between items-center">
-            <span className="text-[16px] font-bold text-[#1A1A1A]">{labels.total}</span>
-            <span className="text-[20px] font-bold text-[#1A1A1A]">
+            <span className="text-[14px] font-semibold tracking-[-0.2px] text-[var(--color-ink)]">
+              {labels.total}
+            </span>
+            <span className="text-[18px] font-bold tabular-nums text-[var(--color-ink)]">
               {formatDisplayPrice(finalTotal, currencyCode)}
             </span>
           </div>

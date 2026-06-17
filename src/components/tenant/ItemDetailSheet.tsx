@@ -1,21 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-
+import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import {
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
-  Minus,
-  Plus,
-  Utensils,
-  Leaf,
-  Flame,
-  Check,
-  AlertTriangle,
-  X,
-} from 'lucide-react';
+import { Minus, Plus, Utensils, Leaf, Check, X, Star } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
@@ -24,6 +12,7 @@ import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.typ
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getTranslatedContent } from '@/lib/utils/translate';
+import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 
 // --- Props ---------------------------------------------------------------
 
@@ -35,6 +24,37 @@ interface ItemDetailSheetProps {
   category?: string;
   currency?: string;
   language?: 'fr' | 'en';
+}
+
+// --- Group title (variants / options / modifiers) ------------------------
+
+function GroupTitle({
+  title,
+  required,
+  requiredLabel,
+  optionalLabel,
+}: {
+  title: ReactNode;
+  required?: boolean;
+  requiredLabel: string;
+  optionalLabel: string;
+}) {
+  return (
+    <div className="mb-2.5 flex items-center gap-2">
+      <span className="text-[14.5px] font-semibold tracking-[-0.3px] text-[var(--color-ink)]">
+        {title}
+      </span>
+      {required ? (
+        <span className="inline-flex items-center rounded-[var(--radius-tag)] border border-[var(--color-divider)] px-2 py-[3px] text-[10.5px] font-semibold tracking-[0.1px] text-[var(--color-ink-muted)]">
+          {requiredLabel}
+        </span>
+      ) : (
+        <span className="font-mono text-[11px] uppercase tracking-[0.3px] text-[var(--color-ink-muted)]">
+          {optionalLabel}
+        </span>
+      )}
+    </div>
+  );
 }
 
 // --- Component -----------------------------------------------------------
@@ -64,22 +84,18 @@ export default function ItemDetailSheet({
   const [customerNotes, setCustomerNotes] = useState('');
   const [imageError, setImageError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [notesExpanded, setNotesExpanded] = useState(false);
 
   // --- Reset state when item changes ------------------------------------
   /* eslint-disable react-hooks/set-state-in-effect -- intentional: syncing multiple state fields when item prop changes; item is an external boundary requiring full reset on each new selection (2026-05-04) */
   useEffect(() => {
     if (!item) return;
 
-    // Reset all selections
     setSelectedModifiers([]);
     setQuantity(1);
     setCustomerNotes('');
     setImageError(false);
     setShowSuccess(false);
-    setNotesExpanded(false);
 
-    // Default variant
     if (item.price_variants?.length) {
       const defaultVariant =
         item.price_variants.find((v) => v.is_default) || item.price_variants[0];
@@ -88,13 +104,9 @@ export default function ItemDetailSheet({
       setSelectedVariant(null);
     }
 
-    // Default option
     if (item.options?.length) {
       const defaultOpt = item.options.find((o) => o.is_default) || item.options[0];
-      setSelectedOption({
-        name_fr: defaultOpt.name_fr,
-        name_en: defaultOpt.name_en,
-      });
+      setSelectedOption({ name_fr: defaultOpt.name_fr, name_en: defaultOpt.name_en });
     } else {
       setSelectedOption(null);
     }
@@ -135,7 +147,6 @@ export default function ItemDetailSheet({
   const handleAddToCart = useCallback(() => {
     if (!item) return;
 
-    // Validate required modifiers
     if (item.modifiers && item.modifiers.length > 0) {
       const requiredModifiers = item.modifiers.filter((m) => m.is_required);
       const missingRequired = requiredModifiers.filter(
@@ -145,7 +156,6 @@ export default function ItemDetailSheet({
           ),
       );
       if (missingRequired.length > 0) {
-        // Shake effect or visual feedback - for now just return
         return;
       }
     }
@@ -178,7 +188,6 @@ export default function ItemDetailSheet({
 
     addToCart(cartItem, restaurantId);
 
-    // Haptic feedback for mobile devices
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(10);
     }
@@ -212,37 +221,51 @@ export default function ItemDetailSheet({
     !imageError;
 
   const hasVariants = item.price_variants && item.price_variants.length > 0;
+  const hasOptions = item.options && item.options.length > 0;
   const hasModifiers = item.modifiers && item.modifiers.filter((m) => m.is_available).length > 0;
   const hasAllergens = item.allergens && item.allergens.length > 0;
+  const itemName = getTranslatedContent(language, item.name, item.name_en);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Full-page overlay (not a modal sheet) */}
+          {/* Backdrop */}
+          <motion.div
+            key="backdrop"
+            className="fixed inset-0 z-[60] bg-[rgba(26,26,26,0.5)]"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          />
+
+          {/* Bottom sheet */}
           <motion.div
             key="sheet"
-            className="fixed inset-0 z-[61] flex h-dvh max-h-dvh flex-col bg-white"
-            initial={{ x: shouldReduceMotion ? 0 : '100%', opacity: shouldReduceMotion ? 0 : 1 }}
-            animate={{ x: 0, opacity: 1 }}
+            className="fixed inset-x-0 bottom-0 top-[46px] z-[61] flex flex-col overflow-hidden rounded-t-[var(--radius-modal)] bg-white shadow-[0_20px_25px_-5px_rgba(26,26,26,0.10),0_8px_10px_-6px_rgba(26,26,26,0.04)]"
+            initial={{ y: shouldReduceMotion ? 0 : '100%', opacity: shouldReduceMotion ? 0 : 1 }}
+            animate={{ y: 0, opacity: 1 }}
             exit={{
-              x: shouldReduceMotion ? 0 : '100%',
+              y: shouldReduceMotion ? 0 : '100%',
               opacity: shouldReduceMotion ? 0 : 1,
-              transition: shouldReduceMotion
-                ? { duration: 0.15 }
-                : { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
+              transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
             }}
             transition={
-              shouldReduceMotion ? { duration: 0.15 } : { duration: 0.28, ease: [0.32, 0.72, 0, 1] }
+              shouldReduceMotion ? { duration: 0.15 } : { duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }
             }
           >
-            {/* Hero image - flex-shrink-0 so it doesn't squeeze, sized for no-scroll fit */}
-            <div className="flex-shrink-0">
-              <div className="relative h-[200px] w-full bg-[var(--color-surface-alt)]">
+            {/* Grabber */}
+            <div className="absolute left-1/2 top-2 z-[3] h-1 w-10 -translate-x-1/2 rounded-full bg-white/85" />
+
+            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+              {/* Hero photo */}
+              <div className="relative h-[250px] w-full bg-[var(--color-surface-alt)]">
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
-                    alt={getTranslatedContent(language, item.name, item.name_en)}
+                    alt={itemName}
                     fill
                     sizes="100vw"
                     className="object-cover"
@@ -251,284 +274,296 @@ export default function ItemDetailSheet({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Utensils className="h-12 w-12 text-[var(--color-ink-muted)]" />
+                    <Utensils className="h-12 w-12 text-[var(--color-ink-soft)]" />
                   </div>
                 )}
-                {/* Back button - top-left, full-page style */}
+                <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-[rgba(26,26,26,0.22)] to-transparent" />
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="absolute top-3 left-3 z-10 rounded-full bg-white min-h-[44px] min-w-[44px] border-[var(--color-divider)] active:bg-neutral-100"
-                  aria-label={t('ariaGoBack')}
+                  aria-label={t('close')}
+                  className="absolute right-3.5 top-3.5 h-[38px] w-[38px] rounded-full bg-white/90 p-0 shadow-[0_1px_3px_0_rgba(26,26,26,0.06)] backdrop-blur hover:bg-white"
                 >
-                  <ChevronLeft className="h-5 w-5 text-[var(--color-ink)]" />
+                  <X className="h-[18px] w-[18px] text-[var(--color-ink)]" strokeWidth={2.2} />
                 </Button>
-              </div>
-            </div>
-
-            {/* Scrollable content (flex-1) - scroll inside this area only, button stays put */}
-            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
-              <div className="px-6 pb-3 pt-4">
-                {/* Category label */}
-                {category && (
-                  <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-[var(--color-ink-muted)]">
-                    {category}
-                  </p>
+                {item.is_featured && (
+                  <span className="absolute bottom-3.5 left-4 inline-flex items-center rounded-[var(--radius-tag)] bg-[var(--color-warning-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-warning-fg)]">
+                    {t('popularBadge')}
+                  </span>
                 )}
+              </div>
 
-                {/* Name - prominent title on full page */}
-                <h2 className="mt-2 font-bold text-2xl leading-[32px] text-[var(--color-ink)]">
-                  {getTranslatedContent(language, item.name, item.name_en)}
+              <div className="px-[18px] pb-6 pt-5">
+                {/* Name */}
+                <h2 className="text-[22px] font-semibold leading-[1.2] tracking-[-0.7px] text-[var(--color-ink)]">
+                  {itemName}
                 </h2>
 
-                {/* Description - full text, readable */}
+                {/* Meta: rating, kcal, vegetarian */}
+                {(item.rating != null || item.calories != null || item.is_vegetarian) && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+                    {item.rating != null && item.rating > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-[var(--color-ink-2)]">
+                        <Star
+                          className="text-[var(--color-rating)]"
+                          style={{ width: 14, height: 14 }}
+                          fill="currentColor"
+                          strokeWidth={0}
+                        />
+                        {item.rating.toFixed(1)}
+                        {item.rating_count != null && (
+                          <span className="font-normal text-[var(--color-ink-muted)]">
+                            ({item.rating_count})
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {item.calories != null && item.calories > 0 && (
+                      <>
+                        <span className="h-[3px] w-[3px] rounded-full bg-[var(--color-ink-soft)]" />
+                        <span className="text-[12.5px] font-medium text-[var(--color-ink-muted)]">
+                          {t('calories', { n: item.calories })}
+                        </span>
+                      </>
+                    )}
+                    {item.is_vegetarian && (
+                      <>
+                        <span className="h-[3px] w-[3px] rounded-full bg-[var(--color-ink-soft)]" />
+                        <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-brand-dark)]">
+                          <Leaf className="h-3 w-3" />
+                          {t('vegetarian')}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Description */}
                 {(item.description || item.description_en) && (
-                  <p className="mt-2 font-normal text-[15px] leading-[22px] text-[var(--color-ink-2)]">
+                  <p className="mt-3 text-[14px] leading-[1.55] tracking-[-0.1px] text-[var(--color-ink-2)]">
                     {getTranslatedContent(language, item.description || '', item.description_en)}
                   </p>
                 )}
 
-                {/* Price (when no variants) - DESIGN.MD: price #1A1A1A (NOT green) */}
-                {!hasVariants && (
-                  <p className="mt-2 font-bold text-[15px] leading-[21px] text-[var(--color-ink)]">
-                    {resolveAndFormatPrice(item.price, item.prices, currency)}
+                {/* Allergens */}
+                {hasAllergens && (
+                  <p className="mt-2 text-[12px] text-[var(--color-ink-muted)]">
+                    <span className="font-semibold">{t('allergensLabel')}: </span>
+                    {item.allergens!.join(', ')}
                   </p>
                 )}
 
-                {/* Divider - compacted */}
-                <div className="my-3 h-px bg-[var(--color-divider)]" />
-
-                {/* Tags row - diet badges + allergens */}
-                {(item.is_vegetarian || item.is_spicy || hasAllergens) && (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {item.is_vegetarian && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-ink)]">
-                          <Leaf className="h-3 w-3" />
-                          {t('vegetarian')}
-                        </span>
-                      )}
-                      {item.is_spicy && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[var(--color-surface-alt)] text-danger">
-                          <Flame className="h-3 w-3" />
-                          {t('spicy')}
-                        </span>
-                      )}
-                      {hasAllergens && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[var(--color-surface-alt)] text-allergen">
-                          <AlertTriangle className="h-3 w-3" />
-                          {t('allergenWarning')}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Allergen detail list */}
-                    {hasAllergens && (
-                      <p className="mt-1.5 text-xs text-allergen">{item.allergens!.join(', ')}</p>
-                    )}
-
-                    {/* Divider */}
-                    <div className="my-3 h-px bg-[var(--color-divider)]" />
-                  </>
-                )}
-
-                {/* --- Variants (radio) ---------------------------------- */}
+                {/* 1 - Price variants (selectable cards) */}
                 {hasVariants && (
-                  <>
-                    <div>
-                      <h3 className="mb-2 font-semibold text-sm text-[var(--color-ink)]">
-                        {t('size')}
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {item
-                          .price_variants!.sort((a, b) => a.display_order - b.display_order)
-                          .map((variant) => {
-                            const isActive = selectedVariant?.id === variant.id;
-                            return (
-                              <Button
-                                key={variant.id}
-                                variant="outline"
-                                onClick={() => setSelectedVariant(variant)}
-                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-[var(--color-ink)]' : 'border-[var(--color-divider)]'}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {/* Radio dot */}
-                                  <div
-                                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${isActive ? 'border-[var(--color-ink)]' : 'border-[var(--color-divider)]'}`}
-                                  >
-                                    {isActive && (
-                                      <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-ink)]" />
-                                    )}
-                                  </div>
-                                  <span className="font-medium text-sm text-[var(--color-ink)]">
-                                    {getTranslatedContent(
-                                      language,
-                                      variant.variant_name_fr,
-                                      variant.variant_name_en,
-                                    )}
-                                  </span>
-                                </div>
-                                {/* DESIGN.MD: price is #1A1A1A, NOT green */}
-                                <span className="font-bold text-sm text-[var(--color-ink)]">
-                                  {resolveAndFormatPrice(variant.price, variant.prices, currency)}
-                                </span>
-                              </Button>
-                            );
-                          })}
-                      </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="my-3 h-px bg-[var(--color-divider)]" />
-                  </>
-                )}
-
-                {/* --- Modifiers (checkboxes) ----------------------------- */}
-                {hasModifiers && (
-                  <>
-                    <div>
-                      <h3 className="mb-2 font-semibold text-sm text-[var(--color-ink)]">
-                        {t('extras')}
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {item
-                          .modifiers!.filter((m) => m.is_available)
-                          .sort((a, b) => a.display_order - b.display_order)
-                          .map((modifier) => {
-                            const isActive = selectedModifiers.some((m) => m.id === modifier.id);
-                            return (
-                              <Button
-                                key={modifier.id}
-                                variant="outline"
-                                onClick={() => toggleModifier(modifier)}
-                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-[var(--color-ink)]' : 'border-[var(--color-divider)]'}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {/* Checkbox */}
-                                  <div
-                                    className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors ${isActive ? 'border-[var(--color-ink)] bg-[var(--color-ink)]' : 'border-[var(--color-divider)] bg-transparent'}`}
-                                  >
-                                    {isActive && <Check className="h-3 w-3 text-white" />}
-                                  </div>
-                                  <span className="font-medium text-sm text-[var(--color-ink)]">
-                                    {getTranslatedContent(
-                                      language,
-                                      modifier.name,
-                                      modifier.name_en,
-                                    )}
-                                  </span>
-                                </div>
-                                {modifier.price > 0 && (
-                                  <span className="font-medium text-sm text-[var(--color-ink-2)]">
-                                    +
-                                    {resolveAndFormatPrice(
-                                      modifier.price,
-                                      modifier.prices,
-                                      currency,
-                                    )}
-                                  </span>
-                                )}
-                              </Button>
-                            );
-                          })}
-                      </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="my-3 h-px bg-[var(--color-divider)]" />
-                  </>
-                )}
-
-                {/* --- Quantity selector - compact pill, LEFT-aligned, above instructions --- */}
-                <div className="mb-3 flex justify-start">
-                  <div className="inline-flex items-center h-[44px] rounded-full border border-[var(--color-divider)] bg-[var(--color-surface-alt)] px-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="min-h-[44px] min-w-[44px] active:opacity-60"
-                      disabled={quantity <= 1}
-                      aria-label={t('ariaDecrease')}
-                    >
-                      <Minus className="h-4 w-4 text-[var(--color-ink)]" />
-                    </Button>
-
-                    <span className="font-bold text-center text-base text-[var(--color-ink)] min-w-8">
-                      {quantity}
-                    </span>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setQuantity((q) => q + 1)}
-                      className="min-h-[44px] min-w-[44px] active:opacity-60"
-                      aria-label={t('ariaIncrease')}
-                    >
-                      <Plus className="h-4 w-4 text-[var(--color-ink)]" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* --- Special instructions (collapsed trigger, expand on tap) --- */}
-                {notesExpanded || customerNotes ? (
-                  <div className="rounded-xl bg-[var(--color-surface-alt)] p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[13px] font-semibold text-[var(--color-ink)]">
-                        {t('specialInstructions')}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setNotesExpanded(false);
-                          setCustomerNotes('');
-                        }}
-                        className="min-h-[44px] min-w-[44px] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] focus-visible:ring-0"
-                        aria-label={t('close')}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <Textarea
-                      autoFocus={notesExpanded && !customerNotes}
-                      value={customerNotes}
-                      onChange={(e) => setCustomerNotes(e.target.value)}
-                      placeholder={t('specialInstructionsPlaceholder')}
-                      rows={3}
-                      className="w-full resize-none border-0 shadow-none px-0 py-0 font-normal focus:outline-none focus-visible:ring-0 text-[13px] text-[var(--color-ink)] bg-transparent"
+                  <div className="mt-6">
+                    <GroupTitle
+                      title={t('size')}
+                      required
+                      requiredLabel={t('required')}
+                      optionalLabel={t('optionalLabel')}
                     />
+                    <div className="flex gap-2" role="radiogroup" aria-label={t('size')}>
+                      {item
+                        .price_variants!.slice()
+                        .sort((a, b) => a.display_order - b.display_order)
+                        .map((variant) => {
+                          const isActive = selectedVariant?.id === variant.id;
+                          return (
+                            <Button
+                              key={variant.id}
+                              type="button"
+                              variant="ghost"
+                              role="radio"
+                              aria-checked={isActive}
+                              onClick={() => setSelectedVariant(variant)}
+                              className={`h-auto flex-1 flex-col items-stretch gap-0 rounded-[var(--radius-card)] border-[1.5px] px-2 py-3 text-center hover:bg-transparent ${
+                                isActive
+                                  ? 'border-[var(--color-ink)] shadow-[0_0_0_1px_var(--color-ink)]'
+                                  : 'border-[var(--color-divider)]'
+                              }`}
+                            >
+                              <div className="text-[13.5px] font-semibold tracking-[-0.2px] text-[var(--color-ink)]">
+                                {getTranslatedContent(
+                                  language,
+                                  variant.variant_name_fr,
+                                  variant.variant_name_en,
+                                )}
+                              </div>
+                              <div className="mt-[3px] text-[12px] font-medium text-[var(--color-ink-2)]">
+                                {resolveAndFormatPrice(variant.price, variant.prices, currency)}
+                              </div>
+                            </Button>
+                          );
+                        })}
+                    </div>
                   </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setNotesExpanded(true)}
-                    className="w-full justify-start gap-2 text-[14px] font-semibold text-[var(--color-ink)] py-3 hover:text-black"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{t('specialInstructions')}</span>
-                    <ChevronRight className="w-4 h-4 ml-auto text-[var(--color-ink-soft)]" />
-                  </Button>
                 )}
+
+                {/* 2 - Free options (radios) */}
+                {hasOptions && (
+                  <div className="mt-6">
+                    <GroupTitle
+                      title={t('optionsTitle')}
+                      required
+                      requiredLabel={t('required')}
+                      optionalLabel={t('optionalLabel')}
+                    />
+                    <div role="radiogroup" aria-label={t('optionsTitle')}>
+                      {item
+                        .options!.slice()
+                        .sort((a, b) => a.display_order - b.display_order)
+                        .map((option) => {
+                          const isActive = selectedOption?.name_fr === option.name_fr;
+                          return (
+                            <Button
+                              key={option.id}
+                              type="button"
+                              variant="ghost"
+                              role="radio"
+                              aria-checked={isActive}
+                              onClick={() =>
+                                setSelectedOption({
+                                  name_fr: option.name_fr,
+                                  name_en: option.name_en,
+                                })
+                              }
+                              className={`mb-[7px] flex h-auto w-full items-center justify-start gap-3 rounded-[var(--radius-search)] border px-3.5 py-[13px] text-left hover:bg-[var(--color-surface-alt)] ${
+                                isActive
+                                  ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)]'
+                                  : 'border-[var(--color-divider)] bg-white'
+                              }`}
+                            >
+                              <span
+                                className={`flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full border-[1.5px] ${
+                                  isActive
+                                    ? 'border-[var(--color-ink)]'
+                                    : 'border-[var(--color-ink-soft)]'
+                                }`}
+                              >
+                                {isActive && (
+                                  <span className="h-[9px] w-[9px] rounded-full bg-[var(--color-ink)]" />
+                                )}
+                              </span>
+                              <span className="flex-1 text-[14px] font-medium tracking-[-0.2px] text-[var(--color-ink-2)]">
+                                {getTranslatedContent(language, option.name_fr, option.name_en)}
+                              </span>
+                            </Button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3 - Paid modifiers (checkboxes) */}
+                {hasModifiers && (
+                  <div className="mt-6">
+                    <GroupTitle
+                      title={t('extras')}
+                      requiredLabel={t('required')}
+                      optionalLabel={t('optionalLabel')}
+                    />
+                    <div role="group" aria-label={t('extras')}>
+                      {item
+                        .modifiers!.filter((m) => m.is_available)
+                        .sort((a, b) => a.display_order - b.display_order)
+                        .map((modifier) => {
+                          const isActive = selectedModifiers.some((m) => m.id === modifier.id);
+                          return (
+                            <Button
+                              key={modifier.id}
+                              type="button"
+                              variant="ghost"
+                              role="checkbox"
+                              aria-checked={isActive}
+                              onClick={() => toggleModifier(modifier)}
+                              className={`mb-[7px] flex h-auto w-full items-center justify-start gap-3 rounded-[var(--radius-search)] border px-3.5 py-[13px] text-left hover:bg-[var(--color-surface-alt)] ${
+                                isActive
+                                  ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)]'
+                                  : 'border-[var(--color-divider)] bg-white'
+                              }`}
+                            >
+                              <span
+                                className={`flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
+                                  isActive
+                                    ? 'border-[var(--color-ink)] bg-[var(--color-ink)]'
+                                    : 'border-[var(--color-ink-soft)] bg-white'
+                                }`}
+                              >
+                                {isActive && (
+                                  <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                                )}
+                              </span>
+                              <span className="flex-1 text-[14px] font-medium tracking-[-0.2px] text-[var(--color-ink-2)]">
+                                {getTranslatedContent(language, modifier.name, modifier.name_en)}
+                              </span>
+                              {modifier.price > 0 && (
+                                <span className="text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
+                                  +
+                                  {resolveAndFormatPrice(modifier.price, modifier.prices, currency)}
+                                </span>
+                              )}
+                            </Button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Kitchen note */}
+                <div className="mt-6">
+                  <div className="mb-2.5 text-[14.5px] font-semibold tracking-[-0.3px] text-[var(--color-ink)]">
+                    {t('specialInstructions')}
+                  </div>
+                  <Textarea
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    placeholder={t('specialInstructionsPlaceholder')}
+                    rows={2}
+                    className="w-full resize-none rounded-[var(--radius-search)] border border-[var(--color-divider)] bg-[var(--color-surface-alt)] px-3.5 py-3 text-[13px] leading-[1.4] tracking-[-0.1px] text-[var(--color-ink)] shadow-none focus-visible:ring-0"
+                  />
+                </div>
               </div>
+              <div className="h-[90px]" />
             </div>
 
-            {/* --- Add to cart button - independent zone (flex-shrink-0), bouton avec respiration autour, meme fond blanc continu --- */}
+            {/* CTA bar: qty stepper + add button */}
             <div
-              className="flex-shrink-0 bg-white px-6 pt-2"
-              style={{
-                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-              }}
+              className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-[var(--color-divider)] bg-white/95 px-3.5 pt-3 backdrop-blur"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
             >
+              <div className="flex items-center rounded-full border border-[var(--color-divider)] bg-[var(--color-surface-alt)] p-[3px]">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  aria-label={t('ariaDecrease')}
+                  className="h-8 w-8 rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white disabled:opacity-40"
+                >
+                  <Minus className="h-3.5 w-3.5 text-[var(--color-ink)]" strokeWidth={2.4} />
+                </Button>
+                <span className="min-w-[30px] text-center text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
+                  {quantity}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuantity((q) => Math.min(MAX_ITEM_QTY, q + 1))}
+                  aria-label={t('ariaIncrease')}
+                  className="h-8 w-8 rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+                >
+                  <Plus className="h-3.5 w-3.5 text-white" strokeWidth={2.4} />
+                </Button>
+              </div>
               <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-[var(--color-ink)] hover:bg-black"
+                className="h-[54px] flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
               >
                 {showSuccess ? (
                   <motion.div
+                    className="mx-auto"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 600, damping: 15 }}
@@ -537,12 +572,10 @@ export default function ItemDetailSheet({
                   </motion.div>
                 ) : (
                   <>
-                    <span>{t('addToCart')}</span>
-                    <span
-                      aria-hidden="true"
-                      className="inline-block rounded-full bg-white w-[5px] h-[5px]"
-                    />
-                    <span className="text-white">{formatDisplayPrice(currentPrice, currency)}</span>
+                    <span className="min-w-0 truncate">{t('addToCart')}</span>
+                    <span className="shrink-0 tabular-nums">
+                      {formatDisplayPrice(currentPrice, currency)}
+                    </span>
                   </>
                 )}
               </Button>

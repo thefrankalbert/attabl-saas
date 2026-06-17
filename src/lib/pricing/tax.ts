@@ -48,6 +48,9 @@ export function calculateServiceCharge(subtotal: number, config: TaxConfig): num
  * @param discountAmount - Coupon discount already calculated
  * @returns Full pricing breakdown
  *
+ * Tax and service charge are computed on the discounted base
+ * (subtotal - discount), so a coupon reduces the taxable amount.
+ *
  * @example
  * const breakdown = calculateOrderTotal(10000, { enable_tax: true, tax_rate: 18, enable_service_charge: true, service_charge_rate: 10 }, 0);
  * // { subtotal: 10000, taxAmount: 1800, serviceChargeAmount: 1000, discountAmount: 0, total: 12800 }
@@ -57,9 +60,10 @@ export function calculateOrderTotal(
   config: TaxConfig,
   discountAmount: number = 0,
 ): PricingBreakdown {
-  const taxAmount = calculateTax(subtotal, config);
-  const serviceChargeAmount = calculateServiceCharge(subtotal, config);
-  const total = subtotal + taxAmount + serviceChargeAmount - discountAmount;
+  const taxableBase = Math.max(0, subtotal - discountAmount);
+  const taxAmount = calculateTax(taxableBase, config);
+  const serviceChargeAmount = calculateServiceCharge(taxableBase, config);
+  const total = taxableBase + taxAmount + serviceChargeAmount;
 
   return {
     subtotal,

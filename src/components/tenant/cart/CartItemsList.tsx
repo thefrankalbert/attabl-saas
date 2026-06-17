@@ -2,9 +2,10 @@
 
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Minus, Plus, Trash2, Utensils } from 'lucide-react';
+import { Minus, Plus, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getTranslatedContent } from '@/lib/utils/translate';
+import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { CurrencyCode } from '@/types/admin.types';
 
 export interface CartListItem {
@@ -12,12 +13,11 @@ export interface CartListItem {
   name: string;
   name_en?: string;
   price: number;
-  prices?: Record<string, number> | null;
   quantity: number;
   image_url?: string;
   selectedOption?: { name_fr: string; name_en?: string } | null;
   selectedVariant?: { name_fr: string; name_en?: string } | null;
-  modifiers?: { name: string }[] | null;
+  modifiers?: { name: string; price?: number }[] | null;
 }
 
 export function getCartItemKey(item: {
@@ -43,11 +43,11 @@ interface CartItemsListProps {
   items: CartListItem[];
   language: 'fr' | 'en';
   currencyCode: CurrencyCode;
-  resolveAndFormatPrice: (
-    amount: number,
-    prices: Record<string, number> | null | undefined,
-    currency: CurrencyCode,
-  ) => string;
+  // Line totals are converted from the native amount so they stay consistent
+  // with the OrderSummary subtotal. Per-currency manual prices are unit-level
+  // (used on menu cards), so they cannot represent a (base + modifiers) x qty
+  // line and are intentionally not applied here.
+  formatDisplayPrice: (amount: number, currency: CurrencyCode) => string;
   updateQuantity: (itemKey: string, quantity: number) => void;
   removeFromCart: (itemKey: string) => void;
   labels: {
@@ -61,13 +61,13 @@ export function CartItemsList({
   items,
   language,
   currencyCode,
-  resolveAndFormatPrice,
+  formatDisplayPrice,
   updateQuantity,
   removeFromCart,
   labels,
 }: CartItemsListProps) {
   return (
-    <section className="bg-white">
+    <section className="rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white px-4 py-1">
       <AnimatePresence mode="popLayout">
         {items.map((item) => {
           const itemKey = getCartItemKey(item);
@@ -81,6 +81,16 @@ export function CartItemsList({
               ? item.selectedVariant.name_en
               : item.selectedVariant.name_fr
             : null;
+          // Market standard (Uber Eats / Deliveroo / Jumia Food): the line price is
+          // the full line total = (base + paid modifiers) x quantity, and the chosen
+          // modifiers are listed under the item name.
+          const modifiersTotal = (item.modifiers || []).reduce((s, m) => s + (m.price ?? 0), 0);
+          const modifierLabels = (item.modifiers || []).map((m) => m.name);
+          const subParts = [variantLabel, optionLabel, ...modifierLabels].filter(Boolean);
+          const hasValidImage =
+            item.image_url &&
+            !item.image_url.includes('placeholder') &&
+            !item.image_url.includes('default');
 
           return (
             <motion.div
@@ -90,73 +100,69 @@ export function CartItemsList({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="relative flex bg-white border-b border-[#F0F0F0] last:border-b-0"
+              className="flex items-center gap-3 border-b border-[var(--color-divider)] py-[13px] last:border-b-0"
             >
-              {/* TEXT - Left side */}
-              <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-[16px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2">
-                    {getTranslatedContent(language, item.name, item.name_en)}
-                  </h3>
-                  {(optionLabel || variantLabel) && (
-                    <p className="mt-1 text-[13px] text-[#737373] line-clamp-2">
-                      {[variantLabel, optionLabel].filter(Boolean).join(' - ')}
-                    </p>
-                  )}
-                  <p className="mt-1.5 text-[15px] font-bold text-[#1A1A1A]">
-                    {resolveAndFormatPrice(item.price * item.quantity, item.prices, currencyCode)}
-                  </p>
+              {/* IMAGE - left */}
+              <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[var(--radius-search)] border border-[var(--color-divider)] bg-[var(--color-surface-alt)]">
+                {hasValidImage ? (
+                  <Image
+                    src={item.image_url!}
+                    alt={item.name}
+                    fill
+                    sizes="58px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Utensils className="h-5 w-5 text-[var(--color-ink-soft)]" />
+                  </div>
+                )}
+              </div>
+
+              {/* TEXT */}
+              <div className="min-w-0 flex-1">
+                <div className="text-[13.5px] font-semibold leading-[1.3] tracking-[-0.2px] text-[var(--color-ink)]">
+                  {getTranslatedContent(language, item.name, item.name_en)}
                 </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                    aria-label={labels.decrease}
-                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[44px] min-w-[44px]"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="text-[16px] font-bold text-[#1A1A1A] w-6 text-center">
-                    {item.quantity}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                    aria-label={labels.increase}
-                    className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[44px] min-w-[44px]"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                {subParts.length > 0 && (
+                  <div className="mt-0.5 text-[11.5px] leading-[1.35] text-[var(--color-ink-muted)]">
+                    {subParts.join(' - ')}
+                  </div>
+                )}
+                <div className="mt-1.5 text-[13px] font-bold tabular-nums text-[var(--color-ink)]">
+                  {formatDisplayPrice((item.price + modifiersTotal) * item.quantity, currencyCode)}
                 </div>
               </div>
 
-              {/* IMAGE - Right side */}
-              <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
-                <div className="w-full h-full rounded-xl overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
-                  {item.image_url &&
-                  !item.image_url.includes('placeholder') &&
-                  !item.image_url.includes('default') ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      width={90}
-                      height={90}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Utensils className="w-6 h-6 text-[#B0B0B0]" />
-                  )}
-                </div>
+              {/* QTY STEPPER (sm) */}
+              <div className="flex shrink-0 items-center rounded-full border border-[var(--color-divider)] bg-[var(--color-surface-alt)] p-[3px]">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  onClick={() => removeFromCart(itemKey)}
-                  className="absolute -bottom-2 -right-2 z-10 w-7 h-7 min-h-[44px] min-w-[44px] rounded-full bg-white border-[#EEEEEE] text-[#B0B0B0] hover:text-[#FF3008]"
-                  aria-label={labels.remove}
+                  onClick={() =>
+                    item.quantity <= 1
+                      ? removeFromCart(itemKey)
+                      : updateQuantity(itemKey, item.quantity - 1)
+                  }
+                  aria-label={item.quantity <= 1 ? labels.remove : labels.decrease}
+                  className="h-[26px] w-[26px] rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Minus className="h-3 w-3 text-[var(--color-ink)]" strokeWidth={2.4} />
+                </Button>
+                <span className="min-w-[24px] text-center text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
+                  {item.quantity}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    item.quantity < MAX_ITEM_QTY && updateQuantity(itemKey, item.quantity + 1)
+                  }
+                  disabled={item.quantity >= MAX_ITEM_QTY}
+                  aria-label={labels.increase}
+                  className="h-[26px] w-[26px] rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] disabled:opacity-40"
+                >
+                  <Plus className="h-3 w-3 text-white" strokeWidth={2.4} />
                 </Button>
               </div>
             </motion.div>

@@ -116,6 +116,10 @@ export const oauthSignupLimiter = createLimiter(
 /** Orders: 20 requests / minute per IP */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
 
+/** Menu search corpus: read-only GET, 60 requests / minute per IP (separate
+ *  bucket so browsing the search modal cannot deplete the order limit). */
+export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(60, '1 m'));
+
 /** Payment initiation (Wave, Orange Money): 5 requests / minute per IP. Fail-closed. */
 export const paymentInitiationLimiter = createLimiter(
   'payment-init',

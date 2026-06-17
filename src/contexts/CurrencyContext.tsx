@@ -122,9 +122,18 @@ export function CurrencyProvider({
 }) {
   const supportedCurrencies = (supportedCurrenciesProp || [tenantCurrency]) as DisplayCurrency[];
 
-  const [displayCurrency, setDisplayCurrencyState] = useState<DisplayCurrency>(() =>
-    readStored(tenantCurrency),
+  // Start from the tenant currency (stable server/client value) and adopt the
+  // stored preference after mount. Reading localStorage in the initializer
+  // would cause a hydration mismatch (rule 03-responsive).
+  const [displayCurrency, setDisplayCurrencyState] = useState<DisplayCurrency>(
+    tenantCurrency as DisplayCurrency,
   );
+
+  useEffect(() => {
+    const stored = readStored(tenantCurrency);
+    if (stored !== tenantCurrency) setDisplayCurrencyState(stored);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
 
   const [ratesToXaf, setRatesToXaf] = useState<Record<string, number>>(DEFAULT_RATES_TO_XAF);
   const hasFetched = useRef(false);

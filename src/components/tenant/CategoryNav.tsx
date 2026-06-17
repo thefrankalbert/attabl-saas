@@ -9,26 +9,42 @@ interface Category {
 }
 
 const OBSERVER_OPTIONS: IntersectionObserverInit = {
-  rootMargin: '-140px 0px -60% 0px',
+  rootMargin: '-116px 0px -60% 0px',
   threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
 };
 
-/** Offset used for scrolling (sticky search header + sticky category nav) */
-const SCROLL_OFFSET = 112;
-
 interface CategoryNavProps {
   categories: Category[];
-  /** Optional map of category id to item count */
-  itemCounts?: Record<string, number>;
   /** Top offset (px) where the nav becomes sticky - below search bar */
   topOffset?: number;
 }
 
 export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavProps) {
   const [activeCategory, setActiveCategory] = React.useState<string>('');
-  const navRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
+  // True while a chip-click smooth scroll is in flight: the scroll-spy must not
+  // override the clicked category (it would flicker through intermediate
+  // sections, and a short last section that bottom-clamps below the active band
+  // would never re-highlight). Released on the next genuine user scroll input.
+  const programmaticScrollRef = React.useRef(false);
+
+  // Release the programmatic lock as soon as the user scrolls themselves, so the
+  // scroll-spy resumes. Programmatic smooth scroll fires neither wheel nor
+  // touchstart, so these signals reliably mean "user took over".
+  React.useEffect(() => {
+    const scroller = document.getElementById('main-content');
+    if (!scroller) return;
+    const release = () => {
+      programmaticScrollRef.current = false;
+    };
+    scroller.addEventListener('wheel', release, { passive: true });
+    scroller.addEventListener('touchstart', release, { passive: true });
+    return () => {
+      scroller.removeEventListener('wheel', release);
+      scroller.removeEventListener('touchstart', release);
+    };
+  }, []);
 
   // Sync horizontal scroll when active category changes
   React.useEffect(() => {
@@ -52,6 +68,9 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
   // Scroll-spy: observe section headers to highlight active category
   React.useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
+      // Don't fight a chip-click scroll; the click already set the active chip.
+      if (programmaticScrollRef.current) return;
+
       let bestEntry: IntersectionObserverEntry | null = null;
       let bestRatio = 0;
 
@@ -78,16 +97,14 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
 
   const scrollToCategory = (id: string) => {
     setActiveCategory(id);
+    programmaticScrollRef.current = true;
+    // The scroll container is <main id="main-content"> (html/body are
+    // overflow:hidden), so window.scrollTo is a no-op here. scrollIntoView
+    // targets the right scroller and respects the section's scroll-mt-[116px],
+    // anchoring it just under the sticky header + CategoryNav.
     const element = document.getElementById(`cat-${id}`);
     if (element) {
-      const elementRect = element.getBoundingClientRect();
-      const absoluteElementTop = elementRect.top + window.scrollY;
-      const offsetPosition = absoluteElementTop - SCROLL_OFFSET;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -95,7 +112,6 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
 
   return (
     <div
-      ref={navRef}
       className="scrollbar-hide"
       style={{
         position: 'sticky',
@@ -118,7 +134,7 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
           alignItems: 'center',
           paddingLeft: '16px',
           paddingRight: '16px',
-          gap: '8px',
+          gap: '6px',
         }}
       >
         {categories.map((category) => {
@@ -135,18 +151,18 @@ export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavPr
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
-              className="active:scale-[0.98] h-auto px-4 py-2"
+              className="h-auto px-[15px] py-2 active:scale-[0.98]"
               style={{
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
                 borderRadius: '24px',
-                fontSize: '11px',
+                fontSize: '13px',
                 fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
+                letterSpacing: '-0.1px',
                 lineHeight: 1.4,
-                backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
-                color: isActive ? '#FFFFFF' : '#737373',
+                border: `1px solid ${isActive ? '#1A1A1A' : '#EEEEEE'}`,
+                backgroundColor: isActive ? '#1A1A1A' : '#FFFFFF',
+                color: isActive ? '#FFFFFF' : '#404040',
                 transition: 'background-color 0.15s ease, color 0.15s ease',
               }}
             >
