@@ -3,8 +3,6 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientOrders from '@/components/tenant/ClientOrders';
 import OrdersTabs from '@/components/tenant/OrdersTabs';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 export default async function OrdersPage({
@@ -35,32 +33,31 @@ export default async function OrdersPage({
 
   return (
     <div className="h-full bg-white text-[#1A1A1A]">
-      {/* Sticky header: back + tabs */}
-      <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
-        <div className="max-w-lg mx-auto px-3 pt-2 pb-0 flex items-center gap-3">
-          <Link
-            href={`/sites/${tenantSlug}`}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F6F6F6] text-[#1A1A1A] shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <OrdersTabs
-            tenantSlug={tenantSlug}
-            showHistory={showHistory}
-            activeLabel={t('ordersActive')}
-            historyLabel={t('ordersHistory')}
-          />
+      {/* Sticky header: title + pill tabs */}
+      <div className="sticky top-0 z-40 bg-white">
+        <div className="max-w-lg mx-auto px-4 pt-4 pb-3">
+          <h1 className="text-[19px] font-semibold tracking-[-0.6px] text-[#1A1A1A]">
+            {t('ordersTitle')}
+          </h1>
+          <div className="mt-3">
+            <OrdersTabs
+              tenantSlug={tenantSlug}
+              showHistory={showHistory}
+              activeLabel={t('ordersActive')}
+              historyLabel={t('ordersHistory')}
+            />
+          </div>
         </div>
       </div>
 
-      <main className="max-w-lg mx-auto px-4 pt-4 pb-28">
+      <div className="max-w-lg mx-auto px-4 pt-4 pb-28">
         <ClientOrders
           tenantSlug={tenantSlug}
           tenantId={tenant.id}
           currency={tenant.currency || 'XAF'}
           showHistory={showHistory}
         />
-      </main>
+      </div>
     </div>
   );
 }

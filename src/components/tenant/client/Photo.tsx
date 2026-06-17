@@ -10,9 +10,20 @@ export interface PhotoProps {
   height?: number;
   className?: string;
   sizes?: string;
+  priority?: boolean;
 }
 
-export function Photo({ src, alt, kind, fill, width, height, className = '', sizes }: PhotoProps) {
+export function Photo({
+  src,
+  alt,
+  kind,
+  fill,
+  width,
+  height,
+  className = '',
+  sizes,
+  priority,
+}: PhotoProps) {
   if (!src) return <PhotoPlaceholder kind={kind} className={className} />;
 
   if (fill) {
@@ -21,6 +32,7 @@ export function Photo({ src, alt, kind, fill, width, height, className = '', siz
         src={src}
         alt={alt}
         fill
+        priority={priority}
         sizes={sizes ?? '(max-width: 480px) 100vw, 480px'}
         className={`object-cover ${className}`}
       />

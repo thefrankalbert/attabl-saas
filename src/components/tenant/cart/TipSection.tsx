@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, HandCoins, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { CurrencyCode } from '@/types/admin.types';
 
@@ -41,26 +40,30 @@ export function TipSection({
   formatDisplayPrice,
   labels,
 }: TipSectionProps) {
+  // Collapsed trigger (matches the promo / notes rows)
   if (!tipOpen && tipAmount === 0) {
     return (
       <section>
         <Button
           variant="ghost"
           onClick={() => setTipOpen(true)}
-          className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+          aria-expanded={false}
+          className="w-full justify-start gap-2 py-3 text-[14px] font-semibold text-[#1A1A1A] hover:text-black"
         >
-          <HandCoins className="w-4 h-4" />
+          <HandCoins className="h-4 w-4" />
           <span>{labels.tip}</span>
-          <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+          <ChevronRight className="ml-auto h-4 w-4 text-[#B0B0B0]" />
         </Button>
       </section>
     );
   }
 
   return (
-    <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
-      <div className="flex items-center justify-between mb-3">
-        <Label className="text-[13px] font-semibold text-[#1A1A1A]">{labels.tip}</Label>
+    <section>
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--color-ink-muted)]">
+          {labels.tip}
+        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -69,13 +72,13 @@ export function TipSection({
             setTipPreset(0);
             setCustomTipInput('');
           }}
-          className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
+          className="h-8 w-8 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
           aria-label={labels.close}
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {(
           [
             { key: 0, label: labels.tipNone },
@@ -90,16 +93,16 @@ export function TipSection({
           return (
             <Button
               key={String(opt.key)}
-              variant={active ? 'default' : 'outline'}
+              variant="ghost"
               onClick={() => {
                 setTipPreset(opt.key);
                 if (opt.key !== 'custom') setCustomTipInput('');
               }}
               className={cn(
-                'min-h-[44px] rounded-xl text-[13px] font-semibold px-1',
+                'h-auto flex-[1_0_28%] rounded-[var(--radius-search)] border py-[11px] text-[12.5px] font-semibold tabular-nums',
                 active
-                  ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A] hover:bg-black'
-                  : 'bg-white text-[#737373] border-[#EEEEEE] hover:border-[#B0B0B0]',
+                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink)]'
+                  : 'border-[var(--color-divider)] bg-white text-[var(--color-ink-2)] hover:bg-white',
               )}
             >
               {opt.label}
@@ -115,7 +118,7 @@ export function TipSection({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-3">
+            <div className="mt-2 flex items-center gap-2 rounded-[var(--radius-search)] border border-[var(--color-divider)] bg-white px-3.5 py-2.5">
               <Input
                 type="number"
                 inputMode="decimal"
@@ -124,8 +127,11 @@ export function TipSection({
                 value={customTipInput}
                 onChange={(e) => setCustomTipInput(e.target.value)}
                 placeholder={labels.tipCustomPlaceholder}
-                className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 text-[14px] font-semibold text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                className="h-auto flex-1 border-0 bg-transparent p-0 text-[14px] font-semibold text-[var(--color-ink)] shadow-none focus-visible:ring-0"
               />
+              <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
+                {currencyCode === 'XAF' ? 'FCFA' : currencyCode}
+              </span>
             </div>
           </motion.div>
         )}

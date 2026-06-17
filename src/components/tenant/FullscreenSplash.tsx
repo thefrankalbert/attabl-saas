@@ -4,14 +4,13 @@ import { useState, useCallback, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 
 interface FullscreenSplashProps {
   tenantName: string;
   logoUrl?: string | null;
   primaryColor?: string;
 }
-
-const noopSubscribe = () => () => {};
 
 function useIsStandalone(): boolean {
   return useSyncExternalStore(

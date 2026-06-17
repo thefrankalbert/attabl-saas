@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShoppingBag } from 'lucide-react';
 import { MENU_COLORS as C } from '@/lib/tenant/menu-tokens';
+import { formatCartCount } from '@/lib/utils/cart-display';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 interface FloatingCartBarProps {
@@ -52,10 +53,10 @@ export function FloatingCartBar({
               {viewCartLabel}
             </span>
             <span
-              className="text-sm font-bold whitespace-nowrap"
+              className="text-sm font-bold tabular-nums whitespace-nowrap"
               style={{ color: C.textOnPrimary }}
             >
-              {totalItems}
+              {formatCartCount(totalItems)}
             </span>
             <span
               aria-hidden="true"

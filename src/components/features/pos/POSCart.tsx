@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { formatCurrency } from '@/lib/utils/currency';
+import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { ServiceType, CurrencyCode, Zone, Table, PricingBreakdown } from '@/types/admin.types';
 import type { CartItem, AppliedCoupon } from '@/hooks/usePOSData';
 
@@ -322,8 +323,9 @@ export default function POSCart({
                           variant="ghost"
                           size="icon"
                           aria-label="Increase"
+                          disabled={item.quantity >= MAX_ITEM_QTY}
                           onClick={() => onUpdateQuantity(itemKey, 1)}
-                          className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation"
+                          className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
                         >
                           <Plus className="w-3 h-3" />
                         </Button>

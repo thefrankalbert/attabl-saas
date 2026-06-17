@@ -5,16 +5,18 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import {
   ArrowLeft,
+  ArrowRight,
   ChefHat,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  MapPin,
   ShoppingBag,
   AlertCircle,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { useTranslations, useLocale } from 'next-intl';
@@ -23,6 +25,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCartSuggestions, type UpsellItem } from '@/hooks/useCartSuggestions';
 import { CartItemsList, getCartItemKey } from '@/components/tenant/cart/CartItemsList';
+import { remainingItemCapacity } from '@/lib/utils/cart-display';
+import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 import { UpsellSection } from '@/components/tenant/cart/UpsellSection';
 import { PromoSection } from '@/components/tenant/cart/PromoSection';
 import { TipSection, type TipPreset } from '@/components/tenant/cart/TipSection';
@@ -69,7 +73,19 @@ export default function CartPage() {
     applyCoupon,
     removeCoupon,
   } = useCart();
-  const { slug: tenantSlug } = useTenant();
+  const { slug: tenantSlug, tenant } = useTenant();
+
+  const tableNum = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      try {
+        return localStorage.getItem(`attabl_${tenantSlug}_table`);
+      } catch {
+        return null;
+      }
+    },
+    () => null,
+  );
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
   const t = useTranslations('tenant');
   const locale = useLocale();
@@ -99,6 +115,12 @@ export default function CartPage() {
   const [promoOpen, setPromoOpen] = useState(false);
 
   const submitLock = useRef(false);
+  const promoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current);
+    };
+  }, []);
 
   const applyPreviewResult = useCallback(
     (data: {
@@ -168,6 +190,9 @@ export default function CartPage() {
   const handleAddUpsellItem = useCallback(
     (item: UpsellItem) => {
       if (!currentRestaurantId) return;
+      // Upsell items are simple (no options), so their cart key is the id.
+      const existingQty = items.find((l) => getCartItemKey(l) === item.id)?.quantity ?? 0;
+      if (remainingItemCapacity(existingQty) <= 0) return;
       addToCart(
         {
           id: item.id,
@@ -181,7 +206,7 @@ export default function CartPage() {
         currentRestaurantId,
       );
     },
-    [addToCart, currentRestaurantId],
+    [addToCart, currentRestaurantId, items],
   );
 
   const handleApplyPromo = useCallback(async () => {
@@ -194,7 +219,8 @@ export default function CartPage() {
       if (result.success) {
         setPromoJustApplied(true);
         setPromoInput('');
-        setTimeout(() => setPromoJustApplied(false), 2500);
+        if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current);
+        promoTimeoutRef.current = setTimeout(() => setPromoJustApplied(false), 2500);
       } else {
         setPromoError(result.error || t('orderError'));
       }
@@ -266,12 +292,20 @@ export default function CartPage() {
         return;
       }
 
-      // Namespace the stored order IDs per tenant slug.
-      const orderIdsStorageKey = `attabl_${tenantSlug}_order_ids`;
-      const storedIds: string[] = JSON.parse(localStorage.getItem(orderIdsStorageKey) || '[]');
-      if (data.orderId && !storedIds.includes(data.orderId)) {
-        storedIds.push(data.orderId);
-        localStorage.setItem(orderIdsStorageKey, JSON.stringify(storedIds));
+      // Namespace the stored order IDs per tenant slug. The order is already
+      // created server-side at this point, so a corrupt/unavailable localStorage
+      // must NOT block clearCart + redirect (else the user could re-submit a dup).
+      try {
+        const orderIdsStorageKey = `attabl_${tenantSlug}_order_ids`;
+        const raw = localStorage.getItem(orderIdsStorageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        const storedIds: string[] = Array.isArray(parsed) ? parsed : [];
+        if (data.orderId && !storedIds.includes(data.orderId)) {
+          storedIds.push(data.orderId);
+          localStorage.setItem(orderIdsStorageKey, JSON.stringify(storedIds));
+        }
+      } catch (storageErr) {
+        logger.warn('Could not persist order id to localStorage', { error: storageErr });
       }
 
       clearCart();
@@ -290,7 +324,7 @@ export default function CartPage() {
   // Empty cart state
   if (items.length === 0) {
     return (
-      <main className="h-full bg-white pb-20">
+      <div className="h-full bg-white pb-20">
         <div className="max-w-lg mx-auto h-14 px-4 flex items-center">
           <Button
             variant="ghost"
@@ -323,17 +357,16 @@ export default function CartPage() {
             </Link>
           </Button>
         </div>
-      </main>
+      </div>
     );
   }
 
   // Main cart
   const notesLength = notes?.length ?? 0;
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <main
-      className="min-h-full bg-white"
+    <div
+      className="min-h-full bg-[var(--color-surface-alt)]"
       style={{
         // 144px = 76 (bottom nav anchor) + 52 (CTA height) + 16 breathing room
         paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))',
@@ -341,22 +374,31 @@ export default function CartPage() {
     >
       {/* Cart header */}
       <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
-        <div className="max-w-lg mx-auto h-14 px-4 flex items-center gap-3">
+        <div className="max-w-lg mx-auto px-[14px] py-3 flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A] shrink-0"
+            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[#1A1A1A]"
             aria-label={t('ariaGoBack')}
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-[17px] font-bold text-[#1A1A1A] flex-1">
-            {t('navCart')}
-            <span className="text-[15px] font-normal text-[#B0B0B0] ml-1.5">
-              &middot; {itemCount}
-            </span>
-          </h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[16px] font-semibold leading-[1.15] tracking-[-0.4px] text-[#1A1A1A]">
+              {t('cartTitle')}
+            </h1>
+            {(tenant?.name || tableNum) && (
+              <div className="mt-px flex items-center gap-1 text-[11.5px] text-[#737373]">
+                <MapPin className="h-[11px] w-[11px] shrink-0" strokeWidth={2} />
+                <span className="truncate">
+                  {[tenant?.name, tableNum ? t('tableLabel', { num: tableNum }) : null]
+                    .filter(Boolean)
+                    .join(' - ')}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -385,7 +427,7 @@ export default function CartPage() {
           items={items}
           language={language}
           currencyCode={currencyCode}
-          resolveAndFormatPrice={resolveAndFormatPrice}
+          formatDisplayPrice={formatDisplayPrice}
           updateQuantity={updateQuantity}
           removeFromCart={removeFromCart}
           labels={{
@@ -401,6 +443,7 @@ export default function CartPage() {
             <Button
               variant="ghost"
               onClick={() => setNotesOpen(true)}
+              aria-expanded={false}
               className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
             >
               <ChefHat className="w-4 h-4" />
@@ -422,7 +465,7 @@ export default function CartPage() {
                   setNotes('');
                 }}
                 className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
-                aria-label={t('ariaClose') || 'Fermer'}
+                aria-label={t('ariaClose')}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -457,8 +500,9 @@ export default function CartPage() {
             resolveAndFormatPrice={resolveAndFormatPrice}
             onAdd={handleAddUpsellItem}
             labels={{
-              title: t('upsellYouMayLike'),
-              seeAll: t('seeAll') || 'See all',
+              title: t('upsellTitle'),
+              subtitle: t('upsellSubtitle'),
+              seeAll: t('seeAll'),
               ariaAdd: (name) => t('ariaAddUpsell', { name }),
             }}
           />
@@ -502,10 +546,10 @@ export default function CartPage() {
           formatDisplayPrice={formatDisplayPrice}
           labels={{
             tip: t('tip'),
-            tipNone: t('tipNone') || 'Aucun',
-            tipCustom: t('tipCustom') || 'Autre',
+            tipNone: t('tipNone'),
+            tipCustom: t('tipCustom'),
             tipCustomPlaceholder: t('tipCustomPlaceholder'),
-            close: t('ariaClose') || 'Fermer',
+            close: t('ariaClose'),
           }}
         />
 
@@ -544,25 +588,26 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
+            className="w-full h-[54px] justify-between rounded-full bg-[#1A1A1A] px-5 text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] disabled:opacity-100 disabled:bg-[#1A1A1A]"
           >
             {isSubmitting ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
+              <Loader2 className="mx-auto w-6 h-6 animate-spin" />
             ) : (
               <>
-                <span>{t('confirmOrder')}</span>
-                <span
-                  aria-hidden="true"
-                  className="inline-block rounded-full bg-white"
-                  style={{ width: 5, height: 5 }}
-                />
-                <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <ChefHat className="h-[17px] w-[17px] shrink-0" strokeWidth={2} />
+                  <span className="truncate">{t('confirmOrder')}</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-2 tabular-nums">
+                  {formatDisplayPrice(finalTotal, currencyCode)}
+                  <ArrowRight className="h-[15px] w-[15px] shrink-0" strokeWidth={2.2} />
+                </span>
               </>
             )}
           </Button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
