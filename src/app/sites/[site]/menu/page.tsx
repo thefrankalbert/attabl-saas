@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
-import { getCachedTenant } from '@/lib/cache';
+import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import type { Menu, Category, MenuItem, Venue, Zone, Table } from '@/types/admin.types';
 
 export const revalidate = 30;
@@ -168,7 +168,7 @@ export default async function MenuDetailPage({
   return (
     <NextIntlClientProvider messages={messages}>
       <ClientMenuDetailPage
-        tenant={tenant}
+        tenant={toPublicTenant(tenant)}
         venues={venues}
         menus={menus}
         transversalMenus={transversalMenus}
