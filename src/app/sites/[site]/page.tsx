@@ -7,18 +7,16 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
 import Link from 'next/link';
-import { Timer, ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import type { MenuItem, Category, Menu, Table } from '@/types/admin.types';
 import { HomeHeaderClient } from '@/components/tenant/client/HomeHeaderClient';
 import { CategoryTile } from '@/components/tenant/client/CategoryTile';
 import type { ClientCategory } from '@/components/tenant/client/CategoryTile';
 import { HomeItemsSection } from '@/components/tenant/client/HomeItemsSection';
+import { HomeHero } from '@/components/tenant/client/HomeHero';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import { SectionHeader } from '@/components/tenant/client/SectionHeader';
 import { deriveCategoryIconKey, getCategoryColors } from '@/components/tenant/client/CategoryIcon';
 import { Photo } from '@/components/tenant/client/Photo';
-import { formatAmount } from '@/lib/utils/currency';
 import { sanitizeTypography } from '@/lib/utils/sanitize-typography';
 
 export const revalidate = 30;
@@ -182,7 +180,6 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
   const heroItem: ClientMenuItem | null = heroSource
     ? toClientMenuItem(heroSource, featuredLabel)
     : null;
-  const heroCategoryId: string | null = heroSource ? heroSource.category_id : null;
 
   const hour = new Date().getHours();
   const period = hour < 11 ? 'matin' : hour < 17 ? 'midi' : 'soir';
@@ -222,57 +219,16 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
 
         {/* - HERO - */}
         <div className="px-4 pb-6">
-          {heroItem ? (
-            <Link
-              href={`/sites/${site}/menu${heroCategoryId ? `?cat=${heroCategoryId}` : ''}`}
-              className="relative block h-[232px] overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-ink)]"
-              aria-label={heroItem.name}
-            >
-              {heroItem.photoUrl && (
-                <div className="absolute inset-0">
-                  <Photo
-                    src={heroItem.photoUrl}
-                    alt={heroItem.name}
-                    kind="food"
-                    fill
-                    priority
-                    sizes="100vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[30%] to-black/85" />
-                </div>
-              )}
-              <div className="relative flex h-full flex-col justify-between p-[18px]">
-                <div className="flex items-start justify-between">
-                  <Badge className="rounded-[var(--radius-tag)] bg-[var(--color-brand)] px-2.5 py-1 text-[11px] font-bold tracking-[0.2px] text-white hover:bg-[var(--color-brand)]">
-                    {t('platDuJour')}
-                  </Badge>
-                  <span className="flex items-center gap-[5px] rounded-[var(--radius-tag)] bg-white/15 px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.2px] text-white backdrop-blur-[10px]">
-                    <Timer className="h-[11px] w-[11px]" />
-                    {t('dispoHeure')}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-mono text-[11px] font-medium uppercase tracking-[0.5px] text-white/70">
-                    {t('suggestionChef')}
-                  </div>
-                  <div className="mt-[5px] text-[25px] font-semibold leading-[1.05] tracking-[-0.9px] text-white">
-                    {heroItem.name}
-                  </div>
-                  <div className="mt-3.5 flex items-center gap-3.5">
-                    <span className="text-[18px] font-semibold leading-none tracking-[-0.3px] text-white">
-                      {formatAmount(heroItem.price, currencyCode)}{' '}
-                      <span className="font-mono text-[13px] font-medium text-white/60">
-                        {currencyUnit}
-                      </span>
-                    </span>
-                    <span className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[var(--color-brand)] px-4 text-[12.5px] font-semibold leading-none tracking-[-0.2px] text-white">
-                      {t('commander')}
-                      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Link>
+          {heroItem && heroSource ? (
+            <HomeHero
+              item={heroSource}
+              name={heroItem.name}
+              price={heroItem.price}
+              photoUrl={heroItem.photoUrl}
+              restaurantId={tenant.id}
+              currencyCode={currencyCode}
+              currencyUnit={currencyUnit}
+            />
           ) : (
             <div
               className="relative h-[232px] overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-ink)] p-[20px]"
@@ -314,7 +270,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
                 <CategoryTile
                   key={cat.id}
                   category={cat}
-                  href={`/sites/${site}/menu?cat=${cat.id}`}
+                  href={`/sites/${site}/menu?section=${encodeURIComponent(cat.label)}`}
                 />
               ))}
             </div>
