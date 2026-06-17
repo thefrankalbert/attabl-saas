@@ -9,7 +9,7 @@ interface Category {
 }
 
 const OBSERVER_OPTIONS: IntersectionObserverInit = {
-  rootMargin: '-116px 0px -60% 0px',
+  rootMargin: '-170px 0px -55% 0px',
   threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
 };
 
@@ -17,10 +17,22 @@ interface CategoryNavProps {
   categories: Category[];
   /** Top offset (px) where the nav becomes sticky - below search bar */
   topOffset?: number;
+  /** Notified whenever the active category changes (click or scroll-spy), so a
+   *  parent can render a single sticky title bar in sync with the chips. */
+  onActiveChange?: (categoryId: string) => void;
 }
 
-export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavProps) {
+export default function CategoryNav({
+  categories,
+  topOffset = 0,
+  onActiveChange,
+}: CategoryNavProps) {
   const [activeCategory, setActiveCategory] = React.useState<string>('');
+
+  // Mirror the active category to the parent (single sticky title bar).
+  React.useEffect(() => {
+    if (activeCategory) onActiveChange?.(activeCategory);
+  }, [activeCategory, onActiveChange]);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
   // True while a chip-click smooth scroll is in flight: the scroll-spy must not

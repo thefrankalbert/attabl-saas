@@ -130,6 +130,8 @@ export default function ClientMenuDetailPage({
 
   // Realtime availability
   const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
+  // Active category for the single sticky title bar (synced with CategoryNav).
+  const [activeCategoryId, setActiveCategoryId] = useState<string>('');
 
   const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
 
@@ -514,23 +516,36 @@ export default function ClientMenuDetailPage({
 
       {/* - CATEGORY NAVIGATION (sticky breadcrumb) - */}
       {filteredCategories && filteredCategories.length > 0 && (
-        <CategoryNav categories={filteredCategories} topOffset={63} />
+        <CategoryNav
+          categories={filteredCategories}
+          topOffset={63}
+          onActiveChange={setActiveCategoryId}
+        />
+      )}
+
+      {/* Single sticky category title bar - reflects the active category (synced
+          with the chips). Replaces per-section sticky headers, which overlapped
+          and flashed the next title on short adjacent categories. */}
+      {menuFilteredByCategory.length > 0 && (
+        <div className="sticky top-[111px] z-20 border-b border-[#EEEEEE] bg-white px-4 pt-4 pb-[14px]">
+          <h2 className="text-[20px] font-bold leading-[1.4] tracking-[-0.6px] text-[#1A1A1A]">
+            {
+              (
+                menuFilteredByCategory.find((c) => c.id === activeCategoryId) ??
+                menuFilteredByCategory[0]
+              )?.name
+            }
+          </h2>
+        </div>
       )}
 
       {/* - MENU ITEMS LIST - */}
       {menuFilteredByCategory.length > 0 ? (
-        <div className="mt-4">
+        <div>
           {menuFilteredByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[116px]">
-                  {/* Sticky section header - sits below sticky header (57px) + category nav (48px) */}
-                  <div className="sticky top-[111px] z-20 bg-white border-b border-[#EEEEEE] px-4 pt-4 pb-[14px]">
-                    <h2 className="text-[20px] font-bold tracking-[-0.6px] text-[#1A1A1A] leading-[1.4]">
-                      {category.name}
-                    </h2>
-                  </div>
-
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[170px]">
                   {/* Items list */}
                   <div className="bg-white pt-3 px-4">
                     <div>
