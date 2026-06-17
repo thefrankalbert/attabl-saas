@@ -39,7 +39,7 @@ function createCacheClient() {
  * Revalidation: 60 seconds OR on-demand via `revalidateTag('tenant-config')`
  */
 const TENANT_SELECT =
-  'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, enabled_payment_methods, activation_events, last_active_at, created_at';
+  'id, name, slug, primary_color, secondary_color, logo_url, currency, supported_currencies, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, enabled_payment_methods, activation_events, last_active_at, created_at';
 
 /**
  * Per-tenant cache factory.
@@ -83,6 +83,46 @@ function getOrCreateTenantCache(slug: string) {
     tenantCacheMap.set(slug, cached);
   }
   return cached;
+}
+
+/**
+ * Strip a tenant to its public-safe fields before it crosses into a Client
+ * Component / browser-serialized context.
+ *
+ * The full `Tenant` carries billing (subscription_plan/status/trial), POS
+ * config (screen_lock_mode, idle_timeout, notification_sound, bar_display) and
+ * behavioral-tracking fields (activation_events, last_active_at) that anonymous
+ * convive visitors must never see. Server Components and the middleware keep
+ * using the full object; only the client TenantProvider gets this subset.
+ */
+export function toPublicTenant(t: Tenant): Tenant {
+  return {
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    logo_url: t.logo_url,
+    primary_color: t.primary_color,
+    secondary_color: t.secondary_color,
+    font_family: t.font_family,
+    is_active: t.is_active,
+    created_at: t.created_at,
+    currency: t.currency,
+    supported_currencies: t.supported_currencies,
+    tax_rate: t.tax_rate,
+    service_charge_rate: t.service_charge_rate,
+    enable_tax: t.enable_tax,
+    enable_service_charge: t.enable_service_charge,
+    enable_coupons: t.enable_coupons,
+    establishment_type: t.establishment_type,
+    city: t.city,
+    country: t.country,
+    table_count: t.table_count,
+    description: t.description,
+    address: t.address,
+    phone: t.phone,
+    opening_hours: t.opening_hours,
+    enabled_payment_methods: t.enabled_payment_methods,
+  };
 }
 
 /** Cached tenant config. Returns null on failure instead of crashing the page. */

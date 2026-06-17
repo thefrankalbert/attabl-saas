@@ -9,7 +9,6 @@ type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 interface OrderTrackerProps {
   status: string;
-  createdAt: string;
   compact?: boolean;
 }
 

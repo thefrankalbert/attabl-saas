@@ -16,26 +16,22 @@ export interface CategoryTileProps {
 }
 
 export function CategoryTile({ category, href }: CategoryTileProps) {
-  const bg = category.bgColor ?? 'oklch(0.965 0.005 90)';
-  const fg = category.fgColor ?? 'oklch(0.65 0.015 80)';
+  const base = category.fgColor ?? 'oklch(0.5 0.08 80)';
 
   return (
     <Link
       href={href}
       className="group flex flex-col items-center gap-2"
-      aria-label={`Voir ${category.label}`}
+      aria-label={category.label}
     >
       <div
-        className="relative w-full overflow-hidden rounded-[var(--radius-card)] transition-transform group-active:scale-95"
+        className="relative flex w-full items-center justify-center overflow-hidden rounded-[var(--radius-card)] transition-transform group-active:scale-95"
         style={{
           aspectRatio: '1 / 1',
-          backgroundColor: bg,
-          border: '1px solid oklch(0.92 0.002 286)',
+          background: `linear-gradient(155deg, color-mix(in oklab, ${base}, white 22%) 0%, ${base} 52%, color-mix(in oklab, ${base}, black 16%) 100%)`,
         }}
       >
-        <div className="flex h-full w-full items-center justify-center" style={{ color: fg }}>
-          <CategoryIcon name={category.icon} size={30} />
-        </div>
+        <CategoryIcon name={category.icon} size={30} className="text-white" />
       </div>
       <div className="w-full truncate text-center text-[11.5px] font-medium text-[var(--color-ink-2)]">
         {category.label}

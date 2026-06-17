@@ -10,6 +10,7 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { useSessionState } from '@/hooks/useSessionState';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
+import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import { logger } from '@/lib/logger';
 import type {
   MenuItem,
@@ -285,7 +286,9 @@ export function usePOSData(tenantId: string) {
         const existing = prev.find((i) => (i.cartKey || i.id) === key);
         if (existing)
           return prev.map((i) =>
-            (i.cartKey || i.id) === key ? { ...i, quantity: i.quantity + 1 } : i,
+            (i.cartKey || i.id) === key
+              ? { ...i, quantity: Math.min(MAX_ITEM_QTY, i.quantity + 1) }
+              : i,
           );
         return [
           ...prev,
@@ -308,7 +311,7 @@ export function usePOSData(tenantId: string) {
     setCart((prev) => {
       const item = prev.find((i) => (i.cartKey || i.id) === itemId);
       if (!item) return prev;
-      const newQty = item.quantity + delta;
+      const newQty = Math.min(MAX_ITEM_QTY, item.quantity + delta);
       const key = item.cartKey || item.id;
       if (newQty <= 0) return prev.filter((i) => (i.cartKey || i.id) !== key);
       return prev.map((i) => ((i.cartKey || i.id) === key ? { ...i, quantity: newQty } : i));

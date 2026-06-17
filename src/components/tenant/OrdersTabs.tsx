@@ -17,12 +17,12 @@ export default function OrdersTabs({
   historyLabel,
 }: OrdersTabsProps) {
   return (
-    <div className="flex gap-1 flex-1 pb-0">
+    <div className="inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-divider)] bg-[var(--color-surface-alt)] p-[3px]">
       <Link
         href={`/sites/${tenantSlug}/orders`}
         className={cn(
-          'px-4 py-3 text-[14px] font-semibold border-b-2 transition-colors',
-          !showHistory ? 'border-[#1A1A1A] text-[#1A1A1A]' : 'border-transparent text-[#B0B0B0]',
+          'rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors',
+          !showHistory ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-ink-muted)]',
         )}
       >
         {activeLabel}
@@ -30,8 +30,8 @@ export default function OrdersTabs({
       <Link
         href={`/sites/${tenantSlug}/orders?history=true`}
         className={cn(
-          'px-4 py-3 text-[14px] font-semibold border-b-2 transition-colors',
-          showHistory ? 'border-[#1A1A1A] text-[#1A1A1A]' : 'border-transparent text-[#B0B0B0]',
+          'rounded-[var(--radius-pill)] px-4 py-1.5 text-[12.5px] font-medium tracking-[-0.2px] transition-colors',
+          showHistory ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-ink-muted)]',
         )}
       >
         {historyLabel}

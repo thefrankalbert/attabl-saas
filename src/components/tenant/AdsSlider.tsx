@@ -21,7 +21,11 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
 
   useEffect(() => {
     if (!emblaApi) return;
-    emblaApi.on('select', () => setSelectedIndex(emblaApi.selectedScrollSnap()));
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
   }, [emblaApi]);
 
   if (!ads || ads.length === 0) return null;

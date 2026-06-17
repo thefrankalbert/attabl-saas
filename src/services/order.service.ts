@@ -547,6 +547,7 @@ export function createOrderService(supabase: SupabaseClient) {
         .from('tables')
         .select('table_number, display_name')
         .eq('id', tableId)
+        .eq('tenant_id', tenantId)
         .maybeSingle();
 
       if (tableError) {
