@@ -559,7 +559,7 @@ export default function ItemDetailSheet({
               <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="h-[54px] flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
+                className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
               >
                 {showSuccess ? (
                   <motion.div
