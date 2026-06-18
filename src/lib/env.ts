@@ -5,9 +5,12 @@
  * required env vars exist and are well-formed at startup instead
  * of failing at runtime.
  *
- * The required set is intentionally identical to the historical
- * presence-only checks: do not add new required vars here or boot
- * will break in environments that never provisioned them.
+ * The required SET (which vars are mandatory) is intentionally identical to the
+ * historical presence-only checks: do not add new required vars here or boot
+ * will break in environments that never provisioned them. The validation is
+ * stricter than before though - URL-shaped vars (e.g. NEXT_PUBLIC_SUPABASE_URL)
+ * are now format-checked, so a present-but-malformed URL fails loud at boot
+ * (in production) instead of failing later at runtime. That is intended.
  */
 
 import { z } from 'zod';
