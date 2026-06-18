@@ -107,16 +107,3 @@ export type TenantFontId = (typeof CURATED_FONTS)[number]['id'];
 
 /** Default font applied when a tenant has no font_family or an invalid one. */
 export const DEFAULT_FONT: CuratedFont = CURATED_FONTS[0];
-
-/**
- * Resolve a font id (typically from tenants.font_family) to a curated font.
- * Falls back to Inter if the id is null, undefined, empty, or not in the list.
- */
-export function getFontById(id: string | null | undefined): CuratedFont {
-  if (!id) {
-    return DEFAULT_FONT;
-  }
-  const normalized = id.trim().toLowerCase();
-  const match = CURATED_FONTS.find((font) => font.id === normalized);
-  return match ?? DEFAULT_FONT;
-}

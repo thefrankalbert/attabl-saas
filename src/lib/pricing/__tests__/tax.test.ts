@@ -55,6 +55,27 @@ describe('calculateOrderTotal', () => {
     });
   });
 
+  it('computes tax and service on the discounted base (post-discount)', () => {
+    const result = calculateOrderTotal(
+      10000,
+      {
+        enable_tax: true,
+        tax_rate: 18,
+        enable_service_charge: true,
+        service_charge_rate: 10,
+      },
+      2000,
+    );
+    // taxable base = 10000 - 2000 = 8000
+    expect(result).toEqual({
+      subtotal: 10000,
+      taxAmount: 1440,
+      serviceChargeAmount: 800,
+      discountAmount: 2000,
+      total: 10240,
+    });
+  });
+
   it('applies discount and ensures total >= 0', () => {
     const result = calculateOrderTotal(
       100,

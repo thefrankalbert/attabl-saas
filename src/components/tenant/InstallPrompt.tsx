@@ -5,6 +5,7 @@ import { Share, X, Download, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -26,8 +27,6 @@ const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const MAX_DISMISSALS = 3; // Stop showing after 3 dismissals
 
 // ─── Hydration-safe browser detection ────────────────────
-const noopSubscribe = () => () => {};
-
 function useIsStandalone(): boolean {
   return useSyncExternalStore(
     noopSubscribe,

@@ -7,20 +7,17 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
 import Link from 'next/link';
-import { Timer } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import type { MenuItem, Category, Menu, Announcement, Table } from '@/types/admin.types';
+import type { MenuItem, Category, Menu, Table } from '@/types/admin.types';
 import { HomeHeaderClient } from '@/components/tenant/client/HomeHeaderClient';
-import type { HomeSearchItem } from '@/components/tenant/client/HomeHeaderClient';
-import { PromoCard } from '@/components/tenant/client/PromoCard';
 import { CategoryTile } from '@/components/tenant/client/CategoryTile';
 import type { ClientCategory } from '@/components/tenant/client/CategoryTile';
-import { MenuItemCard } from '@/components/tenant/client/MenuItemCard';
+import { HomeItemsSection } from '@/components/tenant/client/HomeItemsSection';
+import { HomeHero } from '@/components/tenant/client/HomeHero';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import { SectionHeader } from '@/components/tenant/client/SectionHeader';
 import { deriveCategoryIconKey, getCategoryColors } from '@/components/tenant/client/CategoryIcon';
 import { Photo } from '@/components/tenant/client/Photo';
-import { fmtFCFA } from '@/lib/format';
+import { sanitizeTypography } from '@/lib/utils/sanitize-typography';
 
 export const revalidate = 30;
 
@@ -67,8 +64,8 @@ function toClientMenuItem(item: MenuItem, featuredLabel: string): ClientMenuItem
   return {
     id: item.id,
     categoryId: item.category_id,
-    name: item.name,
-    description: item.description ?? null,
+    name: sanitizeTypography(item.name),
+    description: item.description ? sanitizeTypography(item.description) : null,
     price: item.price,
     photoUrl: item.image_url ?? null,
     rating: item.rating ?? null,
@@ -96,137 +93,93 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
     return notFound();
   }
 
-  const now = new Date().toISOString();
-  const [
-    categoriesResult,
-    featuredResult,
-    recentResult,
-    menusResult,
-    announcementsResult,
-    tablesResult,
-    allItemsResult,
-  ] = await Promise.all([
-    supabase
-      .from('categories')
-      .select(
-        'id, tenant_id, menu_id, name, name_en, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true }),
+  const [categoriesResult, featuredResult, recentResult, menusResult, tablesResult] =
+    await Promise.all([
+      supabase
+        .from('categories')
+        .select(
+          'id, tenant_id, menu_id, name, name_en, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
+        )
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true }),
 
-    supabase
-      .from('menu_items')
-      .select(
-        'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
-      )
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .eq('is_featured', true)
-      .eq('is_available', true)
-      .order('display_order', { ascending: true })
-      .limit(8),
+      supabase
+        .from('menu_items')
+        .select(
+          `
+        id, tenant_id, category_id, name, name_en, description, description_en,
+        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
+        category:categories(id, name, name_en),
+        options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
+        price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
+        modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
+      `,
+        )
+        .eq('tenant_id', tenant.id)
+        .is('deleted_at', null)
+        .eq('is_featured', true)
+        .eq('is_available', true)
+        .order('created_at', { ascending: false })
+        .limit(8),
 
-    supabase
-      .from('menu_items')
-      .select(
-        'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
-      )
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .eq('is_available', true)
-      .order('created_at', { ascending: false })
-      .limit(6),
+      supabase
+        .from('menu_items')
+        .select(
+          `
+        id, tenant_id, category_id, name, name_en, description, description_en,
+        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
+        category:categories(id, name, name_en),
+        options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
+        price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
+        modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
+      `,
+        )
+        .eq('tenant_id', tenant.id)
+        .is('deleted_at', null)
+        .eq('is_available', true)
+        .order('created_at', { ascending: false })
+        .limit(6),
 
-    supabase
-      .from('menus')
-      .select('id, tenant_id, name, description, image_url, is_active, display_order')
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true })
-      .limit(4),
+      supabase
+        .from('menus')
+        .select('id, tenant_id, name, description, image_url, is_active, display_order')
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(4),
 
-    supabase
-      .from('announcements')
-      .select(
-        'id, tenant_id, title, description, image_url, start_date, end_date, is_active, created_at',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .lte('start_date', now)
-      .or(`end_date.is.null,end_date.gte.${now}`)
-      .order('created_at', { ascending: false })
-      .limit(10),
-
-    supabase
-      .from('tables')
-      .select(
-        'id, tenant_id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true),
-
-    supabase
-      .from('menu_items')
-      .select('id, category_id, name, description, price')
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .eq('is_available', true)
-      .order('name', { ascending: true })
-      .limit(150),
-  ]);
+      supabase
+        .from('tables')
+        .select(
+          'id, tenant_id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
+        )
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true),
+    ]);
 
   const allCategories = (categoriesResult.data || []) as unknown as Category[];
   const featuredItems = (featuredResult.data || []) as unknown as MenuItem[];
   const recentItems = (recentResult.data || []) as unknown as MenuItem[];
   const menus = (menusResult.data || []) as unknown as Menu[];
   const tables = (tablesResult.data || []) as unknown as Table[];
-  const announcements = ((announcementsResult.data || []) as unknown as Announcement[])
-    .filter((ann) => !ann.end_date || ann.end_date >= now)
-    .slice(0, 5);
-
-  const categoryMap: Record<string, string> = Object.fromEntries(
-    allCategories.map((c) => [c.id, c.name]),
-  );
-  const rawAllItems = (allItemsResult.data || []) as unknown as Array<{
-    id: string;
-    category_id: string;
-    name: string;
-    description: string | null;
-    price: number;
-  }>;
-  const searchItems: HomeSearchItem[] = rawAllItems.map((item) => ({
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    price: item.price,
-    categoryId: item.category_id,
-    categoryName: categoryMap[item.category_id] ?? '',
-  }));
 
   const clientCategories = allCategories.slice(0, 8).map(toClientCategory);
 
   const featuredLabel = t('featured');
-  const featuredClients = featuredItems
-    .slice(0, 6)
-    .map((item) => toClientMenuItem(item, featuredLabel));
-  const recentClients = recentItems
-    .slice(0, 4)
-    .map((item) => toClientMenuItem(item, featuredLabel));
+  const featuredFull = featuredItems.slice(0, 6);
+  const recentFull = recentItems.slice(0, 4);
+  const featuredClients = featuredFull.map((item) => toClientMenuItem(item, featuredLabel));
+  const recentClients = recentFull.map((item) => toClientMenuItem(item, featuredLabel));
 
   const openingState = computeOpeningState(tenant.opening_hours, new Date());
 
-  const heroItem: ClientMenuItem | null =
-    featuredItems.length > 0 ? toClientMenuItem(featuredItems[0], featuredLabel) : null;
-  const heroCategoryId: string | null =
-    featuredItems.length > 0 ? featuredItems[0].category_id : null;
-
-  const tenantInitials = tenant.name
-    .split(' ')
-    .map((w: string) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  // Plat du jour: prefer a featured dish, else fall back to the most recent
+  // available item so the hero dish card (maquette) always shows.
+  const heroSource: MenuItem | null = featuredItems[0] ?? recentItems[0] ?? null;
+  const heroItem: ClientMenuItem | null = heroSource
+    ? toClientMenuItem(heroSource, featuredLabel)
+    : null;
 
   const hour = new Date().getHours();
   const period = hour < 11 ? 'matin' : hour < 17 ? 'midi' : 'soir';
@@ -245,67 +198,37 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
   const periodLabel =
     period === 'matin' ? t('periodMatin') : period === 'midi' ? t('periodMidi') : t('periodSoir');
 
+  const currencyCode = tenant.currency ?? 'XAF';
+  const currencyUnit = currencyCode === 'XAF' || currencyCode === 'XOF' ? 'FCFA' : currencyCode;
+
   return (
     <NextIntlClientProvider messages={messages}>
       <div className="pb-20">
         <HomeHeaderClient
           site={site}
           tenantName={tenant.name}
-          tenantInitials={tenantInitials}
-          logoUrl={tenant.logo_url ?? null}
           tables={tables}
-          searchItems={searchItems}
+          popularItems={featuredClients}
+          popularFull={featuredFull}
+          featuredLabel={featuredLabel}
+          currencyCode={currencyCode}
+          isOpen={openingState.isOpen}
+          restaurantId={tenant.id}
+          currency={tenant.currency}
         />
 
-        {/* ── HERO ── */}
+        {/* - HERO - */}
         <div className="px-4 pb-6">
-          {heroItem ? (
-            <Link
-              href={`/sites/${site}/menu${heroCategoryId ? `?cat=${heroCategoryId}` : ''}`}
-              className="relative block h-[232px] overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-ink)]"
-              aria-label={heroItem.name}
-            >
-              {heroItem.photoUrl && (
-                <div className="absolute inset-0">
-                  <Photo
-                    src={heroItem.photoUrl}
-                    alt={heroItem.name}
-                    kind="food"
-                    fill
-                    sizes="100vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[30%] to-black/85" />
-                </div>
-              )}
-              <div className="relative flex h-full flex-col justify-between p-[18px]">
-                <div className="flex items-start justify-between">
-                  <Badge className="rounded-[4px] bg-[var(--color-ink)] px-[7px] py-[2px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.2px] text-[var(--color-brand)] hover:bg-[var(--color-ink)]">
-                    {t('platDuJour')}
-                  </Badge>
-                  <span className="flex items-center gap-1 rounded-[var(--radius-tag)] bg-white/15 px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.2px] text-white backdrop-blur-sm">
-                    <Timer className="h-[11px] w-[11px]" />
-                    {t('dispoHeure')}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-mono text-[11px] font-medium uppercase tracking-[0.6px] text-white/65">
-                    {t('suggestionChef')}
-                  </div>
-                  <div className="mt-1.5 text-[26px] font-semibold leading-[1.05] tracking-[-0.04em] text-white">
-                    {heroItem.name}
-                  </div>
-                  <div className="mt-3.5 flex items-center gap-3.5">
-                    <span className="text-[18px] font-semibold leading-none tracking-[-0.02em] text-white">
-                      {fmtFCFA(heroItem.price)}{' '}
-                      <span className="font-mono text-[11px] font-medium text-white/70">FCFA</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-[9px] text-[13px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-ink)]">
-                      {t('commander')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Link>
+          {heroItem && heroSource ? (
+            <HomeHero
+              item={heroSource}
+              name={heroItem.name}
+              price={heroItem.price}
+              photoUrl={heroItem.photoUrl}
+              restaurantId={tenant.id}
+              currencyCode={currencyCode}
+              currencyUnit={currencyUnit}
+            />
           ) : (
             <div
               className="relative h-[232px] overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-ink)] p-[20px]"
@@ -334,44 +257,27 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
           )}
         </div>
 
-        {/* ── ANNONCES ── */}
-        {announcements.length > 0 && (
-          <section>
-            <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
-              {announcements.map((ann, i) => {
-                const tones = ['brand', 'ink', 'warm'] as const;
-                return (
-                  <PromoCard
-                    key={ann.id}
-                    title={ann.title}
-                    subtitle={ann.description ?? ''}
-                    cta={t('voir')}
-                    href={`/sites/${site}/menu`}
-                    tone={tones[i % tones.length]}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* ── CATEGORIES ── */}
+        {/* - CATEGORIES - */}
         {clientCategories.length > 0 && (
           <section>
-            <SectionHeader title={t('categories')} seeAllHref={`/sites/${site}/menu`} />
+            <SectionHeader
+              title={t('categories')}
+              seeAllHref={`/sites/${site}/menu`}
+              seeAllLabel={t('seeAll')}
+            />
             <div className="grid grid-cols-4 gap-2.5 px-4">
               {clientCategories.map((cat) => (
                 <CategoryTile
                   key={cat.id}
                   category={cat}
-                  href={`/sites/${site}/menu?cat=${cat.id}`}
+                  href={`/sites/${site}/menu?section=${encodeURIComponent(cat.label)}`}
                 />
               ))}
             </div>
           </section>
         )}
 
-        {/* ── NOS CARTES ── */}
+        {/* - NOS CARTES - */}
         {menus.length > 0 && (
           <section>
             <SectionHeader title={t('nosCartes')} subtitle={t('nosCartesSubtitle')} />
@@ -408,43 +314,40 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
           </section>
         )}
 
-        {/* ── COUPS DE COEUR DU CHEF ── */}
+        {/* - COUPS DE COEUR DU CHEF - */}
         {featuredClients.length > 0 && (
           <section>
             <SectionHeader
               title={t('coupsDeCoeur')}
               subtitle={t('coupsDeCoeurSubtitle')}
               seeAllHref={`/sites/${site}/menu`}
+              seeAllLabel={t('seeAll')}
             />
-            <div className="flex gap-3.5 overflow-x-auto px-4 pb-2 scrollbar-none">
-              {featuredClients.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  href={`/sites/${site}/menu?cat=${item.categoryId}`}
-                  variant="featured"
-                />
-              ))}
-            </div>
+            <HomeItemsSection
+              display={featuredClients}
+              full={featuredFull}
+              variant="featured"
+              containerClassName="flex gap-3.5 overflow-x-auto px-4 pb-2 scrollbar-none"
+              restaurantId={tenant.id}
+              currency={tenant.currency}
+              currencyCode={currencyCode}
+            />
           </section>
         )}
 
-        {/* ── COMMANDES RECENTES ── */}
+        {/* - NOUVEAUTES - */}
         {recentClients.length > 0 && (
           <section>
-            <SectionHeader
-              title={t('commandesRecentes')}
-              subtitle={t('commandesRecentesSubtitle')}
+            <SectionHeader title={t('nouveautes')} subtitle={t('nouveautesSubtitle')} />
+            <HomeItemsSection
+              display={recentClients}
+              full={recentFull}
+              variant="list"
+              containerClassName="px-4"
+              restaurantId={tenant.id}
+              currency={tenant.currency}
+              currencyCode={currencyCode}
             />
-            <div className="px-4">
-              {recentClients.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  href={`/sites/${site}/menu?cat=${item.categoryId}`}
-                />
-              ))}
-            </div>
           </section>
         )}
       </div>

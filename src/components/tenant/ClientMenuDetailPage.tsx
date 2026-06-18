@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Check, MapPin, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
+import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
@@ -17,18 +17,12 @@ import CategoryNav from '@/components/tenant/CategoryNav';
 import TablePicker from '@/components/tenant/TablePicker';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { QRScanResult } from '@/components/tenant/QRScanner';
 
-const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
-  ssr: false,
-  loading: () => <div className="h-64 animate-pulse rounded-lg bg-[#F6F6F6]" />,
-});
-
-// ─── Helpers ────────────────────────────────────────────
+// - Helpers -
 
 // formatPrice is now handled by useDisplayCurrency().formatDisplayPrice
 
-// ─── Types ──────────────────────────────────────────────
+// - Types -
 
 interface ClientMenuDetailPageProps {
   tenant: Tenant;
@@ -46,7 +40,7 @@ interface ClientMenuDetailPageProps {
   tables: Table[];
 }
 
-// ─── Component ──────────────────────────────────────────
+// - Component -
 
 export default function ClientMenuDetailPage({
   tenant,
@@ -70,11 +64,24 @@ export default function ClientMenuDetailPage({
   const { toast } = useToast();
   const { resolveAndFormatPrice } = useDisplayCurrency();
 
-  // ─── State ─────────────────────────────────────────────
+  // - State -
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Table number (localStorage, hydration-safe) for the header subtitle.
+  const tableNum = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      try {
+        return localStorage.getItem(`attabl_${tenant.slug}_table`);
+      } catch {
+        return null;
+      }
+    },
+    () => null,
+  );
 
   // Menu navigation state - auto-select menu containing the target section
   const [activeMenuSlug, setActiveMenuSlug] = useState<string | null>(() => {
@@ -123,17 +130,19 @@ export default function ClientMenuDetailPage({
 
   // Realtime availability
   const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
+  // Active category for the single sticky title bar (synced with CategoryNav).
+  const [activeCategoryId, setActiveCategoryId] = useState<string>('');
 
   const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
 
-  // ─── Persist table from URL param to localStorage ───────
+  // - Persist table from URL param to localStorage -
   useEffect(() => {
     if (initialTable) {
       localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
     }
   }, [initialTable, tenant.slug]);
 
-  // ─── Scroll to section on mount ─────────────────────────
+  // - Scroll to section on mount -
   useEffect(() => {
     if (!initialSection) return;
 
@@ -164,7 +173,7 @@ export default function ClientMenuDetailPage({
     };
   }, [initialSection, categories]);
 
-  // ─── Open item detail from URL param ──────────────────
+  // - Open item detail from URL param -
   useEffect(() => {
     if (!initialItemId) return;
     for (const group of itemsByCategory) {
@@ -176,7 +185,7 @@ export default function ClientMenuDetailPage({
     }
   }, [initialItemId, itemsByCategory]);
 
-  // ─── Realtime subscriptions ────────────────────────────
+  // Realtime subscriptions.
   // Availability toggles (the most frequent staff action) are applied to local
   // state incrementally - no server round-trip, no full re-render. Structural
   // changes (item add/remove, category edits) still need the full cached menu
@@ -226,7 +235,7 @@ export default function ClientMenuDetailPage({
     onChange: scheduleRealtimeRefresh,
   });
 
-  // ─── Filtering logic ──────────────────────────────────
+  // - Filtering logic -
 
   // Filter menus by venue
   const filteredMenus = activeVenueId
@@ -275,15 +284,6 @@ export default function ClientMenuDetailPage({
 
   const allItems = useMemo(() => itemsByCategory.flatMap((cat) => cat.items), [itemsByCategory]);
 
-  // Build category item counts for nav pills
-  const categoryItemCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const cat of menuFilteredByCategory) {
-      counts[cat.id] = cat.items.length;
-    }
-    return counts;
-  }, [menuFilteredByCategory]);
-
   // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
   const normalize = useCallback(
     (text: string) =>
@@ -308,7 +308,7 @@ export default function ClientMenuDetailPage({
       .slice(0, 8);
   }, [allItems, searchQuery, normalize]);
 
-  // ─── Handlers ──────────────────────────────────────────
+  // - Handlers -
 
   const handleTableSelect = (table: Table) => {
     localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
@@ -316,41 +316,6 @@ export default function ClientMenuDetailPage({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),
     });
-  };
-
-  const handleQRScan = (result: QRScanResult) => {
-    if (result.tableNumber) {
-      const matchedTable = tables.find(
-        (tb) =>
-          tb.table_number === result.tableNumber ||
-          tb.table_number === result.tableNumber?.toUpperCase() ||
-          tb.display_name === result.tableNumber,
-      );
-
-      if (matchedTable) {
-        handleTableSelect(matchedTable);
-      } else {
-        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
-        toast({
-          title: t('tableIdentified'),
-          description: t('seatedAtTable', { table: result.tableNumber }),
-        });
-      }
-    } else {
-      toast({
-        title: t('qrScanned'),
-        description: t('noTableDetected'),
-        variant: 'destructive',
-      });
-    }
-
-    if (result.menuSlug) {
-      const matchedMenu = menus.find((m) => m.slug === result.menuSlug);
-      if (matchedMenu) {
-        setActiveMenuSlug(matchedMenu.slug);
-        setActiveSubMenuId(null);
-      }
-    }
   };
 
   const handleMenuChange = (slug: string) => {
@@ -374,74 +339,111 @@ export default function ClientMenuDetailPage({
   // instead via the header back button.
   const hideMenuTabsRow = !!initialMenuSlug && filteredMenus.length > 1;
 
-  // ─── Render ──────────────────────────────────────────
+  // - Render -
+  const headerVenueLabel = activeVenueId
+    ? (venues.find((v) => v.id === activeVenueId)?.name ?? null)
+    : null;
+  const headerSubtitle = [tableNum ? t('tableLabel', { num: tableNum }) : null, headerVenueLabel]
+    .filter(Boolean)
+    .join(' - ');
+
+  const toggleSearch = () => {
+    setShowSearch((s) => !s);
+    setSearchQuery('');
+  };
+
+  const canSwitchMenu = filteredMenus.length > 1 || venues.length > 1;
+  const headerTitleInner = (
+    <>
+      <h1 className="text-[16px] font-semibold leading-[1.15] tracking-[-0.4px] text-[#1A1A1A] truncate">
+        {t('menuTitle')} {tenant.name}
+      </h1>
+      {headerSubtitle && (
+        <div className="mt-px flex items-center gap-1 text-[11.5px] text-[#737373]">
+          <MapPin className="w-[11px] h-[11px] flex-shrink-0" strokeWidth={2} />
+          <span className="truncate">{headerSubtitle}</span>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div
       className="flex-1 w-full bg-white"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ═══ HEADER (two rows) ═══ */}
+      {/* - HEADER - */}
       <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
-        {/* Row 1: navigation + identity + cart */}
-        <div className="px-3 pt-2 pb-1.5 flex items-center gap-2">
+        {/* Row 1: back + title/subtitle + search toggle */}
+        <div className="px-[14px] py-3 flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push(`/sites/${tenant.slug}`)}
-            className="w-9 h-9 rounded-full bg-app-elevated flex-shrink-0"
+            className="w-[38px] h-[38px] rounded-full bg-app-elevated flex-shrink-0"
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-5 h-5 text-[#1A1A1A]" />
           </Button>
-          <h1 className="flex-1 text-center text-[15px] font-bold text-[#1A1A1A] truncate">
-            {tenant.name}
-          </h1>
-          <div className="w-9 flex-shrink-0" />
-        </div>
-        {/* Row 2: composite search bar (selector prefix + search input) */}
-        <div className="px-3 pb-2">
-          <div className="flex items-center bg-[#F6F6F6] rounded-[10px] h-9 overflow-hidden">
-            {((!hideVenueRow && venues.length > 1) ||
-              (filteredMenus.length > 1 && !hideMenuTabsRow)) && (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsMenuSheetOpen(true)}
-                  className="flex items-center gap-1 h-full pl-3 pr-2 flex-shrink-0 rounded-none hover:bg-transparent focus-visible:ring-0"
-                  aria-haspopup="dialog"
-                  aria-label={t('sheetMenuTitle')}
-                >
-                  <span className="text-[12px] font-medium text-[#1A1A1A] truncate max-w-[80px]">
-                    {filteredMenus.length > 1 && !hideMenuTabsRow && activeMenu
-                      ? activeMenu.name
-                      : activeVenueId
-                        ? (venues.find((v) => v.id === activeVenueId)?.name ?? t('allFilter'))
-                        : t('allFilter')}
-                  </span>
-                  <ChevronDown className="w-3 h-3 flex-shrink-0 text-[#1A1A1A]" />
-                </Button>
-                <div className="w-px h-4 bg-[#DDDDDD] flex-shrink-0" />
-              </>
+          {canSwitchMenu ? (
+            <Button
+              variant="ghost"
+              onClick={() => setIsMenuSheetOpen(true)}
+              aria-haspopup="dialog"
+              aria-label={t('sheetMenuTitle')}
+              className="flex h-auto min-w-0 flex-1 flex-col items-start gap-0 p-0 text-left hover:bg-transparent"
+            >
+              {headerTitleInner}
+            </Button>
+          ) : (
+            <div className="min-w-0 flex-1">{headerTitleInner}</div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSearch}
+            className="w-[38px] h-[38px] rounded-full flex-shrink-0"
+            aria-label={t('searchMenu')}
+          >
+            {showSearch ? (
+              <X className="w-5 h-5 text-[#1A1A1A]" />
+            ) : (
+              <Search className="w-5 h-5 text-[#1A1A1A]" />
             )}
-            <div className="relative flex-1 min-w-0">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#B0B0B0]">
-                <Search className="w-4 h-4" strokeWidth={1.5} />
-              </div>
+          </Button>
+        </div>
+        {/* Row 2: search input (toggled by the header icon) */}
+        {showSearch && (
+          <div className="px-3 pb-2">
+            <div className="flex h-10 items-center gap-2.5 rounded-[var(--radius-search)] border border-[#EEEEEE] bg-[#F6F6F6] px-3">
+              <Search className="w-[17px] h-[17px] flex-shrink-0 text-[#737373]" strokeWidth={2} />
               <Input
+                autoFocus
                 type="text"
                 placeholder={t('searchMenu')}
-                className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0 bg-transparent rounded-none h-9 text-[#1A1A1A]"
+                className="h-auto flex-1 border-0 bg-transparent p-0 text-[14px] font-medium shadow-none focus-visible:ring-0 text-[#1A1A1A]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchQuery('')}
+                  aria-label={t('clearSearch')}
+                  className="w-[18px] h-[18px] shrink-0 rounded-full bg-[#1A1A1A] p-0 hover:bg-[#1A1A1A]"
+                >
+                  <X className="w-[11px] h-[11px] text-white" strokeWidth={2.6} />
+                </Button>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ═══ SEARCH RESULTS OVERLAY ═══ */}
+      {/* - SEARCH RESULTS OVERLAY - */}
       {searchQuery.length >= 2 && (
-        <div className="fixed inset-x-0 top-[94px] bottom-0 z-[35] bg-white overflow-y-auto">
+        <div className="fixed inset-x-0 top-[63px] bottom-0 z-[35] bg-white overflow-y-auto">
           <div className="px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
             {searchResults.length === 0 && (
               <p className="text-center text-sm py-8 text-[#B0B0B0]">
@@ -482,7 +484,7 @@ export default function ClientMenuDetailPage({
         </div>
       )}
 
-      {/* ═══ SUB-MENU TABS ═══ */}
+      {/* - SUB-MENU TABS - */}
       {activeMenu &&
         ((activeMenu.children && activeMenu.children.length > 0) ||
           transversalMenus.length > 0) && (
@@ -534,29 +536,38 @@ export default function ClientMenuDetailPage({
           </div>
         )}
 
-      {/* ═══ CATEGORY NAVIGATION (sticky breadcrumb) ═══ */}
+      {/* - CATEGORY NAVIGATION (sticky breadcrumb) - */}
       {filteredCategories && filteredCategories.length > 0 && (
         <CategoryNav
           categories={filteredCategories}
-          itemCounts={categoryItemCounts}
-          topOffset={94}
+          topOffset={63}
+          onActiveChange={setActiveCategoryId}
         />
       )}
 
-      {/* ═══ MENU ITEMS LIST ═══ */}
+      {/* Single sticky category title bar - reflects the active category (synced
+          with the chips). Replaces per-section sticky headers, which overlapped
+          and flashed the next title on short adjacent categories. */}
+      {menuFilteredByCategory.length > 0 && (
+        <div className="sticky top-[111px] z-20 border-b border-[#EEEEEE] bg-white px-4 pt-4 pb-[14px]">
+          <h2 className="text-[20px] font-bold leading-[1.4] tracking-[-0.6px] text-[#1A1A1A]">
+            {
+              (
+                menuFilteredByCategory.find((c) => c.id === activeCategoryId) ??
+                menuFilteredByCategory[0]
+              )?.name
+            }
+          </h2>
+        </div>
+      )}
+
+      {/* - MENU ITEMS LIST - */}
       {menuFilteredByCategory.length > 0 ? (
-        <div className="mt-4">
+        <div>
           {menuFilteredByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[150px]">
-                  {/* Sticky section header - sits below sticky search header (56px) + category nav (48px) */}
-                  <div className="sticky top-[142px] z-20 bg-white border-b border-[#EEEEEE] px-4 pt-4 pb-[14px]">
-                    <h2 className="text-[20px] font-bold text-[#1A1A1A] leading-[1.4]">
-                      {category.name}
-                    </h2>
-                  </div>
-
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[170px]">
                   {/* Items list */}
                   <div className="bg-white pt-3 px-4">
                     <div>
@@ -595,19 +606,12 @@ export default function ClientMenuDetailPage({
         </div>
       )}
 
-      {/* ═══ MODALS ═══ */}
+      {/* - MODALS - */}
       <TablePicker
         isOpen={isTablePickerOpen}
         onClose={() => setIsTablePickerOpen(false)}
         onSelect={handleTableSelect}
         zones={zones}
-        tables={tables}
-      />
-
-      <QRScanner
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onScan={handleQRScan}
         tables={tables}
       />
 

@@ -3,7 +3,7 @@ import {
   UtensilsCrossed,
   Soup,
   Cookie,
-  GlassWater,
+  Wine,
   Pizza,
   Beef,
   ChefHat,
@@ -31,7 +31,7 @@ const MAP: Record<CategoryIconKey, React.ComponentType<LucideProps>> = {
   main: UtensilsCrossed,
   side: Soup,
   dessert: Cookie,
-  drink: GlassWater,
+  drink: Wine,
   salad: Salad,
   pizza: Pizza,
   burger: Beef,
@@ -81,7 +81,12 @@ export function deriveCategoryIconKey(categoryName: string): CategoryIconKey {
     lower.includes('boisson') ||
     lower.includes('drink') ||
     lower.includes('cocktail') ||
-    lower.includes('jus')
+    lower.includes('jus') ||
+    lower.includes('vin') ||
+    lower.includes('wine') ||
+    lower.includes('champagne') ||
+    lower.includes('biere') ||
+    lower.includes('beer')
   )
     return 'drink';
   if (lower.includes('salade')) return 'salad';

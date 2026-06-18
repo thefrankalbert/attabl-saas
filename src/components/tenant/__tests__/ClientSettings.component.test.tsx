@@ -59,6 +59,7 @@ const defaultProps = {
   tenantSlug: 'test-restaurant',
   tenantName: 'Le Gourmet',
   tenantLogo: 'https://example.com/logo.png',
+  isOpen: true,
   currency: 'XAF',
 };
 
@@ -97,11 +98,10 @@ afterEach(() => {
 describe('ClientSettings', () => {
   // ─── Rendering ──────────────────────────────────────
 
-  it('renders back button in header (no title)', () => {
+  it('renders the restaurant header (tenant name, no back button - it is a tab)', () => {
     renderSettings();
-    const backBtn = screen.getByRole('button', { name: 'ariaGoBack' });
-    expect(backBtn).toBeInTheDocument();
-    expect(screen.queryByText('settingsTitle')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Le Gourmet').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole('button', { name: 'ariaGoBack' })).not.toBeInTheDocument();
   });
 
   it('renders the Preferences section label', () => {
@@ -133,11 +133,6 @@ describe('ClientSettings', () => {
     expect(screen.getByText('languageLabel')).toBeInTheDocument();
   });
 
-  it('shows current language subtitle', () => {
-    renderSettings();
-    expect(screen.getByText('currentLanguage')).toBeInTheDocument();
-  });
-
   it('sets cookie and reloads when clicking EN', () => {
     const reloadMock = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -167,8 +162,8 @@ describe('ClientSettings', () => {
   it('renders all 3 currency buttons', () => {
     renderSettings();
     expect(screen.getByText(/FCFA/)).toBeInTheDocument();
-    expect(screen.getByText(/Euro/)).toBeInTheDocument();
-    expect(screen.getByText(/Dollar/)).toBeInTheDocument();
+    expect(screen.getByText(/^EUR$/)).toBeInTheDocument();
+    expect(screen.getByText(/^USD$/)).toBeInTheDocument();
   });
 
   it('defaults to XAF/XOF when no stored preference', () => {
@@ -180,15 +175,14 @@ describe('ClientSettings', () => {
 
   it('stores currency preference in localStorage on click', () => {
     renderSettings();
-    fireEvent.click(screen.getByText(/Euro/).closest('button')!);
+    fireEvent.click(screen.getByText(/^EUR$/).closest('button')!);
     expect(mockSetDisplayCurrency).toHaveBeenCalledWith('EUR');
   });
 
   it('reads stored currency preference on mount', () => {
     mockDisplayCurrency = 'USD';
     renderSettings();
-    const dollarButton = screen.getByText(/Dollar/).closest('button');
-    expect(dollarButton!.style.backgroundColor).toBeTruthy();
+    const dollarButton = screen.getByText(/^USD$/).closest('button');
     expect(dollarButton!.className).toContain('text-white');
   });
 
@@ -202,7 +196,7 @@ describe('ClientSettings', () => {
   it('shows notification status text', () => {
     renderSettings();
     // Mock returns translation keys - happy-dom may not have Notification API
-    const statusEl = screen.getByText(/notificationsDisabled|notificationsNotSupported/);
+    const statusEl = screen.getByText(/notificationsTrackingSub|notificationsNotSupported/);
     expect(statusEl).toBeInTheDocument();
   });
 
@@ -286,21 +280,20 @@ describe('ClientSettings', () => {
 
   // ─── Navigation ─────────────────────────────────────
 
-  it('navigates home when clicking back button in header', () => {
+  it('navigates to order history from the History tile', () => {
     renderSettings();
-    // The back arrow is the first button in the header
-    const allButtons = screen.getAllByRole('button');
-    fireEvent.click(allButtons[0]);
-    expect(mockPush).toHaveBeenCalledWith('/sites/test-restaurant');
+    fireEvent.click(screen.getByText('historyShort').closest('button')!);
+    expect(mockPush).toHaveBeenCalledWith('/sites/test-restaurant/orders?history=true');
   });
 
   // ─── Layout ─────────────────────────────────────────
 
-  it('main element uses bg-white background', () => {
+  it('root container uses the surface-alt background', () => {
     const { container } = renderSettings();
-    const main = container.querySelector('main');
-    expect(main).toBeTruthy();
-    expect(main!.className).toContain('bg-white');
+    // The page renders a <div> root (the single <main> landmark lives in the layout).
+    const root = container.firstElementChild as HTMLElement | null;
+    expect(root).toBeTruthy();
+    expect(root!.className).toContain('--color-surface-alt');
   });
 
   // ─── Translation keys used consistently ─────────────

@@ -4,11 +4,11 @@ import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
-import { getCachedTenant, getCachedMenuData } from '@/lib/cache';
+import { getCachedTenant, getCachedMenuData, toPublicTenant } from '@/lib/cache';
 
 export const revalidate = 30;
 
-// ─── SEO Metadata ─────────────────────────────────────────
+// - SEO Metadata -
 export async function generateMetadata({
   params,
 }: {
@@ -87,7 +87,7 @@ export default async function MenuDetailPage({
   return (
     <NextIntlClientProvider messages={messages}>
       <ClientMenuDetailPage
-        tenant={tenant}
+        tenant={toPublicTenant(tenant)}
         venues={venues}
         menus={menus}
         transversalMenus={transversalMenus}

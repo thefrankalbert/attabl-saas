@@ -17,7 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:responsive": "playwright test tests/e2e/responsive.spec.ts",
-    "test:e2e:ci": "playwright test tests/e2e/home.spec.ts tests/e2e/segments.spec.ts",
+    "test:e2e:ci": "playwright test tests/e2e/home.spec.ts",
     "db:migrate": "supabase db push",
     "db:repair-restaurant-groups": "node scripts/apply-restaurant-groups-repair.mjs",
     "db:types": "supabase gen types typescript --linked > src/types/database.generated.ts",

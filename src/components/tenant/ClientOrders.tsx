@@ -4,30 +4,18 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShoppingBag,
-  Loader2,
-  ChevronDown,
-  Pencil,
-  ArrowLeft,
-  BellRing,
-  X,
-  Users,
-  RotateCcw,
-} from 'lucide-react';
+import { ShoppingBag, ArrowLeft, ArrowRight, BellRing, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
+import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
+import { remainingItemCapacity } from '@/lib/utils/cart-display';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
-import OrderTracker from './OrderTracker';
 
 // --- Types --------------------------------------------------
 
@@ -45,6 +33,7 @@ interface RawOrderRow {
   order_number: string;
   status: string;
   total: number;
+  tip_amount: number | null;
   table_number: string | null;
   created_at: string;
   service_type: string | null;
@@ -65,10 +54,17 @@ interface OrderRecord {
   order_number: string;
   status: string;
   total: number;
+  tip_amount: number;
   table_number: string | null;
   items: OrderItem[];
   created_at: string;
   service_type: string | null;
+}
+
+// Grand total actually paid (the stored `total` excludes the tip, which is a
+// separate column - mirror the order detail / tracking screens).
+function grandTotal(o: { total: number; tip_amount: number }): number {
+  return o.total + o.tip_amount;
 }
 
 interface ClientOrdersProps {
@@ -81,10 +77,8 @@ interface ClientOrdersProps {
 
 // --- Constants ----------------------------------------------
 
-const EDIT_WINDOW_MS = 3 * 60 * 1000; // 3 minutes
-const EDITABLE_STATUSES = new Set(['pending']);
 const ACTIVE_STATUSES = new Set(['pending', 'confirmed', 'preparing', 'ready']);
-const TERMINAL_STATUSES = new Set(['delivered', 'served', 'cancelled']);
+const TERMINAL_STATUSES = new Set(['delivered', 'served', 'completed', 'cancelled']);
 
 // --- Helpers ------------------------------------------------
 
@@ -99,27 +93,6 @@ function getStoredOrderIds(tenantSlug: string): string[] {
   }
 }
 
-function isWithinEditWindow(createdAt: string): boolean {
-  return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
-}
-
-const ETA_WINDOW_MS: Record<string, number> = {
-  pending: 20 * 60 * 1000,
-  confirmed: 15 * 60 * 1000,
-  preparing: 10 * 60 * 1000,
-};
-
-function getEtaMinutes(status: string, createdAt: string): number | null {
-  const window = ETA_WINDOW_MS[status];
-  if (!window) return null;
-  const elapsed = Date.now() - new Date(createdAt).getTime();
-  return Math.max(0, Math.ceil((window - elapsed) / 60_000));
-}
-
-function shortOrderNumber(order: Pick<OrderRecord, 'order_number' | 'id'>): string {
-  return `#${(order.order_number || order.id).slice(-5).toUpperCase()}`;
-}
-
 // --- Component ----------------------------------------------
 
 export default function ClientOrders({
@@ -130,9 +103,6 @@ export default function ClientOrders({
 }: ClientOrdersProps) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [, setTick] = useState(0); // force re-render for countdown
   const supabaseRef = useRef(createClient());
   const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const t = useTranslations('tenant');
@@ -142,7 +112,7 @@ export default function ClientOrders({
   const dateLocale = locale.startsWith('fr') ? fr : undefined;
 
   const router = useRouter();
-  const { addToCart, clearCart } = useCart();
+  const { addToCart, items } = useCart();
   const { formatDisplayPrice } = useDisplayCurrency();
 
   // --- Load orders ------------------------------------------
@@ -164,7 +134,7 @@ export default function ClientOrders({
     supabase
       .from('orders')
       .select(
-        'id, order_number, status, total, table_number, created_at, service_type, order_items(item_name, item_name_en, quantity, price_at_order, menu_item_id, menu_items(image_url))',
+        'id, order_number, status, total, tip_amount, table_number, created_at, service_type, order_items(item_name, item_name_en, quantity, price_at_order, menu_item_id, menu_items(image_url))',
       )
       .eq('tenant_id', tenantId)
       .in('id', storedIds)
@@ -179,6 +149,7 @@ export default function ClientOrders({
             order_number: row.order_number,
             status: row.status,
             total: row.total,
+            tip_amount: row.tip_amount ?? 0,
             table_number: row.table_number,
             created_at: row.created_at,
             service_type: row.service_type,
@@ -245,19 +216,6 @@ export default function ClientOrders({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-subscribe only when active order count changes, not on every order object mutation (2026-05-04)
   }, [activeOrderIds.length, tenantId]);
 
-  // --- Countdown timer: edit window + ETA ------------------
-
-  useEffect(() => {
-    const hasEditable = orders.some(
-      (o) => EDITABLE_STATUSES.has(o.status) && isWithinEditWindow(o.created_at),
-    );
-    const hasActive = orders.some((o) => ACTIVE_STATUSES.has(o.status));
-    if (!hasEditable && !hasActive) return;
-
-    const interval = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(interval);
-  }, [orders]);
-
   // --- Track initial statuses for transition detection ------
 
   useEffect(() => {
@@ -268,68 +226,18 @@ export default function ClientOrders({
     }
   }, [orders]);
 
-  // --- Edit order handler -----------------------------------
-
-  const handleEditOrder = useCallback(
-    async (order: OrderRecord) => {
-      setEditingOrderId(order.id);
-      try {
-        const supabase = supabaseRef.current;
-
-        // Cancel the original order
-        const { error } = await supabase
-          .from('orders')
-          .update({ status: 'cancelled' })
-          .eq('id', order.id)
-          .eq('tenant_id', tenantId);
-
-        if (error) {
-          logger.error('Failed to cancel order for editing', error);
-          setEditingOrderId(null);
-          return;
-        }
-
-        // Clear cart and restore order items
-        clearCart();
-
-        // Small delay to ensure cart is cleared before adding items
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        for (const item of order.items) {
-          for (let i = 0; i < item.quantity; i++) {
-            addToCart(
-              {
-                id: item.menu_item_id || item.name,
-                name: item.name,
-                name_en: item.name_en,
-                price: item.price,
-                quantity: 1,
-              },
-              tenantId,
-              true,
-            );
-          }
-        }
-
-        // Navigate to cart
-        router.push(`/sites/${tenantSlug}/cart`);
-      } catch (err) {
-        logger.error('Error editing order', err);
-        setEditingOrderId(null);
-      }
-    },
-    [tenantId, tenantSlug, clearCart, addToCart, router],
-  );
-
   // --- Reorder handler: add all items to cart without cancelling --
 
   const handleReorder = useCallback(
     (order: OrderRecord) => {
       for (const item of order.items) {
-        for (let i = 0; i < item.quantity; i++) {
+        const key = item.menu_item_id || item.name;
+        const existingQty = items.find((l) => getCartItemKey(l) === key)?.quantity ?? 0;
+        const toAdd = Math.min(item.quantity, remainingItemCapacity(existingQty));
+        for (let i = 0; i < toAdd; i++) {
           addToCart(
             {
-              id: item.menu_item_id || item.name,
+              id: key,
               name: item.name,
               name_en: item.name_en,
               price: item.price,
@@ -342,7 +250,7 @@ export default function ClientOrders({
       }
       router.push(`/sites/${tenantSlug}/cart`);
     },
-    [addToCart, router, tenantId, tenantSlug],
+    [addToCart, items, router, tenantId, tenantSlug],
   );
 
   // --- Derive displayed orders based on mode -------
@@ -351,7 +259,9 @@ export default function ClientOrders({
     () =>
       showHistory
         ? orders.filter((o) => TERMINAL_STATUSES.has(o.status))
-        : orders.filter((o) => ACTIVE_STATUSES.has(o.status)),
+        : // Any non-terminal status (incl. unrecognized ones) shows as active,
+          // so no order can silently disappear from both tabs.
+          orders.filter((o) => !TERMINAL_STATUSES.has(o.status)),
     [orders, showHistory],
   );
 
@@ -426,234 +336,122 @@ export default function ClientOrders({
         </div>
       )}
 
-      {/* ALL active orders as expandable cards - no separate banner,
-          every order shows its tracker + can be expanded to see items */}
       {displayedOrders.map((order) => {
-        const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
-        const isEditing = editingOrderId === order.id;
-        const isExpanded = expandedOrderId === order.id;
         const isTerminal = TERMINAL_STATUSES.has(order.status);
+        const thumbs = (order.items || []).filter((i) => i.image_url).slice(0, 3);
+
+        if (isTerminal) {
+          const dateStr = format(new Date(order.created_at), 'dd MMM, HH:mm', {
+            locale: dateLocale,
+          });
+          const statusStr = order.status === 'cancelled' ? t('statusCancelled') : t('statusServed');
+          return (
+            <div
+              key={order.id}
+              className="relative flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white px-3.5 py-[13px]"
+            >
+              <Link
+                href={`/sites/${tenantSlug}/orders/${order.id}`}
+                className="absolute inset-0 rounded-[var(--radius-card)]"
+                aria-label={order.order_number}
+              />
+              <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[var(--radius-search)] bg-[var(--color-brand-light)]">
+                <Check
+                  className="h-[18px] w-[18px] text-[var(--color-brand-dark)]"
+                  strokeWidth={2.4}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-mono text-[12.5px] font-semibold tracking-[0.2px] text-[var(--color-ink)]">
+                  {order.order_number}
+                </div>
+                <div className="mt-px text-[11.5px] text-[var(--color-ink-muted)]">
+                  {dateStr} - {statusStr}
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <div className="text-[13px] font-bold tabular-nums text-[var(--color-ink)]">
+                  {formatDisplayPrice(grandTotal(order), currency)}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleReorder(order)}
+                  className="relative z-10 mt-0.5 h-auto p-0 text-[10.5px] font-semibold text-[var(--color-accent)] hover:bg-transparent"
+                >
+                  {t('reorderShort')}
+                </Button>
+              </div>
+            </div>
+          );
+        }
 
         return (
-          <div
+          <Link
             key={order.id}
-            className={cn(
-              'rounded-xl overflow-hidden bg-white border border-app-border',
-              !isTerminal && 'shadow-[var(--shadow-card)]',
-            )}
+            href={`/sites/${tenantSlug}/order-confirmed?orderId=${order.id}&view=tracking`}
+            className="block overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white"
           >
-            {/* Tappable header */}
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-              className="w-full p-0 h-auto rounded-none flex-col items-stretch justify-start gap-0 hover:bg-transparent active:bg-app-elevated"
-              aria-expanded={isExpanded}
-            >
-              {!isTerminal ? (
-                <>
-                  {/* Active - Row 1: order# (secondary) + status text (hero, black) */}
-                  <div className="px-4 pt-4 pb-0 flex items-start justify-between gap-3">
-                    <span className="text-[17px] font-bold text-app-text leading-tight">
-                      {activeStatusLabel[order.status] ?? order.status}
-                    </span>
-                    <span className="text-[12px] font-medium text-app-text-secondary shrink-0 pt-0.5">
-                      {shortOrderNumber(order)}
-                    </span>
+            <div className="px-4 pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] bg-[var(--color-brand-light)] px-2 py-[3px] font-mono text-[10.5px] font-medium uppercase tracking-[0.3px] text-[var(--color-brand-dark)]">
+                    <span className="track-pulse h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]" />
+                    {activeStatusLabel[order.status] ?? order.status}
+                  </span>
+                  <div className="mt-2 text-[18px] font-semibold tracking-[-0.5px] text-[var(--color-ink)]">
+                    {activeStatusLabel[order.status] ?? order.status}
                   </div>
-
-                  {/* Active - Row 2: ETA (muted, no chip) */}
-                  {order.status !== 'ready' &&
-                    (() => {
-                      const mins = getEtaMinutes(order.status, order.created_at);
-                      if (mins === null) return null;
-                      return (
-                        <div className="px-4 pt-1 pb-0">
-                          <span className="text-[13px] text-app-text-secondary">
-                            {mins <= 1 ? t('etaReady') : t('etaMinutes', { min: mins })}
-                          </span>
-                        </div>
-                      );
-                    })()}
-
-                  {/* Active - Row 3: tracker with labels (collapsed only) */}
-                  {!isExpanded && (
-                    <div className="px-4 pt-4 pb-1">
-                      <OrderTracker status={order.status} createdAt={order.created_at} />
-                    </div>
-                  )}
-
-                  {/* Active - Row 4: table info + total + chevron */}
-                  <div className="px-4 pt-3 pb-4 flex items-center justify-between gap-2">
-                    {order.table_number && order.service_type === 'dine-in' ? (
-                      <span className="inline-flex items-center gap-1 text-[12px] text-app-text-secondary">
-                        <Users className="w-3 h-3" />
-                        {t('tableLabel', { num: order.table_number })}
-                      </span>
-                    ) : (
-                      <span />
-                    )}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[15px] font-bold text-app-text">
-                        {formatDisplayPrice(order.total, currency)}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          'w-4 h-4 transition-transform text-app-text-muted',
-                          isExpanded && 'rotate-180',
-                        )}
-                      />
-                    </div>
+                  <div className="mt-px font-mono text-[11.5px] text-[var(--color-ink-muted)]">
+                    {order.order_number}
+                    {order.table_number ? ` - ${t('table')} ${order.table_number}` : ''}
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* Terminal - Row 1: order# + price */}
-                  <div className="px-4 pt-4 pb-0 flex items-center justify-between">
-                    <span className="text-[14px] font-semibold text-app-text">
-                      {shortOrderNumber(order)}
-                    </span>
-                    <span className="text-[15px] font-bold text-app-text">
-                      {formatDisplayPrice(order.total, currency)}
-                    </span>
+                </div>
+                {thumbs.length > 0 && (
+                  <div className="flex shrink-0">
+                    {thumbs.map((it, i) => (
+                      <div
+                        key={i}
+                        className="h-11 w-11 overflow-hidden rounded-[var(--radius-search)] border-2 border-white"
+                        style={{ marginLeft: i === 0 ? 0 : -14 }}
+                      >
+                        <Image
+                          src={it.image_url!}
+                          alt=""
+                          width={44}
+                          height={44}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Terminal - Row 2: status badge + date + chevron */}
-                  <div className="px-4 pt-2 pb-4 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <BadgeStatus status={order.status} />
-                      <span className="text-[12px] text-app-text-secondary truncate">
-                        {format(new Date(order.created_at), 'dd MMM, HH:mm', {
-                          locale: dateLocale,
-                        })}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={cn(
-                        'w-4 h-4 shrink-0 transition-transform text-app-text-muted',
-                        isExpanded && 'rotate-180',
-                      )}
-                    />
-                  </div>
-                </>
-              )}
-            </Button>
-
-            {/* Expanded details */}
-            <AnimatePresence initial={false}>
-              {isExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="border-t border-app-border">
-                    {/* Items with thumbnails */}
-                    <div>
-                      {(order.items || []).map((item, idx) => (
-                        <div
-                          key={`${item.menu_item_id || item.name}-${idx}`}
-                          className={cn(
-                            'px-4 py-3 flex items-center gap-3',
-                            idx < order.items.length - 1 && 'border-b border-app-border',
-                          )}
-                        >
-                          {/* Thumbnail 48x48 */}
-                          <div
-                            className="shrink-0 rounded-xl overflow-hidden w-12 h-12 bg-app-elevated border border-app-border flex items-center justify-center"
-                            aria-hidden
-                          >
-                            {item.image_url ? (
-                              <Image
-                                src={item.image_url}
-                                alt=""
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <ShoppingBag className="w-5 h-5 text-app-text-muted" />
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm font-semibold text-app-text">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-app-text-secondary">
-                              {item.quantity} x {formatDisplayPrice(item.price, currency)}
-                            </p>
-                          </div>
-
-                          <span className="whitespace-nowrap text-sm font-bold text-app-text">
-                            {formatDisplayPrice(item.price * item.quantity, currency)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Total */}
-                    <div className="px-4 py-3 flex items-center justify-between border-t border-app-border">
-                      <span className="text-[15px] font-bold text-app-text">{t('total')}</span>
-                      <span className="text-[15px] font-bold text-app-text">
-                        {formatDisplayPrice(order.total, currency)}
-                      </span>
-                    </div>
-
-                    {/* Date */}
-                    <div className="px-4 pb-3 text-[11px] text-app-text-muted">
-                      {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
-                        locale: dateLocale,
-                      })}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="px-4 pb-4 space-y-2">
-                      {canEdit && (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditOrder(order);
-                          }}
-                          disabled={isEditing}
-                          className="w-full h-12 rounded-xl bg-app-text text-white text-[15px] font-semibold hover:bg-black"
-                        >
-                          {isEditing ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Pencil className="w-4 h-4" />
-                              {t('editOrder')}
-                            </>
-                          )}
-                        </Button>
-                      )}
-
-                      {/* Reorder button for terminal orders */}
-                      {isTerminal && order.items.length > 0 && (
-                        <Button
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReorder(order);
-                          }}
-                          className="w-full h-12 rounded-xl bg-white border-app-border text-app-text text-[15px] font-semibold"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                          {t('reorder')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-[var(--color-divider)] bg-[var(--color-surface-alt)] px-4 py-[11px]">
+              <span className="text-[12.5px] font-semibold text-[var(--color-ink-2)]">
+                {t('trackLive')}
+              </span>
+              <ArrowRight className="h-[15px] w-[15px] text-[var(--color-ink-2)]" strokeWidth={2} />
+            </div>
+          </Link>
         );
       })}
 
-      {/* Terminal orders accessible from Account > Order History only */}
+      <style jsx>{`
+        @keyframes track-pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.35;
+          }
+        }
+        .track-pulse {
+          animation: track-pulse 1.6s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
@@ -689,35 +487,4 @@ function OrdersSkeleton() {
       ))}
     </div>
   );
-}
-
-function BadgeStatus({ status }: { status: string }) {
-  const t = useTranslations('tenant');
-
-  type BadgeVariant = 'warning' | 'info' | 'success' | 'destructive' | 'secondary';
-
-  const variantMap: Record<string, BadgeVariant> = {
-    pending: 'warning',
-    confirmed: 'info',
-    preparing: 'warning',
-    ready: 'success',
-    delivered: 'secondary',
-    served: 'secondary',
-    cancelled: 'destructive',
-  };
-
-  const labels: Record<string, string> = {
-    pending: t('statusPending'),
-    confirmed: t('statusConfirmed'),
-    preparing: t('trackerPreparing'),
-    ready: t('statusReady'),
-    delivered: t('statusDelivered'),
-    served: t('statusServed'),
-    cancelled: t('statusCancelled'),
-  };
-
-  const label = labels[status] ?? t('statusPending');
-  const variant: BadgeVariant = variantMap[status] ?? 'secondary';
-
-  return <Badge variant={variant}>{label}</Badge>;
 }

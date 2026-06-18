@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Scanner, type IDetectedBarcode } from '@yudiel/react-qr-scanner';
-import { X, Camera, CameraOff, CheckCircle2, RotateCcw, ScanLine } from 'lucide-react';
+import { X, Camera, CameraOff, RotateCcw, ScanLine, MapPin, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,10 @@ interface QRScannerProps {
   onClose: () => void;
   onScan: (result: QRScanResult) => void;
   tables?: Table[];
+  /** Shown on the confirmation card after a successful scan. */
+  tenantName?: string;
+  zoneName?: string;
+  isOpen_venue?: boolean;
 }
 
 // --- Parse QR code data ---
@@ -55,30 +59,36 @@ function parseQRData(decodedText: string): QRScanResult {
 }
 
 // --- Component ---
-export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScannerProps) {
+export default function QRScanner({
+  isOpen,
+  onClose,
+  onScan,
+  tables,
+  tenantName,
+  zoneName,
+  isOpen_venue,
+}: QRScannerProps) {
   const t = useTranslations('qrScanner');
   const manualInputRef = useRef<HTMLInputElement>(null);
-  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasScannedRef = useRef(false);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
+  const [scannedResult, setScannedResult] = useState<QRScanResult | null>(null);
 
   // Reset on open/close
   /* eslint-disable react-hooks/set-state-in-effect -- intentional: isOpen is an external prop boundary; full multi-field reset required on each open/close cycle; component persists across open/close so useState initializer is insufficient (2026-05-05) */
   useEffect(() => {
     if (!isOpen) {
-      if (successTimeoutRef.current) {
-        clearTimeout(successTimeoutRef.current);
-        successTimeoutRef.current = null;
-      }
       setScanStatus('loading');
       setMatchedTable(null);
+      setScannedResult(null);
       hasScannedRef.current = false;
       return;
     }
     hasScannedRef.current = false;
     setScanStatus('loading');
     setMatchedTable(null);
+    setScannedResult(null);
   }, [isOpen]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -88,13 +98,6 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
     const timer = setTimeout(() => setScanStatus('scanning'), 600);
     return () => clearTimeout(timer);
   }, [isOpen, scanStatus]);
-
-  // cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
-    };
-  }, []);
 
   const submitManualTable = useCallback(() => {
     const value = manualInputRef.current?.value.trim();
@@ -121,14 +124,19 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         if (found) setMatchedTable(found.table_number);
       }
 
+      // Maquette flow: show a confirmation card and let the user confirm the
+      // detected table (no auto-navigation).
+      setScannedResult(result);
       setScanStatus('success');
-      successTimeoutRef.current = setTimeout(() => {
-        onScan(result);
-        onClose();
-      }, 800);
     },
-    [onScan, onClose, tables],
+    [tables],
   );
+
+  const confirmScan = useCallback(() => {
+    if (!scannedResult) return;
+    onScan(scannedResult);
+    onClose();
+  }, [scannedResult, onScan, onClose]);
 
   const handleError = useCallback((error: unknown) => {
     const errStr = error instanceof Error ? error.message : String(error);
@@ -163,6 +171,11 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
       {/* Viewfinder overlay */}
       {(scanStatus === 'scanning' || scanStatus === 'success') && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          {scanStatus === 'success' && (
+            <p className="mb-9 text-center text-[20px] font-bold leading-tight tracking-[-0.3px] text-white">
+              {t('tableDetected')}
+            </p>
+          )}
           <div
             className="w-60 h-60"
             style={{
@@ -171,36 +184,69 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
               position: 'relative',
             }}
           >
-            {/* Corner brackets */}
-            <div className="absolute -top-px -left-px w-7 h-7 border-t-2 border-l-2 border-white rounded-tl" />
-            <div className="absolute -top-px -right-px w-7 h-7 border-t-2 border-r-2 border-white rounded-tr" />
-            <div className="absolute -bottom-px -left-px w-7 h-7 border-b-2 border-l-2 border-white rounded-bl" />
-            <div className="absolute -bottom-px -right-px w-7 h-7 border-b-2 border-r-2 border-white rounded-br" />
+            {/* Corner brackets (brand green per maquette) */}
+            <div className="absolute -top-px -left-px h-7 w-7 rounded-tl border-l-2 border-t-2 border-[var(--color-brand)]" />
+            <div className="absolute -top-px -right-px h-7 w-7 rounded-tr border-r-2 border-t-2 border-[var(--color-brand)]" />
+            <div className="absolute -bottom-px -left-px h-7 w-7 rounded-bl border-b-2 border-l-2 border-[var(--color-brand)]" />
+            <div className="absolute -bottom-px -right-px h-7 w-7 rounded-br border-b-2 border-r-2 border-[var(--color-brand)]" />
 
             {/* Scan line */}
             {scanStatus === 'scanning' && (
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent animate-[scan_2s_ease-in-out_infinite]" />
-            )}
-
-            {/* Success overlay */}
-            {scanStatus === 'success' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/15 rounded animate-[fadeIn_0.3s_ease-out]">
-                <CheckCircle2 className="w-14 h-14 text-white" />
-                {matchedTable && (
-                  <p className="text-white font-bold text-base mt-2 px-3 text-center">
-                    {t('tableMatched', { table: matchedTable })}
-                  </p>
-                )}
-              </div>
+              <div className="absolute left-0 right-0 top-0 h-px animate-[scan_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--color-brand)] to-transparent" />
             )}
           </div>
 
-          {/* Status text */}
-          <div className="mt-6 text-center px-8">
-            {scanStatus === 'scanning' && <p className="text-white/80 text-sm">{t('placeQR')}</p>}
-            {scanStatus === 'success' && (
-              <p className="text-white text-sm font-semibold">{t('success')}</p>
-            )}
+          {/* Status text (scanning hint) */}
+          {scanStatus === 'scanning' && (
+            <div className="mt-6 px-8 text-center">
+              <p className="text-sm text-white/80">{t('placeQR')}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation card (after a successful scan) */}
+      {scanStatus === 'success' && scannedResult && (
+        <div
+          className="absolute inset-x-0 bottom-0 z-20 animate-[fadeIn_0.3s_ease-out] px-3"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="mx-auto max-w-lg rounded-[var(--radius-modal)] bg-white p-3.5 shadow-[0_-2px_16px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center gap-3 px-1 pb-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-search)] bg-[var(--color-brand-light)]">
+                <MapPin className="h-5 w-5 text-[var(--color-brand-dark)]" />
+              </span>
+              <div className="min-w-0 flex-1">
+                {(tenantName || zoneName) && (
+                  <div className="truncate font-mono text-[11px] font-medium uppercase tracking-[0.4px] text-[var(--color-ink-muted)]">
+                    {[tenantName, zoneName].filter(Boolean).join(' - ')}
+                  </div>
+                )}
+                <div className="text-[17px] font-bold tracking-[-0.3px] text-[var(--color-ink)]">
+                  {scannedResult.tableNumber || matchedTable
+                    ? t('tableMatched', { table: matchedTable || scannedResult.tableNumber || '' })
+                    : t('tableDetected')}
+                </div>
+              </div>
+              {isOpen_venue !== undefined && (
+                <span
+                  className={
+                    isOpen_venue
+                      ? 'shrink-0 rounded-[var(--radius-tag)] bg-[var(--color-brand-light)] px-2 py-1 text-[11px] font-semibold text-[var(--color-brand-dark)]'
+                      : 'shrink-0 rounded-[var(--radius-tag)] bg-[var(--color-surface-alt)] px-2 py-1 text-[11px] font-semibold text-[var(--color-ink-muted)]'
+                  }
+                >
+                  {isOpen_venue ? t('venueOpen') : t('close')}
+                </span>
+              )}
+            </div>
+            <Button
+              onClick={confirmScan}
+              className="h-[54px] w-full justify-center gap-2 rounded-full bg-[var(--color-ink)] text-[15px] font-semibold text-white hover:bg-black"
+            >
+              {t('confirmTableCta')}
+              <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+            </Button>
           </div>
         </div>
       )}
