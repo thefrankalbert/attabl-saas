@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["src/components/ui/**"],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/app/**/page.tsx",
+        "src/app/**/layout.tsx",
+        "src/app/**/loading.tsx",
+        "src/app/**/error.tsx",
+        "src/app/**/global-error.tsx",
+        "src/app/**/not-found.tsx",
+        "src/app/**/route.ts",
+        "src/app/**/sitemap.ts",
+        "src/app/**/robots.ts",
+        "src/app/**/manifest.ts",
+        "src/app/actions/**/*.ts",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "tests/e2e/**/*.spec.ts",
+        "scripts/**/*.{ts,mjs,js}"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{ts,mjs,js}"]
+    }
+  }
+}

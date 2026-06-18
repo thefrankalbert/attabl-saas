@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Plus, Loader2, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,12 @@ import AdminModal from '@/components/admin/AdminModal';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
-import { createAnnouncementService } from '@/services/announcement.service';
+import {
+  actionCreateAnnouncement,
+  actionUpdateAnnouncement,
+  actionDeleteAnnouncement,
+  actionToggleAnnouncementActive,
+} from '@/app/actions/announcements';
 import { revalidateMenuCache } from '@/lib/revalidate';
 
 interface AnnouncementsClientProps {
@@ -55,7 +59,6 @@ export default function AnnouncementsClient({
   const t = useTranslations('announcements');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const supabase = createClient();
 
   const resetForm = () => {
     setEditingAnnouncement(null);
@@ -90,29 +93,39 @@ export default function AnnouncementsClient({
         is_active: isActive,
       };
 
-      const announcementService = createAnnouncementService(supabase);
       if (editingAnnouncement) {
-        const data = await announcementService.updateAnnouncement(editingAnnouncement.id, payload);
+        const result = await actionUpdateAnnouncement(tenantId, editingAnnouncement.id, payload);
+        if (result.error) {
+          logger.error('Failed to update announcement', result.error);
+          toast({
+            title: tc('error'),
+            description: result.error,
+            variant: 'destructive',
+          });
+          return;
+        }
         setAnnouncements((prev) =>
-          prev.map((a) => (a.id === editingAnnouncement.id ? (data as Announcement) : a)),
+          prev.map((a) => (a.id === editingAnnouncement.id ? (result.data as Announcement) : a)),
         );
         toast({ title: t('announcementUpdated') });
       } else {
-        const newAnnouncement = await announcementService.createAnnouncement(tenantId, payload);
-        setAnnouncements((prev) => [newAnnouncement as Announcement, ...prev]);
+        const result = await actionCreateAnnouncement(tenantId, payload);
+        if (result.error) {
+          logger.error('Failed to create announcement', result.error);
+          toast({
+            title: tc('error'),
+            description: result.error,
+            variant: 'destructive',
+          });
+          return;
+        }
+        setAnnouncements((prev) => [result.data as Announcement, ...prev]);
         toast({ title: t('announcementCreated') });
       }
 
       revalidateMenuCache(tenantSlug);
       setIsModalOpen(false);
       resetForm();
-    } catch (e: unknown) {
-      logger.error('Failed to save announcement', e);
-      toast({
-        title: tc('error'),
-        description: e instanceof Error ? e.message : tc('errorGeneric'),
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
@@ -129,24 +142,23 @@ export default function AnnouncementsClient({
   };
 
   const performDelete = async (id: string) => {
-    try {
-      const announcementService = createAnnouncementService(supabase);
-      await announcementService.deleteAnnouncement(id, tenantId);
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      if (editingAnnouncement?.id === id) {
-        setIsModalOpen(false);
-        resetForm();
-      }
-      toast({ title: t('announcementDeletedConfirm') });
-      revalidateMenuCache(tenantSlug);
-    } catch (e: unknown) {
-      logger.error('Failed to delete announcement', e, { announcementId: id, tenantId });
+    const result = await actionDeleteAnnouncement(tenantId, id);
+    if (result.error) {
+      logger.error('Failed to delete announcement', result.error, { announcementId: id, tenantId });
       toast({
         title: tc('error'),
-        description: e instanceof Error ? e.message : tc('errorGeneric'),
+        description: result.error,
         variant: 'destructive',
       });
+      return;
     }
+    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    if (editingAnnouncement?.id === id) {
+      setIsModalOpen(false);
+      resetForm();
+    }
+    toast({ title: t('announcementDeletedConfirm') });
+    revalidateMenuCache(tenantSlug);
   };
 
   const requestDelete = (id: string) => {
@@ -154,19 +166,22 @@ export default function AnnouncementsClient({
   };
 
   const toggleActive = async (announcement: Announcement) => {
-    try {
-      const announcementService = createAnnouncementService(supabase);
-      const data = await announcementService.toggleActive(announcement.id, !announcement.is_active);
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === announcement.id ? (data as Announcement) : a)),
-      );
-      revalidateMenuCache(tenantSlug);
-      toast({
-        title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
-      });
-    } catch {
+    const result = await actionToggleAnnouncementActive(
+      tenantId,
+      announcement.id,
+      !announcement.is_active,
+    );
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    setAnnouncements((prev) =>
+      prev.map((a) => (a.id === announcement.id ? (result.data as Announcement) : a)),
+    );
+    revalidateMenuCache(tenantSlug);
+    toast({
+      title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
+    });
   };
 
   return (

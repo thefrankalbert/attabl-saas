@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { Truck, Plus, Search, Pencil, Trash2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,7 +13,11 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import AdminModal from '@/components/admin/AdminModal';
-import { createSupplierService } from '@/services/supplier.service';
+import {
+  actionCreateSupplier,
+  actionUpdateSupplier,
+  actionDeleteSupplier,
+} from '@/app/actions/suppliers';
 import type { ColumnDef } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
@@ -48,9 +51,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const { toast } = useToast();
   const t = useTranslations('suppliers');
   const tc = useTranslations('common');
-  const supabase = createClient();
   const queryClient = useQueryClient();
-  const supplierService = createSupplierService(supabase);
 
   // TanStack Query for suppliers
   const { data: suppliers = [], isLoading: loading } = useSuppliers(tenantId);
@@ -194,7 +195,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openEdit/handleToggleActive/handleDelete are stable action handlers; the reactive values (t, deleteConfirm) are listed, and adding the handler identities would rebuild columns each render with no behavior change (2026-06-18)
     [t, deleteConfirm],
   );
 
@@ -240,10 +241,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           address: formAddress.trim() || undefined,
           notes: formNotes.trim() || undefined,
         };
-        await supplierService.createSupplier(tenantId, input);
+        const r = await actionCreateSupplier(tenantId, input);
+        if (r.error) throw new Error(r.error);
         toast({ title: t('supplierAdded') });
       } else if (modalMode === 'edit' && selectedSupplier) {
-        await supplierService.updateSupplier(selectedSupplier.id, tenantId, {
+        const r = await actionUpdateSupplier(tenantId, selectedSupplier.id, {
           name: formName.trim(),
           contact_name: formContact.trim() || null,
           phone: formPhone.trim() || null,
@@ -251,6 +253,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           address: formAddress.trim() || null,
           notes: formNotes.trim() || null,
         });
+        if (r.error) throw new Error(r.error);
         toast({ title: t('supplierModified') });
       }
       setModalMode(null);
@@ -263,9 +266,10 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
   const handleToggleActive = async (supplier: Supplier) => {
     try {
-      await supplierService.updateSupplier(supplier.id, tenantId, {
+      const r = await actionUpdateSupplier(tenantId, supplier.id, {
         is_active: !supplier.is_active,
       });
+      if (r.error) throw new Error(r.error);
       toast({ title: supplier.is_active ? t('supplierDisabled') : t('supplierEnabled') });
       loadSuppliers();
     } catch {
@@ -275,7 +279,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
   const handleDelete = async (supplierId: string) => {
     try {
-      await supplierService.deleteSupplier(supplierId, tenantId);
+      const r = await actionDeleteSupplier(tenantId, supplierId);
+      if (r.error) throw new Error(r.error);
       toast({ title: t('supplierDeleted') });
       setDeleteConfirm(null);
       loadSuppliers();

@@ -280,7 +280,7 @@ describe('ClientSettings', () => {
     renderSettings();
     fireEvent.click(screen.getByText('aboutLabel').closest('button')!);
     expect(screen.getByText('ATTABL')).toBeInTheDocument();
-    // appVersion appears in footer + modal — verify at least 2 occurrences
+    // appVersion appears in footer + modal - verify at least 2 occurrences
     expect(screen.getAllByText('appVersion').length).toBeGreaterThanOrEqual(2);
   });
 

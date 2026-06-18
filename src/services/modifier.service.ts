@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ItemModifier } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
 interface CreateModifierInput {
@@ -11,17 +12,23 @@ interface CreateModifierInput {
   display_order: number;
 }
 
+export interface ModifierService {
+  createModifier(data: CreateModifierInput): Promise<ItemModifier>;
+  deleteModifier(modifierId: string, tenantId: string): Promise<void>;
+  toggleAvailable(modifierId: string, isAvailable: boolean, tenantId: string): Promise<void>;
+}
+
 /**
  * Modifier service - handles item modifier CRUD operations.
  *
  * Used by ItemModifierEditor.
  */
-export function createModifierService(supabase: SupabaseClient) {
+export function createModifierService(supabase: SupabaseClient): ModifierService {
   return {
     /**
      * Create a new item modifier. Returns the created modifier.
      */
-    async createModifier(data: CreateModifierInput): Promise<unknown> {
+    async createModifier(data: CreateModifierInput): Promise<ItemModifier> {
       const { data: modifier, error } = await supabase
         .from('item_modifiers')
         .insert(data)
@@ -31,14 +38,18 @@ export function createModifierService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError('Erreur lors de la creation du modificateur', 'INTERNAL', error);
       }
-      return modifier;
+      return modifier as ItemModifier;
     },
 
     /**
-     * Delete an item modifier by ID.
+     * Delete an item modifier by ID, scoped to tenant.
      */
-    async deleteModifier(modifierId: string): Promise<void> {
-      const { error } = await supabase.from('item_modifiers').delete().eq('id', modifierId);
+    async deleteModifier(modifierId: string, tenantId: string): Promise<void> {
+      const { error } = await supabase
+        .from('item_modifiers')
+        .delete()
+        .eq('id', modifierId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression du modificateur', 'INTERNAL', error);
@@ -46,13 +57,18 @@ export function createModifierService(supabase: SupabaseClient) {
     },
 
     /**
-     * Toggle availability of an item modifier.
+     * Toggle availability of an item modifier, scoped to tenant.
      */
-    async toggleAvailable(modifierId: string, isAvailable: boolean): Promise<void> {
+    async toggleAvailable(
+      modifierId: string,
+      isAvailable: boolean,
+      tenantId: string,
+    ): Promise<void> {
       const { error } = await supabase
         .from('item_modifiers')
         .update({ is_available: isAvailable })
-        .eq('id', modifierId);
+        .eq('id', modifierId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError(

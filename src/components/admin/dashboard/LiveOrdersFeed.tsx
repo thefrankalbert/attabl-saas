@@ -115,7 +115,7 @@ export function LiveOrdersFeed({
             const itemsSummary = items
               .slice(0, 3)
               .map((i) => `${i.quantity}x ${i.name}`)
-              .join(' · ');
+              .join(' - ');
 
             return (
               <Link
@@ -144,7 +144,7 @@ export function LiveOrdersFeed({
                     </span>
                   </div>
                   <div className="mt-[3px] font-mono text-[11px] text-app-text-muted truncate">
-                    {order.table_number} · {itemsSummary || labels.statusDefault}
+                    {order.table_number} - {itemsSummary || labels.statusDefault}
                   </div>
                 </div>
                 <div className="text-right">

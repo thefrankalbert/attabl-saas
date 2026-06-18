@@ -2,8 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
-import { createInventoryService } from '@/services/inventory.service';
+import { actionAdjustStock } from '@/app/actions/inventory';
 import { useToast } from '@/components/ui/use-toast';
 import type { MovementType } from '@/types/inventory.types';
 
@@ -27,9 +26,9 @@ export function useAdjustStock(tenantId: string) {
   return useMutation({
     mutationKey: ['adjust-stock', tenantId],
     mutationFn: async (input: AdjustStockInput) => {
-      const supabase = createClient();
-      const inventoryService = createInventoryService(supabase);
-      return inventoryService.adjustStock(tenantId, input);
+      const r = await actionAdjustStock(tenantId, input);
+      if (r.error) throw new Error(r.error);
+      return r;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });

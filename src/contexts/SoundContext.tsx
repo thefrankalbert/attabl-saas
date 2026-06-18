@@ -189,7 +189,7 @@ export function SoundProvider({ children, notificationSoundId, tenantId }: Sound
     if (notificationSoundId && notificationSoundId !== currentSoundId) {
       setCurrentSoundId(notificationSoundId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-apply the prop ONLY when the prop changes; adding currentSoundId would overwrite a user's manual sound choice on every selection (2026-06-18)
   }, [notificationSoundId]);
 
   // Update audio src when sound changes, and preload

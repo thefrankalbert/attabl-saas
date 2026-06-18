@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PreparationZone } from '@/types/admin.types';
+import type { Category, PreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
 interface CreateCategoryInput {
@@ -24,12 +24,27 @@ interface UpdateCategoryInput {
   menu_id?: string | null;
 }
 
+export interface CategoryService {
+  createCategory(
+    data: CreateCategoryInput,
+    options?: { returning?: boolean },
+  ): Promise<Category | null>;
+  updateCategory(categoryId: string, data: UpdateCategoryInput): Promise<void>;
+  deleteCategory(categoryId: string, tenantId: string): Promise<void>;
+  assignCategoryToMenu(categoryId: string, menuId: string, tenantId: string): Promise<void>;
+  reorderCategories(
+    tenantId: string,
+    updates: { id: string; display_order: number }[],
+  ): Promise<void>;
+  isCategoryLinkedToMenu(categoryId: string, tenantId: string): Promise<boolean>;
+}
+
 /**
  * Category service - handles category CRUD operations.
  *
  * Used by CategoriesClient, MenuDetailClient, and WizardStepCategories.
  */
-export function createCategoryService(supabase: SupabaseClient) {
+export function createCategoryService(supabase: SupabaseClient): CategoryService {
   return {
     /**
      * Create a new category.
@@ -38,7 +53,7 @@ export function createCategoryService(supabase: SupabaseClient) {
     async createCategory(
       data: CreateCategoryInput,
       options?: { returning?: boolean },
-    ): Promise<unknown> {
+    ): Promise<Category | null> {
       if (options?.returning) {
         const { data: category, error } = await supabase
           .from('categories')
@@ -49,7 +64,7 @@ export function createCategoryService(supabase: SupabaseClient) {
         if (error) {
           throw new ServiceError('Erreur lors de la creation de la categorie', 'INTERNAL', error);
         }
-        return category;
+        return category as Category;
       }
 
       const { error } = await supabase.from('categories').insert([data]);
@@ -63,7 +78,14 @@ export function createCategoryService(supabase: SupabaseClient) {
      * Update an existing category.
      */
     async updateCategory(categoryId: string, data: UpdateCategoryInput): Promise<void> {
-      const { error } = await supabase.from('categories').update(data).eq('id', categoryId);
+      // Double-scope the write: filter by id AND the tenant_id carried in the
+      // validated payload (the caller sets data.tenant_id to the session tenant).
+      // Belt-and-suspenders alongside RLS.
+      const { error } = await supabase
+        .from('categories')
+        .update(data)
+        .eq('id', categoryId)
+        .eq('tenant_id', data.tenant_id);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour de la categorie', 'INTERNAL', error);
@@ -71,10 +93,14 @@ export function createCategoryService(supabase: SupabaseClient) {
     },
 
     /**
-     * Delete a category by ID.
+     * Delete a category by ID, scoped to tenant.
      */
-    async deleteCategory(categoryId: string): Promise<void> {
-      const { error } = await supabase.from('categories').delete().eq('id', categoryId);
+    async deleteCategory(categoryId: string, tenantId: string): Promise<void> {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression de la categorie', 'INTERNAL', error);
@@ -82,13 +108,18 @@ export function createCategoryService(supabase: SupabaseClient) {
     },
 
     /**
-     * Assign an existing category to a menu by updating its menu_id.
+     * Assign an existing category to a menu by updating its menu_id, scoped to tenant.
      */
-    async assignCategoryToMenu(categoryId: string, menuId: string): Promise<void> {
+    async assignCategoryToMenu(
+      categoryId: string,
+      menuId: string,
+      tenantId: string,
+    ): Promise<void> {
       const { error } = await supabase
         .from('categories')
         .update({ menu_id: menuId })
-        .eq('id', categoryId);
+        .eq('id', categoryId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError("Erreur lors de l'assignation de la categorie", 'INTERNAL', error);

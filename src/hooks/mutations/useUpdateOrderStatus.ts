@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { actionUpdateOrderStatus } from '@/app/actions/orders';
 
 interface UpdateOrderStatusInput {
   orderId: string;
@@ -11,7 +11,7 @@ interface UpdateOrderStatusInput {
 }
 
 /**
- * Mutation to update an order's status.
+ * Mutation to update an order's status via server action.
  * Automatically invalidates orders and dashboard-stats queries on success.
  */
 export function useUpdateOrderStatus(tenantId: string) {
@@ -22,17 +22,9 @@ export function useUpdateOrderStatus(tenantId: string) {
   return useMutation({
     mutationKey: ['update-order-status', tenantId],
     mutationFn: async ({ orderId, status }: UpdateOrderStatusInput) => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      const result = await actionUpdateOrderStatus(tenantId, orderId, status);
+      if (result.error) throw new Error(result.error);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });

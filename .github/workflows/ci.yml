@@ -87,9 +87,11 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      # Gate 4: Unit tests (Vitest — services + Zod schemas)
-      - name: Test
-        run: pnpm test
+      # Gate 4: Unit tests + coverage gate (Vitest - services + Zod schemas)
+      # Runs coverage so the ratchet thresholds in vitest.config.ts actually gate PRs.
+      # Previously this ran `pnpm test`, leaving the thresholds decorative.
+      - name: Test (with coverage gate)
+        run: pnpm test:coverage
 
       # Gate 5: Next.js build
       - name: Build
@@ -116,3 +118,55 @@ jobs:
           # Upstash Redis (rate limiting)
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+
+  # E2E smoke tests (Playwright). Scoped to the DB-free marketing/landing specs
+  # (home + segments) which render without auth or a seeded database. The
+  # DB-backed specs (admin-dashboard, responsive) need a seeded test database
+  # and auth bypass; enabling them in CI is blocked on schema versioning
+  # (a versioned baseline so a test DB can be provisioned) and is tracked
+  # separately. The playwright config boots `pnpm dev` via its webServer block.
+  e2e:
+    name: E2E Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        run: pnpm test:e2e:ci
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}

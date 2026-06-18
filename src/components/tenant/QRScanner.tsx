@@ -144,7 +144,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
 
   return (
     <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-      {/* Camera feed — fills entire screen; library renders video in JSX, CSS works normally */}
+      {/* Camera feed - fills entire screen; library renders video in JSX, CSS works normally */}
       {scanStatus !== 'error' && (
         <Scanner
           onScan={handleScan}
@@ -205,7 +205,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         </div>
       )}
 
-      {/* Header — always on top */}
+      {/* Header - always on top */}
       <div
         className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5"
         style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)', paddingBottom: '16px' }}

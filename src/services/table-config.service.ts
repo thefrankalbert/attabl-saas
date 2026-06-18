@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Table, Zone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import type { ZoneInput } from '@/lib/validations/table-config.schema';
 
@@ -23,12 +24,161 @@ interface ZoneWithTables {
 const DEFAULT_CAPACITY = 2;
 
 /**
+ * Shape returned by the zone-ownership lookup (zone joined to its venue's tenant).
+ */
+interface ZoneOwnershipRow {
+  venue: { tenant_id: string } | { tenant_id: string }[] | null;
+}
+
+/**
+ * Shape returned by the table-ownership lookup (table -> zone -> venue's tenant).
+ */
+interface TableOwnershipRow {
+  zone:
+    | { venue: { tenant_id: string } | { tenant_id: string }[] | null }
+    | { venue: { tenant_id: string } | { tenant_id: string }[] | null }[]
+    | null;
+}
+
+/**
+ * Normalize the tenant_id out of a possibly-array embedded relation.
+ * Supabase typings allow embedded relations to be an object or an array.
+ */
+function extractTenantId(
+  venue: { tenant_id: string } | { tenant_id: string }[] | null | undefined,
+): string | null {
+  if (!venue) return null;
+  if (Array.isArray(venue)) {
+    return venue.length > 0 ? venue[0].tenant_id : null;
+  }
+  return venue.tenant_id;
+}
+
+/** A `zones` row (select '*') with the embedded venue tenant_id used by the !inner filter. */
+export type ZoneWithVenueRef = Zone & { venue: { tenant_id: string } };
+
+/** A `tables` row (select '*') with the embedded zone -> venue tenant_id. */
+export type TableWithZoneRef = Table & {
+  zone: { venue: { tenant_id: string } };
+};
+
+export interface TableConfigService {
+  generateTableNumber(prefix: string, index: number): string;
+  createZonesAndTables(
+    tenantId: string,
+    venueId: string,
+    zones: ZoneInput[],
+  ): Promise<ZoneWithTables[]>;
+  createDefaultConfig(
+    tenantId: string,
+    venueId: string,
+    tableCount: number,
+  ): Promise<ZoneWithTables>;
+  addTablesToZone(
+    tenantId: string,
+    zoneId: string,
+    prefix: string,
+    count: number,
+    capacity?: number,
+  ): Promise<TableRow[]>;
+  createZone(
+    tenantId: string,
+    venueId: string,
+    name: string,
+    prefix: string,
+    displayOrder: number,
+  ): Promise<void>;
+  updateZoneName(tenantId: string, zoneId: string, name: string): Promise<void>;
+  deleteZone(tenantId: string, zoneId: string): Promise<void>;
+  insertTables(
+    tenantId: string,
+    tables: Array<{
+      zone_id: string;
+      table_number: string;
+      display_name: string;
+      capacity: number;
+      is_active: boolean;
+    }>,
+  ): Promise<void>;
+  toggleTableActive(tenantId: string, tableId: string, isActive: boolean): Promise<void>;
+  updateTableCapacity(tenantId: string, tableId: string, capacity: number): Promise<void>;
+  updateTableDisplayName(tenantId: string, tableId: string, displayName: string): Promise<void>;
+  deleteTable(tenantId: string, tableId: string): Promise<void>;
+  listZonesForVenue(tenantId: string, venueId: string): Promise<ZoneWithVenueRef[]>;
+  listTablesForZone(tenantId: string, zoneId: string): Promise<TableWithZoneRef[]>;
+}
+
+/**
  * Service for managing restaurant zones and table configurations.
  *
  * Handles bulk creation from onboarding, default configurations,
  * and incremental table additions with auto-numbering.
  */
-export function createTableConfigService(supabase: SupabaseClient) {
+export function createTableConfigService(supabase: SupabaseClient): TableConfigService {
+  /**
+   * Ownership guard: confirm a venue belongs to the verified tenant.
+   * Throws NOT_FOUND if the venue does not resolve to tenantId, so a foreign
+   * venueId can never be used as a write target (defense beyond RLS).
+   */
+  async function assertVenueOwnedByTenant(tenantId: string, venueId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('venues')
+      .select('id')
+      .eq('id', venueId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (error) {
+      throw new ServiceError(`Erreur verification venue: ${error.message}`, 'INTERNAL', error);
+    }
+    if (!data) {
+      throw new ServiceError('Venue introuvable pour ce tenant', 'NOT_FOUND');
+    }
+  }
+
+  /**
+   * Ownership guard: confirm a zone belongs to the verified tenant via
+   * zone.venue_id -> venues.tenant_id. Throws NOT_FOUND on mismatch so a
+   * foreign zoneId can never be used as a write target.
+   */
+  async function assertZoneOwnedByTenant(tenantId: string, zoneId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('zones')
+      .select('venue:venues!inner(tenant_id)')
+      .eq('id', zoneId)
+      .maybeSingle<ZoneOwnershipRow>();
+
+    if (error) {
+      throw new ServiceError(`Erreur verification zone: ${error.message}`, 'INTERNAL', error);
+    }
+    if (!data || extractTenantId(data.venue) !== tenantId) {
+      throw new ServiceError('Zone introuvable pour ce tenant', 'NOT_FOUND');
+    }
+  }
+
+  /**
+   * Ownership guard: confirm a table belongs to the verified tenant via
+   * table.zone_id -> zones -> venues.tenant_id. Throws NOT_FOUND on mismatch
+   * so a foreign tableId can never be used as a write target.
+   */
+  async function assertTableOwnedByTenant(tenantId: string, tableId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('tables')
+      .select('zone:zones!inner(venue:venues!inner(tenant_id))')
+      .eq('id', tableId)
+      .maybeSingle<TableOwnershipRow>();
+
+    if (error) {
+      throw new ServiceError(`Erreur verification table: ${error.message}`, 'INTERNAL', error);
+    }
+
+    const zone = data?.zone;
+    const venue = Array.isArray(zone) ? zone[0]?.venue : zone?.venue;
+    if (!data || extractTenantId(venue) !== tenantId) {
+      throw new ServiceError('Table introuvable pour ce tenant', 'NOT_FOUND');
+    }
+  }
+
   return {
     /**
      * Generate a table number from a prefix and index.
@@ -148,6 +298,9 @@ export function createTableConfigService(supabase: SupabaseClient) {
       count: number,
       capacity: number = DEFAULT_CAPACITY,
     ): Promise<TableRow[]> {
+      // 0. Ownership guard: zone must belong to the verified tenant
+      await assertZoneOwnedByTenant(tenantId, zoneId);
+
       // 1. Find the max existing table number for this prefix
       const { data: maxTable } = await supabase
         .from('tables')
@@ -200,15 +353,20 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Create a single zone for a venue.
+     * Guarded: the venue must belong to the verified tenant.
      */
     async createZone(
+      tenantId: string,
       venueId: string,
       name: string,
       prefix: string,
       displayOrder: number,
     ): Promise<void> {
+      await assertVenueOwnedByTenant(tenantId, venueId);
+
       const { error } = await supabase.from('zones').insert([
         {
+          tenant_id: tenantId,
           venue_id: venueId,
           name,
           prefix: prefix.toUpperCase(),
@@ -223,8 +381,11 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Update a zone's name.
+     * Guarded: the zone must belong to the verified tenant.
      */
-    async updateZoneName(zoneId: string, name: string): Promise<void> {
+    async updateZoneName(tenantId: string, zoneId: string, name: string): Promise<void> {
+      await assertZoneOwnedByTenant(tenantId, zoneId);
+
       const { error } = await supabase.from('zones').update({ name }).eq('id', zoneId);
 
       if (error) {
@@ -234,8 +395,11 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Delete a zone by ID.
+     * Guarded: the zone must belong to the verified tenant.
      */
-    async deleteZone(zoneId: string): Promise<void> {
+    async deleteZone(tenantId: string, zoneId: string): Promise<void> {
+      await assertZoneOwnedByTenant(tenantId, zoneId);
+
       const { error } = await supabase.from('zones').delete().eq('id', zoneId);
 
       if (error) {
@@ -244,9 +408,12 @@ export function createTableConfigService(supabase: SupabaseClient) {
     },
 
     /**
-     * Insert multiple tables into a zone.
+     * Insert multiple tables into one or more zones.
+     * Guarded: every target zone must belong to the verified tenant, so a
+     * foreign zone_id in the batch is rejected before any write.
      */
     async insertTables(
+      tenantId: string,
       tables: Array<{
         zone_id: string;
         table_number: string;
@@ -255,6 +422,28 @@ export function createTableConfigService(supabase: SupabaseClient) {
         is_active: boolean;
       }>,
     ): Promise<void> {
+      const uniqueZoneIds = Array.from(new Set(tables.map((t) => t.zone_id)));
+
+      const { data: ownedZones, error: zonesError } = await supabase
+        .from('zones')
+        .select('id, venue:venues!inner(tenant_id)')
+        .in('id', uniqueZoneIds)
+        .eq('venues.tenant_id', tenantId);
+
+      if (zonesError) {
+        throw new ServiceError(
+          `Erreur verification zones: ${zonesError.message}`,
+          'INTERNAL',
+          zonesError,
+        );
+      }
+
+      const ownedZoneIds = new Set(((ownedZones as Array<{ id: string }>) ?? []).map((z) => z.id));
+      const hasForeignZone = uniqueZoneIds.some((id) => !ownedZoneIds.has(id));
+      if (hasForeignZone) {
+        throw new ServiceError('Zone introuvable pour ce tenant', 'NOT_FOUND');
+      }
+
       const { error } = await supabase.from('tables').insert(tables);
 
       if (error) {
@@ -264,8 +453,11 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Toggle the is_active flag on a table.
+     * Guarded: the table must belong to the verified tenant.
      */
-    async toggleTableActive(tableId: string, isActive: boolean): Promise<void> {
+    async toggleTableActive(tenantId: string, tableId: string, isActive: boolean): Promise<void> {
+      await assertTableOwnedByTenant(tenantId, tableId);
+
       const { error } = await supabase
         .from('tables')
         .update({ is_active: isActive })
@@ -278,8 +470,11 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Update a table's capacity.
+     * Guarded: the table must belong to the verified tenant.
      */
-    async updateTableCapacity(tableId: string, capacity: number): Promise<void> {
+    async updateTableCapacity(tenantId: string, tableId: string, capacity: number): Promise<void> {
+      await assertTableOwnedByTenant(tenantId, tableId);
+
       const { error } = await supabase.from('tables').update({ capacity }).eq('id', tableId);
 
       if (error) {
@@ -289,8 +484,15 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Update a table's display name.
+     * Guarded: the table must belong to the verified tenant.
      */
-    async updateTableDisplayName(tableId: string, displayName: string): Promise<void> {
+    async updateTableDisplayName(
+      tenantId: string,
+      tableId: string,
+      displayName: string,
+    ): Promise<void> {
+      await assertTableOwnedByTenant(tenantId, tableId);
+
       const { error } = await supabase
         .from('tables')
         .update({ display_name: displayName })
@@ -303,8 +505,11 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * Delete a table by ID.
+     * Guarded: the table must belong to the verified tenant.
      */
-    async deleteTable(tableId: string): Promise<void> {
+    async deleteTable(tenantId: string, tableId: string): Promise<void> {
+      await assertTableOwnedByTenant(tenantId, tableId);
+
       const { error } = await supabase.from('tables').delete().eq('id', tableId);
 
       if (error) {
@@ -317,7 +522,7 @@ export function createTableConfigService(supabase: SupabaseClient) {
      * Filters by venue's tenant to enforce multi-tenant isolation even if
      * a venueId leaks or is guessed (defense-in-depth beyond RLS).
      */
-    async listZonesForVenue(tenantId: string, venueId: string): Promise<unknown[]> {
+    async listZonesForVenue(tenantId: string, venueId: string): Promise<ZoneWithVenueRef[]> {
       const { data, error } = await supabase
         .from('zones')
         .select('*, venue:venues!inner(tenant_id)')
@@ -328,14 +533,14 @@ export function createTableConfigService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError(`Erreur chargement zones: ${error.message}`, 'INTERNAL', error);
       }
-      return (data as unknown[]) || [];
+      return (data as ZoneWithVenueRef[]) || [];
     },
 
     /**
      * List all tables for a zone (ordered by table_number).
      * Filters by the zone's venue's tenant for multi-tenant isolation.
      */
-    async listTablesForZone(tenantId: string, zoneId: string): Promise<unknown[]> {
+    async listTablesForZone(tenantId: string, zoneId: string): Promise<TableWithZoneRef[]> {
       const { data, error } = await supabase
         .from('tables')
         .select('*, zone:zones!inner(venue:venues!inner(tenant_id))')
@@ -346,7 +551,7 @@ export function createTableConfigService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError(`Erreur chargement tables: ${error.message}`, 'INTERNAL', error);
       }
-      return (data as unknown[]) || [];
+      return (data as TableWithZoneRef[]) || [];
     },
   };
 }

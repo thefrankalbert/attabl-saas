@@ -16,8 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
-import { createOrderService } from '@/services/order.service';
+import { actionMarkOrderPaid } from '@/app/actions/orders';
 import { formatCurrency } from '@/lib/utils/currency';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, CurrencyCode } from '@/types/admin.types';
@@ -157,8 +156,13 @@ export default function PaymentModal({
     try {
       if (order?.id) {
         try {
-          const service = createOrderService(createClient());
-          await service.markPaid(order.id, order.tenant_id, { method, tipAmount });
+          const result = await actionMarkOrderPaid(
+            order.tenant_id,
+            order.id,
+            method,
+            tipAmount > 0 ? tipAmount : undefined,
+          );
+          if (result.error) throw new Error(result.error);
         } catch (paymentError) {
           const description = paymentError instanceof Error ? paymentError.message : undefined;
           toast({ title: t('paymentError'), description, variant: 'destructive' });

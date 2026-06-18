@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -92,6 +92,12 @@ export function useDashboardData({
   const queryClient = useQueryClient();
   const { play: playNotification } = useSound();
 
+  // Coalesce bursts of realtime events into a single refetch. During service the
+  // dashboard receives hundreds of order/ingredient events per hour; without this,
+  // each one would re-run the full 8-query bundle. A short debounce keeps the
+  // dashboard fresh within ~1s of the last change while collapsing storms into one.
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
   const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
@@ -132,6 +138,19 @@ export function useDashboardData({
   };
 
   useEffect(() => {
+    // Debounced refetch: schedule a single invalidation that fires once the event
+    // burst settles. Repeated events within the window reset the timer, so N events
+    // collapse into 1 refetch instead of N x 8 queries.
+    const scheduleRefetch = (): void => {
+      if (refetchTimerRef.current !== null) {
+        clearTimeout(refetchTimerRef.current);
+      }
+      refetchTimerRef.current = setTimeout(() => {
+        refetchTimerRef.current = null;
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+      }, 800);
+    };
+
     const channel = supabase
       .channel(`dashboard-${tenantId}`)
       .on(
@@ -143,8 +162,9 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
+          // Notification is per-order (immediate); only the refetch is debounced.
           playNotification();
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .on(
@@ -156,7 +176,7 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .on(
@@ -168,7 +188,7 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .subscribe();
@@ -185,12 +205,16 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .subscribe();
 
     return () => {
+      if (refetchTimerRef.current !== null) {
+        clearTimeout(refetchTimerRef.current);
+        refetchTimerRef.current = null;
+      }
       channel.unsubscribe();
       stockChannel.unsubscribe();
       supabase.removeChannel(channel);

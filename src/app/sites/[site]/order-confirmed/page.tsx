@@ -72,7 +72,8 @@ function OrderConfirmedContent() {
       }
     }, 2000);
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: one-shot 2s success animation + permission prompt on mount; adding permissionState/requestPermission would restart the timer on every permission change (2026-06-18)
+  }, []);
 
   // Fetch order details
   useEffect(() => {

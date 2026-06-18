@@ -120,11 +120,11 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
           style={{ color: 'var(--cc-text-3)' }}
         >
           <span>{statusLabel}</span>
-          <span style={{ color: 'var(--cc-text-3)' }}>·</span>
+          <span style={{ color: 'var(--cc-text-3)' }}>-</span>
           <span className="cc-mono">{formatTime(order.created_at)}</span>
           {showTenant && order.tenant_name && (
             <>
-              <span style={{ color: 'var(--cc-text-3)' }}>·</span>
+              <span style={{ color: 'var(--cc-text-3)' }}>-</span>
               <span className="truncate">{order.tenant_name}</span>
             </>
           )}

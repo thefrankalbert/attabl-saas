@@ -452,7 +452,7 @@ export default function ClientOrders({
             >
               {!isTerminal ? (
                 <>
-                  {/* Active — Row 1: order# (secondary) + status text (hero, black) */}
+                  {/* Active - Row 1: order# (secondary) + status text (hero, black) */}
                   <div className="px-4 pt-4 pb-0 flex items-start justify-between gap-3">
                     <span className="text-[17px] font-bold text-app-text leading-tight">
                       {activeStatusLabel[order.status] ?? order.status}
@@ -462,7 +462,7 @@ export default function ClientOrders({
                     </span>
                   </div>
 
-                  {/* Active — Row 2: ETA (muted, no chip) */}
+                  {/* Active - Row 2: ETA (muted, no chip) */}
                   {order.status !== 'ready' &&
                     (() => {
                       const mins = getEtaMinutes(order.status, order.created_at);
@@ -476,14 +476,14 @@ export default function ClientOrders({
                       );
                     })()}
 
-                  {/* Active — Row 3: tracker with labels (collapsed only) */}
+                  {/* Active - Row 3: tracker with labels (collapsed only) */}
                   {!isExpanded && (
                     <div className="px-4 pt-4 pb-1">
                       <OrderTracker status={order.status} createdAt={order.created_at} />
                     </div>
                   )}
 
-                  {/* Active — Row 4: table info + total + chevron */}
+                  {/* Active - Row 4: table info + total + chevron */}
                   <div className="px-4 pt-3 pb-4 flex items-center justify-between gap-2">
                     {order.table_number && order.service_type === 'dine-in' ? (
                       <span className="inline-flex items-center gap-1 text-[12px] text-app-text-secondary">
@@ -508,7 +508,7 @@ export default function ClientOrders({
                 </>
               ) : (
                 <>
-                  {/* Terminal — Row 1: order# + price */}
+                  {/* Terminal - Row 1: order# + price */}
                   <div className="px-4 pt-4 pb-0 flex items-center justify-between">
                     <span className="text-[14px] font-semibold text-app-text">
                       {shortOrderNumber(order)}
@@ -518,7 +518,7 @@ export default function ClientOrders({
                     </span>
                   </div>
 
-                  {/* Terminal — Row 2: status badge + date + chevron */}
+                  {/* Terminal - Row 2: status badge + date + chevron */}
                   <div className="px-4 pt-2 pb-4 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <BadgeStatus status={order.status} />

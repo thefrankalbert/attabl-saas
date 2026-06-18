@@ -20,11 +20,37 @@ interface CreateSuggestionInput {
 }
 
 /**
+ * An active `item_suggestions` row (select '*') joined to the source and
+ * target menu-item names for display.
+ */
+export interface ActiveSuggestionRow {
+  id: string;
+  tenant_id: string;
+  menu_item_id: string;
+  suggested_item_id: string;
+  suggestion_type: SuggestionType;
+  description: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  menu_item: { name: string } | null;
+  suggested_item: { name: string } | null;
+}
+
+/**
  * Suggestion service - handles item suggestion CRUD and auto-generation.
  *
  * Used by SuggestionsClient.
  */
-export function createSuggestionService(supabase: SupabaseClient) {
+export interface SuggestionService {
+  createSuggestion(data: CreateSuggestionInput): Promise<void>;
+  deactivateSuggestion(suggestionId: string, tenantId: string): Promise<void>;
+  bulkDeactivateSuggestions(suggestionIds: string[], tenantId: string): Promise<void>;
+  listAvailableItems(tenantId: string): Promise<{ id: string; name: string }[]>;
+  listActiveSuggestions(tenantId: string): Promise<ActiveSuggestionRow[]>;
+}
+
+export function createSuggestionService(supabase: SupabaseClient): SuggestionService {
   return {
     /**
      * Create a manual suggestion.
@@ -38,13 +64,14 @@ export function createSuggestionService(supabase: SupabaseClient) {
     },
 
     /**
-     * Soft-delete a suggestion by setting is_active to false.
+     * Soft-delete a suggestion by setting is_active to false, scoped to tenant.
      */
-    async deactivateSuggestion(suggestionId: string): Promise<void> {
+    async deactivateSuggestion(suggestionId: string, tenantId: string): Promise<void> {
       const { error } = await supabase
         .from('item_suggestions')
         .update({ is_active: false })
-        .eq('id', suggestionId);
+        .eq('id', suggestionId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression de la suggestion', 'INTERNAL', error);
@@ -52,13 +79,14 @@ export function createSuggestionService(supabase: SupabaseClient) {
     },
 
     /**
-     * Bulk soft-delete suggestions by setting is_active to false.
+     * Bulk soft-delete suggestions by setting is_active to false, scoped to tenant.
      */
-    async bulkDeactivateSuggestions(suggestionIds: string[]): Promise<void> {
+    async bulkDeactivateSuggestions(suggestionIds: string[], tenantId: string): Promise<void> {
       const { error } = await supabase
         .from('item_suggestions')
         .update({ is_active: false })
-        .in('id', suggestionIds);
+        .in('id', suggestionIds)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la suppression des suggestions', 'INTERNAL', error);
@@ -85,7 +113,7 @@ export function createSuggestionService(supabase: SupabaseClient) {
      * List active suggestions for a tenant with joined source/target
      * menu item names for display.
      */
-    async listActiveSuggestions(tenantId: string): Promise<unknown[]> {
+    async listActiveSuggestions(tenantId: string): Promise<ActiveSuggestionRow[]> {
       const { data, error } = await supabase
         .from('item_suggestions')
         .select(
@@ -97,7 +125,7 @@ export function createSuggestionService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError('Erreur lors du chargement des suggestions', 'INTERNAL', error);
       }
-      return (data as unknown[]) || [];
+      return (data as ActiveSuggestionRow[]) || [];
     },
   };
 }

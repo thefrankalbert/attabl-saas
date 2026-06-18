@@ -256,7 +256,7 @@ export function OverviewChart({
             </div>
             {hovered.prev !== undefined && hovered.prev > 0 && (
               <div className="text-[10px] text-app-text-muted font-mono mt-1">
-                {hoveredDelta >= 0 ? '▲' : '▼'} {Math.abs(hoveredDelta)}% ·{' '}
+                {hoveredDelta >= 0 ? '▲' : '▼'} {Math.abs(hoveredDelta)}% -{' '}
                 {formatValue(hovered.prev)}
               </div>
             )}

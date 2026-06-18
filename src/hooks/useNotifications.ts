@@ -4,6 +4,10 @@ import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import {
+  actionMarkNotificationRead,
+  actionMarkAllNotificationsRead,
+} from '@/app/actions/notifications';
 
 export interface Notification {
   id: string;
@@ -76,21 +80,19 @@ export function useNotifications({
 
   const markAsRead = useCallback(
     async (notificationId: string) => {
-      const supabase = createClient();
-      await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
+      await actionMarkNotificationRead(tenantId, notificationId);
       queryClient.invalidateQueries({ queryKey });
     },
-    [queryClient, queryKey],
+    [tenantId, queryClient, queryKey],
   );
 
   const markAllAsRead = useCallback(async () => {
-    const supabase = createClient();
     const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     if (unreadIds.length === 0) return;
 
-    await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    await actionMarkAllNotificationsRead(tenantId, unreadIds);
     queryClient.invalidateQueries({ queryKey });
-  }, [notifications, queryClient, queryKey]);
+  }, [tenantId, notifications, queryClient, queryKey]);
 
   return {
     notifications,

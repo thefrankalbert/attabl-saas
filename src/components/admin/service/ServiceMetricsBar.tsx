@@ -81,7 +81,7 @@ export function ServiceMetricsBar({ tables, avgDurationMin, labels }: Props) {
         label={labels.occupationRate}
         value={String(occPct)}
         unit="%"
-        sub={`${occ} ${labels.occupiedSummary} · ${free} ${labels.freeSummary}${reserved > 0 ? ` · ${reserved} ${labels.reservedSummary}` : ''}${cleaning > 0 ? ` · ${cleaning} ${labels.cleaningSummary}` : ''}`}
+        sub={`${occ} ${labels.occupiedSummary} - ${free} ${labels.freeSummary}${reserved > 0 ? ` - ${reserved} ${labels.reservedSummary}` : ''}${cleaning > 0 ? ` - ${cleaning} ${labels.cleaningSummary}` : ''}`}
         barPct={occPct}
       />
       <Tile

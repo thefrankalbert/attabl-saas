@@ -257,7 +257,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: formatDateShort/formatTime derive only from locale (already a dep), so listing their identities is redundant and would rebuild columns needlessly (2026-06-18)
     [locale, t],
   );
 

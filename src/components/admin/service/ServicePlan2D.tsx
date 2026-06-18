@@ -151,7 +151,7 @@ export function ServicePlan2D({
       }}
     >
       <div className="absolute left-3 top-3 z-10 rounded-sm bg-app-bg px-2 py-0.5 text-[10px] font-semibold tracking-[1.5px] uppercase text-app-text-muted">
-        {zoneName} · {labels.roomPlanLabel}
+        {zoneName} - {labels.roomPlanLabel}
       </div>
 
       {editMode && (

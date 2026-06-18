@@ -44,7 +44,7 @@ function ResetPasswordContent() {
   const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  // If the URL already contains ?error=invalid_token the token is known-invalid — skip checking.
+  // If the URL already contains ?error=invalid_token the token is known-invalid - skip checking.
   const [checking, setChecking] = useState(searchParams.get('error') !== 'invalid_token');
 
   const form = useForm<ResetPasswordInput>({
@@ -67,7 +67,7 @@ function ResetPasswordContent() {
       }
     });
 
-    // If the URL has ?error=invalid_token, checking was already initialised to false — just cleanup.
+    // If the URL has ?error=invalid_token, checking was already initialised to false - just cleanup.
     if (searchParams.get('error') === 'invalid_token') {
       return () => subscription.unsubscribe();
     }

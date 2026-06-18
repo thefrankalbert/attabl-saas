@@ -4,8 +4,31 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
+import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { createOrderService } from '@/services/order.service';
+import { ServiceError } from '@/services/errors';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
+
+const updateOrderStatusSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  status: z.enum(['pending', 'preparing', 'ready', 'delivered', 'cancelled']),
+});
+
+const markOrderPaidSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  method: z.string().min(1).max(50),
+  tipAmount: z.number().min(0).optional(),
+});
+
+const updateItemStatusSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  itemIds: z.array(z.string().uuid()).min(1).max(200),
+  status: z.enum(['pending', 'preparing', 'ready', 'served']),
+});
 
 type ActionResponse = {
   success?: boolean;
@@ -105,4 +128,148 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
   }
 
   return { success: true, deletedCount: foundIds.length };
+}
+
+/**
+ * Updates the status of an order.
+ * Verifies the current user is a staff member (server or above) for the tenant.
+ */
+export async function actionUpdateOrderStatus(
+  tenantId: string,
+  orderId: string,
+  status: string,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = updateOrderStatusSchema.safeParse({ tenantId, orderId, status });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    await createOrderService(supabase).updateStatus(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      parsed.data.status,
+    );
+    return { success: true };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionUpdateOrderStatus: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Updates the kitchen item_status of one or more order_items belonging to an order.
+ * order_items has no tenant_id column, so isolation is enforced by first verifying
+ * the order belongs to the tenant (session-bound), then scoping the write by order_id:
+ * a foreign itemId cannot be written because it would not match order_id of a
+ * tenant-owned order.
+ */
+export async function actionUpdateItemStatus(
+  tenantId: string,
+  orderId: string,
+  itemIds: string[],
+  status: string,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = updateItemStatusSchema.safeParse({ tenantId, orderId, itemIds, status });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+
+    // Verify the order belongs to the verified tenant before touching its items.
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', parsed.data.orderId)
+      .eq('tenant_id', parsed.data.tenantId)
+      .maybeSingle();
+
+    if (orderError) {
+      logger.error('actionUpdateItemStatus: order lookup failed', orderError, {
+        tenantId,
+        orderId,
+      });
+      return { error: 'Erreur interne' };
+    }
+    if (!order) {
+      return { error: 'Commande introuvable' };
+    }
+
+    // Scope the write by order_id (tenant-owned) AND the targeted item ids.
+    const { error: updateError } = await supabase
+      .from('order_items')
+      .update({ item_status: parsed.data.status })
+      .eq('order_id', parsed.data.orderId)
+      .in('id', parsed.data.itemIds);
+
+    if (updateError) {
+      logger.error('actionUpdateItemStatus: update failed', updateError, { tenantId, orderId });
+      return { error: 'Erreur interne' };
+    }
+    return { success: true };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    logger.error('actionUpdateItemStatus: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Marks an order as paid.
+ * Verifies the current user is a staff member (server or above) for the tenant.
+ */
+export async function actionMarkOrderPaid(
+  tenantId: string,
+  orderId: string,
+  method: string,
+  tipAmount?: number,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = markOrderPaidSchema.safeParse({ tenantId, orderId, method, tipAmount });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    await createOrderService(supabase).markPaid(parsed.data.orderId, parsed.data.tenantId, {
+      method: parsed.data.method,
+      tipAmount: parsed.data.tipAmount,
+    });
+    return { success: true };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionMarkOrderPaid: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
 }

@@ -6,8 +6,9 @@ import {
   CACHE_TAG_TENANT_CONFIG,
   CACHE_TAG_TENANT_DOMAIN,
   tenantConfigTag,
+  tenantMenusTag,
 } from '@/lib/cache-tags';
-import type { Tenant } from '@/types/admin.types';
+import type { Category, Menu, MenuItem, Table, Tenant, Venue, Zone } from '@/types/admin.types';
 
 /**
  * Supabase client for use inside unstable_cache.
@@ -144,32 +145,184 @@ export const getCachedTenantByDomain = unstable_cache(
 );
 
 /**
- * Cached active menu structure for a tenant.
+ * Full client-facing menu payload for a single tenant.
  *
- * Returns all active menus ordered by display_order so that
- * client-facing pages can render the menu navigation without
- * hitting the DB on every page view.
+ * This is the heaviest read path in the product: every QR scan loads the
+ * customer menu, which needs venues, categories, menu items (with their
+ * modifiers), menus, transversal menus, zones and tables. Running these 7
+ * queries on every request does not scale.
  *
- * Cache key: `['menus', tenantId]`
- * Revalidation: 300 seconds OR on-demand via `revalidateTag('menus')`
+ * The whole payload is wrapped in `unstable_cache`, keyed by tenantId, so
+ * repeated scans for the same tenant are served from the Next.js data cache
+ * instead of hitting Supabase. The menu page itself stays dynamic (it reads
+ * headers()/searchParams for table/menu/section selection), but the expensive
+ * data fetch is isolated here and cached independently of the request.
+ *
+ * Tenant isolation: every query filters by `tenant_id`, and the cache is keyed
+ * + tagged per tenant, so one tenant's payload never leaks into another's.
+ *
+ * Cache key: `['menu-data', tenantId]`
+ * Revalidation: 30 seconds OR on-demand. The shared `CACHE_TAG_MENUS` tag is
+ * the same one menu/category server actions already revalidate, so structural
+ * edits flush this cache instantly; the 30s window bounds staleness for the
+ * remaining item/modifier edits (item availability also updates live via
+ * realtime on the client).
  */
-export const getCachedMenuStructure = unstable_cache(
-  async (tenantId: string) => {
-    const supabase = createCacheClient();
-    const { data, error } = await supabase
-      .from('menus')
-      .select('id, name, name_en, slug, is_active, display_order, venue_id')
-      .eq('tenant_id', tenantId)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
+export interface CachedMenuData {
+  venues: Venue[];
+  categories: Category[];
+  menuItems: MenuItem[];
+  menus: Menu[];
+  transversalMenus: Menu[];
+  zones: Zone[];
+  tables: Table[];
+}
 
-    if (error) {
-      logger.error('getCachedMenuStructure: failed to fetch menus', error, { tenantId });
-      return [];
-    }
+const EMPTY_MENU_DATA: CachedMenuData = {
+  venues: [],
+  categories: [],
+  menuItems: [],
+  menus: [],
+  transversalMenus: [],
+  zones: [],
+  tables: [],
+};
 
-    return data ?? [];
-  },
-  [CACHE_TAG_MENUS],
-  { revalidate: 300, tags: [CACHE_TAG_MENUS] },
-);
+/**
+ * Per-tenant cache factory for the full menu payload.
+ * Each tenantId gets its own unstable_cache instance with tenant-scoped tags,
+ * so revalidating one tenant's menu does not flush every tenant's payload.
+ */
+type CachedMenuDataFn = (tenantId: string) => Promise<CachedMenuData>;
+
+const menuDataCacheMap = new Map<string, CachedMenuDataFn>();
+
+function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
+  let cached = menuDataCacheMap.get(tenantId);
+  if (!cached) {
+    cached = unstable_cache(
+      async (id: string): Promise<CachedMenuData> => {
+        const supabase = createCacheClient();
+
+        const [
+          venuesResult,
+          categoriesResult,
+          menuItemsResult,
+          menusResult,
+          transversalMenusResult,
+          zonesResult,
+          tablesResult,
+        ] = await Promise.all([
+          supabase
+            .from('venues')
+            .select('id, tenant_id, name, name_en, slug, type, has_own_menu, is_active, created_at')
+            .eq('tenant_id', id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: true }),
+
+          supabase
+            .from('categories')
+            .select(
+              'id, tenant_id, menu_id, name, name_en, description, display_order, is_active, created_at, preparation_zone',
+            )
+            .eq('tenant_id', id)
+            .eq('is_active', true)
+            .order('display_order', { ascending: true }),
+
+          supabase
+            .from('menu_items')
+            .select(
+              `
+              id, tenant_id, category_id, name, name_en, description, description_en,
+              price, image_url, is_available, is_featured, allergens, calories, created_at,
+              category:categories(id, tenant_id, name, name_en, created_at),
+              modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
+            `,
+            )
+            .eq('tenant_id', id)
+            .is('deleted_at', null)
+            .eq('is_available', true)
+            .order('created_at', { ascending: true }),
+
+          supabase
+            .from('menus')
+            .select(
+              'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, description, is_active, display_order)',
+            )
+            .eq('tenant_id', id)
+            .eq('is_active', true)
+            .eq('is_transversal_menu', false)
+            .is('parent_menu_id', null)
+            .order('display_order', { ascending: true }),
+
+          supabase
+            .from('menus')
+            .select(
+              'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
+            )
+            .eq('tenant_id', id)
+            .eq('is_active', true)
+            .eq('is_transversal_menu', true)
+            .order('display_order', { ascending: true }),
+
+          supabase
+            .from('zones')
+            .select('id, venue_id, name, name_en, prefix, display_order, created_at')
+            .eq('tenant_id', id),
+
+          supabase
+            .from('tables')
+            .select(
+              'id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
+            )
+            .eq('tenant_id', id),
+        ]);
+
+        const firstError =
+          venuesResult.error ||
+          categoriesResult.error ||
+          menuItemsResult.error ||
+          menusResult.error ||
+          transversalMenusResult.error ||
+          zonesResult.error ||
+          tablesResult.error;
+
+        if (firstError) {
+          logger.error('getCachedMenuData: failed to fetch menu payload', firstError, {
+            tenantId: id,
+          });
+          // Throw so unstable_cache does not memoize an empty payload.
+          throw new Error(`getCachedMenuData failed for "${id}": ${firstError.message}`);
+        }
+
+        return {
+          venues: (venuesResult.data ?? []) as unknown as Venue[],
+          categories: (categoriesResult.data ?? []) as unknown as Category[],
+          menuItems: (menuItemsResult.data ?? []) as unknown as MenuItem[],
+          menus: (menusResult.data ?? []) as unknown as Menu[],
+          transversalMenus: (transversalMenusResult.data ?? []) as unknown as Menu[],
+          zones: (zonesResult.data ?? []) as unknown as Zone[],
+          tables: (tablesResult.data ?? []) as unknown as Table[],
+        };
+      },
+      [`${CACHE_TAG_MENUS}:${tenantId}`],
+      { revalidate: 30, tags: [CACHE_TAG_MENUS, tenantMenusTag(tenantId)] },
+    );
+    menuDataCacheMap.set(tenantId, cached);
+  }
+  return cached;
+}
+
+/**
+ * Cached client-facing menu payload. Returns an empty payload on failure
+ * instead of crashing the menu page (the page renders a "no menu" state).
+ */
+export async function getCachedMenuData(tenantId: string): Promise<CachedMenuData> {
+  try {
+    const cacheFn = getOrCreateMenuDataCache(tenantId);
+    return await cacheFn(tenantId);
+  } catch (err) {
+    logger.error('getCachedMenuData: all attempts failed', err, { tenantId });
+    return EMPTY_MENU_DATA;
+  }
+}

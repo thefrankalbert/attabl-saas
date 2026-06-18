@@ -23,7 +23,6 @@ import {
   EyeOff,
   ChevronDown,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +33,18 @@ import ItemModifierEditor from '@/components/admin/ItemModifierEditor';
 import ImageUpload from '@/components/shared/ImageUpload';
 import { cn } from '@/lib/utils';
 import { actionUpdateMenu } from '@/app/actions/menus';
-import { actionToggleCategoryActive } from '@/app/actions/categories';
+import {
+  actionToggleCategoryActive,
+  actionCreateCategory,
+  actionUpdateCategory,
+  actionDeleteCategory,
+  actionAssignCategoryToMenu,
+} from '@/app/actions/categories';
+import {
+  actionUpdateMenuItem,
+  actionToggleMenuItemAvailable,
+  actionUpdateMenuItemPrice,
+} from '@/app/actions/menu-items';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import {
   AlertDialog,
@@ -47,8 +57,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
-import { createCategoryService } from '@/services/category.service';
-import { createMenuItemService } from '@/services/menu-item.service';
 import { ListPagination } from '@/components/admin/ListPagination';
 import type { ServerListPagination } from '@/lib/pagination';
 
@@ -142,7 +150,6 @@ export default function MenuDetailClient({
   const t = useTranslations('menus');
   const tc = useTranslations('common');
   const tCat = useTranslations('categories');
-  const supabase = createClient();
 
   const { pageSize, total: totalCategories } = categoryPagination;
   const maxCategoryPage = Math.max(0, Math.ceil(totalCategories / pageSize) - 1);
@@ -216,12 +223,19 @@ export default function MenuDetailClient({
         tenant_id: tenantId,
         menu_id: menu.id,
       };
-      const categoryService = createCategoryService(supabase);
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.id, payload);
+        const result = await actionUpdateCategory(tenantId, editingCategory.id, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
+          return;
+        }
         toast({ title: t('categoryUpdated') });
       } else {
-        await categoryService.createCategory(payload);
+        const result = await actionCreateCategory(tenantId, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
+          return;
+        }
         toast({ title: t('categoryCreated') });
       }
       setShowCategoryModal(false);
@@ -248,8 +262,11 @@ export default function MenuDetailClient({
   const confirmDeleteCategory = async () => {
     if (!deleteTarget) return;
     try {
-      const categoryService = createCategoryService(supabase);
-      await categoryService.deleteCategory(deleteTarget.id);
+      const result = await actionDeleteCategory(tenantId, deleteTarget.id);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
       toast({ title: t('categoryDeleted') });
       refreshList();
     } catch {
@@ -282,8 +299,11 @@ export default function MenuDetailClient({
   const handleAssignCategory = async (cat: Category) => {
     setAssigningCategory(true);
     try {
-      const categoryService = createCategoryService(supabase);
-      await categoryService.assignCategoryToMenu(cat.id, menu.id);
+      const result = await actionAssignCategoryToMenu(tenantId, cat.id, menu.id);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
       toast({ title: t('categoryAssigned') });
       setShowAssignDropdown(false);
       revalidateMenuCache();
@@ -302,8 +322,14 @@ export default function MenuDetailClient({
     // Optimistic update
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_available: newValue } : i)));
     try {
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.toggleAvailable(item.id, newValue, tenantId);
+      const result = await actionToggleMenuItemAvailable(tenantId, item.id, newValue);
+      if (result.error) {
+        // Rollback
+        setItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, is_available: item.is_available } : i)),
+        );
+        toast({ title: result.error, variant: 'destructive' });
+      }
     } catch {
       // Rollback
       setItems((prev) =>
@@ -329,9 +355,14 @@ export default function MenuDetailClient({
     // Optimistic update
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)));
     try {
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.updatePrice(item.id, newPrice, tenantId);
-      toast({ title: t('itemSaved') });
+      const result = await actionUpdateMenuItemPrice(tenantId, item.id, newPrice);
+      if (result.error) {
+        // Rollback
+        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: item.price } : i)));
+        toast({ title: result.error, variant: 'destructive' });
+      } else {
+        toast({ title: t('itemSaved') });
+      }
     } catch {
       // Rollback
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: item.price } : i)));
@@ -362,8 +393,11 @@ export default function MenuDetailClient({
         is_available: itemFormAvailable,
         image_url: itemFormImageUrl || null,
       };
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.updateMenuItem(editingItem.id, tenantId, payload);
+      const result = await actionUpdateMenuItem(tenantId, editingItem.id, payload);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
 
       // Optimistic update
       setItems((prev) =>
