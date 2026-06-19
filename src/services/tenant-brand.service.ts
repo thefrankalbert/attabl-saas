@@ -9,7 +9,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { tenantBrandUpdateSchema } from '@/lib/validations/tenant-brand.schema';
 
-export function createTenantBrandService(supabase: SupabaseClient) {
+export interface TenantBrandService {
+  updateBrand(tenantId: string, input: unknown): Promise<{ success: true }>;
+}
+
+export function createTenantBrandService(supabase: SupabaseClient): TenantBrandService {
   return {
     async updateBrand(tenantId: string, input: unknown): Promise<{ success: true }> {
       const parsed = tenantBrandUpdateSchema.safeParse(input);

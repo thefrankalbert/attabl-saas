@@ -2,7 +2,23 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import type { TableAssignment, AdminUser } from '@/types/admin.types';
 
-export function createAssignmentService(supabase: SupabaseClient) {
+export interface AssignmentService {
+  assignServerToTable(
+    tenantId: string,
+    tableId: string,
+    serverId: string,
+  ): Promise<TableAssignment>;
+  releaseAssignment(assignmentId: string, tenantId: string): Promise<void>;
+  releaseAllForServer(tenantId: string, serverId: string): Promise<void>;
+  getActiveServerForTable(tenantId: string, tableId: string): Promise<AdminUser | null>;
+  getActiveAssignments(
+    tenantId: string,
+    options?: { page?: number; pageSize?: number },
+  ): Promise<{ assignments: TableAssignment[]; total: number }>;
+  claimOrder(orderId: string, serverId: string, tenantId: string): Promise<void>;
+}
+
+export function createAssignmentService(supabase: SupabaseClient): AssignmentService {
   return {
     async assignServerToTable(
       tenantId: string,

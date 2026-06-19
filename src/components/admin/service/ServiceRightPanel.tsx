@@ -295,7 +295,7 @@ function ServerCard({
           {vm.assignedTables.length === 0
             ? labels.availableStatus
             : labels.tablesPlural(vm.assignedTables.length)}
-          {' · '}
+          {' - '}
           {vm.server.role}
         </div>
         {vm.assignedTables.length > 0 && (

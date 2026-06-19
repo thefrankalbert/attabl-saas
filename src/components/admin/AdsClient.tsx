@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 import type { Ad } from '@/types/admin.types';
-import { createAdService } from '@/services/ad.service';
+import { actionCreateAd, actionDeleteAd, actionToggleAdActive } from '@/app/actions/ads';
 
 interface AdsClientProps {
   tenantId: string;
@@ -78,9 +78,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
         data: { publicUrl },
       } = supabase.storage.from('images').getPublicUrl(fileName);
 
-      // 2. Insert DB Record
-      const adService = createAdService(supabase);
-      const newAd = await adService.createAd({
+      // 2. Insert DB Record via server action
+      const result = await actionCreateAd(tenantId, {
         tenant_id: tenantId,
         image_url: publicUrl,
         link: link || null,
@@ -88,7 +87,17 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
         is_active: isActive,
       });
 
-      setAds((prev) => [...prev, newAd as Ad].sort((a, b) => a.sort_order - b.sort_order));
+      if (result.error) {
+        logger.error('Failed to save ad', result.error);
+        toast({
+          title: tc('error'),
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setAds((prev) => [...prev, result.data as Ad].sort((a, b) => a.sort_order - b.sort_order));
       toast({ title: t('adCreated') });
       setIsModalOpen(false);
       resetForm();
@@ -114,26 +123,23 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
     });
     if (!ok) return;
 
-    try {
-      const adService = createAdService(supabase);
-      await adService.deleteAd(id);
-      setAds((prev) => prev.filter((ad) => ad.id !== id));
-      toast({ title: t('adDeleted') });
-    } catch {
+    const result = await actionDeleteAd(tenantId, id);
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    setAds((prev) => prev.filter((ad) => ad.id !== id));
+    toast({ title: t('adDeleted') });
   };
 
   const toggleActive = async (ad: Ad) => {
-    try {
-      const adService = createAdService(supabase);
-      const data = await adService.toggleActive(ad.id, !ad.is_active);
-
-      setAds((prev) => prev.map((a) => (a.id === ad.id ? (data as Ad) : a)));
-      toast({ title: !ad.is_active ? t('activated') : t('deactivated') });
-    } catch {
+    const result = await actionToggleAdActive(tenantId, ad.id, !ad.is_active);
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    setAds((prev) => prev.map((a) => (a.id === ad.id ? (result.data as Ad) : a)));
+    toast({ title: !ad.is_active ? t('activated') : t('deactivated') });
   };
 
   return (

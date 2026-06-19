@@ -54,7 +54,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             ? `${tUp} ${Math.abs(delta)}%`
             : delta < 0
               ? `${tDown} ${Math.abs(delta)}%`
-              : '·';
+              : '-';
         const deltaClass =
           delta > 0
             ? 'bg-accent-muted text-accent'

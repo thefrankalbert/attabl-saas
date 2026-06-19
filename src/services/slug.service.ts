@@ -47,7 +47,12 @@ const RESERVED_SLUGS = new Set([
  * Extracted from signup/signup-oauth routes to eliminate duplication.
  * Normalizes restaurant names into URL-safe slugs and ensures uniqueness.
  */
-export function createSlugService(supabase: SupabaseClient) {
+export interface SlugService {
+  normalizeToSlug(name: string): string;
+  generateUniqueSlug(name: string): Promise<string>;
+}
+
+export function createSlugService(supabase: SupabaseClient): SlugService {
   return {
     /**
      * Normalizes a name into a URL-safe slug.

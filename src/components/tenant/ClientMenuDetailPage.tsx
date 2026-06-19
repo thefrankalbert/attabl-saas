@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { Search, ChevronLeft, ChevronRight, Check, MapPin, X } from 'lucide-react';
@@ -185,10 +185,32 @@ export default function ClientMenuDetailPage({
     }
   }, [initialItemId, itemsByCategory]);
 
-  // - Realtime subscriptions -
-  const handleRealtimeRefresh = useCallback(() => {
-    router.refresh();
+  // Realtime subscriptions.
+  // Availability toggles (the most frequent staff action) are applied to local
+  // state incrementally - no server round-trip, no full re-render. Structural
+  // changes (item add/remove, category edits) still need the full cached menu
+  // payload (with modifiers) re-fetched from the server, but we DEBOUNCE that
+  // refresh so a burst of staff edits collapses into a single refresh per
+  // device instead of one full server re-render per row changed.
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleRealtimeRefresh = useCallback(() => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => {
+      refreshTimerRef.current = null;
+      router.refresh();
+    }, 1500);
   }, [router]);
+
+  // Clear any pending debounced refresh on unmount (no leaked timer).
+  useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, []);
 
   useRealtimeSubscription<{ id: string; is_available: boolean }>({
     channelName: `menu_items_realtime_${tenant.id}`,
@@ -202,15 +224,15 @@ export default function ClientMenuDetailPage({
         return next;
       });
     },
-    onInsert: handleRealtimeRefresh,
-    onDelete: handleRealtimeRefresh,
+    onInsert: scheduleRealtimeRefresh,
+    onDelete: scheduleRealtimeRefresh,
   });
 
   useRealtimeSubscription({
     channelName: `categories_realtime_${tenant.id}`,
     table: 'categories',
     filter: `tenant_id=eq.${tenant.id}`,
-    onChange: handleRealtimeRefresh,
+    onChange: scheduleRealtimeRefresh,
   });
 
   // - Filtering logic -

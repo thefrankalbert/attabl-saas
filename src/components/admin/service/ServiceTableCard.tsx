@@ -74,7 +74,7 @@ export function ServiceTableCard({
   const displayId = table.display_name || table.table_number;
   const sinceLabel =
     since && status === 'occupied'
-      ? `${labels.occupied} · ${labels.sinceSince} ${formatTimeHHMM(since)}`
+      ? `${labels.occupied} - ${labels.sinceSince} ${formatTimeHHMM(since)}`
       : statusLabel(status, labels);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {

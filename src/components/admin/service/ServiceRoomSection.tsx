@@ -65,8 +65,8 @@ export function ServiceRoomSection({
           )}
         </div>
         <div className="font-mono text-[11px] text-app-text-muted">
-          {occ}/{total} {labels.occupiedSummary} · {free} {labels.freeSummary}
-          {reserved > 0 && ` · ${reserved} ${labels.reservedSummary}`}
+          {occ}/{total} {labels.occupiedSummary} - {free} {labels.freeSummary}
+          {reserved > 0 && ` - ${reserved} ${labels.reservedSummary}`}
         </div>
       </header>
 

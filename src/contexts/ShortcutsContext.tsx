@@ -101,7 +101,7 @@ export function ShortcutsProvider({ basePath, children }: ShortcutsProviderProps
   const allShortcuts = useMemo(() => {
     const contextual = Array.from(contextualRef.current.values());
     return [...globalShortcuts, ...contextual];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: contextualRef.current.size is the recompute trigger; registerShortcuts mutates the ref Map and bumps setRevision to force this re-render, so the memo re-reads the latest contextual shortcuts. Switching to a state counter trips react-hooks/refs on the ref reads above (2026-06-18)
   }, [globalShortcuts, contextualRef.current.size]);
 
   const getAllShortcuts = useCallback((): ShortcutDefinition[] => {

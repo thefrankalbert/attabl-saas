@@ -321,7 +321,7 @@ export function useCartSuggestions(
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: cartItemIds is a stable fingerprint of items[].id; the effect reads items only for those same ids. Depending on items directly would re-run the debounced fetch on every unrelated field change (quantity, notes) (2026-06-18)
   }, [currentRestaurantId, cartItemIds]);
 
   return { upsellItems, isLoadingUpsell };

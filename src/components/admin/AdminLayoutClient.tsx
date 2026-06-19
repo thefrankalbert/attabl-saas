@@ -91,7 +91,7 @@ function AdminLayoutInner({
       }
     });
     // Only run when device type changes (tablet vs desktop), not on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: auto-collapse must fire only on device-type change; adding sidebarCollapsed would re-collapse and fight the user's explicit expand action (2026-06-18)
   }, [isTablet]);
 
   const handleToggleCollapsed = useCallback(() => {
