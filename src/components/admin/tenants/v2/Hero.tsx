@@ -108,7 +108,7 @@ export function Hero({
             {delta}
           </span>
         )}
-        {delta && relative && <span style={{ color: 'var(--cc-text-3)' }}>·</span>}
+        {delta && relative && <span style={{ color: 'var(--cc-text-3)' }}>-</span>}
         {relative && <span>{relative}</span>}
       </div>
     </div>

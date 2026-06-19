@@ -140,7 +140,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       {
         key: 'revenue',
         label: t('revenueToday'),
-        value: showFin ? fmtF(revenueToday) : '•••',
+        value: showFin ? fmtF(revenueToday) : '***',
         unit: currencySymbol,
         compareText: revenueTrend !== undefined ? t('vsYesterday') : undefined,
         deltaPercent: revenueTrend,
@@ -221,7 +221,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         return {
           id: d.id,
           name: d.name,
-          subline: `${d.category} · ${fmtF(d.revenue / Math.max(d.portions, 1))}`,
+          subline: `${d.category} - ${fmtF(d.revenue / Math.max(d.portions, 1))}`,
           category: d.category.toLowerCase(),
           categoryLabel: d.category.toUpperCase(),
           portions: d.portions,
@@ -322,9 +322,9 @@ export default function DashboardClient(props: DashboardClientProps) {
                 month: 'long',
               })}
             </span>
-            {' · '}
+            {' - '}
             {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-            {' · '}
+            {' - '}
             {t('liveLabel')}
           </p>
         </div>

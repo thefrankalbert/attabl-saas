@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { createCouponService } from '@/services/coupon.service';
+import { actionDeleteCoupon, actionToggleCouponActive } from '@/app/actions/coupons';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -53,27 +54,25 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   }, [tenantId, toast, t]);
 
   const performDelete = async (couponId: string) => {
-    try {
-      const service = createCouponService(createClient());
-      await service.deleteCoupon(couponId, tenantId);
-      toast({ title: t('couponDeleted') });
-      refetch();
-    } catch (err) {
-      logger.error('Failed to delete coupon', err);
+    const result = await actionDeleteCoupon(tenantId, couponId);
+    if (result.error) {
+      logger.error('Failed to delete coupon', result.error);
       toast({ title: t('deleteError'), variant: 'destructive' });
+      return;
     }
+    toast({ title: t('couponDeleted') });
+    refetch();
   };
 
   const toggleActive = async (coupon: Coupon) => {
-    try {
-      const service = createCouponService(createClient());
-      await service.toggleActive(coupon.id, tenantId, !coupon.is_active);
-      toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
-      refetch();
-    } catch (err) {
-      logger.error('Failed to toggle coupon', err);
+    const result = await actionToggleCouponActive(tenantId, coupon.id, !coupon.is_active);
+    if (result.error) {
+      logger.error('Failed to toggle coupon', result.error);
       toast({ title: t('updateError'), variant: 'destructive' });
+      return;
     }
+    toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
+    refetch();
   };
 
   const openEdit = (coupon: Coupon) => {

@@ -18,7 +18,13 @@ import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
 import type { SuggestionType } from '@/types/inventory.types';
-import { generateAndSaveSuggestions, createSuggestionService } from '@/services/suggestion.service';
+import { createSuggestionService } from '@/services/suggestion.service';
+import {
+  actionCreateSuggestion,
+  actionDeactivateSuggestion,
+  actionBulkDeactivateSuggestions,
+  actionGenerateAndSaveSuggestions,
+} from '@/app/actions/suggestions';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
@@ -115,7 +121,7 @@ export default function SuggestionsClient({
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: reload only when tenantId changes; supabase/toast/tc are stable singletons and including them would re-run the fetch on unrelated identity changes (2026-06-18)
   }, [tenantId]);
 
   useEffect(() => {
@@ -132,49 +138,46 @@ export default function SuggestionsClient({
       return;
     }
 
-    try {
-      const suggestionService = createSuggestionService(supabase);
-      await suggestionService.createSuggestion({
-        tenant_id: tenantId,
-        menu_item_id: sourceItemId,
-        suggested_item_id: targetItemId,
-        suggestion_type: suggestionType,
-        description: description.trim() || null,
-        display_order: suggestions.length,
-      });
-      toast({ title: t('suggestionAdded') });
-      setShowAdd(false);
-      setSourceItemId('');
-      setTargetItemId('');
-      setDescription('');
-      loadData();
-    } catch {
+    const result = await actionCreateSuggestion(tenantId, {
+      tenant_id: tenantId,
+      menu_item_id: sourceItemId,
+      suggested_item_id: targetItemId,
+      suggestion_type: suggestionType,
+      description: description.trim() || null,
+      display_order: suggestions.length,
+    });
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    toast({ title: t('suggestionAdded') });
+    setShowAdd(false);
+    setSourceItemId('');
+    setTargetItemId('');
+    setDescription('');
+    loadData();
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      const suggestionService = createSuggestionService(supabase);
-      await suggestionService.deactivateSuggestion(id);
-      toast({ title: t('suggestionDeleted') });
-      loadData();
-    } catch {
+    const result = await actionDeactivateSuggestion(tenantId, id);
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    toast({ title: t('suggestionDeleted') });
+    loadData();
   };
 
   const handleAutoGenerate = async () => {
     setGenerating(true);
-    try {
-      const count = await generateAndSaveSuggestions(supabase, tenantId);
-      toast({ title: t('suggestionsGenerated', { count }) });
-      loadData();
-    } catch {
+    const result = await actionGenerateAndSaveSuggestions(tenantId);
+    setGenerating(false);
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
-    } finally {
-      setGenerating(false);
+      return;
     }
+    toast({ title: t('suggestionsGenerated', { count: result.data ?? 0 }) });
+    loadData();
   };
 
   const toggleSelect = (id: string) => {
@@ -196,15 +199,14 @@ export default function SuggestionsClient({
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    try {
-      const suggestionService = createSuggestionService(supabase);
-      await suggestionService.bulkDeactivateSuggestions(Array.from(selectedIds));
-      toast({ title: t('suggestionsDeleted', { count: selectedIds.size }) });
-      setSelectedIds(new Set());
-      loadData();
-    } catch {
+    const result = await actionBulkDeactivateSuggestions(tenantId, Array.from(selectedIds));
+    if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
+      return;
     }
+    toast({ title: t('suggestionsDeleted', { count: selectedIds.size }) });
+    setSelectedIds(new Set());
+    loadData();
   };
 
   const filtered = suggestions.filter((s) => {

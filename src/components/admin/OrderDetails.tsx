@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
-import { createOrderService } from '@/services/order.service';
+import { actionUpdateOrderStatus } from '@/app/actions/orders';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, OrderStatus, Tenant, CurrencyCode } from '@/types/admin.types';
 import { STATUS_STYLES } from '@/lib/design-tokens';
@@ -56,8 +55,8 @@ export default function OrderDetails({
   const handleStatusUpdate = async (status: OrderStatus) => {
     setLoading(true);
     try {
-      const service = createOrderService(createClient());
-      await service.updateStatus(order.id, order.tenant_id, status);
+      const result = await actionUpdateOrderStatus(order.tenant_id, order.id, status);
+      if (result.error) throw new Error(result.error);
       toast({ title: t('statusUpdated') });
       onUpdate();
       if (status === 'delivered') onClose();
@@ -159,7 +158,7 @@ export default function OrderDetails({
                       <User className="w-3 h-3" />
                     )
                   }
-                  value={[order.customer_name, order.customer_phone].filter(Boolean).join(' · ')}
+                  value={[order.customer_name, order.customer_phone].filter(Boolean).join(' - ')}
                 />
               )}
               {order.room_number && (

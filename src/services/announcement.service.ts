@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Announcement } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
 interface AnnouncementPayload {
@@ -9,17 +10,28 @@ interface AnnouncementPayload {
   is_active: boolean;
 }
 
+export interface AnnouncementService {
+  createAnnouncement(tenantId: string, data: AnnouncementPayload): Promise<Announcement>;
+  updateAnnouncement(
+    announcementId: string,
+    tenantId: string,
+    data: AnnouncementPayload,
+  ): Promise<Announcement>;
+  deleteAnnouncement(announcementId: string, tenantId: string): Promise<void>;
+  toggleActive(announcementId: string, isActive: boolean, tenantId: string): Promise<Announcement>;
+}
+
 /**
  * Announcement service - handles announcement CRUD operations.
  *
  * Used by AnnouncementsClient.
  */
-export function createAnnouncementService(supabase: SupabaseClient) {
+export function createAnnouncementService(supabase: SupabaseClient): AnnouncementService {
   return {
     /**
      * Create a new announcement. Returns the created announcement.
      */
-    async createAnnouncement(tenantId: string, data: AnnouncementPayload): Promise<unknown> {
+    async createAnnouncement(tenantId: string, data: AnnouncementPayload): Promise<Announcement> {
       const { data: announcement, error } = await supabase
         .from('announcements')
         .insert({ tenant_id: tenantId, ...data })
@@ -29,24 +41,29 @@ export function createAnnouncementService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError("Erreur lors de la creation de l'annonce", 'INTERNAL', error);
       }
-      return announcement;
+      return announcement as Announcement;
     },
 
     /**
-     * Update an existing announcement. Returns the updated announcement.
+     * Update an existing announcement, scoped to tenant. Returns the updated announcement.
      */
-    async updateAnnouncement(announcementId: string, data: AnnouncementPayload): Promise<unknown> {
+    async updateAnnouncement(
+      announcementId: string,
+      tenantId: string,
+      data: AnnouncementPayload,
+    ): Promise<Announcement> {
       const { data: announcement, error } = await supabase
         .from('announcements')
         .update(data)
         .eq('id', announcementId)
+        .eq('tenant_id', tenantId)
         .select()
         .single();
 
       if (error) {
         throw new ServiceError("Erreur lors de la mise a jour de l'annonce", 'INTERNAL', error);
       }
-      return announcement;
+      return announcement as Announcement;
     },
 
     /**
@@ -65,20 +82,25 @@ export function createAnnouncementService(supabase: SupabaseClient) {
     },
 
     /**
-     * Toggle the is_active flag on an announcement. Returns the updated announcement.
+     * Toggle the is_active flag on an announcement, scoped to tenant. Returns the updated announcement.
      */
-    async toggleActive(announcementId: string, isActive: boolean): Promise<unknown> {
+    async toggleActive(
+      announcementId: string,
+      isActive: boolean,
+      tenantId: string,
+    ): Promise<Announcement> {
       const { data, error } = await supabase
         .from('announcements')
         .update({ is_active: isActive })
         .eq('id', announcementId)
+        .eq('tenant_id', tenantId)
         .select()
         .single();
 
       if (error) {
         throw new ServiceError("Erreur lors de la mise a jour de l'annonce", 'INTERNAL', error);
       }
-      return data;
+      return data as Announcement;
     },
   };
 }

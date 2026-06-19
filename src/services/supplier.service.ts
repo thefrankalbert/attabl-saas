@@ -6,7 +6,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '@/services/errors';
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types/supplier.types';
 
-export function createSupplierService(supabase: SupabaseClient) {
+export interface SupplierService {
+  getSuppliers(tenantId: string): Promise<Supplier[]>;
+  getActiveSuppliers(tenantId: string): Promise<Supplier[]>;
+  createSupplier(tenantId: string, input: CreateSupplierInput): Promise<Supplier>;
+  updateSupplier(
+    supplierId: string,
+    tenantId: string,
+    input: UpdateSupplierInput,
+  ): Promise<Supplier>;
+  deleteSupplier(supplierId: string, tenantId: string): Promise<void>;
+}
+
+export function createSupplierService(supabase: SupabaseClient): SupplierService {
   return {
     async getSuppliers(tenantId: string): Promise<Supplier[]> {
       const { data, error } = await supabase

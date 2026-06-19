@@ -3,11 +3,54 @@ import { deleteMenuItemScoped, updateMenuItemScoped } from '@/lib/menu-items-que
 import { ServiceError } from './errors';
 
 /**
+ * Columns a client is allowed to write on menu_items. Anything else in the
+ * payload (id, tenant_id, rating/rating_count, joined relations, timestamps)
+ * is dropped to prevent mass-assignment - the payload arrives as an untyped
+ * Record from the client, so we never spread it raw into the DB.
+ */
+const ALLOWED_MENU_ITEM_COLUMNS = [
+  'name',
+  'name_en',
+  'description',
+  'description_en',
+  'price',
+  'prices',
+  'image_url',
+  'image_back_url',
+  'is_available',
+  'is_featured',
+  'is_vegetarian',
+  'is_spicy',
+  'is_drink',
+  'allergens',
+  'calories',
+  'category_id',
+  'display_order',
+] as const;
+
+function pickMenuItemColumns(payload: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of ALLOWED_MENU_ITEM_COLUMNS) {
+    if (key in payload) out[key] = payload[key];
+  }
+  return out;
+}
+
+export interface MenuItemService {
+  createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<string>;
+  updateMenuItem(itemId: string, tenantId: string, payload: Record<string, unknown>): Promise<void>;
+  deleteMenuItem(itemId: string, tenantId: string): Promise<void>;
+  toggleAvailable(itemId: string, isAvailable: boolean, tenantId: string): Promise<void>;
+  toggleFeatured(itemId: string, isFeatured: boolean, tenantId: string): Promise<void>;
+  updatePrice(itemId: string, price: number, tenantId: string): Promise<void>;
+}
+
+/**
  * Menu item service - handles menu item CRUD operations.
  *
  * Used by ItemsClient and MenuDetailClient.
  */
-export function createMenuItemService(supabase: SupabaseClient) {
+export function createMenuItemService(supabase: SupabaseClient): MenuItemService {
   return {
     /**
      * Create a new menu item.
@@ -16,7 +59,7 @@ export function createMenuItemService(supabase: SupabaseClient) {
       if (!tenantId) throw new ServiceError('tenant_id manquant', 'VALIDATION');
       const { data, error } = await supabase
         .from('menu_items')
-        .insert([{ ...payload, tenant_id: tenantId }])
+        .insert([{ ...pickMenuItemColumns(payload), tenant_id: tenantId }])
         .select('id')
         .single();
 
@@ -37,7 +80,12 @@ export function createMenuItemService(supabase: SupabaseClient) {
       tenantId: string,
       payload: Record<string, unknown>,
     ): Promise<void> {
-      const { error } = await updateMenuItemScoped(supabase, itemId, tenantId, payload);
+      const { error } = await updateMenuItemScoped(
+        supabase,
+        itemId,
+        tenantId,
+        pickMenuItemColumns(payload),
+      );
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du plat', 'INTERNAL', error);

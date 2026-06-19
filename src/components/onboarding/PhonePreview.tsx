@@ -457,7 +457,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                           idx < displayItems.length - 1 ? `1px solid ${C.divider}` : 'none',
                       }}
                     >
-                      {/* Texte — gauche */}
+                      {/* Texte - gauche */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p
                           style={{
@@ -499,7 +499,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                         </p>
                       </div>
 
-                      {/* Image — droite (w-90px → 53px scaled) */}
+                      {/* Image - droite (w-90px -> 53px scaled) */}
                       <div
                         style={{
                           position: 'relative',
@@ -678,7 +678,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {displayItems.length}&nbsp;•&nbsp;{(displayItems[0]?.price ?? 0).toLocaleString()}
+                {displayItems.length}&nbsp;-&nbsp;{(displayItems[0]?.price ?? 0).toLocaleString()}
                 &nbsp;{currency || 'FCFA'}
               </span>
             </div>

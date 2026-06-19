@@ -152,15 +152,20 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           ),
         ]);
 
-      // Category query is non-critical - fire separately so it never blocks core data
+      // Category query is non-critical - fire separately so it never blocks core data.
+      // Bounded to today (matches revenueToday semantics: the donut breaks down today's
+      // revenue by category) and capped so an all-time order_items join can never grow
+      // unbounded as a tenant accumulates history.
       const categoryRes = await safeQuery(
         () =>
           supabase
             .from('order_items')
             .select(
-              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id)',
+              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
             )
-            .eq('orders.tenant_id', tenantId),
+            .eq('orders.tenant_id', tenantId)
+            .gte('orders.created_at', today.toISOString())
+            .limit(2000),
         'categoryBreakdown',
       );
 

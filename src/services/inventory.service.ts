@@ -17,7 +17,36 @@ import type {
   AdjustStockInput,
 } from '@/types/inventory.types';
 
-export function createInventoryService(supabase: SupabaseClient) {
+export interface InventoryService {
+  getIngredients(tenantId: string): Promise<Ingredient[]>;
+  createIngredient(tenantId: string, input: CreateIngredientInput): Promise<Ingredient>;
+  updateIngredient(
+    ingredientId: string,
+    tenantId: string,
+    input: UpdateIngredientInput,
+  ): Promise<Ingredient>;
+  getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]>;
+  setRecipe(tenantId: string, menuItemId: string, lines: RecipeLineInput[]): Promise<void>;
+  destockOrder(orderId: string, tenantId: string): Promise<number>;
+  adjustStock(tenantId: string, input: AdjustStockInput): Promise<void>;
+  setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
+  getStockStatus(tenantId: string): Promise<StockStatus[]>;
+  getStockMovements(
+    tenantId: string,
+    filters?: { ingredientId?: string; startDate?: string; endDate?: string },
+  ): Promise<StockMovement[]>;
+  getRecipesOverview(tenantId: string): Promise<{
+    menuItems: {
+      id: string;
+      name: string;
+      category_id: string | null;
+      is_available: boolean;
+    }[];
+    recipeItemIds: Set<string>;
+  }>;
+}
+
+export function createInventoryService(supabase: SupabaseClient): InventoryService {
   return {
     // ─── Ingredients ──────────────────────────────────────
 

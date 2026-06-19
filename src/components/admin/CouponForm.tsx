@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +16,7 @@ import {
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import AdminModal from '@/components/admin/AdminModal';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
-import { createCouponService } from '@/services/coupon.service';
-import { ServiceError } from '@/services/errors';
+import { actionCreateCoupon, actionUpdateCoupon } from '@/app/actions/coupons';
 
 interface CouponFormProps {
   tenantId: string;
@@ -81,8 +79,6 @@ export default function CouponForm({
 
     setSubmitting(true);
 
-    const supabase = createClient();
-    const couponService = createCouponService(supabase);
     const payload = {
       code: code.toUpperCase().trim(),
       discount_type: discountType,
@@ -94,27 +90,27 @@ export default function CouponForm({
       max_uses: maxUses ? Number(maxUses) : null,
     };
 
-    try {
-      if (initialData) {
-        await couponService.updateCoupon(initialData.id, payload);
-      } else {
-        await couponService.createCoupon(tenantId, payload);
-      }
-      setSubmitting(false);
-      toast({ title: t('couponCreated') });
-      onSuccess();
-    } catch (err: unknown) {
-      setSubmitting(false);
-      if (err instanceof ServiceError && err.code === 'CONFLICT') {
+    const result = initialData
+      ? await actionUpdateCoupon(tenantId, initialData.id, payload)
+      : await actionCreateCoupon(tenantId, payload);
+
+    setSubmitting(false);
+
+    if (result.error) {
+      if (result.error.toLowerCase().includes('existe')) {
         toast({ title: t('codeExists'), variant: 'destructive' });
       } else {
         toast({
           title: t('createError'),
-          description: err instanceof Error ? err.message : undefined,
+          description: result.error,
           variant: 'destructive',
         });
       }
+      return;
     }
+
+    toast({ title: t('couponCreated') });
+    onSuccess();
   };
 
   return (

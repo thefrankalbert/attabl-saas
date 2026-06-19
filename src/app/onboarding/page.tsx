@@ -281,7 +281,7 @@ export default function OnboardingPage() {
     };
 
     fetchOnboardingState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load saved onboarding state once on mount; re-running on toast/t changes would refetch and clobber in-progress edits (2026-06-18)
   }, []);
 
   // ─── Auto-save debounced ───────────────────────────────────────────────────
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
       }
     }, 2000);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast/t stable enough for error path
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: toast/t are referenced only on the error path and are stable across renders; including them would reset the 2s auto-save debounce on every locale/toast identity change (2026-06-18)
   }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
 
   // ─── Save on tab close / navigate away (beacon API for reliability) ──────
@@ -416,7 +416,7 @@ export default function OnboardingPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: goNext/goPrev are recreated each render but close over phase/subScreen which are already deps; listing them would re-bind the keydown listener on every render with no behavior change (2026-06-18)
   }, [phase, subScreen, isLastScreen]);
 
   const goToPhase = (targetPhase: number) => {

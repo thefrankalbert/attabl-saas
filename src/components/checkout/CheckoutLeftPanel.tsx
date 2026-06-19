@@ -94,7 +94,7 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
         </ul>
       </div>
 
-      {/* Security badge — always visible at bottom */}
+      {/* Security badge - always visible at bottom */}
       <div className="mt-auto pt-10 flex items-center gap-2 text-[#6b6560]">
         <ShieldCheck className="w-4 h-4 shrink-0" />
         <p className="text-xs">{tc('page.securePayment')}</p>

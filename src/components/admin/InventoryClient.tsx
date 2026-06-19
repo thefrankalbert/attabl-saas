@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Package, Plus, Search } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -22,7 +21,11 @@ import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import { useTranslations } from 'next-intl';
-import { createInventoryService } from '@/services/inventory.service';
+import {
+  actionCreateIngredient,
+  actionUpdateIngredient,
+  actionAdjustStock,
+} from '@/app/actions/inventory';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -71,9 +74,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
-  const supabase = createClient();
   const queryClient = useQueryClient();
-  const inventoryService = createInventoryService(supabase);
 
   // TanStack Query for ingredients and suppliers
   const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
@@ -217,7 +218,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openAdjust/openEdit are stable dialog openers (only call setState); excluding them keeps the column defs from rebuilding on every render, and a stale reference is harmless here (2026-06-18)
     [currency, t, tc],
   );
 
@@ -274,16 +275,18 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || undefined,
         };
-        await inventoryService.createIngredient(tenantId, input);
+        const r = await actionCreateIngredient(tenantId, input);
+        if (r.error) throw new Error(r.error);
         toast({ title: t('productAdded') });
       } else if (modalMode === 'edit' && selectedIngredient) {
-        await inventoryService.updateIngredient(selectedIngredient.id, tenantId, {
+        const r = await actionUpdateIngredient(tenantId, selectedIngredient.id, {
           name: formName.trim(),
           unit: formUnit,
           min_stock_alert: parseFloat(formMinAlert) || 0,
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || null,
         });
+        if (r.error) throw new Error(r.error);
         toast({ title: t('productUpdated') });
       }
       setModalMode(null);
@@ -298,13 +301,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     if (!selectedIngredient || !adjustQty) return;
 
     try {
-      await inventoryService.adjustStock(tenantId, {
+      const r = await actionAdjustStock(tenantId, {
         ingredient_id: selectedIngredient.id,
         quantity: parseFloat(adjustQty),
         movement_type: adjustType,
         notes: adjustNotes.trim() || undefined,
         supplier_id: adjustSupplierId || undefined,
       });
+      if (r.error) throw new Error(r.error);
       toast({ title: t('stockAdjusted') });
       setModalMode(null);
       resetForm();

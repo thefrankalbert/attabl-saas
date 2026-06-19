@@ -1,20 +1,15 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assignments';
 
 export function useAssignServer(tenantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ tableId, serverId }: { tableId: string; serverId: string }) => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('table_assignments')
-        .insert({ tenant_id: tenantId, table_id: tableId, server_id: serverId })
-        .select('*, server:admin_users(id, full_name, role), table:tables(id, display_name)')
-        .single();
-      if (error) throw error;
-      return data;
+      const result = await actionAssignServer(tenantId, tableId, serverId);
+      if (result.error) throw new Error(result.error);
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments', tenantId] });
@@ -28,12 +23,8 @@ export function useReleaseAssignment(tenantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (assignmentId: string) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('table_assignments')
-        .update({ ended_at: new Date().toISOString() })
-        .eq('id', assignmentId);
-      if (error) throw error;
+      const result = await actionReleaseAssignment(tenantId, assignmentId);
+      if (result.error) throw new Error(result.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments', tenantId] });

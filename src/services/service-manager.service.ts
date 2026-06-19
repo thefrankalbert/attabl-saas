@@ -1,12 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AdminUser, Table, Zone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { createOrderService } from './order.service';
+
+/** A `zones` row with its tables and the venue's tenant_id (for the !inner filter). */
+export type ServiceZoneRow = Zone & {
+  tables: Table[];
+  venues: { tenant_id: string };
+};
+
+export interface ServiceManagerService {
+  loadDashboard(tenantId: string): Promise<{
+    zones: ServiceZoneRow[];
+    servers: AdminUser[];
+    // readyOrders is typed unknown[] because it is produced by the protected
+    // order.service (listReadyOrdersToday), whose signature is out of scope here.
+    readyOrders: unknown[];
+  }>;
+}
 
 /**
  * Service for the Service Manager dashboard (floor view with tables,
  * servers, and ready orders).
  */
-export function createServiceManagerService(supabase: SupabaseClient) {
+export function createServiceManagerService(supabase: SupabaseClient): ServiceManagerService {
   const orderService = createOrderService(supabase);
 
   return {
@@ -17,8 +34,8 @@ export function createServiceManagerService(supabase: SupabaseClient) {
      * - today's ready orders
      */
     async loadDashboard(tenantId: string): Promise<{
-      zones: unknown[];
-      servers: unknown[];
+      zones: ServiceZoneRow[];
+      servers: AdminUser[];
       readyOrders: unknown[];
     }> {
       const [zonesResult, serversResult, readyOrders] = await Promise.all([
@@ -44,8 +61,8 @@ export function createServiceManagerService(supabase: SupabaseClient) {
       }
 
       return {
-        zones: (zonesResult.data as unknown[]) || [],
-        servers: (serversResult.data as unknown[]) || [],
+        zones: (zonesResult.data as ServiceZoneRow[]) || [],
+        servers: (serversResult.data as AdminUser[]) || [],
         readyOrders,
       };
     },

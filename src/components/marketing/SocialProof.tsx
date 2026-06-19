@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { TestimonialsColumn, type Testimonial } from '@/components/ui/testimonials-columns';
 
 const testimonials: Testimonial[] = [

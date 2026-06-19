@@ -31,8 +31,32 @@ interface TenantsPageClientProps {
   serverUserName: string;
   serverTenants?: Tenant[];
   serverRestaurants?: OwnerDashboardRow[];
+  /**
+   * True platform-wide tenant count, computed server-side. The displayed tenant
+   * set (serverTenants / serverRestaurants) is bounded for scalability, so these
+   * totals are passed separately to keep the headline counters accurate without
+   * loading every tenant client-side.
+   */
+  serverTotalLocations?: number;
+  /** True platform-wide count of active tenants, computed server-side. */
+  serverActiveLocations?: number;
+  /**
+   * Lightweight, orders-free directory of every tenant (superadmin only). Used
+   * to keep the search dialog able to reach any tenant beyond the bounded page
+   * that carries real metrics. Never used to drive orders aggregation.
+   */
+  serverDirectory?: TenantDirectoryRow[];
   /** Theme read server-side from the attabl-cc-theme cookie (FOUC fix). */
   initialTheme?: 'light' | 'dark';
+}
+
+/** Minimal directory row used to make any tenant findable in the search dialog. */
+interface TenantDirectoryRow {
+  id: string;
+  slug: string;
+  name: string;
+  subscription_plan: string | null;
+  is_active: boolean;
 }
 
 interface OrderRow {
@@ -56,6 +80,9 @@ export default function TenantsPageClient({
   serverUserName,
   serverTenants,
   serverRestaurants,
+  serverTotalLocations,
+  serverActiveLocations,
+  serverDirectory,
   initialTheme = 'light',
 }: TenantsPageClientProps) {
   const router = useRouter();
@@ -80,11 +107,16 @@ export default function TenantsPageClient({
     return map;
   }, [serverRestaurants]);
 
+  // True platform totals (server-computed). Fall back to the loaded set when the
+  // server did not provide them so behavior is identical for small tenant counts.
+  const totalLocations = serverTotalLocations ?? baseTenants.length;
+  const activeLocations = serverActiveLocations ?? baseTenants.filter((t) => t.is_active).length;
+
   const [loading, setLoading] = useState(baseTenants.length > 0);
   const [locations, setLocations] = useState<LocationStat[]>([]);
   const [globals, setGlobals] = useState<CommandCenterGlobals>({
-    total_locations: baseTenants.length,
-    active_locations: baseTenants.filter((t) => t.is_active).length,
+    total_locations: totalLocations,
+    active_locations: activeLocations,
     revenue_today: 0,
     revenue_yesterday: 0,
     orders_today: 0,
@@ -222,8 +254,8 @@ export default function TenantsPageClient({
     setAlerts(allAlerts);
 
     setGlobals({
-      total_locations: baseTenants.length,
-      active_locations: baseTenants.filter((t) => t.is_active).length,
+      total_locations: totalLocations,
+      active_locations: activeLocations,
       revenue_today: totalRevenueToday,
       revenue_yesterday: totalRevenueYesterday,
       orders_today: totalOrdersToday,
@@ -250,7 +282,16 @@ export default function TenantsPageClient({
     );
 
     setLoading(false);
-  }, [supabase, tenantIds, baseTenants, logoBySlug, tenantById, tAlerts]);
+  }, [
+    supabase,
+    tenantIds,
+    baseTenants,
+    logoBySlug,
+    tenantById,
+    tAlerts,
+    totalLocations,
+    activeLocations,
+  ]);
 
   const fetchChart = useCallback(
     async (period: ChartPeriod) => {
@@ -321,14 +362,48 @@ export default function TenantsPageClient({
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: fetchAll sets state only after an awaited async fetch, never synchronously during render; the rule cannot see through the async boundary (2026-06-18)
     void fetchAll();
   }, [fetchAll]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: fetchChart sets state only after an awaited async fetch, never synchronously during render; the rule cannot see through the async boundary (2026-06-18)
     void fetchChart(chartPeriod);
   }, [fetchChart, chartPeriod]);
+
+  // The initial tenant load is bounded for scalability, so the in-memory list
+  // (with real per-tenant metrics) covers only the first page. To keep the
+  // superadmin able to find ANY tenant via the search dialog, the server also
+  // sends a lightweight, orders-free directory of every tenant. Directory-only
+  // rows (the long tail beyond the loaded page) carry zeroed metrics; their
+  // precise rollups belong to the DB rollup wave. This never expands the orders
+  // aggregation tenant set, which stays bound to the loaded page.
+  const directory = useMemo<LocationStat[]>(() => {
+    if (!serverDirectory || serverDirectory.length === 0) return [];
+    const loadedIds = new Set(tenantIds);
+    return serverDirectory
+      .filter((r) => !loadedIds.has(r.id))
+      .map((r) => ({
+        tenant_id: r.id,
+        tenant_slug: r.slug,
+        tenant_name: r.name,
+        tenant_plan: r.subscription_plan,
+        tenant_logo_url: null,
+        is_active: r.is_active,
+        revenue_today: 0,
+        revenue_yesterday: 0,
+        orders_today: 0,
+        orders_yesterday: 0,
+        sparkline: [],
+      }));
+  }, [serverDirectory, tenantIds]);
+
+  // Loaded tenants (with real metrics) take precedence; directory-only rows fill
+  // the long tail so search can reach every tenant.
+  const dialogLocations = useMemo<LocationStat[]>(
+    () => (directory.length > 0 ? [...locations, ...directory] : locations),
+    [locations, directory],
+  );
 
   const handleOpenDashboard = useCallback(
     (slug: string) => router.push(`/sites/${slug}/admin`),
@@ -411,7 +486,7 @@ export default function TenantsPageClient({
       <TenantsListDialog
         open={showFullList}
         onOpenChange={setShowFullList}
-        locations={locations}
+        locations={dialogLocations}
         onOpenDashboard={handleOpenDashboard}
         onOpenMenu={handleOpenMenu}
       />

@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
-import { getCachedTenant, toPublicTenant } from '@/lib/cache';
-import type { Menu, Category, MenuItem, Venue, Zone, Table } from '@/types/admin.types';
+import { getCachedTenant, getCachedMenuData, toPublicTenant } from '@/lib/cache';
 
 export const revalidate = 30;
 
@@ -66,98 +64,19 @@ export default async function MenuDetailPage({
     return notFound();
   }
 
-  const supabase = await createClient();
-
   const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return notFound();
   }
 
-  // Parallel data fetching
-  const [
-    venuesResult,
-    categoriesResult,
-    menuItemsResult,
-    menusResult,
-    transversalMenusResult,
-    zonesResult,
-    tablesResult,
-  ] = await Promise.all([
-    supabase
-      .from('venues')
-      .select('id, tenant_id, name, name_en, slug, type, has_own_menu, is_active, created_at')
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: true }),
-
-    supabase
-      .from('categories')
-      .select(
-        'id, tenant_id, menu_id, name, name_en, description, display_order, is_active, created_at, preparation_zone',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true }),
-
-    supabase
-      .from('menu_items')
-      .select(
-        `
-        id, tenant_id, category_id, name, name_en, description, description_en,
-        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
-        category:categories(id, tenant_id, name, name_en, created_at),
-        options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
-        price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
-        modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
-      `,
-      )
-      .eq('tenant_id', tenant.id)
-      .is('deleted_at', null)
-      .eq('is_available', true)
-      .order('created_at', { ascending: true }),
-
-    supabase
-      .from('menus')
-      .select(
-        'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, description, is_active, display_order)',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .eq('is_transversal_menu', false)
-      .is('parent_menu_id', null)
-      .order('display_order', { ascending: true }),
-
-    supabase
-      .from('menus')
-      .select(
-        'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
-      )
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .eq('is_transversal_menu', true)
-      .order('display_order', { ascending: true }),
-
-    supabase
-      .from('zones')
-      .select('id, venue_id, name, name_en, prefix, display_order, created_at')
-      .eq('tenant_id', tenant.id),
-
-    supabase
-      .from('tables')
-      .select(
-        'id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
-      )
-      .eq('tenant_id', tenant.id),
-  ]);
-
-  const venues = (venuesResult.data || []) as unknown as Venue[];
-  const categories = (categoriesResult.data || []) as unknown as Category[];
-  const menuItems = (menuItemsResult.data || []) as unknown as MenuItem[];
-  const menus = (menusResult.data || []) as Menu[];
-  const transversalMenus = (transversalMenusResult.data || []) as Menu[];
-  const zones = (zonesResult.data || []) as unknown as Zone[];
-  const tables = (tablesResult.data || []) as unknown as Table[];
+  // Heavy menu payload (venues, categories, items+modifiers, menus, zones,
+  // tables) is fetched through a per-tenant cached function so repeated QR
+  // scans are served from the Next.js data cache instead of re-running 7
+  // Supabase queries on every request. Cache invalidation is driven by the
+  // shared `menus` tag that menu/category server actions already revalidate.
+  const { venues, categories, menuItems, menus, transversalMenus, zones, tables } =
+    await getCachedMenuData(tenant.id);
 
   // Group items by category
   const itemsByCategory = categories.map((category) => ({

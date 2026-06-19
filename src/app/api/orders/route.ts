@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { createOrderSchema } from '@/lib/validations/order.schema';
@@ -202,17 +202,17 @@ export async function POST(request: Request) {
       throw orderError;
     }
 
-    // 9. Create in-app notification for admins (fire-and-forget, non-blocking)
-    void Promise.resolve(
-      adminSupabase.from('notifications').insert({
+    // 9. Create in-app notification for admins (scheduled via after() so Vercel
+    // serverless runs it after the response instead of racing a fire-and-forget promise).
+    after(async () => {
+      const { error: notifError } = await adminSupabase.from('notifications').insert({
         tenant_id: tenantId,
         user_id: null, // broadcast to all tenant admins
         type: 'info',
         title: `Nouvelle commande - Table ${tableNumber}`,
         body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
         link: `/orders`,
-      }),
-    ).then(({ error: notifError }) => {
+      });
       if (notifError) {
         logger.error('Failed to create order notification', notifError, {
           tenantId,
@@ -221,8 +221,10 @@ export async function POST(request: Request) {
       }
     });
 
-    // 10. Behavioral email triggers (fire-and-forget)
-    void (async () => {
+    // 10. Behavioral email triggers (scheduled via after() so Vercel serverless
+    // guarantees the work runs after the response is sent, instead of racing
+    // a fire-and-forget promise that the platform may freeze/terminate).
+    after(async () => {
       try {
         const [countResult, ownerResult, tenantExtResult] = await Promise.all([
           adminSupabase
@@ -268,7 +270,7 @@ export async function POST(request: Request) {
       } catch (triggerErr) {
         logger.warn('Order trigger email check failed (non-blocking)', { err: triggerErr });
       }
-    })();
+    });
 
     // 11. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
@@ -278,19 +280,18 @@ export async function POST(request: Request) {
       tenant?.trial_ends_at as string | null,
     );
     if (hasInventory) {
-      const inventoryService = createInventoryService(adminSupabase);
-      inventoryService
-        .destockOrder(result.orderId, tenantId)
-        .then(() => {
-          import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
-            checkAndNotifyLowStock(tenantId).catch((err) => {
-              logger.error('Stock alert check failed (non-blocking)', err);
-            }),
-          );
-        })
-        .catch((err) => {
+      // Scheduled via after() so destock + low-stock check survive serverless
+      // freeze after the response (was a raced fire-and-forget chain).
+      after(async () => {
+        try {
+          const inventoryService = createInventoryService(adminSupabase);
+          await inventoryService.destockOrder(result.orderId, tenantId);
+          const { checkAndNotifyLowStock } = await import('@/services/notification.service');
+          await checkAndNotifyLowStock(tenantId);
+        } catch (err) {
           logger.error('Auto-destock failed (non-blocking)', err);
-        });
+        }
+      });
     }
 
     return NextResponse.json({

@@ -9,7 +9,25 @@ import { ServiceError } from './errors';
  * This service ENFORCES plan limits (not just displays them).
  * Every resource creation must check limits before proceeding.
  */
-export function createPlanEnforcementService(supabase: SupabaseClient) {
+export interface PlanEnforcementService {
+  canAddAdmin(tenant: Tenant): Promise<void>;
+  canAddStaff(tenant: Tenant): Promise<void>;
+  canAddMenuItem(tenant: Tenant): Promise<void>;
+  canAddVenue(tenant: Tenant): Promise<void>;
+  canAddMenu(tenant: Tenant): Promise<void>;
+  canAddCategory(tenant: Tenant): Promise<void>;
+  canAddItems(tenant: Tenant, batchSize: number): Promise<void>;
+  canAddCategories(tenant: Tenant, batchSize: number): Promise<void>;
+  getUsageCounts(tenantId: string): Promise<{
+    admins: number;
+    items: number;
+    venues: number;
+    menus: number;
+    categories: number;
+  }>;
+}
+
+export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnforcementService {
   return {
     /**
      * Check if tenant can add more admin users

@@ -22,7 +22,12 @@ interface AddRestaurantResult {
  * Each owner has exactly one group. All their restaurants belong to that group.
  * The group is created automatically on first signup or first restaurant addition.
  */
-export function createRestaurantGroupService(supabase: SupabaseClient) {
+export interface RestaurantGroupService {
+  getOrCreateGroup(userId: string): Promise<{ id: string }>;
+  addRestaurantToGroup(input: AddRestaurantInput): Promise<AddRestaurantResult>;
+}
+
+export function createRestaurantGroupService(supabase: SupabaseClient): RestaurantGroupService {
   return {
     /**
      * Get the owner's existing group, or create one if it doesn't exist.

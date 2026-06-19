@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { createOrderService } from '@/services/order.service';
 import { createServiceManagerService } from '@/services/service-manager.service';
+import { actionUpdateOrderStatus } from '@/app/actions/orders';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -192,8 +193,8 @@ export default function ServiceManager({ tenantId }: Props) {
     async (orderId: string) => {
       setReadyOrders((prev) => prev.filter((o) => o.id !== orderId));
       try {
-        const orderService = createOrderService(createClient());
-        await orderService.updateStatus(orderId, tenantId, 'delivered');
+        const result = await actionUpdateOrderStatus(tenantId, orderId, 'delivered');
+        if (result.error) throw new Error(result.error);
         toast({ title: t('markDelivered') });
       } catch (error) {
         logger.error('Failed to mark order as delivered', error);

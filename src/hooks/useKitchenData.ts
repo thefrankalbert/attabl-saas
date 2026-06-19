@@ -13,6 +13,7 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
+import { actionUpdateOrderStatus, actionUpdateItemStatus } from '@/app/actions/orders';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -267,7 +268,12 @@ export function useKitchenData({
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
     try {
-      await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+      const result = await actionUpdateOrderStatus(tenantId, orderId, newStatus);
+      if (result.error) {
+        toast({ title: tc('error'), variant: 'destructive' });
+        loadOrders();
+        return;
+      }
       toast({ title: newStatus === 'ready' ? t('actionAllReady') : ta('statusUpdated') });
       loadOrders();
     } catch {
@@ -284,12 +290,8 @@ export function useKitchenData({
     allItems: { id: string; item_status?: string }[],
   ) => {
     try {
-      const { error } = await supabase
-        .from('order_items')
-        .update({ item_status: newStatus })
-        .eq('id', itemId);
-
-      if (error) {
+      const result = await actionUpdateItemStatus(tenantId, orderId, [itemId], newStatus);
+      if (result.error) {
         toast({ title: tc('error'), variant: 'destructive' });
         return;
       }
@@ -299,7 +301,12 @@ export function useKitchenData({
       );
 
       if (allReady && allItems.length > 0) {
-        await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId);
+        const result = await actionUpdateOrderStatus(tenantId, orderId, 'ready');
+        if (result.error) {
+          toast({ title: tc('error'), variant: 'destructive' });
+          loadOrders();
+          return;
+        }
         toast({ title: t('actionAllReady') });
       }
 
@@ -313,20 +320,16 @@ export function useKitchenData({
   const markAllItemsReady = async (orderId: string, itemIds: string[]) => {
     try {
       if (itemIds.length > 0) {
-        const { error } = await supabase
-          .from('order_items')
-          .update({ item_status: 'ready' })
-          .in('id', itemIds);
-
-        if (error) {
+        const result = await actionUpdateItemStatus(tenantId, orderId, itemIds, 'ready');
+        if (result.error) {
           toast({ title: tc('error'), variant: 'destructive' });
           return;
         }
       }
 
-      const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId);
+      const result = await actionUpdateOrderStatus(tenantId, orderId, 'ready');
 
-      if (error) {
+      if (result.error) {
         toast({ title: tc('error'), variant: 'destructive' });
         return;
       }

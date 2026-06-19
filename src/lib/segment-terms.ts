@@ -14,7 +14,7 @@ export type EstablishmentSegment =
   | 'cafe'
   | 'fastfood'
   | 'other'
-  // Legacy — existing tenants only, not shown in onboarding
+  // Legacy - existing tenants only, not shown in onboarding
   | 'retail'
   | 'boutique'
   | 'pharmacy'

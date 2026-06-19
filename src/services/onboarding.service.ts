@@ -105,6 +105,17 @@ interface OnboardingState {
   data: OnboardingDraft;
 }
 
+export interface OnboardingService {
+  saveStep(
+    tenantId: string,
+    step: number,
+    data: OnboardingStepData,
+    fullDraft?: OnboardingDraft,
+  ): Promise<void>;
+  completeOnboarding(tenantId: string, data: OnboardingCompleteData): Promise<{ slug?: string }>;
+  getState(userId: string): Promise<OnboardingState>;
+}
+
 /**
  * Onboarding service - handles the multi-step onboarding flow.
  *
@@ -115,7 +126,7 @@ interface OnboardingState {
  *
  * On restore, draft takes priority since it has the most complete snapshot.
  */
-export function createOnboardingService(supabase: SupabaseClient) {
+export function createOnboardingService(supabase: SupabaseClient): OnboardingService {
   return {
     /**
      * Saves progress for a specific onboarding step.
