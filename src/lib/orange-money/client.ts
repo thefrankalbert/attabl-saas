@@ -42,7 +42,7 @@ async function getAccessToken(clientId: string, clientSecret: string): Promise<s
   return data.access_token;
 }
 
-export interface OrangeMoneyPaymentData {
+interface OrangeMoneyPaymentData {
   id: number;
   currency: string;
   order_id: string;

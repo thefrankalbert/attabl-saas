@@ -12,13 +12,13 @@ export interface PdfExtractedItem {
   price: number;
 }
 
-export interface PdfExtractionResult {
+interface PdfExtractionResult {
   items: PdfExtractedItem[];
   pageCount: number;
   textLength: number;
 }
 
-export interface PdfImportResult {
+interface PdfImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;

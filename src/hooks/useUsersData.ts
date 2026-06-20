@@ -28,7 +28,7 @@ export interface CreateUserFormData {
  * Returns true when the user confirms, false otherwise. We keep the signature
  * narrow (message string only) so callers can plug any dialog implementation.
  */
-export type ConfirmFn = (message: string) => Promise<boolean>;
+type ConfirmFn = (message: string) => Promise<boolean>;
 
 export interface UseUsersDataParams {
   tenantId: string;

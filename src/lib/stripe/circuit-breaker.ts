@@ -92,7 +92,7 @@ class CircuitBreaker {
 }
 
 /** Circuit breaker for Stripe API calls */
-export const stripeCircuitBreaker = new CircuitBreaker({
+const stripeCircuitBreaker = new CircuitBreaker({
   name: 'stripe',
   failureThreshold: 3,
   resetTimeout: 30000,

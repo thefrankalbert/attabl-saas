@@ -24,7 +24,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string> {
 /**
  * Converts <img> and SVG <image> sources to inline data URLs before canvas capture.
  */
-export async function preloadImagesForCapture(root: HTMLElement): Promise<void> {
+async function preloadImagesForCapture(root: HTMLElement): Promise<void> {
   const elements: Array<HTMLImageElement | SVGImageElement> = [
     ...Array.from(root.querySelectorAll('img')),
     ...Array.from(root.querySelectorAll('image')),

@@ -1,11 +1,3 @@
-export interface RestaurantGroup {
-  id: string;
-  owner_user_id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface OwnerDashboardRow {
   tenant_id: string;
   tenant_name: string;
@@ -18,12 +10,4 @@ export interface OwnerDashboardRow {
   revenue_today: number;
   orders_month: number;
   revenue_month: number;
-}
-
-export interface OwnerDashboardGlobals {
-  totalRestaurants: number;
-  totalOrdersToday: number;
-  totalRevenueToday: number;
-  totalOrdersMonth: number;
-  totalRevenueMonth: number;
 }

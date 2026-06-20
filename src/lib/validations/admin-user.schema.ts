@@ -23,8 +23,6 @@ export const createAdminUserSchema = z.object({
   }),
 });
 
-export type CreateAdminUserInput = z.infer<typeof createAdminUserSchema>;
-
 /**
  * Schema for updating an existing admin user.
  * Used in admin server actions.
@@ -34,5 +32,3 @@ export const updateAdminUserSchema = z.object({
   full_name: z.string().min(2).max(100).optional(),
   is_active: z.boolean().optional(),
 });
-
-export type UpdateAdminUserInput = z.infer<typeof updateAdminUserSchema>;

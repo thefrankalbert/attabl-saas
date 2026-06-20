@@ -33,23 +33,4 @@ export const addTablesSchema = z.object({
     .default(2),
 });
 
-export const updateZoneSchema = z.object({
-  name: z.string().min(1).max(50).optional(),
-  prefix: z
-    .string()
-    .min(1)
-    .max(5)
-    .regex(/^[A-Z0-9]+$/)
-    .optional(),
-  display_order: z.number().int().min(0).optional(),
-});
-
-export const updateTableSchema = z.object({
-  display_name: z.string().min(1).max(100).optional(),
-  capacity: z.number().int().min(1).max(20).optional(),
-  is_active: z.boolean().optional(),
-});
-
 export type ZoneInput = z.infer<typeof zoneSchema>;
-export type TableConfigInput = z.infer<typeof tableConfigSchema>;
-export type AddTablesInput = z.infer<typeof addTablesSchema>;

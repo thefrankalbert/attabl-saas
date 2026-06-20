@@ -1,11 +1,4 @@
-export const SETTINGS_TABS = [
-  'identity',
-  'branding',
-  'billing',
-  'sounds',
-  'security',
-  'contact',
-] as const;
+const SETTINGS_TABS = ['identity', 'branding', 'billing', 'sounds', 'security', 'contact'] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 

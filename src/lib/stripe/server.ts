@@ -1,9 +1,6 @@
 import Stripe from 'stripe';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
-// Re-export pricing constants for backwards compatibility (server-side callers)
-export { PLAN_AMOUNTS, PLAN_TOTALS, getPlanAmount } from './pricing';
-
 // Client Stripe cote serveur - lazy initialized to avoid crash if env var is missing at import time
 let _stripeInstance: Stripe | null = null;
 
@@ -67,7 +64,7 @@ function getStripePricesInstance(): StripePriceMap {
 }
 
 // Proxy defers requireEnv() calls until first property access (same pattern as `stripe`)
-export const STRIPE_PRICES: StripePriceMap = new Proxy({} as StripePriceMap, {
+const STRIPE_PRICES: StripePriceMap = new Proxy({} as StripePriceMap, {
   get(_target, prop: string | symbol) {
     return Reflect.get(getStripePricesInstance(), prop);
   },

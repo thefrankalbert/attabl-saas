@@ -55,10 +55,10 @@ function extractTenantId(
 }
 
 /** A `zones` row (select '*') with the embedded venue tenant_id used by the !inner filter. */
-export type ZoneWithVenueRef = Zone & { venue: { tenant_id: string } };
+type ZoneWithVenueRef = Zone & { venue: { tenant_id: string } };
 
 /** A `tables` row (select '*') with the embedded zone -> venue tenant_id. */
-export type TableWithZoneRef = Table & {
+type TableWithZoneRef = Table & {
   zone: { venue: { tenant_id: string } };
 };
 

@@ -27,7 +27,7 @@ interface UseKitchenDataParams {
   zoneFilter?: KDSZoneFilter;
 }
 
-export interface ColumnConfig {
+interface ColumnConfig {
   dot: string;
   countBadge: string;
   colBg: string;
@@ -36,7 +36,7 @@ export interface ColumnConfig {
   emptyLabel: string;
 }
 
-export type ColumnKey = 'pending' | 'preparing' | 'ready';
+type ColumnKey = 'pending' | 'preparing' | 'ready';
 
 export interface UseKitchenDataReturn {
   // Data

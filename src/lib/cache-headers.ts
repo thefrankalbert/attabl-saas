@@ -9,11 +9,6 @@ const CACHE_STRATEGIES: Record<CacheStrategy, string> = {
   realtime: 'no-store, no-cache, must-revalidate',
 };
 
-export function withCacheHeaders(response: NextResponse, strategy: CacheStrategy): NextResponse {
-  response.headers.set('Cache-Control', CACHE_STRATEGIES[strategy]);
-  return response;
-}
-
 export function jsonWithCache<T>(data: T, strategy: CacheStrategy, status = 200): NextResponse {
   const response = NextResponse.json(data, { status });
   response.headers.set('Cache-Control', CACHE_STRATEGIES[strategy]);

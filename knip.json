@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignore": ["src/components/ui/**", "src/types/database.generated.ts"],
+  "ignoreDependencies": ["@radix-ui/react-separator", "@radix-ui/react-tooltip", "tailwindcss"],
   "workspaces": {
     ".": {
       "entry": [
