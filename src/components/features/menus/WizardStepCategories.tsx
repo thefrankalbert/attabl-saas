@@ -83,14 +83,7 @@ export default function WizardStepCategories({
                 <p className="text-sm font-medium text-app-text">{cat.name}</p>
               </div>
               {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-                <span
-                  className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
-                    cat.preparation_zone === 'bar'
-                      ? 'bg-purple-500/10 text-purple-400'
-                      : 'bg-blue-500/10 text-blue-400',
-                  )}
-                >
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium normal-case border border-[var(--border)] text-[var(--muted-foreground)]">
                   {cat.preparation_zone === 'bar' ? (
                     <Wine className="w-3 h-3" />
                   ) : (

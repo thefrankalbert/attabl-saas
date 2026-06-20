@@ -121,9 +121,9 @@ export default function ItemModifierEditor({
                 variant="outline"
                 onClick={() => handleToggleAvailable(mod)}
                 className={cn(
-                  'px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 h-auto',
+                  'px-2 py-0.5 rounded-[0.625rem] text-[10px] font-medium shrink-0 h-auto',
                   mod.is_available
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    ? 'border border-[var(--border)] text-[var(--success)]'
                     : 'bg-app-elevated text-app-text-secondary border-app-border',
                 )}
               >
@@ -135,7 +135,7 @@ export default function ItemModifierEditor({
                 onClick={() => handleDelete(mod.id)}
                 disabled={deletingId === mod.id}
                 title="Supprimer"
-                className="h-8 w-8 p-0 text-app-text-muted hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 p-0 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 {deletingId === mod.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

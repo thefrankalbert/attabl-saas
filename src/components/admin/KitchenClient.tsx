@@ -205,7 +205,7 @@ export default function KitchenClient({
         style={safeAreaStyle}
       >
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
+          <RefreshCw className="w-8 h-8 animate-spin text-[var(--warning)]" />
           <p className="text-sm font-medium text-app-text-secondary">{t('loadingKds')}</p>
         </div>
       </div>
@@ -224,8 +224,8 @@ export default function KitchenClient({
           onTouchStart={handleUnlock}
         >
           <div className="text-center p-8">
-            <Volume2 className="w-16 h-16 text-amber-400 mx-auto" />
-            <p className="text-lg font-bold text-app-text mt-4">{t('tapToEnableSound')}</p>
+            <Volume2 className="w-16 h-16 text-[var(--warning)] mx-auto" />
+            <p className="text-lg font-medium text-app-text mt-4">{t('tapToEnableSound')}</p>
             <p className="text-sm text-app-text-muted mt-2">{t('tapToEnableSoundDesc')}</p>
           </div>
         </div>

@@ -245,7 +245,6 @@ export default function OrdersClient({
       text: string;
       nextStatus: OrderStatus | null;
       nextLabel: string | null;
-      actionDot: string;
     }
   > = useMemo(
     () => ({
@@ -255,7 +254,6 @@ export default function OrdersClient({
         text: STATUS_STYLES.pending.text,
         nextStatus: 'preparing',
         nextLabel: t('actionPrepare'),
-        actionDot: STATUS_STYLES.pending.dot,
       },
       preparing: {
         label: t('statusPreparingCard'),
@@ -263,7 +261,6 @@ export default function OrdersClient({
         text: STATUS_STYLES.preparing.text,
         nextStatus: 'ready',
         nextLabel: t('actionReady'),
-        actionDot: STATUS_STYLES.preparing.dot,
       },
       ready: {
         label: t('statusReadyCard'),
@@ -271,7 +268,6 @@ export default function OrdersClient({
         text: STATUS_STYLES.ready.text,
         nextStatus: 'delivered',
         nextLabel: t('actionDeliver'),
-        actionDot: STATUS_STYLES.ready.dot,
       },
       delivered: {
         label: t('statusDeliveredCard'),
@@ -279,7 +275,6 @@ export default function OrdersClient({
         text: STATUS_STYLES.delivered.text,
         nextStatus: null,
         nextLabel: null,
-        actionDot: '',
       },
       cancelled: {
         label: t('statusCancelledCard'),
@@ -287,7 +282,6 @@ export default function OrdersClient({
         text: STATUS_STYLES.cancelled.text,
         nextStatus: null,
         nextLabel: null,
-        actionDot: '',
       },
     }),
     [t],
@@ -303,7 +297,6 @@ export default function OrdersClient({
         text: 'text-app-text-muted',
         nextStatus: null as OrderStatus | null,
         nextLabel: null as string | null,
-        actionDot: '',
       },
     [statusConfig],
   );
@@ -363,7 +356,7 @@ export default function OrdersClient({
                 {label}
               </span>
               {row.original.preparation_zone === 'bar' && (
-                <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-400">
+                <span className="px-1.5 py-0.5 rounded text-xs font-medium border border-[var(--border)] text-[var(--muted-foreground)]">
                   BAR
                 </span>
               )}
@@ -387,7 +380,7 @@ export default function OrdersClient({
             <div className="text-right">
               <span className="font-mono font-bold text-app-text">{formatNumber(total + tip)}</span>
               {tip > 0 && (
-                <span className="block text-xs text-emerald-500 font-medium">
+                <span className="block text-xs text-[var(--success)] font-medium">
                   +{formatNumber(tip)} {ta('tipLabel')}
                 </span>
               )}
@@ -422,11 +415,7 @@ export default function OrdersClient({
                     e.stopPropagation();
                     handleStatusChange(order.id, config.nextStatus!);
                   }}
-                  className={cn(
-                    'text-xs text-accent-text gap-1 min-h-[44px]',
-                    config.actionDot,
-                    `hover:opacity-90`,
-                  )}
+                  className="text-xs gap-1 min-h-[44px]"
                 >
                   {config.nextLabel} <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -669,7 +658,7 @@ export default function OrdersClient({
             aria-label="Delete"
             onClick={() => setShowDeleteConfirm(true)}
             title={tc('delete')}
-            className="h-8 w-8 text-red-400 hover:bg-red-500/15"
+            className="h-8 w-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -801,7 +790,7 @@ export default function OrdersClient({
                               {formatNumber(total)}
                             </span>
                             {(order.tip_amount ?? 0) > 0 && (
-                              <span className="block text-xs text-emerald-500 font-medium">
+                              <span className="block text-xs text-[var(--success)] font-medium">
                                 +{formatNumber(order.tip_amount ?? 0)} {ta('tipLabel')}
                               </span>
                             )}
@@ -818,11 +807,7 @@ export default function OrdersClient({
                               e.stopPropagation();
                               handleStatusChange(order.id, config.nextStatus!);
                             }}
-                            className={cn(
-                              'text-xs text-accent-text gap-1 min-h-[44px]',
-                              config.actionDot,
-                              `hover:opacity-90`,
-                            )}
+                            className="text-xs gap-1 min-h-[44px]"
                           >
                             {config.nextLabel} <ChevronRight className="w-4 h-4" />
                           </Button>

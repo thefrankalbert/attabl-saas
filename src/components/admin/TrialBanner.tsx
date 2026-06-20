@@ -67,29 +67,29 @@ interface StyleConfig {
 function getStyleConfig(daysRemaining: number): StyleConfig {
   if (daysRemaining <= 1) {
     return {
-      containerClass: 'bg-red-500/10 border-b border-red-500/20',
-      iconClass: 'text-red-500',
-      textClass: 'text-red-500',
-      linkClass: 'text-red-400',
-      closeClass: 'hover:bg-red-500/20 text-red-500',
+      containerClass: 'border-b border-[var(--border)]',
+      iconClass: 'text-[var(--destructive)]',
+      textClass: 'text-[var(--destructive)]',
+      linkClass: 'text-[var(--destructive)]',
+      closeClass: 'hover:bg-[var(--accent)] text-[var(--destructive)]',
     };
   }
 
   if (daysRemaining === 2) {
     return {
-      containerClass: 'bg-amber-500/10 border-b border-amber-500/20',
-      iconClass: 'text-amber-500',
-      textClass: 'text-amber-500',
-      linkClass: 'text-amber-400',
-      closeClass: 'hover:bg-amber-500/20 text-amber-500',
+      containerClass: 'border-b border-[var(--border)]',
+      iconClass: 'text-[var(--warning)]',
+      textClass: 'text-[var(--warning)]',
+      linkClass: 'text-[var(--warning)]',
+      closeClass: 'hover:bg-[var(--accent)] text-[var(--warning)]',
     };
   }
 
   return {
-    containerClass: 'bg-blue-500/10 border-b border-blue-500/20',
-    iconClass: 'text-blue-500',
-    textClass: 'text-blue-500',
-    linkClass: 'text-blue-400',
-    closeClass: 'hover:bg-blue-500/20 text-blue-500',
+    containerClass: 'border-b border-[var(--border)]',
+    iconClass: 'text-[var(--muted-foreground)]',
+    textClass: 'text-[var(--muted-foreground)]',
+    linkClass: 'text-[var(--muted-foreground)]',
+    closeClass: 'hover:bg-[var(--accent)] text-[var(--muted-foreground)]',
   };
 }

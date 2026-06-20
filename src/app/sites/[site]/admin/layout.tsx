@@ -197,6 +197,36 @@ export default async function AdminLayout({
     }
   })();
 
+  // Real nav badge counts (open orders / in-kitchen / active items). Best-effort,
+  // tenant-scoped, cheap head counts; failures leave the badge hidden.
+  let navCounts: { orders?: number; kitchen?: number; items?: number } = {};
+  try {
+    const [openOrdersRes, kitchenRes, itemsRes] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .in('status', ['pending', 'preparing', 'ready']),
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .in('status', ['preparing', 'ready']),
+      supabase
+        .from('menu_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .eq('is_available', true),
+    ]);
+    navCounts = {
+      orders: openOrdersRes.count ?? undefined,
+      kitchen: kitchenRes.count ?? undefined,
+      items: itemsRes.count ?? undefined,
+    };
+  } catch {
+    // counts are best-effort; ignore failures
+  }
+
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
@@ -221,6 +251,7 @@ export default async function AdminLayout({
             userName={adminUser?.name || user.email || ''}
             userEmail={user.email ?? undefined}
             ordersUsagePercent={ordersUsagePercent}
+            navCounts={navCounts}
             userTenants={userTenants}
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
             breadcrumbs={<AdminBreadcrumbs />}

@@ -1,113 +1,53 @@
 'use client';
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
-import { BarChart3, Package, QrCode } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
 import { formatCurrency, getCurrencyConfig } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
-import { MetricsRow, type MetricDescriptor, type MetricKey } from './dashboard/MetricsRow';
-// OverviewChart brings in recharts (~200KB). Defer with next/dynamic so it
-// doesn't block the initial admin shell render. Types still imported eagerly
-// - type imports are erased at build time.
-import type { ChartMetric, ChartRange, SeriesPoint } from './dashboard/OverviewChart';
-const OverviewChart = dynamic(
-  () => import('./dashboard/OverviewChart').then((m) => m.OverviewChart),
-  {
-    ssr: false,
-    loading: () => <div className="h-[300px] w-full animate-pulse rounded-xl bg-app-elevated" />,
-  },
-);
-import { TopDishesCard, type TopDish } from './dashboard/TopDishesCard';
-import { StockAlertsCard, type StockAlert } from './dashboard/StockAlertsCard';
-// LiveOrdersFeed subscribes to Supabase realtime - only needed once hydrated.
-const LiveOrdersFeed = dynamic(
-  () => import('./dashboard/LiveOrdersFeed').then((m) => m.LiveOrdersFeed),
-  {
-    ssr: false,
-    loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-app-elevated" />,
-  },
-);
+import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
+import { RevenueChart } from './dashboard/RevenueChart';
+import { OrdersTable } from './dashboard/OrdersTable';
 import type {
   DashboardBucketSeries,
-  DashboardDayBucket,
+  DashboardChannelSeries,
   TopDishRecord,
   StockAlertRecord,
 } from '@/types/dashboard.types';
 
 type DashboardClientProps = UseDashboardDataParams & {
   establishmentType?: string;
+  /** Legacy single-series buckets (still provided by the server, now unused here) */
   initialBuckets?: DashboardBucketSeries;
+  initialChannelBuckets?: DashboardChannelSeries;
   initialTopDishes?: TopDishRecord[];
   initialStockAlerts?: StockAlertRecord[];
   initialActiveTables?: { used: number; total: number };
 };
 
-function weekdayShort(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { weekday: 'short' });
-}
-
-function weekLabel(bucketIndex: number, total: number, locale: string, bucketDate: string): string {
-  const d = new Date(bucketDate);
-  if (total <= 7) return weekdayShort(d, locale);
-  if (total <= 30) return d.toLocaleDateString(locale, { day: 'numeric' });
-  // quarter: show weekly ticks every ~7 days
-  if (bucketIndex % 7 !== 0 && bucketIndex !== total - 1) return '';
-  return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-}
-
-function buildSeries(
-  current: DashboardDayBucket[],
-  previous: DashboardDayBucket[],
-  metric: ChartMetric,
-  locale: string,
-): SeriesPoint[] {
-  return current.map((b, i) => {
-    const prevValue =
-      previous.length === current.length
-        ? metric === 'revenue'
-          ? previous[i].revenue
-          : previous[i].count
-        : 0;
-    return {
-      label: weekLabel(i, current.length, locale, b.date),
-      value: metric === 'revenue' ? b.revenue : b.count,
-      prev: prevValue,
-    };
-  });
-}
+const EMPTY_CHANNELS: DashboardChannelSeries = { week: [], month: [], quarter: [] };
 
 export default function DashboardClient(props: DashboardClientProps) {
   const {
     tenantSlug,
-    tenantName,
-    userName,
     currency = 'XAF',
-    initialBuckets,
-    initialTopDishes = [],
-    initialStockAlerts = [],
+    initialChannelBuckets = EMPTY_CHANNELS,
     initialActiveTables = { used: 0, total: 0 },
   } = props;
 
   const t = useTranslations('admin');
-  const tc = useTranslations('common');
-  const to = useTranslations('orders');
   const locale = useLocale();
 
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmtF = useCallback((n: number) => formatCurrency(n, currency as CurrencyCode), [currency]);
   const currencySymbol = getCurrencyConfig(currency as CurrencyCode).symbol;
 
-  const { stats, recentOrders, loading } = useDashboardData(props);
+  const { stats, recentOrders, loading, handleStatusChange } = useDashboardData(props);
   const { can } = usePermissions();
   const showFin = can('canViewAllFinances');
 
-  const [metricKey, setMetricKey] = useState<MetricKey>('revenue');
-  const [range, setRange] = useState<ChartRange>('week');
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -115,149 +55,102 @@ export default function DashboardClient(props: DashboardClientProps) {
     return () => clearInterval(timer);
   }, []);
 
-  const hour = currentTime.getHours();
-  const greetKey: 'goodMorning' | 'goodAfternoon' | 'goodEvening' =
-    hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
-
-  // ── Metrics row
+  // ── KPI section cards
   // Depend on primitive stat values, not the whole `stats` object -
   // TanStack Query returns a fresh reference on every refetch even when
   // values are unchanged, which would defeat the memo otherwise.
   const revenueToday = stats.revenueToday;
   const ordersToday = stats.ordersToday;
-  const activeItems = stats.activeItems;
   const activeCards = stats.activeCards;
   const revenueTrend = stats.revenueTrend;
   const ordersTrend = stats.ordersTrend;
   const activeTablesUsed = initialActiveTables.used;
   const activeTablesTotal = initialActiveTables.total;
-  const weekBuckets = initialBuckets?.week;
 
-  const metrics: MetricDescriptor[] = useMemo(() => {
-    const revenueSpark = (weekBuckets ?? []).map((b) => b.revenue);
-    const orderSpark = (weekBuckets ?? []).map((b) => b.count);
+  const sectionCards: SectionCardData[] = useMemo(() => {
+    const fmtNum = (n: number) =>
+      Math.round(n).toLocaleString(locale, { maximumFractionDigits: 0 });
+    const deltaText = (trend: number | undefined) =>
+      trend === undefined ? undefined : `${trend >= 0 ? '+' : ''}${trend}%`;
+
+    // Yesterday raw values are derived exactly from today + the trend %:
+    // trend = (today - yesterday) / yesterday  =>  yesterday = today / (1 + trend/100)
+    const revYest =
+      revenueTrend !== undefined && revenueTrend !== -100
+        ? revenueToday / (1 + revenueTrend / 100)
+        : undefined;
+    const ordYest =
+      ordersTrend !== undefined && ordersTrend !== -100
+        ? ordersToday / (1 + ordersTrend / 100)
+        : undefined;
+
+    const ticketToday = ordersToday > 0 ? revenueToday / ordersToday : 0;
+    const ticketYest =
+      revYest !== undefined && ordYest !== undefined && ordYest > 0 ? revYest / ordYest : undefined;
+    const ticketTrend =
+      ticketYest !== undefined && ticketYest > 0
+        ? Math.round(((ticketToday - ticketYest) / ticketYest) * 100)
+        : undefined;
+
+    const tablesTotal = activeTablesTotal || activeCards;
+
     return [
       {
-        key: 'revenue',
-        label: t('revenueToday'),
-        value: showFin ? fmtF(revenueToday) : '***',
-        unit: currencySymbol,
-        compareText: revenueTrend !== undefined ? t('vsYesterday') : undefined,
-        deltaPercent: revenueTrend,
-        sparkline: revenueSpark,
-        live: true,
+        desc: t('revenueToday'),
+        value: showFin ? fmtNum(revenueToday) : '•••',
+        unit: showFin ? ` ${currencySymbol}` : '',
+        deltaText: deltaText(revenueTrend),
+        up: (revenueTrend ?? 0) >= 0,
+        line1: (revenueTrend ?? 0) >= 0 ? t('kpiUp') : t('kpiDown'),
+        line2:
+          revYest !== undefined && showFin
+            ? t('kpiVsYesterdayValue', { value: `${fmtNum(revYest)} ${currencySymbol}` })
+            : t('pageSubtitle'),
       },
       {
-        key: 'items',
-        label: t('activeItems'),
-        value: String(activeItems),
-        compareText: '',
-        deltaPercent: 0,
-      },
-      {
-        key: 'orders',
-        label: t('ordersToday'),
+        desc: t('ordersToday'),
         value: String(ordersToday),
-        compareText: ordersTrend !== undefined ? t('vsYesterday') : undefined,
-        deltaPercent: ordersTrend,
-        sparkline: orderSpark,
+        deltaText: deltaText(ordersTrend),
+        up: (ordersTrend ?? 0) >= 0,
+        line1: (ordersTrend ?? 0) >= 0 ? t('kpiUp') : t('kpiDown'),
+        line2:
+          ordYest !== undefined
+            ? t('kpiOrdersYesterday', { value: fmtNum(ordYest) })
+            : t('liveLabel'),
       },
       {
-        key: 'tables',
-        label: t('activeTables'),
-        value: `${activeTablesUsed}`,
-        unit: `/${activeTablesTotal || activeCards}`,
-        compareText: '',
-        deltaPercent: 0,
+        desc: t('avgTicket'),
+        value: showFin ? fmtNum(ticketToday) : '•••',
+        unit: showFin ? ` ${currencySymbol}` : '',
+        deltaText: deltaText(ticketTrend),
+        up: (ticketTrend ?? 0) >= 0,
+        line1: (ticketTrend ?? 0) >= 0 ? t('kpiAvgUp') : t('kpiAvgDown'),
+        line2: t('kpiAvgFoot'),
+      },
+      {
+        desc: t('activeTables'),
+        value: String(activeTablesUsed),
+        unit: ` / ${tablesTotal}`,
+        deltaText:
+          tablesTotal > 0 ? `${Math.round((activeTablesUsed / tablesTotal) * 100)}%` : undefined,
+        up: true,
+        line1: t('kpiTablesActive'),
+        line2: t('kpiTablesFoot', { used: activeTablesUsed, total: tablesTotal }),
       },
     ];
   }, [
     t,
-    fmtF,
+    locale,
     currencySymbol,
     showFin,
     revenueToday,
     ordersToday,
-    activeItems,
     activeCards,
     revenueTrend,
     ordersTrend,
     activeTablesUsed,
     activeTablesTotal,
-    weekBuckets,
   ]);
-
-  // ── Chart data
-  const chartMetric: ChartMetric = metricKey === 'orders' ? 'orders' : 'revenue';
-  const chartSeries: SeriesPoint[] = useMemo(() => {
-    if (!initialBuckets) return [];
-    const current = initialBuckets[range] ?? [];
-    // Previous period comes from the quarter window (90d back only).
-    // Week → previous 7d, Month → previous 30d. Quarter has no comparable
-    // window because we only fetch 90d; return an empty prev to hide the
-    // dashed comparison line on that range.
-    const previous = (() => {
-      const q = initialBuckets.quarter;
-      if (!q.length || range === 'quarter') return [];
-      if (range === 'week') return q.slice(-14, -7);
-      return q.slice(-60, -30);
-    })();
-    return buildSeries(current, previous, chartMetric, locale);
-  }, [initialBuckets, range, chartMetric, locale]);
-
-  const chartTotal = useMemo(() => {
-    const current = initialBuckets ? (initialBuckets[range] ?? []) : [];
-    return chartMetric === 'revenue'
-      ? current.reduce((s, b) => s + b.revenue, 0)
-      : current.reduce((s, b) => s + b.count, 0);
-  }, [initialBuckets, range, chartMetric]);
-
-  // ── Top dishes
-  const topDishes: TopDish[] = useMemo(
-    () =>
-      initialTopDishes.map((d) => {
-        const dayKeys = Object.keys(d.dayCounts).sort();
-        const trend = dayKeys.length > 1 ? dayKeys.map((k) => d.dayCounts[k]) : [0, d.portions];
-        return {
-          id: d.id,
-          name: d.name,
-          subline: `${d.category} - ${fmtF(d.revenue / Math.max(d.portions, 1))}`,
-          category: d.category.toLowerCase(),
-          categoryLabel: d.category.toUpperCase(),
-          portions: d.portions,
-          revenue: d.revenue,
-          trend,
-          color: d.color,
-          initials: d.initials,
-          available: d.available,
-        };
-      }),
-    [initialTopDishes, fmtF],
-  );
-
-  const topDishCategories = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const d of topDishes) {
-      if (!seen.has(d.category)) seen.set(d.category, d.categoryLabel);
-    }
-    return Array.from(seen.entries()).map(([key, label]) => ({ key, label }));
-  }, [topDishes]);
-
-  // ── Stock alerts
-  const stockAlerts: StockAlert[] = useMemo(
-    () =>
-      initialStockAlerts.map((a) => ({
-        id: a.id,
-        level: a.level,
-        title: a.title,
-        subtitle: t('stockAlertSubtitle', {
-          current: a.current,
-          threshold: a.threshold,
-          unit: a.unit,
-        }),
-      })),
-    [initialStockAlerts, t],
-  );
 
   // ── Loading
   if (loading) {
@@ -299,157 +192,35 @@ export default function DashboardClient(props: DashboardClientProps) {
   }
 
   return (
-    // On lg+: dashboard fills the viewport. The header (greeting + actions)
-    // and metrics row stay fixed at top; only the left column (chart + top
-    // dishes) scrolls internally. Right column is stationary on lg+.
-    // Below lg: plain stacked page scroll (mobile UX unchanged).
-    <div className="flex flex-col gap-4 p-3 @sm:p-5 pb-10 @md:h-full @md:overflow-hidden @md:pb-4">
-      {/* Page head (greeting + quick-action Links) - full width, fixed on lg+ */}
-      <div className="flex items-end justify-between gap-6 flex-wrap">
-        <div>
-          <h1 className="text-[22px] font-medium tracking-tight text-app-text truncate max-w-[600px]">
-            {t(greetKey)}, {userName || tenantName}
-          </h1>
-          <p className="text-[13px] text-app-text-muted font-normal mt-0">{t('pageSubtitle')}</p>
-          <p
-            className="font-mono text-[13px] text-app-text-secondary mt-0.5"
-            suppressHydrationWarning
-          >
-            <span className="capitalize">
-              {currentTime.toLocaleDateString(locale, {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-            </span>
-            {' - '}
-            {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-            {' - '}
-            {t('liveLabel')}
-          </p>
-        </div>
-        <div className="flex gap-2 items-center flex-wrap">
-          <Link
-            href={`${adminBase}/qr-codes`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            {t('qrGenerator')}
-          </Link>
-          <Link
-            href={`${adminBase}/reports`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            {t('reportsLabel')}
-          </Link>
-          <Link
-            href={`${adminBase}/stock-history`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-          >
-            <Package className="w-3.5 h-3.5" />
-            {t('stockHistoryLabel')}
-          </Link>
-        </div>
+    // Maquette layout: vertical stack (KPI cards -> revenue chart -> orders
+    // table), full width, scrolling within the admin shell's main area.
+    <div className="flex flex-col gap-6 py-6">
+      <SectionCards cards={sectionCards} />
+      <div className="px-3 @sm:px-5">
+        <RevenueChart
+          series={initialChannelBuckets}
+          formatValue={fmtF}
+          locale={locale}
+          labels={{
+            title: t('chartRevenueTitle'),
+            desc: t('chartRevenueDesc'),
+            surplace: t('channelSurplace'),
+            emporter: t('channelEmporter'),
+            range90d: t('range90d'),
+            range30d: t('range30d'),
+            range7d: t('range7d'),
+            totalLabel: t('total90d'),
+          }}
+        />
       </div>
-
-      {/* Metrics row - full width, fixed on lg+ */}
-      <MetricsRow
-        metrics={metrics}
-        activeKey={metricKey}
-        onSelect={(key) => {
-          setMetricKey(key);
-        }}
-        tUp={t('trendUp')}
-        tDown={t('trendDown')}
+      <OrdersTable
+        orders={recentOrders}
+        formatValue={fmtF}
+        locale={locale}
+        adminBase={adminBase}
+        nowMs={currentTime.getTime()}
+        onStatusChange={handleStatusChange}
       />
-
-      {/* Main grid: chart + feed. On lg+, grid fills remaining space and
-          each column manages its own overflow independently.
-          `lg:grid-rows-1` + `lg:overflow-hidden` is REQUIRED to constrain
-          the row to the grid's computed height - without them the implicit
-          row is `auto` (content-sized), the left column never overflows
-          its parent, and `overflow-y-auto` never triggers a scrollbar. */}
-      <div className="grid grid-cols-1 @md:grid-cols-[minmax(0,1fr)_320px] @lg:grid-cols-[minmax(0,1fr)_360px] @md:grid-rows-1 gap-4 @md:flex-1 @md:min-h-0 @md:overflow-hidden">
-        {/* Left column - scrolls internally on md+ (chart + top dishes) */}
-        <div className="flex flex-col gap-4 min-w-0 @md:min-h-0 @md:overflow-y-auto @md:pr-1">
-          <OverviewChart
-            metric={chartMetric}
-            onMetricChange={(next) => setMetricKey(next === 'orders' ? 'orders' : 'revenue')}
-            range={range}
-            onRangeChange={setRange}
-            series={chartSeries}
-            total={chartTotal}
-            formatValue={fmtF}
-            totalLabel={t(
-              range === 'week' ? 'total7d' : range === 'month' ? 'total30d' : 'total90d',
-            )}
-            legendCurrent={t('legendCurrent')}
-            legendPrev={t('legendPrev')}
-            revenueLabel={t('revenueLabel')}
-            ordersLabel={t('ordersLabel')}
-            rangeLabels={{
-              week: t('range7d'),
-              month: t('range30d'),
-              quarter: t('range90d'),
-            }}
-            title={t('dashboardOverview')}
-          />
-          <TopDishesCard
-            dishes={topDishes}
-            formatValue={fmtF}
-            title={t('topDishesTitle')}
-            rangeBadge={t('range7dShort')}
-            placeholder={t('topDishesSearch')}
-            tabAll={tc('all')}
-            tabs={topDishCategories}
-            headers={{
-              dish: t('thDish'),
-              portions: t('thPortions'),
-              revenue: t('thRevenue'),
-              category: t('thCategory'),
-              status: t('thStatus'),
-              trend: t('thTrend'),
-            }}
-            availableLabel={t('dishAvailable')}
-            unavailableLabel={t('dishUnavailable')}
-            emptyLabel={t('topDishesEmpty')}
-          />
-        </div>
-
-        {/* Right column - fixed on lg+. StockAlertsCard is conditional
-            (only when alerts exist). LiveOrdersFeed uses flex-1 min-h-0
-            so it fills remaining space; its internal order list scrolls. */}
-        <div className="flex flex-col gap-4 @md:min-h-0 @md:overflow-hidden">
-          <StockAlertsCard
-            alerts={stockAlerts}
-            title={t('stockAlertsTitle')}
-            watchingLabel={t('stockAlertsWatching')}
-            viewAllHref={`${adminBase}/inventory`}
-            viewAllLabel={t('stockAlertsViewAll')}
-          />
-          <LiveOrdersFeed
-            orders={recentOrders}
-            adminBase={adminBase}
-            formatValue={fmtF}
-            currentTime={currentTime}
-            labels={{
-              title: t('recentOrders'),
-              countSuffix: t('todaySuffix'),
-              pauseTitle: t('feedPause'),
-              resumeTitle: t('feedResume'),
-              emptyTitle: t('noOrdersDescAlt'),
-              emptySubtitle: t('noOrdersHint'),
-              newLabel: 'NEW',
-              statusDelivered: to('statusDeliveredCard'),
-              statusPending: to('statusPendingCard'),
-              statusPreparing: to('statusPreparingCard'),
-              statusCanceled: to('statusCancelledCard'),
-              statusDefault: to('statusPendingCard'),
-            }}
-          />
-        </div>
-      </div>
     </div>
   );
 }

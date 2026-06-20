@@ -445,9 +445,9 @@ export default function MenuDetailClient({
           variant="outline"
           onClick={toggleMenuActive}
           className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-semibold h-auto shrink-0',
+            'px-3 py-1.5 rounded-[0.625rem] text-xs font-medium h-auto shrink-0',
             menu.is_active
-              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+              ? 'border border-[var(--border)] text-[var(--success)]'
               : 'bg-app-bg text-app-text-secondary border-app-border',
           )}
         >
@@ -591,7 +591,7 @@ export default function MenuDetailClient({
                           size="sm"
                           onClick={() => handleDeleteCategory(cat)}
                           title="Supprimer"
-                          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                          className="text-xs h-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -678,9 +678,9 @@ export default function MenuDetailClient({
                               variant="outline"
                               onClick={() => toggleItemAvailable(item)}
                               className={cn(
-                                'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
+                                'px-2 py-0.5 rounded-[0.625rem] text-xs font-medium h-auto',
                                 item.is_available
-                                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                  ? 'border border-[var(--border)] text-[var(--success)]'
                                   : 'bg-app-bg text-app-text-secondary border-app-border',
                               )}
                             >
@@ -817,9 +817,9 @@ export default function MenuDetailClient({
                 variant="outline"
                 onClick={() => setItemFormAvailable(!itemFormAvailable)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold h-auto',
+                  'px-3 py-1.5 rounded-[0.625rem] text-xs font-medium h-auto',
                   itemFormAvailable
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    ? 'border border-[var(--border)] text-[var(--success)]'
                     : 'bg-app-bg text-app-text-secondary border-app-border',
                 )}
               >
@@ -883,7 +883,7 @@ export default function MenuDetailClient({
             <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteCategory}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
             >
               {tc('delete')}
             </AlertDialogAction>

@@ -93,7 +93,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
       {/* My Tables */}
       <div>
         <h2 className="text-lg font-semibold text-app-text mb-3 flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-emerald-600" />
+          <UserCheck className="w-5 h-5 text-[var(--success)]" />
           {t('myTables', { count: myAssignments.length })}
         </h2>
         {myAssignments.length === 0 ? (
@@ -124,7 +124,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                           e.stopPropagation();
                           releaseAssignment.mutate(assignment.id);
                         }}
-                        className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-red-500 min-h-[44px] min-w-[44px] justify-center touch-manipulation h-auto"
+                        className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-[var(--destructive)] min-h-[44px] min-w-[44px] justify-center touch-manipulation h-auto"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         {t('release')}
@@ -150,14 +150,14 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                               #{order.id.slice(0, 8)}
                             </span>
                             <span
-                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-[0.625rem] border border-[var(--border)] ${
                                 order.status === 'pending'
-                                  ? 'bg-amber-500/10 text-amber-500'
+                                  ? 'text-[var(--warning)]'
                                   : order.status === 'preparing'
-                                    ? 'bg-purple-500/10 text-purple-500'
+                                    ? 'text-[var(--muted-foreground)]'
                                     : order.status === 'ready'
-                                      ? 'bg-emerald-500/10 text-emerald-500'
-                                      : 'bg-app-elevated text-app-text-secondary'
+                                      ? 'text-[var(--success)]'
+                                      : 'text-app-text-secondary'
                               }`}
                             >
                               {order.status}

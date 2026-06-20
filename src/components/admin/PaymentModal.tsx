@@ -308,7 +308,7 @@ export default function PaymentModal({
                   </div>
                 )}
               {discountAmount !== undefined && discountAmount !== null && discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-400 text-xs">
+                <div className="flex justify-between text-[var(--success)] text-xs">
                   <span>{t('discount')}</span>
                   <span className="tabular-nums font-mono">
                     -{formatCurrency(discountAmount, currency)}
@@ -497,7 +497,7 @@ export default function PaymentModal({
                     {formatCurrency(receivedAmount, currency)}
                   </p>
                   {!cashIsValid && amountRemaining > 0 && (
-                    <p className="mt-1.5 text-[10px] font-medium text-amber-500">
+                    <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
                       {t('amountRemaining', { amount: formatCurrency(amountRemaining, currency) })}
                     </p>
                   )}
@@ -506,14 +506,14 @@ export default function PaymentModal({
                   className={cn(
                     'rounded-xl border p-3 text-center',
                     cashIsValid && change > 0
-                      ? 'border-emerald-500/40 bg-emerald-500/10'
+                      ? 'border-[var(--border)] bg-app-elevated/40'
                       : 'border-app-border bg-app-elevated/40',
                   )}
                 >
                   <p
                     className={cn(
                       'text-[10px] font-semibold uppercase tracking-widest',
-                      cashIsValid && change > 0 ? 'text-emerald-500' : 'text-app-text-muted',
+                      cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
                     )}
                   >
                     {t('change')}
@@ -521,7 +521,7 @@ export default function PaymentModal({
                   <p
                     className={cn(
                       'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
-                      cashIsValid && change > 0 ? 'text-emerald-500' : 'text-app-text',
+                      cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
                     )}
                   >
                     {formatCurrency(change, currency)}
@@ -561,8 +561,8 @@ export default function PaymentModal({
                     onClick={() => handleKeypadPress(key)}
                     className={cn(
                       'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
-                      key === 'C' && 'text-red-400',
-                      key === '⌫' && 'text-amber-400',
+                      key === 'C' && 'text-[var(--destructive)]',
+                      key === '⌫' && 'text-[var(--warning)]',
                       key === '0' && 'col-span-2',
                     )}
                     aria-label={
@@ -587,7 +587,7 @@ export default function PaymentModal({
                 disabled={!cashIsValid || isProcessing}
                 className={cn(
                   'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
-                  cashIsValid ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'opacity-60',
+                  cashIsValid ? '' : 'opacity-60',
                 )}
               >
                 {isProcessing ? (

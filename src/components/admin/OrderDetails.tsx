@@ -131,7 +131,7 @@ export default function OrderDetails({
                 {fmt(displayTotal + tipAmount)}
               </span>
               {tipAmount > 0 && (
-                <span className="text-[10px] text-emerald-500 font-medium">
+                <span className="text-[10px] text-[var(--success)] font-medium">
                   +{fmt(tipAmount)} {ta('tipLabel')}
                 </span>
               )}
@@ -248,7 +248,7 @@ export default function OrderDetails({
                   </div>
                 )}
                 {tipAmount > 0 && (
-                  <div className="flex justify-between text-[11px] text-emerald-500">
+                  <div className="flex justify-between text-[11px] text-[var(--success)]">
                     <span>{ta('tipLabel')}</span>
                     <span>+{fmt(tipAmount)}</span>
                   </div>
@@ -263,7 +263,7 @@ export default function OrderDetails({
             {/* Tip-only footer when no full breakdown exists but tip is present */}
             {!hasBreakdown && tipAmount > 0 && (
               <div className="border-t border-app-border px-3 py-2 space-y-1 shrink-0 bg-app-bg">
-                <div className="flex justify-between text-[11px] text-emerald-500">
+                <div className="flex justify-between text-[11px] text-[var(--success)]">
                   <span>{ta('tipLabel')}</span>
                   <span>+{fmt(tipAmount)}</span>
                 </div>
@@ -363,7 +363,7 @@ export default function OrderDetails({
 
         {/* Warnings */}
         {order.status !== 'ready' && order.status !== 'delivered' && (
-          <div className="flex items-center gap-2 p-4 border border-amber-500/20 bg-amber-500/10 text-amber-500 rounded-xl text-xs">
+          <div className="flex items-center gap-2 p-4 border border-[var(--border)] text-[var(--warning)] rounded-xl text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {t('warningReadyBeforeCheckout')}
           </div>
