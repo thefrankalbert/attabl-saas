@@ -255,11 +255,11 @@ export function SoundSettings({
               disabled={isLocked}
               className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-left group h-auto whitespace-normal ${
                 isSelected
-                  ? 'border-amber-500/40 bg-amber-500/10 ring-1 ring-amber-500/20'
+                  ? 'border-[var(--warning)]/40 bg-[var(--warning)]/10 ring-1 ring-[var(--warning)]/20'
                   : isLocked
                     ? 'border-app-border bg-app-bg/50 opacity-60 cursor-not-allowed'
                     : isCustom
-                      ? 'border-purple-200 bg-purple-500/5 hover:border-purple-500/30 cursor-pointer'
+                      ? 'border-[var(--border)] bg-app-card hover:border-app-border-hover cursor-pointer'
                       : 'border-app-border bg-app-card hover:border-app-border-hover cursor-pointer'
               }`}
             >
@@ -279,7 +279,7 @@ export function SoundSettings({
                 }}
                 className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
                   isPlaying
-                    ? 'bg-amber-500 text-white'
+                    ? 'bg-[var(--warning)] text-white'
                     : isLocked
                       ? 'bg-app-elevated text-app-text-muted'
                       : 'bg-app-elevated text-app-text-secondary hover:bg-app-elevated'
@@ -302,7 +302,7 @@ export function SoundSettings({
                   </span>
                   {sound.isPremium && !isPremium && <PremiumBadge />}
                   {isCustom && (
-                    <span className="text-[10px] uppercase tracking-wide bg-purple-500/10 text-purple-500 px-1 py-0.5 rounded-full flex-shrink-0">
+                    <span className="text-[10px] normal-case border border-[var(--border)] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded-[0.625rem] flex-shrink-0">
                       {t('customBadge')}
                     </span>
                   )}
@@ -331,7 +331,7 @@ export function SoundSettings({
                     }
                   }}
                   title="Supprimer"
-                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-[var(--destructive)] hover:bg-[var(--accent)] transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </div>
@@ -339,8 +339,8 @@ export function SoundSettings({
 
               {/* Selected indicator */}
               {isSelected && (
-                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3 h-3 text-white" />
+                <div className="w-5 h-5 rounded-full bg-[var(--primary)] flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-[var(--primary-foreground)]" />
                 </div>
               )}
             </Button>
@@ -384,7 +384,7 @@ export function SoundSettings({
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-[var(--border)] text-[var(--warning)] text-sm">
           <Crown className="w-4 h-4 flex-shrink-0" />
           <span>{t('customSoundPremiumOnly')}</span>
         </div>

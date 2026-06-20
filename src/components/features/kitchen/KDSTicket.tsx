@@ -37,11 +37,11 @@ const STATUS_BADGE: Record<string, { labelKey: string; className: string }> = {
   },
   preparing: {
     labelKey: 'statusCooking',
-    className: 'bg-orange-500 text-white',
+    className: 'border border-[var(--border)] text-[var(--warning)]',
   },
   ready: {
     labelKey: 'statusPacking',
-    className: 'bg-emerald-500 text-white',
+    className: 'border border-[var(--border)] text-[var(--success)]',
   },
 };
 
@@ -52,17 +52,17 @@ const CTA_CONFIG: Record<string, { labelKey: string; next: OrderStatus | undefin
     pending: {
       labelKey: 'startCooking',
       next: 'preparing',
-      bg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black',
+      bg: '',
     },
     preparing: {
       labelKey: 'finishCooking',
       next: 'ready',
-      bg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white',
+      bg: '',
     },
     ready: {
       labelKey: 'done',
       next: 'delivered',
-      bg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white',
+      bg: '',
     },
   };
 
@@ -250,8 +250,10 @@ export default function KDSTicket({
           </div>
           <span
             className={cn(
-              'text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0',
-              isDelayed ? 'bg-red-500 text-white' : badge.className,
+              'text-[10px] font-medium normal-case px-1.5 py-0.5 rounded shrink-0',
+              isDelayed
+                ? 'border border-[var(--border)] text-[var(--destructive)]'
+                : badge.className,
             )}
           >
             {isDelayed ? t('footerDelayed').toUpperCase() : t(badge.labelKey)}
@@ -262,7 +264,7 @@ export default function KDSTicket({
       {/* ━━━ ORDER NOTES ━━━ */}
       {order.notes && (
         <div className="px-3 py-1.5 border-b border-app-border">
-          <p className="text-xs italic text-amber-500">{order.notes}</p>
+          <p className="text-xs italic text-[var(--warning)]">{order.notes}</p>
         </div>
       )}
 
@@ -295,7 +297,7 @@ export default function KDSTicket({
                   </div>
                 ))}
               {hasNotes && (
-                <p className="text-xs italic text-amber-500/70 ml-5 mt-0.5">
+                <p className="text-xs italic text-[var(--warning)] ml-5 mt-0.5">
                   {item.customer_notes || item.notes}
                 </p>
               )}
@@ -334,7 +336,9 @@ export default function KDSTicket({
             disabled={isMock}
             className={cn(
               'flex-1 min-h-[44px] flex items-center justify-between px-3 font-bold text-sm uppercase tracking-wide active:scale-[0.98] rounded-none',
-              isDelayed ? 'bg-red-500 hover:bg-red-400 active:bg-red-600 text-white' : cta.bg,
+              isDelayed
+                ? 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90'
+                : cta.bg,
             )}
           >
             <span>{t(cta.labelKey)}</span>

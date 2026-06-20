@@ -128,19 +128,19 @@ export default function AuditLogClient({
     switch (action) {
       case 'create':
         return (
-          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px]">
+          <Badge className="border border-[var(--border)] text-[var(--success)] text-[10px]">
             {t('actionCreate')}
           </Badge>
         );
       case 'update':
         return (
-          <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[10px]">
+          <Badge className="border border-[var(--border)] text-[var(--muted-foreground)] text-[10px]">
             {t('actionUpdate')}
           </Badge>
         );
       case 'delete':
         return (
-          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px]">
+          <Badge className="border border-[var(--border)] text-[var(--destructive)] text-[10px]">
             {t('actionDelete')}
           </Badge>
         );
@@ -182,11 +182,11 @@ export default function AuditLogClient({
           {changedKeys.slice(0, 2).map((k) => (
             <span key={k}>
               {k}:{' '}
-              <span className="line-through text-red-400">
+              <span className="line-through text-[var(--destructive)]">
                 {String(entry.old_data![k] ?? ' - ')}
               </span>
               {' → '}
-              <span className="text-emerald-600">{String(entry.new_data![k] ?? ' - ')}</span>
+              <span className="text-[var(--success)]">{String(entry.new_data![k] ?? ' - ')}</span>
               {', '}
             </span>
           ))}

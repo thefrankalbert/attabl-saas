@@ -341,7 +341,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           className={cn(
                             'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
                             hasRecipe
-                              ? 'bg-green-500/10 text-green-500'
+                              ? 'border border-[var(--border)] text-[var(--success)]'
                               : 'bg-app-bg text-app-text-secondary',
                           )}
                         >

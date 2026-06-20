@@ -74,6 +74,38 @@
   --color-brand-green-dark: var(--app-accent-hover);
   --color-brand-green-light: var(--app-accent-muted);
 
+  /* ===== Dashboard refonte (shadcn neutral oklch) -- raw vars defined only
+     under .admin-shell so the convive (outside) is untouched. ===== */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-c-surplace: var(--c-surplace);
+  --color-c-emporter: var(--c-emporter);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
   /* Typography — System font stack */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-display:
@@ -221,6 +253,148 @@
   --app-status-warning-bg: #fffbeb;
   --app-status-error-bg: #fef2f2;
   --app-status-info-bg: #eff6ff;
+}
+
+/* ===== ADMIN DASHBOARD REFONTE - shadcn neutral oklch palette =====
+   Scoped to .admin-shell so the convive (outside) keeps its own palette.
+   Light = default .admin-shell ; Dark = .admin-shell.dark (toggled locally
+   by the admin shell, independent of the convive forced-light theme). */
+/* `:root:has(.admin-shell...)` mirrors the tokens onto :root whenever an admin
+   shell is mounted, so PORTALED content (shadcn Dialog/Popover/DropdownMenu render
+   into document.body, outside .admin-shell) inherits the neutral admin palette
+   instead of the brand accent. Convive (no .admin-shell) is unaffected. */
+.admin-shell,
+:root:has(.admin-shell:not(.dark)) {
+  color-scheme: light;
+  --radius: 0.625rem;
+  --app-bg: oklch(1 0 0);
+  --app-card: oklch(1 0 0);
+  --app-elevated: oklch(0.97 0 0);
+  --app-hover: oklch(0.97 0 0);
+  --app-border: oklch(0.922 0 0);
+  --app-border-hover: oklch(0.87 0 0);
+  --app-text: oklch(0.145 0 0);
+  --app-text-secondary: oklch(0.47 0 0);
+  --app-text-muted: oklch(0.556 0 0);
+  --app-accent: oklch(0.205 0 0);
+  --app-accent-hover: oklch(0.3 0 0);
+  --app-accent-muted: oklch(0.97 0 0);
+  --app-accent-text: oklch(0.985 0 0);
+  --app-status-success-bg: color-mix(in oklch, var(--success) 14%, transparent);
+  --app-status-warning-bg: color-mix(in oklch, var(--warning) 14%, transparent);
+  --app-status-error-bg: color-mix(in oklch, var(--destructive) 12%, transparent);
+  --app-status-info-bg: color-mix(in oklch, var(--c-emporter) 12%, transparent);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.47 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --c-surplace: #16a34a;
+  --c-emporter: #2563eb;
+  --success: oklch(0.63 0.17 149);
+  --warning: oklch(0.7 0.16 70);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* CRITICAL: re-declare the Tailwind @theme --color-app-x tokens INSIDE
+     .admin-shell. Tailwind v4 computes `--color-app-card: var(--app-card)`
+     once at :root and inherits the frozen value, so the bg-app and text-app
+     utilities ignored .admin-shell.dark. Re-declaring here recomputes them in
+     this scope, so every admin page legacy app-x class follows light/dark.
+     (Mirrors what .tenant-client does for the convive.) */
+  --color-app-bg: var(--app-bg);
+  --color-app-card: var(--app-card);
+  --color-app-elevated: var(--app-elevated);
+  --color-app-hover: var(--app-hover);
+  --color-app-border: var(--app-border);
+  --color-app-border-hover: var(--app-border-hover);
+  --color-app-text: var(--app-text);
+  --color-app-text-secondary: var(--app-text-secondary);
+  --color-app-text-muted: var(--app-text-muted);
+  --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-muted: var(--app-accent-muted);
+  --color-accent-text: var(--app-accent-text);
+  --color-status-success-bg: var(--app-status-success-bg);
+  --color-status-warning-bg: var(--app-status-warning-bg);
+  --color-status-error-bg: var(--app-status-error-bg);
+  --color-status-info-bg: var(--app-status-info-bg);
+}
+.admin-shell.dark,
+:root:has(.admin-shell.dark) {
+  color-scheme: dark;
+  --app-bg: oklch(0.145 0 0);
+  --app-card: oklch(0.205 0 0);
+  --app-elevated: oklch(0.269 0 0);
+  --app-hover: oklch(0.269 0 0);
+  --app-border: oklch(1 0 0 / 10%);
+  --app-border-hover: oklch(1 0 0 / 15%);
+  --app-text: oklch(0.985 0 0);
+  --app-text-secondary: oklch(0.76 0 0);
+  --app-text-muted: oklch(0.708 0 0);
+  --app-accent: oklch(0.922 0 0);
+  --app-accent-hover: oklch(0.85 0 0);
+  --app-accent-muted: oklch(0.269 0 0);
+  --app-accent-text: oklch(0.205 0 0);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.76 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --c-surplace: #4ade80;
+  --c-emporter: #60a5fa;
+  --success: oklch(0.7 0.15 150);
+  --warning: oklch(0.75 0.15 75);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
 }
 
 /* CSS fallback for system light preference before JS loads (prevents FOUC) */

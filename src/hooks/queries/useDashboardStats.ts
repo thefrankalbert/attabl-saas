@@ -109,7 +109,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
               supabase
                 .from('orders')
                 .select(
-                  `id, order_number, table_number, status, total, tip_amount, created_at,
+                  `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
                  order_items(id, quantity, price_at_order, menu_items(name))`,
                 )
                 .eq('tenant_id', tenantId)
@@ -190,6 +190,8 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           total_price: Number(order.total || 0),
           tip_amount: Number(order.tip_amount || 0),
           created_at: order.created_at as string,
+          service_type: (order.service_type as Order['service_type']) || undefined,
+          payment_status: (order.payment_status as Order['payment_status']) || undefined,
           items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
             (item: Record<string, unknown>) => ({
               id: item.id as string,

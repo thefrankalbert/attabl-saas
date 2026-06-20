@@ -5,9 +5,11 @@ import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats } from '@/types/admin.types';
 import type {
   DashboardBucketSeries,
+  DashboardChannelSeries,
   TopDishRecord,
   StockAlertRecord,
 } from '@/types/dashboard.types';
+import type { ServiceType } from '@/types/admin.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
 
@@ -36,6 +38,36 @@ function buildBuckets(
     if (!key || !buckets[key]) continue;
     buckets[key].count += 1;
     buckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
+  }
+  return Object.values(buckets);
+}
+
+type ChannelBucket = { date: string; surplace: number; emporter: number };
+
+function buildChannelBuckets(
+  orders: {
+    total?: number | null;
+    tip_amount?: number | null;
+    created_at: string;
+    service_type?: ServiceType | null;
+  }[],
+  days: number,
+): ChannelBucket[] {
+  const buckets: Record<string, ChannelBucket> = {};
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (days - 1 - i));
+    const key = d.toISOString().slice(0, 10);
+    buckets[key] = { date: key, surplace: 0, emporter: 0 };
+  }
+  for (const o of orders) {
+    const key = o.created_at?.slice(0, 10);
+    if (!key || !buckets[key]) continue;
+    const amount = Number(o.total || 0) + Number(o.tip_amount || 0);
+    // dine_in + room_service -> Sur place ; takeaway + delivery -> A emporter
+    const emporter = o.service_type === 'takeaway' || o.service_type === 'delivery';
+    if (emporter) buckets[key].emporter += amount;
+    else buckets[key].surplace += amount;
   }
   return Object.values(buckets);
 }
@@ -84,6 +116,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   let initialRevenueSparkline: { value: number }[] = [];
   let initialOrdersSparkline: { value: number }[] = [];
   let initialBuckets: DashboardBucketSeries = { week: [], month: [], quarter: [] };
+  let initialChannelBuckets: DashboardChannelSeries = { week: [], month: [], quarter: [] };
   let initialTopDishes: TopDishRecord[] = [];
   let initialStockAlerts: StockAlertRecord[] = [];
   let activeTablesTotal = 0;
@@ -141,7 +174,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       supabase
         .from('orders')
         .select(
-          `id, order_number, table_number, status, total, tip_amount, created_at,
+          `id, order_number, table_number, status, total, tip_amount, created_at, service_type, payment_status,
            order_items(id, quantity, price_at_order, menu_items(name))`,
         )
         .eq('tenant_id', tenant.id)
@@ -159,7 +192,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       // Last 90 days for chart buckets (week/month/quarter ranges)
       supabase
         .from('orders')
-        .select('id, total, tip_amount, created_at, status')
+        .select('id, total, tip_amount, created_at, status, service_type')
         .eq('tenant_id', tenant.id)
         .gte('created_at', ninetyDaysAgo.toISOString()),
 
@@ -226,6 +259,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       tip_amount?: number | null;
       created_at: string;
       status?: string;
+      service_type?: ServiceType | null;
     }>;
     const dayBuckets90 = buildBuckets(quarterOrders, 90);
     const last7 = dayBuckets90.slice(-7);
@@ -234,6 +268,13 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       week: last7,
       month: last30,
       quarter: dayBuckets90,
+    };
+
+    const channelBuckets90 = buildChannelBuckets(quarterOrders, 90);
+    initialChannelBuckets = {
+      week: channelBuckets90.slice(-7),
+      month: channelBuckets90.slice(-30),
+      quarter: channelBuckets90,
     };
     initialRevenueSparkline = last7.map((b) => ({ value: b.revenue }));
     initialOrdersSparkline = last7.map((b) => ({ value: b.count }));
@@ -248,6 +289,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       total_price: Number(order.total || 0),
       tip_amount: Number(order.tip_amount || 0),
       created_at: order.created_at as string,
+      service_type: (order.service_type as Order['service_type']) || undefined,
+      payment_status: (order.payment_status as Order['payment_status']) || undefined,
       items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
         (item: Record<string, unknown>) => ({
           id: item.id as string,
@@ -339,6 +382,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         initialRevenueSparkline={initialRevenueSparkline}
         initialOrdersSparkline={initialOrdersSparkline}
         initialBuckets={initialBuckets}
+        initialChannelBuckets={initialChannelBuckets}
         initialTopDishes={initialTopDishes}
         initialStockAlerts={initialStockAlerts}
         initialActiveTables={{ used: activeTablesUsed, total: activeTablesTotal }}

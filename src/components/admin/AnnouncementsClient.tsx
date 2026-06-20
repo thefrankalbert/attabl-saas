@@ -384,7 +384,7 @@ export default function AnnouncementsClient({
                   setAnnouncementPendingDelete(null);
                 }
               }}
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
             >
               {t('deleteAction')}
             </AlertDialogAction>

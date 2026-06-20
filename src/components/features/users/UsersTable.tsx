@@ -73,13 +73,7 @@ export default function UsersTable({
               </div>
 
               <div className="flex items-center gap-6">
-                <div
-                  className={cn(
-                    'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2',
-                    roleConfig.bg,
-                    roleConfig.color,
-                  )}
-                >
+                <div className="inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
                   <RoleIcon className="w-3.5 h-3.5" />
                   {roleConfig.label}
                 </div>
@@ -129,7 +123,7 @@ export default function UsersTable({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600 focus:text-red-600"
+                        className="text-[var(--destructive)] focus:text-[var(--destructive)]"
                         onClick={() => onDeleteUser(user.id)}
                       >
                         <X className="w-4 h-4 mr-2" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Download,
@@ -80,10 +80,8 @@ function TrendBadge({ value }: { value: number }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums',
-        isUp
-          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-          : 'bg-red-500/10 text-red-600 dark:text-red-400',
+        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium tabular-nums',
+        isUp ? 'text-[var(--success)]' : 'text-[var(--destructive)]',
       )}
     >
       {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -100,6 +98,11 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const [period, setPeriod] = useSessionState<Period>('reports:period', '7d');
   const [exporting, setExporting] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
+  // Hydration guard: useSessionState reads sessionStorage on the client, so the
+  // first client render can pick a different branch than the server. Render the
+  // loading branch until mounted so SSR and client-initial match.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const { toast } = useToast();
 
@@ -247,7 +250,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     );
   }
 
-  if (loading)
+  if (loading || !mounted)
     return (
       <div className="h-full flex flex-col">
         <AnalyseTabs />

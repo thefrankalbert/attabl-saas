@@ -31,13 +31,13 @@ export function TopbarSearch({ className }: { className?: string }) {
       variant="ghost"
       onClick={openPalette}
       className={cn(
-        'hidden md:inline-flex items-center justify-start gap-2 h-auto px-2.5 py-[5px] rounded-md border border-app-border bg-app-card text-xs font-normal text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary transition-colors w-[220px] shadow-none',
+        'hidden h-8 min-w-0 max-w-[380px] flex-1 items-center justify-start gap-2 rounded-[0.625rem] border border-[var(--border)] bg-[var(--background)] px-2.5 text-[13px] font-normal text-[var(--muted-foreground)] shadow-none hover:bg-[var(--accent)] hover:text-[var(--foreground)] md:inline-flex',
         className,
       )}
     >
-      <Search className="w-3 h-3 shrink-0" />
+      <Search className="size-[15px] shrink-0" />
       <span className="flex-1 truncate text-left">{tc('placeholder')}</span>
-      <span className="font-mono text-[10px] px-1.5 py-px rounded border border-app-border text-app-text-muted">
+      <span className="rounded-[5px] border border-[var(--border)] px-[5px] py-px font-mono text-[11px] text-[var(--muted-foreground)]">
         ⌘K
       </span>
     </Button>

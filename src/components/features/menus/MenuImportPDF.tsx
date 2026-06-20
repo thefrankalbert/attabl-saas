@@ -349,7 +349,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                     variant="ghost"
                     size="icon"
                     onClick={() => removeItem(index)}
-                    className="p-1 h-auto w-auto text-app-text-muted hover:text-red-500 hover:bg-status-error/10"
+                    className="p-1 h-auto w-auto text-app-text-muted hover:text-[var(--destructive)] hover:bg-status-error/10"
                     title="Supprimer"
                     aria-label="Remove"
                   >
@@ -402,32 +402,32 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
         <>
           <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
             {importResult.categoriesCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <div className="flex items-center gap-2 text-sm text-[var(--success)]">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('categoriesCreated', { count: importResult.categoriesCreated })}
               </div>
             )}
             {importResult.itemsCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <div className="flex items-center gap-2 text-sm text-[var(--success)]">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('itemsCreated', { count: importResult.itemsCreated })}
               </div>
             )}
             {importResult.itemsSkipped > 0 && (
-              <div className="flex items-center gap-2 text-sm text-amber-600">
+              <div className="flex items-center gap-2 text-sm text-[var(--warning)]">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {t('itemsSkipped', { count: importResult.itemsSkipped })}
               </div>
             )}
             {importResult.errors.length > 0 && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--destructive)]">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {t('errorsFound', { count: importResult.errors.length })}
                 </div>
                 <ul className="ml-6 space-y-0.5">
                   {importResult.errors.map((err, i) => (
-                    <li key={i} className="text-xs text-red-500">
+                    <li key={i} className="text-xs text-[var(--destructive)]">
                       {err.message}
                     </li>
                   ))}

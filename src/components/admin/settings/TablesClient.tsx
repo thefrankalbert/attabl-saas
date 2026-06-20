@@ -409,7 +409,7 @@ export function TablesClient({
                           e.stopPropagation();
                           handleSaveZoneName(zone.id);
                         }}
-                        className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
+                        className="h-7 w-7 text-[var(--success)] hover:opacity-90"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </Button>
@@ -461,7 +461,7 @@ export function TablesClient({
                             handleDeleteZone(zone);
                           }}
                           title="Supprimer"
-                          className="h-7 w-7 text-red-400 hover:text-red-600"
+                          className="h-7 w-7 text-[var(--destructive)] hover:opacity-90"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -533,7 +533,7 @@ export function TablesClient({
                           <span
                             className={cn(
                               'w-2 h-2 rounded-full',
-                              table.is_active ? 'bg-emerald-400' : 'bg-amber-400',
+                              table.is_active ? 'bg-[var(--success)]' : 'bg-[var(--warning)]',
                             )}
                           />
                           <span className="text-xs font-mono text-app-text-muted">
@@ -546,7 +546,7 @@ export function TablesClient({
                           aria-label="Delete"
                           onClick={() => handleDeleteTable(table)}
                           title="Supprimer"
-                          className="h-7 w-7 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-7 w-7 text-app-text-muted hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -570,7 +570,7 @@ export function TablesClient({
                             size="icon"
                             aria-label="Confirm"
                             onClick={() => handleSaveTableName(table.id)}
-                            className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
+                            className="h-7 w-7 text-[var(--success)] hover:opacity-80"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </Button>

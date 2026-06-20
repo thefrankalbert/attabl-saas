@@ -562,10 +562,10 @@ export default function ItemsClient({
                           toggleAvailable(item);
                         }}
                         className={cn(
-                          'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
+                          'h-auto shrink-0 gap-1.5 whitespace-nowrap rounded-[0.625rem] border-[var(--border)] px-2 py-0.5 text-xs font-medium',
                           item.is_available
-                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                            : 'bg-app-bg text-app-text-secondary border-app-border',
+                            ? 'text-[var(--success)]'
+                            : 'text-[var(--muted-foreground)]',
                         )}
                       >
                         {item.is_available ? (
@@ -726,7 +726,7 @@ export default function ItemsClient({
                   e.preventDefault();
                   void confirmDelete();
                 }}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
               >
                 {tc('delete')}
               </AlertDialogAction>

@@ -91,19 +91,19 @@ export default function SuggestionsClient({
         value: 'pairing',
         label: t('pairing'),
         emoji: '\uD83C\uDF77',
-        color: 'bg-purple-500/10 text-purple-500',
+        color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
       },
       {
         value: 'upsell',
         label: t('upsell'),
         emoji: '\uD83D\uDCA1',
-        color: 'bg-amber-500/10 text-amber-500',
+        color: 'border border-[var(--border)] text-[var(--warning)]',
       },
       {
         value: 'alternative',
         label: t('alternativeItem'),
         emoji: '\uD83D\uDD04',
-        color: 'bg-blue-500/10 text-blue-500',
+        color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
       },
     ];
 
@@ -324,8 +324,9 @@ export default function SuggestionsClient({
                       </Button>
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0',
-                          typeConfig?.color || 'bg-app-bg text-app-text-secondary',
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-[0.625rem] text-[10px] font-medium shrink-0',
+                          typeConfig?.color ||
+                            'border border-[var(--border)] text-app-text-secondary',
                         )}
                       >
                         {typeConfig?.emoji} {typeConfig?.label}
@@ -350,7 +351,7 @@ export default function SuggestionsClient({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                          className="h-8 w-8 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
                           title="Supprimer"
                           onClick={() => handleDelete(suggestion.id)}
                         >
