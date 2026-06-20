@@ -125,7 +125,7 @@ export function ItemFormModal({
                   isActive
                     ? 'bg-accent/10 text-accent border-accent/30'
                     : isCompleted
-                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 cursor-pointer'
+                      ? 'border-[var(--border)] text-[var(--success)] cursor-pointer'
                       : 'bg-app-bg text-app-text-muted border-app-border cursor-default',
                 )}
               >
@@ -285,7 +285,7 @@ export function ItemFormModal({
             </div>
             <div className="space-y-1.5">
               <Label className="text-app-text flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+                <AlertTriangle className="w-3.5 h-3.5 text-[var(--warning)]" />
                 {ta('title')}
               </Label>
               <div className="flex flex-wrap gap-1.5">
@@ -304,7 +304,7 @@ export function ItemFormModal({
                       className={cn(
                         'px-2.5 py-1 rounded-full text-xs font-medium h-auto',
                         selected
-                          ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                          ? 'border-[var(--border)] text-[var(--warning)]'
                           : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
                       )}
                     >

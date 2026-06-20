@@ -1,15 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { TenantProvider } from '@/contexts/TenantContext';
-import { CartProvider } from '@/contexts/CartContext';
-import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import { TenantBrandProvider } from '@/components/theme/TenantBrandProvider';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import { getCachedTenant, toPublicTenant } from '@/lib/cache';
+import { getCachedTenant } from '@/lib/cache';
 import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 import { redirectFromReservedSiteSlug } from '@/lib/tenant-routing';
-import { DEFAULT_FONT } from '@/lib/config/fonts';
-import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
-import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -35,6 +27,13 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Shared parent for every `[site]` route. Intentionally thin: it only resolves
+ * the tenant for the reserved-slug guard and renders children. The convive
+ * (storefront) chrome lives in `(storefront)/layout.tsx`; the admin dashboard
+ * brings its own shell under `admin/layout.tsx`. Keeping this layout free of
+ * visual chrome is what prevents the storefront UI from leaking into admin.
+ */
 export default async function SiteLayout({
   children,
   params,
@@ -45,53 +44,9 @@ export default async function SiteLayout({
   const { site } = await params;
 
   const tenant = await getCachedTenant(site);
-
   if (!tenant && isReservedSiteSlug(site)) {
     await redirectFromReservedSiteSlug();
   }
 
-  const tenantId = tenant?.id || null;
-
-  // Tenant custom font is not configurable from the dashboard (no write path),
-  // so the client interface always uses the default curated font.
-  const tenantFontFamily = `var(${DEFAULT_FONT.cssVariable}), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`;
-
-  return (
-    <NextThemesProvider attribute="class" forcedTheme="light">
-      <TenantProvider
-        slug={site}
-        tenantId={tenantId}
-        tenant={tenant ? toPublicTenant(tenant) : null}
-      >
-        <TenantBrandProvider
-          initialColors={{
-            primaryColor: tenant?.primary_color || '#1A1A1A',
-          }}
-        >
-          <CartProvider>
-            <CurrencyProvider
-              tenantCurrency={tenant?.currency || 'XAF'}
-              supportedCurrencies={
-                (tenant?.supported_currencies as string[]) || [tenant?.currency || 'XAF']
-              }
-            >
-              <div
-                className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
-                style={{ fontFamily: tenantFontFamily }}
-              >
-                <main
-                  id="main-content"
-                  className="relative flex-1 overflow-y-auto overscroll-contain"
-                >
-                  {children}
-                </main>
-                <ClientFloatingCart slug={site} />
-                <ClientBottomNav slug={site} />
-              </div>
-            </CurrencyProvider>
-          </CartProvider>
-        </TenantBrandProvider>
-      </TenantProvider>
-    </NextThemesProvider>
-  );
+  return <>{children}</>;
 }

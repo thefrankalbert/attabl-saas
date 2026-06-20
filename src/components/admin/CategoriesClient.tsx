@@ -133,14 +133,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
       {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-        <div
-          className={cn(
-            'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
-            cat.preparation_zone === 'bar'
-              ? 'bg-purple-500/10 text-purple-400'
-              : 'bg-blue-500/10 text-blue-400',
-          )}
-        >
+        <div className="flex items-center gap-1 rounded-[0.625rem] border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-medium normal-case text-[var(--muted-foreground)]">
           {cat.preparation_zone === 'bar' ? (
             <Wine className="w-3 h-3" />
           ) : (
@@ -170,7 +163,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
           size="sm"
           onClick={() => onDelete(cat)}
           title="Supprimer"
-          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-9 w-9 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -601,7 +594,7 @@ export default function CategoriesClient({
               {isFeaturedOnHome &&
                 featuredCount >= FEATURED_LIMIT &&
                 !(editingCategory && editingCategory.is_featured_on_home === true) && (
-                  <p className="text-xs text-amber-500 font-medium mt-2">
+                  <p className="text-xs text-[var(--warning)] font-medium mt-2">
                     {t('featuredOnHomeLimit', { count: FEATURED_LIMIT })}
                   </p>
                 )}
@@ -678,7 +671,7 @@ export default function CategoriesClient({
               <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
               >
                 {tc('delete')}
               </AlertDialogAction>

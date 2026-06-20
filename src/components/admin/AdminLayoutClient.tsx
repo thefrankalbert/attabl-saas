@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
-import { AdminTopBar } from './AdminTopBar';
+import { ShellHeader } from './shell/ShellHeader';
 import { AdminBottomNav } from './AdminBottomNav';
-import { AdminSidebar } from './AdminSidebar';
+import { ShellSidebar } from './shell/ShellSidebar';
+import { SettingsDialog, type SettingsTab } from './shell/SettingsDialog';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
 
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
+const THEME_STORAGE_KEY = 'attabl-admin-theme';
 
 // ─── Inner Layout ───────────────────────────────────────
 
@@ -39,6 +41,8 @@ interface AdminLayoutInnerProps {
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
+  /** Real nav badge counts (open orders / in-kitchen / active items) */
+  navCounts?: { orders?: number; kitchen?: number; items?: number };
 }
 
 function AdminLayoutInner({
@@ -49,10 +53,10 @@ function AdminLayoutInner({
   tenant,
   userName,
   userEmail,
-  ordersUsagePercent,
   userTenants,
   notifications,
   breadcrumbs,
+  navCounts,
 }: AdminLayoutInnerProps) {
   const { isMobile, isTablet } = useDeviceContext();
   const pathname = usePathname();
@@ -104,29 +108,82 @@ function AdminLayoutInner({
     });
   }, []);
 
+  // Admin-local light/dark theme. Independent of the convive (which stays
+  // forced-light). The `dark` class is toggled on the .admin-shell root only,
+  // so the oklch neutral tokens scoped under .admin-shell.dark take effect.
+  // SSR default = light; synced from localStorage / system after mount.
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    let initial = false;
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      initial =
+        stored !== null
+          ? stored === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      // localStorage / matchMedia unavailable
+    }
+    queueMicrotask(() => setIsDark(initial));
+  }, []);
+
+  const handleToggleTheme = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, next ? 'dark' : 'light');
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Settings hub dialog (opened from the sidebar Parametres entry + account menu)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('compte');
+  const openSettings = useCallback((tab: SettingsTab) => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  }, []);
+
   return (
-    <div className="admin-shell h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
+    <div
+      className={cn(
+        'admin-shell flex h-dvh items-start overflow-hidden bg-[var(--sidebar)] transition-colors duration-200',
+        isDark && 'dark',
+      )}
+    >
       {/* Sidebar - tablet & desktop, hidden on immersive pages */}
       {!immersive && (
-        <AdminSidebar
+        <ShellSidebar
           basePath={basePath}
           tenant={tenant}
           userName={userName}
           userEmail={userEmail}
-          ordersUsagePercent={ordersUsagePercent}
           userTenants={userTenants}
           className="hidden lg:flex"
           collapsed={sidebarCollapsed}
-          onToggleCollapsed={handleToggleCollapsed}
+          onOpenSettings={openSettings}
+          counts={navCounts}
         />
       )}
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <AdminTopBar notifications={notifications} breadcrumbs={breadcrumbs} />
+      {/* Inset panel. Explicit height (parent uses items-start per the maquette,
+          so flex stretch does not apply); h-[calc(100dvh-1rem)] = viewport minus
+          the 0.5rem top/bottom margins, matching Dashboard.html calc(100svh-16px). */}
+      <div className="flex h-[calc(100dvh-1rem)] min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-[0_1px_3px_0_rgb(0_0_0/0.06),0_1px_2px_-1px_rgb(0_0_0/0.06)] m-2 lg:my-2 lg:ml-0 lg:mr-2">
+        {!immersive && (
+          <ShellHeader
+            onToggleSidebar={handleToggleCollapsed}
+            isDark={isDark}
+            onToggleTheme={handleToggleTheme}
+            title={breadcrumbs}
+            notifications={notifications}
+          />
+        )}
 
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-app-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-[var(--card)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
         >
           Skip to content
         </a>
@@ -139,7 +196,7 @@ function AdminLayoutInner({
             showBottomNav && 'pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]',
           )}
         >
-          <div className="max-w-screen-2xl mx-auto flex-1 min-h-0 flex flex-col">{children}</div>
+          <div className="flex-1 min-h-0 flex flex-col w-full">{children}</div>
         </main>
 
         {showBottomNav && (
@@ -150,6 +207,18 @@ function AdminLayoutInner({
           />
         )}
       </div>
+
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        activeTab={settingsTab}
+        onTabChange={setSettingsTab}
+        basePath={basePath}
+        userName={userName}
+        userEmail={userEmail}
+        tenant={tenant}
+        isDark={isDark}
+      />
     </div>
   );
 }
@@ -174,6 +243,7 @@ interface AdminLayoutClientProps {
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
+  navCounts?: { orders?: number; kitchen?: number; items?: number };
 }
 
 export function AdminLayoutClient({
@@ -188,6 +258,7 @@ export function AdminLayoutClient({
   userTenants,
   notifications,
   breadcrumbs,
+  navCounts,
 }: AdminLayoutClientProps) {
   return (
     <DeviceProvider>
@@ -202,6 +273,7 @@ export function AdminLayoutClient({
         userTenants={userTenants}
         notifications={notifications}
         breadcrumbs={breadcrumbs}
+        navCounts={navCounts}
       >
         {children}
       </AdminLayoutInner>

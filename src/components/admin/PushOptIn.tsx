@@ -21,7 +21,7 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
     <div className="flex items-center justify-between rounded-lg border border-app-border p-4">
       <div className="flex items-center gap-3">
         {isSubscribed ? (
-          <Bell className="h-5 w-5 text-green-500" />
+          <Bell className="h-5 w-5 text-[var(--success)]" />
         ) : (
           <BellOff className="h-5 w-5 text-app-text-muted" />
         )}

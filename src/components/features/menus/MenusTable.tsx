@@ -207,7 +207,7 @@ function MenuRow({
           size="sm"
           onClick={onDelete}
           title="Supprimer"
-          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-9 w-9 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
