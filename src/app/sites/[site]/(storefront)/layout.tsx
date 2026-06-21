@@ -7,6 +7,7 @@ import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import { DEFAULT_FONT } from '@/lib/config/fonts';
 import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
 import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
+import { headers } from 'next/headers';
 
 /**
  * Storefront (convive) shell.
@@ -26,13 +27,16 @@ export default async function StorefrontLayout({
   const { site } = await params;
   const tenant = await getCachedTenant(site);
   const tenantId = tenant?.id || null;
+  // Per-request CSP nonce (set on the request headers by the proxy) so
+  // next-themes' inline anti-flash script is not blocked by the enforced CSP.
+  const nonce = (await headers()).get('x-csp-nonce') ?? undefined;
 
   // Tenant custom font is not configurable from the dashboard (no write path),
   // so the client interface always uses the default curated font.
   const tenantFontFamily = `var(${DEFAULT_FONT.cssVariable}), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`;
 
   return (
-    <NextThemesProvider attribute="class" forcedTheme="light">
+    <NextThemesProvider attribute="class" forcedTheme="light" nonce={nonce}>
       <TenantProvider
         slug={site}
         tenantId={tenantId}

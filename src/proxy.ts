@@ -82,6 +82,13 @@ export async function proxy(request: NextRequest) {
   // Generate a per-request CSP nonce (replaces static unsafe-inline in script-src)
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
   request.headers.set('x-csp-nonce', nonce);
+  // Next.js only nonces its own inline bootstrap scripts when it can read the CSP
+  // from the REQUEST headers (it extracts 'nonce-...' there). Every downstream
+  // NextResponse.next/rewrite - including the supabase session response - forwards
+  // request.headers, so setting it once here makes the nonced CSP actually work
+  // instead of blocking Next's scripts (the previous attempt only set a custom
+  // x-csp-nonce header, which Next ignores).
+  request.headers.set('Content-Security-Policy', buildCspHeader(nonce));
 
   // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this
   request.headers.delete('x-tenant-slug');
@@ -127,6 +134,7 @@ export async function proxy(request: NextRequest) {
       sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
         response.cookies.set(cookie.name, cookie.value);
       });
+      response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
       return response;
     }
   }
@@ -270,6 +278,7 @@ export async function proxy(request: NextRequest) {
     sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
       response.cookies.set(cookie.name, cookie.value);
     });
+    response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
     return response;
   }
 
@@ -296,6 +305,7 @@ export async function proxy(request: NextRequest) {
       sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
         response.cookies.set(cookie.name, cookie.value);
       });
+      response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
       return response;
     }
 
@@ -317,6 +327,7 @@ export async function proxy(request: NextRequest) {
       response.cookies.set(cookie.name, cookie.value);
     });
 
+    response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
     return response;
   }
 
