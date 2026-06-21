@@ -42,7 +42,7 @@ export interface ValidateBrandPrimaryOptions {
  * used by major food-ordering platforms (UberEats ships #06C167 as its
  * brand green) and predate this validator. Keep entries UPPERCASE.
  */
-export const GRANDFATHERED_BRAND_COLORS: readonly string[] = ['#06C167'];
+const GRANDFATHERED_BRAND_COLORS: readonly string[] = ['#06C167'];
 
 const HEX_REGEX = /^#([0-9a-fA-F]{6})$/;
 

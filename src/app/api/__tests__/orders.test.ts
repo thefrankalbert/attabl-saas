@@ -6,6 +6,19 @@ import type { PricingBreakdown } from '@/types/admin.types';
 
 // ─── Mock external dependencies ────────────────────────────────
 
+// Keep the real NextResponse but make after() run its callback inline.
+// after() requires a request scope at runtime; in unit tests we execute the
+// scheduled work immediately (mirrors the old fire-and-forget behavior).
+vi.mock('next/server', async (importActual) => {
+  const actual = await importActual<typeof import('next/server')>();
+  return {
+    ...actual,
+    after: (cb: () => unknown) => {
+      void cb();
+    },
+  };
+});
+
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));

@@ -6,7 +6,7 @@ import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-impo
 
 // ─── Types ────────────────────────────────────────────────────
 
-export interface ImportResult {
+interface ImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
@@ -14,7 +14,7 @@ export interface ImportResult {
   errors: ImportRowError[];
 }
 
-export interface ImportRowError {
+interface ImportRowError {
   row: number;
   message: string;
 }
@@ -185,6 +185,16 @@ function parseNumericCell(value: unknown): number | null {
 
 // ─── Service ──────────────────────────────────────────────────
 
+export interface ExcelImportService {
+  parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }>;
+  groupByCategory(
+    rows: ParsedRow[],
+  ): Map<string, { categoryEn: string | null; items: ParsedRow[] }>;
+  importToDatabase(tenantId: string, menuId: string, rows: ParsedRow[]): Promise<ImportResult>;
+  importFromExcel(tenantId: string, menuId: string, buffer: ArrayBuffer): Promise<ImportResult>;
+  generateTemplate(): Promise<Buffer>;
+}
+
 /**
  * Excel import service for menu data.
  *
@@ -193,7 +203,7 @@ function parseNumericCell(value: unknown): number | null {
  *
  * Follows the project DI pattern: receives a SupabaseClient.
  */
-export function createExcelImportService(supabase: SupabaseClient) {
+export function createExcelImportService(supabase: SupabaseClient): ExcelImportService {
   return {
     /**
      * Parses an Excel ArrayBuffer into validated rows.

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { DragEvent } from 'react';
-import { CheckCircle2, GripVertical, Users, Utensils } from 'lucide-react';
+import { CheckCircle2, GripVertical, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatInitials, formatTimeHHMM, getElapsedMinutes } from './service-status';
@@ -295,7 +295,7 @@ function ServerCard({
           {vm.assignedTables.length === 0
             ? labels.availableStatus
             : labels.tablesPlural(vm.assignedTables.length)}
-          {' · '}
+          {' - '}
           {vm.server.role}
         </div>
         {vm.assignedTables.length > 0 && (
@@ -380,5 +380,3 @@ function OrderCard({
     </div>
   );
 }
-
-export { Users };

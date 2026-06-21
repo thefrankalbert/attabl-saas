@@ -16,7 +16,7 @@ import type {
  * `reserved` and `cleaning` are reserved for future backend support and
  * currently never returned.
  */
-export function deriveTableStatus(
+function deriveTableStatus(
   assignment: TableAssignment | undefined,
   order: Order | undefined,
 ): ServiceTableStatus {
@@ -26,7 +26,7 @@ export function deriveTableStatus(
   return 'free';
 }
 
-export function deriveServerStatus(server: AdminUser, hasAssignment: boolean): ServiceServerStatus {
+function deriveServerStatus(server: AdminUser, hasAssignment: boolean): ServiceServerStatus {
   if (!server.is_active) return 'break';
   if (hasAssignment) return 'busy';
   return 'online';

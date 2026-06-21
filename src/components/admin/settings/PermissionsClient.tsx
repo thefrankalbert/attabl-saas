@@ -277,7 +277,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
               </TableHead>
               {/* Owner column (locked) */}
               <TableHead className="text-center px-3 py-3.5 min-w-[100px]">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[0.625rem] text-xs font-medium border border-[var(--border)] text-[var(--warning)]">
                   {roleLabel('owner')}
                 </span>
               </TableHead>
@@ -287,17 +287,12 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                   <div className="flex flex-col items-center gap-1.5">
                     <span
                       className={cn(
-                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
-                        role === 'admin' &&
-                          'bg-purple-500/10 text-purple-500 border border-purple-500/20',
-                        role === 'manager' &&
-                          'bg-blue-500/10 text-blue-500 border border-blue-500/20',
-                        role === 'cashier' &&
-                          'bg-green-500/10 text-green-500 border border-green-500/20',
-                        role === 'chef' &&
-                          'bg-orange-500/10 text-orange-500 border border-orange-500/20',
-                        role === 'waiter' &&
-                          'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20',
+                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[0.625rem] text-xs font-medium border border-[var(--border)]',
+                        role === 'admin' && 'text-[var(--muted-foreground)]',
+                        role === 'manager' && 'text-[var(--muted-foreground)]',
+                        role === 'cashier' && 'text-[var(--success)]',
+                        role === 'chef' && 'text-[var(--warning)]',
+                        role === 'waiter' && 'text-[var(--muted-foreground)]',
                       )}
                     >
                       {roleLabel(role)}
@@ -377,16 +372,18 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                               <Switch
                                 checked={isEnabled}
                                 onCheckedChange={() => handleToggle(role, perm)}
-                                className={cn(isEnabled ? 'data-[state=checked]:bg-lime-400' : '')}
+                                className={cn(
+                                  isEnabled ? 'data-[state=checked]:bg-[var(--success)]' : '',
+                                )}
                                 aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
                               />
                               {isOverridden && (
                                 <span
                                   className={cn(
-                                    'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                                    'text-[10px] font-medium px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)]',
                                     isEnabled !== defaultVal
-                                      ? 'bg-amber-500/10 text-amber-500'
-                                      : 'bg-app-bg text-app-text-muted',
+                                      ? 'text-[var(--warning)]'
+                                      : 'text-app-text-muted',
                                   )}
                                 >
                                   {t('modified')}
@@ -408,13 +405,13 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
       {/* Legend */}
       <div className="border border-app-border rounded-xl p-6 text-xs text-app-text-secondary space-y-1.5">
         <p>
-          <span className="inline-block w-3 h-3 rounded-full bg-lime-400 align-middle mr-1.5" />={' '}
-          {t('legendAllowed')}
+          <span className="inline-block w-3 h-3 rounded-full bg-[var(--success)] align-middle mr-1.5" />
+          = {t('legendAllowed')}
           <span className="inline-block w-3 h-3 rounded-full bg-border-default align-middle ml-4 mr-1.5" />
           = {t('legendDenied')}
         </p>
         <p>
-          <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium align-middle mr-1.5">
+          <span className="inline-block px-1.5 py-0.5 rounded-[0.625rem] border border-[var(--border)] text-[var(--warning)] font-medium align-middle mr-1.5">
             {t('modified')}
           </span>
           = {t('legendModified')}

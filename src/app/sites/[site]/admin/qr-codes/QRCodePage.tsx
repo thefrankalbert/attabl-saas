@@ -122,10 +122,10 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsContent value="choose" className="flex-1 overflow-auto">
           <div>
             {/* Info Banner */}
-            <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="mb-6 p-4 rounded-xl bg-app-bg border border-app-border flex items-start gap-3">
+              <Info className="h-5 w-5 text-app-text-muted flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-800">
+                <p className="text-sm text-app-text-secondary">
                   <strong>{t('menuUrl')} :</strong>{' '}
                   <a
                     href={menuUrl}
@@ -136,7 +136,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                     {menuUrl}
                   </a>
                 </p>
-                <p className="text-xs text-blue-600 mt-1">{t('qrRedirectInfo')}</p>
+                <p className="text-xs text-app-text-muted mt-1">{t('qrRedirectInfo')}</p>
               </div>
             </div>
 

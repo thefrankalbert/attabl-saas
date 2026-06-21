@@ -11,7 +11,7 @@ function requireWaveEnv(): { apiKey: string; webhookSecret: string } {
   return { apiKey, webhookSecret };
 }
 
-export interface WaveCheckoutSession {
+interface WaveCheckoutSession {
   id: string;
   checkout_status: 'pending' | 'processing' | 'complete' | 'failed' | 'expired';
   checkout_ui_url: string;
@@ -88,33 +88,4 @@ export function verifyWaveWebhook(rawBody: string, signatureHeader: string): boo
   } catch {
     return false;
   }
-}
-
-export async function refundWavePayment(transactionId: string): Promise<void> {
-  const { apiKey } = requireWaveEnv();
-
-  const response = await fetch(`${WAVE_API_BASE}/transactions/${transactionId}/reverse`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    logger.error('Wave refund failed', undefined, { status: response.status, body, transactionId });
-    throw new Error(`Wave refund error: ${response.status}`);
-  }
-}
-
-export async function getWaveCheckoutStatus(checkoutId: string): Promise<WaveCheckoutSession> {
-  const { apiKey } = requireWaveEnv();
-
-  const response = await fetch(`${WAVE_API_BASE}/checkout/sessions/${checkoutId}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Wave API error: ${response.status}`);
-  }
-
-  return response.json() as Promise<WaveCheckoutSession>;
 }

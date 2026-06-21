@@ -32,7 +32,6 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCategories } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -64,7 +63,12 @@ import {
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
-import { createCategoryService } from '@/services/category.service';
+import {
+  actionCreateCategory,
+  actionUpdateCategory,
+  actionDeleteCategory,
+  actionReorderCategories,
+} from '@/app/actions/categories';
 import { ListPagination } from '@/components/admin/ListPagination';
 import type { ServerListPagination } from '@/lib/pagination';
 
@@ -129,14 +133,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
       {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-        <div
-          className={cn(
-            'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
-            cat.preparation_zone === 'bar'
-              ? 'bg-purple-500/10 text-purple-400'
-              : 'bg-blue-500/10 text-blue-400',
-          )}
-        >
+        <div className="flex items-center gap-1 rounded-[0.625rem] border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-medium normal-case text-[var(--muted-foreground)]">
           {cat.preparation_zone === 'bar' ? (
             <Wine className="w-3 h-3" />
           ) : (
@@ -166,7 +163,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
           size="sm"
           onClick={() => onDelete(cat)}
           title="Supprimer"
-          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-9 w-9 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -204,7 +201,6 @@ export default function CategoriesClient({
   const [listPage, setListPage] = useState(0);
   const useServerPagination = !!serverListPagination;
   const { toast } = useToast();
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   // @dnd-kit sensors
@@ -300,9 +296,14 @@ export default function CategoriesClient({
           .map((cat, i) => ({ id: cat.id, display_order: i, idx: i }))
           .filter((u) => previousIndexMap.get(u.id) !== u.idx)
           .map(({ id, display_order }) => ({ id, display_order }));
-        const service = createCategoryService(supabase);
-        await service.reorderCategories(tenantId, updates);
-        revalidateMenuCache(tenantSlug);
+        const result = await actionReorderCategories(tenantId, updates);
+        if (result.error) {
+          queryClient.setQueryData(['categories', tenantId, true], previous);
+          logger.error('Failed to reorder categories', result.error);
+          toast({ title: tc('updateError'), variant: 'destructive' });
+        } else {
+          revalidateMenuCache(tenantSlug);
+        }
       } catch (err: unknown) {
         // Rollback on error
         queryClient.setQueryData(['categories', tenantId, true], previous);
@@ -312,7 +313,7 @@ export default function CategoriesClient({
         setIsReordering(false);
       }
     },
-    [categories, supabase, tenantId, tenantSlug, queryClient, toast, tc, isReordering],
+    [categories, tenantId, tenantSlug, queryClient, toast, tc, isReordering],
   );
 
   const featuredCount = categories.filter((c) => c.is_featured_on_home === true).length;
@@ -357,12 +358,19 @@ export default function CategoriesClient({
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
-      const categoryService = createCategoryService(supabase);
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.id, payload);
+        const result = await actionUpdateCategory(tenantId, editingCategory.id, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
+          return;
+        }
         toast({ title: t('categoryUpdated') });
       } else {
-        await categoryService.createCategory(payload);
+        const result = await actionCreateCategory(tenantId, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
+          return;
+        }
         toast({ title: t('categoryCreated') });
       }
       setShowModal(false);
@@ -390,8 +398,11 @@ export default function CategoriesClient({
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      const categoryService = createCategoryService(supabase);
-      await categoryService.deleteCategory(deleteTarget.id);
+      const result = await actionDeleteCategory(tenantId, deleteTarget.id);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
       toast({ title: t('categoryDeleted') });
       loadCategories();
       revalidateMenuCache(tenantSlug);
@@ -583,7 +594,7 @@ export default function CategoriesClient({
               {isFeaturedOnHome &&
                 featuredCount >= FEATURED_LIMIT &&
                 !(editingCategory && editingCategory.is_featured_on_home === true) && (
-                  <p className="text-xs text-amber-500 font-medium mt-2">
+                  <p className="text-xs text-[var(--warning)] font-medium mt-2">
                     {t('featuredOnHomeLimit', { count: FEATURED_LIMIT })}
                   </p>
                 )}
@@ -660,7 +671,7 @@ export default function CategoriesClient({
               <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
               >
                 {tc('delete')}
               </AlertDialogAction>

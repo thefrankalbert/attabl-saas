@@ -8,7 +8,7 @@ import { getTranslatedContent } from '@/lib/utils/translate';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { CurrencyCode } from '@/types/admin.types';
 
-export interface CartListItem {
+interface CartListItem {
   id: string;
   name: string;
   name_en?: string;

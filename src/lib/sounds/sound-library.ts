@@ -105,7 +105,7 @@ export const SOUND_LIBRARY: SoundDefinition[] = [
 export const DEFAULT_SOUND_ID = 'classic-bell';
 
 /** Get a sound definition by ID */
-export function getSoundById(id: string): SoundDefinition | undefined {
+function getSoundById(id: string): SoundDefinition | undefined {
   return SOUND_LIBRARY.find((s) => s.id === id);
 }
 
@@ -120,10 +120,4 @@ export function getSoundFile(id?: string | null): string {
   if (isCustomSound(id)) return id;
   const sound = getSoundById(id);
   return sound?.file || SOUND_LIBRARY[0].file;
-}
-
-/** Get available sounds for a plan */
-export function getAvailableSounds(isPremiumPlan: boolean): SoundDefinition[] {
-  if (isPremiumPlan) return SOUND_LIBRARY;
-  return SOUND_LIBRARY.filter((s) => !s.isPremium);
 }

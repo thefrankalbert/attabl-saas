@@ -193,7 +193,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   );
 
   // Chargement initial depuis localStorage
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: localStorage is client-only and must be read after mount, not in a useState initializer, to avoid SSR hydration mismatch (2026-06-18) */
   useEffect(() => {
     const savedCart = localStorage.getItem(getStorageKey('cart'));
     const savedResto = localStorage.getItem(getStorageKey('cart_restaurant_id'));

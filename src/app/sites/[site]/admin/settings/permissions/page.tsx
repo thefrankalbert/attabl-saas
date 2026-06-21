@@ -38,10 +38,10 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
   if (!adminUser || adminUser.role !== 'owner') {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">
-        <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-4">
-          <ShieldCheck className="w-8 h-8 text-red-400" />
+        <div className="w-16 h-16 border border-[var(--border)] rounded-2xl flex items-center justify-center mb-4">
+          <ShieldCheck className="w-8 h-8 text-[var(--destructive)]" />
         </div>
-        <h2 className="text-lg font-bold text-app-text">Access Denied</h2>
+        <h2 className="text-lg font-medium text-app-text">Access Denied</h2>
         <p className="text-sm text-app-text-secondary mt-2">Owner access required</p>
       </div>
     );

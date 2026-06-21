@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,7 +20,7 @@ import type {
 
 // ─── Types ─────────────────────────────────────────────────
 
-export interface StockItem {
+interface StockItem {
   id: string;
   name: string;
   unit: string;
@@ -54,29 +54,6 @@ export interface UseDashboardDataReturn {
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
 }
 
-// ─── Helpers ───────────────────────────────────────────────
-
-export function timeAgo(
-  date: string,
-  tc: (key: string, values?: Record<string, number>) => string,
-  locale: string,
-): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return tc('justNow');
-  if (seconds < 3600) return tc('minutesAgo', { count: Math.floor(seconds / 60) });
-  if (seconds < 86400) return tc('hoursAgo', { count: Math.floor(seconds / 3600) });
-  return new Date(date).toLocaleDateString(locale);
-}
-
-export function getLast7DaysData(orders: Order[]): number[] {
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
-}
-
 // ─── Hook ──────────────────────────────────────────────────
 
 export function useDashboardData({
@@ -91,6 +68,12 @@ export function useDashboardData({
   const supabase = createClient();
   const queryClient = useQueryClient();
   const { play: playNotification } = useSound();
+
+  // Coalesce bursts of realtime events into a single refetch. During service the
+  // dashboard receives hundreds of order/ingredient events per hour; without this,
+  // each one would re-run the full 8-query bundle. A short debounce keeps the
+  // dashboard fresh within ~1s of the last change while collapsing storms into one.
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
@@ -132,6 +115,19 @@ export function useDashboardData({
   };
 
   useEffect(() => {
+    // Debounced refetch: schedule a single invalidation that fires once the event
+    // burst settles. Repeated events within the window reset the timer, so N events
+    // collapse into 1 refetch instead of N x 8 queries.
+    const scheduleRefetch = (): void => {
+      if (refetchTimerRef.current !== null) {
+        clearTimeout(refetchTimerRef.current);
+      }
+      refetchTimerRef.current = setTimeout(() => {
+        refetchTimerRef.current = null;
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+      }, 800);
+    };
+
     const channel = supabase
       .channel(`dashboard-${tenantId}`)
       .on(
@@ -143,8 +139,9 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
+          // Notification is per-order (immediate); only the refetch is debounced.
           playNotification();
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .on(
@@ -156,7 +153,7 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .on(
@@ -168,7 +165,7 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .subscribe();
@@ -185,12 +182,16 @@ export function useDashboardData({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+          scheduleRefetch();
         },
       )
       .subscribe();
 
     return () => {
+      if (refetchTimerRef.current !== null) {
+        clearTimeout(refetchTimerRef.current);
+        refetchTimerRef.current = null;
+      }
       channel.unsubscribe();
       stockChannel.unsubscribe();
       supabase.removeChannel(channel);

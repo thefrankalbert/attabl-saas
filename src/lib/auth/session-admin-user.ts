@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createSignupService } from '@/services/signup.service';
 import { logger } from '@/lib/logger';
 
-export type SessionAdminUser = {
+type SessionAdminUser = {
   tenant_id: string;
   role: string;
 };

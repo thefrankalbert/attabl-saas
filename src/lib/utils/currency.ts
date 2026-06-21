@@ -46,33 +46,6 @@ export function formatCurrency(
 }
 
 /**
- * Format a compact currency amount (for small UI elements)
- *
- * @example
- * formatCurrencyCompact(1500000, 'XAF') // "1,5M FCFA"
- * formatCurrencyCompact(1500, 'EUR')     // "1 500,00 €"
- */
-export function formatCurrencyCompact(
-  amount: number,
-  currencyCode?: CurrencyCode | string | null,
-): string {
-  const config = getCurrencyConfig(currencyCode);
-
-  if (amount >= 1_000_000) {
-    const millions = amount / 1_000_000;
-    const formatted = new Intl.NumberFormat(config.locale, {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(millions);
-    return config.position === 'before'
-      ? `${config.symbol}${formatted}M`
-      : `${formatted}M ${config.symbol}`;
-  }
-
-  return formatCurrency(amount, currencyCode);
-}
-
-/**
  * Format an amount WITHOUT the currency symbol (for printed receipts)
  *
  * @example

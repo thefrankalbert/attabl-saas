@@ -23,11 +23,3 @@ export const PLAN_TOTALS: Record<
   pro: { monthly: 79000, semiannual: 402900, yearly: 758400 },
   business: { monthly: 149000, semiannual: 759900, yearly: 1430400 },
 };
-
-// Helper pour obtenir le montant en FCFA
-export function getPlanAmount(
-  plan: Exclude<SubscriptionPlan, 'enterprise'>,
-  interval: BillingInterval,
-): number {
-  return PLAN_AMOUNTS[plan][interval];
-}

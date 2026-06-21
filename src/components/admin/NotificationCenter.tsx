@@ -22,10 +22,10 @@ const TYPE_ICONS: Record<Notification['type'], typeof Info> = {
 };
 
 const TYPE_COLORS: Record<Notification['type'], string> = {
-  info: 'text-blue-500',
-  warning: 'text-amber-500',
-  success: 'text-green-500',
-  error: 'text-red-500',
+  info: 'text-[var(--muted-foreground)]',
+  warning: 'text-[var(--warning)]',
+  success: 'text-[var(--success)]',
+  error: 'text-[var(--destructive)]',
 };
 
 interface NotificationCenterProps {

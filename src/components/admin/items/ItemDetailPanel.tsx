@@ -113,7 +113,7 @@ export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailP
                 {item.allergens.map((a) => (
                   <span
                     key={a}
-                    className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20"
+                    className="px-2 py-0.5 rounded-full text-xs font-medium border border-[var(--border)] text-[var(--warning)]"
                   >
                     {ta(a)}
                   </span>
@@ -136,7 +136,7 @@ export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailP
               className={cn(
                 'px-2.5 py-1 rounded-full text-xs font-semibold border',
                 item.is_available
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                  ? 'border-[var(--border)] text-[var(--success)]'
                   : 'bg-app-bg text-app-text-secondary border-app-border',
               )}
             >
@@ -153,7 +153,7 @@ export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailP
               )}
             </span>
             {item.is_featured && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold border border-[var(--border)] text-[var(--warning)] inline-flex items-center gap-1">
                 <Star className="w-3 h-3 fill-current" />
                 {t('featured')}
               </span>

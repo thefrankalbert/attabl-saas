@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CreateMenuInput, UpdateMenuInput } from '@/lib/validations/menu.schema';
+import type { Category, Menu, MenuItem } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -9,13 +10,67 @@ import { logger } from '@/lib/logger';
  * Manages the menu hierarchy: Tenant → Venue → Menu (carte) → Category → Item
  * Supports sous-cartes via parent_menu_id (self-referencing FK).
  */
-export function createMenuService(supabase: SupabaseClient) {
+
+/** All `menus` columns selected by the menu queries (no joins). */
+type MenuRow = Omit<Menu, 'venue' | 'children' | 'categories'>;
+
+/** Partial venue projection embedded in some menu queries (id, name, slug only). */
+interface MenuVenueRef {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+/** Partial child-menu projection embedded via the self-referencing FK. */
+interface MenuChildRef {
+  id: string;
+  name: string;
+  name_en?: string;
+  slug: string;
+  description?: string;
+  is_active: boolean;
+  display_order: number;
+}
+
+/** Top-level menu with its embedded venue ref and child refs. */
+type MenuWithRelations = MenuRow & {
+  venue?: MenuVenueRef | null;
+  children?: MenuChildRef[];
+};
+
+/** Category row plus the lightweight item-count join used by the admin nav. */
+type CategoryWithItemRefs = Category & { menu_items: { id: string }[] };
+
+export interface MenuService {
+  getMenusByTenant(tenantId: string): Promise<MenuWithRelations[]>;
+  getAllMenusFlat(tenantId: string): Promise<MenuRow[]>;
+  getTransversalMenusByTenant(tenantId: string): Promise<MenuRow[]>;
+  getMenuWithChildren(tenantId: string, menuId: string): Promise<MenuWithRelations>;
+  getMenuBySlug(tenantId: string, slug: string): Promise<MenuWithRelations | null>;
+  createMenu(tenantId: string, input: CreateMenuInput): Promise<MenuRow>;
+  updateMenu(tenantId: string, input: UpdateMenuInput): Promise<MenuRow>;
+  deleteMenu(menuId: string, tenantId: string): Promise<void>;
+  reorderMenus(tenantId: string, orderedIds: string[]): Promise<void>;
+  getCategoriesForMenu(tenantId: string, menuId: string): Promise<CategoryWithItemRefs[]>;
+  getItemsForMenu(tenantId: string, menuId: string): Promise<MenuItem[]>;
+  getMenuDetailBundle(
+    tenantId: string,
+    menuId: string,
+  ): Promise<{
+    menu: Menu;
+    categories: Category[];
+    availableCategories: Category[];
+    items: MenuItem[];
+  }>;
+}
+
+export function createMenuService(supabase: SupabaseClient): MenuService {
   return {
     /**
      * Get all menus for a tenant, grouped with children (sous-cartes).
      * Returns only top-level menus; children are nested via the join.
      */
-    async getMenusByTenant(tenantId: string) {
+    async getMenusByTenant(tenantId: string): Promise<MenuWithRelations[]> {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -30,13 +85,13 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du chargement des cartes', 'INTERNAL');
       }
 
-      return data || [];
+      return (data as unknown as MenuWithRelations[]) || [];
     },
 
     /**
      * Get all menus for a tenant (flat list, including children).
      */
-    async getAllMenusFlat(tenantId: string) {
+    async getAllMenusFlat(tenantId: string): Promise<MenuRow[]> {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -49,14 +104,14 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du chargement des cartes', 'INTERNAL');
       }
 
-      return data || [];
+      return (data as MenuRow[]) || [];
     },
 
     /**
      * Get transversal menus for a tenant (is_transversal_menu = TRUE, is_active).
      * These are exposed as sub-tabs across every other top-level menu.
      */
-    async getTransversalMenusByTenant(tenantId: string) {
+    async getTransversalMenusByTenant(tenantId: string): Promise<MenuRow[]> {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -72,14 +127,14 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du chargement des cartes transversales', 'INTERNAL');
       }
 
-      return data || [];
+      return (data as MenuRow[]) || [];
     },
 
     /**
      * Get a single menu with its children, categories, and items.
      * Used for the menu detail admin page and client display.
      */
-    async getMenuWithChildren(tenantId: string, menuId: string) {
+    async getMenuWithChildren(tenantId: string, menuId: string): Promise<MenuWithRelations> {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -99,13 +154,13 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Carte introuvable', 'NOT_FOUND');
       }
 
-      return data;
+      return data as unknown as MenuWithRelations;
     },
 
     /**
      * Get a menu by its slug (for URL routing: ?menu=carte-boissons).
      */
-    async getMenuBySlug(tenantId: string, slug: string) {
+    async getMenuBySlug(tenantId: string, slug: string): Promise<MenuWithRelations | null> {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -119,14 +174,14 @@ export function createMenuService(supabase: SupabaseClient) {
         return null;
       }
 
-      return data;
+      return data as unknown as MenuWithRelations;
     },
 
     /**
      * Create a new menu (carte).
      * Generates a unique slug from the name.
      */
-    async createMenu(tenantId: string, input: CreateMenuInput) {
+    async createMenu(tenantId: string, input: CreateMenuInput): Promise<MenuRow> {
       // Generate slug via RPC
       const { data: slugData, error: slugError } = await supabase.rpc('generate_menu_slug', {
         p_tenant_id: tenantId,
@@ -166,7 +221,7 @@ export function createMenuService(supabase: SupabaseClient) {
         if (error) {
           throw new ServiceError('Erreur lors de la création de la carte', 'INTERNAL');
         }
-        return data;
+        return data as MenuRow;
       }
 
       const slug = slugData as string;
@@ -197,13 +252,13 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la création de la carte', 'INTERNAL');
       }
 
-      return data;
+      return data as MenuRow;
     },
 
     /**
      * Update an existing menu.
      */
-    async updateMenu(tenantId: string, input: UpdateMenuInput) {
+    async updateMenu(tenantId: string, input: UpdateMenuInput): Promise<MenuRow> {
       const { id, ...updates } = input;
 
       // If name changed, regenerate slug
@@ -248,13 +303,13 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la mise à jour de la carte', 'INTERNAL');
       }
 
-      return data;
+      return data as MenuRow;
     },
 
     /**
      * Delete a menu. Categories cascade-delete via FK.
      */
-    async deleteMenu(menuId: string, tenantId: string) {
+    async deleteMenu(menuId: string, tenantId: string): Promise<void> {
       const { error } = await supabase
         .from('menus')
         .delete()
@@ -270,7 +325,7 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Reorder menus by updating display_order.
      */
-    async reorderMenus(tenantId: string, orderedIds: string[]) {
+    async reorderMenus(tenantId: string, orderedIds: string[]): Promise<void> {
       // N parallel UPDATEs via Promise.all - intentional trade-off for simplicity.
       // Supabase JS client has no multi-row UPDATE with varying values.
       // Acceptable because menu count is small (typically < 20) and calls are parallel.
@@ -292,7 +347,7 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Get categories for a specific menu (scoped).
      */
-    async getCategoriesForMenu(tenantId: string, menuId: string) {
+    async getCategoriesForMenu(tenantId: string, menuId: string): Promise<CategoryWithItemRefs[]> {
       const { data, error } = await supabase
         .from('categories')
         .select('*, menu_items:menu_items(id)')
@@ -304,13 +359,13 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du chargement des catégories', 'INTERNAL');
       }
 
-      return data || [];
+      return (data as CategoryWithItemRefs[]) || [];
     },
 
     /**
      * Get items for a specific menu (through its categories).
      */
-    async getItemsForMenu(tenantId: string, menuId: string) {
+    async getItemsForMenu(tenantId: string, menuId: string): Promise<MenuItem[]> {
       // First get category IDs for this menu
       const { data: categories, error: catError } = await supabase
         .from('categories')
@@ -335,7 +390,7 @@ export function createMenuService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du chargement des articles', 'INTERNAL');
       }
 
-      return items || [];
+      return (items as unknown as MenuItem[]) || [];
     },
 
     /**
@@ -344,7 +399,15 @@ export function createMenuService(supabase: SupabaseClient) {
      * unassigned categories (for the "add existing category" picker)
      * and the items belonging to its categories.
      */
-    async getMenuDetailBundle(tenantId: string, menuId: string) {
+    async getMenuDetailBundle(
+      tenantId: string,
+      menuId: string,
+    ): Promise<{
+      menu: Menu;
+      categories: Category[];
+      availableCategories: Category[];
+      items: MenuItem[];
+    }> {
       const menuRes = await supabase
         .from('menus')
         .select('*, venue:venues(id, name, slug)')
@@ -385,7 +448,7 @@ export function createMenuService(supabase: SupabaseClient) {
       }
 
       const catIds = categories.map((c: { id: string }) => c.id);
-      let items: unknown[] = [];
+      let items: MenuItem[] = [];
       if (catIds.length > 0) {
         const itemsRes = await supabase
           .from('menu_items')
@@ -400,13 +463,13 @@ export function createMenuService(supabase: SupabaseClient) {
             itemsRes.error,
           );
         }
-        items = itemsRes.data || [];
+        items = (itemsRes.data as unknown as MenuItem[]) || [];
       }
 
       return {
-        menu: menuRes.data,
-        categories,
-        availableCategories: availRes.data || [],
+        menu: menuRes.data as unknown as Menu,
+        categories: categories as Category[],
+        availableCategories: (availRes.data as Category[]) || [],
         items,
       };
     },

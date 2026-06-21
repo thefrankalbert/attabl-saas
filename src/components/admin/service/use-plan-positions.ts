@@ -48,8 +48,7 @@ export function usePlanPositions(tenantId: string, zoneId: string | null) {
 
   const positions = useMemo<PlanPositions>(
     () => (zoneId ? safeRead(tenantId, zoneId) : {}),
-    // `version` is intentionally in deps to re-read after writes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: version is a write-counter deliberately kept in deps to re-read localStorage after setPosition, avoiding a set-state-in-effect cascade; safeRead is a stable module function (2026-06-18)
     [tenantId, zoneId, version],
   );
 

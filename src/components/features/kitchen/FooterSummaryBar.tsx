@@ -79,28 +79,32 @@ function FooterSummaryBarInner({
         label: t('footerQueue'),
         count: summary.pending,
         baseColor: 'text-app-text-muted',
-        activeColor: 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30',
+        activeColor:
+          'border border-[var(--border)] text-[var(--warning)] ring-1 ring-[var(--border)]',
       },
       {
         key: 'preparing' as const,
         label: t('footerCooking'),
         count: summary.preparing,
         baseColor: 'text-app-text-muted',
-        activeColor: 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30',
+        activeColor:
+          'border border-[var(--border)] text-[var(--muted-foreground)] ring-1 ring-[var(--border)]',
       },
       {
         key: 'ready' as const,
         label: t('footerPacking'),
         count: summary.ready,
         baseColor: 'text-app-text-muted',
-        activeColor: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30',
+        activeColor:
+          'border border-[var(--border)] text-[var(--success)] ring-1 ring-[var(--border)]',
       },
       {
         key: 'delayed' as const,
         label: t('footerDelayed'),
         count: summary.delayed,
-        baseColor: 'text-red-400/70',
-        activeColor: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30',
+        baseColor: 'text-[var(--destructive)]',
+        activeColor:
+          'border border-[var(--border)] text-[var(--destructive)] ring-1 ring-[var(--border)]',
       },
     ],
     [t, summary],
@@ -137,7 +141,7 @@ function FooterSummaryBarInner({
                 }
               }}
               className={cn(
-                'px-3 py-2 min-h-[40px] rounded-md text-xs font-bold uppercase tracking-wider h-auto',
+                'px-3 py-2 min-h-[40px] rounded-md text-xs font-medium normal-case h-auto',
                 isActive ? tab.activeColor : tab.baseColor,
                 !isActive && !isDelayedTab && 'hover:bg-app-elevated/50',
                 isDelayedTab && 'cursor-default animate-pulse',

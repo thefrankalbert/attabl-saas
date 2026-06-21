@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Plus, ArrowLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils/currency';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, CurrencyCode, WizardItem } from '@/types/admin.types';
+import { actionCreateMenuItem } from '@/app/actions/menu-items';
 
 interface WizardStepItemsProps {
   menu: Menu;
@@ -35,7 +35,6 @@ export default function WizardStepItems({
 }: WizardStepItemsProps) {
   const t = useTranslations('menus');
   const { toast } = useToast();
-  const supabase = createClient();
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState<number | string>('');
@@ -53,19 +52,18 @@ export default function WizardStepItems({
         price: numericPrice,
         description: description.trim() || null,
         category_id: category.id,
-        tenant_id: tenantId,
         is_available: true,
         is_featured: false,
         display_order: items.length,
       };
-      const { data, error } = await supabase
-        .from('menu_items')
-        .insert([payload])
-        .select('id, name, price')
-        .single();
-      if (error) throw error;
-      toast({ title: t('wizardItemAdded', { name: data.name }) });
-      onItemCreated({ id: data.id, name: data.name, price: data.price });
+      const result = await actionCreateMenuItem(tenantId, payload);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
+      const itemName = name.trim();
+      toast({ title: t('wizardItemAdded', { name: itemName }) });
+      onItemCreated({ id: result.itemId ?? '', name: itemName, price: numericPrice });
       setName('');
       setPrice('');
       setDescription('');

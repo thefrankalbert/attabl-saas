@@ -15,7 +15,6 @@ import type { OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 interface KitchenClientProps {
   tenantId: string;
   tenantName?: string;
-  notificationSoundId?: string;
   barDisplayEnabled?: boolean;
 }
 
@@ -24,7 +23,6 @@ const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
 export default function KitchenClient({
   tenantId,
   tenantName,
-  notificationSoundId,
   barDisplayEnabled = false,
 }: KitchenClientProps) {
   const t = useTranslations('kitchen');
@@ -48,7 +46,7 @@ export default function KitchenClient({
     }
     // Hydrating from localStorage after SSR default - the documented pattern for
     // avoiding hydration mismatch. One setState per mount, not a render cascade.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: localStorage hydration after SSR default; client-only read cannot run in a useState initializer (2026-06-18)
     setZoneFilter(initial);
   }, [tenantId]);
 
@@ -66,7 +64,6 @@ export default function KitchenClient({
 
   const kitchen = useKitchenData({
     tenantId,
-    notificationSoundId,
     barDisplayEnabled,
     zoneFilter,
   });
@@ -83,7 +80,7 @@ export default function KitchenClient({
       // sessionStorage unavailable
     }
     // Same hydration-from-storage pattern as zoneFilter above.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: sessionStorage hydration after SSR default; client-only read cannot run in a useState initializer (2026-06-18)
     setSoundUnlocked(initial);
   }, []);
 
@@ -205,7 +202,7 @@ export default function KitchenClient({
         style={safeAreaStyle}
       >
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
+          <RefreshCw className="w-8 h-8 animate-spin text-[var(--warning)]" />
           <p className="text-sm font-medium text-app-text-secondary">{t('loadingKds')}</p>
         </div>
       </div>
@@ -224,8 +221,8 @@ export default function KitchenClient({
           onTouchStart={handleUnlock}
         >
           <div className="text-center p-8">
-            <Volume2 className="w-16 h-16 text-amber-400 mx-auto" />
-            <p className="text-lg font-bold text-app-text mt-4">{t('tapToEnableSound')}</p>
+            <Volume2 className="w-16 h-16 text-[var(--warning)] mx-auto" />
+            <p className="text-lg font-medium text-app-text mt-4">{t('tapToEnableSound')}</p>
             <p className="text-sm text-app-text-muted mt-2">{t('tapToEnableSoundDesc')}</p>
           </div>
         </div>

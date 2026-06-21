@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Photo } from './Photo';
 import { Rating } from './Rating';
 
-export interface ClientBadge {
+interface ClientBadge {
   kind: 'promo' | 'new' | 'popular' | 'spicy';
   label: string;
 }

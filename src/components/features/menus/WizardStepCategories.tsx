@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, ChefHat, Wine, Shuffle, Plus, Utensils } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, PreparationZone } from '@/types/admin.types';
-import { createCategoryService } from '@/services/category.service';
+import { actionCreateCategory } from '@/app/actions/categories';
 
 interface WizardStepCategoriesProps {
   menu: Menu;
@@ -32,7 +31,6 @@ export default function WizardStepCategories({
 }: WizardStepCategoriesProps) {
   const t = useTranslations('menus');
   const { toast } = useToast();
-  const supabase = createClient();
 
   const [name, setName] = useState('');
   const [preparationZone, setPreparationZone] = useState<PreparationZone>('kitchen');
@@ -50,10 +48,13 @@ export default function WizardStepCategories({
         menu_id: menu.id,
         display_order: categories.length,
       };
-      const categoryService = createCategoryService(supabase);
-      const data = await categoryService.createCategory(payload, { returning: true });
+      const result = await actionCreateCategory(tenantId, payload, { returning: true });
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        return;
+      }
       toast({ title: t('categoryCreated') });
-      onCategoryCreated(data as Category);
+      onCategoryCreated(result.data as Category);
       setName('');
       setPreparationZone('kitchen');
       revalidateMenuCache();
@@ -82,14 +83,7 @@ export default function WizardStepCategories({
                 <p className="text-sm font-medium text-app-text">{cat.name}</p>
               </div>
               {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-                <span
-                  className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
-                    cat.preparation_zone === 'bar'
-                      ? 'bg-purple-500/10 text-purple-400'
-                      : 'bg-blue-500/10 text-blue-400',
-                  )}
-                >
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium normal-case border border-[var(--border)] text-[var(--muted-foreground)]">
                   {cat.preparation_zone === 'bar' ? (
                     <Wine className="w-3 h-3" />
                   ) : (

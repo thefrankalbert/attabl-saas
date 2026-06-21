@@ -12,13 +12,13 @@ export interface PdfExtractedItem {
   price: number;
 }
 
-export interface PdfExtractionResult {
+interface PdfExtractionResult {
   items: PdfExtractedItem[];
   pageCount: number;
   textLength: number;
 }
 
-export interface PdfImportResult {
+interface PdfImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
@@ -45,6 +45,15 @@ function cleanJsonResponse(raw: string): string {
 
 // ─── Service ──────────────────────────────────────────────────
 
+export interface PdfImportService {
+  extractFromPdf(pdfBuffer: Buffer): Promise<PdfExtractionResult>;
+  importItems(
+    tenantId: string,
+    menuId: string,
+    items: PdfExtractedItem[],
+  ): Promise<PdfImportResult>;
+}
+
 /**
  * PDF import service for menu data.
  *
@@ -54,7 +63,7 @@ function cleanJsonResponse(raw: string): string {
  *
  * Follows the project DI pattern: receives a SupabaseClient.
  */
-export function createPdfImportService(supabase: SupabaseClient) {
+export function createPdfImportService(supabase: SupabaseClient): PdfImportService {
   return {
     /**
      * Extracts structured menu items from a PDF buffer using Claude AI.

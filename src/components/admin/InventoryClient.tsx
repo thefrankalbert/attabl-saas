@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Package, Plus, Search } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { Package, Plus, Search, Check, AlertTriangle, XCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -22,7 +21,11 @@ import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import { useTranslations } from 'next-intl';
-import { createInventoryService } from '@/services/inventory.service';
+import {
+  actionCreateIngredient,
+  actionUpdateIngredient,
+  actionAdjustStock,
+} from '@/app/actions/inventory';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -35,6 +38,8 @@ import type {
 } from '@/types/inventory.types';
 import { INGREDIENT_UNITS, MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { StatusBadge, type BadgeTone } from '@/components/admin/shared/StatusBadge';
+import type { LucideIcon } from 'lucide-react';
 
 interface InventoryClientProps {
   tenantId: string;
@@ -71,9 +76,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
-  const supabase = createClient();
   const queryClient = useQueryClient();
-  const inventoryService = createInventoryService(supabase);
 
   // TanStack Query for ingredients and suppliers
   const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
@@ -108,11 +111,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     return true;
   });
 
-  const getStockBadge = (ing: Ingredient) => {
-    if (ing.current_stock <= 0) return { label: t('outOfStock'), bg: 'bg-red-500/10 text-red-500' };
+  const getStockBadge = (ing: Ingredient): { label: string; tone: BadgeTone; icon: LucideIcon } => {
+    if (ing.current_stock <= 0)
+      return { label: t('outOfStock'), tone: 'destructive', icon: XCircle };
     if (ing.current_stock <= ing.min_stock_alert)
-      return { label: t('lowStock'), bg: 'bg-amber-500/10 text-amber-500' };
-    return { label: t('stockOk'), bg: 'bg-green-500/10 text-green-500' };
+      return { label: t('lowStock'), tone: 'warning', icon: AlertTriangle };
+    return { label: t('stockOk'), tone: 'success', icon: Check };
   };
 
   // TanStack Table column definitions
@@ -183,9 +187,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           const badge = getStockBadge(row.original);
           return (
             <div className="text-center">
-              <span className={cn('px-2 py-1 rounded-full text-xs font-bold', badge.bg)}>
+              <StatusBadge tone={badge.tone} icon={badge.icon}>
                 {badge.label}
-              </span>
+              </StatusBadge>
             </div>
           );
         },
@@ -217,7 +221,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openAdjust/openEdit are stable dialog openers (only call setState); excluding them keeps the column defs from rebuilding on every render, and a stale reference is harmless here (2026-06-18)
     [currency, t, tc],
   );
 
@@ -274,16 +278,18 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || undefined,
         };
-        await inventoryService.createIngredient(tenantId, input);
+        const r = await actionCreateIngredient(tenantId, input);
+        if (r.error) throw new Error(r.error);
         toast({ title: t('productAdded') });
       } else if (modalMode === 'edit' && selectedIngredient) {
-        await inventoryService.updateIngredient(selectedIngredient.id, tenantId, {
+        const r = await actionUpdateIngredient(tenantId, selectedIngredient.id, {
           name: formName.trim(),
           unit: formUnit,
           min_stock_alert: parseFloat(formMinAlert) || 0,
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || null,
         });
+        if (r.error) throw new Error(r.error);
         toast({ title: t('productUpdated') });
       }
       setModalMode(null);
@@ -298,13 +304,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     if (!selectedIngredient || !adjustQty) return;
 
     try {
-      await inventoryService.adjustStock(tenantId, {
+      const r = await actionAdjustStock(tenantId, {
         ingredient_id: selectedIngredient.id,
         quantity: parseFloat(adjustQty),
         movement_type: adjustType,
         notes: adjustNotes.trim() || undefined,
         supplier_id: adjustSupplierId || undefined,
       });
+      if (r.error) throw new Error(r.error);
       toast({ title: t('stockAdjusted') });
       setModalMode(null);
       resetForm();
@@ -373,11 +380,11 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                           status === 'out' &&
                             outCount > 0 &&
                             filterStatus !== status &&
-                            'border-red-500/30 text-red-500',
+                            'border-[var(--border)] text-[var(--destructive)]',
                           status === 'low' &&
                             lowCount > 0 &&
                             filterStatus !== status &&
-                            'border-amber-500/30 text-amber-500',
+                            'border-[var(--border)] text-[var(--warning)]',
                         )}
                       >
                         {status === 'all'
@@ -392,8 +399,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                               filterStatus === status
                                 ? 'bg-app-bg/30'
                                 : status === 'out'
-                                  ? 'bg-red-500/15'
-                                  : 'bg-amber-500/15',
+                                  ? 'text-[var(--destructive)]'
+                                  : 'text-[var(--warning)]',
                             )}
                           >
                             {count}
@@ -435,14 +442,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                               <p className="text-xs text-app-text-secondary">{ing.category}</p>
                             )}
                           </div>
-                          <span
-                            className={cn(
-                              'px-2 py-1 rounded-full text-xs font-bold shrink-0',
-                              badge.bg,
-                            )}
-                          >
+                          <StatusBadge tone={badge.tone} icon={badge.icon} className="shrink-0">
                             {badge.label}
-                          </span>
+                          </StatusBadge>
                         </div>
 
                         {/* Row 2: Stock + Cost */}

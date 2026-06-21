@@ -104,7 +104,31 @@ function formatCurrency(amount: number, currency: string): string {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createEmailService() {
+export interface EmailService {
+  sendWelcomeEmail(to: string, data: WelcomeEmailData): Promise<EmailResult>;
+  sendPasswordResetEmail(to: string, data: PasswordResetEmailData): Promise<EmailResult>;
+  sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult>;
+  sendOrderConfirmationEmail(to: string, data: OrderConfirmationEmailData): Promise<EmailResult>;
+  sendLowStockAlertEmail(to: string | string[], data: LowStockAlertEmailData): Promise<EmailResult>;
+  sendFirstOrderTriggerEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
+  sendTenthOrderTriggerEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
+  sendTrialIdleEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string },
+  ): Promise<EmailResult>;
+  sendTrialEndgameEmail(
+    to: string,
+    data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
+  ): Promise<EmailResult>;
+}
+
+export function createEmailService(): EmailService {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL || 'noreply@attabl.com';
   const resend = apiKey ? new Resend(apiKey) : null;
@@ -469,23 +493,3 @@ export const sendStockAlertEmail = async (
     })
   ).success;
 };
-
-export const sendFirstOrderTriggerEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendFirstOrderTriggerEmail(to, data)).success;
-
-export const sendTenthOrderTriggerEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendTenthOrderTriggerEmail(to, data)).success;
-
-export const sendTrialIdleEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendTrialIdleEmail(to, data)).success;
-
-export const sendTrialEndgameEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
-): Promise<boolean> => (await _svc.sendTrialEndgameEmail(to, data)).success;

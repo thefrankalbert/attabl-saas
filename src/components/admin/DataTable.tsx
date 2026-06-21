@@ -116,7 +116,7 @@ export function DataTable<TData>({
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
         <Table className="text-sm min-w-0">
           {/* Sticky Header */}
-          <TableHeader className="bg-app-bg sticky top-0 z-10">
+          <TableHeader className="bg-app-elevated sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
@@ -125,7 +125,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="px-4 @xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
+                    className="h-10 px-3 py-2.5 text-left text-[13px] font-medium normal-case tracking-normal text-app-text-secondary"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
@@ -146,7 +146,7 @@ export function DataTable<TData>({
                   {columns.map((_, j) => (
                     <TableCell
                       key={`skeleton-cell-${String(i)}-${String(j)}`}
-                      className="px-4 py-3"
+                      className="px-3 py-2.5 text-[13px]"
                     >
                       <div className="animate-pulse bg-app-elevated rounded h-4 w-3/4" />
                     </TableCell>
@@ -164,7 +164,7 @@ export function DataTable<TData>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3">
+                    <TableCell key={cell.id} className="px-3 py-2.5 text-[13px]">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

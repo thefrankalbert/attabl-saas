@@ -15,6 +15,8 @@ import { ServiceError } from '../errors';
  */
 interface MockChain {
   single: ReturnType<typeof vi.fn>;
+  maybeSingle: ReturnType<typeof vi.fn>;
+  ownership: ReturnType<typeof vi.fn>;
   bulkResult: ReturnType<typeof vi.fn>;
 }
 
@@ -25,6 +27,19 @@ function createMockSupabase() {
     if (!chains[table]) {
       chains[table] = {
         single: vi.fn(),
+        // Ownership guards resolve via .select(...).eq('id', x).maybeSingle().
+        // Default to "owned by TENANT_ID" so happy-path tests pass without
+        // extra wiring; tests can override per-case.
+        maybeSingle: vi.fn().mockResolvedValue({
+          data:
+            table === 'tables'
+              ? { zone: { venue: { tenant_id: TENANT_ID } } }
+              : { venue: { tenant_id: TENANT_ID } },
+          error: null,
+        }),
+        // Ownership guard for insertTables resolves via .in('id', ids).eq(...)
+        // returning the owned rows; default returns nothing (overridden per-case).
+        ownership: vi.fn().mockResolvedValue({ data: [], error: null }),
         bulkResult: vi.fn(),
       };
     }
@@ -52,16 +67,21 @@ function createMockSupabase() {
         }),
       }),
 
-      // select('table_number').eq().like().order().limit().single()
-      // - used by addTablesToZone to find max existing number
+      // select(...) supports several read shapes:
+      // - addTablesToZone max-number lookup: .eq().like().order().limit().single()
+      // - ownership guards: .eq('id', x).maybeSingle() (zones/tables)
+      //   and .eq('id', x).eq('tenant_id', y).maybeSingle() (venues)
+      // - insertTables guard: .in('id', ids).eq('venues.tenant_id', y) (awaited)
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
+          // venues ownership guard: second .eq() then .maybeSingle()
           eq: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
                 single: chain.single,
               }),
             }),
+            maybeSingle: chain.maybeSingle,
           }),
           like: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
@@ -70,6 +90,12 @@ function createMockSupabase() {
               }),
             }),
           }),
+          // zones/tables ownership guard: single .eq('id', x).maybeSingle()
+          maybeSingle: chain.maybeSingle,
+        }),
+        // insertTables ownership guard: .in('id', ids).eq('venues.tenant_id', y)
+        in: vi.fn().mockReturnValue({
+          eq: chain.ownership,
         }),
       }),
     };
@@ -423,6 +449,128 @@ describe('TableConfigService', () => {
       const result = await service.addTablesToZone(TENANT_ID, ZONE_ID, 'BAR', 1);
 
       expect(result).toHaveLength(1);
+    });
+  });
+
+  // ── Cross-tenant ownership guards ───────────────────────
+
+  describe('cross-tenant write guards', () => {
+    const FOREIGN_TENANT = 'tenant-other';
+
+    it('addTablesToZone rejects a zone owned by another tenant', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      // Zone resolves to a different tenant via the venue join
+      supabase._getChain('zones').maybeSingle.mockResolvedValueOnce({
+        data: { venue: { tenant_id: FOREIGN_TENANT } },
+        error: null,
+      });
+
+      await expect(service.addTablesToZone(TENANT_ID, ZONE_ID, 'INT', 2, 4)).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('updateZoneName rejects a foreign zone before writing', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      supabase._getChain('zones').maybeSingle.mockResolvedValueOnce({
+        data: { venue: { tenant_id: FOREIGN_TENANT } },
+        error: null,
+      });
+
+      await expect(service.updateZoneName(TENANT_ID, ZONE_ID, 'Hacked')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('deleteZone rejects a foreign zone before writing', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      supabase._getChain('zones').maybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+      await expect(service.deleteZone(TENANT_ID, ZONE_ID)).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('deleteTable rejects a table owned by another tenant', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      supabase._getChain('tables').maybeSingle.mockResolvedValueOnce({
+        data: { zone: { venue: { tenant_id: FOREIGN_TENANT } } },
+        error: null,
+      });
+
+      await expect(service.deleteTable(TENANT_ID, 'table-foreign')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('toggleTableActive rejects a foreign table before writing', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      supabase._getChain('tables').maybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+      await expect(
+        service.toggleTableActive(TENANT_ID, 'table-foreign', false),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('createZone rejects a venue owned by another tenant', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      // venues guard lookup returns no row for this tenant
+      supabase._getChain('venues').maybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+      await expect(
+        service.createZone(TENANT_ID, 'venue-foreign', 'Zone', 'ZN', 0),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('insertTables rejects a batch containing a foreign zone_id', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      // Ownership lookup returns only one owned zone; the batch references two.
+      supabase._getChain('zones').ownership.mockResolvedValueOnce({
+        data: [{ id: 'zone-owned' }],
+        error: null,
+      });
+
+      await expect(
+        service.insertTables(TENANT_ID, [
+          {
+            zone_id: 'zone-owned',
+            table_number: 'A-1',
+            display_name: 'A-1',
+            capacity: 2,
+            is_active: true,
+          },
+          {
+            zone_id: 'zone-foreign',
+            table_number: 'B-1',
+            display_name: 'B-1',
+            capacity: 2,
+            is_active: true,
+          },
+        ]),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });

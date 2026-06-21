@@ -50,7 +50,7 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
                       {labels.tableShort} {order.table_number}
                     </span>
                     <span className="font-mono text-[10px] text-app-text-muted">
-                      {formatTimeHHMM(order.created_at)} · {labels.minutesAgoShort(minutes)}
+                      {formatTimeHHMM(order.created_at)} - {labels.minutesAgoShort(minutes)}
                     </span>
                   </div>
                   <div className="text-[11px] text-app-text-secondary">

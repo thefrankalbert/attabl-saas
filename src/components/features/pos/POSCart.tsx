@@ -137,7 +137,7 @@ export default function POSCart({
   // Initialize picker zone when dialog opens
   useEffect(() => {
     if (showTablePicker && zones.length > 0 && !pickerZoneId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync init when dialog opens
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: one-time default zone selection when the picker dialog opens; guarded by !pickerZoneId so it sets once and cannot loop (2026-06-18)
       setPickerZoneId(zones[0].id);
     }
   }, [showTablePicker, zones, pickerZoneId]);
@@ -286,7 +286,7 @@ export default function POSCart({
                             </span>
                           )}
                           {item.notes && (
-                            <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            <span className="text-[10px] text-[var(--warning)] px-1.5 py-0.5 rounded border border-[var(--border)]">
                               {item.notes}
                             </span>
                           )}
@@ -362,12 +362,16 @@ export default function POSCart({
             onClick={() => setShowOrderNotes((prev) => !prev)}
             className={cn(
               'flex items-center gap-1 text-[11px] font-medium shrink-0 h-auto px-1 py-0.5',
-              orderNotes ? 'text-amber-500' : 'text-app-text-muted hover:text-app-text-secondary',
+              orderNotes
+                ? 'text-[var(--warning)]'
+                : 'text-app-text-muted hover:text-app-text-secondary',
             )}
           >
             <StickyNote className="w-3 h-3" />
             <span>{t('orderNote')}</span>
-            {orderNotes && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
+            {orderNotes && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] shrink-0" />
+            )}
           </Button>
 
           {/* Coupon inline (only if enabled in tenant settings) */}
@@ -375,10 +379,10 @@ export default function POSCart({
             <div className="flex-1 min-w-0">
               {appliedCoupon ? (
                 <div className="flex items-center gap-1 animate-in fade-in">
-                  <div className="flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
+                  <div className="flex items-center gap-1 text-[var(--success)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
                     <Tag className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate">{appliedCoupon.code}</span>
-                    <span className="text-green-500 shrink-0">
+                    <span className="text-[var(--success)] shrink-0">
                       -
                       {appliedCoupon.discount_type === 'percentage'
                         ? `${appliedCoupon.discount_value}%`
@@ -460,8 +464,10 @@ export default function POSCart({
             </div>
             {pricing.discountAmount > 0 && (
               <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-green-600">{tc('discount') || 'Remise'}</span>
-                <span className="text-xs font-medium text-green-600 tabular-nums font-mono">
+                <span className="text-[11px] text-[var(--success)]">
+                  {tc('discount') || 'Remise'}
+                </span>
+                <span className="text-xs font-medium text-[var(--success)] tabular-nums font-mono">
                   -{formatCurrency(pricing.discountAmount, currency)}
                 </span>
               </div>
@@ -519,7 +525,7 @@ export default function POSCart({
           </Button>
           <Button
             variant="default"
-            className="col-span-5 min-h-[48px] rounded-xl text-sm font-bold touch-manipulation bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="col-span-5 min-h-[48px] rounded-xl text-sm font-bold touch-manipulation"
             disabled={cart.length === 0}
             onClick={onCheckout}
           >
@@ -646,7 +652,7 @@ export default function POSCart({
                 onClearCart();
                 setShowClearCartConfirm(false);
               }}
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
             >
               {tc('delete')}
             </AlertDialogAction>

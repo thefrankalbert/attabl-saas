@@ -36,4 +36,3 @@ export const createRestaurantSchema = createRestaurantStep1Schema.merge(
 
 export type CreateRestaurantStep1Input = z.infer<typeof createRestaurantStep1Schema>;
 export type CreateRestaurantStep2Input = z.infer<typeof createRestaurantStep2Schema>;
-export type CreateRestaurantInput = z.infer<typeof createRestaurantSchema>;

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { createCouponService } from '@/services/coupon.service';
+import { actionDeleteCoupon, actionToggleCouponActive } from '@/app/actions/coupons';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -53,27 +54,25 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   }, [tenantId, toast, t]);
 
   const performDelete = async (couponId: string) => {
-    try {
-      const service = createCouponService(createClient());
-      await service.deleteCoupon(couponId, tenantId);
-      toast({ title: t('couponDeleted') });
-      refetch();
-    } catch (err) {
-      logger.error('Failed to delete coupon', err);
+    const result = await actionDeleteCoupon(tenantId, couponId);
+    if (result.error) {
+      logger.error('Failed to delete coupon', result.error);
       toast({ title: t('deleteError'), variant: 'destructive' });
+      return;
     }
+    toast({ title: t('couponDeleted') });
+    refetch();
   };
 
   const toggleActive = async (coupon: Coupon) => {
-    try {
-      const service = createCouponService(createClient());
-      await service.toggleActive(coupon.id, tenantId, !coupon.is_active);
-      toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
-      refetch();
-    } catch (err) {
-      logger.error('Failed to toggle coupon', err);
+    const result = await actionToggleCouponActive(tenantId, coupon.id, !coupon.is_active);
+    if (result.error) {
+      logger.error('Failed to toggle coupon', result.error);
       toast({ title: t('updateError'), variant: 'destructive' });
+      return;
     }
+    toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
+    refetch();
   };
 
   const openEdit = (coupon: Coupon) => {
@@ -146,13 +145,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
                   {/* Type */}
                   <div>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        coupon.discount_type === 'percentage'
-                          ? 'bg-blue-500/10 text-blue-500'
-                          : 'bg-purple-500/10 text-purple-500'
-                      }`}
-                    >
+                    <span className="inline-flex items-center border border-[var(--border)] px-2 py-0.5 rounded-[0.625rem] text-xs font-medium text-[var(--muted-foreground)]">
                       {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
                     </span>
                   </div>
@@ -180,15 +173,15 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   >
                     {coupon.is_active ? (
                       <>
-                        <ToggleRight className="h-5 w-5 text-green-600" />
-                        <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
+                        <ToggleRight className="h-5 w-5 text-[var(--success)]" />
+                        <span className="text-xs font-medium text-[var(--success)] border border-[var(--border)] px-2 py-0.5 rounded-[0.625rem]">
                           {t('active')}
                         </span>
                       </>
                     ) : (
                       <>
                         <ToggleLeft className="h-5 w-5 text-app-text-muted" />
-                        <span className="text-xs font-semibold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-[0.625rem]">
                           {t('inactive')}
                         </span>
                       </>
@@ -202,7 +195,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                       size="icon"
                       aria-label="Delete"
                       onClick={() => setCouponPendingDelete(coupon.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
+                      className="text-[var(--destructive)] hover:text-[var(--destructive)] hover:bg-[var(--accent)]"
                       title={t('deleteAction')}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -298,7 +291,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   setCouponPendingDelete(null);
                 }
               }}
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
             >
               {t('deleteAction')}
             </AlertDialogAction>

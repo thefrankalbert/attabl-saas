@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
+import { actionSetRecipe } from '@/app/actions/inventory';
 import { ServiceError } from '@/services/errors';
 import type { Recipe, RecipeLineInput } from '@/types/inventory.types';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
@@ -208,7 +209,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
     setSaving(true);
     try {
-      await inventoryService.setRecipe(tenantId, selectedItemId, payload);
+      const r = await actionSetRecipe(tenantId, selectedItemId, payload);
+      if (r.error) throw new Error(r.error);
       toast({ title: t('recipeSaved') });
 
       queryClient.setQueryData(
@@ -339,7 +341,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           className={cn(
                             'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
                             hasRecipe
-                              ? 'bg-green-500/10 text-green-500'
+                              ? 'border border-[var(--border)] text-[var(--success)]'
                               : 'bg-app-bg text-app-text-secondary',
                           )}
                         >

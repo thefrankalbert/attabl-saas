@@ -14,10 +14,10 @@ import {
 } from '@/types/permission.types';
 
 // ─── View Types ──────────────────────────────────────────────
-export type ViewType = 'standard' | 'pos' | 'kitchen' | 'server';
+type ViewType = 'standard' | 'pos' | 'kitchen' | 'server';
 
 // ─── Stats Scope ─────────────────────────────────────────────
-export type StatsScope = 'all' | 'restaurant' | 'quantities' | 'own';
+type StatsScope = 'all' | 'restaurant' | 'quantities' | 'own';
 
 // ─── Legacy Permission Interface (role matrix) ──────────────
 export interface RolePermissions {
@@ -62,7 +62,7 @@ export interface RolePermissions {
 
 // ─── Role Permission Definitions ─────────────────────────────
 
-export const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
+const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
   // Owner (superadmin): full access to everything
   owner: {
     canManageMenus: true,
@@ -244,22 +244,6 @@ export function getRolePermissions(role: AdminRole): RolePermissions {
 // ─── Navigation Filtering ────────────────────────────────────
 
 export type NavItemPermission = keyof RolePermissions | null;
-
-/**
- * Filter navigation items based on a role's permissions.
- * Items with `null` or undefined `requiredPermission` are always visible.
- */
-export function getVisibleNavItems<T extends { requiredPermission?: NavItemPermission }>(
-  role: AdminRole,
-  items: T[],
-): T[] {
-  return items.filter((item) => {
-    if (item.requiredPermission === undefined || item.requiredPermission === null) {
-      return true;
-    }
-    return hasLegacyPermission(role, item.requiredPermission);
-  });
-}
 
 // ─── New 3-Level Permission Override API ─────────────────────
 

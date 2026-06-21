@@ -14,7 +14,6 @@ import {
   Package,
   MoreVertical,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
@@ -37,7 +36,13 @@ import {
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
-import { actionCreateMenuItem } from '@/app/actions/menu-items';
+import {
+  actionCreateMenuItem,
+  actionUpdateMenuItem,
+  actionDeleteMenuItem,
+  actionToggleMenuItemAvailable,
+  actionToggleMenuItemFeatured,
+} from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
@@ -53,7 +58,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
-import { createMenuItemService } from '@/services/menu-item.service';
 import { ItemDetailPanel } from './items/ItemDetailPanel';
 import { ItemFormModal, type FormStep } from './items/ItemFormModal';
 import { ListPagination } from '@/components/admin/ListPagination';
@@ -113,7 +117,6 @@ export default function ItemsClient({
   const t = useTranslations('items');
   const tc = useTranslations('common');
   const seg = useSegmentTerms();
-  const supabase = createClient();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -291,9 +294,13 @@ export default function ItemsClient({
         payload.prices = Object.keys(cleanPrices).length > 0 ? cleanPrices : null;
       }
 
-      const menuItemService = createMenuItemService(supabase);
       if (editingItem) {
-        await menuItemService.updateMenuItem(editingItem.id, tenantId, payload);
+        const result = await actionUpdateMenuItem(tenantId, editingItem.id, payload);
+        if (result.error) {
+          toast({ title: result.error, variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
         toast({ title: t('itemUpdated') });
       } else {
         const result = await actionCreateMenuItem(tenantId, payload);
@@ -331,8 +338,12 @@ export default function ItemsClient({
     if (!deleteTarget) return;
     const target = deleteTarget;
     try {
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.deleteMenuItem(target.id, tenantId);
+      const result = await actionDeleteMenuItem(tenantId, target.id);
+      if (result.error) {
+        toast({ title: result.error, variant: 'destructive' });
+        setDeleteTarget(null);
+        return;
+      }
       toast({ title: t('itemDeleted') });
       setDeleteTarget(null);
       loadItems();
@@ -347,28 +358,26 @@ export default function ItemsClient({
   };
 
   const toggleAvailable = async (item: MenuItem) => {
-    try {
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.toggleAvailable(item.id, !item.is_available, tenantId);
-      loadItems();
-      router.refresh();
-      revalidateMenuCache(tenantSlug);
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    const result = await actionToggleMenuItemAvailable(tenantId, item.id, !item.is_available);
+    if (result.error) {
+      toast({ title: result.error, variant: 'destructive' });
+      return;
     }
+    loadItems();
+    router.refresh();
+    revalidateMenuCache(tenantSlug);
   };
 
   const toggleFeatured = async (item: MenuItem) => {
-    try {
-      const menuItemService = createMenuItemService(supabase);
-      await menuItemService.toggleFeatured(item.id, !item.is_featured, tenantId);
-      toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
-      loadItems();
-      router.refresh();
-      revalidateMenuCache(tenantSlug);
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+    const result = await actionToggleMenuItemFeatured(tenantId, item.id, !item.is_featured);
+    if (result.error) {
+      toast({ title: result.error, variant: 'destructive' });
+      return;
     }
+    toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
+    loadItems();
+    router.refresh();
+    revalidateMenuCache(tenantSlug);
   };
 
   return (
@@ -443,12 +452,11 @@ export default function ItemsClient({
                     const item = items.find((i) => i.id === id);
                     return item && !item.is_available;
                   });
-                  const menuItemService = createMenuItemService(supabase);
                   const results = await Promise.allSettled(
                     [...selectedIds].map((id) => {
                       const item = items.find((i) => i.id === id);
                       if (!item) return Promise.resolve();
-                      return menuItemService.toggleAvailable(item.id, targetAvailability, tenantId);
+                      return actionToggleMenuItemAvailable(tenantId, item.id, targetAvailability);
                     }),
                   );
                   const failed = results.filter((r) => r.status === 'rejected');
@@ -554,10 +562,10 @@ export default function ItemsClient({
                           toggleAvailable(item);
                         }}
                         className={cn(
-                          'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
+                          'h-auto shrink-0 gap-1.5 whitespace-nowrap rounded-[0.625rem] border-[var(--border)] px-2 py-0.5 text-xs font-medium',
                           item.is_available
-                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                            : 'bg-app-bg text-app-text-secondary border-app-border',
+                            ? 'text-[var(--success)]'
+                            : 'text-[var(--muted-foreground)]',
                         )}
                       >
                         {item.is_available ? (
@@ -718,7 +726,7 @@ export default function ItemsClient({
                   e.preventDefault();
                   void confirmDelete();
                 }}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
               >
                 {tc('delete')}
               </AlertDialogAction>

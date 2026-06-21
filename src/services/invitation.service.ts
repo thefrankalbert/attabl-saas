@@ -31,7 +31,19 @@ function getExpiresAt(): string {
   return date.toISOString();
 }
 
-export function createInvitationService(supabase: SupabaseClient) {
+export interface InvitationService {
+  createInvitation(input: CreateInvitationInput): Promise<Invitation>;
+  validateToken(token: string): Promise<Invitation>;
+  acceptInvitation(input: AcceptInvitationInput): Promise<{ tenantSlug: string }>;
+  cancelInvitation(invitationId: string): Promise<void>;
+  resendInvitation(invitationId: string): Promise<Invitation>;
+  getPendingInvitations(
+    tenantId: string,
+    options?: { page?: number; pageSize?: number },
+  ): Promise<{ invitations: Invitation[]; total: number }>;
+}
+
+export function createInvitationService(supabase: SupabaseClient): InvitationService {
   return {
     async createInvitation(input: CreateInvitationInput): Promise<Invitation> {
       // Check if email already has an ATTABL account

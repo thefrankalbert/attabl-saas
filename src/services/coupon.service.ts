@@ -10,13 +10,53 @@ export interface CouponValidationResult {
   error?: string;
 }
 
+export interface CouponService {
+  validateCoupon(
+    code: string,
+    tenantId: string,
+    orderSubtotal: number,
+  ): Promise<CouponValidationResult>;
+  claimUsage(couponId: string): Promise<boolean>;
+  unclaimUsage(couponId: string): Promise<void>;
+  createCoupon(
+    tenantId: string,
+    data: {
+      code: string;
+      discount_type: 'percentage' | 'fixed';
+      discount_value: number;
+      min_order_amount?: number | null;
+      max_discount_amount?: number | null;
+      valid_from?: string | null;
+      valid_until?: string | null;
+      max_uses?: number | null;
+    },
+  ): Promise<Coupon>;
+  updateCoupon(
+    couponId: string,
+    tenantId: string,
+    data: {
+      code: string;
+      discount_type: 'percentage' | 'fixed';
+      discount_value: number;
+      min_order_amount?: number | null;
+      max_discount_amount?: number | null;
+      valid_from?: string | null;
+      valid_until?: string | null;
+      max_uses?: number | null;
+    },
+  ): Promise<void>;
+  deleteCoupon(couponId: string, tenantId: string): Promise<void>;
+  listCoupons(tenantId: string): Promise<Coupon[]>;
+  toggleActive(couponId: string, tenantId: string, newValue: boolean): Promise<void>;
+}
+
 /**
  * Coupon service - validates coupons and calculates discounts.
  *
  * Security: All validation is server-side. Client sends coupon code,
  * server verifies validity, calculates discount, and applies atomically.
  */
-export function createCouponService(supabase: SupabaseClient) {
+export function createCouponService(supabase: SupabaseClient): CouponService {
   return {
     /**
      * Validate a coupon code and calculate the discount amount.
@@ -171,6 +211,7 @@ export function createCouponService(supabase: SupabaseClient) {
      */
     async updateCoupon(
       couponId: string,
+      tenantId: string,
       data: {
         code: string;
         discount_type: 'percentage' | 'fixed';
@@ -194,7 +235,8 @@ export function createCouponService(supabase: SupabaseClient) {
           valid_until: data.valid_until ?? null,
           max_uses: data.max_uses ?? null,
         })
-        .eq('id', couponId);
+        .eq('id', couponId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         if (error.code === '23505') {

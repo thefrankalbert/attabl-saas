@@ -18,5 +18,3 @@ export const ALLERGENS = [
   'lupin',
   'molluscs',
 ] as const;
-
-export type AllergenId = (typeof ALLERGENS)[number];

@@ -7,14 +7,14 @@
 
 // ─── Types ──────────────────────────────────────────────
 
-export type EstablishmentSegment =
+type EstablishmentSegment =
   | 'restaurant'
   | 'hotel'
   | 'bar'
   | 'cafe'
   | 'fastfood'
   | 'other'
-  // Legacy — existing tenants only, not shown in onboarding
+  // Legacy - existing tenants only, not shown in onboarding
   | 'retail'
   | 'boutique'
   | 'pharmacy'
@@ -22,7 +22,7 @@ export type EstablishmentSegment =
 
 export type SegmentFamily = 'food' | 'hospitality' | 'retail' | 'services';
 
-export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
+const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   restaurant: 'food',
   hotel: 'hospitality',
   bar: 'food',

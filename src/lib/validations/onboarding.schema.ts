@@ -14,8 +14,6 @@ export const onboardingSaveSchema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
 
-export type OnboardingSaveInput = z.infer<typeof onboardingSaveSchema>;
-
 /**
  * Schema for onboarding completion (/api/onboarding/complete).
  * Validates all fields that get written to the tenants table.
@@ -61,5 +59,3 @@ export const onboardingCompleteSchema = z.object({
     menuItems: z.array(menuItemSchema).max(50).optional(),
   }),
 });
-
-export type OnboardingCompleteInput = z.infer<typeof onboardingCompleteSchema>;

@@ -327,8 +327,8 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               {error && (
-                <div className="rounded-lg bg-red-500/10 p-3">
-                  <p className="text-sm text-red-700">{error}</p>
+                <div className="rounded-lg border border-[var(--border)] p-3">
+                  <p className="text-sm text-[var(--destructive)]">{error}</p>
                 </div>
               )}
             </div>

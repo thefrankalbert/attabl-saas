@@ -256,13 +256,13 @@ export default function SettingsIdentity({
             <div className="flex items-center gap-2 text-xs">
               {verified ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-emerald-600">{t('domainVerified')}</span>
+                  <CheckCircle2 className="w-4 h-4 text-[var(--success)]" />
+                  <span className="text-[var(--success)]">{t('domainVerified')}</span>
                 </>
               ) : (
                 <>
-                  <Clock className="w-4 h-4 text-amber-500" />
-                  <span className="text-amber-600">{t('domainPending')}</span>
+                  <Clock className="w-4 h-4 text-[var(--warning)]" />
+                  <span className="text-[var(--warning)]">{t('domainPending')}</span>
                 </>
               )}
             </div>
@@ -293,7 +293,7 @@ export default function SettingsIdentity({
                 variant="ghost"
                 onClick={handleRemoveDomain}
                 disabled={domainSaving}
-                className="text-red-600 min-h-[44px]"
+                className="text-[var(--destructive)] min-h-[44px]"
               >
                 {t('remove')}
               </Button>

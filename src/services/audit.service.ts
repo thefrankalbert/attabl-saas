@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { ServiceError } from './errors';
 
-export type AuditAction = 'create' | 'update' | 'delete';
-export type AuditEntityType =
+type AuditAction = 'create' | 'update' | 'delete';
+type AuditEntityType =
   | 'order'
   | 'menu'
   | 'item'
@@ -24,16 +24,27 @@ interface LogAuditInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface AuditService {
+  log(input: LogAuditInput): Promise<void>;
+}
+
 export function createAuditService(
   supabase: SupabaseClient,
   context: { tenantId: string; userId?: string; userEmail?: string; userRole?: string },
-) {
+): AuditService {
   return {
     /**
      * Log an audit event. Fire-and-forget - never throws.
      * The audit log should never block the primary operation.
      */
-    async log({ action, entityType, entityId, oldData, newData, metadata }: LogAuditInput) {
+    async log({
+      action,
+      entityType,
+      entityId,
+      oldData,
+      newData,
+      metadata,
+    }: LogAuditInput): Promise<void> {
       try {
         await supabase.from('audit_log').insert({
           tenant_id: context.tenantId,
@@ -64,16 +75,39 @@ interface ListAuditInput {
   searchEmail?: string;
 }
 
+/**
+ * A row from the `audit_log` table as returned by the listing query
+ * (select '*'). Mirrors the columns written by AuditService.log.
+ */
+interface AuditLogRow {
+  id: string;
+  tenant_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  user_role: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 interface ListAuditResult {
-  logs: unknown[];
+  logs: AuditLogRow[];
   count: number;
+}
+
+export interface AuditReadService {
+  listLogs(input: ListAuditInput): Promise<ListAuditResult>;
 }
 
 /**
  * Read-side service for the audit log admin dashboard. Separate factory
  * because listing audit logs has no write context (no userId/userEmail).
  */
-export function createAuditReadService(supabase: SupabaseClient) {
+export function createAuditReadService(supabase: SupabaseClient): AuditReadService {
   return {
     async listLogs(input: ListAuditInput): Promise<ListAuditResult> {
       let query = supabase
@@ -91,7 +125,7 @@ export function createAuditReadService(supabase: SupabaseClient) {
       if (error) {
         throw new ServiceError("Erreur lors du chargement de l'audit log", 'INTERNAL', error);
       }
-      return { logs: (data as unknown[]) || [], count: count || 0 };
+      return { logs: (data as AuditLogRow[]) || [], count: count || 0 };
     },
   };
 }

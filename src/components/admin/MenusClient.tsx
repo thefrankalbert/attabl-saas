@@ -153,7 +153,7 @@ export default function MenusClient({
                   variant="outline"
                   size="sm"
                   title="Supprimer"
-                  className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700"
+                  className="gap-1.5 shrink-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

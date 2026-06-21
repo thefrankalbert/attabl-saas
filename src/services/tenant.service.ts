@@ -38,7 +38,11 @@ interface TenantSettings {
  *
  * Extracted from tenant-settings.ts server action and orders route.
  */
-export function createTenantService(supabase: SupabaseClient) {
+export interface TenantService {
+  updateSettings(tenantId: string, settings: TenantSettings): Promise<void>;
+}
+
+export function createTenantService(supabase: SupabaseClient): TenantService {
   return {
     /**
      * Updates tenant settings.
