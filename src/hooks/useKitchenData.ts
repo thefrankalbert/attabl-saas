@@ -19,8 +19,6 @@ import { actionUpdateOrderStatus, actionUpdateItemStatus } from '@/app/actions/o
 
 interface UseKitchenDataParams {
   tenantId: string;
-  /** @deprecated Sound is now managed globally via SoundContext */
-  notificationSoundId?: string;
   /** When true, zone filter UI is shown and queries adapt. When false, all items go to KDS. */
   barDisplayEnabled?: boolean;
   /** Active zone filter: 'all' shows everything, 'kitchen' shows kitchen+mixed, 'bar' shows bar+mixed */

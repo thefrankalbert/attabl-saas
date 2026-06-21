@@ -93,7 +93,6 @@ export default async function OrdersPage({
       <OrdersClient
         tenantId={tenant.id}
         initialOrders={transformedOrders}
-        notificationSoundId={tenant.notification_sound_id}
         serverListPagination={serverListPagination}
       />
     </div>

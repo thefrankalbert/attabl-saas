@@ -14,7 +14,6 @@
         "src/app/**/route.ts",
         "src/app/**/sitemap.ts",
         "src/app/**/robots.ts",
-        "src/app/**/manifest.ts",
         "src/app/actions/**/*.ts",
         "src/**/*.test.ts",
         "src/**/*.test.tsx",
