@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { getTenant } from '@/lib/cache';
 import { logger } from '@/lib/logger';
 import { permissionLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -27,16 +29,32 @@ const deletePermissionsSchema = z.object({
   role: z.enum(VALID_ROLES, { error: 'Rôle invalide' }),
 });
 
-async function verifyOwner(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+// Resolves the tenant from the sub-domain context (x-tenant-slug, injected by
+// the proxy) and confirms the caller is its active owner. Scoping by tenant
+// (instead of picking an arbitrary owner row) means a user who owns several
+// restaurants only edits the permissions of the one they are viewing.
+async function verifyOwner(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  tenantId: string,
+) {
   const { data: adminUser } = await supabase
     .from('admin_users')
     .select('tenant_id, role')
     .eq('user_id', userId)
+    .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .eq('role', 'owner')
-    .single();
+    .maybeSingle();
 
   return adminUser;
+}
+
+async function resolveTenantId(): Promise<string | null> {
+  const tenantSlug = (await headers()).get('x-tenant-slug');
+  if (!tenantSlug) return null;
+  const tenant = await getTenant(tenantSlug);
+  return tenant?.id ?? null;
 }
 
 export async function PUT(request: Request) {
@@ -70,8 +88,12 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Derive tenant_id from authenticated user's owner record
-    const adminUser = await verifyOwner(supabase, user.id);
+    // Resolve the tenant from the sub-domain context, then confirm ownership.
+    const tenantId = await resolveTenantId();
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant introuvable' }, { status: 400 });
+    }
+    const adminUser = await verifyOwner(supabase, user.id, tenantId);
     if (!adminUser) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
@@ -130,8 +152,12 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Derive tenant_id from authenticated user's owner record
-    const adminUser = await verifyOwner(supabase, user.id);
+    // Resolve the tenant from the sub-domain context, then confirm ownership.
+    const tenantId = await resolveTenantId();
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant introuvable' }, { status: 400 });
+    }
+    const adminUser = await verifyOwner(supabase, user.id, tenantId);
     if (!adminUser) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
+import { getTenant } from '@/lib/cache';
 import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
@@ -34,15 +36,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Derive tenant from authenticated user
+    // Derive the tenant from the sub-domain context (x-tenant-slug, injected by
+    // the proxy) - NOT an arbitrary admin_users row - so a multi-tenant owner
+    // sees the invoices of the restaurant they are actually viewing.
+    const tenantSlug = (await headers()).get('x-tenant-slug');
+    if (!tenantSlug) {
+      return NextResponse.json({ error: 'Tenant not found' }, { status: 400 });
+    }
+    const tenantCtx = await getTenant(tenantSlug);
+    if (!tenantCtx) {
+      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+    }
+
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('tenant_id, tenants(stripe_customer_id)')
+      .select('role, tenants(stripe_customer_id)')
       .eq('user_id', user.id)
-      .single();
+      .eq('tenant_id', tenantCtx.id)
+      .maybeSingle();
 
-    if (!adminUser?.tenant_id) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+    }
+
+    // RBAC: financial documents are owner/admin only.
+    if (!['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Supabase join type gap

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/server';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { getTenant } from '@/lib/cache';
 import { logger } from '@/lib/logger';
 import { billingPortalLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -30,12 +32,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Get tenant's stripe_customer_id
+    // Derive the tenant from the sub-domain context (x-tenant-slug, injected by
+    // the proxy) - NOT an arbitrary admin_users row - so a multi-tenant owner
+    // manages the billing of the restaurant they are actually viewing.
+    const tenantSlug = (await headers()).get('x-tenant-slug');
+    if (!tenantSlug) {
+      return NextResponse.json({ error: 'Tenant introuvable' }, { status: 400 });
+    }
+    const tenantCtx = await getTenant(tenantSlug);
+    if (!tenantCtx) {
+      return NextResponse.json({ error: 'Tenant introuvable' }, { status: 404 });
+    }
+
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('tenant_id, tenants(stripe_customer_id, slug)')
+      .select('role, tenants(stripe_customer_id, slug)')
       .eq('user_id', user.id)
-      .single();
+      .eq('tenant_id', tenantCtx.id)
+      .maybeSingle();
+
+    // RBAC: managing billing is owner/admin only.
+    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
 
     // Supabase join type gap
     const tenant = adminUser?.tenants as unknown as {

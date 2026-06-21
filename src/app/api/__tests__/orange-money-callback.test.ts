@@ -7,7 +7,8 @@ const mockGetOrangeMoneyTransactionStatus = vi.fn();
 const mockWebhookLimiterCheck = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdateEqPending = vi.fn();
-const mockUpdateEqId = vi.fn(() => ({ eq: mockUpdateEqPending }));
+const mockUpdateEqTenant = vi.fn(() => ({ eq: mockUpdateEqPending }));
+const mockUpdateEqId = vi.fn(() => ({ eq: mockUpdateEqTenant }));
 const mockUpdate = vi.fn(() => ({ eq: mockUpdateEqId }));
 const mockSelectSingle = vi.fn();
 const mockSelectEq = vi.fn(() => ({ single: mockSelectSingle }));
@@ -70,6 +71,7 @@ describe('POST /api/orange-money/callback', () => {
     mockSelectSingle.mockResolvedValue({
       data: {
         id: 'order-1',
+        tenant_id: 'tenant-1',
         total: 5000,
         payment_status: 'pending',
         payment_method: 'orange_money',
@@ -170,6 +172,7 @@ describe('POST /api/orange-money/callback', () => {
       }),
     );
     expect(mockUpdateEqId).toHaveBeenCalledWith('id', 'order-1');
+    expect(mockUpdateEqTenant).toHaveBeenCalledWith('tenant_id', 'tenant-1');
     expect(mockUpdateEqPending).toHaveBeenCalledWith('payment_status', 'pending');
   });
 });
