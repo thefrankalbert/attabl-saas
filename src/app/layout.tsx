@@ -25,6 +25,7 @@ import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { headers } from 'next/headers';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -166,6 +167,10 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  // Per-request CSP nonce (set on the request headers by the proxy). next-themes
+  // injects an inline anti-flash script; without the nonce the enforced CSP
+  // blocks it. Passing it through applies nonce="..." to that script.
+  const nonce = (await headers()).get('x-csp-nonce') ?? undefined;
 
   return (
     <html lang={locale} translate="no" suppressHydrationWarning>
@@ -196,6 +201,7 @@ export default async function RootLayout({
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
+            nonce={nonce}
           >
             <Suspense fallback={null}>
               <ScrollRestoration />
