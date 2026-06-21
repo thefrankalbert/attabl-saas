@@ -15,7 +15,6 @@ import type { OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 interface KitchenClientProps {
   tenantId: string;
   tenantName?: string;
-  notificationSoundId?: string;
   barDisplayEnabled?: boolean;
 }
 
@@ -24,7 +23,6 @@ const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
 export default function KitchenClient({
   tenantId,
   tenantName,
-  notificationSoundId,
   barDisplayEnabled = false,
 }: KitchenClientProps) {
   const t = useTranslations('kitchen');
@@ -66,7 +64,6 @@ export default function KitchenClient({
 
   const kitchen = useKitchenData({
     tenantId,
-    notificationSoundId,
     barDisplayEnabled,
     zoneFilter,
   });

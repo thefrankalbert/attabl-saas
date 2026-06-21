@@ -66,18 +66,6 @@ export interface StockStatus {
   is_low: boolean;
 }
 
-export interface ItemSuggestion {
-  id: string;
-  tenant_id: string;
-  menu_item_id: string;
-  suggested_item_id: string;
-  suggestion_type: SuggestionType;
-  description: string | null;
-  display_order: number;
-  is_active: boolean;
-  created_at: string;
-}
-
 // ─── Input types for service methods ────────────────────
 
 export interface CreateIngredientInput {

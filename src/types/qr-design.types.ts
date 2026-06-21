@@ -13,7 +13,7 @@ export type QRErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
 
 export type QRShadowIntensity = 'none' | 'light' | 'medium' | 'strong';
 
-export type QRExportFormat = 'pdf' | 'png' | 'svg';
+type QRExportFormat = 'pdf' | 'png' | 'svg';
 
 export type QRCTAPreset =
   | 'scannez-commander'
@@ -24,7 +24,7 @@ export type QRCTAPreset =
 
 // Config Interfaces
 
-export interface QRLogoConfig {
+interface QRLogoConfig {
   enabled: boolean;
   src: string;
   width: number;
@@ -33,7 +33,7 @@ export interface QRLogoConfig {
   opacity: number;
 }
 
-export interface QRGradientConfig {
+interface QRGradientConfig {
   enabled: boolean;
   colorStart: string;
   colorEnd: string;

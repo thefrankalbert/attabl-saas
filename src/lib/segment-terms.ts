@@ -7,7 +7,7 @@
 
 // ─── Types ──────────────────────────────────────────────
 
-export type EstablishmentSegment =
+type EstablishmentSegment =
   | 'restaurant'
   | 'hotel'
   | 'bar'
@@ -22,7 +22,7 @@ export type EstablishmentSegment =
 
 export type SegmentFamily = 'food' | 'hospitality' | 'retail' | 'services';
 
-export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
+const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   restaurant: 'food',
   hotel: 'hospitality',
   bar: 'food',

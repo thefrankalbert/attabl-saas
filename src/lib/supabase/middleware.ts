@@ -62,9 +62,3 @@ export async function createMiddlewareClient(
 
   return { response, supabase };
 }
-
-// Fonction legacy pour compatibilité
-export async function updateSession(request: NextRequest) {
-  const { response } = await createMiddlewareClient(request);
-  return response;
-}

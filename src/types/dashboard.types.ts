@@ -1,4 +1,4 @@
-export interface DashboardDayBucket {
+interface DashboardDayBucket {
   date: string;
   revenue: number;
   count: number;
@@ -11,7 +11,7 @@ export interface DashboardBucketSeries {
 }
 
 /** Revenue split by sales channel for a single day. */
-export interface DashboardChannelBucket {
+interface DashboardChannelBucket {
   date: string;
   /** Sur place: dine_in + room_service */
   surplace: number;

@@ -21,7 +21,7 @@ export interface ShortcutDefinition {
 
 // ─── Helpers ────────────────────────────────────────────
 
-export function getOS(): 'mac' | 'other' {
+function getOS(): 'mac' | 'other' {
   if (typeof navigator === 'undefined') return 'other';
   return /Mac|iPhone|iPad/.test(navigator.userAgent) ? 'mac' : 'other';
 }

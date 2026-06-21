@@ -63,5 +63,3 @@ export const updateTenantSettingsSchema = z.object({
     .nullable()
     .optional(),
 });
-
-export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

@@ -7,7 +7,7 @@ type MenuItemsFilterQuery = {
 };
 
 /** PostgREST embed: alias required (see menu.service.ts). */
-export const MENU_ITEM_CATEGORY_SELECT = 'category:categories(id, name)';
+const MENU_ITEM_CATEGORY_SELECT = 'category:categories(id, name)';
 
 export function buildMenuItemsSelect(options: {
   withCategory?: boolean;
@@ -83,7 +83,7 @@ export function isMissingDeletedAtColumnError(error: unknown): boolean {
   return text.includes('deleted_at') || err.code === '42703';
 }
 
-export function mapMenuItemRow(
+function mapMenuItemRow(
   item: Record<string, unknown>,
   options?: { withCategory?: boolean; withVariants?: boolean },
 ): Record<string, unknown> {

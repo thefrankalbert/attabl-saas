@@ -23,7 +23,7 @@ interface CreateSuggestionInput {
  * An active `item_suggestions` row (select '*') joined to the source and
  * target menu-item names for display.
  */
-export interface ActiveSuggestionRow {
+interface ActiveSuggestionRow {
   id: string;
   tenant_id: string;
   menu_item_id: string;

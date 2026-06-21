@@ -12,5 +12,3 @@ export const contactSchema = z.object({
   date: z.string().optional(),
   message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
 });
-
-export type ContactInput = z.infer<typeof contactSchema>;

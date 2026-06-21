@@ -42,7 +42,7 @@ export interface PlanLimits {
 
 export type FeatureKey = keyof PlanLimits;
 
-export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
+const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   starter: {
     maxVenues: 1,
     maxAdmins: 1,
@@ -223,22 +223,6 @@ export function canAccessFeature(
 ): boolean {
   const limits = getPlanLimits(plan, status, trialEndsAt);
   return limits[feature] as boolean;
-}
-
-/**
- * Check if a numeric limit has been reached
- */
-export function hasReachedLimit(
-  limitKey: 'maxVenues' | 'maxAdmins' | 'maxStaff' | 'maxMenus' | 'maxItems' | 'maxCategories',
-  currentCount: number,
-  plan?: SubscriptionPlan | null,
-  status?: SubscriptionStatus | null,
-  trialEndsAt?: string | null,
-): boolean {
-  const limits = getPlanLimits(plan, status, trialEndsAt);
-  const limit = limits[limitKey];
-  if (limit === -1) return false;
-  return currentCount >= limit;
 }
 
 /**

@@ -34,7 +34,7 @@ function escapeHtml(str: string): string {
  * Génère le HTML d'un ticket cuisine pour impression.
  * Gros caractères, items groupés par course, notes mises en évidence.
  */
-export function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): string {
+function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): string {
   const { zoneFilter = 'all', barDisplayEnabled = false } = options;
   const items = filterItemsByZone(order.items, barDisplayEnabled, zoneFilter);
   const orderTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {

@@ -65,7 +65,3 @@ export function ClientFloatingCart({ slug }: { slug: string }) {
     </Link>
   );
 }
-
-export function FloatingCartIcon() {
-  return <ShoppingBag className="h-5 w-5" />;
-}

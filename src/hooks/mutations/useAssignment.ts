@@ -31,22 +31,3 @@ export function useReleaseAssignment(tenantId: string) {
     },
   });
 }
-
-export function useClaimOrder(tenantId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ orderId }: { orderId: string; serverId?: string }) => {
-      const response = await fetch(`/api/orders/${orderId}/claim`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        const body = (await response.json()) as { error: string };
-        throw new Error(body.error || 'Failed to claim order');
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['assignments', tenantId] });
-    },
-  });
-}

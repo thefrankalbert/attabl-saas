@@ -22,6 +22,3 @@ export const acceptInvitationSchema = z.object({
     .max(100)
     .optional(),
 });
-
-export type CreateInvitationInput = z.infer<typeof createInvitationSchema>;
-export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;

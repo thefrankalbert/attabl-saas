@@ -10,5 +10,3 @@ export const subscribeSchema = z.object({
   p256dh: z.string().min(1),
   auth: z.string().min(1),
 });
-
-export type SubscribeInput = z.infer<typeof subscribeSchema>;

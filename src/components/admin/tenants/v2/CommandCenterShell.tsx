@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import './cc-shell.css';
 
 type Theme = 'light' | 'dark';
-export const CC_THEME_COOKIE = 'attabl-cc-theme';
+const CC_THEME_COOKIE = 'attabl-cc-theme';
 
 interface CommandCenterShellProps {
   children: ReactNode;

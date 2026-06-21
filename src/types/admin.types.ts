@@ -14,46 +14,10 @@ export interface WizardItem {
 // ─── Rôles d'administration ────────────────────────────────
 export type AdminRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'chef' | 'waiter';
 
-export const ROLE_DESCRIPTIONS: Record<
-  AdminRole,
-  { label: string; description: string; level: number }
-> = {
-  owner: {
-    label: 'Propriétaire',
-    description: 'Accès complet - propriétaire du restaurant',
-    level: 100,
-  },
-  admin: {
-    label: 'Administrateur',
-    description: 'Gestion complète sauf suppression du tenant',
-    level: 80,
-  },
-  manager: {
-    label: 'Manager',
-    description: 'Gestion opérationnelle complète',
-    level: 60,
-  },
-  cashier: {
-    label: 'Caissier',
-    description: 'Caisse, paiements, factures, remboursements',
-    level: 50,
-  },
-  chef: {
-    label: 'Chef Cuisine',
-    description: 'Réception et validation des commandes en cuisine',
-    level: 40,
-  },
-  waiter: {
-    label: 'Serveur',
-    description: 'Prise de commandes et service',
-    level: 20,
-  },
-} as const;
-
 // ─── Statuts & Enums ─────────────────────────────────────────
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
-export type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
+type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
@@ -265,7 +229,7 @@ export interface MenuItem {
 }
 
 // Option sélectionnable (ex: saveurs de jus - même prix)
-export interface ItemOption {
+interface ItemOption {
   id: string;
   menu_item_id: string;
   name_fr: string;
@@ -374,14 +338,6 @@ export interface SparklinePoint {
   value: number;
 }
 
-export interface DashboardExtendedData {
-  categoryBreakdown: CategoryBreakdown[];
-  hourlyOrders: HourlyOrderCount[];
-  revenueSparkline: SparklinePoint[];
-  ordersSparkline: SparklinePoint[];
-  itemsSparkline: SparklinePoint[];
-}
-
 export interface PopularItem {
   id: string;
   name: string;
@@ -440,53 +396,6 @@ export interface TableAssignment {
   server?: AdminUser;
   table?: Table;
 }
-
-// ─── Settings ──────────────────────────────────────────────
-
-export interface Setting {
-  id: string;
-  tenant_id: string;
-  key: string;
-  value: unknown;
-  description?: string;
-  updated_at: string;
-  created_at: string;
-}
-
-export interface SettingsMap {
-  restaurant_name: string;
-  currency: CurrencyCode;
-  currency_symbol: string;
-  default_language: 'fr' | 'en';
-  notification_sound: boolean;
-  auto_accept_orders: boolean;
-  order_timeout_minutes: number;
-}
-
-// ─── Utility Types ─────────────────────────────────────────
-export type WithId<T> = T & { id: string };
-export type WithTimestamps<T> = T & { created_at: string; updated_at?: string };
-export type Nullable<T> = T | null;
-
-// ─── API Response Types ────────────────────────────────────
-export interface ApiResponse<T> {
-  data: T | null;
-  error: string | null;
-  success: boolean;
-}
-
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  total: number;
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
-}
-
-// ─── Form Types ────────────────────────────────────────────
-export type FormErrors<T> = Partial<Record<keyof T, string>>;
-
-// ─── Language Support ──────────────────────────────────────
-export type Language = 'fr' | 'en';
 
 // ─── Pricing ───────────────────────────────────────────────
 export interface PricingBreakdown {

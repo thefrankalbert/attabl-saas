@@ -15,7 +15,7 @@ function escapeHtml(str: string): string {
  * Génère le HTML d'un reçu client premium pour impression.
  * Design épuré inspiré du client-space, optimisé pour imprimante thermique 80mm.
  */
-export function generateReceiptHTML(order: Order, tenant: Tenant): string {
+function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const currency = tenant.currency || 'XAF';
   const currencySymbol = getCurrencySymbol(currency);
   const items = order.items || [];

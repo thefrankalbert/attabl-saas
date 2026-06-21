@@ -8,6 +8,3 @@ export const createAssignmentSchema = z.object({
 export const claimOrderSchema = z.object({
   server_id: z.string().uuid('Identifiant de serveur invalide'),
 });
-
-export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
-export type ClaimOrderInput = z.infer<typeof claimOrderSchema>;

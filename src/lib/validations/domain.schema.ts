@@ -15,5 +15,3 @@ export const domainVerifySchema = z.object({
       'Invalid domain format',
     ),
 });
-
-export type DomainVerifyInput = z.infer<typeof domainVerifySchema>;

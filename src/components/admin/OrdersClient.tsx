@@ -58,8 +58,6 @@ import type { ServerListPagination } from '@/lib/pagination';
 interface OrdersClientProps {
   tenantId: string;
   initialOrders: Order[];
-  /** @deprecated Sound is now managed globally via SoundContext */
-  notificationSoundId?: string;
   serverListPagination?: ServerListPagination;
 }
 

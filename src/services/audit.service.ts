@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { ServiceError } from './errors';
 
-export type AuditAction = 'create' | 'update' | 'delete';
-export type AuditEntityType =
+type AuditAction = 'create' | 'update' | 'delete';
+type AuditEntityType =
   | 'order'
   | 'menu'
   | 'item'
@@ -79,7 +79,7 @@ interface ListAuditInput {
  * A row from the `audit_log` table as returned by the listing query
  * (select '*'). Mirrors the columns written by AuditService.log.
  */
-export interface AuditLogRow {
+interface AuditLogRow {
   id: string;
   tenant_id: string;
   user_id: string | null;
