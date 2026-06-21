@@ -4,6 +4,8 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ArrowRight, ExternalLink, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Sparkline } from '@/components/admin/tenants/v2/Sparkline';
+import { TrendDelta } from '@/components/admin/tenants/v2/TrendDelta';
 import type { LocationStat } from '@/types/command-center.types';
 
 interface EstablishmentsListProps {
@@ -76,7 +78,7 @@ export function EstablishmentsList({
               variant="ghost"
               size="icon"
               onClick={onAdd}
-              className="h-6 w-6 rounded-md"
+              className="min-h-[44px] min-w-[44px] rounded-md"
               style={{ color: 'var(--cc-text-3)' }}
               aria-label={t('add')}
             >
@@ -88,7 +90,7 @@ export function EstablishmentsList({
               type="button"
               variant="ghost"
               onClick={onSeeAll}
-              className="h-auto gap-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-normal shadow-none"
+              className="min-h-[44px] gap-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-normal shadow-none"
               style={{ color: 'var(--cc-text-3)' }}
             >
               {t('seeAll')}
@@ -114,6 +116,8 @@ export function EstablishmentsList({
               openDashboardLabel={t('openDashboard', { name: loc.tenant_name })}
               openMenuLabel={t('openMenu', { name: loc.tenant_name })}
               ordersLabel={t('ordersShort')}
+              sparklineLabel={t('sparklineLabel', { name: loc.tenant_name })}
+              trendLabel={t('trendLabel')}
               locale={locale}
             />
           ))
@@ -131,6 +135,8 @@ interface EstablishmentRowProps {
   openDashboardLabel: string;
   openMenuLabel: string;
   ordersLabel: string;
+  sparklineLabel: string;
+  trendLabel: string;
   locale: string;
 }
 
@@ -142,6 +148,8 @@ function EstablishmentRow({
   openDashboardLabel,
   openMenuLabel,
   ordersLabel,
+  sparklineLabel,
+  trendLabel,
   locale,
 }: EstablishmentRowProps) {
   const initials = initialsFor(location.tenant_name);
@@ -161,7 +169,7 @@ function EstablishmentRow({
         onClick={onClick}
         aria-label={openDashboardLabel}
         className={cn(
-          '-mx-2.5 grid h-auto w-[calc(100%+1.25rem)] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 rounded-lg p-2.5 text-left font-normal shadow-none transition-colors',
+          '-mx-2.5 grid h-auto w-[calc(100%+1.25rem)] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 rounded-lg p-2.5 text-left font-normal shadow-none transition-colors sm:grid-cols-[auto_1fr_auto_auto_auto]',
           'justify-start hover:bg-[var(--cc-surface-2)]',
         )}
         style={{ color: 'var(--cc-text)' }}
@@ -186,14 +194,26 @@ function EstablishmentRow({
             <span className="truncate">{location.tenant_name}</span>
           </div>
           <div
-            className="cc-mono mt-0.5 truncate text-[11.5px]"
+            className="cc-mono mt-0.5 hidden truncate text-[11.5px] sm:block"
             style={{ color: 'var(--cc-text-3)' }}
           >
             {url}
           </div>
         </div>
+        <Sparkline
+          data={location.sparkline}
+          ariaLabel={sparklineLabel}
+          className="hidden sm:block"
+        />
         <div className="cc-mono whitespace-nowrap text-[13px]" style={{ color: 'var(--cc-text)' }}>
-          {formatFull(location.revenue_today, locale)} F
+          <span className="flex items-center justify-end gap-1.5">
+            {formatFull(location.revenue_today, locale)} F
+            <TrendDelta
+              current={location.revenue_today}
+              previous={location.revenue_yesterday}
+              label={trendLabel}
+            />
+          </span>
           <span
             className="mt-0.5 block text-[11px] font-normal"
             style={{ color: 'var(--cc-text-3)' }}
@@ -215,7 +235,7 @@ function EstablishmentRow({
           variant="ghost"
           size="icon"
           onClick={onOpenMenu}
-          className="absolute right-[18px] top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-md opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+          className="absolute right-2 top-1/2 z-10 min-h-[44px] min-w-[44px] -translate-y-1/2 rounded-md opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
           style={{ color: 'var(--cc-text-3)' }}
           aria-label={openMenuLabel}
         >

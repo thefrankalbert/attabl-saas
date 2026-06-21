@@ -12,6 +12,7 @@ interface ChartPanelMinimalProps {
   period: ChartPeriod;
   onModeChange: (mode: ChartMode) => void;
   onPeriodChange: (period: ChartPeriod) => void;
+  isLoading?: boolean;
 }
 
 const W = 800;
@@ -31,14 +32,22 @@ export function ChartPanelMinimal({
   period,
   onModeChange,
   onPeriodChange,
+  isLoading = false,
 }: ChartPanelMinimalProps) {
+  const t = useTranslations('admin.tenants.commandCenter');
   const tEst = useTranslations('admin.tenants.commandCenter.establishments');
   const locale = useLocale();
   const hostRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const hasEnoughData = data.length >= 2;
+  // Skeleton only when actively loading with no data yet; the empty-state
+  // message below is for the loaded-but-insufficient case (data present, < 2 points).
+  const showSkeleton = isLoading && data.length === 0;
 
+  // The mode toggle (CA/Commandes) reshapes the already-fetched `data` between
+  // revenue and orders via this memo - NO refetch. Only the period toggle
+  // triggers a parent refetch through onPeriodChange.
   const { values, labels, paths, xFor, yFor, innerH } = useMemo(() => {
     const vals = data.map((p) => (mode === 'orders' ? p.orders : p.revenue));
     const lbls = data.map((p) => p.label);
@@ -99,111 +108,127 @@ export function ChartPanelMinimal({
   const hovered = hoverIndex !== null ? values[hoverIndex] : null;
   const hoveredLabel = hoverIndex !== null ? labels[hoverIndex] : null;
 
+  const periodDescriptor =
+    period === 'day'
+      ? t('chart.hourly')
+      : period === 'week'
+        ? t('chart.last7days')
+        : t('chart.thisMonth');
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <div
           className="text-xs font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
-          {period === 'day'
-            ? 'Heure par heure'
-            : period === 'week'
-              ? 'Sept derniers jours'
-              : 'Ce mois-ci'}
+          {periodDescriptor}
         </div>
         <div className="flex items-center gap-2">
           <Segmented
             value={mode}
             options={[
-              { key: 'revenue' as const, label: 'CA' },
-              { key: 'orders' as const, label: 'Commandes' },
+              { key: 'revenue' as const, label: t('chart.revenue') },
+              { key: 'orders' as const, label: t('chart.orders') },
             ]}
             onChange={onModeChange}
           />
           <Segmented
             value={period}
             options={[
-              { key: 'day' as const, label: 'Jour' },
-              { key: 'week' as const, label: '7j' },
-              { key: 'month' as const, label: 'Mois' },
+              { key: 'day' as const, label: t('chart.periodDay') },
+              { key: 'week' as const, label: t('chart.periodWeek') },
+              { key: 'month' as const, label: t('chart.periodMonth') },
             ]}
             onChange={onPeriodChange}
           />
         </div>
       </div>
 
-      <div
-        className="relative min-h-0 flex-1"
-        ref={hostRef}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-      >
-        {!hasEnoughData && (
-          <div
-            className="absolute inset-0 flex items-center justify-center text-xs"
-            style={{ color: 'var(--cc-text-3)' }}
-          >
-            Pas encore assez de donnees
-          </div>
-        )}
-        <svg
-          className="block h-full w-full overflow-visible"
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="xMidYMid meet"
+      {showSkeleton ? (
+        <div
+          className="h-[200px] min-h-0 flex-1 animate-pulse rounded-[8px] bg-[var(--cc-surface-2)] md:h-[240px] lg:h-[260px]"
+          role="status"
+          aria-label={t('chart.loading')}
+        />
+      ) : (
+        <div
+          className="relative h-[200px] min-h-0 flex-1 md:h-[240px] lg:h-[260px]"
+          ref={hostRef}
+          onMouseMove={onMove}
+          onMouseLeave={onLeave}
         >
-          <defs>
-            <linearGradient id="cc-area-grad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="var(--cc-accent)" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="var(--cc-accent)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <g className="cc-chart-grid">
-            {[0, 1, 2, 3].map((i) => {
-              const y = PAD_T + (i / 3) * innerH;
-              return <line key={i} x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} />;
-            })}
-          </g>
-          <g className="cc-chart-axis">
-            {tickIndices.map((i) => (
-              <text key={i} x={xFor(i)} y={H - 6} textAnchor="middle">
-                {labels[i]}
-              </text>
-            ))}
-          </g>
-          {hasEnoughData && <path d={paths.area} className="cc-chart-area" />}
-          {hasEnoughData && <path d={paths.line} className="cc-chart-line" />}
-          {hasEnoughData && hoverIndex !== null && hovered !== null && (
-            <>
-              <line
-                x1={xFor(hoverIndex)}
-                x2={xFor(hoverIndex)}
-                y1={PAD_T}
-                y2={PAD_T + innerH}
-                className="cc-crosshair-x"
-              />
-              <circle cx={xFor(hoverIndex)} cy={yFor(hovered)} r={4} className="cc-crosshair-dot" />
-            </>
-          )}
-        </svg>
-
-        {hoverIndex !== null && hovered !== null && (
-          <div
-            className={cn('cc-tooltip cc-show')}
-            style={{
-              left: `calc(${(xFor(hoverIndex) / W) * 100}%)`,
-              top: `calc(${(yFor(hovered) / H) * 100}%)`,
-            }}
-          >
-            <div className="cc-t-time">{hoveredLabel}</div>
-            <div className="cc-t-val">
-              {mode === 'orders'
-                ? `${new Intl.NumberFormat(locale).format(hovered)} ${tEst('ordersShort')}`
-                : `${formatMoney(hovered, locale)} F`}
+          {!hasEnoughData && (
+            <div
+              className="absolute inset-0 flex items-center justify-center text-xs"
+              style={{ color: 'var(--cc-text-3)' }}
+            >
+              {t('chart.notEnoughData')}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          <svg
+            className="block h-full w-full overflow-visible"
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <defs>
+              <linearGradient id="cc-area-grad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="var(--cc-accent)" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="var(--cc-accent)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <g className="cc-chart-grid">
+              {[0, 1, 2, 3].map((i) => {
+                const y = PAD_T + (i / 3) * innerH;
+                return <line key={i} x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} />;
+              })}
+            </g>
+            <g className="cc-chart-axis">
+              {tickIndices.map((i) => (
+                <text key={i} x={xFor(i)} y={H - 6} textAnchor="middle">
+                  {labels[i]}
+                </text>
+              ))}
+            </g>
+            {hasEnoughData && <path d={paths.area} className="cc-chart-area" />}
+            {hasEnoughData && <path d={paths.line} className="cc-chart-line" />}
+            {hasEnoughData && hoverIndex !== null && hovered !== null && (
+              <>
+                <line
+                  x1={xFor(hoverIndex)}
+                  x2={xFor(hoverIndex)}
+                  y1={PAD_T}
+                  y2={PAD_T + innerH}
+                  className="cc-crosshair-x"
+                />
+                <circle
+                  cx={xFor(hoverIndex)}
+                  cy={yFor(hovered)}
+                  r={4}
+                  className="cc-crosshair-dot"
+                />
+              </>
+            )}
+          </svg>
+
+          {hoverIndex !== null && hovered !== null && (
+            <div
+              className={cn('cc-tooltip cc-show')}
+              style={{
+                left: `calc(${(xFor(hoverIndex) / W) * 100}%)`,
+                top: `calc(${(yFor(hovered) / H) * 100}%)`,
+              }}
+            >
+              <div className="cc-t-time">{hoveredLabel}</div>
+              <div className="cc-t-val">
+                {mode === 'orders'
+                  ? `${new Intl.NumberFormat(locale).format(hovered)} ${tEst('ordersShort')}`
+                  : `${formatMoney(hovered, locale)} ${t('chart.currencyShort')}`}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -220,28 +245,31 @@ function Segmented<K extends string>({ value, options, onChange }: SegmentedProp
       className="inline-flex gap-0.5 rounded-md p-0.5"
       style={{ background: 'var(--cc-surface-2)' }}
     >
-      {options.map((opt) => (
-        <Button
-          key={opt.key}
-          type="button"
-          variant="ghost"
-          onClick={() => onChange(opt.key)}
-          className={cn(
-            'h-auto whitespace-nowrap rounded px-2.5 py-[3px] text-[11.5px] font-medium shadow-none',
-          )}
-          style={
-            value === opt.key
-              ? {
-                  background: 'var(--cc-surface)',
-                  color: 'var(--cc-text)',
-                  boxShadow: '0 0 0 1px var(--cc-border)',
-                }
-              : { color: 'var(--cc-text-3)' }
-          }
-        >
-          {opt.label}
-        </Button>
-      ))}
+      {options.map((opt) => {
+        const active = value === opt.key;
+        return (
+          <Button
+            key={opt.key}
+            type="button"
+            variant="ghost"
+            aria-pressed={active}
+            onClick={() => onChange(opt.key)}
+            className={cn(
+              'h-auto min-h-[44px] whitespace-nowrap rounded px-3 py-2 text-[11.5px] font-medium shadow-none',
+            )}
+            style={
+              active
+                ? {
+                    background: 'var(--cc-accent-soft)',
+                    color: 'var(--cc-accent-ink)',
+                  }
+                : { color: 'var(--cc-text-3)' }
+            }
+          >
+            {opt.label}
+          </Button>
+        );
+      })}
     </div>
   );
 }

@@ -1094,7 +1094,27 @@
         },
         "alerts": {
           "orderCancelled": "Order #{number} cancelled",
-          "siteOffline": "Site offline"
+          "siteOffline": "Site offline",
+          "title": "Needs attention",
+          "empty": "All clear, no alerts",
+          "viewSite": "Open {name}"
+        },
+        "chart": {
+          "hourly": "Hour by hour",
+          "last7days": "Last 7 days",
+          "thisMonth": "This month",
+          "revenue": "Revenue",
+          "orders": "Orders",
+          "periodDay": "Day",
+          "periodWeek": "7d",
+          "periodMonth": "Month",
+          "notEnoughData": "Not enough data yet",
+          "loading": "Loading chart",
+          "currencyShort": "F"
+        },
+        "errors": {
+          "fetchFailed": "Could not load data. Try again.",
+          "retry": "Retry"
         },
         "hero": {
           "todayRevenue": "Revenue - today",
@@ -1119,11 +1139,14 @@
           "add": "Add an establishment",
           "openDashboard": "Open {name} dashboard",
           "openMenu": "Open {name} customer menu",
-          "ordersShort": "ord."
+          "ordersShort": "ord.",
+          "trendLabel": "vs yesterday",
+          "sparklineLabel": "{name} today activity"
         },
         "topbar": {
           "toggleTheme": "Toggle theme",
-          "logout": "Sign out"
+          "logout": "Sign out",
+          "refresh": "Refresh data"
         },
         "micro": {
           "orders": "Orders",

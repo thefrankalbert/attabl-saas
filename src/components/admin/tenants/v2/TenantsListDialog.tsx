@@ -13,6 +13,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Sparkline } from '@/components/admin/tenants/v2/Sparkline';
+import { TrendDelta } from '@/components/admin/tenants/v2/TrendDelta';
 import type { LocationStat } from '@/types/command-center.types';
 
 interface TenantsListDialogProps {
@@ -67,7 +69,10 @@ export function TenantsListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl cc-shell" style={{ color: 'var(--cc-text)' }}>
+      <DialogContent
+        className="max-w-[calc(100vw-2rem)] cc-shell sm:max-w-2xl"
+        style={{ color: 'var(--cc-text)' }}
+      >
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
@@ -112,7 +117,7 @@ export function TenantsListDialog({
                       }}
                       aria-label={tEst('openDashboard', { name: loc.tenant_name })}
                       className={cn(
-                        'grid h-auto w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md px-2 py-2 text-left font-normal shadow-none transition-colors',
+                        'grid h-auto w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md px-2 py-2 text-left font-normal shadow-none transition-colors sm:grid-cols-[auto_1fr_auto_auto]',
                         'justify-start hover:bg-[var(--cc-surface-2)]',
                       )}
                       style={{ color: 'var(--cc-text)' }}
@@ -139,17 +144,29 @@ export function TenantsListDialog({
                           <span className="truncate">{loc.tenant_name}</span>
                         </div>
                         <div
-                          className="cc-mono mt-0.5 truncate text-[11.5px]"
+                          className="cc-mono mt-0.5 hidden truncate text-[11.5px] sm:block"
                           style={{ color: 'var(--cc-text-3)' }}
                         >
                           {loc.tenant_slug}.attabl.com
                         </div>
                       </div>
+                      <Sparkline
+                        data={loc.sparkline}
+                        ariaLabel={tEst('sparklineLabel', { name: loc.tenant_name })}
+                        className="hidden sm:block"
+                      />
                       <div
                         className="cc-mono whitespace-nowrap text-[13px]"
                         style={{ color: 'var(--cc-text)' }}
                       >
-                        {formatFull(loc.revenue_today, locale)} F
+                        <span className="flex items-center justify-end gap-1.5">
+                          {formatFull(loc.revenue_today, locale)} F
+                          <TrendDelta
+                            current={loc.revenue_today}
+                            previous={loc.revenue_yesterday}
+                            label={tEst('trendLabel')}
+                          />
+                        </span>
                         <span
                           className="mt-0.5 block text-[11px] font-normal"
                           style={{ color: 'var(--cc-text-3)' }}
@@ -168,7 +185,7 @@ export function TenantsListDialog({
                           onOpenChange(false);
                         }}
                         aria-label={tEst('openMenu', { name: loc.tenant_name })}
-                        className="absolute right-3 top-1/2 z-10 h-6 -translate-y-1/2 rounded-md px-2 text-[11px] opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                        className="absolute right-2 top-1/2 z-10 min-h-[44px] min-w-[44px] -translate-y-1/2 rounded-md px-3 text-[11px] opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
                         style={{ color: 'var(--cc-text-3)' }}
                       >
                         {t('menu')}

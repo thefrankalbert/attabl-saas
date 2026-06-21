@@ -49,7 +49,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-4">
       <div className="mb-3 flex items-baseline justify-between">
         <div
           className="flex items-center gap-2 text-xs font-medium tracking-[0.02em]"
@@ -99,6 +99,14 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
     prep: 'var(--cc-warn)',
     attente: 'var(--cc-text-3)',
   };
+  const badgeStyle: Record<FluxStatus, { background: string; color: string }> = {
+    delivered: { background: 'var(--cc-accent-soft)', color: 'var(--cc-accent-ink)' },
+    prep: {
+      background: 'color-mix(in srgb, var(--cc-warn) 16%, transparent)',
+      color: 'var(--cc-warn)',
+    },
+    attente: { background: 'var(--cc-surface-2)', color: 'var(--cc-text-2)' },
+  };
   const interactive = Boolean(onClick);
 
   const content = (
@@ -116,15 +124,19 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
           #{order.order_number || order.id.slice(0, 8)}
         </div>
         <div
-          className="mt-[1px] flex items-center gap-2 whitespace-nowrap text-[11px]"
+          className="mt-[3px] flex items-center gap-2 whitespace-nowrap text-[11px]"
           style={{ color: 'var(--cc-text-3)' }}
         >
-          <span>{statusLabel}</span>
-          <span style={{ color: 'var(--cc-text-3)' }}>-</span>
+          <span
+            className="inline-flex items-center rounded px-1.5 py-[1px] text-[10px] font-bold uppercase tracking-[0.04em]"
+            style={badgeStyle[status]}
+          >
+            {statusLabel}
+          </span>
           <span className="cc-mono">{formatTime(order.created_at)}</span>
           {showTenant && order.tenant_name && (
             <>
-              <span style={{ color: 'var(--cc-text-3)' }}>-</span>
+              <span aria-hidden className="inline-block h-3 w-px bg-[var(--cc-border)]" />
               <span className="truncate">{order.tenant_name}</span>
             </>
           )}
@@ -137,7 +149,7 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
   );
 
   const baseClass = cn(
-    'grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5',
+    'grid min-h-[44px] grid-cols-[auto_1fr_auto] items-center gap-3 py-3',
     !isFirst && 'border-t',
   );
   const baseStyle = { borderColor: 'var(--cc-border)' } as const;
