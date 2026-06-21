@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 interface HeroProps {
   /** Revenue today, in the display currency (FCFA by default). */
@@ -16,20 +17,28 @@ function formatMoney(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
+interface DeltaInfo {
+  /** "+12.3% vs yesterday" - already sign-prefixed and localized. */
+  text: string;
+  /** Drives the chip color + arrow direction. */
+  direction: 'up' | 'down' | 'flat';
+}
+
 function formatDelta(
   today: number,
   yesterday: number,
   vsLabel: string,
   locale: string,
-): string | null {
+): DeltaInfo | null {
   if (yesterday <= 0) return null;
   const delta = ((today - yesterday) / yesterday) * 100;
-  const sign = delta > 0 ? '+' : delta < 0 ? '-' : '';
+  const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  const sign = direction === 'up' ? '+' : direction === 'down' ? '-' : '';
   const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(Math.abs(delta));
-  return `${sign}${formatted}% ${vsLabel}`;
+  return { text: `${sign}${formatted}% ${vsLabel}`, direction };
 }
 
 type RelativeT = (
@@ -78,18 +87,16 @@ export function Hero({
       </div>
 
       <div
-        className="mb-2.5 mt-[14px] flex items-baseline gap-[14px] overflow-hidden"
+        className="mb-2.5 mt-[14px] flex items-baseline gap-[14px] overflow-hidden text-[clamp(44px,9vw,72px)] font-semibold tabular-nums"
         style={{
-          fontFamily: 'var(--cc-serif)',
-          fontSize: 84,
-          fontWeight: 400,
-          letterSpacing: '-0.03em',
-          lineHeight: 1,
+          fontFamily: 'var(--cc-sans)',
+          letterSpacing: '-0.04em',
+          lineHeight: 0.95,
         }}
       >
         <span className="truncate">{formatMoney(revenueToday, locale)}</span>
         <span
-          className="text-[22px] font-normal tracking-tight"
+          className="text-[18px] font-medium sm:text-[20px]"
           style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}
         >
           {currencyLabel}
@@ -103,12 +110,26 @@ export function Hero({
         {delta && (
           <span
             className="cc-mono inline-flex items-center gap-1 whitespace-nowrap rounded px-2 py-0.5 text-[11.5px]"
-            style={{ background: 'var(--cc-accent-soft)', color: 'var(--cc-accent-ink)' }}
+            style={
+              delta.direction === 'down'
+                ? {
+                    background: 'color-mix(in srgb, var(--cc-danger) 12%, transparent)',
+                    color: 'var(--cc-danger)',
+                  }
+                : { background: 'var(--cc-accent-soft)', color: 'var(--cc-accent-ink)' }
+            }
           >
-            {delta}
+            {delta.direction === 'down' ? (
+              <ArrowDownRight size={12} aria-hidden />
+            ) : (
+              <ArrowUpRight size={12} aria-hidden />
+            )}
+            {delta.text}
           </span>
         )}
-        {delta && relative && <span style={{ color: 'var(--cc-text-3)' }}>-</span>}
+        {delta && relative && (
+          <span aria-hidden className="inline-block h-3 w-px bg-[var(--cc-border)] align-middle" />
+        )}
         {relative && <span>{relative}</span>}
       </div>
     </div>

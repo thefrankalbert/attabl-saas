@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Moon, LogOut } from 'lucide-react';
+import { Moon, Sun, LogOut, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -12,10 +12,24 @@ interface TopbarMinimalProps {
   userInitials: string;
   /** Full display name next to the avatar. */
   userName: string;
+  /** Current shell theme, used to pick the toggle icon (Sun in dark, Moon in light). */
+  theme?: 'light' | 'dark';
   onLogout?: () => void;
+  /** Triggered by the inline refresh control. */
+  onRefresh?: () => void;
+  /** When true, the refresh control spins and is disabled. */
+  isRefreshing?: boolean;
 }
 
-export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: TopbarMinimalProps) {
+export function TopbarMinimal({
+  crumb,
+  userInitials,
+  userName,
+  theme = 'light',
+  onLogout,
+  onRefresh,
+  isRefreshing = false,
+}: TopbarMinimalProps) {
   const t = useTranslations('admin.tenants.commandCenter.topbar');
   const handleThemeToggle = () => {
     window.dispatchEvent(new CustomEvent('cc:theme:toggle'));
@@ -23,7 +37,9 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
 
   return (
     <header
-      className={cn('flex h-14 shrink-0 items-center gap-[14px] px-8')}
+      className={cn(
+        'flex h-14 shrink-0 items-center gap-[14px] border-b border-[var(--cc-border)] px-8',
+      )}
       style={{ color: 'var(--cc-text)' }}
     >
       <div className="flex items-center gap-2.5 whitespace-nowrap text-sm font-medium tracking-tight">
@@ -50,16 +66,38 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
 
       <div className="flex-1" />
 
+      {onRefresh && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="shrink-0 rounded-md"
+          style={{ color: 'var(--cc-text-2)' }}
+          aria-label={t('refresh')}
+        >
+          <RefreshCw
+            className={cn('size-[15px]', isRefreshing && 'animate-spin')}
+            strokeWidth={2}
+          />
+        </Button>
+      )}
+
       <Button
         type="button"
         variant="ghost"
         size="icon"
         onClick={handleThemeToggle}
-        className="h-7 w-7 shrink-0 rounded-md"
+        className="shrink-0 rounded-md"
         style={{ color: 'var(--cc-text-2)' }}
         aria-label={t('toggleTheme')}
       >
-        <Moon className="size-[14px]" strokeWidth={2} />
+        {theme === 'dark' ? (
+          <Sun className="size-[14px]" strokeWidth={2} />
+        ) : (
+          <Moon className="size-[14px]" strokeWidth={2} />
+        )}
       </Button>
 
       <div
@@ -69,8 +107,8 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
         <div
           className="grid size-6 place-items-center rounded-full text-[10px] font-semibold"
           style={{
-            background: 'linear-gradient(135deg, #c2f542, #6aa512)',
-            color: '#0a0a0a',
+            background: 'linear-gradient(135deg, var(--cc-accent), var(--cc-accent-hover))',
+            color: '#ffffff',
             fontFamily: 'var(--cc-mono)',
           }}
         >
@@ -85,7 +123,7 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
           variant="ghost"
           size="icon"
           onClick={onLogout}
-          className="h-7 w-7 shrink-0 rounded-md"
+          className="shrink-0 rounded-md"
           style={{ color: 'var(--cc-text-3)' }}
           aria-label={t('logout')}
         >
