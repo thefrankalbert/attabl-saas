@@ -3,6 +3,8 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 import { getTenantUrl } from '@/lib/constants';
+import TenantNotFound from '@/components/admin/TenantNotFound';
+import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,15 +17,27 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold text-app-text">QR Codes</h1>
-        <p className="text-app-text-secondary mt-2">Tenant non trouvé</p>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   const supabase = await createClient();
+
+  // Auth + tenant membership guard (defense-in-depth alongside the admin layout).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirectToLogin();
+  }
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
+    .maybeSingle();
+  if (!adminUser) {
+    redirectToUnauthorized();
+  }
 
   // Fetch tables, zones, and menus in parallel
   const [{ data: zones }, { data: tables }, { data: menus }] = await Promise.all([

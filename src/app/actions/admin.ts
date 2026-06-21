@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { AdminRole, AdminUser } from '@/types/admin.types';
+import { canGrantRole, canActOnUser } from '@/lib/auth/role-hierarchy';
 import { createAdminUserSchema, updateAdminUserSchema } from '@/lib/validations/admin-user.schema';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
@@ -59,6 +60,11 @@ export async function actionCreateAdminUser(
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || t('invalidData') };
+  }
+
+  // SECURITY: prevent privilege escalation (e.g. an admin creating an owner).
+  if (!canGrantRole(role, parsed.data.role)) {
+    return { error: t('permissionDenied') };
   }
 
   const adminClient = createAdminClient();
@@ -179,6 +185,12 @@ export async function actionDeleteAdminUser(
 
   if (!targetUser) return { error: t('userNotFound') };
 
+  // SECURITY: an actor cannot delete a peer or higher-ranked account (e.g. an
+  // admin deleting the owner).
+  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+    return { error: t('permissionDenied') };
+  }
+
   // Atomically delete admin_users row and clean up auth user if no memberships remain.
   // The RPC uses SELECT FOR UPDATE to prevent race conditions.
   const { data: authDeleted, error: rpcError } = await adminClient.rpc('delete_admin_user_atomic', {
@@ -243,7 +255,26 @@ export async function actionUpdateAdminUser(
     return { error: parsed.error.issues[0]?.message || t('invalidData') };
   }
 
+  // SECURITY: prevent privilege escalation when changing a role.
+  if (parsed.data.role && !canGrantRole(currentRole, parsed.data.role)) {
+    return { error: t('permissionDenied') };
+  }
+
   const adminClient = createAdminClient();
+
+  // SECURITY: verify the actor outranks the target's CURRENT role before any
+  // mutation - covers is_active / full_name too, not only role changes - so an
+  // admin cannot disable or demote the owner.
+  const { data: targetUser } = await adminClient
+    .from('admin_users')
+    .select('role')
+    .eq('id', userId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+  if (!targetUser) return { error: t('userNotFound') };
+  if (!canActOnUser(currentRole, targetUser.role as AdminRole)) {
+    return { error: t('permissionDenied') };
+  }
 
   const { error } = await adminClient
     .from('admin_users')
@@ -310,12 +341,18 @@ export async function actionResetUserPassword(
   // Get the auth user_id from admin_users
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id, email')
+    .select('user_id, email, role')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .single();
 
   if (!targetUser) return { error: t('userNotFound') };
+
+  // SECURITY: an actor cannot reset the password of a peer or higher-ranked
+  // account (e.g. an admin taking over the owner).
+  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+    return { error: t('permissionDenied') };
+  }
 
   const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
     password: newPassword,
@@ -366,12 +403,18 @@ export async function actionUpdateUserEmail(
   // Get the auth user_id from admin_users
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id, email')
+    .select('user_id, email, role')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .single();
 
   if (!targetUser) return { error: t('userNotFound') };
+
+  // SECURITY: an actor cannot change the email of a peer or higher-ranked
+  // account (e.g. an admin taking over the owner).
+  if (!canActOnUser(role, targetUser.role as AdminRole)) {
+    return { error: t('permissionDenied') };
+  }
 
   // Update auth email
   const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {

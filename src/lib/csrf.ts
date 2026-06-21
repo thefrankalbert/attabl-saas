@@ -13,7 +13,10 @@ function normalizeDomain(domain: string): string {
 }
 
 function isLocalhostHost(host: string): boolean {
-  return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost');
+  // host may carry a port (e.g. "localhost:3001"); compare on hostname only so
+  // the dev-localhost allowance works on any local port, not just the app URL.
+  const hostname = host.split(':')[0];
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
 }
 
 /**

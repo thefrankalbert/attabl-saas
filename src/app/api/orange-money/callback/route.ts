@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const { data: order } = await supabase
     .from('orders')
     .select(
-      'id, total, payment_status, payment_method, orange_money_pay_token, orange_money_notif_token',
+      'id, tenant_id, total, payment_status, payment_method, orange_money_pay_token, orange_money_notif_token',
     )
     .eq('id', orderId)
     .single();
@@ -138,6 +138,7 @@ export async function POST(request: Request) {
       paid_at: new Date().toISOString(),
     })
     .eq('id', orderId)
+    .eq('tenant_id', order.tenant_id)
     .eq('payment_status', 'pending');
 
   if (updateError) {

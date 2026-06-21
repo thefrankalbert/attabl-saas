@@ -99,6 +99,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // 8. SECURITY: verify the target menu belongs to the session tenant before
+    // importing anything into it (no cross-tenant import via a foreign menuId).
+    const { data: menu } = await supabase
+      .from('menus')
+      .select('id')
+      .eq('id', menuId)
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
+
+    if (!menu) {
+      return NextResponse.json({ error: 'Menu non trouve' }, { status: 404 });
+    }
+
     // 9. Check plan limits before import
     const enforcement = createPlanEnforcementService(supabase);
     await enforcement.canAddMenuItem(tenant as Tenant);

@@ -2,6 +2,8 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +24,24 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) notFound();
+
+  // Auth + tenant membership guard (defense-in-depth alongside the admin layout).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirectToLogin();
+  }
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
+    .maybeSingle();
+  if (!adminUser) {
+    redirectToUnauthorized();
+  }
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto">

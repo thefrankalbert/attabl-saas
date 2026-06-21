@@ -25,6 +25,14 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock('next/headers', () => ({
+  headers: vi.fn(),
+}));
+
+vi.mock('@/lib/cache', () => ({
+  getTenant: vi.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
@@ -33,6 +41,8 @@ import { POST } from '../billing-portal/route';
 import { billingPortalLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/server';
+import { headers } from 'next/headers';
+import { getTenant } from '@/lib/cache';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,14 +74,17 @@ function createMockSupabase(overrides?: {
   const adminUserResult = overrides?.adminUser ?? {
     data: {
       tenant_id: 'tenant-1',
+      role: 'owner',
       tenants: { stripe_customer_id: 'cus_test_123', slug: 'my-restaurant' },
     },
     error: null,
   };
 
-  const mockSingle = vi.fn().mockResolvedValue(adminUserResult);
-  const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+  // Chain: .select().eq('user_id').eq('tenant_id').maybeSingle()
+  const mockMaybeSingle = vi.fn().mockResolvedValue(adminUserResult);
+  const mockEqTenant = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+  const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqTenant });
+  const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
 
   return {
     auth: {
@@ -91,6 +104,10 @@ function createMockSupabase(overrides?: {
 describe('POST /api/billing-portal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(headers).mockResolvedValue({
+      get: (k: string) => (k === 'x-tenant-slug' ? 'my-restaurant' : null),
+    } as never);
+    vi.mocked(getTenant).mockResolvedValue({ id: 'tenant-1', slug: 'my-restaurant' } as never);
   });
 
   it('returns 429 when rate limited', async () => {
@@ -115,11 +132,50 @@ describe('POST /api/billing-portal', () => {
     expect(json.error).toContain('Non autoris');
   });
 
+  it('returns 403 when the user role is not owner or admin', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase({
+      adminUser: {
+        data: {
+          tenant_id: 'tenant-1',
+          role: 'staff',
+          tenants: { stripe_customer_id: 'cus_x', slug: 's' },
+        },
+        error: null,
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await POST(buildRequest());
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(403);
+    expect(json.error).toContain('Non autoris');
+    expect(stripe.billingPortal.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 when no admin_users row matches the user and tenant', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase({ adminUser: { data: null, error: null } });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const res = await POST(buildRequest());
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(403);
+    expect(json.error).toContain('Non autoris');
+    expect(stripe.billingPortal.sessions.create).not.toHaveBeenCalled();
+  });
+
   it('returns 400 when tenant has no stripe_customer_id', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase({
       adminUser: {
-        data: { tenant_id: 'tenant-1', tenants: { stripe_customer_id: null, slug: 'test' } },
+        data: {
+          tenant_id: 'tenant-1',
+          role: 'owner',
+          tenants: { stripe_customer_id: null, slug: 'test' },
+        },
         error: null,
       },
     });

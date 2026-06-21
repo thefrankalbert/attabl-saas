@@ -8,8 +8,7 @@ import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 import { redirectFromReservedSiteSlug } from '@/lib/tenant-routing';
 import { DEFAULT_FONT } from '@/lib/config/fonts';
-import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
-import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
+import { ConviveShell } from '@/components/tenant/client/ConviveShell';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -75,19 +74,9 @@ export default async function SiteLayout({
                 (tenant?.supported_currencies as string[]) || [tenant?.currency || 'XAF']
               }
             >
-              <div
-                className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
-                style={{ fontFamily: tenantFontFamily }}
-              >
-                <main
-                  id="main-content"
-                  className="relative flex-1 overflow-y-auto overscroll-contain"
-                >
-                  {children}
-                </main>
-                <ClientFloatingCart slug={site} />
-                <ClientBottomNav slug={site} />
-              </div>
+              <ConviveShell slug={site} fontFamily={tenantFontFamily}>
+                {children}
+              </ConviveShell>
             </CurrencyProvider>
           </CartProvider>
         </TenantBrandProvider>

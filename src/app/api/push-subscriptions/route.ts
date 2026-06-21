@@ -50,7 +50,9 @@ export async function POST(request: NextRequest) {
       .select('tenant_id')
       .eq('user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ error: 'Tenant not found for user' }, { status: 403 });
