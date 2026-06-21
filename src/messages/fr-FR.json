@@ -1093,8 +1093,28 @@
           "menu": "Menu"
         },
         "alerts": {
-          "orderCancelled": "Commande #{number} annulée",
-          "siteOffline": "Site désactivé"
+          "orderCancelled": "Commande #{number} annulee",
+          "siteOffline": "Site desactive",
+          "title": "A surveiller",
+          "empty": "Tout roule, aucune alerte",
+          "viewSite": "Ouvrir {name}"
+        },
+        "chart": {
+          "hourly": "Heure par heure",
+          "last7days": "Sept derniers jours",
+          "thisMonth": "Ce mois-ci",
+          "revenue": "CA",
+          "orders": "Commandes",
+          "periodDay": "Jour",
+          "periodWeek": "7j",
+          "periodMonth": "Mois",
+          "notEnoughData": "Pas encore assez de donnees",
+          "loading": "Chargement du graphique",
+          "currencyShort": "F"
+        },
+        "errors": {
+          "fetchFailed": "Impossible de charger les donnees. Reessayez.",
+          "retry": "Reessayer"
         },
         "hero": {
           "todayRevenue": "Chiffre d'affaires - aujourd'hui",
@@ -1119,11 +1139,15 @@
           "add": "Ajouter un etablissement",
           "openDashboard": "Ouvrir le dashboard de {name}",
           "openMenu": "Ouvrir le menu client de {name}",
-          "ordersShort": "cmd."
+          "ordersShort": "cmd.",
+          "trendLabel": "vs hier",
+          "trendNew": "Nouveau",
+          "sparklineLabel": "Activite du jour de {name}"
         },
         "topbar": {
           "toggleTheme": "Basculer le theme",
-          "logout": "Se deconnecter"
+          "logout": "Se deconnecter",
+          "refresh": "Rafraichir les donnees"
         },
         "micro": {
           "orders": "Commandes",
