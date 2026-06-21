@@ -10,7 +10,7 @@
  * tenant layout selects the corresponding CSS variable at render time.
  */
 
-export type FontCategory = 'sans' | 'serif' | 'display';
+type FontCategory = 'sans' | 'serif' | 'display';
 
 export interface CuratedFont {
   /** Stable DB identifier stored in tenants.font_family. */
@@ -29,7 +29,7 @@ export interface CuratedFont {
  * Curated list of 10 Google Fonts available to tenants.
  * Inter is the default (UberEats-like). Order matters for the picker UI.
  */
-export const CURATED_FONTS: readonly CuratedFont[] = [
+const CURATED_FONTS: readonly CuratedFont[] = [
   {
     id: 'inter',
     name: 'Inter',
@@ -101,9 +101,6 @@ export const CURATED_FONTS: readonly CuratedFont[] = [
     category: 'sans',
   },
 ] as const;
-
-/** Union type of all valid curated font ids. */
-export type TenantFontId = (typeof CURATED_FONTS)[number]['id'];
 
 /** Default font applied when a tenant has no font_family or an invalid one. */
 export const DEFAULT_FONT: CuratedFont = CURATED_FONTS[0];

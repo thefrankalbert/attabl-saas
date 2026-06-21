@@ -493,23 +493,3 @@ export const sendStockAlertEmail = async (
     })
   ).success;
 };
-
-export const sendFirstOrderTriggerEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendFirstOrderTriggerEmail(to, data)).success;
-
-export const sendTenthOrderTriggerEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendTenthOrderTriggerEmail(to, data)).success;
-
-export const sendTrialIdleEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string },
-): Promise<boolean> => (await _svc.sendTrialIdleEmail(to, data)).success;
-
-export const sendTrialEndgameEmail = async (
-  to: string,
-  data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },
-): Promise<boolean> => (await _svc.sendTrialEndgameEmail(to, data)).success;

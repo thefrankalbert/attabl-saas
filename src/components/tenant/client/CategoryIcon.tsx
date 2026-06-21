@@ -54,7 +54,7 @@ export function CategoryIcon({
   return <Cmp width={size} height={size} strokeWidth={1.6} className={className} />;
 }
 
-export const CATEGORY_COLORS: Record<CategoryIconKey, { bg: string; fg: string }> = {
+const CATEGORY_COLORS: Record<CategoryIconKey, { bg: string; fg: string }> = {
   starter: { bg: 'oklch(0.97 0.02 130)', fg: 'oklch(0.42 0.10 130)' },
   main: { bg: 'oklch(0.97 0.02 50)', fg: 'oklch(0.42 0.10 50)' },
   side: { bg: 'oklch(0.97 0.015 60)', fg: 'oklch(0.42 0.06 60)' },

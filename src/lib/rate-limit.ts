@@ -260,12 +260,6 @@ export const revalidateMenuLimiter = createLimiter(
   Ratelimit.slidingWindow(20, '1 m'),
 );
 
-/** Server actions (generic): 30 requests / minute per IP */
-export const serverActionLimiter = createLimiter(
-  'server-action',
-  Ratelimit.slidingWindow(30, '1 m'),
-);
-
 // --- IP extraction helpers ---
 
 /**

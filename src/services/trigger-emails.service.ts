@@ -2,7 +2,7 @@ import { createEmailService } from './email.service';
 import { getTrialDaysRemaining } from '@/lib/plans/features';
 import { logger } from '@/lib/logger';
 
-export type ActivationEvents = Record<string, string>;
+type ActivationEvents = Record<string, string>;
 
 interface OrderTriggerParams {
   ordersCount: number;
@@ -105,42 +105,4 @@ export async function sendTrialEmailForKey(
     const result = await svc.sendTrialIdleEmail(adminEmail, { restaurantName, dashboardUrl });
     if (!result.success) logger.warn('Trial idle trigger email failed to send', { restaurantName });
   }
-}
-
-/**
- * @deprecated Use determineOrderEventKey + (atomic DB claim) + sendOrderEmailForKey
- * to prevent race conditions on concurrent requests. Kept for compatibility.
- */
-export async function checkAndFireOrderTrigger(params: OrderTriggerParams): Promise<string | null> {
-  const { adminEmail, restaurantName, dashboardUrl, activationEvents, ordersCount } = params;
-  const key = determineOrderEventKey({ ordersCount, activationEvents });
-  if (!key) return null;
-  await sendOrderEmailForKey(key, { adminEmail, restaurantName, dashboardUrl });
-  return key;
-}
-
-/**
- * @deprecated Use determineTrialEventKey + (atomic DB claim) + sendTrialEmailForKey
- * to prevent race conditions on concurrent requests. Kept for compatibility.
- */
-export async function checkAndFireTrialTrigger(params: TrialTriggerParams): Promise<string | null> {
-  const {
-    adminEmail,
-    restaurantName,
-    dashboardUrl,
-    trialEndsAt,
-    lastActiveAt,
-    activationEvents,
-    ordersCount = 0,
-  } = params;
-  const key = determineTrialEventKey({ trialEndsAt, lastActiveAt, activationEvents });
-  if (!key) return null;
-  await sendTrialEmailForKey(key, {
-    adminEmail,
-    restaurantName,
-    dashboardUrl,
-    trialEndsAt,
-    ordersCount,
-  });
-  return key;
 }

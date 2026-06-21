@@ -4,7 +4,7 @@ import { ServiceError } from './errors';
 import { createOrderService } from './order.service';
 
 /** A `zones` row with its tables and the venue's tenant_id (for the !inner filter). */
-export type ServiceZoneRow = Zone & {
+type ServiceZoneRow = Zone & {
   tables: Table[];
   venues: { tenant_id: string };
 };

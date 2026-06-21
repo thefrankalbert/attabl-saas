@@ -17,13 +17,4 @@ export const TEMPLATE_REGISTRY: Record<QRTemplateId, ComponentType<QRTemplatePro
   neon: NeonTemplate,
 };
 
-export {
-  StandardTemplate,
-  ChevaletTemplate,
-  CarteTemplate,
-  MinimalTemplate,
-  ElegantTemplate,
-  NeonTemplate,
-};
-
 export type { QRTemplateProps };

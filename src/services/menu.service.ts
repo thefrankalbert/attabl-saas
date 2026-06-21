@@ -12,17 +12,17 @@ import { logger } from '@/lib/logger';
  */
 
 /** All `menus` columns selected by the menu queries (no joins). */
-export type MenuRow = Omit<Menu, 'venue' | 'children' | 'categories'>;
+type MenuRow = Omit<Menu, 'venue' | 'children' | 'categories'>;
 
 /** Partial venue projection embedded in some menu queries (id, name, slug only). */
-export interface MenuVenueRef {
+interface MenuVenueRef {
   id: string;
   name: string;
   slug: string;
 }
 
 /** Partial child-menu projection embedded via the self-referencing FK. */
-export interface MenuChildRef {
+interface MenuChildRef {
   id: string;
   name: string;
   name_en?: string;
@@ -33,13 +33,13 @@ export interface MenuChildRef {
 }
 
 /** Top-level menu with its embedded venue ref and child refs. */
-export type MenuWithRelations = MenuRow & {
+type MenuWithRelations = MenuRow & {
   venue?: MenuVenueRef | null;
   children?: MenuChildRef[];
 };
 
 /** Category row plus the lightweight item-count join used by the admin nav. */
-export type CategoryWithItemRefs = Category & { menu_items: { id: string }[] };
+type CategoryWithItemRefs = Category & { menu_items: { id: string }[] };
 
 export interface MenuService {
   getMenusByTenant(tenantId: string): Promise<MenuWithRelations[]>;

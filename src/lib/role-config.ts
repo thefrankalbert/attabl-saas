@@ -29,7 +29,7 @@ export function buildRoleConfig(t: (key: string) => string): Record<AdminRole, R
 }
 
 /** Default fallback for unknown roles. */
-export function buildDefaultRoleConfig(t: (key: string) => string): RoleConfigEntry {
+function buildDefaultRoleConfig(t: (key: string) => string): RoleConfigEntry {
   return {
     label: t('roleDefaultLabel'),
     icon: Users,

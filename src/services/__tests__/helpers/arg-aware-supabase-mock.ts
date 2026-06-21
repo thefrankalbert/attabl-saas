@@ -32,17 +32,17 @@
  */
 
 /** A seeded DB row. Keys may be plain columns or dotted relation paths. */
-export type MockRow = Record<string, unknown>;
+type MockRow = Record<string, unknown>;
 
 /** Shape Supabase returns from a resolved query. */
-export interface MockQueryResult<T = unknown> {
+interface MockQueryResult<T = unknown> {
   data: T;
   error: MockError | null;
   count?: number | null;
 }
 
 /** Minimal Postgres/PostgREST-style error shape. */
-export interface MockError {
+interface MockError {
   message: string;
   code?: string;
   details?: string;
@@ -58,9 +58,7 @@ interface Filter {
 }
 
 /** RPC handler signature. */
-export type RpcHandler = (
-  args: Record<string, unknown>,
-) => MockQueryResult | Promise<MockQueryResult>;
+type RpcHandler = (args: Record<string, unknown>) => MockQueryResult | Promise<MockQueryResult>;
 
 const PGRST116: MockError = {
   message: 'JSON object requested, multiple (or no) rows returned',
@@ -160,7 +158,7 @@ function applyFilters(rows: MockRow[], filters: Filter[]): MockRow[] {
  * The query builder returned by from(). Chainable, and thenable so that
  * `await query` (a list query) resolves to all surviving rows.
  */
-export interface MockQueryBuilder<T = unknown> extends PromiseLike<MockQueryResult<T>> {
+interface MockQueryBuilder<T = unknown> extends PromiseLike<MockQueryResult<T>> {
   select(
     columns?: string,
     options?: { count?: 'exact' | 'planned' | 'estimated' },

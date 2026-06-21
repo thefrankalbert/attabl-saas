@@ -1,5 +1,3 @@
-import type { OwnerDashboardRow } from './restaurant-group.types';
-
 export interface Tenant {
   id: string;
   slug: string;
@@ -61,5 +59,3 @@ export interface CommandCenterGlobals {
   orders_yesterday: number;
   alerts_count: number;
 }
-
-export type LocationRow = OwnerDashboardRow;

@@ -10,10 +10,6 @@ export function runWithRequestContext<T>(correlationId: string, fn: () => T): T 
   return storage.run({ correlationId }, fn);
 }
 
-export function getCorrelationId(): string | undefined {
-  return storage.getStore()?.correlationId;
-}
-
 export function resolveCorrelationId(incoming: string | null): string {
   if (incoming && incoming.length > 0 && incoming.length <= 128) {
     return incoming;

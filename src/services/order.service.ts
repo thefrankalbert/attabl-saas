@@ -37,7 +37,7 @@ interface CreateOrderResult {
   total: number;
 }
 
-export type OrderPreviewIssue = {
+type OrderPreviewIssue = {
   itemId: string;
   message: string;
   /** Client should remove this line from the cart (deleted or unavailable item). */

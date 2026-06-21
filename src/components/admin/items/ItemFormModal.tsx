@@ -23,7 +23,7 @@ import type { Category, CurrencyCode, MenuItem } from '@/types/admin.types';
 
 export type FormStep = 1 | 2 | 3;
 
-export interface ItemFormState {
+interface ItemFormState {
   name: string;
   nameEn: string;
   description: string;
@@ -39,7 +39,7 @@ export interface ItemFormState {
   formStep: FormStep;
 }
 
-export interface ItemFormSetters {
+interface ItemFormSetters {
   setName: (v: string) => void;
   setNameEn: (v: string) => void;
   setDescription: (v: string) => void;

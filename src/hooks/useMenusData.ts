@@ -29,7 +29,7 @@ export interface MenuFormData {
 }
 
 /** Async confirmation callback - typically from useConfirmDialog. */
-export type ConfirmFn = (message: string) => Promise<boolean>;
+type ConfirmFn = (message: string) => Promise<boolean>;
 
 interface UseMenusDataParams {
   tenantId: string;

@@ -6,10 +6,10 @@
 // Components subscribe via useSyncExternalStore; initAbVariants() sets cookies
 // and notifies subscribers. No setState-in-effect pattern.
 
-export const AB_COOKIE_ID = 'attabl_ab_id';
-export const AB_COOKIE_TRIAL = 'attabl_ab_trial';
-export const AB_COOKIE_TOGGLE = 'attabl_ab_toggle';
-export const AB_COOKIE_DAYS = 60;
+const AB_COOKIE_ID = 'attabl_ab_id';
+const AB_COOKIE_TRIAL = 'attabl_ab_trial';
+const AB_COOKIE_TOGGLE = 'attabl_ab_toggle';
+const AB_COOKIE_DAYS = 60;
 
 export type TrialVariant = '7d' | '14d';
 export type ToggleVariant = '2' | '3';
@@ -40,14 +40,14 @@ export function assignToggleVariant(id: string): ToggleVariant {
 
 // --- Client-side cookie helpers (browser only) ---
 
-export function getClientCookie(name: string): string | null {
+function getClientCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const match = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function setClientCookie(name: string, value: string, days: number): void {
+function setClientCookie(name: string, value: string, days: number): void {
   const expires = new Date(Date.now() + days * 86400000).toUTCString();
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
 }

@@ -1,7 +1,7 @@
 /**
  * Slugs that must never be used as tenant identifiers in /sites/[site]/...
  */
-export const RESERVED_SITE_SLUGS = new Set([
+const RESERVED_SITE_SLUGS = new Set([
   'admin',
   'api',
   'login',

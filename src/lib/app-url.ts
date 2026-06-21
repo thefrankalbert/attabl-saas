@@ -1,7 +1,7 @@
 /**
  * Main app origin (marketing, auth, onboarding). Tenant subdomains serve /sites/[slug] only.
  */
-export function getMainAppOrigin(): string {
+function getMainAppOrigin(): string {
   if (typeof window !== 'undefined') {
     const envOrigin = process.env.NEXT_PUBLIC_APP_URL;
     if (envOrigin) {

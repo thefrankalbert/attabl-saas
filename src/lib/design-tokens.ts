@@ -65,7 +65,7 @@ export const STATUS_STYLES: Record<OrderStatus, StatusStyle> = {
 // Generates N perceptually uniform colors for charts.
 // All at the same lightness and chroma, evenly spaced in hue.
 
-export function generateChartColors(count: number, startHue = 128): string[] {
+function generateChartColors(count: number, startHue = 128): string[] {
   return Array.from(
     { length: count },
     (_, i) => `oklch(0.70 0.15 ${(startHue + (i * 360) / count) % 360})`,
@@ -74,14 +74,6 @@ export function generateChartColors(count: number, startHue = 128): string[] {
 
 /** Default 8-color palette for reports/charts */
 export const CHART_PALETTE = generateChartColors(8);
-
-/** Chart colors for dashboard gauges and line charts */
-export const CHART_COLORS = {
-  revenue: '#4ade80',
-  orders: '#60a5fa',
-  activeItems: '#f97316',
-  activeTables: '#a78bfa',
-} as const;
 
 /** Stock movement type styles using semantic tokens */
 export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border: string }> = {

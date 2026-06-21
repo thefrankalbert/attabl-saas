@@ -6,7 +6,7 @@ import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-impo
 
 // ─── Types ────────────────────────────────────────────────────
 
-export interface ImportResult {
+interface ImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
@@ -14,7 +14,7 @@ export interface ImportResult {
   errors: ImportRowError[];
 }
 
-export interface ImportRowError {
+interface ImportRowError {
   row: number;
   message: string;
 }

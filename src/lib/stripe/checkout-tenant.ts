@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-export type CheckoutTenantRow = {
+type CheckoutTenantRow = {
   tenant_id: string;
   tenants: {
     name: string;

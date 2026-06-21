@@ -20,7 +20,7 @@ import type {
 
 // ─── Types ─────────────────────────────────────────────────
 
-export interface StockItem {
+interface StockItem {
   id: string;
   name: string;
   unit: string;
@@ -52,29 +52,6 @@ export interface UseDashboardDataReturn {
   itemsSparkline: SparklinePoint[];
   loading: boolean;
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
-}
-
-// ─── Helpers ───────────────────────────────────────────────
-
-export function timeAgo(
-  date: string,
-  tc: (key: string, values?: Record<string, number>) => string,
-  locale: string,
-): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return tc('justNow');
-  if (seconds < 3600) return tc('minutesAgo', { count: Math.floor(seconds / 60) });
-  if (seconds < 86400) return tc('hoursAgo', { count: Math.floor(seconds / 3600) });
-  return new Date(date).toLocaleDateString(locale);
-}
-
-export function getLast7DaysData(orders: Order[]): number[] {
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
 }
 
 // ─── Hook ──────────────────────────────────────────────────
