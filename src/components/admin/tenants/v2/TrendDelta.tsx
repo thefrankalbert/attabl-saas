@@ -6,6 +6,8 @@ interface TrendDeltaProps {
   className?: string;
   /** Optional accessible label prefix (e.g. "vs yesterday"). */
   label?: string;
+  /** Translated marker shown when growth comes from a zero baseline (e.g. "New"). */
+  newLabel: string;
 }
 
 /**
@@ -17,7 +19,7 @@ interface TrendDeltaProps {
  *
  * Pure SVG icons, no hooks - safe to render inside a server component.
  */
-export function TrendDelta({ current, previous, className, label }: TrendDeltaProps) {
+export function TrendDelta({ current, previous, className, label, newLabel }: TrendDeltaProps) {
   const baseClass =
     `cc-mono inline-flex items-center gap-0.5 text-[10px] ${className ?? ''}`.trim();
 
@@ -35,7 +37,7 @@ export function TrendDelta({ current, previous, className, label }: TrendDeltaPr
     return (
       <span className={baseClass} style={{ color: 'var(--cc-accent-ink)' }} aria-label={label}>
         <ArrowUpRight size={12} aria-hidden />
-        new
+        {newLabel}
       </span>
     );
   }

@@ -1141,6 +1141,7 @@
           "openMenu": "Open {name} customer menu",
           "ordersShort": "ord.",
           "trendLabel": "vs yesterday",
+          "trendNew": "New",
           "sparklineLabel": "{name} today activity"
         },
         "topbar": {

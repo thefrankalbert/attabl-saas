@@ -118,6 +118,7 @@ export function EstablishmentsList({
               ordersLabel={t('ordersShort')}
               sparklineLabel={t('sparklineLabel', { name: loc.tenant_name })}
               trendLabel={t('trendLabel')}
+              trendNewLabel={t('trendNew')}
               locale={locale}
             />
           ))
@@ -137,6 +138,7 @@ interface EstablishmentRowProps {
   ordersLabel: string;
   sparklineLabel: string;
   trendLabel: string;
+  trendNewLabel: string;
   locale: string;
 }
 
@@ -150,6 +152,7 @@ function EstablishmentRow({
   ordersLabel,
   sparklineLabel,
   trendLabel,
+  trendNewLabel,
   locale,
 }: EstablishmentRowProps) {
   const initials = initialsFor(location.tenant_name);
@@ -212,6 +215,7 @@ function EstablishmentRow({
               current={location.revenue_today}
               previous={location.revenue_yesterday}
               label={trendLabel}
+              newLabel={trendNewLabel}
             />
           </span>
           <span

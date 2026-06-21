@@ -165,6 +165,7 @@ export function TenantsListDialog({
                             current={loc.revenue_today}
                             previous={loc.revenue_yesterday}
                             label={tEst('trendLabel')}
+                            newLabel={tEst('trendNew')}
                           />
                         </span>
                         <span

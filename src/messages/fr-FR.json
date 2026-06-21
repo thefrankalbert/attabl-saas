@@ -1141,6 +1141,7 @@
           "openMenu": "Ouvrir le menu client de {name}",
           "ordersShort": "cmd.",
           "trendLabel": "vs hier",
+          "trendNew": "Nouveau",
           "sparklineLabel": "Activite du jour de {name}"
         },
         "topbar": {
