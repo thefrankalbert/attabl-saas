@@ -9,7 +9,8 @@ import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
-import type { CurrencyCode } from '@/types/admin.types';
+import { openingHoursSchema } from '@/lib/validations/tenant.schema';
+import type { CurrencyCode, OpeningHoursMap } from '@/types/admin.types';
 import type { UseFormReturn, FieldErrors } from 'react-hook-form';
 
 // ─── Schema ────────────────────────────────────────────────
@@ -44,6 +45,8 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     // Idle timeout
     idleTimeoutMinutes: z.number().int().min(5).max(120).nullable().optional(),
     screenLockMode: z.enum(['overlay', 'password']).optional(),
+    // Opening hours
+    openingHours: openingHoursSchema.optional(),
   });
 }
 
@@ -76,6 +79,7 @@ export interface SettingsTenant {
   bar_display_enabled?: boolean;
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
+  opening_hours?: OpeningHoursMap | null;
   custom_domain?: string | null;
 }
 
@@ -136,6 +140,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       barDisplayEnabled: tenant.bar_display_enabled ?? false,
       idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
       screenLockMode: tenant.screen_lock_mode ?? 'overlay',
+      openingHours: tenant.opening_hours ?? {},
     },
   });
 
@@ -269,6 +274,8 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
         formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
       }
       formData.append('screenLockMode', data.screenLockMode || 'overlay');
+      // Opening hours (always sent on a full settings save)
+      formData.append('openingHours', JSON.stringify(data.openingHours ?? {}));
 
       const result = await actionUpdateTenantSettings(formData);
 

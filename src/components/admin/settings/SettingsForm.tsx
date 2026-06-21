@@ -19,6 +19,7 @@ import SettingsBranding from '@/components/features/settings/SettingsBranding';
 import SettingsBilling from '@/components/features/settings/SettingsBilling';
 import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
+import SettingsOpeningHours from '@/components/features/settings/SettingsOpeningHours';
 import { PushOptIn } from '@/components/admin/PushOptIn';
 
 // ─── Types ─────────────────────────────────────────────────
@@ -33,6 +34,7 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'identity', labelKey: 'tabIdentity' },
   { key: 'branding', labelKey: 'tabBranding' },
   { key: 'billing', labelKey: 'tabBilling' },
+  { key: 'hours', labelKey: 'tabHours' },
   { key: 'sounds', labelKey: 'tabSounds' },
   { key: 'security', labelKey: 'tabSecurity' },
   { key: 'contact', labelKey: 'tabContact' },
@@ -129,6 +131,9 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
 
             {/* Billing tab */}
             <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
+
+            {/* Opening hours tab */}
+            <SettingsOpeningHours form={form} t={t} />
 
             {/* Sounds tab */}
             <TabsContent value="sounds" className="mt-0 space-y-6">

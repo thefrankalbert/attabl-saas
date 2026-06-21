@@ -59,6 +59,17 @@ export async function actionUpdateTenantSettings(formData: FormData) {
         ? Number(formData.get('idleTimeoutMinutes'))
         : null,
       screenLockMode: (formData.get('screenLockMode') as string) || 'overlay',
+      // Opening hours - only included when the field is present (partial saves
+      // such as the custom-domain quick-save must not reset the hours map)
+      openingHours: (() => {
+        const raw = formData.get('openingHours') as string | null;
+        if (raw === null) return undefined;
+        try {
+          return JSON.parse(raw) as unknown;
+        } catch {
+          return undefined;
+        }
+      })(),
       // Custom domain
       customDomain: formData.has('customDomain')
         ? (formData.get('customDomain') as string) || null

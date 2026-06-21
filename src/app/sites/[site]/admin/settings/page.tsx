@@ -71,6 +71,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
           bar_display_enabled: tenant.bar_display_enabled,
           idle_timeout_minutes: tenant.idle_timeout_minutes,
           screen_lock_mode: tenant.screen_lock_mode,
+          opening_hours: tenant.opening_hours,
         }}
       />
     </div>
