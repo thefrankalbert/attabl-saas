@@ -6,6 +6,7 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
+import { canGrantRole } from '@/lib/auth/role-hierarchy';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
 import { jsonWithCache } from '@/lib/cache-headers';
@@ -129,6 +130,14 @@ export async function POST(request: Request) {
         .single();
 
       if (!adminUser) {
+        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+      }
+
+      // SECURITY: prevent privilege escalation - an admin can only invite roles
+      // strictly below admin (never another admin or an owner). Same policy as
+      // actionCreateAdminUser, shared via canGrantRole so the two creation
+      // paths cannot diverge.
+      if (!canGrantRole(adminUser.role, parsed.data.role)) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
