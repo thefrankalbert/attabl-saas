@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createSignupService } from '@/services/signup.service';
 import { logger } from '@/lib/logger';
+import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 
 type SessionAdminUser = {
   tenant_id: string;
@@ -34,16 +35,36 @@ export async function resolveSessionAdminUser(options?: {
   }
 
   const adminSupabase = createAdminClient();
-  let query = adminSupabase.from('admin_users').select('tenant_id, role').eq('user_id', user.id);
 
-  if (requireActive) {
-    query = query.eq('is_active', true);
+  // Pick the working tenant deterministically: the most recently created tenant whose
+  // onboarding is unfinished (else the most recent overall). NEVER order by the uuid
+  // primary key - that is non-deterministic and gave multi-tenant owners a random tenant.
+  async function loadChosenAdminUser(): Promise<{ data: SessionAdminUser | null; error: unknown }> {
+    let q = adminSupabase
+      .from('admin_users')
+      .select('tenant_id, role, tenants ( onboarding_completed, created_at )')
+      .eq('user_id', user!.id);
+    if (requireActive) {
+      q = q.eq('is_active', true);
+    }
+    const { data, error: qErr } = await q;
+    if (qErr || !data || data.length === 0) {
+      return { data: null, error: qErr };
+    }
+    const index = pickOnboardingTenantIndex(
+      data.map((row) => {
+        const tenant = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
+        return {
+          onboardingCompleted: !!tenant?.onboarding_completed,
+          createdAt: tenant?.created_at ?? null,
+        };
+      }),
+    );
+    const chosen = data[index];
+    return { data: { tenant_id: chosen.tenant_id, role: chosen.role }, error: null };
   }
 
-  let { data: adminUser, error } = await query
-    .order('id', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  let { data: adminUser, error } = await loadChosenAdminUser();
 
   if ((error || !adminUser) && provisionIfMissing) {
     const email = user.email;
@@ -69,7 +90,7 @@ export async function resolveSessionAdminUser(options?: {
       return { ok: false, status: 403, error: 'Impossible de creer votre etablissement' };
     }
 
-    const retry = await query.order('id', { ascending: false }).limit(1).maybeSingle();
+    const retry = await loadChosenAdminUser();
     adminUser = retry.data;
     error = retry.error;
   }
