@@ -1716,6 +1716,7 @@
     "supportedCurrenciesDesc": "Sélectionnez les devises dans lesquelles les clients peuvent voir les prix",
     "baseCurrencyAlwaysIncluded": "base",
     "currencyXAF": "Franc CFA (XAF)",
+    "currencyXOF": "Franc CFA Ouest (XOF)",
     "currencyEUR": "Euro (EUR)",
     "currencyUSD": "Dollar US (USD)",
     "enableVat": "Activer la TVA",

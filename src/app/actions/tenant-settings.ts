@@ -21,46 +21,59 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     // 1. Authenticate + get tenant from session (NOT from client)
     const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
 
-    // 2. Extract and validate form data with Zod
+    // 2. Extract and validate form data with Zod.
+    // A field ABSENT from the FormData stays `undefined` so the service leaves
+    // it untouched. This makes partial saves (e.g. the custom-domain quick-save)
+    // safe: they no longer fall back to defaults that would overwrite unrelated
+    // settings. Only `name` + the two colors are always sent by every save path.
+    const str = (key: string) => formData.get(key) as string;
     const rawData = {
-      name: formData.get('name') as string,
-      description: (formData.get('description') as string) || undefined,
-      primaryColor: formData.get('primaryColor') as string,
-      secondaryColor: formData.get('secondaryColor') as string,
-      address: (formData.get('address') as string) || undefined,
-      city: (formData.get('city') as string) || undefined,
-      country: (formData.get('country') as string) || undefined,
-      phone: (formData.get('phone') as string) || undefined,
-      logoUrl: (formData.get('logoUrl') as string) || undefined,
-      notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
-      establishmentType: (formData.get('establishmentType') as string) || undefined,
-      tableCount: formData.get('tableCount') ? Number(formData.get('tableCount')) : undefined,
+      name: formData.has('name') ? str('name') : undefined,
+      primaryColor: formData.has('primaryColor') ? str('primaryColor') : undefined,
+      secondaryColor: formData.has('secondaryColor') ? str('secondaryColor') : undefined,
+      description: formData.has('description') ? str('description') : undefined,
+      address: formData.has('address') ? str('address') : undefined,
+      city: formData.has('city') ? str('city') : undefined,
+      country: formData.has('country') ? str('country') : undefined,
+      phone: formData.has('phone') ? str('phone') : undefined,
+      logoUrl: formData.has('logoUrl') ? str('logoUrl') : undefined,
+      notificationSoundId: formData.has('notificationSoundId')
+        ? str('notificationSoundId')
+        : undefined,
+      establishmentType: formData.has('establishmentType') ? str('establishmentType') : undefined,
+      tableCount: formData.has('tableCount') ? Number(str('tableCount')) : undefined,
       // Billing fields
-      currency: (formData.get('currency') as string) || 'XAF',
+      currency: formData.has('currency') ? str('currency') : undefined,
       supportedCurrencies: (() => {
         const raw = formData.get('supportedCurrencies') as string | null;
-        if (!raw) return undefined;
+        if (raw === null) return undefined;
         try {
           return JSON.parse(raw) as unknown;
         } catch {
           return undefined;
         }
       })(),
-      enableTax: formData.get('enableTax') === 'true',
-      taxRate: formData.get('taxRate') ? Number(formData.get('taxRate')) : 0,
-      enableServiceCharge: formData.get('enableServiceCharge') === 'true',
-      serviceChargeRate: formData.get('serviceChargeRate')
-        ? Number(formData.get('serviceChargeRate'))
-        : 0,
+      enableTax: formData.has('enableTax') ? str('enableTax') === 'true' : undefined,
+      taxRate: formData.has('taxRate') ? Number(str('taxRate')) : undefined,
+      enableServiceCharge: formData.has('enableServiceCharge')
+        ? str('enableServiceCharge') === 'true'
+        : undefined,
+      serviceChargeRate: formData.has('serviceChargeRate')
+        ? Number(str('serviceChargeRate'))
+        : undefined,
+      enableCoupons: formData.has('enableCoupons') ? str('enableCoupons') === 'true' : undefined,
       // KDS
-      barDisplayEnabled: formData.get('barDisplayEnabled') === 'true',
-      // Idle timeout
-      idleTimeoutMinutes: formData.get('idleTimeoutMinutes')
-        ? Number(formData.get('idleTimeoutMinutes'))
-        : null,
-      screenLockMode: (formData.get('screenLockMode') as string) || 'overlay',
-      // Opening hours - only included when the field is present (partial saves
-      // such as the custom-domain quick-save must not reset the hours map)
+      barDisplayEnabled: formData.has('barDisplayEnabled')
+        ? str('barDisplayEnabled') === 'true'
+        : undefined,
+      // Idle timeout: empty string = null (disabled), absent = untouched
+      idleTimeoutMinutes: formData.has('idleTimeoutMinutes')
+        ? str('idleTimeoutMinutes') === ''
+          ? null
+          : Number(str('idleTimeoutMinutes'))
+        : undefined,
+      screenLockMode: formData.has('screenLockMode') ? str('screenLockMode') : undefined,
+      // Opening hours - only included when present (a partial save must not reset the map)
       openingHours: (() => {
         const raw = formData.get('openingHours') as string | null;
         if (raw === null) return undefined;
@@ -71,9 +84,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
         }
       })(),
       // Custom domain
-      customDomain: formData.has('customDomain')
-        ? (formData.get('customDomain') as string) || null
-        : undefined,
+      customDomain: formData.has('customDomain') ? str('customDomain') || null : undefined,
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);
