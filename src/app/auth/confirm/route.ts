@@ -55,7 +55,10 @@ export async function GET(request: Request) {
           .from('admin_users')
           .select('tenant_id')
           .eq('user_id', userId)
-          .single();
+          // A user can own several tenants; `.single()` would throw. Take the most recent.
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (adminUser) {
           const { data: tenant } = await supabase
