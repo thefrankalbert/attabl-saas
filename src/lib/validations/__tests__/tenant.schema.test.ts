@@ -155,4 +155,52 @@ describe('updateTenantSettingsSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  // ─── Opening hours ───────────────────────────────────────
+  it('should accept a valid opening-hours map', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      openingHours: {
+        mon: { open: '09:00', close: '22:00' },
+        sat: { open: '10:00', close: '23:30' },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept an empty opening-hours map (always open)', () => {
+    const result = updateTenantSettingsSchema.safeParse({ ...validInput, openingHours: {} });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a malformed time (not HH:mm / out of range)', () => {
+    expect(
+      updateTenantSettingsSchema.safeParse({
+        ...validInput,
+        openingHours: { mon: { open: '9:00', close: '22:00' } },
+      }).success,
+    ).toBe(false);
+    expect(
+      updateTenantSettingsSchema.safeParse({
+        ...validInput,
+        openingHours: { mon: { open: '08:00', close: '25:00' } },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('should reject when close is not after open', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      openingHours: { mon: { open: '22:00', close: '09:00' } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject an unknown weekday key', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      openingHours: { funday: { open: '09:00', close: '22:00' } },
+    });
+    expect(result.success).toBe(false);
+  });
 });

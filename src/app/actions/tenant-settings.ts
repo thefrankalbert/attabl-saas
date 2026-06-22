@@ -73,6 +73,16 @@ export async function actionUpdateTenantSettings(formData: FormData) {
           : Number(str('idleTimeoutMinutes'))
         : undefined,
       screenLockMode: formData.has('screenLockMode') ? str('screenLockMode') : undefined,
+      // Opening hours - only included when present (a partial save must not reset the map)
+      openingHours: (() => {
+        const raw = formData.get('openingHours') as string | null;
+        if (raw === null) return undefined;
+        try {
+          return JSON.parse(raw) as unknown;
+        } catch {
+          return undefined;
+        }
+      })(),
       // Custom domain
       customDomain: formData.has('customDomain') ? str('customDomain') || null : undefined,
     };

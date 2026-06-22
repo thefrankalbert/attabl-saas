@@ -6,6 +6,35 @@ import { z } from 'zod';
  */
 
 const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+const hhmmRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const daySlotSchema = z
+  .object({
+    open: z.string().regex(hhmmRegex, 'Heure invalide (format HH:mm)'),
+    close: z.string().regex(hhmmRegex, 'Heure invalide (format HH:mm)'),
+  })
+  .refine((slot) => slot.open < slot.close, {
+    message: "L'heure de fermeture doit être après l'ouverture",
+  });
+
+/**
+ * Weekly opening hours: a partial per-weekday map of { open, close } in "HH:mm".
+ * A day absent from the map means closed that day. An empty map means "no hours
+ * configured / always open" (see computeOpeningState in src/lib/opening-hours.ts).
+ * Overnight ranges are not supported (the reader compares within a single day),
+ * so close must be after open. .strict() rejects unknown weekday keys.
+ */
+export const openingHoursSchema = z
+  .object({
+    mon: daySlotSchema.optional(),
+    tue: daySlotSchema.optional(),
+    wed: daySlotSchema.optional(),
+    thu: daySlotSchema.optional(),
+    fri: daySlotSchema.optional(),
+    sat: daySlotSchema.optional(),
+    sun: daySlotSchema.optional(),
+  })
+  .strict();
 
 export const updateTenantSettingsSchema = z.object({
   // name + colors are optional at the schema level so a partial save (the
@@ -63,6 +92,8 @@ export const updateTenantSettingsSchema = z.object({
     .nullable()
     .optional(),
   screenLockMode: z.enum(['overlay', 'password']).optional(),
+  // ─── Opening hours ───────────────────────────────────────
+  openingHours: openingHoursSchema.optional(),
   // ─── Custom domain ───────────────────────────────────────
   customDomain: z
     .string()
