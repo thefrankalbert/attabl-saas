@@ -10,3 +10,17 @@ overrides:
   'picomatch@<2.3.2': '>=2.3.2'
   'picomatch@>=4.0.0 <4.0.4': '>=4.0.4'
   'rollup@>=4.0.0 <4.59.0': '>=4.59.0'
+
+# Dependencies whose install/build scripts are explicitly allowed to run. Newer
+# pnpm (the CI "version: latest") blocks unapproved build scripts and exits 1
+# (ERR_PNPM_IGNORED_BUILDS), which broke the Dependency Audit job. These are all
+# well-known packages that ship native binaries / need their build step.
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@sentry/cli'
+  - '@swc/core'
+  - core-js
+  - esbuild
+  - sharp
+  - supabase
+  - unrs-resolver
