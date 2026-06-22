@@ -349,52 +349,60 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
           itemsByCategory.set(catName, existing);
         }
 
-        // Create all categories in parallel, then their items
-        let itemDisplayOrder = 1;
+        // Create all categories in parallel, then their items.
+        // Pre-compute each category's display_order start offset BEFORE the
+        // parallel inserts. A shared mutable counter incremented inside the
+        // Promise.all callbacks would race, producing duplicate or
+        // non-deterministic display_order values across categories.
+        const categoryEntries = Array.from(itemsByCategory.entries());
+        let nextItemOrder = 1;
+        const itemOrderStartByIndex = categoryEntries.map(([, items]) => {
+          const start = nextItemOrder;
+          nextItemOrder += items.length;
+          return start;
+        });
         await Promise.all(
-          Array.from(itemsByCategory.entries()).map(
-            async ([categoryName, items], categoryIndex) => {
-              const { data: category, error: catError } = await supabase
-                .from('categories')
-                .insert({
-                  tenant_id: tenantId,
-                  menu_id: menuId,
-                  name: categoryName,
-                  is_active: true,
-                  sort_order: categoryIndex + 1,
-                  display_order: categoryIndex + 1,
-                })
-                .select()
-                .single();
+          categoryEntries.map(async ([categoryName, items], categoryIndex) => {
+            const { data: category, error: catError } = await supabase
+              .from('categories')
+              .insert({
+                tenant_id: tenantId,
+                menu_id: menuId,
+                name: categoryName,
+                is_active: true,
+                sort_order: categoryIndex + 1,
+                display_order: categoryIndex + 1,
+              })
+              .select()
+              .single();
 
-              if (catError || !category) {
-                logger.error('Failed to create category during onboarding', catError, {
-                  categoryName,
-                  tenantId,
-                });
-                return;
-              }
+            if (catError || !category) {
+              logger.error('Failed to create category during onboarding', catError, {
+                categoryName,
+                tenantId,
+              });
+              return;
+            }
 
-              const { error: itemsError } = await supabase.from('menu_items').insert(
-                items.map((item) => ({
-                  tenant_id: tenantId,
-                  category_id: category.id,
-                  name: item.name,
-                  price: item.price || 0,
-                  image_url: item.imageUrl || null,
-                  is_available: true,
-                  display_order: itemDisplayOrder++,
-                })),
-              );
+            const { error: itemsError } = await supabase.from('menu_items').insert(
+              items.map((item, itemIndex) => ({
+                tenant_id: tenantId,
+                category_id: category.id,
+                name: item.name,
+                price: item.price || 0,
+                image_url: item.imageUrl || null,
+                is_available: true,
+                display_order: itemOrderStartByIndex[categoryIndex] + itemIndex,
+              })),
+            );
 
-              if (itemsError) {
-                logger.error('Failed to create menu items during onboarding', itemsError, {
-                  categoryName,
-                  tenantId,
-                });
-              }
-            },
-          ),
+            if (itemsError) {
+              logger.error('Failed to create menu items during onboarding', itemsError, {
+                categoryName,
+                tenantId,
+              });
+            }
+          }),
         );
       })();
 
