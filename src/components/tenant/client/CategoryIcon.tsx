@@ -11,6 +11,7 @@ import {
   Wheat,
 } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
+import { getLucideIcon } from '@/lib/config/lucide-food-icons';
 
 export type CategoryIconKey =
   | 'starter'
@@ -26,7 +27,7 @@ export type CategoryIconKey =
   | 'pasta'
   | 'bakery';
 
-const MAP: Record<CategoryIconKey, React.ComponentType<LucideProps>> = {
+const LEGACY_MAP: Record<CategoryIconKey, React.ComponentType<LucideProps>> = {
   starter: Salad,
   main: UtensilsCrossed,
   side: Soup,
@@ -46,11 +47,13 @@ export function CategoryIcon({
   size = 28,
   className = '',
 }: {
-  name: CategoryIconKey;
+  name: string;
   size?: number;
   className?: string;
 }) {
-  const Cmp = MAP[name] ?? UtensilsCrossed;
+  const Cmp =
+    LEGACY_MAP[name as CategoryIconKey] ??
+    (getLucideIcon(name) as React.ComponentType<LucideProps>);
   return <Cmp width={size} height={size} strokeWidth={1.6} className={className} />;
 }
 
@@ -69,8 +72,10 @@ const CATEGORY_COLORS: Record<CategoryIconKey, { bg: string; fg: string }> = {
   bakery: { bg: 'oklch(0.97 0.02 50)', fg: 'oklch(0.42 0.10 50)' },
 };
 
-export function getCategoryColors(key: CategoryIconKey): { bg: string; fg: string } {
-  return CATEGORY_COLORS[key];
+const DEFAULT_COLORS = { bg: 'oklch(0.97 0.015 60)', fg: 'oklch(0.42 0.08 60)' };
+
+export function getCategoryColors(key: string): { bg: string; fg: string } {
+  return CATEGORY_COLORS[key as CategoryIconKey] ?? DEFAULT_COLORS;
 }
 
 export function deriveCategoryIconKey(categoryName: string): CategoryIconKey {

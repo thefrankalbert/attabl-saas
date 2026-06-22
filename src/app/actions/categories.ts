@@ -93,6 +93,7 @@ export async function actionToggleCategoryActive(
 interface CreateCategoryPayload {
   name: string;
   name_en?: string | null;
+  icon?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
@@ -135,6 +136,7 @@ export async function actionCreateCategory(
 interface UpdateCategoryPayload {
   name: string;
   name_en?: string | null;
+  icon?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
