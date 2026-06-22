@@ -1,0 +1,12 @@
+# pnpm 10+ reads dependency overrides from here, NOT from package.json's
+# "pnpm.overrides" (which newer pnpm, e.g. the CI "version: latest", ignores -
+# that mismatch made the frozen install in the Dependency Audit job fail).
+# Keep these in sync with any security pins.
+overrides:
+  dompurify: '>=3.3.2'
+  fast-uri: '>=3.1.2'
+  serialize-javascript: '>=7.0.3'
+  'minimatch@>=9.0.0 <9.0.7': '>=9.0.7'
+  'picomatch@<2.3.2': '>=2.3.2'
+  'picomatch@>=4.0.0 <4.0.4': '>=4.0.4'
+  'rollup@>=4.0.0 <4.59.0': '>=4.59.0'
