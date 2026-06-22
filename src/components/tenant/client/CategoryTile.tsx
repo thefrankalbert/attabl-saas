@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { CategoryIcon } from './CategoryIcon';
-import type { CategoryIconKey } from './CategoryIcon';
 
 export interface ClientCategory {
   id: string;
   label: string;
-  icon: CategoryIconKey;
+  icon: string;
   bgColor?: string;
   fgColor?: string;
 }

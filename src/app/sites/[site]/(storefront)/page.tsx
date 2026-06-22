@@ -47,7 +47,7 @@ export async function generateMetadata({
 }
 
 function toClientCategory(cat: Category): ClientCategory {
-  const iconKey = deriveCategoryIconKey(cat.name);
+  const iconKey = cat.icon ?? deriveCategoryIconKey(cat.name);
   const colors = getCategoryColors(iconKey);
   return {
     id: cat.id,
@@ -98,7 +98,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
       supabase
         .from('categories')
         .select(
-          'id, tenant_id, menu_id, name, name_en, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
+          'id, tenant_id, menu_id, name, name_en, icon, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
         )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)

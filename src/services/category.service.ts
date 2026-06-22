@@ -9,6 +9,7 @@ interface CreateCategoryInput {
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
   is_active?: boolean;
+  icon?: string | null;
   tenant_id: string;
   menu_id?: string | null;
 }
@@ -20,6 +21,7 @@ interface UpdateCategoryInput {
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
   is_active?: boolean;
+  icon?: string | null;
   tenant_id: string;
   menu_id?: string | null;
 }

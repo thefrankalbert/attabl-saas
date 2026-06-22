@@ -2498,7 +2498,8 @@
     "featuredOnHomeLimit": "Limite recommandée de {count} catégories atteinte. Au-delà, seules les {count} premières seront affichées.",
     "isActive": "Categorie active",
     "isActiveDesc": "Masquer cette categorie sur le menu client sans la supprimer.",
-    "categoryLinkedToMenu": "Cette categorie est liee a un menu et ne peut pas etre supprimee."
+    "categoryLinkedToMenu": "Cette categorie est liee a un menu et ne peut pas etre supprimee.",
+    "icon": "Icone"
   },
   "items": {
     "title": "Plats & Articles",

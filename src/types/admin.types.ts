@@ -195,6 +195,7 @@ export interface Category {
   is_active?: boolean;
   is_featured_on_home?: boolean;
   preparation_zone?: PreparationZone;
+  icon?: string | null;
   created_at: string;
 }
 
