@@ -134,7 +134,8 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       serviceChargeRate: tenant.service_charge_rate ?? 0,
       enableCoupons: tenant.enable_coupons ?? false,
       barDisplayEnabled: tenant.bar_display_enabled ?? false,
-      idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
+      // null = idle lock disabled; preserve it instead of silently re-enabling
+      idleTimeoutMinutes: tenant.idle_timeout_minutes ?? null,
       screenLockMode: tenant.screen_lock_mode ?? 'overlay',
     },
   });
@@ -250,7 +251,8 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('logoUrl', data.logo_url ?? '');
       formData.append('notificationSoundId', selectedSoundId);
       formData.append('establishmentType', data.establishmentType || 'restaurant');
-      formData.append('tableCount', String(data.tableCount ?? 10));
+      // tableCount is not editable from Settings (no control), so it is not sent
+      // here - the partial-PATCH action leaves the stored value untouched.
       // Billing fields - reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       if (data.supportedCurrencies) {

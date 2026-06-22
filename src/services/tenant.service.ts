@@ -3,10 +3,10 @@ import { ServiceError } from './errors';
 import type { CurrencyCode } from '@/types/admin.types';
 
 interface TenantSettings {
-  name: string;
+  name?: string;
   description?: string;
-  primaryColor: string;
-  secondaryColor: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   address?: string;
   city?: string;
   country?: string;
@@ -49,8 +49,8 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
      * Maps camelCase input to snake_case database columns.
      */
     async updateSettings(tenantId: string, settings: TenantSettings): Promise<void> {
-      // Validate hex color format
-      const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+      // Validate hex color format (3- or 6-digit, matching the Zod schema).
+      const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
       if (settings.primaryColor && !hexColorRegex.test(settings.primaryColor)) {
         throw new ServiceError('Format de couleur invalide', 'VALIDATION');
       }
@@ -61,13 +61,13 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
       // Partial PATCH: only columns whose value was actually provided are
       // written. A field left `undefined` (absent from the submitted form) is
       // NOT touched, so a partial save - e.g. the custom-domain quick-save that
-      // only sends name/colors/domain - can never reset unrelated settings
-      // (currency, taxes, KDS...) to their defaults.
+      // only sends the domain - can never reset unrelated settings (name,
+      // colors, currency, taxes, KDS...) to their defaults.
       const update: Record<string, unknown> = {
-        name: settings.name,
-        primary_color: settings.primaryColor,
-        secondary_color: settings.secondaryColor,
         updated_at: new Date().toISOString(),
+        ...(settings.name !== undefined && { name: settings.name }),
+        ...(settings.primaryColor !== undefined && { primary_color: settings.primaryColor }),
+        ...(settings.secondaryColor !== undefined && { secondary_color: settings.secondaryColor }),
         ...(settings.description !== undefined && { description: settings.description || null }),
         ...(settings.address !== undefined && { address: settings.address || null }),
         ...(settings.city !== undefined && { city: settings.city || null }),

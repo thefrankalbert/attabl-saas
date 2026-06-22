@@ -64,6 +64,8 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
           table_count: tenant.table_count,
           notification_sound_id: tenant.notification_sound_id,
           currency: tenant.currency,
+          supported_currencies: tenant.supported_currencies,
+          custom_domain: tenant.custom_domain,
           enable_tax: tenant.enable_tax,
           tax_rate: tenant.tax_rate,
           enable_service_charge: tenant.enable_service_charge,

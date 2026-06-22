@@ -28,9 +28,9 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     // settings. Only `name` + the two colors are always sent by every save path.
     const str = (key: string) => formData.get(key) as string;
     const rawData = {
-      name: str('name'),
-      primaryColor: str('primaryColor'),
-      secondaryColor: str('secondaryColor'),
+      name: formData.has('name') ? str('name') : undefined,
+      primaryColor: formData.has('primaryColor') ? str('primaryColor') : undefined,
+      secondaryColor: formData.has('secondaryColor') ? str('secondaryColor') : undefined,
       description: formData.has('description') ? str('description') : undefined,
       address: formData.has('address') ? str('address') : undefined,
       city: formData.has('city') ? str('city') : undefined,

@@ -58,6 +58,20 @@ describe('tenant.service updateSettings (partial PATCH)', () => {
     expect(payload).toHaveProperty('idle_timeout_minutes', null);
   });
 
+  it('writes only custom_domain on a domain-only quick-save (no name/colors)', async () => {
+    const { client, update } = mockSupabase();
+
+    await createTenantService(client).updateSettings('tenant-1', {
+      customDomain: 'shop.example.com',
+    });
+
+    const payload = update.mock.calls[0]![0] as Record<string, unknown>;
+    expect(Object.keys(payload).sort()).toEqual(['custom_domain', 'updated_at'].sort());
+    expect(payload).not.toHaveProperty('name');
+    expect(payload).not.toHaveProperty('primary_color');
+    expect(payload.custom_domain).toBe('shop.example.com');
+  });
+
   it('skips idle_timeout_minutes entirely when it is undefined', async () => {
     const { client, update } = mockSupabase();
 
