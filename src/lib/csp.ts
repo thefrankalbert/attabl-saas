@@ -18,7 +18,7 @@ export function buildCspHeader(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net https://images.unsplash.com",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io https://api.exchangerate-api.com",
     'frame-src https://*.stripe.com https://challenges.cloudflare.com',
     "worker-src 'self' blob:",
     "manifest-src 'self'",

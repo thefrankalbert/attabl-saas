@@ -9,7 +9,8 @@ import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
-import type { CurrencyCode } from '@/types/admin.types';
+import { openingHoursSchema } from '@/lib/validations/tenant.schema';
+import type { CurrencyCode, OpeningHoursMap } from '@/types/admin.types';
 import type { UseFormReturn, FieldErrors } from 'react-hook-form';
 
 // ─── Schema ────────────────────────────────────────────────
@@ -44,6 +45,8 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     // Idle timeout
     idleTimeoutMinutes: z.number().int().min(5).max(120).nullable().optional(),
     screenLockMode: z.enum(['overlay', 'password']).optional(),
+    // Opening hours
+    openingHours: openingHoursSchema.optional(),
   });
 }
 
@@ -76,6 +79,7 @@ export interface SettingsTenant {
   bar_display_enabled?: boolean;
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
+  opening_hours?: OpeningHoursMap | null;
   custom_domain?: string | null;
 }
 
@@ -134,8 +138,10 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       serviceChargeRate: tenant.service_charge_rate ?? 0,
       enableCoupons: tenant.enable_coupons ?? false,
       barDisplayEnabled: tenant.bar_display_enabled ?? false,
-      idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
+      // null = idle lock disabled; preserve it instead of silently re-enabling
+      idleTimeoutMinutes: tenant.idle_timeout_minutes ?? null,
       screenLockMode: tenant.screen_lock_mode ?? 'overlay',
+      openingHours: tenant.opening_hours ?? {},
     },
   });
 
@@ -245,10 +251,13 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('city', data.city || '');
       formData.append('country', data.country || '');
       formData.append('phone', data.phone || '');
-      if (data.logo_url) formData.append('logoUrl', data.logo_url);
+      // Always sent (even empty) so a full save can clear the logo; the service
+      // only skips fields that are entirely absent from the FormData.
+      formData.append('logoUrl', data.logo_url ?? '');
       formData.append('notificationSoundId', selectedSoundId);
       formData.append('establishmentType', data.establishmentType || 'restaurant');
-      formData.append('tableCount', String(data.tableCount ?? 10));
+      // tableCount is not editable from Settings (no control), so it is not sent
+      // here - the partial-PATCH action leaves the stored value untouched.
       // Billing fields - reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       if (data.supportedCurrencies) {
@@ -264,11 +273,15 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('enableCoupons', data.enableCoupons ? 'true' : 'false');
       // KDS
       formData.append('barDisplayEnabled', data.barDisplayEnabled ? 'true' : 'false');
-      // Idle timeout
-      if (data.idleTimeoutMinutes !== null && data.idleTimeoutMinutes !== undefined) {
-        formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
-      }
+      // Idle timeout - empty string means "disabled" (null); always sent so a
+      // full save persists the disabled state instead of leaving it untouched.
+      formData.append(
+        'idleTimeoutMinutes',
+        data.idleTimeoutMinutes == null ? '' : String(data.idleTimeoutMinutes),
+      );
       formData.append('screenLockMode', data.screenLockMode || 'overlay');
+      // Opening hours (always sent on a full settings save)
+      formData.append('openingHours', JSON.stringify(data.openingHours ?? {}));
 
       const result = await actionUpdateTenantSettings(formData);
 

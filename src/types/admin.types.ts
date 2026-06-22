@@ -66,6 +66,8 @@ export interface Tenant {
   bar_display_enabled?: boolean;
   // ─── Opening hours ─────────────────────────────────────
   opening_hours?: OpeningHoursMap | null;
+  // ─── Custom domain ─────────────────────────────────────
+  custom_domain?: string | null;
   // ─── Payment methods ───────────────────────────────────
   enabled_payment_methods?: string[];
   // ─── Behavioral tracking ───────────────────────────────
