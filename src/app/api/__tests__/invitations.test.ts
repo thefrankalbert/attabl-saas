@@ -38,6 +38,12 @@ vi.mock('@/lib/cache-headers', () => ({
   jsonWithCache: vi.fn().mockImplementation((data: unknown) => Response.json(data)),
 }));
 
+vi.mock('next/headers', () => ({
+  headers: vi.fn().mockResolvedValue({
+    get: (key: string) => (key === 'x-tenant-slug' ? 'test' : null),
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
@@ -102,16 +108,17 @@ function createMockSupabase(overrides?: {
   const user = overrides?.authUser ?? { id: 'user-1', email: 'admin@test.com' };
   const adminUser = overrides?.adminUser ?? { tenant_id: 'tenant-1', role: 'owner' };
 
-  const result = { data: adminUser, error: adminUser ? null : { message: 'Not found' } };
-  const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
+  // The route resolves the tenant from x-tenant-slug (tenants.single), then verifies
+  // membership (admin_users.maybeSingle). Mock both table lookups.
+  const makeChain = (single: unknown, maybe: unknown): Record<string, ReturnType<typeof vi.fn>> => {
     const c: Record<string, ReturnType<typeof vi.fn>> = {};
-    c.single = vi.fn().mockResolvedValue(result);
+    c.single = vi.fn().mockResolvedValue(single);
+    c.maybeSingle = vi.fn().mockResolvedValue(maybe);
     c.eq = vi.fn().mockImplementation(() => c);
     c.in = vi.fn().mockImplementation(() => c);
     c.neq = vi.fn().mockImplementation(() => c);
     return c;
   };
-  const adminSelect = vi.fn().mockImplementation(() => chain());
 
   return {
     auth: {
@@ -120,7 +127,16 @@ function createMockSupabase(overrides?: {
         error: null,
       }),
     },
-    from: vi.fn().mockReturnValue({ select: adminSelect }),
+    from: vi.fn().mockImplementation((table: string) => {
+      if (table === 'tenants') {
+        const tenantResult = { data: { id: adminUser?.tenant_id ?? 'tenant-1' }, error: null };
+        return { select: vi.fn().mockImplementation(() => makeChain(tenantResult, tenantResult)) };
+      }
+      // admin_users membership check (role only)
+      const role = adminUser ? { role: adminUser.role } : null;
+      const result = { data: role, error: role ? null : { message: 'Not found' } };
+      return { select: vi.fn().mockImplementation(() => makeChain(result, result)) };
+    }),
   };
 }
 

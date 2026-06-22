@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
@@ -35,20 +36,36 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
       }
 
-      // Derive tenant_id from the authenticated user's session
+      // Scope to the tenant being managed (middleware-injected header), then verify
+      // membership. Deriving the tenant from admin_users by user_id alone breaks for
+      // multi-tenant owners (>1 row -> .single() returns null -> false 403).
+      const headersList = await headers();
+      const tenantSlug = headersList.get('x-tenant-slug');
+      if (!tenantSlug) {
+        return NextResponse.json({ error: 'Tenant non identifie' }, { status: 400 });
+      }
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', tenantSlug)
+        .single();
+      if (!tenant) {
+        return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
+      }
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('tenant_id, role')
+        .select('role')
         .eq('user_id', user.id)
+        .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .in('role', ['owner', 'admin'])
-        .single();
+        .maybeSingle();
 
       if (!adminUser) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
-      const tenantId = adminUser.tenant_id;
+      const tenantId = tenant.id;
 
       const adminClient = createAdminClient();
       const service = createInvitationService(adminClient);
@@ -120,14 +137,30 @@ export async function POST(request: Request) {
         );
       }
 
-      // Derive tenant_id from the authenticated user's session - never from client input
+      // Scope to the tenant being managed (middleware-injected header), then verify
+      // membership. Never derive the tenant from admin_users by user_id alone - it
+      // breaks for multi-tenant owners and is ambiguous about which tenant to invite to.
+      const headersList = await headers();
+      const tenantSlug = headersList.get('x-tenant-slug');
+      if (!tenantSlug) {
+        return NextResponse.json({ error: 'Tenant non identifie' }, { status: 400 });
+      }
+      const { data: currentTenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', tenantSlug)
+        .single();
+      if (!currentTenant) {
+        return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
+      }
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('tenant_id, role')
+        .select('role')
         .eq('user_id', user.id)
+        .eq('tenant_id', currentTenant.id)
         .eq('is_active', true)
         .in('role', ['owner', 'admin'])
-        .single();
+        .maybeSingle();
 
       if (!adminUser) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
@@ -141,7 +174,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
-      const tenantId = adminUser.tenant_id;
+      const tenantId = currentTenant.id;
 
       const adminClient = createAdminClient();
 
