@@ -290,7 +290,8 @@ export function createSignupService(supabase: SupabaseClient) {
         .select('tenant_id, tenants(slug)')
         .eq('user_id', input.userId)
         .eq('is_active', true)
-        .order('id', { ascending: false })
+        // Most recent tenant (deterministic). The uuid primary key is not ordered by time.
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -319,7 +320,8 @@ export function createSignupService(supabase: SupabaseClient) {
           .from('tenants')
           .select('id, slug')
           .eq('group_id', existingGroup.id)
-          .order('id', { ascending: false })
+          // Most recent tenant (deterministic). The uuid primary key is not ordered by time.
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
