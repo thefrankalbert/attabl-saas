@@ -50,7 +50,16 @@ jobs:
         with:
           version: latest
       - name: Show pending migrations (read-only, no apply)
-        run: supabase migration list --db-url "${{ secrets.STAGING_DB_URL }}"
+        env:
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          if [ -z "$STAGING_DB_URL" ]; then
+            echo "STAGING_DB_URL not configured yet - skipping migration dry-run."
+            echo "Create a staging Supabase project + set the repo secret to enable"
+            echo "this gate (see docs/DATABASE-MIGRATIONS.md)."
+            exit 0
+          fi
+          supabase migration list --db-url "$STAGING_DB_URL"
 
   staging:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -62,7 +71,16 @@ jobs:
         with:
           version: latest
       - name: Apply migrations to staging
-        run: supabase db push --db-url "${{ secrets.STAGING_DB_URL }}"
+        env:
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          if [ -z "$STAGING_DB_URL" ]; then
+            echo "STAGING_DB_URL not configured yet - skipping staging apply."
+            echo "Create a staging Supabase project + set the repo secret to enable"
+            echo "this step (see docs/DATABASE-MIGRATIONS.md)."
+            exit 0
+          fi
+          supabase db push --db-url "$STAGING_DB_URL"
 
   production:
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'production')
