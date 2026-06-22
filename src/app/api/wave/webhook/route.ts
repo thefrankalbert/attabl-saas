@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     if (orderId) {
       const { data: order } = await supabase
         .from('orders')
-        .select('id, tenant_id, payment_status, payment_method, wave_checkout_id')
+        .select('id, tenant_id, total, payment_status, payment_method, wave_checkout_id')
         .eq('id', orderId)
         .single();
 
@@ -73,6 +73,35 @@ export async function POST(request: Request) {
           orderId,
           eventId,
           actualMethod: order.payment_method,
+        });
+        return NextResponse.json({ received: true });
+      }
+
+      // Bind the event to the checkout session we created for this order, so a
+      // (validly signed) completion event for a different session cannot mark
+      // this order paid.
+      const sessionId = data.id as string | undefined;
+      const storedCheckoutId = order.wave_checkout_id as string | null;
+      if (storedCheckoutId && sessionId !== storedCheckoutId) {
+        logger.warn('Wave webhook: checkout session mismatch', {
+          orderId,
+          eventId,
+          actualSession: sessionId,
+        });
+        return NextResponse.json({ received: true });
+      }
+
+      // Payment-integrity: the paid amount must match what was owed, otherwise
+      // an underpaid/overpaid session must not flip the order to paid (parity
+      // with the Orange Money callback amount check).
+      const paidAmount = Math.round(parseFloat((data.amount as string | undefined) ?? 'NaN'));
+      const orderTotal = Math.round(Number(order.total));
+      if (!Number.isFinite(paidAmount) || paidAmount !== orderTotal) {
+        logger.warn('Wave webhook: amount mismatch', {
+          orderId,
+          eventId,
+          expected: orderTotal,
+          received: paidAmount,
         });
         return NextResponse.json({ received: true });
       }
