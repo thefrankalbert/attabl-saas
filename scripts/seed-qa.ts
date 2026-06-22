@@ -11,7 +11,7 @@
  *     pnpm db:migrate   (or: supabase db push)
  *
  * This script uses the Supabase admin client (service_role key) to bypass RLS.
- * It is idempotent: if the tenant "lepicurien" exists, everything is wiped and re-seeded.
+ * It is idempotent: if the tenant "attabl-qa" exists, everything is wiped and re-seeded.
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -24,7 +24,6 @@ function loadEnv(): Record<string, string> {
   const candidates = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(__dirname, '..', '.env.local'),
-    path.resolve('/Users/a.g.i.c/Documents/attabl-saas-landing-copy/.env.local'),
   ];
 
   for (const envPath of candidates) {
@@ -265,15 +264,15 @@ interface StaffMember {
 
 const STAFF: StaffMember[] = [
   {
-    email: 'hellofrankalbert@gmail.com',
+    email: 'owner@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Frank Albert',
     role: 'owner',
     phone: '+235 66 00 00 00',
-    isSuperAdmin: true,
+    isSuperAdmin: false,
   },
   {
-    email: 'chef@lepicurien.com',
+    email: 'chef@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Chef Marco Rossi',
     role: 'chef',
@@ -281,7 +280,7 @@ const STAFF: StaffMember[] = [
     isSuperAdmin: false,
   },
   {
-    email: 'manager@lepicurien.com',
+    email: 'manager@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Sophie Dubois',
     role: 'manager',
@@ -289,7 +288,7 @@ const STAFF: StaffMember[] = [
     isSuperAdmin: false,
   },
   {
-    email: 'caisse@lepicurien.com',
+    email: 'caisse@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Amadou Toure',
     role: 'cashier',
@@ -297,7 +296,7 @@ const STAFF: StaffMember[] = [
     isSuperAdmin: false,
   },
   {
-    email: 'serveur1@lepicurien.com',
+    email: 'serveur1@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Ibrahim Mahamat',
     role: 'waiter',
@@ -305,7 +304,7 @@ const STAFF: StaffMember[] = [
     isSuperAdmin: false,
   },
   {
-    email: 'serveur2@lepicurien.com',
+    email: 'serveur2@attabl-qa.test',
     password: 'Demo2024!',
     fullName: 'Fatima Abdoulaye',
     role: 'waiter',
@@ -350,13 +349,13 @@ function dateAtHour(base: Date, hour: number, minuteMin = 0, minuteMax = 59): Da
 // ─── CLEAN UP ──────────────────────────────────────────────────────────────
 
 async function cleanup() {
-  logStep(0, 'Cleanup existing "lepicurien" data');
+  logStep(0, 'Cleanup existing "attabl-qa" data');
 
   // Check if tenant exists
   const { data: existing } = await supabase
     .from('tenants')
     .select('id')
-    .eq('slug', 'lepicurien')
+    .eq('slug', 'attabl-qa')
     .single();
 
   // Always clean up auth users (they may exist even if tenant was deleted)
@@ -430,10 +429,10 @@ async function createTenant() {
   // Base tenant fields (always present)
   const tenantData: Record<string, unknown> = {
     id: ID.tenant,
-    name: "L'Epicurien",
-    slug: 'lepicurien',
+    name: 'ATTABL QA',
+    slug: 'attabl-qa',
     secondary_color: '#CCFF00',
-    subscription_plan: 'premium',
+    subscription_plan: 'business',
     subscription_status: 'active',
     onboarding_completed: true,
     establishment_type: 'restaurant',
@@ -476,7 +475,7 @@ async function createUsers() {
       email_confirm: true,
       user_metadata: {
         full_name: staff.fullName,
-        restaurant_name: "L'Epicurien",
+        restaurant_name: 'ATTABL QA',
       },
     });
 
@@ -1548,7 +1547,14 @@ async function createHistoricalOrders() {
     'takeaway',
     'delivery',
   ];
-  const paymentMethods: Array<'cash' | 'card' | 'wave'> = ['cash', 'card', 'card', 'wave'];
+  // Constraint orders_payment_method_check (current schema) allows:
+  // cash, card, wave, orange_money, mtn_momo, free_money (NOT mobile_money).
+  const paymentMethods: Array<'cash' | 'card' | 'wave' | 'orange_money'> = [
+    'cash',
+    'card',
+    'wave',
+    'orange_money',
+  ];
 
   const today = new Date();
   const allOrders: Array<Record<string, unknown>> = [];
@@ -1859,7 +1865,7 @@ function printSummary() {
   console.log("  SEED COMPLETE: L'Epicurien Demo Data");
   console.log('='.repeat(60));
   console.log(`
-  Tenant:         L'Epicurien (lepicurien)
+  Tenant:         L'Epicurien (attabl-qa)
   Tenant ID:      ${ID.tenant}
   Venue:          Salle Principale
 
@@ -1877,15 +1883,15 @@ function printSummary() {
   Orders:         ~310 (300 historical + 10 live)
 
   Login Credentials:
-    Owner:    hellofrankalbert@gmail.com / Demo2024!
-    Chef:     chef@lepicurien.com / Demo2024!
-    Manager:  manager@lepicurien.com / Demo2024!
-    Cashier:  caisse@lepicurien.com / Demo2024!
-    Waiter1:  serveur1@lepicurien.com / Demo2024!
-    Waiter2:  serveur2@lepicurien.com / Demo2024!
+    Owner:    owner@attabl-qa.test / Demo2024!
+    Chef:     chef@attabl-qa.test / Demo2024!
+    Manager:  manager@attabl-qa.test / Demo2024!
+    Cashier:  caisse@attabl-qa.test / Demo2024!
+    Waiter1:  serveur1@attabl-qa.test / Demo2024!
+    Waiter2:  serveur2@attabl-qa.test / Demo2024!
 
-  URL (dev):  http://lepicurien.localhost:3000
-  URL (prod): https://lepicurien.attabl.com
+  URL (dev):  http://attabl-qa.localhost:3000
+  URL (prod): https://attabl-qa.attabl.com
 `);
   console.log('='.repeat(60));
 }

@@ -39,12 +39,17 @@ function getAudioContext(): AudioContext | null {
  * "Unlock" the AudioContext and HTML5 Audio on first user gesture.
  * Browsers require a user interaction before audio can play.
  */
-function unlockAudioOnUserGesture(): void {
-  if (audioContextUnlocked) return;
+function unlockAudioOnUserGesture(): () => void {
+  if (audioContextUnlocked) return () => {};
+
+  const events = ['click', 'touchstart', 'keydown'] as const;
 
   const unlock = () => {
     if (audioContextUnlocked) return;
     audioContextUnlocked = true;
+    // Stop listening as soon as we are unlocked so the global listeners do not
+    // linger for the document lifetime (or stack on a SoundProvider remount).
+    events.forEach((evt) => document.removeEventListener(evt, unlock));
 
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') {
@@ -72,10 +77,14 @@ function unlockAudioOnUserGesture(): void {
     });
   };
 
-  const events = ['click', 'touchstart', 'keydown'] as const;
   events.forEach((evt) => {
     document.addEventListener(evt, unlock, { once: false, passive: true });
   });
+
+  // Teardown for the caller's effect cleanup (covers unmount before any gesture).
+  return () => {
+    events.forEach((evt) => document.removeEventListener(evt, unlock));
+  };
 }
 
 /**
@@ -179,10 +188,8 @@ export function SoundProvider({ children, notificationSoundId, tenantId }: Sound
     currentSoundIdRef.current = currentSoundId;
   }, [currentSoundId]);
 
-  // Register the audio unlock listener once on mount
-  useEffect(() => {
-    unlockAudioOnUserGesture();
-  }, []);
+  // Register the audio unlock listener once on mount; tear it down on unmount.
+  useEffect(() => unlockAudioOnUserGesture(), []);
 
   // Sync soundId from props (e.g., when tenant settings change)
   useEffect(() => {

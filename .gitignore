@@ -41,6 +41,7 @@ yarn-error.log*
 .env*
 !.env.local.example
 !.env.example
+!.env.staging.example
 
 # vercel
 .vercel
@@ -65,3 +66,7 @@ public/swe-worker-*.js
 /build_*.log
 /ci_*.log
 /test_*.log
+
+# DB migration backups (local/CI artifacts, never commit). The real .env.staging
+# is already covered by the .env* rule above; .env.staging.example is un-ignored.
+supabase/backups/
