@@ -6,7 +6,7 @@ import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { acceptInvitationSchema } from '@/lib/validations/invitation.schema';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
 
 export async function POST(request: Request) {
@@ -48,7 +48,12 @@ export async function POST(request: Request) {
 
     if (tenant) {
       const enforcement = createPlanEnforcementService(adminClient);
-      await enforcement.canAddAdmin(tenant as Tenant);
+      // Staff roles count against maxStaff; admin/owner count against maxAdmins
+      if ((STAFF_ROLES as readonly string[]).includes(invitation.role)) {
+        await enforcement.canAddStaff(tenant as Tenant);
+      } else {
+        await enforcement.canAddAdmin(tenant as Tenant);
+      }
     }
 
     const { tenantSlug } = await service.acceptInvitation({

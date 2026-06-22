@@ -9,6 +9,7 @@ import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
+import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
@@ -255,15 +256,13 @@ export async function POST(request: Request) {
 
         const eventKey = determineOrderEventKey({ ordersCount, activationEvents });
         if (eventKey) {
-          const now = new Date().toISOString();
-          // Atomically claim the event slot - only update if key doesn't exist yet
-          const { data: claimed } = await adminSupabase
-            .from('tenants')
-            .update({ activation_events: { ...activationEvents, [eventKey]: now } })
-            .eq('id', tenantId)
-            .filter(`activation_events->>${eventKey}`, 'is', null)
-            .select('id');
-          if (claimed?.length) {
+          // Atomically claim the event slot server-side - merges into the live row
+          // (no stale snapshot), so a concurrent writer's key is never clobbered.
+          const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
+            p_tenant_id: tenantId,
+            p_event_key: eventKey,
+          });
+          if (claimed) {
             await sendOrderEmailForKey(eventKey, { adminEmail, restaurantName, dashboardUrl });
           }
         }
@@ -293,6 +292,39 @@ export async function POST(request: Request) {
         }
       });
     }
+
+    // 12. Monthly order quota check (NON-blocking - never rejects an order).
+    // Scheduled via after() so it survives serverless freeze, like the blocks above.
+    // Warns admins once per month when the plan's monthly order quota is exceeded.
+    after(async () => {
+      try {
+        const now = new Date();
+        const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const enforcement = createPlanEnforcementService(adminSupabase);
+        const usage = await enforcement.getMonthlyOrderUsage(tenant, monthStart);
+        if (!usage.exceeded) return;
+
+        const monthKey = `monthly_quota_exceeded_${now.getUTCFullYear()}_${now.getUTCMonth() + 1}`;
+        // Atomically claim the monthly slot server-side - merges into the live row,
+        // so a concurrent writer's key is never clobbered. Notify once per month.
+        const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
+          p_tenant_id: tenantId,
+          p_event_key: monthKey,
+        });
+        if (claimed) {
+          await adminSupabase.from('notifications').insert({
+            tenant_id: tenantId,
+            user_id: null,
+            type: 'warning',
+            title: 'Quota de commandes mensuel atteint',
+            body: `Votre plan inclut ${usage.limit} commandes par mois. Passez au plan superieur pour lever cette limite.`,
+            link: `/admin/subscription`,
+          });
+        }
+      } catch (quotaErr) {
+        logger.warn('Monthly quota check failed (non-blocking)', { err: quotaErr });
+      }
+    });
 
     return NextResponse.json({
       success: true,

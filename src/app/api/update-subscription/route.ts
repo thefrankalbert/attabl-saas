@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe/server';
+import { stripe, getStripePriceId } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
@@ -34,21 +34,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
     }
 
-    // 2. Derive tenant from session and verify owner/admin role
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select('tenant_id, role, tenants(stripe_subscription_id)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
+    // 2. Resolve the ACTIVE tenant from the middleware-injected slug (multi-tenant safe),
+    //    then verify the user is an owner/admin of THAT tenant.
+    const tenantSlug = request.headers.get('x-tenant-slug');
+    if (!tenantSlug) {
+      return NextResponse.json({ error: 'Contexte tenant manquant' }, { status: 400 });
+    }
+
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('id, stripe_subscription_id')
+      .eq('slug', tenantSlug)
       .maybeSingle();
 
-    if (adminUserError || !adminUser?.tenant_id) {
-      logger.error('Update subscription: tenant not found', adminUserError, { userId: user.id });
-      return NextResponse.json(
-        { error: 'Tenant non trouve pour cet utilisateur' },
-        { status: 404 },
-      );
+    if (tenantError || !tenant) {
+      logger.error('Update subscription: tenant not found', tenantError, { tenantSlug });
+      return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
+    }
+
+    const { data: adminUser, error: adminUserError } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (adminUserError || !adminUser) {
+      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
     if (adminUser.role !== 'owner' && adminUser.role !== 'admin') {
@@ -58,12 +71,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Supabase join type gap
-    const tenantData = adminUser.tenants as unknown as {
-      stripe_subscription_id: string | null;
-    } | null;
-
-    if (!tenantData?.stripe_subscription_id) {
+    if (!tenant.stripe_subscription_id) {
       return NextResponse.json(
         { error: 'Aucun abonnement actif. Creez un abonnement via le checkout.' },
         { status: 400 },
@@ -84,10 +92,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const { priceId } = parseResult.data;
+    const { plan, billingInterval } = parseResult.data;
 
-    // 4. Retrieve current subscription and update with proration
-    const subscriptionId = tenantData.stripe_subscription_id;
+    // 4. Resolve the Stripe price ID server-side (single source of truth)
+    let priceId: string;
+    try {
+      priceId = getStripePriceId(plan, billingInterval);
+    } catch (configError) {
+      logger.error('Update subscription: missing Stripe price configuration', configError, {
+        plan,
+        billingInterval,
+      });
+      return NextResponse.json(
+        { error: 'Configuration de facturation manquante' },
+        { status: 500 },
+      );
+    }
+
+    // 5. Retrieve current subscription and update with proration
+    const subscriptionId = tenant.stripe_subscription_id;
     const subscription = await withStripeBreaker(() =>
       stripe.subscriptions.retrieve(subscriptionId),
     );
@@ -102,7 +125,7 @@ export async function POST(request: Request) {
     const existingItem = subscription.items.data[0];
     if (!existingItem) {
       logger.error('Update subscription: no items found', undefined, {
-        subscriptionId: tenantData.stripe_subscription_id,
+        subscriptionId,
       });
       return NextResponse.json(
         { error: "Erreur de configuration de l'abonnement" },
@@ -125,7 +148,7 @@ export async function POST(request: Request) {
     logger.info('Subscription updated successfully', {
       subscriptionId: updatedSubscription.id,
       newPriceId: priceId,
-      tenantId: adminUser.tenant_id,
+      tenantId: tenant.id,
     });
 
     return NextResponse.json({

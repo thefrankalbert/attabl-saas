@@ -32,7 +32,9 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
     supabase.auth.getUser(),
     supabase
       .from('tenants')
-      .select('subscription_current_period_end, billing_interval, stripe_customer_id')
+      .select(
+        'subscription_current_period_end, billing_interval, stripe_customer_id, stripe_subscription_id',
+      )
       .eq('id', tenant.id)
       .single(),
   ]);
@@ -41,6 +43,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
     email: user?.email,
     subscription_current_period_end: billingInfo?.subscription_current_period_end ?? null,
     billing_interval: billingInfo?.billing_interval ?? null,
+    stripe_subscription_id: billingInfo?.stripe_subscription_id ?? null,
   };
 
   return (

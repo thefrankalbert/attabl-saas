@@ -134,8 +134,9 @@ export default function OrdersClient({
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
-  const { plan } = useSubscription();
-  const isPremium = plan === 'pro' || plan === 'business' || plan === 'enterprise';
+  const { effectivePlan } = useSubscription();
+  const isPremium =
+    effectivePlan === 'pro' || effectivePlan === 'business' || effectivePlan === 'enterprise';
 
   const handleSoundPointerDown = useCallback(() => {
     longPressTriggered.current = false;

@@ -25,9 +25,13 @@ export const verifyCheckoutQuerySchema = z.object({
 });
 
 /**
- * Schema for updating an existing subscription (plan change).
+ * Schema for updating an existing subscription (plan change / migration).
+ * The price ID is resolved server-side from plan + interval (single source of truth).
  * Used in /api/update-subscription route.
  */
 export const updateSubscriptionSchema = z.object({
-  priceId: z.string().min(1, 'Price ID requis').startsWith('price_', 'Price ID invalide'),
+  plan: z.enum(['starter', 'pro', 'business'], {
+    error: 'Plan invalide. Choisissez starter, pro ou business.',
+  }),
+  billingInterval: z.enum(['monthly', 'semiannual', 'yearly']).optional().default('monthly'),
 });

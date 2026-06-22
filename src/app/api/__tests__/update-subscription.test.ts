@@ -20,6 +20,7 @@ vi.mock('@/lib/stripe/server', () => ({
       update: vi.fn(),
     },
   },
+  getStripePriceId: vi.fn().mockReturnValue('price_pro_yearly'),
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -33,22 +34,19 @@ vi.mock('@/lib/logger', () => ({
 import { POST } from '../update-subscription/route';
 import { checkoutLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
-import { stripe } from '@/lib/stripe/server';
+import { stripe, getStripePriceId } from '@/lib/stripe/server';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface AdminUserRow {
-  tenant_id: string;
-  role: string;
-  tenants: { stripe_subscription_id: string | null } | null;
-}
-
-interface MockSingleResult {
-  data: AdminUserRow | null;
+interface MockResult<T> {
+  data: T | null;
   error: { message: string } | null;
 }
+
+type TenantRow = { id: string; stripe_subscription_id: string | null };
+type AdminRow = { role: string };
 
 interface MockSupabaseClient {
   auth: { getUser: ReturnType<typeof vi.fn> };
@@ -59,17 +57,24 @@ interface MockSupabaseClient {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildRequest(body?: unknown, options?: { malformed?: boolean }): Request {
+function buildRequest(
+  body?: unknown,
+  options?: { malformed?: boolean; omitTenantSlug?: boolean },
+): Request {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (!options?.omitTenantSlug) {
+    headers['x-tenant-slug'] = 'blutable';
+  }
   if (options?.malformed) {
     return new Request('http://localhost:3000/api/update-subscription', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: 'not-valid-json{{{',
     });
   }
   return new Request('http://localhost:3000/api/update-subscription', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
 }
@@ -92,28 +97,34 @@ function mockRateLimitBlocked(): void {
   });
 }
 
+/**
+ * Builds a chainable mock: select().eq()...().maybeSingle() resolves to result.
+ */
+function chain<T>(result: MockResult<T>) {
+  const obj: Record<string, unknown> = {};
+  obj.select = vi.fn(() => obj);
+  obj.eq = vi.fn(() => obj);
+  obj.maybeSingle = vi.fn(() => Promise.resolve(result));
+  return obj;
+}
+
 function createMockSupabase(overrides?: {
   authUser?: { id: string; email: string } | null;
   authError?: { message: string } | null;
-  adminUser?: MockSingleResult;
+  tenant?: MockResult<TenantRow>;
+  adminUser?: MockResult<AdminRow>;
 }): MockSupabaseClient {
   const user = overrides?.authUser ?? { id: 'user-1', email: 'owner@restaurant.com' };
   const authError = overrides?.authError ?? null;
 
-  const adminUserResult: MockSingleResult = overrides?.adminUser ?? {
-    data: {
-      tenant_id: 'tenant-abc',
-      role: 'owner',
-      tenants: { stripe_subscription_id: 'sub_test_123' },
-    },
+  const tenantResult: MockResult<TenantRow> = overrides?.tenant ?? {
+    data: { id: 'tenant-abc', stripe_subscription_id: 'sub_test_123' },
     error: null,
   };
-
-  const mockMaybeSingle = vi.fn().mockResolvedValue(adminUserResult);
-  const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-  const mockOrder = vi.fn().mockReturnValue({ limit: mockLimit });
-  const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+  const adminResult: MockResult<AdminRow> = overrides?.adminUser ?? {
+    data: { role: 'owner' },
+    error: null,
+  };
 
   return {
     auth: {
@@ -122,7 +133,10 @@ function createMockSupabase(overrides?: {
         error: authError,
       }),
     },
-    from: vi.fn().mockReturnValue({ select: mockSelect }),
+    from: vi.fn((table: string) => {
+      if (table === 'tenants') return chain(tenantResult);
+      return chain(adminResult);
+    }),
   };
 }
 
@@ -147,12 +161,13 @@ function mockActiveSubscription(): void {
 describe('POST /api/update-subscription', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getStripePriceId).mockReturnValue('price_pro_yearly');
   });
 
   it('returns 429 when rate limited', async () => {
     mockRateLimitBlocked();
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
@@ -165,38 +180,47 @@ describe('POST /api/update-subscription', () => {
       createMockSupabase({ authUser: null, authError: { message: 'No session' } }) as never,
     );
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(401);
     expect(json.error).toContain('Non authentifi');
   });
 
-  it('returns 404 when tenant is not found', async () => {
-    setupAuthenticatedMocks({
-      adminUser: { data: null, error: { message: 'No rows' } },
-    });
+  it('returns 400 when x-tenant-slug header is missing', async () => {
+    setupAuthenticatedMocks();
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }, { omitTenantSlug: true }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain('Contexte tenant');
+  });
+
+  it('returns 404 when tenant is not found', async () => {
+    setupAuthenticatedMocks({ tenant: { data: null, error: null } });
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(404);
     expect(json.error).toContain('Tenant non trouv');
   });
 
-  it('returns 403 when user is not owner or admin', async () => {
-    setupAuthenticatedMocks({
-      adminUser: {
-        data: {
-          tenant_id: 'tenant-abc',
-          role: 'staff',
-          tenants: { stripe_subscription_id: 'sub_test_123' },
-        },
-        error: null,
-      },
-    });
+  it('returns 403 when user is not a member of the tenant', async () => {
+    setupAuthenticatedMocks({ adminUser: { data: null, error: null } });
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(403);
+    expect(json.error).toContain('Acces refuse');
+  });
+
+  it('returns 403 when user is not owner or admin', async () => {
+    setupAuthenticatedMocks({ adminUser: { data: { role: 'manager' }, error: null } });
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(403);
@@ -205,13 +229,10 @@ describe('POST /api/update-subscription', () => {
 
   it('returns 400 when tenant has no active stripe subscription', async () => {
     setupAuthenticatedMocks({
-      adminUser: {
-        data: { tenant_id: 'tenant-abc', role: 'owner', tenants: { stripe_subscription_id: null } },
-        error: null,
-      },
+      tenant: { data: { id: 'tenant-abc', stripe_subscription_id: null }, error: null },
     });
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
@@ -228,7 +249,7 @@ describe('POST /api/update-subscription', () => {
     expect(json.error).toContain('Corps de requ');
   });
 
-  it('returns 400 when priceId is missing', async () => {
+  it('returns 400 when plan is missing', async () => {
     setupAuthenticatedMocks();
 
     const res = await POST(buildRequest({}));
@@ -238,14 +259,14 @@ describe('POST /api/update-subscription', () => {
     expect(json.error).toBeDefined();
   });
 
-  it('returns 400 when priceId does not start with price_', async () => {
+  it('returns 400 when plan is invalid', async () => {
     setupAuthenticatedMocks();
 
-    const res = await POST(buildRequest({ priceId: 'invalid_123' }));
+    const res = await POST(buildRequest({ plan: 'gold' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
-    expect(json.error).toContain('Price ID invalide');
+    expect(json.error).toContain('Plan invalide');
   });
 
   it('returns 400 when subscription is already canceled', async () => {
@@ -255,7 +276,7 @@ describe('POST /api/update-subscription', () => {
       items: { data: [] },
     } as never);
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
@@ -269,7 +290,7 @@ describe('POST /api/update-subscription', () => {
       items: { data: [] },
     } as never);
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(500);
@@ -281,7 +302,7 @@ describe('POST /api/update-subscription', () => {
     mockActiveSubscription();
     vi.mocked(stripe.subscriptions.update).mockRejectedValue(new Error('Stripe network error'));
 
-    const res = await POST(buildRequest({ priceId: 'price_test_123' }));
+    const res = await POST(buildRequest({ plan: 'pro', billingInterval: 'yearly' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(500);
@@ -296,11 +317,12 @@ describe('POST /api/update-subscription', () => {
       status: 'active',
     } as never);
 
-    const res = await POST(buildRequest({ priceId: 'price_pro_yearly' }));
+    const res = await POST(buildRequest({ plan: 'pro', billingInterval: 'yearly' }));
     const json = (await res.json()) as { subscriptionId: string; status: string };
 
     expect(res.status).toBe(200);
     expect(json.subscriptionId).toBe('sub_test_123');
     expect(json.status).toBe('active');
+    expect(getStripePriceId).toHaveBeenCalledWith('pro', 'yearly');
   });
 });
