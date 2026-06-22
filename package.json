@@ -19,6 +19,9 @@
     "test:e2e:responsive": "playwright test tests/e2e/responsive.spec.ts",
     "test:e2e:ci": "playwright test tests/e2e/home.spec.ts",
     "db:migrate": "supabase db push",
+    "db:migrate:dry": "scripts/db-migrate.sh --target production --dry-run",
+    "db:migrate:staging": "scripts/db-migrate.sh --target staging",
+    "db:migrate:prod": "scripts/db-migrate.sh --target production --confirm",
     "db:repair-restaurant-groups": "node scripts/apply-restaurant-groups-repair.mjs",
     "db:types": "supabase gen types typescript --linked > src/types/database.generated.ts",
     "prepare": "husky"

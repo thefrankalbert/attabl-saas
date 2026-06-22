@@ -63,6 +63,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
+  // Tracks the stripe_events row inserted by THIS request so the outer catch can
+  // roll it back if a handler throws - otherwise Stripe's retry would short-circuit
+  // as "already processed" and the side effect would be permanently lost.
+  let recordedEventId: string | null = null;
   try {
     const body = await request.text();
     const headersList = await headers();
@@ -117,6 +121,9 @@ export async function POST(request: Request) {
       });
       return NextResponse.json({ received: true, idempotent: true });
     }
+
+    // This request inserted the idempotency row; remember it for rollback on throw.
+    recordedEventId = event.id;
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -187,6 +194,9 @@ export async function POST(request: Request) {
               tenantId,
               subscriptionId,
             });
+            // Roll back the idempotency record so Stripe's retry reprocesses this
+            // event instead of being short-circuited as already-handled.
+            await supabase.from('stripe_events').delete().eq('id', event.id);
             return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
           }
 
@@ -276,6 +286,8 @@ export async function POST(request: Request) {
             tenantId: tenant.id,
             stripeStatus: subscription.status,
           });
+          // Roll back the idempotency record so Stripe's retry reprocesses.
+          await supabase.from('stripe_events').delete().eq('id', event.id);
           return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
         }
 
@@ -323,6 +335,8 @@ export async function POST(request: Request) {
           logger.error('DB update failed for customer.subscription.deleted', updateError, {
             tenantId: tenant.id,
           });
+          // Roll back the idempotency record so Stripe's retry reprocesses.
+          await supabase.from('stripe_events').delete().eq('id', event.id);
           return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
         }
 
@@ -398,6 +412,8 @@ export async function POST(request: Request) {
           logger.error('DB update failed for invoice.payment_failed', updateError, {
             tenantId: tenant.id,
           });
+          // Roll back the idempotency record so Stripe's retry reprocesses.
+          await supabase.from('stripe_events').delete().eq('id', event.id);
           return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
         }
 
@@ -425,6 +441,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   } catch (error: unknown) {
     logger.error('Webhook error', error);
+    // Roll back the idempotency record on a thrown failure so Stripe's retry can
+    // reprocess (mirrors the explicit updateError paths). Uses a fresh admin
+    // client because the in-try one is out of scope here.
+    if (recordedEventId) {
+      try {
+        await createAdminClient().from('stripe_events').delete().eq('id', recordedEventId);
+      } catch (rollbackErr) {
+        logger.error('Failed to roll back Stripe idempotency record', rollbackErr, {
+          eventId: recordedEventId,
+        });
+      }
+    }
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }

@@ -75,6 +75,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
     }
 
+    // SECURITY: verify the target menu belongs to the session tenant before
+    // importing anything into it (no cross-tenant import via a foreign menuId).
+    // Parity with the Excel import route (menu-import).
+    const { data: menu } = await supabase
+      .from('menus')
+      .select('id')
+      .eq('id', menuId)
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
+
+    if (!menu) {
+      return NextResponse.json({ error: 'Menu non trouve' }, { status: 404 });
+    }
+
     const importService = createPdfImportService(supabase);
     const enforcement = createPlanEnforcementService(supabase);
 

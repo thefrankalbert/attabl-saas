@@ -167,9 +167,9 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
-  // Per-request CSP nonce (set on the request headers by the proxy). next-themes
-  // injects an inline anti-flash script; without the nonce the enforced CSP
-  // blocks it. Passing it through applies nonce="..." to that script.
+  // CSP nonce injected per-request by the middleware (src/proxy.ts: x-csp-nonce).
+  // Passed to next-themes so its no-flash inline script carries the nonce and is
+  // not blocked by the strict script-src CSP.
   const nonce = (await headers()).get('x-csp-nonce') ?? undefined;
 
   return (
