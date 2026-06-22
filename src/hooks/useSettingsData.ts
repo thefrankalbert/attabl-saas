@@ -245,7 +245,9 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('city', data.city || '');
       formData.append('country', data.country || '');
       formData.append('phone', data.phone || '');
-      if (data.logo_url) formData.append('logoUrl', data.logo_url);
+      // Always sent (even empty) so a full save can clear the logo; the service
+      // only skips fields that are entirely absent from the FormData.
+      formData.append('logoUrl', data.logo_url ?? '');
       formData.append('notificationSoundId', selectedSoundId);
       formData.append('establishmentType', data.establishmentType || 'restaurant');
       formData.append('tableCount', String(data.tableCount ?? 10));
@@ -264,10 +266,12 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('enableCoupons', data.enableCoupons ? 'true' : 'false');
       // KDS
       formData.append('barDisplayEnabled', data.barDisplayEnabled ? 'true' : 'false');
-      // Idle timeout
-      if (data.idleTimeoutMinutes !== null && data.idleTimeoutMinutes !== undefined) {
-        formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
-      }
+      // Idle timeout - empty string means "disabled" (null); always sent so a
+      // full save persists the disabled state instead of leaving it untouched.
+      formData.append(
+        'idleTimeoutMinutes',
+        data.idleTimeoutMinutes == null ? '' : String(data.idleTimeoutMinutes),
+      );
       formData.append('screenLockMode', data.screenLockMode || 'overlay');
 
       const result = await actionUpdateTenantSettings(formData);

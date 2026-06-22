@@ -58,41 +58,59 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
         throw new ServiceError('Format de couleur invalide', 'VALIDATION');
       }
 
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          name: settings.name,
-          description: settings.description ?? null,
-          primary_color: settings.primaryColor,
-          secondary_color: settings.secondaryColor,
-          address: settings.address ?? null,
-          city: settings.city ?? null,
-          country: settings.country ?? null,
-          phone: settings.phone ?? null,
-          logo_url: settings.logoUrl || null,
-          establishment_type: settings.establishmentType ?? null,
-          table_count: settings.tableCount ?? null,
-          notification_sound_id: settings.notificationSoundId ?? null,
-          // Facturation fields
-          currency: settings.currency ?? 'XAF',
-          supported_currencies: settings.supportedCurrencies ?? [settings.currency ?? 'XAF'],
-          enable_tax: settings.enableTax ?? false,
-          tax_rate: settings.taxRate ?? 0,
-          enable_service_charge: settings.enableServiceCharge ?? false,
-          service_charge_rate: settings.serviceChargeRate ?? 0,
-          enable_coupons: settings.enableCoupons ?? false,
-          // KDS
-          bar_display_enabled: settings.barDisplayEnabled ?? false,
-          // Idle timeout
-          idle_timeout_minutes: settings.idleTimeoutMinutes ?? null,
-          screen_lock_mode: settings.screenLockMode ?? 'overlay',
-          // Custom domain
-          ...(settings.customDomain !== undefined && {
-            custom_domain: settings.customDomain || null,
-          }),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tenantId);
+      // Partial PATCH: only columns whose value was actually provided are
+      // written. A field left `undefined` (absent from the submitted form) is
+      // NOT touched, so a partial save - e.g. the custom-domain quick-save that
+      // only sends name/colors/domain - can never reset unrelated settings
+      // (currency, taxes, KDS...) to their defaults.
+      const update: Record<string, unknown> = {
+        name: settings.name,
+        primary_color: settings.primaryColor,
+        secondary_color: settings.secondaryColor,
+        updated_at: new Date().toISOString(),
+        ...(settings.description !== undefined && { description: settings.description || null }),
+        ...(settings.address !== undefined && { address: settings.address || null }),
+        ...(settings.city !== undefined && { city: settings.city || null }),
+        ...(settings.country !== undefined && { country: settings.country || null }),
+        ...(settings.phone !== undefined && { phone: settings.phone || null }),
+        ...(settings.logoUrl !== undefined && { logo_url: settings.logoUrl || null }),
+        ...(settings.establishmentType !== undefined && {
+          establishment_type: settings.establishmentType || null,
+        }),
+        ...(settings.tableCount !== undefined && { table_count: settings.tableCount }),
+        ...(settings.notificationSoundId !== undefined && {
+          notification_sound_id: settings.notificationSoundId || null,
+        }),
+        // Facturation fields
+        ...(settings.currency !== undefined && { currency: settings.currency }),
+        ...(settings.supportedCurrencies !== undefined && {
+          supported_currencies: settings.supportedCurrencies,
+        }),
+        ...(settings.enableTax !== undefined && { enable_tax: settings.enableTax }),
+        ...(settings.taxRate !== undefined && { tax_rate: settings.taxRate }),
+        ...(settings.enableServiceCharge !== undefined && {
+          enable_service_charge: settings.enableServiceCharge,
+        }),
+        ...(settings.serviceChargeRate !== undefined && {
+          service_charge_rate: settings.serviceChargeRate,
+        }),
+        ...(settings.enableCoupons !== undefined && { enable_coupons: settings.enableCoupons }),
+        // KDS
+        ...(settings.barDisplayEnabled !== undefined && {
+          bar_display_enabled: settings.barDisplayEnabled,
+        }),
+        // Idle timeout (null is a real value = disabled, only undefined is skipped)
+        ...(settings.idleTimeoutMinutes !== undefined && {
+          idle_timeout_minutes: settings.idleTimeoutMinutes,
+        }),
+        ...(settings.screenLockMode !== undefined && { screen_lock_mode: settings.screenLockMode }),
+        // Custom domain
+        ...(settings.customDomain !== undefined && {
+          custom_domain: settings.customDomain || null,
+        }),
+      };
+
+      const { error } = await supabase.from('tenants').update(update).eq('id', tenantId);
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise à jour des paramètres', 'INTERNAL', error);
