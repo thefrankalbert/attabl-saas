@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Crown, Zap, Building2, Check, Loader2, CalendarDays } from 'lucide-react';
+import { toast } from 'sonner';
+import { Crown, Zap, Building2, Check, Loader2, CalendarDays, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
@@ -16,6 +18,7 @@ interface Tenant {
   subscription_status?: string;
   subscription_current_period_end: string | null;
   billing_interval: string | null;
+  stripe_subscription_id?: string | null;
   email?: string;
 }
 
@@ -65,6 +68,8 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
     (tenant.billing_interval as BillingInterval) || 'monthly',
   );
   const [isLoading, setIsLoading] = useState<SelfServicePlan | null>(null);
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
+  const hasSubscription = Boolean(tenant.stripe_subscription_id);
 
   const currentPlan = (tenant.subscription_plan || 'starter') as SubscriptionPlan;
   const currentStatus = tenant.subscription_status || 'trial';
@@ -75,9 +80,50 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
         : 'starter'
     ];
 
-  const handleUpgrade = (plan: SelfServicePlan) => {
+  const handleChangePlan = async (plan: SelfServicePlan) => {
     setIsLoading(plan);
-    router.push(`/checkout?plan=${plan}&interval=${billingInterval}`);
+    // Existing subscriber: change plan in place (proration). Otherwise start a checkout.
+    if (hasSubscription) {
+      try {
+        const res = await fetch('/api/update-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan, billingInterval }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (res.ok) {
+          toast.success(t('subscription.planChanged'));
+          router.refresh();
+        } else {
+          toast.error(data.error || t('subscription.planChangeError'));
+        }
+      } catch (error) {
+        logger.error('Failed to change plan', error);
+        toast.error(t('subscription.planChangeError'));
+      } finally {
+        setIsLoading(null);
+      }
+    } else {
+      router.push(`/checkout?plan=${plan}&interval=${billingInterval}`);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setIsBillingLoading(true);
+    try {
+      const res = await fetch('/api/billing-portal', { method: 'POST' });
+      const data = (await res.json()) as { url?: string };
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(t('subscription.planChangeError'));
+        setIsBillingLoading(false);
+      }
+    } catch (error) {
+      logger.error('Failed to open billing portal', error);
+      toast.error(t('subscription.planChangeError'));
+      setIsBillingLoading(false);
+    }
   };
 
   const statusBadgeClasses = (status: string) => {
@@ -169,6 +215,21 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
                 </p>
               )}
             </div>
+            {hasSubscription && (
+              <Button
+                variant="outline"
+                onClick={handleManageBilling}
+                disabled={isBillingLoading}
+                className="shrink-0 h-9 px-3 text-xs font-semibold rounded-lg gap-1.5"
+              >
+                {isBillingLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CreditCard className="w-3.5 h-3.5" />
+                )}
+                {t('subscription.manageBilling')}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -262,8 +323,8 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
 
                 {/* CTA */}
                 <Button
-                  onClick={() => !isCurrent && handleUpgrade(plan)}
-                  disabled={isLoading !== null}
+                  onClick={() => !isCurrent && handleChangePlan(plan)}
+                  disabled={isLoading !== null || isBillingLoading}
                   className={cn(
                     'w-full h-10 text-sm font-semibold rounded-lg',
                     isCurrent

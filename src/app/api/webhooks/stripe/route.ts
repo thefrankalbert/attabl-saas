@@ -4,7 +4,18 @@ import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getStripe, getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
-import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
+import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+
+const VALID_PLANS: readonly SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
+const VALID_INTERVALS: readonly BillingInterval[] = ['monthly', 'semiannual', 'yearly'];
+
+function isValidPlan(value: string | undefined): value is SubscriptionPlan {
+  return !!value && (VALID_PLANS as readonly string[]).includes(value);
+}
+
+function isValidInterval(value: string | undefined): value is BillingInterval {
+  return !!value && (VALID_INTERVALS as readonly string[]).includes(value);
+}
 
 function getWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -174,14 +185,27 @@ export async function POST(request: Request) {
             subscription_status: mappedStatus,
           };
 
-          // Ajouter le plan si fourni
-          if (plan) {
+          // Ajouter le plan si fourni (valide contre l'enum, on ignore une valeur inattendue)
+          if (isValidPlan(plan)) {
             updateData.subscription_plan = plan;
+          } else if (plan) {
+            logger.warn('checkout.session.completed: plan invalide dans metadata, ignore', {
+              tenantId,
+              plan,
+            });
           }
 
-          // Ajouter l'intervalle de facturation si fourni
-          if (billingInterval) {
+          // Ajouter l'intervalle de facturation si fourni (valide contre l'enum)
+          if (isValidInterval(billingInterval)) {
             updateData.billing_interval = billingInterval;
+          } else if (billingInterval) {
+            logger.warn(
+              'checkout.session.completed: billing_interval invalide dans metadata, ignore',
+              {
+                tenantId,
+                billingInterval,
+              },
+            );
           }
 
           const { error: updateError } = await supabase

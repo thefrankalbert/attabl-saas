@@ -10,7 +10,7 @@ import { canGrantRole } from '@/lib/auth/role-hierarchy';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
 import { jsonWithCache } from '@/lib/cache-headers';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
@@ -156,7 +156,12 @@ export async function POST(request: Request) {
 
       if (tenant) {
         const enforcement = createPlanEnforcementService(adminClient);
-        await enforcement.canAddAdmin(tenant as Tenant);
+        // Staff roles count against maxStaff; admin/owner count against maxAdmins
+        if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
+          await enforcement.canAddStaff(tenant as Tenant);
+        } else {
+          await enforcement.canAddAdmin(tenant as Tenant);
+        }
       }
 
       const service = createInvitationService(adminClient);
