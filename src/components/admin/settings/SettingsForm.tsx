@@ -113,10 +113,10 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
               onLogoChange={handleLogoChange}
               onLogoRemove={handleLogoRemove}
               onDomainSave={async (domain) => {
+                // Partial save: only the domain. The action/service skip every
+                // field absent from the FormData, so this never writes the
+                // (possibly unsaved/invalid) name or colors from the main form.
                 const formData = new FormData();
-                formData.append('name', form.getValues('name'));
-                formData.append('primaryColor', form.getValues('primaryColor'));
-                formData.append('secondaryColor', form.getValues('secondaryColor'));
                 formData.append('customDomain', domain || '');
                 const result = await actionUpdateTenantSettings(formData);
                 if (!result.success) throw new Error(result.error);
