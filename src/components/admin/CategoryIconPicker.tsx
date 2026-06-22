@@ -18,10 +18,18 @@ export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconP
 
   const filtered = search.trim()
     ? FOOD_ICONS.filter((icon) => {
-        const q = search.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const q = search
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         return (
           icon.name.toLowerCase().includes(q) ||
-          icon.keywords.some((kw) => kw.normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q))
+          icon.keywords.some((kw) =>
+            kw
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .includes(q),
+          )
         );
       })
     : FOOD_ICONS;
@@ -51,7 +59,7 @@ export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconP
               onClick={() => onChange(icon.name)}
               variant="outline"
               className={cn(
-                'flex items-center justify-center rounded-lg p-2 h-10 w-full transition-colors border',
+                'flex items-center justify-center rounded-lg p-2 min-h-[44px] w-full transition-colors border',
                 isSelected
                   ? 'border-accent bg-accent/10 text-accent hover:bg-accent/10 hover:text-accent'
                   : isUsed

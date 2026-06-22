@@ -251,14 +251,17 @@ export const FOOD_ICONS: FoodIcon[] = [
  */
 export function suggestIconForName(name: string): string | null {
   if (!name.trim()) return null;
-  const lower = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const lower = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
   let best: string | null = null;
   let bestScore = 0;
 
   for (const icon of FOOD_ICONS) {
     for (const kw of icon.keywords) {
-      const kwNorm = kw.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       if (lower.includes(kwNorm) || kwNorm.includes(lower)) {
         const score = kwNorm.length;
         if (score > bestScore) {
