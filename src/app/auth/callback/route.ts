@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger, hashEmail } from '@/lib/logger';
+import { createSignupService } from '@/services/signup.service';
+import { ServiceError } from '@/services/errors';
+import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -99,39 +103,54 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
       }
 
-      // User has no tenant - need to create one via OAuth signup
-      // Use provided plan/restaurantName or defaults
-      const signupPlan = plan || 'starter';
-      const signupName = restaurantName || 'Mon Établissement';
+      // User has no tenant - create one directly in-process.
+      // The session was just established via exchangeCodeForSession, so we trust
+      // session.user here. A loopback fetch to /api/signup-oauth cannot work: it
+      // forwards no Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
+      // Restrict plan to known values; query params are attacker-controllable.
+      const signupPlan = plan === 'pro' || plan === 'business' ? plan : 'starter';
+      const signupName = (restaurantName || 'Mon Etablissement').slice(0, 100);
 
-      // Call signup API to create tenant
-      const signupResponse = await fetch(`${requestUrl.origin}/api/signup-oauth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        const adminSupabase = createAdminClient();
+        const signupService = createSignupService(adminSupabase);
+
+        const result = await signupService.completeOAuthSignup({
           userId: session.user.id,
-          email: session.user.email,
+          email: session.user.email ?? '',
           restaurantName: signupName,
           plan: signupPlan,
-        }),
-      });
+        });
 
-      const signupData = await signupResponse.json();
+        // A/B test: shorten trial to 7d if the visitor was assigned that variant
+        // (parity with the former /api/signup-oauth route).
+        const trialVariant = parseAbTrialFromCookieHeader(request.headers.get('cookie') ?? '');
+        if (trialVariant === '7d') {
+          const trialEndsAt = new Date(Date.now() + 7 * 86400000).toISOString();
+          const { error: trialErr } = await adminSupabase
+            .from('tenants')
+            .update({ trial_ends_at: trialEndsAt })
+            .eq('id', result.tenantId);
+          if (trialErr) {
+            logger.warn('AB test: failed to apply 7d trial', { tenantId: result.tenantId });
+          }
+        }
 
-      if (signupResponse.ok && signupData.slug) {
         return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
-      } else {
-        // If user already exists error (duplicate), try to find their tenant again
-        if (signupData.error?.includes('already') || signupData.error?.includes('existe')) {
+      } catch (signupError) {
+        const message =
+          signupError instanceof ServiceError ? signupError.message : 'Erreur creation compte';
+        // Duplicate/existing-user case: log softly, otherwise treat as a real error.
+        if (message.includes('already') || message.includes('existe')) {
           logger.warn('OAuth user exists but has no tenant - redirecting to signup', {
             userId: session.user.id,
             emailHash: session.user.email ? hashEmail(session.user.email) : undefined,
           });
         } else {
-          logger.error('Signup OAuth API error', { error: signupData.error });
+          logger.error('OAuth signup failed', { error: message });
         }
         return NextResponse.redirect(
-          `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}&email=${encodeURIComponent(session.user.email || '')}`,
+          `${requestUrl.origin}/signup?error=${encodeURIComponent(message)}&email=${encodeURIComponent(session.user.email || '')}`,
         );
       }
     }
