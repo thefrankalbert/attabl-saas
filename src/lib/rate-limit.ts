@@ -171,6 +171,12 @@ export const excelImportLimiter = createLimiter(
   true,
 );
 
+/** Supports/chevalet PDF export: 10 requests / minute per IP (authenticated admin, costly PDF render) */
+export const supportsExportLimiter = createLimiter(
+  'supports-export',
+  Ratelimit.slidingWindow(10, '1 m'),
+);
+
 /** PDF menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
 export const pdfImportLimiter = createLimiter(
   'pdf-import',
