@@ -283,7 +283,9 @@ export async function POST(request: Request) {
       const { error: updateError } = await adminSupabase
         .from('orders')
         .update(updateFields)
-        .eq('id', result.orderId);
+        .eq('id', result.orderId)
+        // Belt filter: service-role client bypasses RLS, so scope the update to the tenant.
+        .eq('tenant_id', tenant_id);
 
       if (updateError) {
         logger.error('POS order: failed to update order fields', updateError, {

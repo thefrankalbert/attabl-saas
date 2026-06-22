@@ -278,7 +278,11 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
         .from('venues')
         .select('id')
         .eq('tenant_id', tenantId)
-        .single();
+        // A tenant can have several venues; take the earliest (main) one. `.single()`
+        // would throw on >1 row and silently insert a duplicate venue.
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
       if (existingVenue) {
         venueId = existingVenue.id;
