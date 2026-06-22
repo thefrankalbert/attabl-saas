@@ -30,7 +30,9 @@ export async function createMiddlewareClient(
         set(name: string, value: string, options: CookieOptions) {
           if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
             options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
-            options.sameSite = 'strict';
+            // 'lax' (not 'strict') so the OAuth callback navigation from Google/Supabase
+            // carries the auth cookies; 'strict' would break exchangeCodeForSession.
+            options.sameSite = 'lax';
           }
           // Mettre à jour le cookie sur la request (pour les lectures suivantes)
           request.cookies.set({ name, value, ...options });

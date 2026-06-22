@@ -18,7 +18,9 @@ export async function createClient() {
             // En production, on force le domaine racine pour partager le cookie entre sous-domaines
             if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
               options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
-              options.sameSite = 'strict';
+              // 'lax' (not 'strict') so the OAuth callback navigation from Google/Supabase
+              // carries the auth cookies; 'strict' would break exchangeCodeForSession.
+              options.sameSite = 'lax';
             }
             cookieStore.set({ name, value, ...options });
           } catch (error) {
