@@ -25,6 +25,7 @@ interface SettingsBillingProps {
 
 const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
   { code: 'XAF', labelKey: 'currencyXAF' },
+  { code: 'XOF', labelKey: 'currencyXOF' },
   { code: 'EUR', labelKey: 'currencyEUR' },
   { code: 'USD', labelKey: 'currencyUSD' },
 ];
@@ -59,17 +60,26 @@ export default function SettingsBilling({ form, t, initialPaymentMethods }: Sett
           <Label htmlFor="currency">{t('currency')}</Label>
           <Select
             value={watchCurrency}
-            onValueChange={(val) =>
-              setValue('currency', val as CurrencyCode, { shouldDirty: true })
-            }
+            onValueChange={(val) => {
+              const next = val as CurrencyCode;
+              setValue('currency', next, { shouldDirty: true });
+              // Keep the base currency in the supported set (the convive switcher
+              // and default display currency rely on it being present).
+              const current = (watchSupportedCurrencies as CurrencyCode[]) ?? [];
+              if (!current.includes(next)) {
+                setValue('supportedCurrencies', [...current, next], { shouldDirty: true });
+              }
+            }}
           >
             <SelectTrigger id="currency" className="h-10 min-h-[44px] w-full @sm:max-w-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="XAF">{t('currencyXAF')}</SelectItem>
-              <SelectItem value="EUR">{t('currencyEUR')}</SelectItem>
-              <SelectItem value="USD">{t('currencyUSD')}</SelectItem>
+              {ALL_CURRENCIES.map(({ code, labelKey }) => (
+                <SelectItem key={code} value={code}>
+                  {t(labelKey)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-xs text-app-text-secondary">{t('currencyUsedForPriceDisplay')}</p>

@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant } from '@/lib/auth/get-session';
@@ -33,7 +33,18 @@ export async function actionUpdatePaymentMethods(
       return { success: false, error: 'Erreur lors de la mise a jour' };
     }
 
-    revalidateTag(tenantConfigTag(tenantId), 'max');
+    // The per-tenant cache is keyed by SLUG, not id - resolve it so the convive
+    // storefront reflects the new payment methods immediately (not after TTL).
+    const { data: tenantRow } = await supabase
+      .from('tenants')
+      .select('slug')
+      .eq('id', tenantId)
+      .single();
+    if (tenantRow?.slug) {
+      revalidateTag(tenantConfigTag(tenantRow.slug), 'max');
+      revalidatePath(`/sites/${tenantRow.slug}`);
+      revalidatePath(`/sites/${tenantRow.slug}/cart`);
+    }
     return { success: true };
   } catch (err) {
     logger.error('actionUpdatePaymentMethods: unexpected error', { err });

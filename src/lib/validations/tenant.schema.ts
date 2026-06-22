@@ -8,17 +8,23 @@ import { z } from 'zod';
 const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
 export const updateTenantSettingsSchema = z.object({
+  // name + colors are optional at the schema level so a partial save (the
+  // custom-domain quick-save) can omit them; the main settings form still
+  // requires them client-side, and they are validated here when present.
   name: z
     .string()
     .min(2, 'Le nom doit contenir au moins 2 caractères')
-    .max(100, 'Le nom ne doit pas dépasser 100 caractères'),
+    .max(100, 'Le nom ne doit pas dépasser 100 caractères')
+    .optional(),
   description: z.string().max(500, 'La description ne doit pas dépasser 500 caractères').optional(),
   primaryColor: z
     .string()
-    .regex(hexColorRegex, 'Couleur primaire invalide (format: #RGB ou #RRGGBB)'),
+    .regex(hexColorRegex, 'Couleur primaire invalide (format: #RGB ou #RRGGBB)')
+    .optional(),
   secondaryColor: z
     .string()
-    .regex(hexColorRegex, 'Couleur secondaire invalide (format: #RGB ou #RRGGBB)'),
+    .regex(hexColorRegex, 'Couleur secondaire invalide (format: #RGB ou #RRGGBB)')
+    .optional(),
   address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
   city: z.string().max(100, 'La ville ne doit pas dépasser 100 caractères').optional(),
   country: z.string().max(100, 'Le pays ne doit pas dépasser 100 caractères').optional(),
@@ -45,6 +51,7 @@ export const updateTenantSettingsSchema = z.object({
     .optional(),
   enableTax: z.boolean().optional(),
   enableServiceCharge: z.boolean().optional(),
+  enableCoupons: z.boolean().optional(),
   // ─── KDS / Kitchen display ────────────────────────────
   barDisplayEnabled: z.boolean().optional(),
   // ─── Idle timeout / screen lock ────────────────────────
