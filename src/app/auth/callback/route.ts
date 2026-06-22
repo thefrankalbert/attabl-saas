@@ -5,6 +5,7 @@ import { logger, hashEmail } from '@/lib/logger';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError } from '@/services/errors';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
+import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -60,14 +61,30 @@ export async function GET(request: Request) {
     }
 
     if (session?.user) {
-      // Check if user already has a tenant (existing user login)
-      const { data: existingAdmin } = await supabase
+      // Check if user already has a tenant (existing user login). Fetch ALL rows:
+      // a multi-tenant owner has several, and .single() would error -> wrongly fall
+      // through to the new-user branch and create a duplicate tenant.
+      const { data: existingAdminRows } = await supabase
         .from('admin_users')
-        .select('id, tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
-        .eq('user_id', session.user.id)
-        .single();
+        .select(
+          'id, tenant_id, is_super_admin, role, tenants(slug, onboarding_completed, created_at)',
+        )
+        .eq('user_id', session.user.id);
 
-      if (existingAdmin) {
+      if (existingAdminRows && existingAdminRows.length > 0) {
+        // Deterministic pick for login tracking: most recent unfinished tenant.
+        const pickIndex = pickOnboardingTenantIndex(
+          existingAdminRows.map((row) => {
+            const t = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
+            return {
+              onboardingCompleted: !!(t as { onboarding_completed?: boolean } | null)
+                ?.onboarding_completed,
+              createdAt: (t as { created_at?: string } | null)?.created_at ?? null,
+            };
+          }),
+        );
+        const existingAdmin = existingAdminRows[pickIndex];
+
         // Track login: update last_login_at, increment login_count, create session
         try {
           const userAgent = request.headers.get('user-agent') || '';
@@ -88,14 +105,13 @@ export async function GET(request: Request) {
           logger.warn('Failed to track login', { error: String(loginTrackError) });
         }
 
-        // Supabase join type gap
-        const tenantsData = existingAdmin.tenants as unknown as {
-          slug: string;
-          onboarding_completed: boolean;
-        } | null;
-
-        // Check if onboarding is pending
-        if (tenantsData?.onboarding_completed === false) {
+        // Resume onboarding if ANY tenant is still unfinished; the /onboarding page
+        // (getState) then opens the most recent unfinished one. Otherwise go to the hub.
+        const needsOnboarding = existingAdminRows.some((row) => {
+          const t = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
+          return (t as { onboarding_completed?: boolean } | null)?.onboarding_completed === false;
+        });
+        if (needsOnboarding) {
           return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
         }
 
