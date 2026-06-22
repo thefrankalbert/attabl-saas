@@ -19,18 +19,18 @@ export default async function RecipesPage({ params }: { params: Promise<{ site: 
     return <TenantNotFound />;
   }
 
-  const hasInventory = canAccessFeature(
-    'canAccessInventory',
+  const hasRecipes = canAccessFeature(
+    'canAccessRecipes',
     tenant.subscription_plan as SubscriptionPlan | null,
     tenant.subscription_status as SubscriptionStatus | null,
     tenant.trial_ends_at,
   );
 
-  if (!hasInventory) {
+  if (!hasRecipes) {
     return (
       <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
         <FeatureUpgradeWall
-          feature="inventory"
+          feature="recipes"
           checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
           tenantId={tenant.id}
         />

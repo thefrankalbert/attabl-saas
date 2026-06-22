@@ -31,6 +31,7 @@ vi.mock('@/services/email.service', () => ({
 
 vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: vi.fn(),
+  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
 }));
 
 vi.mock('@/lib/cache-headers', () => ({
@@ -204,6 +205,7 @@ function setupMockAdminClient(overrides?: {
   } as never);
   vi.mocked(createPlanEnforcementService).mockReturnValue({
     canAddAdmin: vi.fn().mockResolvedValue(undefined),
+    canAddStaff: vi.fn().mockResolvedValue(undefined),
   } as never);
 
   return adminClient;
@@ -313,6 +315,38 @@ describe('POST /api/invitations', () => {
     expect(res.status).toBe(201);
     expect(json.success).toBe(true);
     expect(json.invitation).not.toHaveProperty('token');
+  });
+
+  it('enforces the staff limit (canAddStaff) for a staff role', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const canAddAdmin = vi.fn().mockResolvedValue(undefined);
+    const canAddStaff = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createPlanEnforcementService).mockReturnValue({ canAddAdmin, canAddStaff } as never);
+
+    const res = await POST(buildPostRequest({ email: 'cook@test.com', role: 'chef' }));
+
+    expect(res.status).toBe(201);
+    expect(canAddStaff).toHaveBeenCalledTimes(1);
+    expect(canAddAdmin).not.toHaveBeenCalled();
+  });
+
+  it('enforces the admin limit (canAddAdmin) for the admin role', async () => {
+    mockRateLimit(true);
+    const mock = createMockSupabase();
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const canAddAdmin = vi.fn().mockResolvedValue(undefined);
+    const canAddStaff = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createPlanEnforcementService).mockReturnValue({ canAddAdmin, canAddStaff } as never);
+
+    const res = await POST(buildPostRequest({ email: 'admin2@test.com', role: 'admin' }));
+
+    expect(res.status).toBe(201);
+    expect(canAddAdmin).toHaveBeenCalledTimes(1);
+    expect(canAddStaff).not.toHaveBeenCalled();
   });
 });
 

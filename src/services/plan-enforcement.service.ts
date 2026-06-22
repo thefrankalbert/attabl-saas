@@ -1,7 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
+
+/**
+ * Roles counted against the per-plan staff limit (maxStaff).
+ * Admin/owner roles are counted against maxAdmins instead.
+ */
+export const STAFF_ROLES = ['manager', 'cashier', 'chef', 'waiter'] as const;
 
 /**
  * Plan Enforcement Service - server-side limit checking.
@@ -12,12 +19,19 @@ import { ServiceError } from './errors';
 export interface PlanEnforcementService {
   canAddAdmin(tenant: Tenant): Promise<void>;
   canAddStaff(tenant: Tenant): Promise<void>;
+  getMonthlyOrderUsage(
+    tenant: {
+      id: string;
+      subscription_plan?: string | null;
+      subscription_status?: string | null;
+      trial_ends_at?: string | null;
+    },
+    monthStart: Date,
+  ): Promise<{ count: number; limit: number; exceeded: boolean }>;
   canAddMenuItem(tenant: Tenant): Promise<void>;
   canAddVenue(tenant: Tenant): Promise<void>;
   canAddMenu(tenant: Tenant): Promise<void>;
-  canAddCategory(tenant: Tenant): Promise<void>;
   canAddItems(tenant: Tenant, batchSize: number): Promise<void>;
-  canAddCategories(tenant: Tenant, batchSize: number): Promise<void>;
   getUsageCounts(tenantId: string): Promise<{
     admins: number;
     items: number;
@@ -76,7 +90,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
-        .in('role', ['manager', 'cashier', 'chef', 'waiter']);
+        .in('role', [...STAFF_ROLES]);
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);
@@ -181,35 +195,6 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
     },
 
     /**
-     * Check if tenant can add more categories
-     */
-    async canAddCategory(tenant: Tenant): Promise<void> {
-      const limits = getPlanLimits(
-        tenant.subscription_plan,
-        tenant.subscription_status,
-        tenant.trial_ends_at,
-      );
-
-      if (limits.maxCategories === -1) return;
-
-      const { count, error } = await supabase
-        .from('categories')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id);
-
-      if (error) {
-        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
-      }
-
-      if ((count || 0) >= limits.maxCategories) {
-        throw new ServiceError(
-          `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
-          'VALIDATION',
-        );
-      }
-    },
-
-    /**
      * Check if tenant can add a batch of items (for bulk imports)
      */
     async canAddItems(tenant: Tenant, batchSize: number): Promise<void> {
@@ -241,33 +226,46 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
     },
 
     /**
-     * Check if tenant can add more categories (batch check for imports)
+     * Monthly order usage for a tenant. Read-only (non-blocking): used to warn
+     * when the per-plan monthly order quota is exceeded, never to reject orders.
+     * Uses a direct uncached count so it reflects the live total.
+     * limit === -1 means unlimited (never exceeded).
      */
-    async canAddCategories(tenant: Tenant, batchSize: number): Promise<void> {
+    async getMonthlyOrderUsage(
+      tenant: {
+        id: string;
+        subscription_plan?: string | null;
+        subscription_status?: string | null;
+        trial_ends_at?: string | null;
+      },
+      monthStart: Date,
+    ): Promise<{ count: number; limit: number; exceeded: boolean }> {
       const limits = getPlanLimits(
-        tenant.subscription_plan,
-        tenant.subscription_status,
+        tenant.subscription_plan as SubscriptionPlan | null,
+        tenant.subscription_status as SubscriptionStatus | null,
         tenant.trial_ends_at,
       );
 
-      if (limits.maxCategories === -1) return;
+      if (limits.maxMonthlyOrders === -1) {
+        return { count: 0, limit: -1, exceeded: false };
+      }
 
       const { count, error } = await supabase
-        .from('categories')
+        .from('orders')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id);
+        .eq('tenant_id', tenant.id)
+        .gte('created_at', monthStart.toISOString());
 
       if (error) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
       }
 
-      if ((count || 0) + batchSize > limits.maxCategories) {
-        const remaining = limits.maxCategories - (count || 0);
-        throw new ServiceError(
-          `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
-          'VALIDATION',
-        );
-      }
+      const total = count || 0;
+      return {
+        count: total,
+        limit: limits.maxMonthlyOrders,
+        exceeded: total >= limits.maxMonthlyOrders,
+      };
     },
 
     /**
