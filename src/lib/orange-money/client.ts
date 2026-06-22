@@ -206,6 +206,14 @@ export function verifyOrangeMoneyWebhookSignature(
 ): boolean {
   const secret = process.env.ORANGE_MONEY_WEBHOOK_SECRET;
   if (!secret) {
+    // No HMAC secret configured: the signature layer cannot run. This is NOT a
+    // silent pass anymore - surface the misconfiguration. The payment is still
+    // gated by the per-order notif_token match and the out-of-band remote status
+    // re-verification, so this alone cannot mark an order paid. Set
+    // ORANGE_MONEY_WEBHOOK_SECRET in production to enable strict signature enforcement.
+    logger.warn(
+      'Orange Money webhook HMAC skipped: ORANGE_MONEY_WEBHOOK_SECRET not configured (payment still gated by notif_token + remote re-check)',
+    );
     return true;
   }
 

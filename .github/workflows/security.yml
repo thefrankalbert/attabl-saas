@@ -35,7 +35,11 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
+      # --ignore-scripts: this job only audits the dependency graph; it does not
+      # need native build steps. Newer pnpm (version: latest) hard-errors on
+      # unapproved build scripts (ERR_PNPM_IGNORED_BUILDS), which is irrelevant
+      # here and was failing the gate. Skipping scripts sidesteps it cleanly.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
       - name: Audit all dependencies (non-blocking)
