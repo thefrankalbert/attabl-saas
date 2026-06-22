@@ -177,12 +177,12 @@ export function createEmailService(): EmailService {
           `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Bienvenue sur ATTABL</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Merci pour votre inscription. Confirmez votre adresse email pour activer votre compte.</p>
           ${cta(safeUrl, 'Confirmer mon adresse')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 24 heures.</p>
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 1 heure.</p>
           <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
         ),
       );
 
-      const text = `Bienvenue sur ATTABL\n\nConfirmez votre adresse email :\n${data.confirmationUrl}\n\nCe lien expire dans 24 heures.\n\n${FOOTER}`;
+      const text = `Bienvenue sur ATTABL\n\nConfirmez votre adresse email :\n${data.confirmationUrl}\n\nCe lien expire dans 1 heure.\n\n${FOOTER}`;
 
       return send(to, 'Confirmez votre adresse email', html, text);
     },
