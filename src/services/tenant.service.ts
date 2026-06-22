@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
-import type { CurrencyCode } from '@/types/admin.types';
+import type { CurrencyCode, OpeningHoursMap } from '@/types/admin.types';
 
 interface TenantSettings {
   name?: string;
@@ -29,6 +29,8 @@ interface TenantSettings {
   // Idle timeout
   idleTimeoutMinutes?: number | null;
   screenLockMode?: 'overlay' | 'password';
+  // Opening hours
+  openingHours?: OpeningHoursMap;
   // Custom domain
   customDomain?: string | null;
 }
@@ -104,6 +106,8 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
           idle_timeout_minutes: settings.idleTimeoutMinutes,
         }),
         ...(settings.screenLockMode !== undefined && { screen_lock_mode: settings.screenLockMode }),
+        // Opening hours
+        ...(settings.openingHours !== undefined && { opening_hours: settings.openingHours }),
         // Custom domain
         ...(settings.customDomain !== undefined && {
           custom_domain: settings.customDomain || null,
