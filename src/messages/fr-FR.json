@@ -3382,6 +3382,7 @@
     "establishmentSubtitle": "On configure tout automatiquement ensuite.",
     "nameLabel": "Nom de l'établissement",
     "namePlaceholder": "Ex : Le Petit Bistrot",
+    "nameRequired": "Donnez d'abord un nom a votre etablissement.",
     "typeRestaurant": "Restaurant",
     "typeRestaurantDesc": "Service a table, midi et soir",
     "typeHotel": "Hôtel",
