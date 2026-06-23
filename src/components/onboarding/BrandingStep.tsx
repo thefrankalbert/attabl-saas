@@ -138,7 +138,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
             {/* Left: Logo & Description */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Identit\u00e9 visuelle
+                Identite visuelle
               </p>
 
               {/* Logo Upload */}

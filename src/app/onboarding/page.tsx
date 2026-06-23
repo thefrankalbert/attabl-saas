@@ -373,6 +373,13 @@ export default function OnboardingPage() {
   // ─── Navigation ───────────────────────────────────────────────────────────
 
   const goNext = () => {
+    // Establishment name is required; block advancing (button click OR swipe) with an
+    // empty name so onboarding never completes with a nameless tenant.
+    if (screenKey === 'establishment' && !data.tenantName.trim()) {
+      setError(t('nameRequired'));
+      return;
+    }
+
     setError(null);
     setDirection('forward');
 
@@ -726,7 +733,7 @@ export default function OnboardingPage() {
                 <Button
                   variant="default"
                   onClick={goNext}
-                  disabled={saving}
+                  disabled={saving || (screenKey === 'establishment' && !data.tenantName.trim())}
                   className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
                 >
                   {saving ? (

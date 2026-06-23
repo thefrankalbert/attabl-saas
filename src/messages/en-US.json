@@ -3382,6 +3382,7 @@
     "establishmentSubtitle": "We set everything up automatically from here.",
     "nameLabel": "Establishment name",
     "namePlaceholder": "E.g.: The Little Bistro",
+    "nameRequired": "Give your establishment a name first.",
     "typeRestaurant": "Restaurant",
     "typeRestaurantDesc": "Table service, lunch and dinner",
     "typeHotel": "Hotel",
