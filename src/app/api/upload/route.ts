@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
+import { logger } from '@/lib/logger';
 
 /** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
 function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
@@ -102,7 +103,8 @@ export async function POST(request: Request) {
     });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      logger.error('Upload failed', { error: uploadError, bucket });
+      return NextResponse.json({ error: 'Echec du televersement' }, { status: 500 });
     }
 
     const {
@@ -111,7 +113,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: publicUrl });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Upload failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error('Upload failed', { error: err });
+    return NextResponse.json({ error: 'Echec du televersement' }, { status: 500 });
   }
 }
