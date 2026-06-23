@@ -175,41 +175,47 @@ export default function ClientOrders({
     () => orders.filter((o) => ACTIVE_STATUSES.has(o.status)).map((o) => o.id),
     [orders],
   );
+  // Stable dependency: only re-subscribe when the SET of active order ids changes,
+  // not on every order object mutation (which gives activeOrderIds a new identity).
+  const activeKey = activeOrderIds.join(',');
 
   useEffect(() => {
     if (activeOrderIds.length === 0) return;
 
     const supabase = supabaseRef.current;
 
-    // Live status via Broadcast on a public per-tenant topic (DB trigger
-    // broadcast_order_status). Payload is non-PII ({ id, status }); the client
-    // ignores broadcasts for orders it does not hold. Replaces the anon
-    // postgres_changes subscription (which leaked the full order row to anon).
-    const channel = supabase
-      .channel(`tenant-orders:${tenantId}`)
-      .on('broadcast', { event: 'status' }, (message) => {
-        const payload = (message.payload ?? {}) as { id?: string; status?: string };
-        const id = payload.id;
-        const status = payload.status;
-        if (!id || !status) return;
-        setOrders((prev) => {
-          const existing = prev.find((o) => o.id === id);
-          if (!existing) return prev;
-          const prevStatus = previousStatusesRef.current.get(id) || existing.status;
-          if (status === 'ready' && prevStatus !== 'ready') {
-            notifyOrderReady(existing.order_number || existing.id.slice(0, 5));
-          }
-          previousStatusesRef.current.set(id, status);
-          return prev.map((o) => (o.id === id ? { ...o, status } : o));
-        });
-      })
-      .subscribe();
+    // Live status via Broadcast on PER-ORDER public topics (DB trigger
+    // broadcast_order_status sends to order:<id>). Payload is non-PII ({ id, status }).
+    // Subscribing per order (instead of a tenant-wide topic) means an anonymous
+    // client only ever receives broadcasts for orders whose id it already holds -
+    // no tenant-wide order-status stream is observable.
+    const channels = activeOrderIds.map((orderId) =>
+      supabase
+        .channel(`order:${orderId}`)
+        .on('broadcast', { event: 'status' }, (message) => {
+          const payload = (message.payload ?? {}) as { id?: string; status?: string };
+          const id = payload.id;
+          const status = payload.status;
+          if (!id || !status) return;
+          setOrders((prev) => {
+            const existing = prev.find((o) => o.id === id);
+            if (!existing) return prev;
+            const prevStatus = previousStatusesRef.current.get(id) || existing.status;
+            if (status === 'ready' && prevStatus !== 'ready') {
+              notifyOrderReady(existing.order_number || existing.id.slice(0, 5));
+            }
+            previousStatusesRef.current.set(id, status);
+            return prev.map((o) => (o.id === id ? { ...o, status } : o));
+          });
+        })
+        .subscribe(),
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach((c) => supabase.removeChannel(c));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-subscribe only when active order count changes, not on every order object mutation (2026-05-04)
-  }, [activeOrderIds.length, tenantId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-subscribe only when the set of active order ids (activeKey) changes, not on every order object mutation
+  }, [activeKey, tenantId]);
 
   // --- Track initial statuses for transition detection ------
 
