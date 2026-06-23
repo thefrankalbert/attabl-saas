@@ -82,13 +82,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 
+    // no-store: statut de paiement per-user, ne jamais conserver dans le cache navigateur.
     return jsonWithCache(
       {
         success: true,
         slug: tenant.slug,
         status: session.payment_status,
       },
-      'dynamic',
+      'realtime',
     );
   } catch (error: unknown) {
     logger.error('Verify checkout error', error);
