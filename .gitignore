@@ -70,3 +70,41 @@ public/swe-worker-*.js
 # DB migration backups (local/CI artifacts, never commit). The real .env.staging
 # is already covered by the .env* rule above; .env.staging.example is un-ignored.
 supabase/backups/
+
+# Local agent tooling / runtime (not part of the app; tracked files already in git
+# stay tracked - this only hides newly generated local artifacts)
+.claude-flow/
+.swarm/
+.kiro/
+.playwright-cli/
+.playwright-mcp/
+.mcp.json
+claude-flow.config.json
+graphify-out/
+.agents/
+.claude/agents/
+.claude/skills/
+.claude/commands/
+.claude/helpers/
+.claude/memory.db
+
+# Local embedded databases (agent/vector stores)
+*.rvf
+*.rvf.lock
+ruvector.db
+agentdb.rvf
+
+# Local screenshots / capture artifacts at repo root (QA, design, debugging)
+/*.png
+/*.jpg
+/*.jpeg
+command-center-redesign-captures/
+
+# Local design / audit handoff docs (kept locally, not versioned with the app)
+/AT-FOOD-DESIGN-BRIEF.md
+/AT-FOOD-V1-SPEC.md
+/AUDIT-ARCHITECTURE.md
+/COMMAND-CENTER-REDESIGN-BRIEF.md
+/CONVIVE-REDESIGN-CONTRACT.md
+/CONVIVE-REDESIGN-PROMPT.md
+/order-confirmed-src.txt
