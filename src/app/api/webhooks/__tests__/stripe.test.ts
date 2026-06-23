@@ -177,11 +177,20 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(await getWrittenStatus('unpaid')).toBe('past_due');
     });
 
-    it('maps unknown status to "active" and logs warning', async () => {
-      expect(await getWrittenStatus('some_unknown_status')).toBe('active');
-      expect(logger.warn).toHaveBeenCalledWith('Unknown Stripe status, defaulting to active', {
-        stripeStatus: 'some_unknown_status',
-      });
+    it('maps unknown status to "frozen" (fail-closed) and logs warning', async () => {
+      expect(await getWrittenStatus('some_unknown_status')).toBe('frozen');
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Unknown Stripe status, defaulting to frozen (fail-closed)',
+        { stripeStatus: 'some_unknown_status' },
+      );
+    });
+
+    it('maps "incomplete" to "past_due"', async () => {
+      expect(await getWrittenStatus('incomplete')).toBe('past_due');
+    });
+
+    it('maps "incomplete_expired" to "cancelled"', async () => {
+      expect(await getWrittenStatus('incomplete_expired')).toBe('cancelled');
     });
   });
 

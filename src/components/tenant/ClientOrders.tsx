@@ -19,16 +19,17 @@ import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 
 // --- Types --------------------------------------------------
 
-interface RawOrderItemRow {
+// Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
+interface TrackedClientItemRow {
   item_name: string;
   item_name_en?: string | null;
   quantity: number;
   price_at_order: number;
   menu_item_id?: string | null;
-  menu_items?: { image_url?: string | null } | null;
+  image_url?: string | null;
 }
 
-interface RawOrderRow {
+interface TrackedClientRow {
   id: string;
   order_number: string;
   status: string;
@@ -37,7 +38,7 @@ interface RawOrderRow {
   table_number: string | null;
   created_at: string;
   service_type: string | null;
-  order_items: RawOrderItemRow[] | null;
+  order_items: TrackedClientItemRow[] | null;
 }
 
 interface OrderItem {
@@ -132,36 +133,32 @@ export default function ClientOrders({
     }
 
     supabase
-      .from('orders')
-      .select(
-        'id, order_number, status, total, tip_amount, table_number, created_at, service_type, order_items(item_name, item_name_en, quantity, price_at_order, menu_item_id, menu_items(image_url))',
-      )
-      .eq('tenant_id', tenantId)
-      .in('id', storedIds)
-      .order('created_at', { ascending: false })
+      .rpc('get_orders_for_tracking', { p_tenant_id: tenantId, p_order_ids: storedIds })
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
           logger.error('Failed to load orders', error);
         } else {
-          const mapped: OrderRecord[] = ((data as RawOrderRow[]) || []).map((row) => ({
-            id: row.id,
-            order_number: row.order_number,
-            status: row.status,
-            total: row.total,
-            tip_amount: row.tip_amount ?? 0,
-            table_number: row.table_number,
-            created_at: row.created_at,
-            service_type: row.service_type,
-            items: (row.order_items || []).map((oi) => ({
-              name: oi.item_name,
-              name_en: oi.item_name_en ?? undefined,
-              quantity: oi.quantity,
-              price: oi.price_at_order,
-              menu_item_id: oi.menu_item_id ?? undefined,
-              image_url: oi.menu_items?.image_url ?? null,
-            })),
-          }));
+          const mapped: OrderRecord[] = ((data as unknown as TrackedClientRow[]) || []).map(
+            (row) => ({
+              id: row.id,
+              order_number: row.order_number,
+              status: row.status,
+              total: row.total,
+              tip_amount: row.tip_amount ?? 0,
+              table_number: row.table_number,
+              created_at: row.created_at,
+              service_type: row.service_type,
+              items: (row.order_items || []).map((oi) => ({
+                name: oi.item_name,
+                name_en: oi.item_name_en ?? undefined,
+                quantity: oi.quantity,
+                price: oi.price_at_order,
+                menu_item_id: oi.menu_item_id ?? undefined,
+                image_url: oi.image_url ?? null,
+              })),
+            }),
+          );
           setOrders(mapped);
         }
         setLoading(false);

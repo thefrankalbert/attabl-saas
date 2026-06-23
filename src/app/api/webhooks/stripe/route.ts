@@ -55,11 +55,21 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
       return 'cancelled';
     case 'unpaid':
       return 'past_due';
+    case 'incomplete':
+      // Initial payment not yet confirmed: bounded grace (past_due), self-corrects
+      // to 'active' on the next webhook once payment succeeds.
+      return 'past_due';
+    case 'incomplete_expired':
+      // Initial payment failed and the subscription is terminal.
+      return 'cancelled';
     case 'paused':
       return 'paused';
     default:
-      logger.warn('Unknown Stripe status, defaulting to active', { stripeStatus });
-      return 'active';
+      // Fail closed for billing entitlement: an unrecognized Stripe status must NOT
+      // grant active paid access. 'frozen' is non-entitling (see plans/features.ts);
+      // a known status arriving later will restore the correct state.
+      logger.warn('Unknown Stripe status, defaulting to frozen (fail-closed)', { stripeStatus });
+      return 'frozen';
   }
 }
 

@@ -4,8 +4,12 @@ import { logger } from '@/lib/logger';
 import { paymentInitiationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOrangeMoneyPayment } from '@/lib/orange-money/client';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
+import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const originError = verifyOrigin(request);
+  if (originError) return originError;
+
   const { id: rawOrderId } = await params;
   const parsedOrderId = parseRouteUuid(rawOrderId);
   if (!parsedOrderId.ok) {

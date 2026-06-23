@@ -2048,6 +2048,10 @@ export type Database = {
           total_tips: number;
         }[];
       };
+      get_orders_for_tracking: {
+        Args: { p_order_ids: string[]; p_tenant_id: string };
+        Returns: Json;
+      };
       get_owner_dashboard: {
         Args: { p_user_id: string };
         Returns: {

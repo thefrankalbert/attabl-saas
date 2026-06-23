@@ -48,6 +48,25 @@ interface OrderDetailData {
   items: DetailItem[];
 }
 
+// Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
+interface TrackedDetailRow {
+  id: string;
+  order_number: string;
+  table_number: string | null;
+  status: string;
+  total: number;
+  subtotal: number | null;
+  tip_amount: number | null;
+  created_at: string;
+  order_items: Array<{
+    item_name: string;
+    quantity: number;
+    price_at_order: number;
+    menu_item_id: string | null;
+    image_url: string | null;
+  }> | null;
+}
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = typeof params.orderId === 'string' ? params.orderId : null;
@@ -69,44 +88,29 @@ export default function OrderDetailPage() {
     if (!orderId || !tenantId) return;
     let cancelled = false;
     supabaseRef.current
-      .from('orders')
-      .select(
-        'id, order_number, table_number, status, total, subtotal, tip_amount, created_at, order_items(item_name, quantity, price_at_order, menu_item_id, menu_items(image_url))',
-      )
-      .eq('id', orderId)
-      .eq('tenant_id', tenantId)
-      .single()
+      .rpc('get_orders_for_tracking', { p_tenant_id: tenantId, p_order_ids: [orderId] })
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (error || !data) {
+        const row = ((data as unknown as TrackedDetailRow[] | null) || [])[0];
+        if (error || !row) {
           logger.warn('Order detail not found', { orderId });
         } else {
-          const rows = (data.order_items || []) as unknown as Array<{
-            item_name: string;
-            quantity: number;
-            price_at_order: number;
-            menu_item_id?: string | null;
-            menu_items?: { image_url?: string | null } | { image_url?: string | null }[] | null;
-          }>;
           setOrder({
-            id: data.id,
-            order_number: data.order_number,
-            table_number: data.table_number,
-            status: data.status,
-            total: data.total,
-            subtotal: data.subtotal ?? null,
-            tip_amount: data.tip_amount ?? 0,
-            created_at: data.created_at,
-            items: rows.map((oi) => {
-              const mi = Array.isArray(oi.menu_items) ? oi.menu_items[0] : oi.menu_items;
-              return {
-                name: oi.item_name,
-                quantity: oi.quantity,
-                price: oi.price_at_order,
-                menu_item_id: oi.menu_item_id ?? undefined,
-                image_url: mi?.image_url ?? null,
-              };
-            }),
+            id: row.id,
+            order_number: row.order_number,
+            table_number: row.table_number,
+            status: row.status,
+            total: row.total,
+            subtotal: row.subtotal ?? null,
+            tip_amount: row.tip_amount ?? 0,
+            created_at: row.created_at,
+            items: (row.order_items || []).map((oi) => ({
+              name: oi.item_name,
+              quantity: oi.quantity,
+              price: oi.price_at_order,
+              menu_item_id: oi.menu_item_id ?? undefined,
+              image_url: oi.image_url ?? null,
+            })),
           });
         }
         setLoading(false);

@@ -48,6 +48,30 @@ interface OrderData {
   }>;
 }
 
+// Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
+interface TrackedOrderRow {
+  id: string;
+  order_number: string;
+  table_number: string | null;
+  status: string;
+  total: number;
+  subtotal: number | null;
+  tip_amount: number | null;
+  discount_amount: number | null;
+  tax_amount: number | null;
+  service_charge_amount: number | null;
+  service_type: string | null;
+  created_at: string;
+  order_items: Array<{
+    item_name: string;
+    item_name_en: string | null;
+    quantity: number;
+    price_at_order: number;
+    menu_item_id: string | null;
+    image_url: string | null;
+  }> | null;
+}
+
 // --- Inner Content (needs Suspense for useSearchParams) --
 function OrderConfirmedContent() {
   const searchParams = useSearchParams();
@@ -102,41 +126,30 @@ function OrderConfirmedContent() {
     let cancelled = false;
 
     supabase
-      .from('orders')
-      .select(
-        'id, order_number, table_number, total, tip_amount, subtotal, discount_amount, tax_amount, service_charge_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order, menu_item:menu_items(image_url))',
-      )
-      .eq('id', orderId)
-      .eq('tenant_id', tenantId)
-      .single()
+      .rpc('get_orders_for_tracking', { p_tenant_id: tenantId, p_order_ids: [orderId] })
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (!error && data) {
+        const row = ((data as unknown as TrackedOrderRow[] | null) || [])[0];
+        if (!error && row) {
           const mapped: OrderData = {
-            ...data,
-            tip_amount: data.tip_amount ?? 0,
-            subtotal: data.subtotal ?? null,
-            discount_amount: data.discount_amount ?? 0,
-            tax_amount: data.tax_amount ?? 0,
-            service_charge_amount: data.service_charge_amount ?? 0,
-            items: (
-              (data.order_items || []) as unknown as Array<{
-                item_name: string;
-                item_name_en?: string;
-                quantity: number;
-                price_at_order: number;
-                menu_item?: { image_url?: string | null } | { image_url?: string | null }[] | null;
-              }>
-            ).map((oi) => {
-              const mi = Array.isArray(oi.menu_item) ? oi.menu_item[0] : oi.menu_item;
-              return {
-                name: oi.item_name,
-                name_en: oi.item_name_en,
-                quantity: oi.quantity,
-                price: oi.price_at_order,
-                image_url: mi?.image_url ?? null,
-              };
-            }),
+            id: row.id,
+            order_number: row.order_number,
+            table_number: row.table_number,
+            total: row.total,
+            status: row.status,
+            created_at: row.created_at,
+            tip_amount: row.tip_amount ?? 0,
+            subtotal: row.subtotal ?? null,
+            discount_amount: row.discount_amount ?? 0,
+            tax_amount: row.tax_amount ?? 0,
+            service_charge_amount: row.service_charge_amount ?? 0,
+            items: (row.order_items || []).map((oi) => ({
+              name: oi.item_name,
+              name_en: oi.item_name_en ?? undefined,
+              quantity: oi.quantity,
+              price: oi.price_at_order,
+              image_url: oi.image_url ?? null,
+            })),
           };
           setOrder(mapped);
         }
