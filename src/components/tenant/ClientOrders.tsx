@@ -180,31 +180,29 @@ export default function ClientOrders({
     if (activeOrderIds.length === 0) return;
 
     const supabase = supabaseRef.current;
-    const channelName = `order-status-${tenantId}`;
 
+    // Live status via Broadcast on a public per-tenant topic (DB trigger
+    // broadcast_order_status). Payload is non-PII ({ id, status }); the client
+    // ignores broadcasts for orders it does not hold. Replaces the anon
+    // postgres_changes subscription (which leaked the full order row to anon).
     const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; status: string };
-          setOrders((prev) => {
-            const existing = prev.find((o) => o.id === updated.id);
-            const prevStatus = previousStatusesRef.current.get(updated.id) || existing?.status;
-            if (updated.status === 'ready' && prevStatus !== 'ready' && existing) {
-              notifyOrderReady(existing.order_number || existing.id.slice(0, 5));
-            }
-            previousStatusesRef.current.set(updated.id, updated.status);
-            return prev.map((o) => (o.id === updated.id ? { ...o, status: updated.status } : o));
-          });
-        },
-      )
+      .channel(`tenant-orders:${tenantId}`)
+      .on('broadcast', { event: 'status' }, (message) => {
+        const payload = (message.payload ?? {}) as { id?: string; status?: string };
+        const id = payload.id;
+        const status = payload.status;
+        if (!id || !status) return;
+        setOrders((prev) => {
+          const existing = prev.find((o) => o.id === id);
+          if (!existing) return prev;
+          const prevStatus = previousStatusesRef.current.get(id) || existing.status;
+          if (status === 'ready' && prevStatus !== 'ready') {
+            notifyOrderReady(existing.order_number || existing.id.slice(0, 5));
+          }
+          previousStatusesRef.current.set(id, status);
+          return prev.map((o) => (o.id === id ? { ...o, status } : o));
+        });
+      })
       .subscribe();
 
     return () => {

@@ -161,49 +161,39 @@ function OrderConfirmedContent() {
     };
   }, [orderId, tenantId]);
 
-  // Realtime subscription for order status changes
+  // Realtime: live order status via Broadcast (DB trigger broadcast_order_status).
+  // The broadcast carries a non-PII payload ({ id, status }) on a public per-order
+  // topic, so anon no longer needs any table SELECT on orders to track its order
+  // (the full-row postgres_changes payload to anon is removed).
   useEffect(() => {
     if (!orderId || !tenantId) return;
 
     const supabase = supabaseRef.current;
 
     const channel = supabase
-      .channel(`order-confirmed-${orderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          // NOTE: Supabase Realtime filter only supports single-column conditions.
-          // Cross-tenant eavesdropping is mitigated by:
-          // 1) UUIDs are unguessable (122 bits of entropy)
-          // 2) The orders table SELECT policy is intentionally public (customers
-          //    track their order without auth - same as Uber Eats/Deliveroo)
-          // 3) Order data is non-sensitive (status + table number, no PII)
-          filter: `id=eq.${orderId}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; status: string };
-          logger.info('Order status updated via realtime', {
-            orderId: updated.id,
-            status: updated.status,
-          });
-          setOrder((prev) => {
-            // Trigger notification only when transitioning TO "ready"
-            if (
-              updated.status === 'ready' &&
-              prev &&
-              prev.status !== 'ready' &&
-              previousStatusRef.current !== 'ready'
-            ) {
-              notifyOrderReadyRef.current(prev.order_number || prev.id.slice(0, 5));
-            }
-            previousStatusRef.current = updated.status;
-            return prev ? { ...prev, status: updated.status } : prev;
-          });
-        },
-      )
+      .channel(`order:${orderId}`)
+      .on('broadcast', { event: 'status' }, (message) => {
+        const payload = (message.payload ?? {}) as { id?: string; status?: string };
+        const status = payload.status;
+        if (!status) return;
+        logger.info('Order status updated via realtime', {
+          orderId: payload.id,
+          status,
+        });
+        setOrder((prev) => {
+          // Trigger notification only when transitioning TO "ready"
+          if (
+            status === 'ready' &&
+            prev &&
+            prev.status !== 'ready' &&
+            previousStatusRef.current !== 'ready'
+          ) {
+            notifyOrderReadyRef.current(prev.order_number || prev.id.slice(0, 5));
+          }
+          previousStatusRef.current = status;
+          return prev ? { ...prev, status } : prev;
+        });
+      })
       .subscribe((status) => {
         // Realtime is a best-effort enhancement: the order already renders from the
         // initial fetch. A channel error/timeout just means no live status updates,
