@@ -101,7 +101,9 @@ export default function DashboardClient(props: DashboardClientProps) {
         unit: showFin ? ` ${currencySymbol}` : '',
         deltaText: deltaText(revenueTrend),
         up: (revenueTrend ?? 0) >= 0,
-        line1: (revenueTrend ?? 0) >= 0 ? t('kpiUp') : t('kpiDown'),
+        // No prior-day data -> no trend to claim. Avoid showing "En hausse" on a 0/empty day.
+        line1:
+          revenueTrend === undefined ? t('kpiFlat') : revenueTrend >= 0 ? t('kpiUp') : t('kpiDown'),
         line2:
           revYest !== undefined && showFin
             ? t('kpiVsYesterdayValue', { value: `${fmtNum(revYest)} ${currencySymbol}` })
@@ -112,7 +114,8 @@ export default function DashboardClient(props: DashboardClientProps) {
         value: String(ordersToday),
         deltaText: deltaText(ordersTrend),
         up: (ordersTrend ?? 0) >= 0,
-        line1: (ordersTrend ?? 0) >= 0 ? t('kpiUp') : t('kpiDown'),
+        line1:
+          ordersTrend === undefined ? t('kpiFlat') : ordersTrend >= 0 ? t('kpiUp') : t('kpiDown'),
         line2:
           ordYest !== undefined
             ? t('kpiOrdersYesterday', { value: fmtNum(ordYest) })
@@ -124,7 +127,12 @@ export default function DashboardClient(props: DashboardClientProps) {
         unit: showFin ? ` ${currencySymbol}` : '',
         deltaText: deltaText(ticketTrend),
         up: (ticketTrend ?? 0) >= 0,
-        line1: (ticketTrend ?? 0) >= 0 ? t('kpiAvgUp') : t('kpiAvgDown'),
+        line1:
+          ticketTrend === undefined
+            ? t('kpiAvgFlat')
+            : ticketTrend >= 0
+              ? t('kpiAvgUp')
+              : t('kpiAvgDown'),
         line2: t('kpiAvgFoot'),
       },
       {

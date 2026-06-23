@@ -328,6 +328,9 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
             tenant_id: tenantId,
             name: 'Carte Principale',
             name_en: 'Main Menu',
+            // menus.slug is NOT NULL; the default menu needs an explicit slug or the
+            // insert fails (23502) and onboarding silently creates no menu/categories.
+            slug: 'carte-principale',
             is_active: true,
             display_order: 1,
           })
@@ -370,7 +373,8 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
                 menu_id: menuId,
                 name: categoryName,
                 is_active: true,
-                sort_order: categoryIndex + 1,
+                // categories has no `sort_order` column (only display_order); writing
+                // it raised PGRST204 and aborted category creation during onboarding.
                 display_order: categoryIndex + 1,
               })
               .select()
