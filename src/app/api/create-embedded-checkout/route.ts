@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
 import { logger } from '@/lib/logger';
@@ -50,9 +51,16 @@ async function createEmbeddedSession(params: {
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
 
+  // Render the embedded Stripe form in the user's language (FR-first market).
+  // Without this, Stripe defaults to English on the otherwise-French checkout page.
+  const cookieLocale = (await cookies()).get('NEXT_LOCALE')?.value;
+  const stripeLocale: Stripe.Checkout.SessionCreateParams.Locale =
+    cookieLocale === 'en-US' ? 'en' : 'fr';
+
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     ui_mode: 'embedded',
     mode: 'subscription',
+    locale: stripeLocale,
     payment_method_types: ['card'],
     line_items: [{ price: params.priceId, quantity: 1 }],
     metadata: {
