@@ -41,7 +41,10 @@ export async function GET(request: Request) {
     const onboardingService = createOnboardingService(supabase);
     const state = await onboardingService.getState(user.id);
 
-    return jsonWithCache(state, 'dynamic');
+    // no-store: l'etat onboarding est per-user mais l'URL ne varie pas par user.
+    // Un cache navigateur ('dynamic' = private,max-age=60) reservirait l'etat du user
+    // precedent au suivant sur un navigateur partage.
+    return jsonWithCache(state, 'realtime');
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

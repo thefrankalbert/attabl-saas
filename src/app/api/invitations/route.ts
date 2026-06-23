@@ -79,12 +79,13 @@ export async function GET(request: Request) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const sanitized = invitations.map(({ token: _token, ...rest }) => rest);
 
+      // no-store: invitations per-tenant, URL identique par user -> pas de cache navigateur.
       return jsonWithCache(
         {
           invitations: sanitized,
           pagination: buildPaginationMeta(page, pageSize, total),
         },
-        'dynamic',
+        'realtime',
       );
     } catch (error) {
       if (error instanceof ServiceError) {
