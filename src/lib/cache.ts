@@ -146,23 +146,26 @@ export async function getCachedTenant(slug: string): Promise<Tenant | null> {
  * Public/client pages should continue using getCachedTenant.
  */
 export async function getTenant(slug: string): Promise<Tenant | null> {
-  try {
-    const supabase = createCacheClient();
-    const { data, error } = await supabase
-      .from('tenants')
-      .select(TENANT_SELECT)
-      .eq('slug', slug)
-      .single();
+  const supabase = createCacheClient();
+  const { data, error } = await supabase
+    .from('tenants')
+    .select(TENANT_SELECT)
+    .eq('slug', slug)
+    .maybeSingle();
 
-    if (error) {
-      logger.error('getTenant: failed', error, { slug });
-      return null;
-    }
-    return data;
-  } catch (err) {
-    logger.error('getTenant: unexpected error', err, { slug });
-    return null;
+  // A real query failure (schema drift, transient DB error) must NOT be flattened
+  // into `null`: every caller treats `null` as "tenant not found", and the admin
+  // layout then bounces an AUTHENTICATED admin to /login. That masked a SEV-1 where
+  // a missing `tenants.custom_domain` column made every admin render error out and
+  // silently logged every restaurateur out. Throw so the admin error boundary shows
+  // a real failure instead of a misleading logout.
+  if (error) {
+    logger.error('getTenant: query failed', error, { slug });
+    throw new Error(`getTenant failed for "${slug}": ${error.message}`);
   }
+
+  // `null` here means the slug genuinely has no matching tenant row.
+  return data;
 }
 
 /**
