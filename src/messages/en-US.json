@@ -118,7 +118,7 @@
   },
   "checkout": {
     "successTitle": "Payment successful!",
-    "successDescription": "Your subscription is now active. You get a 14-day free trial.",
+    "successDescription": "Your subscription is confirmed. Your free trial continues, no commitment.",
     "goToDashboard": "Go to my dashboard",
     "login": "Log in",
     "backToHome": "Back to home",
@@ -1273,6 +1273,8 @@
     "avgTicket": "Average ticket",
     "kpiUp": "Up today",
     "kpiDown": "Down today",
+    "kpiFlat": "No trend yet",
+    "kpiAvgFlat": "No trend yet",
     "kpiVsYesterdayValue": "vs {value} yesterday",
     "kpiOrdersYesterday": "{value} at the same time yesterday",
     "kpiAvgFoot": "Daily revenue / orders",
