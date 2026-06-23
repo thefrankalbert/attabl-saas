@@ -480,7 +480,7 @@ function AuthForm({ mode }: AuthFormProps) {
             onSuccess={setCfToken}
             onExpire={() => setCfToken('')}
             onError={() => setCfToken('')}
-            options={{ theme: 'auto', size: 'normal' }}
+            options={{ theme: 'auto', size: 'flexible', appearance: 'interaction-only' }}
           />
         )}
 

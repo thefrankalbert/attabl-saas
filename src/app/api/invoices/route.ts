@@ -70,7 +70,7 @@ export async function GET(request: Request) {
 
     if (!customerId) {
       // No Stripe customer yet - return empty list
-      return jsonWithCache({ invoices: [] }, 'dynamic');
+      return jsonWithCache({ invoices: [] }, 'realtime');
     }
 
     // Fetch invoices from Stripe
@@ -95,7 +95,8 @@ export async function GET(request: Request) {
       invoice_pdf: inv.invoice_pdf,
     }));
 
-    return jsonWithCache({ invoices }, 'dynamic');
+    // no-store: factures per-user/tenant, URL identique par user -> pas de cache navigateur.
+    return jsonWithCache({ invoices }, 'realtime');
   } catch (error: unknown) {
     logger.error('Failed to fetch invoices', error);
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
