@@ -27,7 +27,7 @@ export default function VideoHero() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Centered text */}
         <div className="text-center">
-          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
+          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-4xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
             <span className="block">{t('titleLine1')}</span>
             <span className="block">{t('titleLine2')}</span>
             <span className="block">{t('titleLine3')}</span>
@@ -53,7 +53,7 @@ export default function VideoHero() {
                 key={key}
                 variant="ghost"
                 onClick={() => setActiveSegment(key)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium h-auto ${
+                className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-sm font-medium h-auto ${
                   activeSegment === key
                     ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'

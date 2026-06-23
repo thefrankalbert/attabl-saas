@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Smartphone, ShoppingBag, Package, BarChart3, Globe, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type CategoryKey = 'menu' | 'stock' | 'business';
 
@@ -31,6 +33,7 @@ const categoryDefs: { key: CategoryKey; items: { key: string; icon: LucideIcon }
 
 export default function FeaturesPage() {
   const t = useTranslations('marketing.features');
+  const tc = useTranslations('marketing.home.cta');
 
   return (
     <>
@@ -51,7 +54,7 @@ export default function FeaturesPage() {
           className={`py-20 ${catIdx % 2 === 0 ? 'bg-white dark:bg-neutral-950' : 'bg-neutral-50 dark:bg-neutral-900'}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white mb-12">
               {t(`categories.${cat.key}.title`)}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -82,6 +85,21 @@ export default function FeaturesPage() {
           </div>
         </section>
       ))}
+
+      <section className="bg-neutral-900 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="mx-auto max-w-2xl font-[family-name:var(--font-sora)] text-3xl font-bold text-white sm:text-4xl">
+            {tc('title')}
+          </h2>
+          <p className="mt-4 text-neutral-400">{tc('subtitle')}</p>
+          <div className="mt-8 flex justify-center">
+            <Button asChild size="lg" variant="secondary">
+              <Link href="/signup">{tc('primary')}</Link>
+            </Button>
+          </div>
+          <p className="mt-6 text-sm text-neutral-500">{tc('footer')}</p>
+        </div>
+      </section>
     </>
   );
 }
