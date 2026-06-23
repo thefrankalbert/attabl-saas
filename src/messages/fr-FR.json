@@ -118,7 +118,7 @@
   },
   "checkout": {
     "successTitle": "Paiement reussi !",
-    "successDescription": "Votre abonnement est maintenant actif. Vous beneficiez de 14 jours d'essai gratuit.",
+    "successDescription": "Votre abonnement est confirme. Votre essai gratuit se poursuit, sans engagement.",
     "goToDashboard": "Acceder a mon dashboard",
     "login": "Se connecter",
     "backToHome": "Retour a l'accueil",
@@ -1273,6 +1273,8 @@
     "avgTicket": "Ticket moyen",
     "kpiUp": "En hausse aujourd'hui",
     "kpiDown": "En baisse aujourd'hui",
+    "kpiFlat": "Pas encore de tendance",
+    "kpiAvgFlat": "Pas encore de tendance",
     "kpiVsYesterdayValue": "Compare a {value} hier",
     "kpiOrdersYesterday": "{value} hier a la meme heure",
     "kpiAvgFoot": "CA du jour / commandes",
