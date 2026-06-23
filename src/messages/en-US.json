@@ -269,7 +269,7 @@
       "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial on the Pro plan.",
       "hero": {
         "title": "Clear pricing. No surprises.",
-        "subtitle": "14-day free trial on the Pro plan. No credit card. No commitment."
+        "subtitle": "14-day free trial on every plan. Try everything before you pay."
       },
       "billing": {
         "monthly": "Monthly",
@@ -286,7 +286,7 @@
           "badge": "To get started",
           "title": "STARTER",
           "subtitle": "For restaurant owners who want to go digital without the headache.",
-          "button": "Get started",
+          "button": "Try it free",
           "featuresTitle": "Included in STARTER",
           "benefits": {
             "b1": "Bilingual QR menu (FR/EN)",
@@ -331,8 +331,8 @@
           "badge": "Multi-site",
           "title": "BUSINESS",
           "subtitle": "Hotel, chain or multi-site - one dashboard for everything.",
-          "primaryButton": "Get started",
-          "secondaryButton": "Watch a demo",
+          "primaryButton": "Try it free",
+          "secondaryButton": "Request a demo",
           "featuresTitle": "Included in BUSINESS",
           "benefits": {
             "b1": "Everything in PRO + up to 10 sites",
@@ -579,8 +579,8 @@
     "features": {
       "metaTitle": "Features",
       "metaDescription": "Discover all ATTABL features: digital menu, orders, stock, analytics and more.",
-      "heroTitle": "Everything you need",
-      "heroSubtitle": "Everything you need. One single tool.",
+      "heroTitle": "Everything you need to run your restaurant",
+      "heroSubtitle": "Menu, orders, stock, recipes, payments. All in one place, from your phone.",
       "categories": {
         "menu": {
           "title": "Menu & Orders",
@@ -616,7 +616,7 @@
               "description": "XAF, EUR, USD"
             },
             "multiTenant": {
-              "title": "Multi-tenant",
+              "title": "Multiple establishments",
               "description": "Manage several establishments"
             }
           }

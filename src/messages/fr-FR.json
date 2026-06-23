@@ -269,7 +269,7 @@
       "metaDescription": "Des prix clairs pour chaque etablissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit sur le plan Pro. Sans carte bancaire. Sans engagement."
+        "subtitle": "14 jours d'essai gratuit sur tous les plans. Vous testez tout avant de payer."
       },
       "billing": {
         "monthly": "Mensuel",
@@ -286,7 +286,7 @@
           "badge": "Pour démarrer",
           "title": "STARTER",
           "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
-          "button": "Commencer",
+          "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans STARTER",
           "benefits": {
             "b1": "Menu QR bilingue (FR/EN)",
@@ -331,8 +331,8 @@
           "badge": "Multi-sites",
           "title": "BUSINESS",
           "subtitle": "Hotel, chaine ou multi-sites : un seul dashboard pour tout piloter.",
-          "primaryButton": "Commencer",
-          "secondaryButton": "Voir une démo",
+          "primaryButton": "Essayer gratuitement",
+          "secondaryButton": "Demander une demo",
           "featuresTitle": "Inclus dans BUSINESS",
           "benefits": {
             "b1": "Tout PRO + jusqu'à 10 sites",
@@ -579,19 +579,19 @@
     "features": {
       "metaTitle": "Fonctionnalités",
       "metaDescription": "Découvrez toutes les fonctionnalités d'ATTABL : menu digital, commandes, stock, analytics et plus.",
-      "heroTitle": "Tout ce dont vous avez besoin",
-      "heroSubtitle": "Tout ce dont vous avez besoin. Un seul outil.",
+      "heroTitle": "Tout ce dont vous avez besoin pour gerer votre resto",
+      "heroSubtitle": "Menu, commandes, stock, recettes, encaissement. Tout au meme endroit, depuis votre telephone.",
       "categories": {
         "menu": {
           "title": "Menu & Commandes",
           "items": {
             "digitalMenu": {
               "title": "Menu digital bilingue",
-              "description": "QR code, FR/EN, modifiers payants"
+              "description": "QR code, FR/EN, options payantes"
             },
             "serviceModes": {
               "title": "4 modes de service",
-              "description": "Dine-in, takeaway, delivery, room service"
+              "description": "Sur place, a emporter, livraison, room service"
             }
           }
         },
@@ -609,14 +609,14 @@
           "items": {
             "analytics": {
               "title": "Analytics temps réel",
-              "description": "Revenus, best-sellers, tendances"
+              "description": "Vos revenus, vos plats qui marchent, vos tendances"
             },
             "multiCurrency": {
               "title": "Multi-devises",
               "description": "XAF, EUR, USD"
             },
             "multiTenant": {
-              "title": "Multi-tenant",
+              "title": "Plusieurs etablissements",
               "description": "Gérez plusieurs établissements"
             }
           }
@@ -630,7 +630,7 @@
         "titleLine3": "Marquez votre territoire.",
         "subtitle": "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Vos chiffres tombent sans effort.",
         "ctaPrimary": "Essayer gratuitement",
-        "ctaSecondary": "Voir une demo",
+        "ctaSecondary": "Demander une demo",
         "segments": {
           "restaurant": "Restaurant",
           "hotel": "Hôtel",
