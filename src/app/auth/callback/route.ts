@@ -125,7 +125,7 @@ export async function GET(request: Request) {
       // forwards no Origin/Referer (CSRF 403) and no auth cookies (getUser 401).
       // Restrict plan to known values; query params are attacker-controllable.
       const signupPlan = plan === 'pro' || plan === 'business' ? plan : 'starter';
-      const signupName = (restaurantName || 'Mon Etablissement').slice(0, 100);
+      const signupName = (restaurantName || 'Mon Établissement').slice(0, 100);
 
       try {
         const adminSupabase = createAdminClient();
