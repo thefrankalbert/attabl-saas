@@ -266,7 +266,7 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Tarifs simples pour la restauration",
-      "metaDescription": "Des prix clairs pour chaque etablissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
+      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
         "subtitle": "14 jours d'essai gratuit sur tous les plans. Vous testez tout avant de payer."
@@ -305,7 +305,7 @@
         "pro": {
           "badge": "Essai gratuit 14 jours",
           "title": "PRO",
-          "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout controler.",
+          "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout contrôler.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans PRO",
           "benefits": {
@@ -330,7 +330,7 @@
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Hotel, chaine ou multi-sites : un seul dashboard pour tout piloter.",
+          "subtitle": "Hôtel, chaine ou multi-sites : un seul dashboard pour tout piloter.",
           "primaryButton": "Essayer gratuitement",
           "secondaryButton": "Demander une demo",
           "featuresTitle": "Inclus dans BUSINESS",
@@ -438,7 +438,7 @@
               "whatsapp": "Support WhatsApp",
               "whatsappPro": "24h",
               "whatsappBusiness": "4h prioritaire",
-              "whatsappEnterprise": "1h telephone prioritaire",
+              "whatsappEnterprise": "1h téléphone prioritaire",
               "manager": "Account manager",
               "sla": "SLA garanti"
             }
@@ -455,7 +455,7 @@
       },
       "tco": {
         "title": "Pourquoi ATTABL ?",
-        "subtitle": "Cout reel sur 12 mois, tout compris.",
+        "subtitle": "Cout réel sur 12 mois, tout compris.",
         "headers": {
           "feature": "Postes de cout",
           "attabl": "ATTABL Pro",
@@ -547,7 +547,7 @@
         "t3": {
           "name": "Ibrahim D.",
           "role": "Directeur",
-          "company": "Hotel Prestige, Abidjan",
+          "company": "Hôtel Prestige, Abidjan",
           "content": "Le room service digital a changé notre classement Booking. Les clients commandent depuis le lit, en anglais ou en français."
         },
         "t4": {
@@ -579,8 +579,8 @@
     "features": {
       "metaTitle": "Fonctionnalités",
       "metaDescription": "Découvrez toutes les fonctionnalités d'ATTABL : menu digital, commandes, stock, analytics et plus.",
-      "heroTitle": "Tout ce dont vous avez besoin pour gerer votre resto",
-      "heroSubtitle": "Menu, commandes, stock, recettes, encaissement. Tout au meme endroit, depuis votre telephone.",
+      "heroTitle": "Tout ce dont vous avez besoin pour gérer votre resto",
+      "heroSubtitle": "Menu, commandes, stock, recettes, encaissement. Tout au même endroit, depuis votre téléphone.",
       "categories": {
         "menu": {
           "title": "Menu & Commandes",
@@ -616,7 +616,7 @@
               "description": "XAF, EUR, USD"
             },
             "multiTenant": {
-              "title": "Plusieurs etablissements",
+              "title": "Plusieurs établissements",
               "description": "Gérez plusieurs établissements"
             }
           }
@@ -628,7 +628,7 @@
         "titleLine1": "Petit comptoir",
         "titleLine2": "ou grande enseigne.",
         "titleLine3": "Marquez votre territoire.",
-        "subtitle": "Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Vos chiffres tombent sans effort.",
+        "subtitle": "Vos clients commandent depuis leur téléphone. Votre cuisine voit tout en temps réel. Vos chiffres tombent sans effort.",
         "ctaPrimary": "Essayer gratuitement",
         "ctaSecondary": "Demander une demo",
         "segments": {
@@ -733,7 +733,7 @@
           },
           "barsCafes": {
             "title": "Bars & Cafés",
-            "description": "Ardoise, comptoir, terrasse. Coulage sous controle, carte mise a jour en 30 secondes."
+            "description": "Ardoise, comptoir, terrasse. Coulage sous contrôle, carte mise a jour en 30 secondes."
           },
           "fastFood": {
             "title": "Fast-Food",
@@ -886,11 +886,11 @@
     },
     "about": {
       "metaTitle": "À propos",
-      "metaDescription": "ATTABL aide les restaurants, hotels et bars d'Afrique a digitaliser leur menu, leurs commandes et leur gestion. Decouvrez notre histoire.",
+      "metaDescription": "ATTABL aide les restaurants, hôtels et bars d'Afrique a digitaliser leur menu, leurs commandes et leur gestion. Decouvrez notre histoire.",
       "heading": "À propos d'ATTABL",
-      "intro": "ATTABL est un outil concu pour digitaliser la gestion des restaurants, hotels et etablissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
+      "intro": "ATTABL est un outil concu pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
       "visionTitle": "Notre vision",
-      "visionBody": "Nous croyons que chaque etablissement, du petit bistrot au grand hotel, merite des outils digitaux qui fonctionnent vraiment. ATTABL regroupe menu QR code, commandes en temps reel, POS tactile, ecran cuisine (KDS) et analytics - tout au meme endroit.",
+      "visionBody": "Nous croyons que chaque établissement, du petit bistrot au grand hôtel, mérite des outils digitaux qui fonctionnent vraiment. ATTABL regroupe menu QR code, commandes en temps réel, POS tactile, écran cuisine (KDS) et analytics - tout au même endroit.",
       "techTitle": "Technologie",
       "techBody": "Construite avec les technologies les plus récentes (Next.js, React, Supabase, Tailwind CSS), ATTABL est rapide, sécurisée et disponible en tant que Progressive Web App (PWA) sur tous les appareils.",
       "contactButton": "Nous contacter",
@@ -953,46 +953,46 @@
       "quickService": {
         "heroTitle": "Fort debit, zero temps mort.",
         "heroSubtitle": "Comptoir, drive, livraison - chaque commande est tracee, chaque seconde compte.",
-        "feature1Title": "KDS : l'ecran qui pilote la cadence",
-        "feature1Description": "Les commandes s'affichent en temps reel sur l'ecran cuisine. Priorite automatique selon le temps de passage. Votre equipe sait quoi preparer, dans quel ordre, sans qu'on leur crie dessus.",
+        "feature1Title": "KDS : l'écran qui pilote la cadence",
+        "feature1Description": "Les commandes s'affichent en temps réel sur l'écran cuisine. Priorite automatique selon le temps de passage. Votre équipe sait quoi preparer, dans quel ordre, sans qu'on leur crie dessus.",
         "feature2Title": "POS rapide : encaissement en 3 clics",
         "feature2Description": "Cash, carte, mobile money. Le ticket moyen s'affiche en direct. Pendant le pic d'affluence du midi, chaque seconde au comptoir est une commande de plus.",
         "feature3Title": "Zero rupture pendant le rush",
         "feature3Description": "Alertes stock avant le coup de feu. Vos ingredients critiques ne tomberont plus en rupture au pire moment. La rotation de vos produits est suivie en continu.",
-        "ctaTitle": "Servez plus vite. Perdez moins. Restez en controle."
+        "ctaTitle": "Servez plus vite. Perdez moins. Restez en contrôle."
       },
       "barsCafes": {
-        "heroTitle": "Comptoir cafe le matin, terrasse cocktails le soir.",
+        "heroTitle": "Comptoir café le matin, terrasse cocktails le soir.",
         "heroSubtitle": "Votre carte s'adapte, votre stock aussi. L'ardoise du jour et le suivi des boissons en un seul endroit.",
         "feature1Title": "L'ardoise et le QR code, ensemble",
         "feature1Description": "Votre carte du jour sur QR - cocktails, boissons chaudes, planches. Le client commande depuis la terrasse sans appeler le serveur. Vous mettez a jour l'ardoise en 30 secondes.",
-        "feature2Title": "Suivi du coulage en temps reel",
+        "feature2Title": "Suivi du coulage en temps réel",
         "feature2Description": "Chaque verre servi est deduit du stock. Vous voyez le coulage avant qu'il ne devienne une perte. Que vous soyez barman ou barista, vous savez exactement ce qui sort et ce qu'il reste.",
-        "feature3Title": "Vos best-sellers, soir apres soir",
+        "feature3Title": "Vos best-sellers, soir après soir",
         "feature3Description": "Quels cocktails marchent ce soir ? Quelle boisson chaude part le mieux le matin ? Ajustez votre carte et votre happy hour en fonction de ce que les chiffres vous disent.",
-        "ctaTitle": "Votre comptoir merite mieux qu'un tableur."
+        "ctaTitle": "Votre comptoir mérite mieux qu'un tableur."
       },
       "fastFood": {
-        "heroTitle": "1 borne ou 10 points de vente. Meme controle.",
-        "heroSubtitle": "Ecran cuisine, bornes de commande, drive-through, stock centralise. La cadence a grande echelle.",
+        "heroTitle": "1 borne ou 10 points de vente. Même contrôle.",
+        "heroSubtitle": "Écran cuisine, bornes de commande, drive-through, stock centralise. La cadence a grande echelle.",
         "feature1Title": "KDS et bornes : le duo gagnant",
-        "feature1Description": "Vos bornes de commande envoient directement en cuisine. L'ecran KDS trie, priorise, chronometre. Temps d'attente reduit, cadence augmentee, zero erreur de preparation.",
+        "feature1Description": "Vos bornes de commande envoient directement en cuisine. L'écran KDS trie, priorise, chronometre. Temps d'attente reduit, cadence augmentee, zero erreur de preparation.",
         "feature2Title": "Dashboard multi-sites",
-        "feature2Description": "Performances de chaque point de vente en temps reel - ticket moyen, cadence, temps de passage au drive-through. Comparez. Identifiez le site qui decroche. Agissez.",
+        "feature2Description": "Performances de chaque point de vente en temps réel - ticket moyen, cadence, temps de passage au drive-through. Comparez. Identifiez le site qui decroche. Agissez.",
         "feature3Title": "Stock centralise pour toute la chaine",
         "feature3Description": "Approvisionnement centralise pour tous vos points de vente. Alertes par site avant la rupture. Fini les combos impossibles faute d'ingredients.",
-        "ctaTitle": "Grandissez sans perdre le controle."
+        "ctaTitle": "Grandissez sans perdre le contrôle."
       },
       "hotels": {
         "heroTitle": "Room service, restaurant, bar. Un seul tableau de bord.",
-        "heroSubtitle": "Vos clients commandent depuis leur chambre dans leur langue. Votre equipe F&B voit tout en temps reel.",
+        "heroSubtitle": "Vos clients commandent depuis leur chambre dans leur langue. Votre équipe F&B voit tout en temps réel.",
         "feature1Title": "QR code par chambre, room service digital",
         "feature1Description": "Chaque chambre a son QR code. Le client commande depuis son lit - petit-dejeuner continental, minibar, repas. Zero appel au front desk, zero ticket perdu.",
         "feature2Title": "Tout votre F&B sous un toit",
         "feature2Description": "Restaurant, bar lounge, piscine, room service. Un seul dashboard pour piloter toutes vos outlets. Vos nuitees et votre restauration enfin connectees.",
         "feature3Title": "Vos clients viennent de partout",
         "feature3Description": "Menu en francais, anglais et plus. Paiement en XAF, EUR, USD. Check-in ou check-out, vos clients sont servis dans leur langue et paient comme ils veulent.",
-        "ctaTitle": "Votre F&B merite un systeme a la hauteur de votre hotel."
+        "ctaTitle": "Votre F&B mérite un systeme a la hauteur de votre hôtel."
       },
       "restaurants": {
         "heroTitle": "La salle, la cuisine, l'addition. Tout connecte.",
@@ -1000,10 +1000,10 @@
         "feature1Title": "Votre carte du jour, en direct",
         "feature1Description": "Plat du jour, allergenes, photos, modificateurs. Vos clients consultent et commandent depuis leur table. Fini les menus plastifies qui trainent.",
         "feature2Title": "La cuisine voit chaque ticket",
-        "feature2Description": "Chaque bon de commande arrive sur l'ecran cuisine au bon moment. Entrees, plats, desserts - chaque station recoit sa partie. Zero oubli, zero cri entre la salle et les fourneaux.",
+        "feature2Description": "Chaque bon de commande arrive sur l'écran cuisine au bon moment. Entrees, plats, desserts - chaque station recoit sa partie. Zero oubli, zero cri entre la salle et les fourneaux.",
         "feature3Title": "Vos recettes, vos marges, vos couverts",
-        "feature3Description": "Cout matiere par plat, suivi des couverts du service du midi et du soir, best-sellers de la semaine. Vous savez exactement ou vous en etes avant de faire votre mise en place.",
-        "ctaTitle": "Votre service du soir merite mieux qu'un carnet et une calculette."
+        "feature3Description": "Cout matiere par plat, suivi des couverts du service du midi et du soir, best-sellers de la semaine. Vous savez exactement ou vous en êtes avant de faire votre mise en place.",
+        "ctaTitle": "Votre service du soir mérite mieux qu'un carnet et une calculette."
       }
     }
   },
@@ -1065,7 +1065,7 @@
       "backToLogin": "Retour à la connexion"
     },
     "errors": {
-      "emailAlreadyRegistered": "Un compte existe deja avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
+      "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
       "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
       "signupGeneric": "Erreur lors de l'inscription",
       "resendGeneric": "Erreur lors de l'envoi",
@@ -1085,9 +1085,9 @@
     "tenants": {
       "commandCenter": {
         "tenantsDialog": {
-          "title": "Tous les etablissements",
-          "subtitleSingle": "{count} etablissement enregistre",
-          "subtitlePlural": "{count} etablissements enregistres",
+          "title": "Tous les établissements",
+          "subtitleSingle": "{count} établissement enregistre",
+          "subtitlePlural": "{count} établissements enregistres",
           "searchPlaceholder": "Rechercher par nom ou sous-domaine...",
           "noResults": "Aucun resultat pour \"{query}\"",
           "menu": "Menu"
@@ -1108,12 +1108,12 @@
           "periodDay": "Jour",
           "periodWeek": "7j",
           "periodMonth": "Mois",
-          "notEnoughData": "Pas encore assez de donnees",
+          "notEnoughData": "Pas encore assez de données",
           "loading": "Chargement du graphique",
           "currencyShort": "F"
         },
         "errors": {
-          "fetchFailed": "Impossible de charger les donnees. Reessayez.",
+          "fetchFailed": "Impossible de charger les données. Reessayez.",
           "retry": "Reessayer"
         },
         "hero": {
@@ -1133,10 +1133,10 @@
           "statusPending": "En attente"
         },
         "establishments": {
-          "title": "Etablissements",
+          "title": "Établissements",
           "seeAll": "Tout voir",
-          "empty": "Aucun etablissement",
-          "add": "Ajouter un etablissement",
+          "empty": "Aucun établissement",
+          "add": "Ajouter un établissement",
           "openDashboard": "Ouvrir le dashboard de {name}",
           "openMenu": "Ouvrir le menu client de {name}",
           "ordersShort": "cmd.",
@@ -1147,7 +1147,7 @@
         "topbar": {
           "toggleTheme": "Basculer le theme",
           "logout": "Se deconnecter",
-          "refresh": "Rafraichir les donnees"
+          "refresh": "Rafraichir les données"
         },
         "micro": {
           "orders": "Commandes",
@@ -1276,7 +1276,7 @@
     "kpiFlat": "Pas encore de tendance",
     "kpiAvgFlat": "Pas encore de tendance",
     "kpiVsYesterdayValue": "Compare a {value} hier",
-    "kpiOrdersYesterday": "{value} hier a la meme heure",
+    "kpiOrdersYesterday": "{value} hier a la même heure",
     "kpiAvgFoot": "CA du jour / commandes",
     "kpiAvgUp": "Hausse du panier moyen",
     "kpiAvgDown": "Recul du panier moyen",
@@ -1323,7 +1323,7 @@
     "period30d": "30 derniers jours",
     "settingsHub": "Parametres",
     "setAccount": "Compte",
-    "setEstablishment": "Etablissement",
+    "setEstablishment": "Établissement",
     "setPrinters": "Imprimantes",
     "setTax": "TVA",
     "setStaff": "Personnel",
@@ -1331,15 +1331,15 @@
     "setEstablishmentSub": "Coordonnees et QR du menu.",
     "setPrintersSub": "Imprimantes tickets et cuisine.",
     "setTaxSub": "Taux de taxe appliques aux additions.",
-    "setStaffSub": "Membres de l'equipe et roles d'acces.",
+    "setStaffSub": "Membres de l'équipe et roles d'acces.",
     "setFieldName": "Nom",
     "setFieldEmail": "Email",
     "setFieldPlan": "Abonnement",
-    "setFieldVenue": "Nom de l'etablissement",
+    "setFieldVenue": "Nom de l'établissement",
     "setFieldQr": "QR du menu",
-    "setManageQr": "Gerer les QR codes",
-    "setManageSub": "Gerer l'abonnement",
-    "setManageStaff": "Gerer l'equipe",
+    "setManageQr": "Gérer les QR codes",
+    "setManageSub": "Gérer l'abonnement",
+    "setManageStaff": "Gérer l'équipe",
     "setManageSettings": "Ouvrir dans les parametres",
     "trendUp": "▲",
     "trendDown": "▼",
@@ -1383,7 +1383,7 @@
       "venues": "Espaces",
       "unlimited": "Illimité",
       "changePlan": "Changer de plan",
-      "manageBilling": "Gerer la facturation",
+      "manageBilling": "Gérer la facturation",
       "planChanged": "Plan mis a jour. Votre facturation est calculee au prorata.",
       "planChangeError": "Impossible de changer le plan. Reessayez.",
       "monthly": "Mensuel",
@@ -1425,7 +1425,7 @@
       "tabChangePlan": "Changer de plan",
       "featureBasicPOS": "Point de vente basique",
       "featureFullPOS": "Point de vente complet",
-      "featureKDS": "Ecran cuisine (KDS)",
+      "featureKDS": "Écran cuisine (KDS)",
       "featureInventory": "Gestion de stock",
       "feature10Spaces": "10 espaces inclus",
       "featureAllProFeatures": "Toutes les fonctionnalites Pro",
@@ -1522,20 +1522,20 @@
       "upgradeCta": "Passer au Pro - 14j gratuits",
       "trialNote": "Disponible gratuitement pendant votre essai Pro",
       "kds": {
-        "title": "Ecran cuisine (KDS)",
-        "desc": "Les commandes arrivent directement sur l'ecran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
+        "title": "Écran cuisine (KDS)",
+        "desc": "Les commandes arrivent directement sur l'écran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."
       },
       "inventory": {
         "title": "Gestion des stocks",
-        "desc": "Suivez vos ingredients en temps reel, recevez des alertes avant les ruptures, et destockez automatiquement apres chaque commande."
+        "desc": "Suivez vos ingredients en temps réel, recevez des alertes avant les ruptures, et destockez automatiquement après chaque commande."
       },
       "recipes": {
         "title": "Fiches techniques",
-        "desc": "Calculez le cout reel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activite reelle."
+        "desc": "Calculez le cout réel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activite réelle."
       },
       "reports": {
         "title": "Statistiques avancees",
-        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des decisions basees sur des donnees reelles."
+        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des decisions basees sur des données réelles."
       }
     }
   },
@@ -1613,9 +1613,9 @@
     "recipeSaveError": "Erreur lors de l'enregistrement de la recette",
     "recipeQtyRequired": "Indiquez une quantite superieure a 0 pour chaque ingredient",
     "recipeDuplicateIngredient": "Chaque ingredient ne peut apparaitre qu'une fois",
-    "recipeAllIngredientsUsed": "Tous vos produits sont deja dans cette fiche",
+    "recipeAllIngredientsUsed": "Tous vos produits sont déjà dans cette fiche",
     "recipeReadOnlyHint": "Vous pouvez consulter les fiches. Seuls les responsables stock peuvent les modifier.",
-    "goToInventory": "Gerer les produits en stock",
+    "goToInventory": "Gérer les produits en stock",
     "loadingRecipeError": "Erreur de chargement de la recette",
     "addProductsFirst": "Ajoutez d'abord des produits",
     "recipesSubtitle": "Gérez les fiches techniques de vos plats",
@@ -1851,7 +1851,7 @@
     "resetInProgress": "Suppression...",
     "resetError": "Une erreur est survenue lors de la réinitialisation.",
     "enableBarDisplay": "Zones de preparation separees",
-    "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand desactive, toutes les commandes apparaissent sur un seul ecran."
+    "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand desactive, toutes les commandes apparaissent sur un seul écran."
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -1943,7 +1943,7 @@
       "pageSubtitle": "Tente de table 21,7 x 11 cm - prete a imprimer",
       "sectionBackground": "Fond",
       "sectionLogo": "Logo",
-      "sectionName": "Nom de l'etablissement",
+      "sectionName": "Nom de l'établissement",
       "sectionTagline": "Description",
       "sectionQr": "QR Code",
       "sectionVerso": "Verso",
@@ -2260,7 +2260,7 @@
     "restoreError": "Erreur lors de la restauration",
     "restoreSuccess": "Permissions par defaut restaurees pour {role}",
     "accessDenied": "Acces refuse",
-    "ownerOnly": "Seul le proprietaire peut gerer les permissions.",
+    "ownerOnly": "Seul le proprietaire peut gérer les permissions.",
     "restoreDefaults": "Restaurer les defauts",
     "reset": "Reinitialiser",
     "modified": "modifie",
@@ -2272,13 +2272,13 @@
       "menu_view": "Voir les menus",
       "menu_edit": "Modifier les menus",
       "orders_view": "Voir les commandes",
-      "orders_manage": "Gerer les commandes",
+      "orders_manage": "Gérer les commandes",
       "reports_view": "Voir les rapports",
       "pos_use": "Utiliser la caisse",
       "inventory_view": "Voir l'inventaire",
       "inventory_edit": "Modifier l'inventaire",
-      "team_view": "Voir l'equipe",
-      "team_manage": "Gerer l'equipe",
+      "team_view": "Voir l'équipe",
+      "team_manage": "Gérer l'équipe",
       "settings_view": "Voir les parametres",
       "settings_edit": "Modifier les parametres"
     },
@@ -2296,7 +2296,7 @@
       "reports": "Rapports",
       "pos": "Point de vente",
       "inventory": "Inventaire",
-      "team": "Equipe",
+      "team": "Équipe",
       "settings": "Parametres"
     }
   },
@@ -2320,7 +2320,7 @@
     "couponAdded": "Coupon ajouté",
     "couponUpdated": "Coupon mis à jour",
     "couponDeleted": "Coupon supprimé",
-    "confirmDelete": "Etes-vous sur de vouloir supprimer ce coupon ?",
+    "confirmDelete": "Êtes-vous sur de vouloir supprimer ce coupon ?",
     "cancel": "Annuler",
     "noCoupons": "Aucun coupon",
     "subtitleClient": "Gérez vos codes de réduction",
@@ -2531,7 +2531,7 @@
     "featuredOnHomeLimit": "Limite recommandée de {count} catégories atteinte. Au-delà, seules les {count} premières seront affichées.",
     "isActive": "Categorie active",
     "isActiveDesc": "Masquer cette categorie sur le menu client sans la supprimer.",
-    "categoryLinkedToMenu": "Cette categorie est liee a un menu et ne peut pas etre supprimee.",
+    "categoryLinkedToMenu": "Cette categorie est liee a un menu et ne peut pas être supprimee.",
     "icon": "Icone"
   },
   "items": {
@@ -3382,7 +3382,7 @@
     "establishmentSubtitle": "On configure tout automatiquement ensuite.",
     "nameLabel": "Nom de l'établissement",
     "namePlaceholder": "Ex : Le Petit Bistrot",
-    "nameRequired": "Donnez d'abord un nom a votre etablissement.",
+    "nameRequired": "Donnez d'abord un nom a votre établissement.",
     "typeRestaurant": "Restaurant",
     "typeRestaurantDesc": "Service a table, midi et soir",
     "typeHotel": "Hôtel",
@@ -3419,6 +3419,11 @@
     "modeMinimumDesc": "Nom de zone + nombre de tables",
     "modeSkip": "Configurer plus tard",
     "modeSkipDesc": "10 tables par défaut",
+    "tablesModeLabel": "Mode de configuration",
+    "zonesLabel": "Zones",
+    "zoneNumber": "Zone {number}",
+    "configurationLabel": "Configuration",
+    "previewDineIn": "Sur place",
     "zoneName": "Nom de la zone",
     "zoneNamePlaceholder": "Ex : Terrasse, Salle",
     "zonePrefix": "Préfixe",
@@ -3707,7 +3712,7 @@
     "close": "Fermer",
     "iosStep1": "1. Appuyez sur Partager",
     "iosStep2": "2. Sélectionnez Sur l'écran d'accueil",
-    "installOnHomeScreen": "Installer {appName} sur votre ecran d'accueil"
+    "installOnHomeScreen": "Installer {appName} sur votre écran d'accueil"
   },
   "contact": {
     "back": "Retour",
@@ -3720,7 +3725,7 @@
     "labelCompany": "Établissement",
     "placeholderCompany": "Hôtel Le Plaza",
     "labelEmail": "Email professionnel",
-    "placeholderEmail": "jean@hotel-plaza.com",
+    "placeholderEmail": "jean@hôtel-plaza.com",
     "labelMessage": "Votre message",
     "placeholderMessage": "Parlez-nous de votre établissement et de vos besoins...",
     "submitting": "Envoi en cours...",
@@ -3763,12 +3768,12 @@
     "invalidCredentials": "Email ou mot de passe incorrect.",
     "emailNotConfirmed": "Veuillez confirmer votre adresse email avant de vous connecter",
     "loginError": "Erreur de connexion. Veuillez reessayer.",
-    "noEstablishment": "Aucun etablissement associe a ce compte",
+    "noEstablishment": "Aucun établissement associe a ce compte",
     "invalidLoginFields": "Email ou mot de passe invalide.",
     "signupConfirmation": "Un email de confirmation a ete envoye. Veuillez verifier votre boite mail.",
-    "emailAlreadyRegistered": "Un compte existe deja avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
+    "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
     "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
-    "invalidDataFallback": "Donnees invalides"
+    "invalidDataFallback": "Données invalides"
   },
   "segment": {
     "food": {

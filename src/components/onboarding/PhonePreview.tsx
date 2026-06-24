@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ChevronDown,
   Clock,
@@ -105,6 +106,7 @@ const C = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
+  const t = useTranslations('onboarding');
   const { logoUrl, tenantName, menuItems, currency } = data;
 
   const categories = useMemo(() => {
@@ -193,7 +195,9 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               {/* Location picker */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <MapPin style={{ width: '9px', height: '9px', color: C.text }} strokeWidth={2} />
-                <span style={{ fontSize: '8px', fontWeight: 600, color: C.text }}>Sur place</span>
+                <span style={{ fontSize: '8px', fontWeight: 600, color: C.text }}>
+                  {t('previewDineIn')}
+                </span>
                 <ChevronDown
                   style={{ width: '8px', height: '8px', color: C.text }}
                   strokeWidth={2}

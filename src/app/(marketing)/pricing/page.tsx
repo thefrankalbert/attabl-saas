@@ -311,8 +311,7 @@ export default function PricingPage() {
       company: t('testimonials.t1.company'),
       content: t('testimonials.t1.content'),
       rating: 5,
-      avatar:
-        'https://images.unsplash.com/photo-1589156280159-27698a70f29e?w=80&h=80&fit=crop&crop=face',
+      avatar: '/avatars/ak.png',
     },
     {
       id: 2,
@@ -321,8 +320,7 @@ export default function PricingPage() {
       company: t('testimonials.t2.company'),
       content: t('testimonials.t2.content'),
       rating: 5,
-      avatar:
-        'https://images.unsplash.com/photo-1611432579699-484f7990b127?w=80&h=80&fit=crop&crop=face',
+      avatar: '/avatars/gm.png',
     },
     {
       id: 3,
@@ -331,8 +329,7 @@ export default function PricingPage() {
       company: t('testimonials.t3.company'),
       content: t('testimonials.t3.content'),
       rating: 5,
-      avatar:
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face',
+      avatar: '/avatars/id.png',
     },
     {
       id: 4,
@@ -341,8 +338,7 @@ export default function PricingPage() {
       company: t('testimonials.t4.company'),
       content: t('testimonials.t4.content'),
       rating: 5,
-      avatar:
-        'https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?w=80&h=80&fit=crop&crop=face',
+      avatar: '/avatars/fs.png',
     },
   ];
 
