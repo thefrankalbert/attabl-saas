@@ -336,7 +336,7 @@ export function EstablishmentStep({
                       <SelectContent>
                         <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
                         <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
+                        <SelectItem value="GBP">GBP ({'£'})</SelectItem>
                         <SelectItem value="XAF">XAF (FCFA)</SelectItem>
                         <SelectItem value="XOF">XOF (FCFA)</SelectItem>
                         <SelectItem value="MAD">

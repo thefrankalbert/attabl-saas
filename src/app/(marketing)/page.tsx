@@ -12,11 +12,11 @@ export const revalidate = 3600; // ISR: regenerate every hour
 export const metadata: Metadata = {
   title: 'Attabl - Votre restaurant digital en 5 minutes',
   description:
-    "Menu QR, commandes en temps reel, encaissement mobile money. Utilise par des restaurants au Burkina Faso, Cote d'Ivoire et au Senegal. Essai gratuit 14 jours.",
+    "Menu QR, commandes en temps réel, encaissement mobile money. Utilisé par des restaurants au Burkina Faso, Côte d'Ivoire et au Sénégal. Essai gratuit 14 jours.",
   openGraph: {
     title: 'Attabl - Petit comptoir ou grande enseigne. Marquez votre territoire.',
     description:
-      'Vos clients commandent depuis leur telephone. Votre cuisine voit tout en temps reel. Essai gratuit 14 jours.',
+      'Vos clients commandent depuis leur téléphone. Votre cuisine voit tout en temps réel. Essai gratuit 14 jours.',
     type: 'website',
   },
 };
