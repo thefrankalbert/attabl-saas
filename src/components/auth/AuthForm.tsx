@@ -103,7 +103,7 @@ function AuthForm({ mode }: AuthFormProps) {
         // Signup flow - restaurant name is collected during onboarding
         const hpValue = honeypotRef.current?.value?.trim() ?? '';
         const signupBody: Record<string, string> = {
-          restaurantName: 'Mon Etablissement',
+          restaurantName: 'Mon Établissement',
           email,
           password,
           plan: 'starter',
