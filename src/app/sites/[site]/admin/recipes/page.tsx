@@ -5,11 +5,13 @@ import RecipesClient from '@/components/admin/RecipesClient';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RecipesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'inventory.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

@@ -3,11 +3,13 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'settings.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

@@ -2,11 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TablesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'settings.view');
   const supabase = await createClient();
 
   // ─── Auth check ──────────────────────────────────────

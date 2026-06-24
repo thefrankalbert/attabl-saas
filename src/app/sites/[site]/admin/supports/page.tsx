@@ -6,11 +6,13 @@ import { getTranslations } from 'next-intl/server';
 import { createSupportsService } from '@/services/supports.service';
 import { ChevaletEditor } from '@/components/admin/supports/ChevaletEditor';
 import type { TenantForEditor } from '@/types/supports.types';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SupportsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'menu.edit');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
   const t = await getTranslations('sidebar.supports');
