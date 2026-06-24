@@ -16,7 +16,7 @@ export function buildCspHeader(nonce: string): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'${devScriptExtras} https://*.stripe.com https://*.sentry.io https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net https://images.unsplash.com",
+    "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net",
     "font-src 'self'",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io https://api.exchangerate-api.com",
     'frame-src https://*.stripe.com https://challenges.cloudflare.com',

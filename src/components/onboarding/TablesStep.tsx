@@ -129,7 +129,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {/* Mode Selector */}
           <div className="mb-6">
             <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-              Mode de configuration
+              {t('tablesModeLabel')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {modeIds.map((id, idx) => {
@@ -184,7 +184,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {mode === 'minimum' && (
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Zones
+                {t('zonesLabel')}
               </p>
               <div className="space-y-3">
                 {zones.map((zone, index) => (
@@ -279,7 +279,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           {mode === 'complete' && (
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Zones
+                {t('zonesLabel')}
               </p>
               <div className="space-y-4">
                 {zones.map((zone, index) => (
@@ -290,7 +290,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     {/* Zone header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
                       <span className="text-xs font-bold text-app-text-muted uppercase tracking-wider">
-                        Zone {index + 1}
+                        {t('zoneNumber', { number: index + 1 })}
                       </span>
                       <Button
                         type="button"
