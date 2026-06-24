@@ -254,7 +254,7 @@ export function createSignupService(supabase: SupabaseClient) {
       const oauthRestaurantName =
         input.restaurantName?.trim() ||
         input.email.split('@')[0]?.replace(/[._-]/g, ' ').trim() ||
-        'Mon Etablissement';
+        'Mon Établissement';
 
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(oauthRestaurantName);
@@ -283,7 +283,7 @@ export function createSignupService(supabase: SupabaseClient) {
       const restaurantName =
         input.restaurantName?.trim() ||
         input.email.split('@')[0]?.replace(/[._-]/g, ' ').trim() ||
-        'Mon Etablissement';
+        'Mon Établissement';
 
       const { data: existingAdmin } = await supabase
         .from('admin_users')
