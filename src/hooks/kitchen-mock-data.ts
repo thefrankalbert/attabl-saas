@@ -25,13 +25,13 @@ export const MOCK_ORDERS: Order[] = [
       },
       {
         id: 'm2',
-        name: 'Entrec\u00f4te Grill\u00e9e',
+        name: 'Entrecôte Grillée',
         quantity: 1,
         price: 9500,
         item_status: 'pending',
         course: 'main',
         notes: 'Cuisson saignante',
-        modifiers: [{ name: 'Sauce b\u00e9arnaise', price: 500 }],
+        modifiers: [{ name: 'Sauce béarnaise', price: 500 }],
       },
       {
         id: 'm3',
@@ -121,7 +121,7 @@ export const MOCK_ORDERS: Order[] = [
     items: [
       {
         id: 'm7',
-        name: 'Salade C\u00e9sar',
+        name: 'Salade César',
         quantity: 1,
         price: 4500,
         item_status: 'ready',

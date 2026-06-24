@@ -6,58 +6,58 @@ import { TestimonialsColumn, type Testimonial } from '@/components/ui/testimonia
 
 const testimonials: Testimonial[] = [
   {
-    text: "On a reduit les erreurs de commande de 40% en 2 mois. La cuisine recoit tout sur l'ecran, plus de tickets perdus.",
+    text: "On a réduit les erreurs de commande de 40% en 2 mois. La cuisine reçoit tout sur l'écran, plus de tickets perdus.",
     image: '/avatars/ak.png',
     name: 'Amadou K.',
     role: "Le Jardin - N'Djamena",
   },
   {
-    text: 'Le room service digital a change notre classement Booking. Les clients commandent depuis le lit, en anglais ou en francais.',
+    text: 'Le room service digital a changé notre classement Booking. Les clients commandent depuis le lit, en anglais ou en français.',
     image: '/avatars/id.png',
     name: 'Ibrahim D.',
-    role: 'Hotel Prestige - Abidjan',
+    role: 'Hôtel Prestige - Abidjan',
   },
   {
-    text: '200 commandes par jour, zero stress. Le KDS fait le tri, on prepare, on envoie.',
+    text: '200 commandes par jour, zéro stress. Le KDS fait le tri, on prépare, on envoie.',
     image: '/avatars/gm.png',
     name: 'Grace M.',
     role: 'Chez Mama - Douala',
   },
   {
-    text: 'Le QR code a transforme notre service. Les clients scannent, commandent et paient sans attendre un serveur.',
+    text: 'Le QR code a transformé notre service. Les clients scannent, commandent et paient sans attendre un serveur.',
     image: '/avatars/jn.png',
     name: 'Jean-Pierre N.',
     role: 'Brasserie du Port - Libreville',
   },
   {
-    text: "En 3 mois, notre chiffre d'affaires a augmente de 25%. Le menu digital pousse les clients a commander plus.",
+    text: "En 3 mois, notre chiffre d'affaires a augmenté de 25%. Le menu digital pousse les clients à commander plus.",
     image: '/avatars/fs.png',
     name: 'Fatou S.',
     role: 'La Terrasse - Dakar',
   },
   {
-    text: "Le suivi des stocks en temps reel m'a evite des ruptures. Je sais exactement quoi commander et quand.",
+    text: "Le suivi des stocks en temps réel m'a évité des ruptures. Je sais exactement quoi commander et quand.",
     image: '/avatars/po.png',
     name: 'Patrick O.',
-    role: 'Saveurs Locales - Yaounde',
+    role: 'Saveurs Locales - Yaoundé',
   },
   {
-    text: 'Avant ATTABL, on perdait 2h par jour a gerer les commandes papier. Maintenant tout est automatise.',
+    text: 'Avant ATTABL, on perdait 2h par jour à gérer les commandes papier. Maintenant tout est automatisé.',
     image: '/avatars/ab.png',
     name: 'Aissatou B.',
     role: "L'Escale Gourmande - Conakry",
   },
   {
-    text: 'Le dashboard analytics me donne une vision claire de mes ventes. Je prends de meilleures decisions chaque semaine.',
+    text: 'Le dashboard analytics me donne une vision claire de mes ventes. Je prends de meilleures décisions chaque semaine.',
     image: '/avatars/et.png',
     name: 'Emmanuel T.',
-    role: 'Royal Beach Hotel - Lome',
+    role: 'Royal Beach Hotel - Lomé',
   },
   {
     text: "L'onboarding a pris 15 minutes. Le lendemain, on avait notre menu digital en ligne avec QR codes sur chaque table.",
     image: '/avatars/ma.png',
     name: 'Marie-Claire A.',
-    role: 'Cafe des Arts - Kinshasa',
+    role: 'Café des Arts - Kinshasa',
   },
 ];
 

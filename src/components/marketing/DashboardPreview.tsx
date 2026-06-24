@@ -106,7 +106,7 @@ const orderData: Record<
     {
       table: 'T12',
       id: '#A2F3',
-      items: '1x Ndole, 2x Biere',
+      items: '1x Ndolé, 2x Bière',
       price: '14 200 F',
       time: '8 min',
       status: 'inProgress',
@@ -122,7 +122,7 @@ const orderData: Record<
     {
       table: 'T2',
       id: '#A2F1',
-      items: '1x Poisson grille',
+      items: '1x Poisson grillé',
       price: '31 800 F',
       time: '22 min',
       status: 'ready',
@@ -200,7 +200,7 @@ const orderData: Record<
     {
       table: 'T3',
       id: '#B01',
-      items: '2x Mojito, 1x Biere',
+      items: '2x Mojito, 1x Bière',
       price: '12 500 F',
       time: '2 min',
       status: 'ready',
