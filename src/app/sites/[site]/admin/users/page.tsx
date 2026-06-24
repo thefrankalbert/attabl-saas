@@ -9,6 +9,7 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ export default async function UsersPage({
   searchParams: Promise<{ page?: string; pageSize?: string }>;
 }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'team.view');
   const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
