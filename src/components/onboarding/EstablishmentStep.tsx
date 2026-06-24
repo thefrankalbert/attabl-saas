@@ -288,7 +288,7 @@ export function EstablishmentStep({
               {/* Right: Configuration */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
-                  Configuration
+                  {t('configurationLabel')}
                 </p>
 
                 <div className="space-y-4">
