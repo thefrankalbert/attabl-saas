@@ -4,11 +4,13 @@ import { headers } from 'next/headers';
 import AuditLogClient from '@/components/admin/AuditLogClient';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AuditLogsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'settings.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

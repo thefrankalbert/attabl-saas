@@ -8,6 +8,7 @@ import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-
 export const dynamic = 'force-dynamic';
 
 import { parseSettingsTab } from '@/lib/settings-tabs';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -16,6 +17,7 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params, searchParams }: SettingsPageProps) {
   const { site } = await params;
+  await requireAdminPermission(site, 'settings.view');
   const sp = await searchParams;
   const initialTab = parseSettingsTab(sp.tab);
   const headersList = await headers();

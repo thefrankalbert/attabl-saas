@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
+import { getAdminPermission } from '@/lib/auth/require-admin-permission';
 import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats } from '@/types/admin.types';
 import type {
@@ -367,6 +368,19 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       { tenantId: tenant.id },
     );
     // Fallback with empty data (already initialized above)
+  }
+
+  // RBAC: revenue/financial widgets are restricted to roles with `reports.view`
+  // (owner/admin/manager). The dashboard stays reachable for every role, but
+  // cashier/chef/waiter must not see revenue, so blank the financial fields
+  // server-side (never ship the data in props/HTML).
+  const canSeeRevenue = await getAdminPermission(site, 'reports.view');
+  if (!canSeeRevenue) {
+    initialStats = { ...initialStats, revenueToday: 0, revenueTrend: undefined };
+    initialRevenueSparkline = [];
+    initialBuckets = { week: [], month: [], quarter: [] };
+    initialChannelBuckets = { week: [], month: [], quarter: [] };
+    initialTopDishes = [];
   }
 
   return (

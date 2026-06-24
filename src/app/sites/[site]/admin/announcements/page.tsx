@@ -4,11 +4,13 @@ import { headers } from 'next/headers';
 import AnnouncementsClient from '@/components/admin/AnnouncementsClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import type { Announcement } from '@/types/admin.types';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AnnouncementsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'menu.edit');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 

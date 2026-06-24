@@ -4,11 +4,13 @@ import { ShieldCheck } from 'lucide-react';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
 import type { PermissionMap } from '@/types/permission.types';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PermissionsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  await requireAdminPermission(site, 'settings.edit');
   const supabase = await createClient();
 
   // ─── Auth check ──────────────────────────────────────
