@@ -18,32 +18,32 @@ import { SupportFAQ } from '@/components/admin/support/SupportFAQ';
 const QUICK_LINKS = [
   {
     icon: BookOpen,
-    title: 'Guide de demarrage',
+    title: 'Guide de démarrage',
     description: 'Premiers pas avec ATTABL : configuration, menu et QR codes.',
     href: '#',
   },
   {
     icon: UtensilsCrossed,
     title: 'Gestion du menu',
-    description: 'Categories, articles, options, variantes de prix et photos.',
+    description: 'Catégories, articles, options, variantes de prix et photos.',
     href: '#',
   },
   {
     icon: ClipboardList,
     title: 'Commandes & KDS',
-    description: 'Ecran cuisine, routage des commandes, mode service et suivi en temps reel.',
+    description: 'Écran cuisine, routage des commandes, mode service et suivi en temps réel.',
     href: '#',
   },
   {
     icon: Laptop,
     title: 'Caisse (POS)',
-    description: 'Point de vente integre, prise de commandes rapide et encaissement.',
+    description: 'Point de vente intégré, prise de commandes rapide et encaissement.',
     href: '#',
   },
   {
     icon: QrCode,
     title: 'QR Codes',
-    description: 'Generation de QR codes par table ou generaux, telechargement HD.',
+    description: 'Génération de QR codes par table ou généraux, téléchargement HD.',
     href: '#',
   },
   {
@@ -54,8 +54,8 @@ const QUICK_LINKS = [
   },
   {
     icon: Users,
-    title: 'Equipe & Permissions',
-    description: 'Gestion des membres, roles personnalises et permissions granulaires.',
+    title: 'Équipe & Permissions',
+    description: 'Gestion des membres, rôles personnalisés et permissions granulaires.',
     href: '#',
   },
   {
@@ -85,7 +85,7 @@ export default function SupportPage() {
             <div>
               <h1 className="text-2xl font-bold text-app-text">Support & Aide</h1>
               <p className="text-sm text-app-text-secondary mt-0.5">
-                Trouvez des r\u00e9ponses rapides ou contactez notre \u00e9quipe.
+                Trouvez des réponses rapides ou contactez notre équipe.
               </p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function SupportPage() {
           {/* FAQ */}
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-app-text-muted mb-4">
-              Questions fr\u00e9quentes
+              Questions fréquentes
             </h2>
             <Card>
               <CardContent className="p-0">
@@ -147,11 +147,10 @@ export default function SupportPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-base font-semibold text-app-text">
-                      Besoin d&apos;aide suppl\u00e9mentaire ?
+                      Besoin d&apos;aide supplémentaire ?
                     </h3>
                     <p className="text-sm text-app-text-secondary mt-1">
-                      Notre \u00e9quipe r\u00e9pond g\u00e9n\u00e9ralement sous 24 heures, du lundi
-                      au vendredi.
+                      Notre équipe répond généralement sous 24 heures, du lundi au vendredi.
                     </p>
                   </div>
                   <a

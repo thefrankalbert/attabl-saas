@@ -56,7 +56,7 @@ const QR_STYLES: Array<{
 const CTA_PRESETS = [
   { key: 'qrCtaScan', value: 'Scannez pour commander' },
   { key: 'qrCtaMenu', value: 'Scannez pour voir le menu' },
-  { key: 'qrCtaDiscover', value: 'Scannez pour d\u00e9couvrir' },
+  { key: 'qrCtaDiscover', value: 'Scannez pour découvrir' },
   { key: 'qrCtaCard', value: 'Scannez notre carte' },
 ];
 
@@ -176,7 +176,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <div>
                   <h2 className="text-xl font-bold text-app-text">{data.tenantName}</h2>
                   <p className="text-app-text-secondary capitalize text-sm">
-                    {data.establishmentType} &bull; {data.city || 'Non d\u00e9fini'}
+                    {data.establishmentType} &bull; {data.city || 'Non défini'}
                   </p>
                 </div>
               </div>

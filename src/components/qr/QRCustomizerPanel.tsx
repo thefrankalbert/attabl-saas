@@ -71,7 +71,7 @@ const ERROR_CORRECTION_LEVELS: {
 
 const SHADOW_OPTIONS: { value: QRShadowIntensity; label: string }[] = [
   { value: 'none', label: 'Aucune' },
-  { value: 'light', label: 'L\u00e9g\u00e8re' },
+  { value: 'light', label: 'Légère' },
   { value: 'medium', label: 'Moyenne' },
   { value: 'strong', label: 'Forte' },
 ];
@@ -206,7 +206,7 @@ export function QRCustomizerPanel({
           </TabsTrigger>
           <TabsTrigger value="advanced" className="flex items-center gap-1.5 text-xs">
             <Settings2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Avanc\u00e9</span>
+            <span className="hidden sm:inline">Avancé</span>
           </TabsTrigger>
         </TabsList>
 
@@ -450,7 +450,7 @@ export function QRCustomizerPanel({
 
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-app-text-muted">
-                        D\u00e9couper le QR sous le logo
+                        Découper le QR sous le logo
                       </Label>
                       <Switch
                         checked={config.logo.excavate}
@@ -576,10 +576,10 @@ export function QRCustomizerPanel({
         {/* ────────────────────────── Tab 4: Text ────────────────────────────── */}
         <TabsContent value="text" className="space-y-6">
           {/* CTA presets */}
-          <Section title="Appel \u00e0 l'action">
+          <Section title="Appel à l'action">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs text-app-text-muted">Texte pr\u00e9d\u00e9fini</Label>
+                <Label className="text-xs text-app-text-muted">Texte prédéfini</Label>
                 <Select
                   value={config.ctaPreset}
                   onValueChange={(val) => {
@@ -599,14 +599,14 @@ export function QRCustomizerPanel({
                         {text}
                       </SelectItem>
                     ))}
-                    <SelectItem value="custom">Personnalis\u00e9...</SelectItem>
+                    <SelectItem value="custom">Personnalisé...</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <FeatureGate feature="canAccessQrCustomization">
                 <div className="space-y-2">
-                  <Label className="text-xs text-app-text-muted">Texte personnalis\u00e9</Label>
+                  <Label className="text-xs text-app-text-muted">Texte personnalisé</Label>
                   <Input
                     value={config.ctaText}
                     onChange={(e) => {
@@ -670,10 +670,10 @@ export function QRCustomizerPanel({
           <FeatureGate feature="canAccessQrCustomization" planRequired="enterprise">
             <div className="space-y-6">
               {/* Gradient */}
-              <Section title="D\u00e9grad\u00e9">
+              <Section title="Dégradé">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm text-app-text">Activer le d\u00e9grad\u00e9</Label>
+                    <Label className="text-sm text-app-text">Activer le dégradé</Label>
                     <Switch
                       checked={config.gradient.enabled}
                       onCheckedChange={(checked) => updateGradient('enabled', checked)}
@@ -685,17 +685,17 @@ export function QRCustomizerPanel({
                       <ColorPicker
                         value={config.gradient.colorStart}
                         onChange={(c) => updateGradient('colorStart', c)}
-                        label="Couleur de d\u00e9part"
+                        label="Couleur de départ"
                       />
                       <ColorPicker
                         value={config.gradient.colorEnd}
                         onChange={(c) => updateGradient('colorEnd', c)}
-                        label="Couleur d'arriv\u00e9e"
+                        label="Couleur d'arrivée"
                       />
                       <SliderField
                         label="Angle"
                         value={config.gradient.angle}
-                        unit="\u00b0"
+                        unit="°"
                         min={0}
                         max={360}
                         step={1}
@@ -729,7 +729,7 @@ export function QRCustomizerPanel({
                         />
                       </div>
                       <SliderField
-                        label="Opacit\u00e9"
+                        label="Opacité"
                         value={Math.round(config.backgroundImage.opacity * 100)}
                         unit="%"
                         min={0}

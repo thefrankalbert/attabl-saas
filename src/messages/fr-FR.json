@@ -721,7 +721,7 @@
         "cards": {
           "restaurants": {
             "title": "Restaurants",
-            "description": "Bon de commande, ticket cuisine, addition. Votre salle et vos fourneaux enfin connectes."
+            "description": "Bon de commande, ticket cuisine, addition. Votre salle et vos fourneaux enfin connectés."
           },
           "hotels": {
             "title": "Hôtels",
@@ -733,11 +733,11 @@
           },
           "barsCafes": {
             "title": "Bars & Cafés",
-            "description": "Ardoise, comptoir, terrasse. Coulage sous contrôle, carte mise a jour en 30 secondes."
+            "description": "Ardoise, comptoir, terrasse. Coulage sous contrôle, carte mise à jour en 30 secondes."
           },
           "fastFood": {
             "title": "Fast-Food",
-            "description": "Bornes, drive-through, multi-sites. La cadence a grande echelle, sans perdre le fil."
+            "description": "Bornes, drive-through, multi-sites. La cadence à grande échelle, sans perdre le fil."
           }
         }
       },
@@ -783,9 +783,9 @@
       },
       "cta": {
         "title": "Votre commerce mérite mieux qu'un carnet et une calculette.",
-        "subtitle": "Compte cree en 2 minutes. Votre menu en ligne aujourd'hui.",
+        "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
         "primary": "Lancer mon restaurant - gratuit",
-        "secondary": "Voir comment ca marche",
+        "secondary": "Voir comment ça marche",
         "footer": "14 jours gratuits - Aucune carte bancaire requise - Support WhatsApp 24/7"
       }
     },
@@ -929,7 +929,7 @@
         "rbacTitle": "Système de permissions par rôle",
         "rbacDescription": "6 rôles (propriétaire, admin, manager, caissier, chef, serveur) avec des permissions granulaires. Chaque équipier voit exactement ce dont il a besoin.",
         "i18nTitle": "Internationalisation (2 langues)",
-        "i18nDescription": "Interface disponible en francais et anglais. Changez la langue de l'interface en un clic.",
+        "i18nDescription": "Interface disponible en français et anglais. Changez la langue de l'interface en un clic.",
         "autolockTitle": "Verrouillage automatique par inactivité",
         "autolockDescription": "Protégez les données sensibles : l'écran se verrouille après une période d'inactivité configurable.",
         "stockAlertTitle": "Alertes de stock par email",
@@ -967,20 +967,20 @@
         "feature1Title": "L'ardoise et le QR code, ensemble",
         "feature1Description": "Votre carte du jour sur QR - cocktails, boissons chaudes, planches. Le client commande depuis la terrasse sans appeler le serveur. Vous mettez a jour l'ardoise en 30 secondes.",
         "feature2Title": "Suivi du coulage en temps réel",
-        "feature2Description": "Chaque verre servi est deduit du stock. Vous voyez le coulage avant qu'il ne devienne une perte. Que vous soyez barman ou barista, vous savez exactement ce qui sort et ce qu'il reste.",
+        "feature2Description": "Chaque verre servi est déduit du stock. Vous voyez le coulage avant qu'il ne devienne une perte. Que vous soyez barman ou barista, vous savez exactement ce qui sort et ce qu'il reste.",
         "feature3Title": "Vos best-sellers, soir après soir",
         "feature3Description": "Quels cocktails marchent ce soir ? Quelle boisson chaude part le mieux le matin ? Ajustez votre carte et votre happy hour en fonction de ce que les chiffres vous disent.",
         "ctaTitle": "Votre comptoir mérite mieux qu'un tableur."
       },
       "fastFood": {
         "heroTitle": "1 borne ou 10 points de vente. Même contrôle.",
-        "heroSubtitle": "Écran cuisine, bornes de commande, drive-through, stock centralise. La cadence a grande echelle.",
+        "heroSubtitle": "Écran cuisine, bornes de commande, drive-through, stock centralisé. La cadence à grande échelle.",
         "feature1Title": "KDS et bornes : le duo gagnant",
-        "feature1Description": "Vos bornes de commande envoient directement en cuisine. L'écran KDS trie, priorise, chronometre. Temps d'attente reduit, cadence augmentee, zero erreur de preparation.",
+        "feature1Description": "Vos bornes de commande envoient directement en cuisine. L'écran KDS trie, priorise, chronomètre. Temps d'attente réduit, cadence augmentée, zéro erreur de préparation.",
         "feature2Title": "Dashboard multi-sites",
-        "feature2Description": "Performances de chaque point de vente en temps réel - ticket moyen, cadence, temps de passage au drive-through. Comparez. Identifiez le site qui decroche. Agissez.",
-        "feature3Title": "Stock centralise pour toute la chaine",
-        "feature3Description": "Approvisionnement centralise pour tous vos points de vente. Alertes par site avant la rupture. Fini les combos impossibles faute d'ingredients.",
+        "feature2Description": "Performances de chaque point de vente en temps réel - ticket moyen, cadence, temps de passage au drive-through. Comparez. Identifiez le site qui décroche. Agissez.",
+        "feature3Title": "Stock centralisé pour toute la chaîne",
+        "feature3Description": "Approvisionnement centralisé pour tous vos points de vente. Alertes par site avant la rupture. Fini les combos impossibles faute d'ingrédients.",
         "ctaTitle": "Grandissez sans perdre le contrôle."
       },
       "hotels": {
@@ -991,16 +991,16 @@
         "feature2Title": "Tout votre F&B sous un toit",
         "feature2Description": "Restaurant, bar lounge, piscine, room service. Un seul dashboard pour piloter toutes vos outlets. Vos nuitees et votre restauration enfin connectees.",
         "feature3Title": "Vos clients viennent de partout",
-        "feature3Description": "Menu en francais, anglais et plus. Paiement en XAF, EUR, USD. Check-in ou check-out, vos clients sont servis dans leur langue et paient comme ils veulent.",
+        "feature3Description": "Menu en français, anglais et plus. Paiement en XAF, EUR, USD. Check-in ou check-out, vos clients sont servis dans leur langue et paient comme ils veulent.",
         "ctaTitle": "Votre F&B mérite un systeme a la hauteur de votre hôtel."
       },
       "restaurants": {
-        "heroTitle": "La salle, la cuisine, l'addition. Tout connecte.",
-        "heroSubtitle": "Du bon de commande a l'encaissement, plus rien ne se perd entre la salle et les fourneaux.",
+        "heroTitle": "La salle, la cuisine, l'addition. Tout connecté.",
+        "heroSubtitle": "Du bon de commande à l'encaissement, plus rien ne se perd entre la salle et les fourneaux.",
         "feature1Title": "Votre carte du jour, en direct",
         "feature1Description": "Plat du jour, allergenes, photos, modificateurs. Vos clients consultent et commandent depuis leur table. Fini les menus plastifies qui trainent.",
         "feature2Title": "La cuisine voit chaque ticket",
-        "feature2Description": "Chaque bon de commande arrive sur l'écran cuisine au bon moment. Entrees, plats, desserts - chaque station recoit sa partie. Zero oubli, zero cri entre la salle et les fourneaux.",
+        "feature2Description": "Chaque bon de commande arrive sur l'écran cuisine au bon moment. Entrees, plats, desserts - chaque station reçoit sa partie. Zero oubli, zero cri entre la salle et les fourneaux.",
         "feature3Title": "Vos recettes, vos marges, vos couverts",
         "feature3Description": "Cout matiere par plat, suivi des couverts du service du midi et du soir, best-sellers de la semaine. Vous savez exactement ou vous en êtes avant de faire votre mise en place.",
         "ctaTitle": "Votre service du soir mérite mieux qu'un carnet et une calculette."
@@ -1129,7 +1129,7 @@
           "live": "en direct",
           "empty": "Aucune commande encore",
           "statusDelivered": "Livree",
-          "statusPreparing": "En preparation",
+          "statusPreparing": "En préparation",
           "statusPending": "En attente"
         },
         "establishments": {
@@ -1240,7 +1240,7 @@
     "dashboardOverview": "Vue d'ensemble",
     "last7days": "7 derniers jours",
     "presenceMap": "Implantation",
-    "popularCategories": "Categories populaires",
+    "popularCategories": "Catégories populaires",
     "topItemsTitle": "Top articles",
     "quickAccessTitle": "Acces rapides",
     "activeTables": "Tables actives",
@@ -1316,7 +1316,7 @@
     "bulkExport": "Exporter",
     "rowView": "Voir la commande",
     "rowMenuLabel": "Actions",
-    "periodLabel": "Periode",
+    "periodLabel": "Période",
     "periodToday": "Aujourd'hui",
     "periodYesterday": "Hier",
     "period7d": "7 derniers jours",
@@ -1535,7 +1535,7 @@
       },
       "reports": {
         "title": "Statistiques avancees",
-        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des decisions basees sur des données réelles."
+        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des décisions basees sur des données réelles."
       }
     }
   },
@@ -1850,7 +1850,7 @@
     "resetClose": "Fermer",
     "resetInProgress": "Suppression...",
     "resetError": "Une erreur est survenue lors de la réinitialisation.",
-    "enableBarDisplay": "Zones de preparation separees",
+    "enableBarDisplay": "Zones de préparation separees",
     "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand desactive, toutes les commandes apparaissent sur un seul écran."
   },
   "commandPalette": {
@@ -2492,10 +2492,10 @@
     "unknownError": "Erreur inconnue"
   },
   "categories": {
-    "title": "Categories",
-    "subtitle": "Structurez vos menus par categories",
+    "title": "Catégories",
+    "subtitle": "Structurez vos menus par catégories",
     "menu": "Menu",
-    "newCategory": "Nouvelle categorie",
+    "newCategory": "Nouvelle catégorie",
     "categoryCount": "{count} catégorie(s)",
     "dishCount": "{count} plats",
     "edit": "Modifier",
@@ -2516,7 +2516,7 @@
     "categoryUpdated": "Catégorie mise à jour",
     "categoryCreated": "Catégorie créée",
     "categoryHasDishes": "Cette catégorie contient {count} plat(s). Supprimez-les d'abord.",
-    "deleteCategoryConfirm": "Supprimer la categorie {name} ?",
+    "deleteCategoryConfirm": "Supprimer la catégorie {name} ?",
     "categoryDeleted": "Catégorie supprimée",
     "loadingError": "Erreur lors du chargement",
     "saveError": "Erreur lors de la sauvegarde",
@@ -2529,9 +2529,9 @@
     "featuredOnHome": "Mettre en avant sur l'accueil",
     "featuredOnHomeDesc": "Affiche cette catégorie dans la grille de raccourcis sur la page d'accueil client.",
     "featuredOnHomeLimit": "Limite recommandée de {count} catégories atteinte. Au-delà, seules les {count} premières seront affichées.",
-    "isActive": "Categorie active",
-    "isActiveDesc": "Masquer cette categorie sur le menu client sans la supprimer.",
-    "categoryLinkedToMenu": "Cette categorie est liee a un menu et ne peut pas être supprimee.",
+    "isActive": "Catégorie active",
+    "isActiveDesc": "Masquer cette catégorie sur le menu client sans la supprimer.",
+    "categoryLinkedToMenu": "Cette catégorie est liee a un menu et ne peut pas être supprimee.",
     "icon": "Icone"
   },
   "items": {
@@ -2551,7 +2551,7 @@
     "noItems": "Aucun plat",
     "noItemsDesc": "Ajoutez des plats à votre carte",
     "noItemsFilter": "Aucun plat pour ces filtres",
-    "noItemsFilterDesc": "Changez la categorie ou le statut, ou reinitialisez les filtres",
+    "noItemsFilterDesc": "Changez la catégorie ou le statut, ou reinitialisez les filtres",
     "addItem": "Ajouter un plat",
     "editItemTitle": "Modifier le plat",
     "newItemTitle": "Nouveau plat",
@@ -3854,14 +3854,14 @@
       "roleChef": "Resp. stock",
       "roleWaiter": "Vendeur",
       "domainPlaceholder": "shop.maboutique.com",
-      "inProduction": "En preparation",
-      "productionNote": "Note preparation",
-      "productionNoteTitle": "Note pour la preparation",
+      "inProduction": "En préparation",
+      "productionNote": "Note préparation",
+      "productionNoteTitle": "Note pour la préparation",
       "productionNotePlaceholder": "Ex: Emballage cadeau, conditionnement special...",
-      "sentToProduction": "Envoyé en preparation !",
-      "printProductionTicket": "Ticket Preparation",
-      "productionTicketPrinted": "Impression ticket preparation lancée",
-      "productionZone": "Preparation"
+      "sentToProduction": "Envoyé en préparation !",
+      "printProductionTicket": "Ticket Préparation",
+      "productionTicketPrinted": "Impression ticket préparation lancée",
+      "productionZone": "Préparation"
     },
     "services": {
       "item": "Prestation",

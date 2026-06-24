@@ -146,7 +146,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           ) : (
             <Download className="h-4 w-4" />
           )}
-          {loading === 'pdf' ? 'Export...' : 'T\u00e9l\u00e9charger PDF'}
+          {loading === 'pdf' ? 'Export...' : 'Télécharger PDF'}
         </Button>
 
         {/* PNG - premium */}
