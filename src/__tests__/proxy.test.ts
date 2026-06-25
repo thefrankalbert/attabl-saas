@@ -35,13 +35,49 @@ let mockUser: {
 
 const getUserMock = vi.fn(async () => ({ data: { user: mockUser } }));
 
+// Controls what the RBAC route guard sees for the current admin_users row.
+let mockAdminRole = 'owner';
+let mockCustomPermissions: Record<string, boolean> | null = null;
+let mockIsSuperAdmin = false;
+
+type QueryBuilder = {
+  select: () => QueryBuilder;
+  eq: () => QueryBuilder;
+  limit: () => QueryBuilder;
+  maybeSingle: () => Promise<{ data: unknown }>;
+};
+
+function makeQueryBuilder(table: string): QueryBuilder {
+  const qb: QueryBuilder = {
+    select: () => qb,
+    eq: () => qb,
+    limit: () => qb,
+    maybeSingle: async () => {
+      if (table === 'admin_users') {
+        return {
+          data: {
+            role: mockAdminRole,
+            custom_permissions: mockCustomPermissions,
+            is_super_admin: mockIsSuperAdmin,
+          },
+        };
+      }
+      return { data: null };
+    },
+  };
+  return qb;
+}
+
 vi.mock('@/lib/supabase/middleware', () => ({
   createMiddlewareClient: vi.fn(async () => {
     const response = NextResponse.next();
     sessionCookies.forEach((c) => response.cookies.set(c.name, c.value));
     return {
       response,
-      supabase: { auth: { getUser: getUserMock } },
+      supabase: {
+        auth: { getUser: getUserMock },
+        from: (table: string) => makeQueryBuilder(table),
+      },
     };
   }),
 }));
@@ -108,6 +144,9 @@ function cookieNames(res: NextResponse): string[] {
 
 beforeEach(() => {
   mockUser = null;
+  mockAdminRole = 'owner';
+  mockCustomPermissions = null;
+  mockIsSuperAdmin = false;
   getUserMock.mockClear();
   getCachedTenantByDomainMock.mockClear();
   getCachedTenantMock.mockClear();
@@ -372,6 +411,89 @@ describe('proxy - frozen tenant guard', () => {
     getCachedTenantMock.mockResolvedValue({ subscription_status: 'active', is_active: true });
     const res = await proxy(makeRequest('attabl.com', '/sites/radisson/admin'));
     expect(res.status).not.toBe(307);
+  });
+});
+
+// ===========================================================================
+// 5b. RBAC per-route role gate (clean server-side redirect for ALL clients)
+// ===========================================================================
+describe('proxy - RBAC route gate', () => {
+  const authed = (id: string) => {
+    mockUser = {
+      id,
+      email_confirmed_at: '2026-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
+    };
+    getCachedTenantMock.mockResolvedValue({ subscription_status: 'active', is_active: true });
+  };
+  const go = (path: string) => proxy(makeRequest('attabl.com', path));
+
+  it('redirects a waiter away from owner-only routes (users, settings, subscription)', async () => {
+    authed('w-1');
+    mockAdminRole = 'waiter';
+    for (const sub of ['users', 'settings', 'subscription', 'audit-logs', 'invoices']) {
+      const res = await go(`/sites/radisson/admin/${sub}`);
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get('location') as string).pathname).toBe('/unauthorized');
+    }
+  });
+
+  it('redirects a waiter away from reports / inventory / pos / marketing editors', async () => {
+    authed('w-2');
+    mockAdminRole = 'waiter';
+    for (const sub of ['reports', 'inventory', 'pos', 'coupons', 'supports']) {
+      const res = await go(`/sites/radisson/admin/${sub}`);
+      expect(res.status).toBe(307);
+    }
+  });
+
+  it('lets a waiter reach operational routes (orders, kitchen, menus, dashboard)', async () => {
+    authed('w-3');
+    mockAdminRole = 'waiter';
+    for (const sub of ['orders', 'kitchen', 'menus', '']) {
+      const res = await go(`/sites/radisson/admin/${sub}`);
+      expect(res.status).not.toBe(307);
+    }
+  });
+
+  it('lets an owner reach every sensitive route', async () => {
+    authed('o-1');
+    mockAdminRole = 'owner';
+    for (const sub of [
+      'users',
+      'settings',
+      'subscription',
+      'reports',
+      'pos',
+      'settings/permissions',
+    ]) {
+      const res = await go(`/sites/radisson/admin/${sub}`);
+      expect(res.status).not.toBe(307);
+    }
+  });
+
+  it('applies role-appropriate access: cashier uses POS but not reports; manager reports but not settings', async () => {
+    authed('c-1');
+    mockAdminRole = 'cashier';
+    expect((await go('/sites/radisson/admin/pos')).status).not.toBe(307); // pos.use = true
+    expect((await go('/sites/radisson/admin/reports')).status).toBe(307); // reports.view = false
+
+    authed('m-1');
+    mockAdminRole = 'manager';
+    expect((await go('/sites/radisson/admin/reports')).status).not.toBe(307); // reports.view = true
+    expect((await go('/sites/radisson/admin/settings')).status).toBe(307); // settings.view = false
+
+    authed('ch-1');
+    mockAdminRole = 'chef';
+    expect((await go('/sites/radisson/admin/pos')).status).toBe(307); // pos.use = false
+    expect((await go('/sites/radisson/admin/inventory')).status).not.toBe(307); // inventory.view = true
+  });
+
+  it('only gates the tenant admin area (super_admin platform area is unaffected)', async () => {
+    authed('w-4');
+    mockAdminRole = 'waiter';
+    // operational route stays reachable; gate only fires on sensitive sub-routes
+    expect((await go('/sites/radisson/admin/service')).status).not.toBe(307);
   });
 });
 
