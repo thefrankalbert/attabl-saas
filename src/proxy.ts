@@ -3,6 +3,8 @@ import { getCachedTenantByDomain, getCachedTenant } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildCspHeader } from '@/lib/csp';
+import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import { isAdminRouteDenied } from '@/lib/auth/admin-route-guard';
 
 // Routes qui nécessitent une authentification
 // Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
@@ -241,6 +243,43 @@ export async function proxy(request: NextRequest) {
             redirectResponse.cookies.set(cookie.name, cookie.value);
           });
           return redirectResponse;
+        }
+      }
+    }
+
+    // B3: RBAC - enforce per-route role permissions with a clean server-side
+    // redirect (covers EVERY client: browser, curl, bots - not only JS-enabled).
+    // Sensitive admin routes (users, settings, billing, reports, inventory, pos,
+    // marketing editors) require a specific permission; operational routes
+    // (orders, kitchen, menus, ...) stay open to all members.
+    if (user) {
+      let gateSlug: string | null = null;
+      let gateSubPath: string | null = null;
+      const mainAdmin = pathname.match(/^\/sites\/([^/]+)\/admin(\/.*)?$/);
+      if (mainAdmin) {
+        gateSlug = mainAdmin[1];
+        gateSubPath = mainAdmin[2] || '';
+      } else if (subdomain && subdomain !== 'www' && /^\/admin(\/|$)/.test(pathname)) {
+        gateSlug = subdomain;
+        gateSubPath = pathname.replace(/^\/admin/, '') || '';
+      }
+
+      if (gateSlug && gateSubPath !== null) {
+        const requiredPermission = permissionForAdminSubPath(gateSubPath);
+        if (requiredPermission) {
+          const gateTenant = await getCachedTenant(gateSlug);
+          if (
+            gateTenant &&
+            (await isAdminRouteDenied(supabase, user.id, gateTenant.id, requiredPermission))
+          ) {
+            const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+            const unauthorizedUrl = new URL('/unauthorized', mainDomain);
+            const redirectResponse = NextResponse.redirect(unauthorizedUrl);
+            sessionResponse.cookies.getAll().forEach((cookie) => {
+              redirectResponse.cookies.set(cookie.name, cookie.value);
+            });
+            return redirectResponse;
+          }
         }
       }
     }
