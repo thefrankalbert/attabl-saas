@@ -1,0 +1,20 @@
+# Gitleaks config for ATTABL.
+# Extends the default ruleset and allowlists known false positives: high-entropy
+# strings that are test fixtures (fake invitation tokens/passwords in unit tests)
+# and example snippets inside planning docs. These are NOT real secrets.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and documentation examples (no real secrets)"
+paths = [
+  '''.*__tests__.*\.test\.(ts|tsx)$''',
+  '''.*\.test\.(ts|tsx)$''',
+  '''docs/.*\.md$''',
+]
+regexes = [
+  # fake invitation token used across schema tests (64-char hex placeholder)
+  '''a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2''',
+  # fake passwords used in tests/docs
+  '''SecurePass123!''',
+]
