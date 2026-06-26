@@ -24,14 +24,15 @@ type ActionResponse = {
 async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['owner', 'admin']) {
   const t = await getTranslations('errors');
   try {
-    const { user, role } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
-    return { error: null, user, role };
+    const { user, role, adminUserId } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
+    return { error: null, user, role, adminUserId };
   } catch (err) {
     if (err instanceof AuthError) {
-      if (err.status === 401) return { error: t('notAuthenticated'), user: null, role: null };
-      return { error: t('permissionDenied'), user: null, role: null };
+      if (err.status === 401)
+        return { error: t('notAuthenticated'), user: null, role: null, adminUserId: null };
+      return { error: t('permissionDenied'), user: null, role: null, adminUserId: null };
     }
-    return { error: t('permissionDenied'), user: null, role: null };
+    return { error: t('permissionDenied'), user: null, role: null, adminUserId: null };
   }
 }
 
@@ -46,6 +47,7 @@ export async function actionCreateAdminUser(
     error: permError,
     user: currentUser,
     role,
+    adminUserId: actorAdminUserId,
   } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
@@ -119,7 +121,9 @@ export async function actionCreateAdminUser(
     full_name: parsed.data.full_name,
     role: parsed.data.role,
     is_active: true,
-    created_by: currentUser!.id,
+    // FK admin_users_created_by_fkey references admin_users(id), NOT auth.users.
+    // currentUser.id is the auth user id; use the actor's membership-row PK.
+    created_by: actorAdminUserId,
   });
 
   if (dbError) {

@@ -40,7 +40,7 @@ async function verifyOwner(
 ) {
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('tenant_id, role')
+    .select('id, tenant_id, role')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
@@ -104,7 +104,9 @@ export async function PUT(request: Request) {
         role: parsed.data.role,
         permissions: parsed.data.permissions,
         updated_at: new Date().toISOString(),
-        updated_by: user.id,
+        // FK role_permissions_updated_by_fkey references admin_users(id), NOT
+        // auth.users. user.id is the auth user id; use the membership-row PK.
+        updated_by: adminUser.id,
       },
       { onConflict: 'tenant_id,role' },
     );

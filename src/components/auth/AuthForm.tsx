@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff, Lock, MailCheck, RefreshCw } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, MailCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -58,6 +58,7 @@ function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
+  const [emailUndelivered, setEmailUndelivered] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -117,7 +118,11 @@ function AuthForm({ mode }: AuthFormProps) {
           body: JSON.stringify(signupBody),
         });
 
-        const data = (await response.json()) as { error?: string; code?: string };
+        const data = (await response.json()) as {
+          error?: string;
+          code?: string;
+          emailDelivered?: boolean;
+        };
 
         if (!response.ok) {
           const apiError =
@@ -131,7 +136,10 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error(apiError);
         }
 
-        // Account created - show confirmation message
+        // Account created - show confirmation message. If the backend could not
+        // hand the email off to any provider, warn the user explicitly instead
+        // of silently telling them to check an inbox that will never receive it.
+        setEmailUndelivered(data.emailDelivered === false);
         setConfirmationSent(true);
       } else {
         // Login flow - server-side with rate limiting
@@ -239,6 +247,13 @@ function AuthForm({ mode }: AuthFormProps) {
           <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
             {tConfirm('instructions')}
           </p>
+
+          {emailUndelivered && (
+            <Alert variant="destructive" className="mb-6 text-left">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{tConfirm('deliveryWarning')}</AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-3">
             <Button
@@ -389,7 +404,7 @@ function AuthForm({ mode }: AuthFormProps) {
             id="email"
             type="email"
             name="email"
-            autoComplete="email"
+            autoComplete={isLogin ? 'email' : 'off'}
             placeholder={tForm('emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}

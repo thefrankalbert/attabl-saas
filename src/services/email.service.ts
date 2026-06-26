@@ -140,8 +140,11 @@ export function createEmailService(): EmailService {
     text: string,
   ): Promise<EmailResult> {
     if (!resend) {
-      logger.warn('RESEND_API_KEY not configured - email skipped', { subject });
-      return { success: true };
+      // Do NOT report success here: a missing API key means no email was sent.
+      // Callers (e.g. signup confirmation) must be able to surface this to the
+      // user instead of silently claiming "check your inbox".
+      logger.warn('RESEND_API_KEY not configured - email NOT sent', { subject });
+      return { success: false, error: 'EMAIL_NOT_CONFIGURED' };
     }
 
     try {
