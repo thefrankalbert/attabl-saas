@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       }
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('role')
+        .select('id, role')
         .eq('user_id', user.id)
         .eq('tenant_id', currentTenant.id)
         .eq('is_active', true)
@@ -203,7 +203,9 @@ export async function POST(request: Request) {
         tenantId,
         email: parsed.data.email,
         role: parsed.data.role,
-        invitedBy: user.id,
+        // FK invitations_invited_by_fkey references admin_users(id), NOT auth.users.
+        // user.id is the auth user id; use the actor's membership-row PK.
+        invitedBy: adminUser.id,
         customPermissions: parsed.data.custom_permissions,
       });
 

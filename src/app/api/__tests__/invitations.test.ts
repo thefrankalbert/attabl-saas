@@ -103,10 +103,14 @@ function mockRateLimit(allowed: boolean) {
 
 function createMockSupabase(overrides?: {
   authUser?: { id: string; email: string } | null;
-  adminUser?: { tenant_id: string; role: string } | null;
+  adminUser?: { id?: string; tenant_id: string; role: string } | null;
 }) {
   const user = overrides?.authUser ?? { id: 'user-1', email: 'admin@test.com' };
-  const adminUser = overrides?.adminUser ?? { tenant_id: 'tenant-1', role: 'owner' };
+  const adminUser = overrides?.adminUser ?? {
+    id: 'membership-1',
+    tenant_id: 'tenant-1',
+    role: 'owner',
+  };
 
   // The route resolves the tenant from x-tenant-slug (tenants.single), then verifies
   // membership (admin_users.maybeSingle). Mock both table lookups.
@@ -132,9 +136,12 @@ function createMockSupabase(overrides?: {
         const tenantResult = { data: { id: adminUser?.tenant_id ?? 'tenant-1' }, error: null };
         return { select: vi.fn().mockImplementation(() => makeChain(tenantResult, tenantResult)) };
       }
-      // admin_users membership check (role only)
-      const role = adminUser ? { role: adminUser.role } : null;
-      const result = { data: role, error: role ? null : { message: 'Not found' } };
+      // admin_users membership check (id + role): the route needs the
+      // membership-row PK (admin_users.id) for the invited_by FK.
+      const membership = adminUser
+        ? { id: adminUser.id ?? 'membership-1', role: adminUser.role }
+        : null;
+      const result = { data: membership, error: membership ? null : { message: 'Not found' } };
       return { select: vi.fn().mockImplementation(() => makeChain(result, result)) };
     }),
   };
@@ -152,6 +159,7 @@ function createMockDeleteSupabase(overrides?: {
     const chain = (): Record<string, ReturnType<typeof vi.fn>> => {
       const c: Record<string, ReturnType<typeof vi.fn>> = {};
       c.single = vi.fn().mockResolvedValue(result);
+      c.maybeSingle = vi.fn().mockResolvedValue(result);
       c.eq = vi.fn().mockImplementation(() => c);
       c.in = vi.fn().mockImplementation(() => c);
       c.neq = vi.fn().mockImplementation(() => c);
@@ -195,7 +203,11 @@ function setupMockAdminClient(overrides?: {
   };
   const tenant = overrides?.tenant ?? { name: 'Test Restaurant', logo_url: null, slug: 'test' };
 
-  const inviteSingle = vi.fn().mockResolvedValue({ data: { tenant_id: 'tenant-1' }, error: null });
+  // Includes `role` so the cancel/resend routes can run their canActOnUser
+  // anti-escalation gate (actor 'owner' may act on an 'admin' invitation).
+  const inviteSingle = vi
+    .fn()
+    .mockResolvedValue({ data: { tenant_id: 'tenant-1', role: 'admin' }, error: null });
   const inviteEq = vi.fn().mockReturnValue({ single: inviteSingle });
   const inviteSelect = vi.fn().mockReturnValue({ eq: inviteEq });
 
@@ -349,6 +361,44 @@ describe('POST /api/invitations', () => {
     expect(canAddAdmin).not.toHaveBeenCalled();
   });
 
+  it('passes the actor admin_users.id (membership PK) as invitedBy, never the auth user id', async () => {
+    // Regression guard for the FK bug: invitations.invited_by references
+    // admin_users(id), NOT auth.users(id). Passing user.id (== admin_users.user_id)
+    // triggered invitations_invited_by_fkey violations for every owner.
+    mockRateLimit(true);
+    const mock = createMockSupabase({
+      authUser: { id: 'auth-user-99', email: 'owner@test.com' },
+      adminUser: { id: 'membership-42', tenant_id: 'tenant-1', role: 'owner' },
+    });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+
+    const createInvitation = vi.fn().mockResolvedValue({
+      id: TEST_INVITATION_ID,
+      email: 'new@test.com',
+      role: 'admin',
+      status: 'pending',
+      token: 'secret',
+      tenant_id: 'tenant-1',
+    });
+    vi.mocked(createInvitationService).mockReturnValue({
+      getPendingInvitations: vi.fn(),
+      createInvitation,
+      cancelInvitation: vi.fn(),
+      resendInvitation: vi.fn(),
+    } as never);
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+
+    expect(res.status).toBe(201);
+    expect(createInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({ invitedBy: 'membership-42' }),
+    );
+    expect(createInvitation).not.toHaveBeenCalledWith(
+      expect.objectContaining({ invitedBy: 'auth-user-99' }),
+    );
+  });
+
   it('enforces the admin limit (canAddAdmin) for the admin role', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();
@@ -409,6 +459,22 @@ describe('DELETE /api/invitations/[id]', () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
+  });
+
+  it('returns 403 when an admin tries to cancel a peer (admin-role) invitation', async () => {
+    // L1 anti-escalation: an admin cannot act on an invitation for a peer/higher
+    // role. setupMockAdminClient fetches an invitation with role 'admin'.
+    mockRateLimit(true);
+    const mock = createMockDeleteSupabase({ adminUser: { role: 'admin' } });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+    setupMockAdminClient();
+    const cancelInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createInvitationService).mockReturnValue({ cancelInvitation } as never);
+
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+
+    expect(res.status).toBe(403);
+    expect(cancelInvitation).not.toHaveBeenCalled();
   });
 
   it('returns mapped status on ServiceError', async () => {

@@ -1056,6 +1056,7 @@
       "title": "Vérifiez votre boîte mail",
       "sentTo": "Un email de confirmation a été envoyé à",
       "instructions": "Cliquez sur le lien dans l'email pour activer votre compte et accéder à la configuration de votre établissement.",
+      "deliveryWarning": "Votre compte est créé, mais l'email de confirmation n'a pas pu être envoyé. Cliquez sur Renvoyer ci-dessous, ou écrivez à support@attabl.com pour activer votre compte.",
       "resendButton": "Renvoyer l'email de confirmation",
       "resendSending": "Envoi en cours...",
       "resendCooldown": "Renvoyer dans {seconds}s",

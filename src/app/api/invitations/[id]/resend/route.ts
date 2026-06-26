@@ -8,6 +8,8 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { sendInvitationEmail } from '@/services/email.service';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
+import { canActOnUser } from '@/lib/auth/role-hierarchy';
+import type { AdminRole } from '@/types/admin.types';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -42,7 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const adminClient = createAdminClient();
     const { data: existingInvitation } = await adminClient
       .from('invitations')
-      .select('tenant_id')
+      .select('tenant_id, role')
       .eq('id', id)
       .single();
 
@@ -57,9 +59,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('user_id', user.id)
       .eq('tenant_id', existingInvitation.tenant_id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // Anti-escalation: an admin cannot resend an invitation for a peer/higher
+    // role (e.g. one the owner created for another admin/owner). Mirrors the
+    // canGrantRole gate on the create path.
+    if (!canActOnUser(adminUser.role as AdminRole, existingInvitation.role as AdminRole)) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 
