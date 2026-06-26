@@ -35,6 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .from('tenants')
       .select('id')
       .eq('slug', tenantSlug)
+      .is('deleted_at', null)
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 

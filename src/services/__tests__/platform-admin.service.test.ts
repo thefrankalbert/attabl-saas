@@ -124,6 +124,26 @@ describe('createPlatformAdminService', () => {
     expect(audit.payload.tenant_id).toBe('t-1');
   });
 
+  it('restoreAdminUser clears BOTH delete and ban metadata (no contradictory state)', async () => {
+    const { client, updates, inserts } = makeAdmin({
+      admin_users: { row: { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter' } },
+    });
+
+    await createPlatformAdminService(client).restoreAdminUser('u-1', actor);
+
+    const upd = updates.find((u) => u.table === 'admin_users')!;
+    expect(upd.payload.is_active).toBe(true);
+    expect(upd.payload.deleted_at).toBeNull();
+    // A restored account must not stay flagged as banned, or it would be active
+    // (dashboard access) yet labelled "banned" in the console.
+    expect(upd.payload.banned_at).toBeNull();
+    expect(upd.payload.banned_by).toBeNull();
+    expect(upd.payload.ban_reason).toBeNull();
+    expect(inserts.find((i) => i.table === 'platform_audit_log')!.payload.action).toBe(
+      'restore_user',
+    );
+  });
+
   it('throws NOT_FOUND when the tenant does not exist', async () => {
     const { client } = makeAdmin({ tenants: { row: null } });
     await expect(

@@ -84,12 +84,16 @@ export default async function AdminLayout({
     if (adminData) {
       adminUser = { ...adminData, name: adminData.full_name ?? adminData.email ?? undefined };
     } else {
-      // Not a direct member - check if the user is a super_admin (can access any tenant)
+      // Not a direct member - check if the user is a super_admin (can access any tenant).
+      // A revoked operator (banned / soft-deleted) must NOT keep this access, so
+      // only a LIVE super-admin membership counts.
       const { data: superAdminCheck } = await supabase
         .from('admin_users')
         .select('id, user_id, tenant_id, role, name, custom_permissions, is_super_admin')
         .eq('user_id', user.id)
         .eq('is_super_admin', true)
+        .eq('is_active', true)
+        .is('deleted_at', null)
         .limit(1)
         .single();
 

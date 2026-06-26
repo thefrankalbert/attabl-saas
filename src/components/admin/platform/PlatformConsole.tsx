@@ -127,6 +127,7 @@ export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
+                aria-label={t('searchPlaceholder')}
                 className="sm:max-w-xs"
               />
             </div>

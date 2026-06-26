@@ -213,7 +213,8 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
           banned_by: actor.userId,
           ban_reason: reason ?? null,
         })
-        .eq('id', adminUserId);
+        .eq('id', adminUserId)
+        .is('deleted_at', null);
       if (error) throw new ServiceError('Echec du bannissement', 'INTERNAL', error);
       await audit(actor, {
         action: 'ban_user',
@@ -271,11 +272,18 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async restoreAdminUser(adminUserId, actor) {
       const target = await getAdminUserLabel(adminUserId);
+      // Restore must return the account to a fully clean state: clearing
+      // deleted_* alone but leaving banned_* would resurrect a member who is
+      // active (dashboard access granted) yet still labelled "banned" in the
+      // console - a contradictory state. Clear the ban metadata too.
       const { error } = await admin
         .from('admin_users')
         .update({
           deleted_at: null,
           deleted_by: null,
+          banned_at: null,
+          banned_by: null,
+          ban_reason: null,
           is_active: true,
         })
         .eq('id', adminUserId);

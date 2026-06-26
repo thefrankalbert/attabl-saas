@@ -50,6 +50,7 @@ const APP_ROOT_ONLY_PREFIXES = [
   '/forgot-password',
   '/unauthorized',
   '/admin/tenants',
+  '/admin/platform',
 ];
 
 function isAppRootOnlyPath(pathname: string): boolean {
