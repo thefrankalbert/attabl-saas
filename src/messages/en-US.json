@@ -1056,6 +1056,7 @@
       "title": "Check your inbox",
       "sentTo": "A confirmation email has been sent to",
       "instructions": "Click the link in the email to activate your account and configure your venue.",
+      "deliveryWarning": "Your account is created, but the confirmation email could not be sent. Click Resend below, or email support@attabl.com to activate your account.",
       "resendButton": "Resend confirmation email",
       "resendSending": "Sending...",
       "resendCooldown": "Resend in {seconds}s",

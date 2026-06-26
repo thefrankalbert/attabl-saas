@@ -108,6 +108,7 @@ export async function POST(request: Request) {
       slug: result.slug,
       tenantId: result.tenantId,
       requiresConfirmation: true,
+      emailDelivered: result.emailDelivered ?? false,
       message: t('signupConfirmation'),
     });
   } catch (error) {

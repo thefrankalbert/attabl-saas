@@ -21,6 +21,14 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     // 1. Authenticate + get tenant from session (NOT from client)
     const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
 
+    // 1b. Role gate: only owner/admin/manager may change tenant settings
+    // (name, branding, billing rates, custom domain, ...). Without this, any
+    // member (cashier/chef/waiter) could modify billing or the custom domain.
+    // Mirrors the owner/admin/manager gate on the tables/zones settings actions.
+    if (!['owner', 'admin', 'manager'].includes(role)) {
+      return { success: false, error: t('permissionDenied') };
+    }
+
     // 2. Extract and validate form data with Zod.
     // A field ABSENT from the FormData stays `undefined` so the service leaves
     // it untouched. This makes partial saves (e.g. the custom-domain quick-save)

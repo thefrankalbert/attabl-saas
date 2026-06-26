@@ -38,6 +38,13 @@ interface OAuthSignupInput {
 interface SignupResult {
   slug: string;
   tenantId: string;
+  /**
+   * Whether the confirmation email was actually handed off to a delivery
+   * provider (Resend, or the Supabase native fallback). Undefined for flows
+   * that do not send a confirmation email (OAuth, onboarding provisioning).
+   * When false, the UI must tell the user the email could not be sent.
+   */
+  emailDelivered?: boolean;
 }
 
 /**
@@ -208,9 +215,13 @@ export function createSignupService(supabase: SupabaseClient) {
         throw err;
       }
 
-      // 6. Generate confirmation link and send welcome email
+      // 6. Generate confirmation link and send welcome email.
       // Note: generateLink('signup') is idempotent - calling it again replaces the previous token.
       // Rate limiting (3 req/10min per IP) on the signup endpoint prevents abuse.
+      // Delivery is best-effort (never fails signup) BUT we now track whether the
+      // email was actually handed off, so the UI can warn the user when it was not.
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+      let emailDelivered = false;
       try {
         const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
           type: 'signup',
@@ -221,19 +232,26 @@ export function createSignupService(supabase: SupabaseClient) {
         if (linkError || !linkData?.properties?.hashed_token) {
           logger.error('Failed to generate confirmation link', { error: linkError });
         } else {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
           const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
 
-          await sendWelcomeConfirmationEmail(input.email, {
+          emailDelivered = await sendWelcomeConfirmationEmail(input.email, {
             confirmationUrl,
           });
         }
       } catch (emailErr) {
-        // Email sending is best-effort - do not fail signup
-        logger.error('Failed to send confirmation email', emailErr);
+        logger.error('Failed to send confirmation email via Resend', emailErr);
       }
 
-      return { slug: tenant.slug, tenantId: tenant.tenantId };
+      // NOTE: no Supabase-native fallback here. The user is created via
+      // auth.admin.createUser({email_confirm:false}) and the confirmation token
+      // is delivered through Resend. supabase.auth.resend() on the service_role
+      // admin client has no authenticated session context and cannot reliably
+      // send (and could falsely report success, masking a real non-delivery).
+      // The real remediation is verifying the Resend sender domain. When
+      // delivery fails, emailDelivered=false is surfaced to the UI, which shows
+      // a warning and offers the "Resend confirmation" action (POST
+      // /api/resend-confirmation, which re-attempts via the same channel).
+      return { slug: tenant.slug, tenantId: tenant.tenantId, emailDelivered };
     },
 
     /**
