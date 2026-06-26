@@ -25,6 +25,7 @@ export default async function OrdersPage({
     .from('tenants')
     .select('id, currency')
     .eq('slug', tenantSlug)
+    .is('deleted_at', null)
     .single();
 
   if (!tenant) return notFound();

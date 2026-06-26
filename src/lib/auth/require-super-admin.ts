@@ -24,7 +24,11 @@ export async function isSuperAdmin(
   const { data, error } = await supabase
     .from('admin_users')
     .select('is_super_admin, role')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    // A revoked operator (banned or soft-deleted) must lose god mode, not keep
+    // it: only LIVE memberships can confer super-admin.
+    .eq('is_active', true)
+    .is('deleted_at', null);
 
   if (error) {
     logger.error('isSuperAdmin: lookup failed', error, { userId });
