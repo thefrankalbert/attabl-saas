@@ -60,10 +60,15 @@ export default async function UsersPage({
   });
   const { from, to } = toSupabaseRange(page, pageSize);
 
+  // Exclude soft-deleted memberships and platform super-admin rows: the owner
+  // manages only their own active staff, never a god-mode operator account that
+  // happens to be anchored to this tenant.
   const { data: users, count } = await supabase
     .from('admin_users')
     .select('*', { count: 'exact' })
     .eq('tenant_id', tenant.id)
+    .is('deleted_at', null)
+    .not('is_super_admin', 'is', true)
     .order('created_at', { ascending: false })
     .range(from, to);
 

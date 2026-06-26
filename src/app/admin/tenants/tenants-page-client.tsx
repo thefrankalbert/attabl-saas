@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
@@ -32,6 +33,8 @@ interface TenantDirectoryRow {
 
 interface TenantsPageClientProps {
   serverMode: 'superadmin' | 'owner';
+  /** Platform super-admin: unlocks the god-mode console link. */
+  isSuperAdmin?: boolean;
   serverUserName: string;
   serverTenants?: Tenant[];
   serverRestaurants?: OwnerDashboardRow[];
@@ -56,6 +59,7 @@ interface TenantsPageClientProps {
 
 export default function TenantsPageClient({
   serverMode,
+  isSuperAdmin = false,
   serverUserName,
   serverTenants,
   serverRestaurants,
@@ -67,6 +71,7 @@ export default function TenantsPageClient({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const tErrors = useTranslations('admin.tenants.commandCenter.errors');
+  const tConsole = useTranslations('admin.platform');
 
   const baseTenants: Tenant[] = useMemo(() => {
     if (serverMode === 'superadmin') return serverTenants || [];
@@ -203,6 +208,19 @@ export default function TenantsPageClient({
         id="main-content"
         className="mx-auto grid w-full max-w-[1400px] min-h-0 flex-1 grid-cols-1 gap-y-6 overflow-y-auto px-4 pb-10 pt-3 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:gap-x-10 lg:px-8"
       >
+        {isSuperAdmin && (
+          <div className="lg:col-span-2">
+            <Link
+              href="/admin/platform"
+              className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition-colors hover:bg-[var(--cc-surface-hover,rgba(0,0,0,0.04))]"
+              style={{ color: 'var(--cc-text)', borderColor: 'var(--cc-border,rgba(0,0,0,0.1))' }}
+            >
+              <span className="font-medium">{tConsole('banner')}</span>
+              <span aria-hidden="true">-&gt;</span>
+            </Link>
+          </div>
+        )}
+
         {error && (
           <div className="lg:col-span-2">
             <div
