@@ -35,9 +35,12 @@ cleanup() {
   [ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null
   lsof -ti:"$DEV_PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
   supabase stop --no-backup >/dev/null 2>&1 || true
-  # restaure les migrations ecartees
+  # restaure les migrations: git checkout pour les fichiers SUIVIS (interrupt-safe,
+  # ne depend pas de MIG_BAK qui disparait si le run est tue), + remet tout fichier
+  # non-suivi parke dans MIG_BAK (sans ecraser ce que git vient de restaurer).
+  git checkout -- supabase/migrations/ 2>/dev/null || true
   if [ -d "$MIG_BAK" ] && [ -n "$(ls -A "$MIG_BAK" 2>/dev/null)" ]; then
-    mv "$MIG_BAK"/*.sql supabase/migrations/ 2>/dev/null || true
+    mv -n "$MIG_BAK"/*.sql supabase/migrations/ 2>/dev/null || true
   fi
   rm -rf "$MIG_BAK" supabase/config.toml supabase/.gitignore supabase/.branches supabase/.temp 2>/dev/null || true
   log "teardown done."
@@ -51,6 +54,12 @@ docker info >/dev/null 2>&1 || { echo "Docker non lance"; exit 1; }
 log "init + ecarte les migrations repo (sinon supabase start rejoue la chaine cassee)"
 supabase init >/dev/null 2>&1 || true
 mv supabase/migrations/*.sql "$MIG_BAK"/ 2>/dev/null || true
+# Auto-confirme les emails en local: les parcours signup->login (01) et le seed
+# staff tournent sans etape de confirmation par email.
+if [ -f supabase/config.toml ]; then
+  sed -i '' 's/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml 2>/dev/null \
+    || sed -i 's/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml 2>/dev/null || true
+fi
 
 log "supabase start (stack local vierge)"
 supabase start >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
@@ -75,9 +84,14 @@ ANON="${SB_ANON_KEY:?cle anon introuvable}"
 SERVICE="${SB_SERVICE_ROLE_KEY:?cle service_role introuvable}"
 
 log "dev server :$DEV_PORT sur le local (override inline, ne touche pas .env.local)"
+# Upstash vide: sinon le rate limiting partage la prod via .env.local, accumule
+# l'etat entre runs et fausse les assertions (429 parasites). Vide -> rate limiting
+# desactive en dev (rate-limit.ts), isole du prod. Le parcours 07 n'exige pas un
+# 429 strict (il verifie l'absence de 5xx).
 NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
   NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON" \
   SUPABASE_SERVICE_ROLE_KEY="$SERVICE" \
+  UPSTASH_REDIS_REST_URL="" UPSTASH_REDIS_REST_TOKEN="" \
   ALLOW_DEV_AUTH_BYPASS=true PORT="$DEV_PORT" pnpm dev >/tmp/journeys-dev.log 2>&1 &
 DEV_PID=$!
 

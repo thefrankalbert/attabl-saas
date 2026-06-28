@@ -14,6 +14,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import WebSocketImpl from 'ws';
 import { assertNotProduction, hasSeedEnv, journeyEnv } from './env';
+import type { Persona, RestaurantRole } from './personas';
 
 // Node < 22 n'a pas de WebSocket global; le constructeur realtime de
 // @supabase/supabase-js le sonde a l'instanciation, meme si ce client admin ne
@@ -77,10 +78,18 @@ export async function ensureAuthUser(email: string, password: string): Promise<s
     password,
     email_confirm: true,
   });
+  if (!error && data?.user?.id) return data.user.id;
   if (error && !/already.*registered|exists/i.test(error.message)) {
     throw new Error(`ensureAuthUser(${email}) echec: ${error.message}`);
   }
-  return data?.user?.id ?? '';
+  // L'utilisateur existe deja (ex: cree non-confirme par le flux signup d'un
+  // autre parcours). On le retrouve et on FORCE email_confirm + password, sinon
+  // /api/login renvoie 403 "email non confirme".
+  const { data: list } = await db.auth.admin.listUsers();
+  const existing = list?.users.find((u) => u.email === email);
+  if (!existing) return '';
+  await db.auth.admin.updateUserById(existing.id, { email_confirm: true, password });
+  return existing.id;
 }
 
 export interface SeededMenu {
@@ -149,4 +158,42 @@ export async function seedTenantWithMenu(
   if (iErr || !item) throw new Error(`seed menu_item echec: ${iErr?.message}`);
 
   return { tenantId: tenant.id, menuItemId: item.id, price, itemName };
+}
+
+// Les personas cote restaurant utilisent des libelles (server, kitchen) qui ne
+// sont pas les valeurs de l'enum admin_users.role. On mappe vers les vraies
+// valeurs autorisees par la contrainte admin_users_role_check.
+const DB_ROLE: Record<RestaurantRole, string> = {
+  owner: 'owner',
+  manager: 'manager',
+  cashier: 'cashier',
+  server: 'waiter',
+  kitchen: 'chef',
+};
+
+/**
+ * Provisionne l'equipe (comptes auth confirmes + lignes admin_users liees au
+ * tenant) pour les parcours qui testent l'auth et les permissions par role.
+ * Idempotent par run (le run-script repart d'un stack local vierge: auth.users
+ * est vide a chaque run).
+ */
+export async function seedStaffForTenant(tenantId: string, personas: Persona[]): Promise<void> {
+  assertNotProduction();
+  const db = getAdmin();
+  for (const p of personas) {
+    if (!p.email || !p.password || !p.role) continue;
+    const userId = await ensureAuthUser(p.email, p.password);
+    if (!userId) continue;
+    const { error } = await db.from('admin_users').insert({
+      tenant_id: tenantId,
+      user_id: userId,
+      email: p.email,
+      full_name: p.label,
+      role: DB_ROLE[p.role],
+      is_active: true,
+    });
+    if (error && !/duplicate|already exists/i.test(error.message)) {
+      throw new Error(`seed staff ${p.email} (${DB_ROLE[p.role]}) echec: ${error.message}`);
+    }
+  }
 }

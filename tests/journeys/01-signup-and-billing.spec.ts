@@ -7,8 +7,9 @@
  * fournie.
  */
 import { test, expect } from '@playwright/test';
-import { hasStripeTestEnv, journeyEnv } from './fixtures/env';
+import { hasSeedEnv, hasStripeTestEnv, journeyEnv } from './fixtures/env';
 import { OWNER, loginPersona, newApiContext } from './fixtures/personas';
+import { ensureAuthUser } from './fixtures/seed';
 
 test.describe.serial('01 - Signup & Billing', () => {
   test('le proprietaire cree son compte (signup)', async () => {
@@ -29,6 +30,14 @@ test.describe.serial('01 - Signup & Billing', () => {
   });
 
   test('le proprietaire se connecte', async () => {
+    // /api/signup cree le compte NON confirme (email de confirmation). En test on
+    // confirme l'email via le client admin avant de se connecter (sinon /api/login
+    // renvoie 403 "email non confirme"). Necessite la base de TEST.
+    test.skip(
+      !hasSeedEnv(),
+      'JOURNEY_SUPABASE_URL/SERVICE_ROLE_KEY requis pour confirmer l email.',
+    );
+    await ensureAuthUser(OWNER.email!, OWNER.password!);
     const ctx = await loginPersona(OWNER);
     // un endpoint authentifie doit repondre (onboarding/state est protege)
     const res = await ctx.get('/api/onboarding/state');

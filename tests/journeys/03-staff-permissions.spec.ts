@@ -1,15 +1,17 @@
 /**
  * Parcours 3: l'equipe se connecte, et les permissions tiennent.
- * Le coeur de la securite multi-tenant: un non-proprietaire ne doit pas atteindre
- * les actions super_admin / plateforme.
+ * Coeur de la securite multi-tenant: un role insuffisant ne doit pas atteindre
+ * une action reservee (owner/admin), meme authentifie.
  */
 import { test, expect } from '@playwright/test';
 import { hasSeedEnv } from './fixtures/env';
-import { RESTAURANT_TEAM, newApiContext } from './fixtures/personas';
-import { ensureAuthUser } from './fixtures/seed';
+import { RESTAURANT_TEAM, newApiContext, loginPersona } from './fixtures/personas';
+import { seedTenantWithMenu, seedStaffForTenant, teardownTenantBySlug } from './fixtures/seed';
+
+const MANAGER = RESTAURANT_TEAM.find((p) => p.role === 'manager')!;
 
 test.describe.serial('03 - Equipe & permissions', () => {
-  // Reel SANS seed: une action sensible doit refuser un appelant non autorise.
+  // Reel SANS seed: une action sensible refuse un appelant non authentifie.
   test('une route sensible refuse un appel non authentifie', async () => {
     const ctx = await newApiContext();
     const res = await ctx.post('/api/admin/reset', { data: {} });
@@ -18,19 +20,26 @@ test.describe.serial('03 - Equipe & permissions', () => {
     await ctx.dispose();
   });
 
-  test('provisionner les comptes staff', async () => {
-    test.skip(!hasSeedEnv(), 'Base de test requise pour creer les comptes staff.');
-    for (const p of RESTAURANT_TEAM.filter((x) => x.role !== 'owner')) {
-      await ensureAuthUser(p.email!, p.password!);
-    }
-    // TODO: rattacher chaque user au tenant via invitations/accept avec son rôle,
-    // puis verifier que chacun ne voit que ce que son rôle autorise.
-  });
+  test.describe('roles seedes (base de TEST)', () => {
+    test.beforeAll(async () => {
+      test.skip(!hasSeedEnv(), 'JOURNEY_SUPABASE_URL/SERVICE_ROLE_KEY requis (base de TEST).');
+      const seeded = await seedTenantWithMenu();
+      // toute l'equipe: owner + manager + cashier + waiter(server) + chef(kitchen)
+      await seedStaffForTenant(seeded.tenantId, RESTAURANT_TEAM);
+    });
 
-  test('un manager ne peut pas faire une action super_admin', async () => {
-    test.skip(
-      true,
-      'TODO: apres rattachement des rôles, se connecter en manager et asserter le refus (403) sur une action super_admin.',
-    );
+    test.afterAll(async () => {
+      if (hasSeedEnv()) await teardownTenantBySlug();
+    });
+
+    test('un manager authentifie ne peut pas reset les donnees du tenant (owner/admin only)', async () => {
+      test.skip(!hasSeedEnv(), 'seed indisponible');
+      const ctx = await loginPersona(MANAGER);
+      const res = await ctx.post('/api/admin/reset', { data: {} });
+      // /api/admin/reset exige role owner/admin -> manager refuse. Jamais 200.
+      expect(res.status(), `manager doit etre refuse, recu ${res.status()}`).not.toBe(200);
+      expect([401, 403]).toContain(res.status());
+      await ctx.dispose();
+    });
   });
 });
