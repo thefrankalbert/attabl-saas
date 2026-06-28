@@ -1,5 +1,9 @@
 {
   "common": {
+    "offlineMode": "Mode hors ligne",
+    "connectionRestored": "Connexion retablie",
+    "outboxPending": "{count} commande(s) en attente d'envoi",
+    "outboxRejected": "{count} commande(s) refusée(s) à l'envoi. Vérifiez et ressaisissez.",
     "aria": {
       "back": "Retour",
       "close": "Fermer",
@@ -2133,6 +2137,8 @@
     "saveNote": "Enregistrer",
     "sentToKitchen": "Envoyé en cuisine !",
     "saleRecorded": "Vente enregistrée !",
+    "orderQueued": "Commande en attente de réseau",
+    "orderQueuedDesc": "Pas de connexion. La commande part dès le retour du réseau.",
     "orderError": "Erreur lors de la commande",
     "orderReady": "Commande prête !",
     "loading": "Chargement du POS...",

@@ -423,9 +423,18 @@ export function usePOSData(tenantId: string) {
     },
   ) => {
     if (cart.length === 0) return;
+    // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
+    // two taps would create two distinct orders. Block while a submit is in
+    // flight (the idempotency key only dedupes one submit's network retries).
+    if (createOrder.isPending) return;
+
+    // Mint the idempotency key once per compose. It survives the network retry /
+    // durable outbox replay so an offline-sent order never duplicates.
+    const clientRequestId = crypto.randomUUID();
 
     createOrder.mutate(
       {
+        clientRequestId,
         table_number: selectedTable || `CMD-${orderNumber}`,
         status,
         total,
@@ -446,12 +455,19 @@ export function usePOSData(tenantId: string) {
         })),
       },
       {
-        onSuccess: (order: { orderNumber?: string }) => {
-          const serverNum = order?.orderNumber;
-          toast({
-            title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
-            description: serverNum ? `#${serverNum}` : undefined,
-          });
+        onSuccess: (order: { orderNumber?: string; queued?: boolean }) => {
+          if (order?.queued) {
+            // Offline: durably captured, will sync on reconnect. Clear the cart
+            // anyway - the order now lives in the outbox; re-submitting would mint
+            // a new key and create a duplicate.
+            toast({ title: t('orderQueued'), description: t('orderQueuedDesc') });
+          } else {
+            const serverNum = order?.orderNumber;
+            toast({
+              title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
+              description: serverNum ? `#${serverNum}` : undefined,
+            });
+          }
           updateOrderNumber(orderNumber + 1);
           setCart([]);
           setOrderNotes('');

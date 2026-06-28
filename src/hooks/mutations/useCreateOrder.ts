@@ -4,9 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
+import { submitOrder } from '@/lib/offline/submit-order';
 
 interface CreateOrderInput {
   tenant_id?: string; // Deprecated: tenant_id is now derived server-side from session
+  /** Idempotency key minted at order compose. Survives the network-retry/outbox replay. */
+  clientRequestId: string;
   table_number: string;
   status: 'pending' | 'delivered';
   service_type: string;
@@ -36,6 +39,8 @@ interface POSOrderResponse {
   total: number;
   error?: string;
   details?: string[];
+  /** True when the network was unreachable and the order was durably queued to sync later. */
+  queued?: boolean;
 }
 
 /**
@@ -54,8 +59,9 @@ export function useCreateOrder(tenantId: string) {
 
   return useMutation({
     mutationKey: ['create-order', tenantId],
-    mutationFn: async (input: CreateOrderInput) => {
-      // Build the API payload (only fields the server expects)
+    mutationFn: async (input: CreateOrderInput): Promise<POSOrderResponse> => {
+      // Build the API payload (only fields the server expects). The idempotency
+      // key (client_request_id) is injected by submitOrder.
       const payload = {
         // tenant_id derived server-side from session (not sent from client)
         table_number: input.table_number,
@@ -76,35 +82,26 @@ export function useCreateOrder(tenantId: string) {
         })),
       };
 
-      let response: Response;
-      try {
-        response = await fetch('/api/orders/pos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } catch (fetchError) {
-        throw new Error(
-          `Erreur reseau: ${fetchError instanceof Error ? fetchError.message : 'connexion echouee'}`,
-        );
-      }
+      // submitOrder handles the durable outbox: on a network/transient failure it
+      // queues the order (idempotency-keyed) and reports 'queued' instead of
+      // throwing, so an offline tablet never loses or duplicates the order.
+      const result = await submitOrder({
+        endpoint: '/api/orders/pos',
+        body: payload,
+        clientRequestId: input.clientRequestId,
+      });
 
-      // Handle non-JSON responses (HTML error pages, redirects, etc.)
-      let data: POSOrderResponse;
-      try {
-        data = await response.json();
-      } catch {
-        const text = await response.text().catch(() => '');
-        throw new Error(`API ${response.status}: reponse invalide. ${text.slice(0, 200)}`);
+      if (result.status === 'sent') {
+        return result.data as POSOrderResponse;
       }
-
-      if (!response.ok) {
-        const message = data.error || `Erreur ${response.status}`;
-        const details = data.details ? ` (${data.details.join(', ')})` : '';
-        throw new Error(`${message}${details}`);
+      if (result.status === 'queued') {
+        return { success: true, queued: true, orderId: '', orderNumber: '', total: 0 };
       }
-
-      return data;
+      // 'rejected' (server refused) or 'failed' (could not send nor queue):
+      // surface to onError.
+      const detail =
+        result.status === 'rejected' && result.details ? ` (${result.details.join(', ')})` : '';
+      throw new Error(`${result.error}${detail}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
@@ -120,22 +117,9 @@ export function useCreateOrder(tenantId: string) {
       logger.error('Failed to create POS order', { message });
       toast({ title: tc('error'), description: message, variant: 'destructive' });
     },
-    retry: (failureCount, error) => {
-      if (failureCount >= 3) return false;
-      const message = error instanceof Error ? error.message : '';
-      // Do not retry validation or business logic errors
-      if (
-        message.includes('duplicate') ||
-        message.includes('violates') ||
-        message.includes('validation') ||
-        message.includes('invalide') ||
-        message.includes('disponible') ||
-        message.includes('refuse')
-      ) {
-        return false;
-      }
-      return true;
-    },
-    retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 10000),
+    // No TanStack retry: transient network failures are durably queued by
+    // submitOrder (and replayed idempotently by the outbox), and the only errors
+    // that now throw are server rejections, which must not be retried.
+    retry: false,
   });
 }
