@@ -1,5 +1,9 @@
 {
   "common": {
+    "offlineMode": "Offline mode",
+    "connectionRestored": "Connection restored",
+    "outboxPending": "{count} order(s) waiting to send",
+    "outboxRejected": "{count} order(s) refused on send. Review and re-enter.",
     "aria": {
       "back": "Back",
       "close": "Close",
@@ -2133,6 +2137,8 @@
     "saveNote": "Save",
     "sentToKitchen": "Sent to kitchen!",
     "saleRecorded": "Sale recorded!",
+    "orderQueued": "Order waiting for network",
+    "orderQueuedDesc": "No connection. The order will be sent as soon as the network is back.",
     "orderError": "Order error",
     "orderReady": "Order ready!",
     "loading": "Loading POS...",

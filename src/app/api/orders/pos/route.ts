@@ -16,6 +16,51 @@ import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
+/**
+ * Applies POS status/payment fields to an order. Idempotent: the payment flip is
+ * scoped to payment_status='pending', so re-running it on a replay (or an order
+ * already paid) is a no-op and never re-stamps paid_at. This lets a replayed POS
+ * order HEAL an earlier non-fatal update failure instead of staying stuck unpaid.
+ * Non-fatal on error (the order itself already exists).
+ */
+async function applyPosFinalState(
+  supabase: ReturnType<typeof createAdminClient>,
+  orderId: string,
+  tenantId: string,
+  status: string,
+  paymentMethod: string | undefined,
+): Promise<void> {
+  if (paymentMethod) {
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_method: paymentMethod,
+        payment_status: 'paid',
+        paid_at: new Date().toISOString(),
+        ...(status !== 'pending' ? { status } : {}),
+      })
+      .eq('id', orderId)
+      // Belt filter: service-role client bypasses RLS, so scope to the tenant.
+      .eq('tenant_id', tenantId)
+      // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
+      .eq('payment_status', 'pending');
+    if (error) {
+      logger.error('POS order: failed to apply payment/status', error, { orderId });
+    }
+    return;
+  }
+  if (status !== 'pending') {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+      .eq('tenant_id', tenantId);
+    if (error) {
+      logger.error('POS order: failed to apply status', error, { orderId });
+    }
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const originErr = verifyOrigin(request);
@@ -63,6 +108,7 @@ export async function POST(request: Request) {
       notes,
       coupon_code,
       items,
+      client_request_id,
     } = parseResult.data;
 
     // 4. Get admin user record for server_id
@@ -82,6 +128,30 @@ export async function POST(request: Request) {
 
     // 5. Validate items and verify prices server-side
     const orderService = createOrderService(adminSupabase);
+
+    // Idempotency: if this POS order was already created (offline replay), return
+    // it BEFORE any non-idempotent side effect (coupon claim, order creation,
+    // destock). Still (re-)apply the status/payment flip idempotently so a replay
+    // heals an order whose original non-fatal payment update had failed.
+    if (client_request_id) {
+      const existing = await orderService.findOrderByClientRequestId(tenant_id, client_request_id);
+      if (existing) {
+        await applyPosFinalState(
+          adminSupabase,
+          existing.orderId,
+          tenant_id,
+          status,
+          payment_method,
+        );
+        return NextResponse.json({
+          success: true,
+          orderId: existing.orderId,
+          orderNumber: existing.orderNumber,
+          total: existing.total,
+          deduplicated: true,
+        });
+      }
+    }
 
     // 5. Fetch menu items AND tenant config in PARALLEL (independent queries)
     const itemIds = items.map((item) => item.menu_item_id);
@@ -235,7 +305,6 @@ export async function POST(request: Request) {
     }
 
     // 11. Create order with items via service
-    const hasPayment = !!payment_method;
     const tipValue = tip_amount && tip_amount > 0 ? tip_amount : 0;
 
     let result;
@@ -259,6 +328,7 @@ export async function POST(request: Request) {
         verifiedPrices,
         preparation_zone: preparationZone,
         itemPreparationZones,
+        clientRequestId: client_request_id,
       });
     } catch (orderError) {
       // Rollback coupon usage if order creation fails
@@ -268,33 +338,33 @@ export async function POST(request: Request) {
       throw orderError;
     }
 
-    // 10. Update order with POS-specific fields (status, payment)
-    // The service always creates with status='pending'. For POS we may need 'delivered'
-    // and payment fields. Update atomically after creation.
-    const updateFields: Record<string, unknown> = {};
-    if (status !== 'pending') {
-      updateFields.status = status;
-    }
-    if (hasPayment) {
-      updateFields.payment_method = payment_method;
-      updateFields.payment_status = 'paid';
-      updateFields.paid_at = new Date().toISOString();
-    }
-    if (Object.keys(updateFields).length > 0) {
-      const { error: updateError } = await adminSupabase
-        .from('orders')
-        .update(updateFields)
-        .eq('id', result.orderId)
-        // Belt filter: service-role client bypasses RLS, so scope the update to the tenant.
-        .eq('tenant_id', tenant_id);
-
-      if (updateError) {
-        logger.error('POS order: failed to update order fields', updateError, {
-          orderId: result.orderId,
-        });
-        // Non-fatal: order was created successfully, just missing payment/status update
+    // Concurrent replay deduped at the DB unique index: the winning request
+    // already created this order and destocked. Undo the coupon claim we made
+    // above (the deduped result is a success, so the catch never unclaimed),
+    // heal the payment/status idempotently, and skip destock/notif/quota.
+    if (result.deduplicated) {
+      if (couponResult?.couponId) {
+        try {
+          await couponService.unclaimUsage(couponResult.couponId);
+        } catch (unclaimError) {
+          logger.error('POS order: failed to unclaim coupon after dedup', unclaimError, {
+            couponId: couponResult.couponId,
+          });
+        }
       }
+      await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
+      return NextResponse.json({
+        success: true,
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        total: result.total,
+        deduplicated: true,
+      });
     }
+
+    // 10. Apply POS-specific status/payment fields (idempotent). The service
+    // always creates with status='pending'; POS may need 'delivered' + payment.
+    await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
 
     // 11. Create in-app notification (fire-and-forget, non-blocking)
     void Promise.resolve(

@@ -29,6 +29,7 @@ function createMockSupabase() {
         eq: vi.fn(),
         in: vi.fn(),
         single: vi.fn(),
+        maybeSingle: vi.fn(),
       };
     }
     return chains[table];
@@ -41,10 +42,12 @@ function createMockSupabase() {
     const isMock = vi.fn().mockReturnValue({ in: inMock, single: chain.single });
     const eqMock = vi.fn().mockReturnValue({
       single: chain.single,
+      maybeSingle: chain.maybeSingle,
       in: inMock,
       is: isMock,
       eq: vi.fn().mockReturnValue({
         single: chain.single,
+        maybeSingle: chain.maybeSingle,
         is: isMock,
       }),
     });
@@ -463,6 +466,120 @@ describe('OrderService', () => {
       expect(num1).toMatch(/^CMD-/);
       expect(num2).toMatch(/^CMD-/);
       expect(num1).not.toBe(num2);
+    });
+  });
+
+  describe('findOrderByClientRequestId (idempotency)', () => {
+    it('returns the existing order when the key was already used', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('orders').maybeSingle.mockResolvedValue({
+        data: { id: 'order-1', order_number: 'CMD-1', total: 42 },
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.findOrderByClientRequestId('tenant-123', 'key-abc');
+
+      expect(result).toEqual({ orderId: 'order-1', orderNumber: 'CMD-1', total: 42 });
+    });
+
+    it('returns null when the key has never been used', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('orders').maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.findOrderByClientRequestId('tenant-123', 'key-new');
+
+      expect(result).toBeNull();
+    });
+
+    it('throws INTERNAL on a lookup error', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('orders').maybeSingle.mockResolvedValue({
+        data: null,
+        error: { message: 'db down' },
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      await expect(service.findOrderByClientRequestId('tenant-123', 'key-x')).rejects.toMatchObject(
+        { code: 'INTERNAL' },
+      );
+    });
+  });
+
+  describe('createOrderWithItems (idempotency key)', () => {
+    it('forwards the client_request_id to the create RPC', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-9', error: null }) // generateOrderNumber
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-9', orderNumber: 'CMD-9', total: 10 },
+          error: null,
+        }); // create_order_with_items
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.createOrderWithItems({
+        tenantId: 'tenant-123',
+        items: [{ id: 'item-1', name: 'Pizza', price: 10, quantity: 1 }] as OrderItemInput[],
+        total: 10,
+        clientRequestId: 'key-123',
+      });
+
+      expect(result.orderId).toBe('order-9');
+      expect(result.deduplicated).toBe(false);
+      expect(rpc).toHaveBeenLastCalledWith(
+        'create_order_with_items',
+        expect.objectContaining({ p_client_request_id: 'key-123' }),
+      );
+    });
+
+    it('surfaces deduplicated:true when the RPC returns an existing order (concurrent replay)', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-7', error: null }) // generateOrderNumber
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-7', orderNumber: 'CMD-7', total: 20, deduplicated: true },
+          error: null,
+        }); // create_order_with_items -> deduped at unique index
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.createOrderWithItems({
+        tenantId: 'tenant-123',
+        items: [{ id: 'item-1', name: 'Pizza', price: 20, quantity: 1 }] as OrderItemInput[],
+        total: 20,
+        clientRequestId: 'key-dup',
+      });
+
+      expect(result.orderId).toBe('order-7');
+      expect(result.deduplicated).toBe(true);
+    });
+
+    it('passes null when no idempotency key is provided', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-8', error: null })
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-8', orderNumber: 'CMD-8', total: 5 },
+          error: null,
+        });
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      await service.createOrderWithItems({
+        tenantId: 'tenant-123',
+        items: [{ id: 'item-1', name: 'Pizza', price: 5, quantity: 1 }] as OrderItemInput[],
+        total: 5,
+      });
+
+      expect(rpc).toHaveBeenLastCalledWith(
+        'create_order_with_items',
+        expect.objectContaining({ p_client_request_id: null }),
+      );
     });
   });
 });
