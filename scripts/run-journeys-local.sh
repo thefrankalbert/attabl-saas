@@ -103,9 +103,12 @@ for _ in $(seq 1 80); do
 done
 
 log "Playwright journeys${1:+ (filtre: $1)}"
+# JOURNEY_STRIPE_SECRET_KEY (sk_test_...) est transmis depuis l'environnement si
+# fourni -> debloque le checkout (01) et les Test Clocks (06). Optionnel.
 JOURNEY_BASE_URL="http://localhost:$DEV_PORT" \
   JOURNEY_SUPABASE_URL="$API_URL" \
   JOURNEY_SUPABASE_SERVICE_ROLE_KEY="$SERVICE" \
+  JOURNEY_STRIPE_SECRET_KEY="${JOURNEY_STRIPE_SECRET_KEY:-}" \
   JOURNEY_CONFIRM_TEST_DB=yes \
   npx playwright test --config tests/journeys/playwright.config.ts ${1:-}
 RUN_EXIT=$?
