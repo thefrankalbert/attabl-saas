@@ -2,17 +2,25 @@
  * Parcours 4: le service tourne. Convives commandent, cuisine suit, on encaisse.
  *
  * - Sans seed: la validation serveur rejette une commande vide (toujours jouable).
- * - Happy-path commande + manipulation de prix: necessite un menu seede sur la
- *   base de TEST (JOURNEY_SUPABASE_URL + SERVICE_ROLE_KEY). On seede tenant + menu
- *   + article via service_role, puis on commande via la vraie route /api/orders.
+ * - Happy-path commande + prix + POS + routage cuisine: necessite un menu seede
+ *   sur la base de TEST (JOURNEY_SUPABASE_URL + SERVICE_ROLE_KEY). On seede tenant
+ *   + menu + equipe via service_role, puis on commande via les vraies routes.
  *
  * Le serveur revalide le prix contre la DB (order.service.validateOrderItems ->
  * ServiceError VALIDATION -> 400): un prix falsifie est rejete.
  */
 import { test, expect } from '@playwright/test';
 import { hasSeedEnv } from './fixtures/env';
-import { newApiContext } from './fixtures/personas';
-import { seedTenantWithMenu, teardownTenantBySlug, type SeededMenu } from './fixtures/seed';
+import { RESTAURANT_TEAM, loginPersona, newApiContext } from './fixtures/personas';
+import {
+  seedTenantWithMenu,
+  seedStaffForTenant,
+  getOrderState,
+  teardownTenantBySlug,
+  type SeededMenu,
+} from './fixtures/seed';
+
+const CASHIER = RESTAURANT_TEAM.find((p) => p.role === 'cashier')!;
 
 test.describe.serial('04 - Service & commandes', () => {
   test('une commande vide est rejetee (validation serveur)', async () => {
@@ -34,6 +42,7 @@ test.describe.serial('04 - Service & commandes', () => {
         'JOURNEY_SUPABASE_URL/SERVICE_ROLE_KEY requis pour seeder le menu (base de TEST).',
       );
       seeded = await seedTenantWithMenu();
+      await seedStaffForTenant(seeded.tenantId, [CASHIER]);
     });
 
     test.afterAll(async () => {
@@ -84,16 +93,50 @@ test.describe.serial('04 - Service & commandes', () => {
       ).toBeGreaterThanOrEqual(400);
       await ctx.dispose();
     });
-  });
 
-  test('la cuisine voit la commande en temps reel (KDS)', async () => {
-    test.skip(
-      true,
-      'TODO: UI - ouvrir le KDS en page authentifiee (cuisine), asserter l apparition de la commande via le broadcast realtime.',
-    );
-  });
+    test('le caissier encaisse une commande POS (cash) -> payee', async () => {
+      test.skip(!seeded, 'seed indisponible');
+      const item = seeded as SeededMenu;
+      const ctx = await loginPersona(CASHIER);
+      const res = await ctx.post('/api/orders/pos', {
+        data: {
+          table_number: '5',
+          status: 'delivered',
+          service_type: 'dine_in',
+          payment_method: 'cash',
+          items: [{ menu_item_id: item.menuItemId, quantity: 1 }],
+        },
+      });
+      expect(res.status(), await res.text()).toBe(200);
+      const body = (await res.json()) as { success?: boolean; orderId?: string };
+      expect(body.success).toBe(true);
+      expect(body.orderId).toBeTruthy();
+      // Le serveur a applique le paiement: payment_status passe a 'paid'.
+      const state = await getOrderState(body.orderId as string);
+      expect(state?.payment_status).toBe('paid');
+      await ctx.dispose();
+    });
 
-  test('le serveur encaisse (POS)', async () => {
-    test.skip(true, 'TODO: UI/POS - passer la commande en payee (cash) et verifier le statut.');
+    test('la commande POS est routee vers la cuisine (KDS)', async () => {
+      test.skip(!seeded, 'seed indisponible');
+      const item = seeded as SeededMenu;
+      const ctx = await loginPersona(CASHIER);
+      const res = await ctx.post('/api/orders/pos', {
+        data: {
+          table_number: '6',
+          status: 'pending',
+          service_type: 'dine_in',
+          items: [{ menu_item_id: item.menuItemId, quantity: 1 }],
+        },
+      });
+      expect(res.status(), await res.text()).toBe(200);
+      const body = (await res.json()) as { orderId?: string };
+      // La commande existe avec une zone de preparation -> le KDS cuisine la voit.
+      // (le push temps reel est assure par le broadcast applicatif, non asserte ici)
+      const state = await getOrderState(body.orderId as string);
+      expect(state, 'la commande doit exister cote cuisine').toBeTruthy();
+      expect(['kitchen', 'bar', 'both', 'mixed']).toContain(state?.preparation_zone);
+      await ctx.dispose();
+    });
   });
 });

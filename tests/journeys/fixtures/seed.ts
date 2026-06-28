@@ -100,6 +100,25 @@ export interface SeededMenu {
   itemName: string;
 }
 
+export interface OrderState {
+  payment_status: string | null;
+  status: string | null;
+  preparation_zone: string | null;
+  server_id: string | null;
+}
+
+/** Lit l'etat d'une commande (paiement, statut, zone de prep) cote DB de test. */
+export async function getOrderState(orderId: string): Promise<OrderState | null> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db
+    .from('orders')
+    .select('payment_status, status, preparation_zone, server_id')
+    .eq('id', orderId)
+    .maybeSingle();
+  return (data as OrderState | null) ?? null;
+}
+
 /**
  * Seed minimal et idempotent pour le parcours commande: un tenant (slug de test),
  * un menu, une categorie, un article avec un prix connu. Repart d'une base propre
