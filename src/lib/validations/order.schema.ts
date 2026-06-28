@@ -67,6 +67,9 @@ export const createOrderSchema = z.object({
   // an attacker attribute orders to an arbitrary staff member.
   display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   tip_amount: z.number().min(0).optional(),
+  // Idempotency key minted client-side when the order is composed. Lets an
+  // offline-replayed order dedupe server-side instead of creating a duplicate.
+  client_request_id: z.string().uuid().optional(),
 });
 
 // ─── POS-specific order schema ──────────────────────────
@@ -100,6 +103,9 @@ export const createPOSOrderSchema = z.object({
     .array(posOrderItemSchema)
     .min(1, 'Cart cannot be empty')
     .max(50, 'Maximum 50 items per order'),
+  // Idempotency key minted client-side when the order is composed. Lets an
+  // offline-replayed POS order dedupe server-side instead of creating a duplicate.
+  client_request_id: z.string().uuid().optional(),
 });
 
 /** Cart pre-validation before POST /api/orders (same item shape, no checkout fields). */

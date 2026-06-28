@@ -29,12 +29,21 @@ interface CreateOrderInput {
   preparation_zone?: OrderPreparationZone;
   /** Per-item preparation zone, keyed by menu_item_id. Denormalized from category at order time. */
   itemPreparationZones?: Map<string, PreparationZone>;
+  /** Idempotency key minted client-side. Dedupes offline-replayed order creation. */
+  clientRequestId?: string;
 }
 
 interface CreateOrderResult {
   orderId: string;
   orderNumber: string;
   total: number;
+  /**
+   * True when the DB function returned an already-existing order for the
+   * idempotency key (concurrent replay deduped at the unique index) instead of
+   * inserting a new one. The caller MUST then skip non-idempotent side effects
+   * (coupon claim, destock, notifications) - the winning request already ran them.
+   */
+  deduplicated?: boolean;
 }
 
 type OrderPreviewIssue = {
@@ -401,9 +410,40 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
+     * Returns an existing order for a client-minted idempotency key, or null.
+     * Used to short-circuit an offline-replayed order BEFORE any side effect
+     * (coupon claim, order creation) so a replay never duplicates the order.
+     */
+    async findOrderByClientRequestId(
+      tenantId: string,
+      clientRequestId: string,
+    ): Promise<CreateOrderResult | null> {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, order_number, total')
+        .eq('tenant_id', tenantId)
+        .eq('client_request_id', clientRequestId)
+        .maybeSingle();
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la verification de la commande', 'INTERNAL', error);
+      }
+      if (!data) return null;
+
+      return {
+        orderId: data.id as string,
+        orderNumber: data.order_number as string,
+        total: data.total as number,
+      };
+    },
+
+    /**
      * Creates an order with its items atomically via a DB function.
      * The entire operation runs in a single PostgreSQL transaction -
      * if item insertion fails, the order is automatically rolled back.
+     *
+     * Idempotent when input.clientRequestId is set: a replay returns the
+     * already-created order (the DB function dedupes on (tenant, key)).
      */
     async createOrderWithItems(input: CreateOrderInput): Promise<CreateOrderResult> {
       const orderNumber = await this.generateOrderNumber(input.tenantId);
@@ -450,6 +490,7 @@ export function createOrderService(supabase: SupabaseClient) {
         p_display_currency: input.display_currency || null,
         p_preparation_zone: input.preparation_zone || 'kitchen',
         p_items: itemsJson,
+        p_client_request_id: input.clientRequestId ?? null,
       });
 
       if (error) {
@@ -464,12 +505,18 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la creation de la commande', 'INTERNAL', error);
       }
 
-      const result = data as { orderId: string; orderNumber: string; total: number };
+      const result = data as {
+        orderId: string;
+        orderNumber: string;
+        total: number;
+        deduplicated?: boolean;
+      };
 
       return {
         orderId: result.orderId,
         orderNumber: result.orderNumber,
         total: result.total,
+        deduplicated: result.deduplicated === true,
       };
     },
 
