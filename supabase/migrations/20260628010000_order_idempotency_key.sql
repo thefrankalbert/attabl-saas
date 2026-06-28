@@ -121,10 +121,14 @@ BEGIN
 
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
   LOOP
+    -- selected_option / selected_variant are preserved from the live prod
+    -- function (added out-of-band, never in the repo migration chain). Omitting
+    -- them here would silently drop those columns from the insert.
     INSERT INTO order_items (
       order_id, menu_item_id, item_name, item_name_en,
       quantity, price_at_order, customer_notes,
-      modifiers, course, item_status, preparation_zone
+      modifiers, course, item_status, preparation_zone,
+      selected_option, selected_variant
     ) VALUES (
       v_order_id,
       (v_item->>'menu_item_id')::uuid,
@@ -136,7 +140,9 @@ BEGIN
       COALESCE(v_item->'modifiers', '[]'::jsonb),
       v_item->>'course',
       'pending',
-      COALESCE(v_item->>'preparation_zone', 'kitchen')
+      COALESCE(v_item->>'preparation_zone', 'kitchen'),
+      v_item->'selected_option',
+      v_item->'selected_variant'
     );
   END LOOP;
 
