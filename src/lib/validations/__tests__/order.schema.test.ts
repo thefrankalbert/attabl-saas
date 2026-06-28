@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createOrderSchema, orderItemSchema, orderPreviewSchema } from '../order.schema';
+import {
+  createOrderSchema,
+  createPOSOrderSchema,
+  orderItemSchema,
+  orderPreviewSchema,
+} from '../order.schema';
 
 describe('orderItemSchema', () => {
   const validItem = {
@@ -153,5 +158,50 @@ describe('createOrderSchema', () => {
       tableNumber: 'a'.repeat(51),
     });
     expect(result.success).toBe(false);
+  });
+
+  it('should accept an optional client_request_id (UUID)', () => {
+    const result = createOrderSchema.safeParse({
+      items: [validItem],
+      client_request_id: '11111111-2222-4333-8444-555555555555',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a non-UUID client_request_id', () => {
+    const result = createOrderSchema.safeParse({
+      items: [validItem],
+      client_request_id: 'not-a-uuid',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('createPOSOrderSchema idempotency key', () => {
+  const base = {
+    table_number: '12',
+    status: 'pending' as const,
+    items: [{ menu_item_id: '550e8400-e29b-41d4-a716-446655440000', quantity: 1 }],
+  };
+
+  it('should accept an optional client_request_id (UUID)', () => {
+    const result = createPOSOrderSchema.safeParse({
+      ...base,
+      client_request_id: '11111111-2222-4333-8444-555555555555',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a non-UUID client_request_id', () => {
+    const result = createPOSOrderSchema.safeParse({
+      ...base,
+      client_request_id: '123',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should accept a POS order without a client_request_id', () => {
+    const result = createPOSOrderSchema.safeParse(base);
+    expect(result.success).toBe(true);
   });
 });

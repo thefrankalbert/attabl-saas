@@ -105,7 +105,24 @@ export async function POST(request: Request) {
       coupon_code,
       display_currency,
       tip_amount,
+      client_request_id,
     } = parseResult.data;
+
+    // Idempotency: if this order was already created (offline replay), return it
+    // unchanged BEFORE any side effect (coupon claim, order creation).
+    if (client_request_id) {
+      const existing = await orderService.findOrderByClientRequestId(tenantId, client_request_id);
+      if (existing) {
+        return NextResponse.json({
+          success: true,
+          orderId: existing.orderId,
+          orderNumber: existing.orderNumber,
+          total: existing.total,
+          message: t('orderSuccess'),
+          deduplicated: true,
+        });
+      }
+    }
 
     const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
       await orderService.validateOrderItems(tenantId, items);
@@ -188,6 +205,7 @@ export async function POST(request: Request) {
         verifiedPrices,
         preparation_zone: preparationZone,
         itemPreparationZones,
+        clientRequestId: client_request_id,
       });
     } catch (orderError) {
       // Rollback coupon usage if order creation fails
@@ -201,6 +219,30 @@ export async function POST(request: Request) {
         }
       }
       throw orderError;
+    }
+
+    // Concurrent replay deduped at the DB unique index: the winning request
+    // already created this order and ran every side effect. Undo the coupon
+    // claim we made above (the deduped result is a success, so the catch that
+    // unclaims never fired) and skip notifications/destock/quota.
+    if (result.deduplicated) {
+      if (couponResult?.couponId) {
+        try {
+          await couponService.unclaimUsage(couponResult.couponId);
+        } catch (unclaimError) {
+          logger.error('Failed to unclaim coupon after dedup', unclaimError, {
+            couponId: couponResult.couponId,
+          });
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        total: result.total,
+        message: t('orderSuccess'),
+        deduplicated: true,
+      });
     }
 
     // 9. Create in-app notification for admins (scheduled via after() so Vercel

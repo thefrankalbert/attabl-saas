@@ -115,6 +115,10 @@ export default function CartPage() {
   const [promoOpen, setPromoOpen] = useState(false);
 
   const submitLock = useRef(false);
+  // Idempotency key for the order POST. Minted lazily, reused across retries of
+  // the same cart (so a lost-response retry dedupes server-side), reset on
+  // success so the next order gets a fresh key.
+  const clientRequestIdRef = useRef<string | null>(null);
   const promoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => {
@@ -269,6 +273,10 @@ export default function CartPage() {
         return;
       }
 
+      if (!clientRequestIdRef.current) {
+        clientRequestIdRef.current = crypto.randomUUID();
+      }
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,6 +287,7 @@ export default function CartPage() {
           display_currency: displayCurrency,
           tip_amount: tipAmount > 0 ? tipAmount : undefined,
           coupon_code: appliedCoupon?.code,
+          client_request_id: clientRequestIdRef.current,
         }),
       });
 
@@ -308,6 +317,8 @@ export default function CartPage() {
         logger.warn('Could not persist order id to localStorage', { error: storageErr });
       }
 
+      // Order succeeded: retire this idempotency key so the next order is fresh.
+      clientRequestIdRef.current = null;
       clearCart();
       setTipPreset(0);
       setCustomTipInput('');
