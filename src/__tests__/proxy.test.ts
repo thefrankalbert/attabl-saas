@@ -43,6 +43,7 @@ let mockIsSuperAdmin = false;
 type QueryBuilder = {
   select: () => QueryBuilder;
   eq: () => QueryBuilder;
+  is: () => QueryBuilder;
   limit: () => QueryBuilder;
   maybeSingle: () => Promise<{ data: unknown }>;
 };
@@ -51,6 +52,7 @@ function makeQueryBuilder(table: string): QueryBuilder {
   const qb: QueryBuilder = {
     select: () => qb,
     eq: () => qb,
+    is: () => qb,
     limit: () => qb,
     maybeSingle: async () => {
       if (table === 'admin_users') {

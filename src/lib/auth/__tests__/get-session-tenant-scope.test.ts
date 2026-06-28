@@ -31,7 +31,7 @@ import { getAuthenticatedUserWithTenant } from '../get-session';
 
 function chain(result: { data: unknown }) {
   const c: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'order', 'limit']) c[m] = vi.fn(() => c);
+  for (const m of ['select', 'eq', 'is', 'order', 'limit']) c[m] = vi.fn(() => c);
   c.maybeSingle = vi.fn(() => Promise.resolve(result));
   return c;
 }

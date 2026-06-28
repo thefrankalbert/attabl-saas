@@ -86,6 +86,8 @@ export function createOrderService(supabase: SupabaseClient) {
           'id, is_active, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
         )
         .eq('slug', slug)
+        // Soft-deleted tenants accept no orders, independently of is_active.
+        .is('deleted_at', null)
         .single();
 
       if (tenantError || !tenant) {

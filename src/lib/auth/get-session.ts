@@ -106,6 +106,8 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
     .from('admin_users')
     .select('id, tenant_id, role')
     .eq('user_id', user.id)
+    .eq('is_active', true)
+    .is('deleted_at', null)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();

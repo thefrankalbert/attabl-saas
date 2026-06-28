@@ -35,9 +35,14 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
+          ban_reason: string | null;
+          banned_at: string | null;
+          banned_by: string | null;
           created_at: string;
           created_by: string | null;
           custom_permissions: Json | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           email: string;
           full_name: string | null;
           id: string;
@@ -52,9 +57,14 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          ban_reason?: string | null;
+          banned_at?: string | null;
+          banned_by?: string | null;
           created_at?: string;
           created_by?: string | null;
           custom_permissions?: Json | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           email: string;
           full_name?: string | null;
           id?: string;
@@ -69,9 +79,14 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          ban_reason?: string | null;
+          banned_at?: string | null;
+          banned_by?: string | null;
           created_at?: string;
           created_by?: string | null;
           custom_permissions?: Json | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           email?: string;
           full_name?: string | null;
           id?: string;
@@ -1208,6 +1223,56 @@ export type Database = {
           },
         ];
       };
+      platform_audit_log: {
+        Row: {
+          action: string;
+          actor_email: string | null;
+          actor_user_id: string | null;
+          created_at: string;
+          id: string;
+          metadata: Json | null;
+          reason: string | null;
+          target_id: string | null;
+          target_label: string | null;
+          target_type: string;
+          tenant_id: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_email?: string | null;
+          actor_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          reason?: string | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          target_type: string;
+          tenant_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_email?: string | null;
+          actor_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          reason?: string | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          target_type?: string;
+          tenant_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'platform_audit_log_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       recipes: {
         Row: {
           created_at: string;
@@ -1605,6 +1670,8 @@ export type Database = {
           created_at: string;
           currency: string | null;
           default_locale: string | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           description: string | null;
           enable_coupons: boolean | null;
           enable_service_charge: boolean | null;
@@ -1638,6 +1705,9 @@ export type Database = {
           subscription_plan: string;
           subscription_status: string;
           supported_currencies: string[];
+          suspend_reason: string | null;
+          suspended_at: string | null;
+          suspended_by: string | null;
           table_count: number | null;
           tax_rate: number | null;
           trial_ends_at: string | null;
@@ -1654,6 +1724,8 @@ export type Database = {
           created_at?: string;
           currency?: string | null;
           default_locale?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           description?: string | null;
           enable_coupons?: boolean | null;
           enable_service_charge?: boolean | null;
@@ -1687,6 +1759,9 @@ export type Database = {
           subscription_plan?: string;
           subscription_status?: string;
           supported_currencies?: string[];
+          suspend_reason?: string | null;
+          suspended_at?: string | null;
+          suspended_by?: string | null;
           table_count?: number | null;
           tax_rate?: number | null;
           trial_ends_at?: string | null;
@@ -1703,6 +1778,8 @@ export type Database = {
           created_at?: string;
           currency?: string | null;
           default_locale?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           description?: string | null;
           enable_coupons?: boolean | null;
           enable_service_charge?: boolean | null;
@@ -1736,6 +1813,9 @@ export type Database = {
           subscription_plan?: string;
           subscription_status?: string;
           supported_currencies?: string[];
+          suspend_reason?: string | null;
+          suspended_at?: string | null;
+          suspended_by?: string | null;
           table_count?: number | null;
           tax_rate?: number | null;
           trial_ends_at?: string | null;

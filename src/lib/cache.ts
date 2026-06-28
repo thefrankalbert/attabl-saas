@@ -63,6 +63,7 @@ function getOrCreateTenantCache(slug: string) {
             .from('tenants')
             .select(TENANT_SELECT)
             .eq('slug', s)
+            .is('deleted_at', null)
             .maybeSingle();
 
           if (!error) {
@@ -151,6 +152,7 @@ export async function getTenant(slug: string): Promise<Tenant | null> {
     .from('tenants')
     .select(TENANT_SELECT)
     .eq('slug', slug)
+    .is('deleted_at', null)
     .maybeSingle();
 
   // A real query failure (schema drift, transient DB error) must NOT be flattened
@@ -179,6 +181,7 @@ export const getCachedTenantByDomain = unstable_cache(
       .from('tenants')
       .select('slug')
       .eq('custom_domain', domain)
+      .is('deleted_at', null)
       .single();
 
     if (error || !data) return null;

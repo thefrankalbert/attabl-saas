@@ -82,6 +82,7 @@ export default async function TenantsPage() {
     return (
       <TenantsPageClient
         serverMode="superadmin"
+        isSuperAdmin
         serverUserName={userName}
         serverTenants={tenantsRes.data || []}
         serverDirectory={directoryRes.data || []}

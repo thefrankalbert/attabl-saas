@@ -37,6 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .from('tenants')
     .select('id, enabled_payment_methods, currency')
     .eq('slug', tenantSlug)
+    .is('deleted_at', null)
     .single();
 
   if (!tenant) {

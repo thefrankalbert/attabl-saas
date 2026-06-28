@@ -38,7 +38,7 @@ function createMockSupabase() {
     const chain = getChain(table);
 
     const inMock = chain.in;
-    const isMock = vi.fn().mockReturnValue({ in: inMock });
+    const isMock = vi.fn().mockReturnValue({ in: inMock, single: chain.single });
     const eqMock = vi.fn().mockReturnValue({
       single: chain.single,
       in: inMock,

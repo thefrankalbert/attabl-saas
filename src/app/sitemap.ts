@@ -87,7 +87,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data: tenants } = await supabase
       .from('tenants')
       .select('slug, updated_at')
-      .eq('onboarding_completed', true);
+      .eq('onboarding_completed', true)
+      .is('deleted_at', null);
 
     if (tenants) {
       tenantPages = tenants.map((tenant) => ({
