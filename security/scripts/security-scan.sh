@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Attabl security scan — exécute les scanners locaux et résume les écarts.
+# Attabl security scan - exécute les scanners locaux et résume les écarts.
 # Usage: bash security/scripts/security-scan.sh
 # N'échoue pas le shell si un outil manque; il l'indique et continue.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 ROOT="$(pwd)"
 echo "==================================================================="
-echo " Attabl — scan sécurité  ($(date '+%Y-%m-%d %H:%M'))  repo: $ROOT"
+echo " Attabl - scan sécurité  ($(date '+%Y-%m-%d %H:%M'))  repo: $ROOT"
 echo "==================================================================="
 
 have() { command -v "$1" >/dev/null 2>&1; }
@@ -31,7 +31,7 @@ section "3. Dépendances vulnérables (pnpm audit)"
 if have pnpm; then
   pnpm audit --audit-level=high || echo ">> vulnérabilités high/critical à corriger"
 else
-  echo "pnpm absent — essaie: npm audit --audit-level=high"
+  echo "pnpm absent - essaie: npm audit --audit-level=high"
 fi
 
 section "4. OSV scanner (lockfile)"

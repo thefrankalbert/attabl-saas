@@ -1,4 +1,4 @@
--- Couverture RLS — à exécuter dans Supabase (SQL Editor) ou via psql/MCP execute_sql.
+-- Couverture RLS - à exécuter dans Supabase (SQL Editor) ou via psql/MCP execute_sql.
 -- But: prouver que toute table du schéma public a la RLS activée ET au moins une policy.
 
 -- 1) Tables du schéma public SANS RLS activée (doit renvoyer 0 ligne)

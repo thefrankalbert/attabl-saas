@@ -31,3 +31,5 @@ CONTRE-AUDIT-*.html
 
 # QA campaign tooling + evidence (driver scripts, screenshots, bug registry)
 .qa/
+playwright-report-journeys/
+tests/journeys/playwright-report-journeys/
