@@ -106,7 +106,7 @@ function buildDeleteRequest(): Request {
  */
 function buildAdminUsersChain(
   eqCalls: Array<[string, unknown]>,
-  ownerRow: { tenant_id: string; role: string } | null,
+  ownerRow: { id?: string; tenant_id: string; role: string } | null,
 ) {
   const chain = {
     select: vi.fn(() => chain),
@@ -224,6 +224,7 @@ describe('permissions API route', () => {
 
     const eqCalls: Array<[string, unknown]> = [];
     const adminUsersChain = buildAdminUsersChain(eqCalls, {
+      id: 'membership-A',
       tenant_id: SLUG_TENANT_ID,
       role: 'owner',
     });
@@ -241,6 +242,39 @@ describe('permissions API route', () => {
     expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ tenant_id: SLUG_TENANT_ID, role: 'manager' }),
       expect.objectContaining({ onConflict: 'tenant_id,role' }),
+    );
+  });
+
+  // 4b. Regression guard: updated_by must be the actor's admin_users.id (the
+  // membership PK), NEVER the auth user id. role_permissions.updated_by is a FK
+  // to admin_users(id); writing user.id (== admin_users.user_id) caused FK
+  // violations / wrong-actor records - the same ID-space bug fixed in invitations.
+  it('PUT writes updated_by as the actor admin_users.id, never the auth user id', async () => {
+    setupAllowed();
+    mockGetHeader.mockReturnValue('restaurant-a');
+    mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
+
+    const eqCalls: Array<[string, unknown]> = [];
+    const adminUsersChain = buildAdminUsersChain(eqCalls, {
+      id: 'membership-A',
+      tenant_id: SLUG_TENANT_ID,
+      role: 'owner',
+    });
+    const { chain: rolePermissionsChain } = buildRolePermissionsChain();
+    mockFrom.mockImplementation((table: string) =>
+      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+    );
+
+    const res = await PUT(buildPutRequest());
+
+    expect(res.status).toBe(200);
+    expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ updated_by: 'membership-A' }),
+      expect.anything(),
+    );
+    expect(rolePermissionsChain.upsert).not.toHaveBeenCalledWith(
+      expect.objectContaining({ updated_by: USER_ID }),
+      expect.anything(),
     );
   });
 

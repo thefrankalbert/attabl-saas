@@ -381,7 +381,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     if (error instanceof ServiceError) {
       if (error.details) {
