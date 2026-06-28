@@ -23,20 +23,26 @@ export async function isAdminRouteDenied(
   tenantId: string,
   permission: PermissionCode,
 ): Promise<boolean> {
+  // Only LIVE memberships count: a banned (is_active=false) or soft-deleted
+  // member/operator must be denied, consistent with the admin layout gate.
   const { data: adminData } = await supabase
     .from('admin_users')
     .select('role, custom_permissions, is_super_admin')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (!adminData) {
-    // Not a direct member - allow only platform super_admins.
+    // Not a direct member - allow only LIVE platform super_admins.
     const { data: superAdmin } = await supabase
       .from('admin_users')
       .select('id')
       .eq('user_id', userId)
       .eq('is_super_admin', true)
+      .eq('is_active', true)
+      .is('deleted_at', null)
       .limit(1)
       .maybeSingle();
     return !superAdmin; // denied unless super admin

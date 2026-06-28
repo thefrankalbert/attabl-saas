@@ -98,6 +98,7 @@ export async function POST(request: Request) {
           'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
         )
         .eq('id', tenant_id)
+        .is('deleted_at', null)
         .single(),
     ]);
 

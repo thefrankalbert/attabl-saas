@@ -7,6 +7,7 @@ import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import { DEFAULT_FONT } from '@/lib/config/fonts';
 import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
 import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
+import { StorefrontUnavailable } from '@/components/tenant/StorefrontUnavailable';
 import { headers } from 'next/headers';
 
 /**
@@ -26,6 +27,14 @@ export default async function StorefrontLayout({
 }) {
   const { site } = await params;
   const tenant = await getCachedTenant(site);
+
+  // A suspended restaurant (super-admin action) must not serve the menu or take
+  // orders. getCachedTenant already returns null for soft-deleted tenants (404);
+  // here we additionally block the live-but-suspended case.
+  if (tenant && tenant.is_active === false) {
+    return <StorefrontUnavailable />;
+  }
+
   const tenantId = tenant?.id || null;
   // Per-request CSP nonce (set on the request headers by the proxy) so
   // next-themes' inline anti-flash script is not blocked by the enforced CSP.

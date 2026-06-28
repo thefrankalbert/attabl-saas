@@ -12,6 +12,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sit
     .from('tenants')
     .select('name, logo_url, primary_color')
     .eq('slug', site)
+    .is('deleted_at', null)
     .single();
 
   const name = tenant?.name || 'Attabl Menu';
