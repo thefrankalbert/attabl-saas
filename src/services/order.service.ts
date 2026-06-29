@@ -82,6 +82,37 @@ interface TenantValidationResult {
  * Key security: server-side price verification prevents price fraud.
  */
 export function createOrderService(supabase: SupabaseClient) {
+  /**
+   * Close a table session once none of its orders are still awaiting payment
+   * (every order paid or cancelled). Tenant-scoped. Best-effort: a failure here
+   * must not fail the payment, so it only logs.
+   */
+  async function closeSessionIfFullySettled(sessionId: string, tenantId: string): Promise<void> {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('session_id', sessionId)
+      .eq('payment_status', 'pending')
+      .neq('status', 'cancelled');
+
+    if (error) {
+      logger.error('Failed to check session settlement', { sessionId, tenantId, error });
+      return;
+    }
+    if ((count ?? 0) > 0) return; // still has unpaid orders -> keep open
+
+    const { error: closeError } = await supabase
+      .from('table_sessions')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'open');
+    if (closeError) {
+      logger.error('Failed to close table session', { sessionId, tenantId, error: closeError });
+    }
+  }
+
   return {
     /**
      * Validates that a tenant exists and is active.
@@ -641,13 +672,21 @@ export function createOrderService(supabase: SupabaseClient) {
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .eq('payment_status', 'pending')
-        .select('id');
+        .select('id, session_id');
 
       if (error) {
         throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
       }
 
-      return { paid: Array.isArray(data) && data.length > 0 };
+      const paidRow = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+      // Close the table session once every order on it is settled (audit C1).
+      // Leaving it open would let tomorrow's orders attach to today's check.
+      if (paidRow?.session_id) {
+        await closeSessionIfFullySettled(paidRow.session_id as string, tenantId);
+      }
+
+      return { paid: paidRow !== null };
     },
 
     /**

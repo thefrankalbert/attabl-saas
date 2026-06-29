@@ -649,6 +649,60 @@ describe('OrderService', () => {
     });
   });
 
+  describe('markPaid - table session closing (C1)', () => {
+    // Multi-table mock: orders.update().eq().eq().eq().select() returns a paid row
+    // with a session; orders.select(count).eq().eq().eq().neq() returns the number
+    // of still-unpaid orders on the session; table_sessions.update().eq().eq().eq().
+    function makeSupabase(remainingUnpaid: number) {
+      const tsUpdateEq3 = vi.fn().mockResolvedValue({ error: null });
+      const tsUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: tsUpdateEq3 }) }),
+      });
+
+      const countNeq = vi.fn().mockResolvedValue({ count: remainingUnpaid, error: null });
+      const ordersSelectCount = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ neq: countNeq }) }),
+        }),
+      });
+
+      const updateSelect = vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
+      const ordersUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: updateSelect }) }),
+        }),
+      });
+
+      const from = vi.fn((table: string) => {
+        if (table === 'orders') return { update: ordersUpdate, select: ordersSelectCount };
+        if (table === 'table_sessions') return { update: tsUpdate };
+        return {};
+      });
+      return { client: { from } as unknown as SupabaseClient, tsUpdate };
+    }
+
+    it('closes the session when no unpaid orders remain', async () => {
+      const m = makeSupabase(0);
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('o1', 't1', { method: 'cash' });
+
+      expect(res).toEqual({ paid: true });
+      expect(m.tsUpdate).toHaveBeenCalledWith({ status: 'closed', closed_at: expect.any(String) });
+    });
+
+    it('keeps the session open while other orders are unpaid', async () => {
+      const m = makeSupabase(1);
+      const service = createOrderService(m.client);
+
+      await service.markPaid('o1', 't1', { method: 'cash' });
+
+      expect(m.tsUpdate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('cancelOrder (reverses side-effects)', () => {
     // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
     // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.
