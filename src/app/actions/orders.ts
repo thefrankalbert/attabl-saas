@@ -59,10 +59,12 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     return { error: 'Unauthorized' };
   }
 
-  // Verify the user is an admin for the tenant(s) of these orders
+  // Verify the user is an admin for the tenant(s) of these orders.
+  // Pull the financial fields too: paid orders may not be hard-deleted (they are
+  // the financial record), and any deletion is snapshotted into the audit log.
   const { data: orders, error: fetchError } = await supabase
     .from('orders')
-    .select('id, tenant_id')
+    .select('id, tenant_id, order_number, status, payment_status, total, tip_amount, paid_at')
     .in('id', orderIds);
 
   if (fetchError) {
@@ -72,6 +74,16 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (!orders || orders.length === 0) {
     return { error: 'No orders found or access denied' };
+  }
+
+  // Never destroy the financial record of a settled order (audit C7). Paid orders
+  // must be voided/refunded (Phase 4), not deleted.
+  const paidOrders = orders.filter((o) => o.payment_status === 'paid');
+  if (paidOrders.length > 0) {
+    return {
+      error:
+        'Impossible de supprimer une commande payee. Une commande reglee fait partie de l historique financier.',
+    };
   }
 
   // Get the tenant IDs involved
@@ -112,9 +124,11 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   logger.info('Orders deleted successfully', { count: foundIds.length, orderIds: foundIds });
 
-  // Fire-and-forget audit log for each tenant
+  // Fire-and-forget audit log for each tenant. Snapshot the financial fields of
+  // each deleted order so the record is reconstructable (audit C7) - the row is
+  // gone but its totals survive in the audit trail.
   for (const tid of tenantIds) {
-    const idsForTenant = orders.filter((o) => o.tenant_id === tid).map((o) => o.id);
+    const ordersForTenant = orders.filter((o) => o.tenant_id === tid);
     const audit = createAuditService(supabase, {
       tenantId: tid,
       userId: user.id,
@@ -123,7 +137,18 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     audit.log({
       action: 'delete',
       entityType: 'order',
-      oldData: { orderIds: idsForTenant },
+      oldData: {
+        orderIds: ordersForTenant.map((o) => o.id),
+        orders: ordersForTenant.map((o) => ({
+          id: o.id,
+          order_number: o.order_number,
+          status: o.status,
+          payment_status: o.payment_status,
+          total: o.total,
+          tip_amount: o.tip_amount,
+          paid_at: o.paid_at,
+        })),
+      },
     });
   }
 
@@ -151,11 +176,14 @@ export async function actionUpdateOrderStatus(
       'manager',
       'server',
     ]);
-    await createOrderService(supabase).updateStatus(
-      parsed.data.orderId,
-      parsed.data.tenantId,
-      parsed.data.status,
-    );
+    const service = createOrderService(supabase);
+    // Cancelling must reverse side-effects (stock + coupon), not just flip the
+    // status (audit C7) - route it through cancelOrder.
+    if (parsed.data.status === 'cancelled') {
+      await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+    } else {
+      await service.updateStatus(parsed.data.orderId, parsed.data.tenantId, parsed.data.status);
+    }
     return { success: true };
   } catch (err) {
     if (err instanceof AuthError) {

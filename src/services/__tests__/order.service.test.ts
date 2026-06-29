@@ -648,4 +648,94 @@ describe('OrderService', () => {
       });
     });
   });
+
+  describe('cancelOrder (reverses side-effects)', () => {
+    // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
+    // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.
+    function makeSupabase(opts: {
+      order: Record<string, unknown> | null;
+      fetchError?: unknown;
+      restockError?: unknown;
+      unclaimError?: unknown;
+      updateError?: unknown;
+    }) {
+      const maybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: opts.order, error: opts.fetchError ?? null });
+      const select = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
+      });
+      const updateEq2 = vi.fn().mockResolvedValue({ error: opts.updateError ?? null });
+      const update = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: updateEq2 }) });
+      const rpc = vi.fn().mockImplementation((name: string) => {
+        if (name === 'restock_order') return Promise.resolve({ error: opts.restockError ?? null });
+        if (name === 'unclaim_coupon_usage')
+          return Promise.resolve({ error: opts.unclaimError ?? null });
+        return Promise.resolve({ error: null });
+      });
+      const from = vi.fn().mockReturnValue({ select, update });
+      return { client: { from, rpc } as unknown as SupabaseClient, rpc, update };
+    }
+
+    it('restocks, unclaims the coupon, then marks cancelled', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      expect(m.rpc).toHaveBeenCalledWith('restock_order', {
+        p_order_id: 'o1',
+        p_tenant_id: 'tenant-123',
+      });
+      expect(m.rpc).toHaveBeenCalledWith('unclaim_coupon_usage', { p_coupon_id: 'c1' });
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    });
+
+    it('does not unclaim when the order has no coupon', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'ready', payment_status: 'pending', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      expect(m.rpc).toHaveBeenCalledWith('restock_order', expect.anything());
+      expect(m.rpc).not.toHaveBeenCalledWith('unclaim_coupon_usage', expect.anything());
+    });
+
+    it('is a no-op when the order is already cancelled', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'cancelled', payment_status: 'pending', coupon_id: 'c1' },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      expect(m.rpc).not.toHaveBeenCalled();
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses to cancel a paid order (CONFLICT)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'delivered', payment_status: 'paid', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+      expect(m.rpc).not.toHaveBeenCalled();
+    });
+
+    it('throws NOT_FOUND when the order does not exist', async () => {
+      const m = makeSupabase({ order: null });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+  });
 });

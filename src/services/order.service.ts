@@ -536,6 +536,74 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
+     * Cancel an order AND reverse its side-effects (audit finding C7): restore
+     * the ingredients that were destocked and release any single-use coupon it
+     * consumed. Before this, cancelling only flipped status='cancelled' and left
+     * stock deducted + the coupon burnt.
+     *
+     * Idempotent: re-cancelling an already-cancelled order is a no-op. A PAID
+     * order cannot be plain-cancelled here - that requires a refund (Phase 4) so
+     * the financial record is preserved; we throw CONFLICT instead of silently
+     * reversing money. restock/unclaim are themselves idempotent, so a partial
+     * failure can be safely retried.
+     */
+    async cancelOrder(orderId: string, tenantId: string): Promise<void> {
+      const { data: order, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, status, payment_status, coupon_id')
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new ServiceError('Erreur lors du chargement de la commande', 'INTERNAL', fetchError);
+      }
+      if (!order) {
+        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+      }
+      if (order.status === 'cancelled') {
+        return; // already cancelled - no-op
+      }
+      if (order.payment_status === 'paid') {
+        throw new ServiceError(
+          'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
+          'CONFLICT',
+        );
+      }
+
+      // Reverse side-effects first (both idempotent), then mark cancelled.
+      const { error: restockError } = await supabase.rpc('restock_order', {
+        p_order_id: orderId,
+        p_tenant_id: tenantId,
+      });
+      if (restockError) {
+        throw new ServiceError('Erreur lors du restockage', 'INTERNAL', restockError);
+      }
+
+      if (order.coupon_id) {
+        const { error: unclaimError } = await supabase.rpc('unclaim_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+        });
+        if (unclaimError) {
+          throw new ServiceError(
+            'Erreur lors de la liberation du coupon',
+            'INTERNAL',
+            unclaimError,
+          );
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
+      if (updateError) {
+        throw new ServiceError("Erreur lors de l'annulation", 'INTERNAL', updateError);
+      }
+    },
+
+    /**
      * Mark an order as paid - updates payment_method, payment_status,
      * paid_at, status to 'delivered', and optionally tip_amount.
      * Always filters by tenant_id for isolation.
