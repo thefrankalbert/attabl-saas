@@ -410,8 +410,10 @@ export function usePOSData(tenantId: string) {
           enable_service_charge: taxConfig.enableServiceCharge,
         },
         discountAmount,
+        // Currency-aware rounding so the POS preview matches the server (audit H1).
+        currency,
       ),
-    [total, taxConfig, discountAmount],
+    [total, taxConfig, discountAmount, currency],
   );
 
   // ─── Order creation ─────────────────────────────────────

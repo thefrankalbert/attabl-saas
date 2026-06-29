@@ -465,8 +465,19 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         service_charge_rate: serviceChargeRate,
       },
       discount,
+      // Round the preview to the tenant's currency so it matches the server
+      // (audit H1: EUR/USD need 2 decimals, XAF/XOF 0).
+      currencyCode,
     );
-  }, [subtotal, enableTax, taxRate, enableServiceCharge, serviceChargeRate, appliedCoupon]);
+  }, [
+    subtotal,
+    enableTax,
+    taxRate,
+    enableServiceCharge,
+    serviceChargeRate,
+    appliedCoupon,
+    currencyCode,
+  ]);
 
   // Backward compat: totalPrice = subtotal
   const totalPrice = subtotal;
