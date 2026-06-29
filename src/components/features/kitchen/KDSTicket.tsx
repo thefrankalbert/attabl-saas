@@ -71,7 +71,7 @@ const CTA_CONFIG: Record<string, { labelKey: string; next: OrderStatus | undefin
 interface KDSTicketProps {
   order: Order;
   onStatusChange: (id: string, status: OrderStatus) => void;
-  /** @deprecated Kept for KitchenBoard compat - no longer used in compact card */
+  /** Per-item bump: tap an item to toggle pending <-> ready (audit H12). */
   onUpdateItemStatus?: (
     orderId: string,
     itemId: string,
@@ -91,8 +91,7 @@ interface KDSTicketProps {
 export default function KDSTicket({
   order,
   onStatusChange,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
-  onUpdateItemStatus: _onUpdateItemStatus,
+  onUpdateItemStatus,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
   onMarkAllReady: _onMarkAllReady,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
@@ -280,14 +279,26 @@ export default function KDSTicket({
         {(expanded ? items : items.slice(0, 4)).map((item) => {
           const hasNotes = item.notes || item.customer_notes;
           const hasMods = item.modifiers && item.modifiers.length > 0;
+          const isItemReady = item.item_status === 'ready';
+          // Per-item bump tap target (audit H12). Avoid nesting a button inside the
+          // collapsed card's expand-on-tap container: only interactive when the
+          // card is expanded or short enough that the container is not a button.
+          const itemInteractive = !!onUpdateItemStatus && (expanded || items.length <= 4);
 
-          return (
-            <div key={item.id}>
+          const itemBody = (
+            <>
               <div className="flex items-start gap-1.5">
                 <span className="text-sm font-bold text-app-text tabular-nums shrink-0">
                   {item.quantity}
                 </span>
-                <span className="text-sm text-app-text leading-tight">{item.name}</span>
+                <span
+                  className={cn(
+                    'text-sm text-app-text leading-tight',
+                    isItemReady && 'line-through text-app-text-muted',
+                  )}
+                >
+                  {item.name}
+                </span>
               </div>
               {hasMods &&
                 item.modifiers!.map((mod, modIdx) => (
@@ -301,7 +312,30 @@ export default function KDSTicket({
                   {item.customer_notes || item.notes}
                 </p>
               )}
-            </div>
+            </>
+          );
+
+          if (!itemInteractive) {
+            return <div key={item.id}>{itemBody}</div>;
+          }
+
+          return (
+            <Button
+              key={item.id}
+              type="button"
+              variant="ghost"
+              aria-pressed={isItemReady}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateItemStatus?.(order.id, item.id, isItemReady ? 'pending' : 'ready', items);
+              }}
+              className={cn(
+                'flex h-auto w-full min-h-[44px] flex-col items-start gap-0 rounded-md px-1.5 py-1 text-left',
+                isItemReady ? 'opacity-70' : 'hover:bg-app-elevated',
+              )}
+            >
+              {itemBody}
+            </Button>
           );
         })}
 
