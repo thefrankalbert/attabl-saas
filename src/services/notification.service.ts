@@ -7,6 +7,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendStockAlertEmail } from '@/services/email.service';
+import { logger } from '@/lib/logger';
 
 interface StockAlertRow {
   id: string;
@@ -23,15 +24,23 @@ interface StockAlertRow {
 export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
   const supabase = createAdminClient();
 
-  // 1. Fetch ingredients that are low or out of stock
+  // 1. Fetch active ingredients for the tenant.
+  // The low/out comparison is column-vs-column (current_stock <= min_stock_alert),
+  // which PostgREST cannot express in a filter, so we narrow in JS below.
   const { data: ingredients, error: ingError } = await supabase
     .from('ingredients')
     .select('id, name, unit, current_stock, min_stock_alert')
     .eq('tenant_id', tenantId)
-    .eq('is_active', true)
-    .or('current_stock.lte.0,current_stock.lte.min_stock_alert');
+    .eq('is_active', true);
 
-  if (ingError || !ingredients || ingredients.length === 0) return;
+  if (ingError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch ingredients', {
+      tenantId,
+      error: ingError,
+    });
+    return;
+  }
+  if (!ingredients || ingredients.length === 0) return;
 
   // Filter to only genuinely low/out items
   const alertItems = (ingredients as StockAlertRow[]).filter(

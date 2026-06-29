@@ -47,6 +47,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const [formEmail, setFormEmail] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
   const t = useTranslations('suppliers');
@@ -94,7 +95,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'email',
         header: () => t('email'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.email || '\u2014'}</span>
+          <span className="text-app-text-secondary">{row.original.email || '-'}</span>
         ),
         enableSorting: false,
       },
@@ -102,7 +103,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'phone',
         header: () => t('phone'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.phone || '\u2014'}</span>
+          <span className="text-app-text-secondary">{row.original.phone || '-'}</span>
         ),
         enableSorting: false,
       },
@@ -111,7 +112,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         header: () => t('address'),
         cell: ({ row }) => (
           <span className="text-app-text-secondary max-w-48 truncate block">
-            {row.original.address || '\u2014'}
+            {row.original.address || '-'}
           </span>
         ),
         enableSorting: false,
@@ -226,11 +227,13 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   };
 
   const handleSave = async () => {
+    if (isSubmitting) return;
     if (!formName.trim()) {
       toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (modalMode === 'add') {
         const input: CreateSupplierInput = {
@@ -261,6 +264,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       loadSuppliers();
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -500,7 +505,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 >
                   {t('cancelAction')}
                 </Button>
-                <Button onClick={handleSave} variant="default">
+                <Button onClick={handleSave} disabled={isSubmitting} variant="default">
                   {t('save')}
                 </Button>
               </div>
