@@ -539,12 +539,18 @@ export function createOrderService(supabase: SupabaseClient) {
      * Mark an order as paid - updates payment_method, payment_status,
      * paid_at, status to 'delivered', and optionally tip_amount.
      * Always filters by tenant_id for isolation.
+     *
+     * Idempotent: the update is scoped to payment_status='pending' (same guard as
+     * the POS route applyPosFinalState). A double-tap / network retry on an
+     * already-paid order matches 0 rows and is a no-op - it never re-stamps
+     * paid_at nor overwrites the recorded tip. Returns whether the order was
+     * actually flipped from pending to paid by this call.
      */
     async markPaid(
       orderId: string,
       tenantId: string,
       payload: { method: string; tipAmount?: number },
-    ): Promise<void> {
+    ): Promise<{ paid: boolean }> {
       const update: Record<string, unknown> = {
         payment_method: payload.method,
         payment_status: 'paid',
@@ -555,15 +561,19 @@ export function createOrderService(supabase: SupabaseClient) {
         update.tip_amount = payload.tipAmount;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .update(update)
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .eq('payment_status', 'pending')
+        .select('id');
 
       if (error) {
         throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
       }
+
+      return { paid: Array.isArray(data) && data.length > 0 };
     },
 
     /**

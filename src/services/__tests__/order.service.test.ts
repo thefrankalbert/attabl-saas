@@ -582,4 +582,70 @@ describe('OrderService', () => {
       );
     });
   });
+
+  describe('markPaid (idempotency guard)', () => {
+    // Bespoke mock for the update().eq().eq().eq().select() chain.
+    function makeSupabase(selectResult: { data?: unknown; error?: unknown }) {
+      const update = vi.fn();
+      const select = vi.fn().mockResolvedValue(selectResult);
+      const eq3 = vi.fn().mockReturnValue({ select });
+      const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
+      const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+      update.mockReturnValue({ eq: eq1 });
+      const from = vi.fn().mockReturnValue({ update });
+      return {
+        client: { from } as unknown as SupabaseClient,
+        update,
+        eq1,
+        eq2,
+        eq3,
+        select,
+      };
+    }
+
+    it('scopes the update to payment_status=pending and returns paid:true when a row flips', async () => {
+      const m = makeSupabase({ data: [{ id: 'order-1' }], error: null });
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 500,
+      });
+
+      expect(res).toEqual({ paid: true });
+      // payment_status='pending' guard present (third .eq)
+      expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
+      // tip recorded when > 0
+      expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
+    });
+
+    it('is a no-op (paid:false) on an already-paid order (0 rows matched)', async () => {
+      const m = makeSupabase({ data: [], error: null });
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('order-1', 'tenant-123', { method: 'cash' });
+
+      expect(res).toEqual({ paid: false });
+    });
+
+    it('does not record a zero tip', async () => {
+      const m = makeSupabase({ data: [{ id: 'order-1' }], error: null });
+      const service = createOrderService(m.client);
+
+      await service.markPaid('order-1', 'tenant-123', { method: 'cash', tipAmount: 0 });
+
+      expect(m.update).toHaveBeenCalledWith(expect.not.objectContaining({ tip_amount: 0 }));
+    });
+
+    it('throws INTERNAL on database error', async () => {
+      const m = makeSupabase({ data: null, error: { message: 'DB error' } });
+      const service = createOrderService(m.client);
+
+      await expect(
+        service.markPaid('order-1', 'tenant-123', { method: 'cash' }),
+      ).rejects.toMatchObject({
+        code: 'INTERNAL',
+      });
+    });
+  });
 });
