@@ -302,7 +302,12 @@ export async function POST(request: Request) {
     const couponService = createCouponService(adminSupabase);
 
     if (coupon_code) {
-      const validation = await couponService.validateCoupon(coupon_code, tenant_id, validatedTotal);
+      const validation = await couponService.validateCoupon(
+        coupon_code,
+        tenant_id,
+        validatedTotal,
+        tenant.currency,
+      );
       if (!validation.valid) {
         return NextResponse.json({ error: validation.error || 'Coupon invalide' }, { status: 400 });
       }

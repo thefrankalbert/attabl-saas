@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Coupon } from '@/types/admin.types';
+import type { CurrencyCode } from '@/lib/constants';
+import { roundForCurrency } from '@/lib/utils/money';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -15,6 +17,7 @@ export interface CouponService {
     code: string,
     tenantId: string,
     orderSubtotal: number,
+    currencyCode?: CurrencyCode | string | null,
   ): Promise<CouponValidationResult>;
   claimUsage(couponId: string): Promise<boolean>;
   unclaimUsage(couponId: string): Promise<void>;
@@ -71,6 +74,7 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       code: string,
       tenantId: string,
       orderSubtotal: number,
+      currencyCode?: CurrencyCode | string | null,
     ): Promise<CouponValidationResult> {
       const { data: coupon, error } = await supabase
         .from('coupons')
@@ -131,8 +135,8 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
 
       // Never discount more than subtotal
       discountAmount = Math.min(discountAmount, orderSubtotal);
-      // Round to 2 decimal places
-      discountAmount = Math.round(discountAmount * 100) / 100;
+      // Round to the currency's smallest unit (audit H1: XAF/XOF zero-decimal).
+      discountAmount = roundForCurrency(discountAmount, currencyCode);
 
       return { valid: true, coupon: coupon as Coupon, discountAmount };
     },

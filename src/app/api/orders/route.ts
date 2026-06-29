@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     const [zoneResult, couponValidation] = await Promise.all([
       orderService.determinePreparationZone(tenantId, categoryIds),
       coupon_code
-        ? couponService.validateCoupon(coupon_code, tenantId, validatedTotal)
+        ? couponService.validateCoupon(coupon_code, tenantId, validatedTotal, tenant?.currency)
         : Promise.resolve(null),
     ]);
 

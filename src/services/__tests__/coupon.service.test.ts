@@ -124,6 +124,22 @@ describe('CouponService', () => {
       expect(result.coupon).toBeDefined();
     });
 
+    it('rounds the discount to the currency unit (XAF zero-decimal by default)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('coupons').single.mockResolvedValue({
+        data: makeCoupon({ discount_type: 'percentage', discount_value: 7 }),
+        error: null,
+      });
+
+      const service = createCouponService(asSupabase(supabase));
+      // 7% of 333 = 23.31 -> 23 for XAF (no centimes)
+      const xaf = await service.validateCoupon('SEVEN', 'tenant-123', 333, 'XAF');
+      expect(xaf.discountAmount).toBe(23);
+      // ... but 23.31 for a 2-decimal currency
+      const eur = await service.validateCoupon('SEVEN', 'tenant-123', 333, 'EUR');
+      expect(eur.discountAmount).toBe(23.31);
+    });
+
     it('should return invalid when coupon not found', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('coupons').single.mockResolvedValue({
