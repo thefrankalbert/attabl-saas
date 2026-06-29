@@ -110,6 +110,9 @@ export interface OrderItem {
   modifiers?: Array<{ name: string; price: number }>;
   // ─── Preparation zone (denormalized from category) ────
   preparation_zone?: PreparationZone;
+  // ─── KDS fire/hold (coursing) ──────────────────────────
+  held?: boolean;
+  fired_at?: string;
 }
 
 export interface Order {

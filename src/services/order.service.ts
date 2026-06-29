@@ -631,6 +631,33 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
+     * Hold or fire a whole course of an order (KDS coursing). Held items are not
+     * sent to the kitchen; firing sets held=false and stamps fired_at. Tenant-
+     * scoped directly via order_items.tenant_id.
+     */
+    async setCourseHeld(
+      orderId: string,
+      tenantId: string,
+      course: string,
+      held: boolean,
+    ): Promise<void> {
+      const update: Record<string, unknown> = held
+        ? { held: true }
+        : { held: false, fired_at: new Date().toISOString() };
+
+      const { error } = await supabase
+        .from('order_items')
+        .update(update)
+        .eq('order_id', orderId)
+        .eq('tenant_id', tenantId)
+        .eq('course', course);
+
+      if (error) {
+        throw new ServiceError('Erreur lors du fire/hold du course', 'INTERNAL', error);
+      }
+    },
+
+    /**
      * Cancel an order AND reverse its side-effects (audit finding C7): restore
      * the ingredients that were destocked and release any single-use coupon it
      * consumed. Before this, cancelling only flipped status='cancelled' and left

@@ -30,6 +30,13 @@ const updateItemStatusSchema = z.object({
   status: z.enum(['pending', 'preparing', 'ready', 'served']),
 });
 
+const setCourseHeldSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  course: z.enum(['appetizer', 'main', 'dessert', 'drink']),
+  held: z.boolean(),
+});
+
 type ActionResponse = {
   success?: boolean;
   error?: string;
@@ -259,6 +266,46 @@ export async function actionUpdateItemStatus(
       return { error: err.message };
     }
     logger.error('actionUpdateItemStatus: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Hold or fire a whole course of an order (KDS coursing).
+ */
+export async function actionSetCourseHeld(
+  tenantId: string,
+  orderId: string,
+  course: string,
+  held: boolean,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = setCourseHeldSchema.safeParse({ tenantId, orderId, course, held });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    await createOrderService(supabase).setCourseHeld(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      parsed.data.course,
+      parsed.data.held,
+    );
+    return { success: true };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionSetCourseHeld: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };
   }
 }

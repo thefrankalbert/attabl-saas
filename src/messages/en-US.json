@@ -2080,7 +2080,9 @@
     "courseAppetizer": "Starters",
     "courseMain": "Mains",
     "courseDessert": "Desserts",
-    "courseDrink": "Drinks"
+    "courseDrink": "Drinks",
+    "fireCourse": "Fire",
+    "holdCourse": "Hold"
   },
   "pos": {
     "title": "Point of Sale",

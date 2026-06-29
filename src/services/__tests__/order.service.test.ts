@@ -788,6 +788,42 @@ describe('OrderService', () => {
     });
   });
 
+  describe('setCourseHeld (fire/hold a course)', () => {
+    function makeSupabase(error: unknown = null) {
+      const eq3 = vi.fn().mockResolvedValue({ error });
+      const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
+      const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+      const update = vi.fn().mockReturnValue({ eq: eq1 });
+      const from = vi.fn().mockReturnValue({ update });
+      return { client: { from } as unknown as SupabaseClient, update, eq3 };
+    }
+
+    it('holds a course (held=true, no fired_at)', async () => {
+      const m = makeSupabase();
+      const service = createOrderService(m.client);
+      await service.setCourseHeld('o1', 't1', 'dessert', true);
+      expect(m.update).toHaveBeenCalledWith({ held: true });
+      expect(m.eq3).toHaveBeenCalledWith('course', 'dessert');
+    });
+
+    it('fires a course (held=false + fired_at)', async () => {
+      const m = makeSupabase();
+      const service = createOrderService(m.client);
+      await service.setCourseHeld('o1', 't1', 'main', false);
+      expect(m.update).toHaveBeenCalledWith(
+        expect.objectContaining({ held: false, fired_at: expect.any(String) }),
+      );
+    });
+
+    it('throws INTERNAL on DB error', async () => {
+      const m = makeSupabase({ message: 'boom' });
+      const service = createOrderService(m.client);
+      await expect(service.setCourseHeld('o1', 't1', 'main', true)).rejects.toMatchObject({
+        code: 'INTERNAL',
+      });
+    });
+  });
+
   describe('cancelOrder (reverses side-effects)', () => {
     // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
     // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.

@@ -92,6 +92,8 @@ interface KDSTicketProps {
   ) => Promise<void>;
   /** @deprecated Kept for KitchenBoard compat - no longer used in compact card */
   onMarkAllReady?: (orderId: string, itemIds: string[]) => Promise<void>;
+  /** Fire/hold a whole course (KDS coursing). */
+  onSetCourseHeld?: (orderId: string, course: string, held: boolean) => Promise<void>;
   onUpdate?: () => void;
   isMock?: boolean;
   zoneFilter?: KDSZoneFilter;
@@ -104,6 +106,7 @@ export default function KDSTicket({
   order,
   onStatusChange,
   onUpdateItemStatus,
+  onSetCourseHeld,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
   onMarkAllReady: _onMarkAllReady,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
@@ -247,7 +250,11 @@ export default function KDSTicket({
     );
 
     if (!itemInteractive) {
-      return <div key={item.id}>{itemBody}</div>;
+      return (
+        <div key={item.id} className={cn(item.held && 'opacity-40')}>
+          {itemBody}
+        </div>
+      );
     }
 
     return (
@@ -263,6 +270,7 @@ export default function KDSTicket({
         className={cn(
           'flex h-auto w-full min-h-[44px] flex-col items-start gap-0 rounded-md px-1.5 py-1 text-left',
           isItemReady ? 'opacity-70' : 'hover:bg-app-elevated',
+          item.held && 'opacity-40',
         )}
       >
         {itemBody}
@@ -357,12 +365,29 @@ export default function KDSTicket({
           ? [...COURSE_ORDER, '__none__'].map((course) => {
               const groupItems = items.filter((i) => (i.course || '__none__') === course);
               if (groupItems.length === 0) return null;
+              const groupHeld = groupItems.every((i) => i.held);
+              const canFireHold = !!onSetCourseHeld && course !== '__none__' && !isMock;
               return (
                 <div key={course} className="space-y-1">
                   {course !== '__none__' && (
-                    <p className="text-xs font-semibold uppercase tracking-wide text-app-text-muted">
-                      {t(COURSE_LABEL_KEY[course])}
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-app-text-muted">
+                        {t(COURSE_LABEL_KEY[course])}
+                      </p>
+                      {canFireHold && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSetCourseHeld?.(order.id, course, !groupHeld);
+                          }}
+                          className="h-auto min-h-[44px] px-2 py-1 text-xs font-semibold text-accent hover:underline"
+                        >
+                          {groupHeld ? t('fireCourse') : t('holdCourse')}
+                        </Button>
+                      )}
+                    </div>
                   )}
                   {groupItems.map(renderItem)}
                 </div>

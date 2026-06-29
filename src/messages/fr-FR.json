@@ -2080,7 +2080,9 @@
     "courseAppetizer": "Entrees",
     "courseMain": "Plats",
     "courseDessert": "Desserts",
-    "courseDrink": "Boissons"
+    "courseDrink": "Boissons",
+    "fireCourse": "Envoyer",
+    "holdCourse": "Retenir"
   },
   "pos": {
     "title": "Caisse (POS)",

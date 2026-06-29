@@ -250,6 +250,7 @@ export default function KitchenClient({
         onStatusChange={kitchen.handleStatusChange}
         onUpdateItemStatus={kitchen.updateItemStatus}
         onMarkAllReady={kitchen.markAllItemsReady}
+        onSetCourseHeld={kitchen.setCourseHeld}
         onUpdate={kitchen.loadOrders}
         isChefView={isChefView}
         zoneFilter={zoneFilter}
