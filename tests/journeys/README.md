@@ -66,7 +66,9 @@ K6_CONFIRM=yes BASE_URL=http://localhost:3000 TENANT_SLUG=journey-test \
 
 Reel et runnable maintenant: preflight, signup+login, validation de commande vide, coupon invalide, rate limiting, refus d'action sensible non authentifiee, checkout Stripe (si cle test), Test Clocks (si cle test), charge k6.
 
-A cabler (marque TODO/skip dans les specs, car depend de l'UI admin, de Server Actions, ou de donnees seedees): creation menu/tables/coupons, KDS temps reel, encaissement POS, paiements Wave/Orange Money, permissions par rôle, happy-path commande avec vrais `menu_item_id`, manipulation de prix. Chaque TODO indique precisement quoi brancher.
+A cabler (marque TODO/skip dans les specs, car depend de l'UI admin, de Server Actions, ou de donnees seedees): creation tables/coupons, push KDS temps reel, webhook abonnement Stripe, scenarios renouvellement/annulation. Chaque TODO indique precisement quoi brancher.
+
+Note paiements: cash uniquement. Le mobile money (Wave, Orange Money, MTN MoMo, Free Money) a ete retire du produit (cf. `docs/MOBILE-MONEY-RETRAIT.md`); les tests fournisseurs du parcours 05 ont ete retires.
 
 Conseil: confie chaque TODO a Claude Code un par un (ex: "cable le parcours 04 happy-path avec les menu_item_id du tenant seede"). La structure, les personas et les garde-fous sont deja en place.
 

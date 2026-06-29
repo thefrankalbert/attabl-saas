@@ -1,40 +1,24 @@
 /**
- * Parcours 5: encaissement multi-methodes.
- * Attabl gere cash, carte, Wave et Orange Money (mobile money).
+ * Parcours 5: encaissement.
  *
- * Ces flux dependent des sandboxes des fournisseurs (Wave/Orange Money) et de
- * commandes existantes. Structure prete, etapes marquees TODO la ou il faut les
- * identifiants sandbox.
+ * Attabl encaisse en ESPECES uniquement pour l'instant. Le mobile money
+ * (Wave, Orange Money, MTN MoMo, Free Money) a ete retire du produit
+ * (cf. docs/MOBILE-MONEY-RETRAIT.md) - les flux fournisseurs n'existent plus.
+ *
+ * L'encaissement cash POS est deja exerce EN REEL dans le parcours 04
+ * ("caissier encaisse une commande POS en cash" -> payment_status='paid').
+ * Ce fichier ne re-teste donc rien : il documente le perimetre paiement.
+ *
+ * A la reactivation d'un moyen mobile money: re-ajouter ici les tests
+ * d'initiation/callback en meme temps que le client provider + ses routes.
  */
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test.describe.serial('05 - Paiements', () => {
-  test('paiement cash (POS) marque la commande payee', async () => {
+  test('encaissement cash (POS)', async () => {
     test.skip(
       true,
-      'TODO: depend d une commande creee (parcours 04) + action POS encaissement cash.',
+      'Couvert en reel par le parcours 04 (POS cash -> payment_status=paid). Cash est le seul moyen actif; le mobile money a ete retire du produit.',
     );
-  });
-
-  test('paiement Wave initie une session de paiement', async () => {
-    test.skip(
-      true,
-      'TODO: necessite Wave active sur le tenant + sandbox Wave. POST /api/orders/<id>/pay-wave.',
-    );
-  });
-
-  test('paiement Orange Money initie une session', async () => {
-    test.skip(
-      true,
-      'TODO: necessite Orange Money active + sandbox. POST /api/orders/<id>/pay-orange-money.',
-    );
-  });
-
-  test('un echec de paiement laisse la commande NON payee', async () => {
-    test.skip(
-      true,
-      'TODO: simuler un callback d echec (Wave/Orange Money) et verifier que le statut reste impaye.',
-    );
-    expect(true).toBeTruthy();
   });
 });
