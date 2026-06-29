@@ -171,6 +171,7 @@ export async function POST(request: Request) {
         enable_service_charge: tenant?.enable_service_charge || false,
       },
       discountAmount,
+      tenant?.currency,
     );
 
     // 7. Atomically claim coupon usage BEFORE order creation to prevent double-spend

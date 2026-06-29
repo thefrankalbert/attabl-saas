@@ -320,6 +320,7 @@ export async function POST(request: Request) {
         enable_service_charge: tenant.enable_service_charge || false,
       },
       discountAmount,
+      tenant.currency,
     );
 
     // 10. Atomically claim coupon usage BEFORE order creation

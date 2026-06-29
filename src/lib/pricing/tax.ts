@@ -9,6 +9,8 @@
  */
 
 import type { PricingBreakdown } from '@/types/admin.types';
+import type { CurrencyCode } from '@/lib/constants';
+import { roundForCurrency } from '@/lib/utils/money';
 
 interface TaxConfig {
   enable_tax?: boolean;
@@ -18,26 +20,34 @@ interface TaxConfig {
 }
 
 /**
- * Calculate tax amount based on tenant settings
+ * Calculate tax amount based on tenant settings, rounded to the currency's
+ * smallest unit (audit H1: XAF/XOF are zero-decimal so a 59.94 result must be
+ * 60). Defaults to the platform currency (XAF) when none is given.
  */
-export function calculateTax(subtotal: number, config: TaxConfig): number {
+export function calculateTax(
+  subtotal: number,
+  config: TaxConfig,
+  currencyCode?: CurrencyCode | string | null,
+): number {
   if (!config.enable_tax || !config.tax_rate || config.tax_rate <= 0) return 0;
-  // BUG-35: Use toFixed(2) for precise rounding on large amounts
-  return Number(((subtotal * config.tax_rate) / 100).toFixed(2));
+  return roundForCurrency((subtotal * config.tax_rate) / 100, currencyCode);
 }
 
 /**
- * Calculate service charge based on tenant settings
+ * Calculate service charge based on tenant settings, currency-aware rounding.
  */
-export function calculateServiceCharge(subtotal: number, config: TaxConfig): number {
+export function calculateServiceCharge(
+  subtotal: number,
+  config: TaxConfig,
+  currencyCode?: CurrencyCode | string | null,
+): number {
   if (
     !config.enable_service_charge ||
     !config.service_charge_rate ||
     config.service_charge_rate <= 0
   )
     return 0;
-  // BUG-35: Use toFixed(2) for precise rounding on large amounts
-  return Number(((subtotal * config.service_charge_rate) / 100).toFixed(2));
+  return roundForCurrency((subtotal * config.service_charge_rate) / 100, currencyCode);
 }
 
 /**
@@ -59,10 +69,11 @@ export function calculateOrderTotal(
   subtotal: number,
   config: TaxConfig,
   discountAmount: number = 0,
+  currencyCode?: CurrencyCode | string | null,
 ): PricingBreakdown {
   const taxableBase = Math.max(0, subtotal - discountAmount);
-  const taxAmount = calculateTax(taxableBase, config);
-  const serviceChargeAmount = calculateServiceCharge(taxableBase, config);
+  const taxAmount = calculateTax(taxableBase, config, currencyCode);
+  const serviceChargeAmount = calculateServiceCharge(taxableBase, config, currencyCode);
   const total = taxableBase + taxAmount + serviceChargeAmount;
 
   return {
@@ -70,7 +81,8 @@ export function calculateOrderTotal(
     taxAmount,
     serviceChargeAmount,
     discountAmount,
-    total: Math.max(0, Math.round(total * 100) / 100), // Never negative, rounded
+    // Never negative, rounded to the currency's smallest unit (audit H1).
+    total: Math.max(0, roundForCurrency(total, currencyCode)),
   };
 }
 
