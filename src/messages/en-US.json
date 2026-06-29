@@ -2807,7 +2807,8 @@
     "exactAmount": "Exact amount",
     "validatePayment": "Validate payment",
     "amountRemaining": "Still due: {amount}",
-    "quickAdd": "+{amount}"
+    "quickAdd": "+{amount}",
+    "paymentAlreadySettled": "Order already settled"
   },
   "qrCodes": {
     "title": "QR Codes",

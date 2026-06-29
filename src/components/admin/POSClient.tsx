@@ -10,7 +10,7 @@ import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Receipt } from 'lucide-react';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
 import POSUnpaidPanel from '@/components/features/pos/POSUnpaidPanel';
@@ -19,7 +19,6 @@ import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
-import { Receipt } from 'lucide-react';
 import type { Order } from '@/types/admin.types';
 
 interface POSClientProps {

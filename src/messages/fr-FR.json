@@ -2807,7 +2807,8 @@
     "exactAmount": "Montant exact",
     "validatePayment": "Valider l'encaissement",
     "amountRemaining": "Il manque {amount}",
-    "quickAdd": "+{amount}"
+    "quickAdd": "+{amount}",
+    "paymentAlreadySettled": "Commande deja reglee"
   },
   "qrCodes": {
     "title": "QR Codes",

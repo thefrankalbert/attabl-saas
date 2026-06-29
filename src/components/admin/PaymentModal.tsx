@@ -147,6 +147,10 @@ export default function PaymentModal({
     setIsProcessing(true);
 
     try {
+      // paid=false means the order had already been settled (idempotent no-op),
+      // e.g. a double-tap or a concurrent cashier - surface a distinct message
+      // instead of implying this tap took a second payment.
+      let alreadySettled = false;
       if (order?.id) {
         try {
           const result = await actionMarkOrderPaid(
@@ -156,6 +160,7 @@ export default function PaymentModal({
             tipAmount > 0 ? tipAmount : undefined,
           );
           if (result.error) throw new Error(result.error);
+          alreadySettled = result.paid === false;
         } catch (paymentError) {
           const description = paymentError instanceof Error ? paymentError.message : undefined;
           toast({ title: t('paymentError'), description, variant: 'destructive' });
@@ -167,7 +172,7 @@ export default function PaymentModal({
       setIsProcessing(false);
       // For existing orders, payment was persisted above - show success toast
       if (order?.id) {
-        toast({ title: t('paymentSuccess') });
+        toast({ title: alreadySettled ? t('paymentAlreadySettled') : t('paymentSuccess') });
       }
       // For POS orders, pass payment data - the caller handles the toast after order creation
       onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });
