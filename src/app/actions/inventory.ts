@@ -18,8 +18,11 @@ const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
 const adjustStockSchema = z.object({
   tenantId: z.string().uuid(),
   ingredient_id: z.string().uuid(),
-  quantity: z.number().finite(),
-  movement_type: z.enum(['order_destock', 'manual_add', 'manual_remove', 'adjustment', 'opening']),
+  // Magnitude only; the service derives the sign from movement_type.
+  quantity: z.number().finite().positive(),
+  // 'order_destock' is system-only (written by destock_order via service_role).
+  // A manual adjustment must never forge an order-attributed movement.
+  movement_type: z.enum(['manual_add', 'manual_remove', 'adjustment', 'opening']),
   notes: z.string().optional(),
   supplier_id: z.string().uuid().optional(),
 });
@@ -30,9 +33,9 @@ const createIngredientSchema = z.object({
   tenantId: z.string().uuid(),
   name: z.string().min(1),
   unit: ingredientUnitEnum,
-  current_stock: z.number().finite().optional(),
-  min_stock_alert: z.number().finite().optional(),
-  cost_per_unit: z.number().finite().optional(),
+  current_stock: z.number().finite().nonnegative().optional(),
+  min_stock_alert: z.number().finite().nonnegative().optional(),
+  cost_per_unit: z.number().finite().nonnegative().optional(),
   category: z.string().optional(),
 });
 
@@ -41,8 +44,8 @@ const updateIngredientSchema = z.object({
   ingredientId: z.string().uuid(),
   name: z.string().min(1).optional(),
   unit: ingredientUnitEnum.optional(),
-  min_stock_alert: z.number().finite().optional(),
-  cost_per_unit: z.number().finite().optional(),
+  min_stock_alert: z.number().finite().nonnegative().optional(),
+  cost_per_unit: z.number().finite().nonnegative().optional(),
   category: z.string().nullable().optional(),
   is_active: z.boolean().optional(),
 });

@@ -31,24 +31,36 @@ function setupChain(data: unknown, error: unknown = null) {
   };
 }
 
+// The ingredients query is terminal at .eq('is_active', true) - no .or() / column
+// comparison (that was the C1 bug: PostgREST cannot compare current_stock to the
+// min_stock_alert column). The builder is awaited directly, so it must be thenable.
+function ingredientsChain(data: unknown, error: unknown = null) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    then: (resolve: (value: { data: unknown; error: unknown }) => void) => resolve({ data, error }),
+  };
+  return chain;
+}
+
 describe('checkAndNotifyLowStock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('returns early when no low stock ingredients', async () => {
-    const chain = setupChain(null);
-    // Override or() to resolve with empty array
-    chain.or.mockResolvedValue({ data: [], error: null });
+    const chain = ingredientsChain([]);
     mockFrom.mockReturnValue(chain);
 
     await checkAndNotifyLowStock('tenant-1');
     expect(mockSendStockAlertEmail).not.toHaveBeenCalled();
+    // Regression guard for C1: must NOT use a column-vs-column .or() filter
+    expect(chain.or).not.toHaveBeenCalled();
   });
 
   it('returns early on ingredient fetch error', async () => {
-    const chain = setupChain(null);
-    chain.or.mockResolvedValue({ data: null, error: { message: 'DB error' } });
+    const chain = ingredientsChain(null, { message: 'DB error' });
     mockFrom.mockReturnValue(chain);
 
     await checkAndNotifyLowStock('tenant-1');
@@ -65,9 +77,7 @@ describe('checkAndNotifyLowStock', () => {
     let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
-        const chain = setupChain(null);
-        chain.or.mockResolvedValue({ data: lowStockItems, error: null });
-        return chain;
+        return ingredientsChain(lowStockItems);
       }
       if (table === 'stock_alert_notifications') {
         if (callIndex === 0) {
@@ -126,9 +136,7 @@ describe('checkAndNotifyLowStock', () => {
 
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
-        const chain = setupChain(null);
-        chain.or.mockResolvedValue({ data: lowStockItems, error: null });
-        return chain;
+        return ingredientsChain(lowStockItems);
       }
       if (table === 'stock_alert_notifications') {
         const chain = setupChain(null);
@@ -156,9 +164,7 @@ describe('checkAndNotifyLowStock', () => {
     let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
-        const chain = setupChain(null);
-        chain.or.mockResolvedValue({ data: lowStockItems, error: null });
-        return chain;
+        return ingredientsChain(lowStockItems);
       }
       if (table === 'stock_alert_notifications') {
         const chain = setupChain(null);
@@ -205,9 +211,7 @@ describe('checkAndNotifyLowStock', () => {
     let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
-        const chain = setupChain(null);
-        chain.or.mockResolvedValue({ data: lowStockItems, error: null });
-        return chain;
+        return ingredientsChain(lowStockItems);
       }
       if (table === 'stock_alert_notifications') {
         // First call: rate limit check; Second call: insert
@@ -274,9 +278,7 @@ describe('checkAndNotifyLowStock', () => {
     let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
-        const chain = setupChain(null);
-        chain.or.mockResolvedValue({ data: lowStockItems, error: null });
-        return chain;
+        return ingredientsChain(lowStockItems);
       }
       if (table === 'stock_alert_notifications') {
         const chain = setupChain(null);
