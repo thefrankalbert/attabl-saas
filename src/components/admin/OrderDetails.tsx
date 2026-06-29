@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { actionUpdateOrderStatus } from '@/app/actions/orders';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, OrderStatus, Tenant, CurrencyCode } from '@/types/admin.types';
-import { STATUS_STYLES } from '@/lib/design-tokens';
+import { getStatusStyle } from '@/lib/design-tokens';
 import { formatCurrency } from '@/lib/utils/currency';
 import { printReceipt } from '@/lib/printing/receipt';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
@@ -98,8 +98,7 @@ export default function OrderDetails({
     room_service: t('serviceRoom'),
   };
 
-  const statusStyle =
-    STATUS_STYLES[order.status as keyof typeof STATUS_STYLES] || STATUS_STYLES.pending;
+  const statusStyle = getStatusStyle(order.status);
 
   const itemCount = (order.items || []).reduce((sum, i) => sum + i.quantity, 0);
 

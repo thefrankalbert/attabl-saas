@@ -7,13 +7,15 @@
 // ─── Order Status Configuration ─────────────────────────
 // Uses semantic CSS variables instead of arbitrary Tailwind classes.
 
-export type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'preparing'
-  | 'ready'
-  | 'delivered'
-  | 'cancelled';
+// Single source of truth for the order status set: the canonical OrderStatus
+// from admin.types (audit H3). design-tokens previously declared its own
+// divergent copy (it had a 'confirmed' the app never produces), so the styles
+// and the type could drift. Re-exported here so existing importers keep working.
+// The DB CHECK still permits a wider legacy set ('confirmed','served'); the app
+// never writes those, and getStatusStyle() falls back to a neutral style if one
+// ever appears out-of-band. Making 'served' a real app state is Phase 3.
+export type { OrderStatus } from '@/types/admin.types';
+import type { OrderStatus } from '@/types/admin.types';
 
 export interface StatusStyle {
   bg: string;
@@ -28,12 +30,6 @@ export const STATUS_STYLES: Record<OrderStatus, StatusStyle> = {
     text: 'text-status-warning',
     dot: 'bg-status-warning',
     pulse: true,
-  },
-  confirmed: {
-    bg: 'bg-status-info-bg',
-    text: 'text-status-info',
-    dot: 'bg-status-info',
-    pulse: false,
   },
   preparing: {
     bg: 'bg-status-info-bg',
@@ -60,6 +56,15 @@ export const STATUS_STYLES: Record<OrderStatus, StatusStyle> = {
     pulse: false,
   },
 };
+
+/**
+ * Style for an order status, with a safe neutral fallback for any value outside
+ * the canonical set (e.g. a legacy 'confirmed'/'served' row the DB CHECK still
+ * permits). Prefer this over indexing STATUS_STYLES directly.
+ */
+export function getStatusStyle(status: string | null | undefined): StatusStyle {
+  return (status && STATUS_STYLES[status as OrderStatus]) || STATUS_STYLES.pending;
+}
 
 // ─── Chart Colors (OKLCH equidistant) ───────────────────
 // Generates N perceptually uniform colors for charts.
