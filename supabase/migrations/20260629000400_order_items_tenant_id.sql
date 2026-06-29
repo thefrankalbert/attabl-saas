@@ -47,6 +47,10 @@ CREATE TRIGGER trg_order_items_tenant_id
   FOR EACH ROW
   EXECUTE FUNCTION public.set_order_item_tenant_id();
 
+-- Trigger function only - not meant to be called via the REST RPC surface
+-- (Supabase advisor 0028/0029).
+REVOKE EXECUTE ON FUNCTION public.set_order_item_tenant_id() FROM PUBLIC, anon, authenticated;
+
 -- 4. Index for tenant-scoped reads / RLS.
 CREATE INDEX IF NOT EXISTS idx_order_items_tenant_id ON public.order_items (tenant_id);
 

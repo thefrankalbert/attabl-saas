@@ -29,4 +29,11 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 --    RLS-bypassing DEFINER functions.
 REVOKE EXECUTE ON FUNCTION public.claim_coupon_usage(uuid) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.unclaim_coupon_usage(uuid) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.increment_coupon_usage(uuid) FROM anon;
+-- increment_coupon_usage was dropped out-of-band on prod (superseded); guard the
+-- revoke so this migration is safe on both prod (absent) and fresh schema (present).
+DO $$
+BEGIN
+  IF to_regprocedure('public.increment_coupon_usage(uuid)') IS NOT NULL THEN
+    EXECUTE 'REVOKE EXECUTE ON FUNCTION public.increment_coupon_usage(uuid) FROM anon';
+  END IF;
+END $$;
