@@ -312,7 +312,11 @@ export async function POST(request: Request) {
       result = await orderService.createOrderWithItems({
         tenantId: tenant_id,
         items: serviceItems,
-        total: pricing.total + tipValue,
+        // orders.total is stored EXCLUDING tip (tip lives in tip_amount), matching the
+        // storefront route (api/orders/route.ts). Revenue aggregates do SUM(total +
+        // tip_amount); storing total+tip here too double-counted POS tips. Keeping a
+        // single consistent semantic is what makes the channels reconcile.
+        total: pricing.total,
         tableNumber: table_number,
         notes,
         service_type,
