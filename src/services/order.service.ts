@@ -115,6 +115,12 @@ export function createOrderService(supabase: SupabaseClient) {
 
   return {
     /**
+     * Public wrapper so non-markPaid settle paths (the POS route's
+     * applyPosFinalState) can also close a fully-settled table session (audit C1).
+     */
+    closeSessionIfFullySettled,
+
+    /**
      * Validates that a tenant exists and is active.
      * Also returns tenant config (currency, tax, subscription) to avoid a second round-trip.
      * Throws ServiceError if not found or inactive.
@@ -525,6 +531,12 @@ export function createOrderService(supabase: SupabaseClient) {
       });
 
       if (error) {
+        // DEPLOY-ORDERING: migration 20260629000600 (table_sessions) replaces the
+        // RPC's TABLE_ACTIVE_ORDER raise with find-or-create-session, so this
+        // handler is dead ONCE THAT MIGRATION IS LIVE. It is intentionally kept
+        // until then: prod still runs the old RPC that raises TABLE_ACTIVE_ORDER,
+        // and removing it now would degrade that error to a generic 500. Remove
+        // this branch in the same release that applies migration 20260629000600.
         if (error.message?.includes('TABLE_ACTIVE_ORDER')) {
           throw new ServiceError(
             'Une commande est deja en cours sur cette table',

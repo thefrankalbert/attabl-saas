@@ -44,7 +44,7 @@ async function applyPosFinalState(
       .eq('tenant_id', tenantId)
       // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
       .eq('payment_status', 'pending')
-      .select('id, total, tip_amount');
+      .select('id, total, tip_amount, session_id');
     if (error) {
       logger.error('POS order: failed to apply payment/status', error, { orderId });
       return;
@@ -64,6 +64,13 @@ async function applyPosFinalState(
       });
       if (tenderError) {
         logger.error('POS order: failed to record payment tender', tenderError, { orderId });
+      }
+      // Close the table session once fully settled (audit C1) - the POS create+pay
+      // path does not go through markPaid, so it must close the session here too,
+      // otherwise sessions stay open forever and tomorrow's orders attach to today's.
+      const sessionId = (flipped as { session_id?: string | null }).session_id;
+      if (sessionId) {
+        await createOrderService(supabase).closeSessionIfFullySettled(sessionId, tenantId);
       }
     }
     return;

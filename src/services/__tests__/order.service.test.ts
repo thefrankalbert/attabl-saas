@@ -609,7 +609,10 @@ describe('OrderService', () => {
     }
 
     it('scopes the update to payment_status=pending and returns paid:true when a row flips', async () => {
-      const m = makeSupabase({ data: [{ id: 'order-1' }], error: null });
+      const m = makeSupabase({
+        data: [{ id: 'order-1', total: 1000, tip_amount: 500 }],
+        error: null,
+      });
       const service = createOrderService(m.client);
 
       const res = await service.markPaid('order-1', 'tenant-123', {
@@ -622,9 +625,14 @@ describe('OrderService', () => {
       expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
       // tip recorded when > 0
       expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
-      // a tender is appended to the ledger (audit H2/H8)
+      // a tender is appended to the ledger (audit H2/H8) with amount = total + tip
       expect(m.paymentsInsert).toHaveBeenCalledWith(
-        expect.objectContaining({ order_id: 'order-1', method: 'cash', status: 'completed' }),
+        expect.objectContaining({
+          order_id: 'order-1',
+          method: 'cash',
+          status: 'completed',
+          amount: 1500,
+        }),
       );
     });
 
