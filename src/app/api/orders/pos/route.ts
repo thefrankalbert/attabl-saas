@@ -370,6 +370,18 @@ export async function POST(request: Request) {
     // always creates with status='pending'; POS may need 'delivered' + payment.
     await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
 
+    // 10b. Record an auditable coupon redemption (audit H11), best-effort.
+    const redeemedCouponId = couponResult?.couponId;
+    if (redeemedCouponId) {
+      const redeemedOrderId = result.orderId;
+      void couponService.recordRedemption({
+        tenantId: tenant_id,
+        couponId: redeemedCouponId,
+        orderId: redeemedOrderId,
+        discountAmount,
+      });
+    }
+
     // 11. Create in-app notification (fire-and-forget, non-blocking)
     void Promise.resolve(
       adminSupabase.from('notifications').insert({

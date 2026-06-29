@@ -18,6 +18,12 @@ export interface CouponService {
   ): Promise<CouponValidationResult>;
   claimUsage(couponId: string): Promise<boolean>;
   unclaimUsage(couponId: string): Promise<void>;
+  recordRedemption(input: {
+    tenantId: string;
+    couponId: string;
+    orderId: string;
+    discountAmount: number;
+  }): Promise<void>;
   createCoupon(
     tenantId: string,
     data: {
@@ -157,6 +163,29 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       });
       if (error) {
         logger.error('Failed to unclaim coupon usage', { couponId, error });
+      }
+    },
+
+    /**
+     * Append an auditable redemption record (audit H11): which coupon was
+     * redeemed on which order, and for how much. The counter (claimUsage) remains
+     * the enforcement; this is the audit trail. Best-effort - a failure here must
+     * not fail the order, so it only logs.
+     */
+    async recordRedemption(input: {
+      tenantId: string;
+      couponId: string;
+      orderId: string;
+      discountAmount: number;
+    }): Promise<void> {
+      const { error } = await supabase.from('coupon_redemptions').insert({
+        tenant_id: input.tenantId,
+        coupon_id: input.couponId,
+        order_id: input.orderId,
+        discount_amount: input.discountAmount,
+      });
+      if (error) {
+        logger.error('Failed to record coupon redemption', { ...input, error });
       }
     },
 

@@ -88,11 +88,15 @@ vi.mock('@/services/order.service', () => ({
 const mockValidateCoupon =
   vi.fn<(code: string, tenantId: string, subtotal: number) => Promise<CouponValidationResult>>();
 const mockClaimUsage = vi.fn<(couponId: string) => Promise<boolean>>();
+const mockUnclaimUsage = vi.fn<(couponId: string) => Promise<void>>();
+const mockRecordRedemption = vi.fn<(input: unknown) => Promise<void>>();
 
 vi.mock('@/services/coupon.service', () => ({
   createCouponService: vi.fn(() => ({
     validateCoupon: mockValidateCoupon,
     claimUsage: mockClaimUsage,
+    unclaimUsage: mockUnclaimUsage,
+    recordRedemption: mockRecordRedemption,
   })),
 }));
 

@@ -332,4 +332,42 @@ describe('CouponService', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('recordRedemption', () => {
+    it('inserts an audit row with the redemption details', async () => {
+      const insert = vi.fn().mockResolvedValue({ error: null });
+      const from = vi.fn().mockReturnValue({ insert });
+      const service = createCouponService({ from } as unknown as SupabaseClient);
+
+      await service.recordRedemption({
+        tenantId: 't1',
+        couponId: 'c1',
+        orderId: 'o1',
+        discountAmount: 500,
+      });
+
+      expect(from).toHaveBeenCalledWith('coupon_redemptions');
+      expect(insert).toHaveBeenCalledWith({
+        tenant_id: 't1',
+        coupon_id: 'c1',
+        order_id: 'o1',
+        discount_amount: 500,
+      });
+    });
+
+    it('is best-effort: swallows a DB error without throwing', async () => {
+      const insert = vi.fn().mockResolvedValue({ error: { message: 'boom' } });
+      const from = vi.fn().mockReturnValue({ insert });
+      const service = createCouponService({ from } as unknown as SupabaseClient);
+
+      await expect(
+        service.recordRedemption({
+          tenantId: 't1',
+          couponId: 'c1',
+          orderId: 'o1',
+          discountAmount: 0,
+        }),
+      ).resolves.toBeUndefined();
+    });
+  });
 });

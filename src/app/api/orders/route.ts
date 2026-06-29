@@ -245,6 +245,22 @@ export async function POST(request: Request) {
       });
     }
 
+    // 8b. Record an auditable coupon redemption (audit H11). The counter was
+    // already claimed before insert; this appends the who/which/how-much record.
+    // Only for a freshly-created (non-deduplicated) order with a coupon.
+    const redeemedCouponId = couponResult?.couponId;
+    if (redeemedCouponId) {
+      const redeemedOrderId = result.orderId;
+      after(() =>
+        couponService.recordRedemption({
+          tenantId,
+          couponId: redeemedCouponId,
+          orderId: redeemedOrderId,
+          discountAmount: pricing.discountAmount,
+        }),
+      );
+    }
+
     // 9. Create in-app notification for admins (scheduled via after() so Vercel
     // serverless runs it after the response instead of racing a fire-and-forget promise).
     after(async () => {
