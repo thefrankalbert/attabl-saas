@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { parseSettingsTab } from '@/lib/settings-tabs';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { DEFAULT_PAYMENT_METHODS } from '@/lib/payments/methods';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -49,7 +50,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
     <div className="flex-1 min-h-0 flex flex-col w-full max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto">
       <SettingsForm
         initialTab={initialTab}
-        initialPaymentMethods={tenant.enabled_payment_methods ?? ['cash', 'card']}
+        initialPaymentMethods={tenant.enabled_payment_methods ?? DEFAULT_PAYMENT_METHODS}
         tenant={{
           id: tenant.id,
           slug: tenant.slug,

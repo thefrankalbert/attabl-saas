@@ -2,17 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Loader2,
-  Coins,
-  CreditCard,
-  Banknote,
-  X,
-  ArrowLeft,
-  Delete,
-  Check,
-  Plus,
-} from 'lucide-react';
+import { Loader2, X, ArrowLeft, Delete, Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -53,7 +43,10 @@ interface PaymentModalProps {
   };
 }
 
-type PaymentMethod = 'cash' | 'card' | 'mobile_money';
+// Especes uniquement pour l'instant. Carte et mobile money sont declares dans
+// le registre central (src/lib/payments/methods.ts) mais inactifs - re-ajouter
+// un selecteur ici quand un autre moyen redevient actif.
+type PaymentMethod = 'cash';
 
 const TIP_AMOUNTS = [1000, 2000, 5000] as const;
 /** Quick cash increments (FCFA / XOF) */
@@ -81,7 +74,7 @@ export default function PaymentModal({
   const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
   const finalOrderNum = orderNumber ?? (order ? parseInt(order.id.slice(0, 4), 16) : undefined);
 
-  const [method, setMethod] = useState<PaymentMethod>('cash');
+  const method: PaymentMethod = 'cash';
   const [amountReceived, setAmountReceived] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -183,13 +176,6 @@ export default function PaymentModal({
       toast({ title: t('paymentError'), description: message, variant: 'destructive' });
       setIsProcessing(false);
     }
-  };
-
-  const isValid = () => {
-    if (method === 'cash') {
-      return cashIsValid;
-    }
-    return true;
   };
 
   // Price breakdown from order (admin view) or pricing prop (POS view)
@@ -405,32 +391,6 @@ export default function PaymentModal({
             </p>
           </div>
 
-          {/* Payment Method -- compact row */}
-          <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
-            {(
-              [
-                { key: 'cash' as const, icon: Banknote, label: t('cash') },
-                { key: 'card' as const, icon: CreditCard, label: t('card') },
-                { key: 'mobile_money' as const, icon: Coins, label: t('mobile') },
-              ] as const
-            ).map((pm) => (
-              <Button
-                key={pm.key}
-                variant="outline"
-                onClick={() => setMethod(pm.key)}
-                className={cn(
-                  'flex items-center justify-center gap-1.5 rounded-lg p-2 min-h-[44px]',
-                  method === pm.key
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-app-border bg-app-elevated/30 text-app-text-muted hover:bg-app-elevated/60 hover:text-app-text-secondary',
-                )}
-              >
-                <pm.icon className="h-4 w-4" />
-                <span className="text-xs font-medium">{pm.label}</span>
-              </Button>
-            ))}
-          </div>
-
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
           <div className="flex gap-1.5 mb-3 @md:hidden shrink-0">
             <Button
@@ -486,165 +446,128 @@ export default function PaymentModal({
           </div>
 
           {/* Cash: received, change, shortcuts, numpad, validate */}
-          {method === 'cash' && (
-            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
-              <div className="grid grid-cols-2 gap-2 shrink-0">
-                <div className="rounded-xl border border-app-border bg-app-elevated/40 p-3 text-center">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted">
-                    {t('received')}
+          <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 shrink-0">
+              <div className="rounded-xl border border-app-border bg-app-elevated/40 p-3 text-center">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted">
+                  {t('received')}
+                </p>
+                <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
+                  {formatCurrency(receivedAmount, currency)}
+                </p>
+                {!cashIsValid && amountRemaining > 0 && (
+                  <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
+                    {t('amountRemaining', { amount: formatCurrency(amountRemaining, currency) })}
                   </p>
-                  <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
-                    {formatCurrency(receivedAmount, currency)}
-                  </p>
-                  {!cashIsValid && amountRemaining > 0 && (
-                    <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
-                      {t('amountRemaining', { amount: formatCurrency(amountRemaining, currency) })}
-                    </p>
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    'rounded-xl border p-3 text-center',
-                    cashIsValid && change > 0
-                      ? 'border-[var(--border)] bg-app-elevated/40'
-                      : 'border-app-border bg-app-elevated/40',
-                  )}
-                >
-                  <p
-                    className={cn(
-                      'text-[10px] font-semibold uppercase tracking-widest',
-                      cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
-                    )}
-                  >
-                    {t('change')}
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
-                      cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
-                    )}
-                  >
-                    {formatCurrency(change, currency)}
-                  </p>
-                </div>
+                )}
               </div>
-
-              <div className="flex flex-wrap gap-1.5 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={setExactCashAmount}
-                  className="min-h-[44px] rounded-lg border-accent/40 bg-accent/10 text-accent text-xs font-bold px-3"
-                >
-                  {t('exactAmount')}
-                </Button>
-                {CASH_QUICK_ADD.map((increment) => (
-                  <Button
-                    key={increment}
-                    type="button"
-                    variant="outline"
-                    onClick={() => addCashAmount(increment)}
-                    className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-xs font-bold tabular-nums px-3"
-                  >
-                    <Plus className="w-3 h-3 mr-0.5 opacity-70" />
-                    {t('quickAdd', { amount: increment.toLocaleString() })}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
-                {NUMPAD_KEYS.map((key) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleKeypadPress(key)}
-                    className={cn(
-                      'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
-                      key === 'C' && 'text-[var(--destructive)]',
-                      key === '⌫' && 'text-[var(--warning)]',
-                      key === '0' && 'col-span-2',
-                    )}
-                    aria-label={
-                      key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
-                    }
-                  >
-                    {key === 'C' ? (
-                      <X className="h-5 w-5" />
-                    ) : key === '⌫' ? (
-                      <Delete className="h-5 w-5" />
-                    ) : (
-                      key
-                    )}
-                  </Button>
-                ))}
-              </div>
-
-              <Button
-                type="button"
-                variant="default"
-                onClick={handleProcessPayment}
-                disabled={!cashIsValid || isProcessing}
+              <div
                 className={cn(
-                  'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
-                  cashIsValid ? '' : 'opacity-60',
+                  'rounded-xl border p-3 text-center',
+                  cashIsValid && change > 0
+                    ? 'border-[var(--border)] bg-app-elevated/40'
+                    : 'border-app-border bg-app-elevated/40',
                 )}
               >
-                {isProcessing ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                  <Check className="mr-2 h-5 w-5" />
-                )}
-                {t('validatePayment')}
-              </Button>
-            </div>
-          )}
-
-          {/* Card/Mobile: Centered confirmation area */}
-          {method !== 'cash' && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-app-elevated/30 border border-app-border flex items-center justify-center mb-3">
-                {method === 'card' ? (
-                  <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-app-text-secondary" />
-                ) : (
-                  <Coins className="w-6 h-6 sm:w-8 sm:h-8 text-app-text-secondary" />
-                )}
+                <p
+                  className={cn(
+                    'text-[10px] font-semibold uppercase tracking-widest',
+                    cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
+                  )}
+                >
+                  {t('change')}
+                </p>
+                <p
+                  className={cn(
+                    'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
+                    cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
+                  )}
+                >
+                  {formatCurrency(change, currency)}
+                </p>
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-app-text tabular-nums mb-1">
-                {formatCurrency(totalWithTip, currency)}
-              </p>
-              <p className="text-xs text-app-text-muted">
-                {method === 'card' ? t('card') : t('mobile')}
-              </p>
             </div>
-          )}
 
-          {/* Action Buttons -- card/mobile; cash uses validate button above */}
-          <div
-            className={cn(
-              'flex gap-2 shrink-0 mt-auto pt-2 border-t border-app-border',
-              method === 'cash' && '@md:border-t-0 @md:pt-0',
-            )}
-          >
+            <div className="flex flex-wrap gap-1.5 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={setExactCashAmount}
+                className="min-h-[44px] rounded-lg border-accent/40 bg-accent/10 text-accent text-xs font-bold px-3"
+              >
+                {t('exactAmount')}
+              </Button>
+              {CASH_QUICK_ADD.map((increment) => (
+                <Button
+                  key={increment}
+                  type="button"
+                  variant="outline"
+                  onClick={() => addCashAmount(increment)}
+                  className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-xs font-bold tabular-nums px-3"
+                >
+                  <Plus className="w-3 h-3 mr-0.5 opacity-70" />
+                  {t('quickAdd', { amount: increment.toLocaleString() })}
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
+              {NUMPAD_KEYS.map((key) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleKeypadPress(key)}
+                  className={cn(
+                    'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
+                    key === 'C' && 'text-[var(--destructive)]',
+                    key === '⌫' && 'text-[var(--warning)]',
+                    key === '0' && 'col-span-2',
+                  )}
+                  aria-label={
+                    key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
+                  }
+                >
+                  {key === 'C' ? (
+                    <X className="h-5 w-5" />
+                  ) : key === '⌫' ? (
+                    <Delete className="h-5 w-5" />
+                  ) : (
+                    key
+                  )}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleProcessPayment}
+              disabled={!cashIsValid || isProcessing}
+              className={cn(
+                'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
+                cashIsValid ? '' : 'opacity-60',
+              )}
+            >
+              {isProcessing ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-5 w-5" />
+              )}
+              {t('validatePayment')}
+            </Button>
+          </div>
+
+          {/* Cancel - especes : la validation se fait via le bouton ci-dessus */}
+          <div className="flex shrink-0 mt-auto pt-2 border-t border-app-border @md:border-t-0 @md:pt-0">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={isProcessing}
-              className={cn('rounded-xl min-h-[44px]', method === 'cash' ? 'flex-1' : '')}
+              className="rounded-xl min-h-[44px] flex-1"
             >
               {t('cancel')}
             </Button>
-            {method !== 'cash' && (
-              <Button
-                variant="default"
-                onClick={handleProcessPayment}
-                disabled={!isValid() || isProcessing}
-                className="flex-1 rounded-xl py-2.5 min-h-[44px] text-sm font-bold"
-              >
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('confirmPayment')}
-              </Button>
-            )}
           </div>
         </div>
       </div>
