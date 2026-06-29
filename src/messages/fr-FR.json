@@ -1,7 +1,7 @@
 {
   "common": {
-    "offlineMode": "Mode hors ligne",
-    "connectionRestored": "Connexion retablie",
+    "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
+    "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "outboxPending": "{count} commande(s) en attente d'envoi",
     "outboxRejected": "{count} commande(s) refusée(s) à l'envoi. Vérifiez et ressaisissez.",
     "aria": {
@@ -100,8 +100,6 @@
     "noItems": "Aucun article",
     "updateError": "Erreur de mise à jour",
     "saving": "Enregistrement...",
-    "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
-    "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "errorTitle": "Oups, une erreur est survenue",
     "errorDescription": "Nous nous excusons pour ce désagrément. Veuillez réessayer ou retourner à l'accueil.",
     "errorHint": "Pas de panique, ce sont des choses qui arrivent.",
@@ -2146,7 +2144,7 @@
     "sendToKitchen": "Envoyer en cuisine",
     "selectTableFirst": "Veuillez sélectionner une table d'abord",
     "server": "Serveur",
-    "itemsCount": "articles",
+    "itemsCount": "{count, plural, one {# article} other {# articles}}",
     "printShort": "Cuisine",
     "confirmClearCart": "Voulez-vous vraiment vider le panier ?",
     "selectVariant": "Choisir une variante",
@@ -2154,7 +2152,10 @@
     "addToCart": "Ajouter au panier",
     "orderNote": "Note de commande",
     "orderNotePlaceholder": "Instructions speciales pour cette commande...",
-    "couponPlaceholder": "Code promo"
+    "couponPlaceholder": "Code promo",
+    "toSettle": "A encaisser",
+    "toSettleSubtitle": "Commandes en attente de paiement",
+    "toSettleEmpty": "Aucune commande a encaisser"
   },
   "users": {
     "title": "Utilisateurs",

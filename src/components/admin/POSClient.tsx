@@ -13,10 +13,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft } from 'lucide-react';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
+import POSUnpaidPanel from '@/components/features/pos/POSUnpaidPanel';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
+import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
+import { Receipt } from 'lucide-react';
+import type { Order } from '@/types/admin.types';
 
 interface POSClientProps {
   tenantId: string;
@@ -29,6 +33,14 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const { isMobile } = useDevice();
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  // ── "A encaisser" (C2): bill an existing QR/served order from the caisse ──
+  const [showUnpaid, setShowUnpaid] = useState(false);
+  const [settlingOrder, setSettlingOrder] = useState<Order | null>(null);
+  const {
+    unpaidOrders,
+    loading: unpaidLoading,
+    refresh: refreshUnpaid,
+  } = usePosUnpaidOrders(tenantId);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -129,6 +141,21 @@ export default function POSClient({ tenantId }: POSClientProps) {
               ) : (
                 <h1 className="text-sm font-semibold text-app-text">{t('title') || 'POS'}</h1>
               )}
+
+              {/* A encaisser: orders awaiting payment (incl. QR/served) */}
+              <Button
+                variant="ghost"
+                onClick={() => setShowUnpaid(true)}
+                className="relative ml-auto mr-2 min-h-[44px] gap-2 text-sm font-semibold text-app-text-secondary hover:text-app-text"
+              >
+                <Receipt className="h-4 w-4" />
+                <span className="hidden @sm:inline">{t('toSettle')}</span>
+                {unpaidOrders.length > 0 && (
+                  <span className="rounded-full bg-accent px-1.5 py-0.5 text-xs text-accent-text">
+                    {unpaidOrders.length}
+                  </span>
+                )}
+              </Button>
             </div>
 
             {/* Main layout - flat surfaces separated by border lines, no boxed cards */}
@@ -249,6 +276,32 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     paymentData,
                   })
                 }
+              />
+            )}
+
+            {/* A encaisser panel: pick an existing unpaid order to settle */}
+            <POSUnpaidPanel
+              open={showUnpaid}
+              onClose={() => setShowUnpaid(false)}
+              orders={unpaidOrders}
+              loading={unpaidLoading}
+              currency={pos.currency}
+              onSelect={(order) => {
+                setShowUnpaid(false);
+                setSettlingOrder(order);
+              }}
+            />
+
+            {/* Settle an existing order: PaymentModal in order mode -> markPaid */}
+            {settlingOrder && (
+              <PaymentModal
+                order={settlingOrder}
+                currency={pos.currency}
+                onClose={() => setSettlingOrder(null)}
+                onSuccess={() => {
+                  setSettlingOrder(null);
+                  refreshUnpaid();
+                }}
               />
             )}
           </>

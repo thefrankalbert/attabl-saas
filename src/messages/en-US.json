@@ -1,7 +1,7 @@
 {
   "common": {
-    "offlineMode": "Offline mode",
-    "connectionRestored": "Connection restored",
+    "offlineMode": "Offline mode - Showing cached data",
+    "connectionRestored": "Connection restored - Syncing...",
     "outboxPending": "{count} order(s) waiting to send",
     "outboxRejected": "{count} order(s) refused on send. Review and re-enter.",
     "aria": {
@@ -100,8 +100,6 @@
     "noItems": "No items",
     "updateError": "Update error",
     "saving": "Saving...",
-    "offlineMode": "Offline mode - Showing cached data",
-    "connectionRestored": "Connection restored - Syncing...",
     "errorTitle": "Oops, something went wrong",
     "errorDescription": "We apologize for the inconvenience. Please try again or return to the home page.",
     "errorHint": "Don't panic, these things happen.",
@@ -2146,7 +2144,7 @@
     "sendToKitchen": "Send to kitchen",
     "selectTableFirst": "Please select a table first",
     "server": "Server",
-    "itemsCount": "items",
+    "itemsCount": "{count, plural, one {# item} other {# items}}",
     "printShort": "Kitchen",
     "confirmClearCart": "Are you sure you want to clear the cart?",
     "selectVariant": "Select a variant",
@@ -2154,7 +2152,10 @@
     "addToCart": "Add to cart",
     "orderNote": "Order note",
     "orderNotePlaceholder": "Special instructions for this order...",
-    "couponPlaceholder": "Promo code"
+    "couponPlaceholder": "Promo code",
+    "toSettle": "To settle",
+    "toSettleSubtitle": "Orders awaiting payment",
+    "toSettleEmpty": "No orders to settle"
   },
   "users": {
     "title": "Users",
