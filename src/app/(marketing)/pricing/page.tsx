@@ -73,7 +73,6 @@ const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] = [
     key: 'checkout',
     features: [
       { labelKey: 'pos', starter: true, pro: true, business: true, enterprise: true },
-      { labelKey: 'mobileMoney', starter: false, pro: true, business: true, enterprise: true },
       { labelKey: 'multiCurrency', starter: false, pro: true, business: true, enterprise: true },
       { labelKey: 'tips', starter: false, pro: true, business: true, enterprise: true },
     ],
