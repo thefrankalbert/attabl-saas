@@ -23,6 +23,10 @@ export const journeyEnv = {
   tenantSlug: process.env.JOURNEY_TENANT_SLUG || 'journey-test',
   // Stripe en MODE TEST uniquement (cle sk_test_...).
   stripeSecretKey: process.env.JOURNEY_STRIPE_SECRET_KEY || '',
+  // Secret de signature des webhooks Stripe. En local, le runner pose la MEME
+  // valeur cote app (STRIPE_WEBHOOK_SECRET) et cote test pour que la signature
+  // forgee corresponde. Jamais un secret de prod (le harnais n'ecrit qu'en test).
+  stripeWebhookSecret: process.env.JOURNEY_STRIPE_WEBHOOK_SECRET || '',
 };
 
 /** Stoppe le run si on pointe (meme par erreur) sur la prod. */
@@ -85,4 +89,24 @@ export function hasSeedEnv(): boolean {
 /** true si Stripe test mode est configure. */
 export function hasStripeTestEnv(): boolean {
   return journeyEnv.stripeSecretKey.startsWith('sk_test_');
+}
+
+/**
+ * true si le rate limiting est ACTIF sur la cible (Upstash configure).
+ * Le runner local le DESACTIVE (Upstash vide, pour ne pas partager l'etat prod):
+ * dans ce mode le test rate-limit ne peut pas observer de 429, il l'annonce au lieu
+ * de faire un vert decoratif. A poser (JOURNEY_RATE_LIMIT_ACTIVE=yes) quand on vise
+ * un env ou Upstash est branche (staging) pour exiger un vrai 429.
+ */
+export function hasRateLimitEnv(): boolean {
+  return process.env.JOURNEY_RATE_LIMIT_ACTIVE === 'yes';
+}
+
+/**
+ * true si on peut forger des webhooks Stripe signes vers /api/webhooks/stripe:
+ * il faut la cle test (pour creer customer/subscription) ET le secret de
+ * signature partage avec l'app. Sinon les parcours billing par webhook skippent.
+ */
+export function hasStripeWebhookEnv(): boolean {
+  return hasStripeTestEnv() && Boolean(journeyEnv.stripeWebhookSecret);
 }

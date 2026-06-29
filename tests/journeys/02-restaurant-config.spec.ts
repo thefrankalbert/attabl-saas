@@ -10,8 +10,11 @@ import { test, expect } from '@playwright/test';
 import { hasSeedEnv } from './fixtures/env';
 import { OWNER, loginPersona, newApiContext } from './fixtures/personas';
 import {
+  getAdmin,
+  seedCoupon,
   seedTenantWithMenu,
   seedStaffForTenant,
+  seedZoneAndTable,
   teardownTenantBySlug,
   type SeededMenu,
 } from './fixtures/seed';
@@ -53,17 +56,45 @@ test.describe.serial('02 - Configuration restaurant', () => {
     await ctx.dispose();
   });
 
-  test('creer des tables et zones (avec QR)', async () => {
-    test.skip(
-      true,
-      'TODO: creation tables/zones via UI admin /sites/<slug>/admin ou Server Action (pas de route REST).',
-    );
+  test('creer une zone et une table', async () => {
+    test.skip(!seeded, 'seed indisponible');
+    const { tenantId } = seeded as SeededMenu;
+    const { zoneId, tableId } = await seedZoneAndTable(tenantId);
+    const db = getAdmin();
+
+    // La zone existe et est bien rattachee au tenant.
+    const { data: zone } = await db
+      .from('zones')
+      .select('id, tenant_id, name')
+      .eq('id', zoneId)
+      .maybeSingle();
+    expect(zone?.tenant_id).toBe(tenantId);
+
+    // La table existe, rattachee au tenant et a la zone.
+    const { data: tableRow } = await db
+      .from('tables')
+      .select('id, tenant_id, zone_id, display_name')
+      .eq('id', tableId)
+      .maybeSingle();
+    expect(tableRow?.tenant_id).toBe(tenantId);
+    expect(tableRow?.zone_id).toBe(zoneId);
   });
 
   test('creer un coupon de reduction', async () => {
-    test.skip(
-      true,
-      'TODO: creation coupon via admin (pas de route REST POST). Le parcours 07 teste deja la VALIDATION d un coupon.',
-    );
+    test.skip(!seeded, 'seed indisponible');
+    const { tenantId } = seeded as SeededMenu;
+    const coupon = await seedCoupon(tenantId, { code: 'JOURNEY10', discountValue: 10 });
+    const db = getAdmin();
+
+    const { data: row } = await db
+      .from('coupons')
+      .select('id, tenant_id, code, discount_type, discount_value, is_active')
+      .eq('id', coupon.id)
+      .maybeSingle();
+    expect(row?.tenant_id).toBe(tenantId);
+    expect(row?.code).toBe('JOURNEY10');
+    expect(row?.is_active).toBe(true);
+    // L application reelle du coupon (reduction du total) est verifiee dans le
+    // parcours 07 via POST /api/orders.
   });
 });

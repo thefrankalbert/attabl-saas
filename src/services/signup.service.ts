@@ -1,15 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSlugService } from './slug.service';
-import { ServiceError } from './errors';
+import { ServiceError, isTenantNameConflictError } from './errors';
 import { sendWelcomeConfirmationEmail } from './email.service';
 import { logger } from '@/lib/logger';
 import { isEmailAlreadyRegisteredAuthError } from '@/lib/auth/is-email-already-registered';
-
-interface CreateTenantInput {
-  slug: string;
-  name: string;
-  plan: string;
-}
 
 interface CreateAdminInput {
   tenantId: string;
@@ -83,6 +77,9 @@ export function createSignupService(supabase: SupabaseClient) {
     });
 
     if (error) {
+      if (isTenantNameConflictError(error)) {
+        throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', error);
+      }
       throw new ServiceError(`Erreur provisionnement: ${error.message}`, 'INTERNAL', error);
     }
 
@@ -95,32 +92,6 @@ export function createSignupService(supabase: SupabaseClient) {
   }
 
   return {
-    /**
-     * Creates a tenant with a 14-day trial period.
-     */
-    async createTenantWithTrial(input: CreateTenantInput): Promise<{ id: string; slug: string }> {
-      const trialEndsAt = new Date(Date.now() + 14 * 86400000);
-
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({
-          slug: input.slug,
-          name: input.name,
-          subscription_plan: input.plan,
-          subscription_status: 'trial',
-          trial_ends_at: trialEndsAt.toISOString(),
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (tenantError) {
-        throw new ServiceError(`Erreur Tenant: ${tenantError.message}`, 'INTERNAL', tenantError);
-      }
-
-      return { id: tenant.id, slug: tenant.slug };
-    },
-
     /**
      * Creates the admin_users link between a user and tenant.
      */
@@ -343,22 +314,25 @@ export function createSignupService(supabase: SupabaseClient) {
           .limit(1)
           .maybeSingle();
 
-        let tenantId = orphanTenant?.id;
-        let slug = orphanTenant?.slug;
-
-        if (!tenantId) {
-          const created = await this.createTenantWithTrial({
+        if (!orphanTenant?.id) {
+          // No tenant yet under this group: create tenant + owner + venue in a
+          // single transaction. provision_signup_tenant reuses the existing
+          // group via ON CONFLICT (owner_user_id), so no orphan can be left.
+          return provisionSignupTenant({
             slug: await slugService.generateUniqueSlug(restaurantName),
             name: restaurantName,
             plan: input.plan || 'starter',
+            userId: input.userId,
+            email: input.email,
+            fullName,
+            phone: input.phone,
           });
-          tenantId = created.id;
-          slug = created.slug;
-          await supabase.from('tenants').update({ group_id: existingGroup.id }).eq('id', tenantId);
         }
 
+        // Orphan tenant exists but the owner link is missing: attach the owner.
+        // Idempotent recovery - safe to re-run.
         await this.createAdminUser({
-          tenantId,
+          tenantId: orphanTenant.id,
           userId: input.userId,
           email: input.email,
           fullName,
@@ -366,18 +340,18 @@ export function createSignupService(supabase: SupabaseClient) {
         });
 
         try {
-          await this.createDefaultVenue(tenantId);
+          await this.createDefaultVenue(orphanTenant.id);
         } catch (venueError) {
           logger.warn(
             'Default venue already exists or could not be created during onboarding recovery',
             {
-              tenantId,
+              tenantId: orphanTenant.id,
               error: String(venueError),
             },
           );
         }
 
-        return { tenantId, slug: slug ?? '' };
+        return { tenantId: orphanTenant.id, slug: orphanTenant.slug ?? '' };
       }
 
       return this.completeOAuthSignup({
