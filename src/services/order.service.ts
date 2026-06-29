@@ -672,7 +672,7 @@ export function createOrderService(supabase: SupabaseClient) {
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .eq('payment_status', 'pending')
-        .select('id, session_id');
+        .select('id, session_id, total, tip_amount');
 
       if (error) {
         throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
@@ -680,10 +680,31 @@ export function createOrderService(supabase: SupabaseClient) {
 
       const paidRow = Array.isArray(data) && data.length > 0 ? data[0] : null;
 
-      // Close the table session once every order on it is settled (audit C1).
-      // Leaving it open would let tomorrow's orders attach to today's check.
-      if (paidRow?.session_id) {
-        await closeSessionIfFullySettled(paidRow.session_id as string, tenantId);
+      if (paidRow) {
+        // Append the tender to the ledger (audit H2/H8): who/what/when, append-only.
+        // Best-effort - payment_status is already flipped; a ledger failure must not
+        // un-settle the order. The amount tendered = order total (excl. tip) + tip.
+        const amount = Number(paidRow.total || 0) + Number(paidRow.tip_amount || 0);
+        const { error: tenderError } = await supabase.from('payments').insert({
+          tenant_id: tenantId,
+          order_id: orderId,
+          amount,
+          method: payload.method,
+          status: 'completed',
+        });
+        if (tenderError) {
+          logger.error('Failed to record payment tender', {
+            orderId,
+            tenantId,
+            error: tenderError,
+          });
+        }
+
+        // Close the table session once every order on it is settled (audit C1).
+        // Leaving it open would let tomorrow's orders attach to today's check.
+        if (paidRow.session_id) {
+          await closeSessionIfFullySettled(paidRow.session_id as string, tenantId);
+        }
       }
 
       return { paid: paidRow !== null };

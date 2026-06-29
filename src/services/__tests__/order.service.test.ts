@@ -592,7 +592,11 @@ describe('OrderService', () => {
       const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
       const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
       update.mockReturnValue({ eq: eq1 });
-      const from = vi.fn().mockReturnValue({ update });
+      const paymentsInsert = vi.fn().mockResolvedValue({ error: null });
+      const from = vi.fn((table: string) => {
+        if (table === 'payments') return { insert: paymentsInsert };
+        return { update };
+      });
       return {
         client: { from } as unknown as SupabaseClient,
         update,
@@ -600,6 +604,7 @@ describe('OrderService', () => {
         eq2,
         eq3,
         select,
+        paymentsInsert,
       };
     }
 
@@ -617,6 +622,10 @@ describe('OrderService', () => {
       expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
       // tip recorded when > 0
       expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
+      // a tender is appended to the ledger (audit H2/H8)
+      expect(m.paymentsInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ order_id: 'order-1', method: 'cash', status: 'completed' }),
+      );
     });
 
     it('is a no-op (paid:false) on an already-paid order (0 rows matched)', async () => {
@@ -678,6 +687,7 @@ describe('OrderService', () => {
       const from = vi.fn((table: string) => {
         if (table === 'orders') return { update: ordersUpdate, select: ordersSelectCount };
         if (table === 'table_sessions') return { update: tsUpdate };
+        if (table === 'payments') return { insert: vi.fn().mockResolvedValue({ error: null }) };
         return {};
       });
       return { client: { from } as unknown as SupabaseClient, tsUpdate };
