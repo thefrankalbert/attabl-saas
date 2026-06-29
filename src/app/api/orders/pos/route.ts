@@ -31,7 +31,7 @@ async function applyPosFinalState(
   paymentMethod: string | undefined,
 ): Promise<void> {
   if (paymentMethod) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('orders')
       .update({
         payment_method: paymentMethod,
@@ -43,9 +43,28 @@ async function applyPosFinalState(
       // Belt filter: service-role client bypasses RLS, so scope to the tenant.
       .eq('tenant_id', tenantId)
       // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
-      .eq('payment_status', 'pending');
+      .eq('payment_status', 'pending')
+      .select('id, total, tip_amount');
     if (error) {
       logger.error('POS order: failed to apply payment/status', error, { orderId });
+      return;
+    }
+    // Append the tender to the ledger (audit H2/H8), only when this call actually
+    // flipped the order to paid - keeps the ledger idempotent (no duplicate tender
+    // on replay). amount = total (excl. tip) + tip.
+    const flipped = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    if (flipped) {
+      const amount = Number(flipped.total || 0) + Number(flipped.tip_amount || 0);
+      const { error: tenderError } = await supabase.from('payments').insert({
+        tenant_id: tenantId,
+        order_id: orderId,
+        amount,
+        method: paymentMethod,
+        status: 'completed',
+      });
+      if (tenderError) {
+        logger.error('POS order: failed to record payment tender', tenderError, { orderId });
+      }
     }
     return;
   }
