@@ -2057,6 +2057,18 @@ export type Database = {
         Args: { p_delta: number; p_ingredient_id: string; p_tenant_id: string };
         Returns: undefined;
       };
+      adjust_ingredient_stock_tx: {
+        Args: {
+          p_created_by?: string;
+          p_delta: number;
+          p_ingredient_id: string;
+          p_movement_type: string;
+          p_notes?: string;
+          p_supplier_id?: string;
+          p_tenant_id: string;
+        };
+        Returns: number;
+      };
       claim_coupon_usage: { Args: { p_coupon_id: string }; Returns: boolean };
       create_order_with_items: {
         Args: {
@@ -2239,12 +2251,20 @@ export type Database = {
         Args: { p_reset_type: string; p_tenant_id: string };
         Returns: Json;
       };
+      restock_order: {
+        Args: { p_order_id: string; p_tenant_id: string };
+        Returns: number;
+      };
       set_opening_stock: {
         Args: {
           p_ingredient_id: string;
           p_quantity: number;
           p_tenant_id: string;
         };
+        Returns: undefined;
+      };
+      set_recipe_tx: {
+        Args: { p_lines: Json; p_menu_item_id: string; p_tenant_id: string };
         Returns: undefined;
       };
       unclaim_coupon_usage: {

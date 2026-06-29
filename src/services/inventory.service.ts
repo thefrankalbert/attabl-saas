@@ -28,6 +28,7 @@ export interface InventoryService {
   getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]>;
   setRecipe(tenantId: string, menuItemId: string, lines: RecipeLineInput[]): Promise<void>;
   destockOrder(orderId: string, tenantId: string): Promise<number>;
+  restockOrder(orderId: string, tenantId: string): Promise<number>;
   adjustStock(tenantId: string, input: AdjustStockInput): Promise<void>;
   setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
   getStockStatus(tenantId: string): Promise<StockStatus[]>;
@@ -165,30 +166,19 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         }
       }
 
-      // Delete existing recipe lines for this item
-      const { error: deleteError } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('menu_item_id', menuItemId)
-        .eq('tenant_id', tenantId);
+      // Atomic replace (delete + insert in one transaction) via RPC so a failed
+      // insert can never leave the recipe wiped.
+      const { error: rpcError } = await supabase.rpc('set_recipe_tx', {
+        p_tenant_id: tenantId,
+        p_menu_item_id: menuItemId,
+        p_lines: lines.map((line) => ({
+          ingredient_id: line.ingredient_id,
+          quantity_needed: line.quantity_needed,
+          notes: line.notes || null,
+        })),
+      });
 
-      if (deleteError)
-        throw new ServiceError('Erreur suppression recette', 'INTERNAL', deleteError);
-
-      if (lines.length === 0) return;
-
-      // Insert new lines
-      const rows = lines.map((line) => ({
-        tenant_id: tenantId,
-        menu_item_id: menuItemId,
-        ingredient_id: line.ingredient_id,
-        quantity_needed: line.quantity_needed,
-        notes: line.notes || null,
-      }));
-
-      const { error: insertError } = await supabase.from('recipes').insert(rows);
-
-      if (insertError) throw new ServiceError('Erreur sauvegarde recette', 'INTERNAL', insertError);
+      if (rpcError) throw new ServiceError('Erreur sauvegarde recette', 'INTERNAL', rpcError);
     },
 
     // ─── Stock Operations ─────────────────────────────────
@@ -212,40 +202,52 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return count;
     },
 
+    async restockOrder(orderId: string, tenantId: string): Promise<number> {
+      // Reverses a prior destock when an order is cancelled/refunded. Idempotent:
+      // the RPC skips ingredients already restocked for this order.
+      const { data, error } = await supabase.rpc('restock_order', {
+        p_order_id: orderId,
+        p_tenant_id: tenantId,
+      });
+
+      if (error) throw new ServiceError('Erreur restockage commande', 'INTERNAL', error);
+      return (data as number) ?? 0;
+    },
+
     async adjustStock(tenantId: string, input: AdjustStockInput): Promise<void> {
-      // Determine stock change direction
+      // Determine stock change direction (callers pass a positive magnitude).
       const delta =
         input.movement_type === 'manual_add' || input.movement_type === 'opening'
           ? Math.abs(input.quantity)
           : -Math.abs(input.quantity);
 
-      // Update ingredient stock (atomic via RPC)
-      const { error: updateError } = await supabase.rpc('adjust_ingredient_stock', {
-        p_tenant_id: tenantId,
-        p_ingredient_id: input.ingredient_id,
-        p_delta: delta,
-      });
-
-      if (updateError) throw new ServiceError('Erreur ajustement stock', 'INTERNAL', updateError);
-
-      // Get current user for audit trail
+      // Get current user for the audit trail.
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Record movement
-      const { error: movementError } = await supabase.from('stock_movements').insert({
-        tenant_id: tenantId,
-        ingredient_id: input.ingredient_id,
-        movement_type: input.movement_type,
-        quantity: delta,
-        notes: input.notes || null,
-        created_by: user?.id || null,
-        supplier_id: input.supplier_id || null,
+      // Atomic RPC: clamps stock at >=0, records the ACTUAL applied delta as a
+      // movement, and validates the supplier belongs to the tenant - all in one
+      // transaction so the ledger always reconstructs current_stock.
+      const { error } = await supabase.rpc('adjust_ingredient_stock_tx', {
+        p_tenant_id: tenantId,
+        p_ingredient_id: input.ingredient_id,
+        p_delta: delta,
+        p_movement_type: input.movement_type,
+        p_notes: input.notes || undefined,
+        p_created_by: user?.id || undefined,
+        p_supplier_id: input.supplier_id || undefined,
       });
 
-      if (movementError)
-        throw new ServiceError('Erreur enregistrement mouvement', 'INTERNAL', movementError);
+      if (error) {
+        if (error.message?.includes('INVALID_SUPPLIER')) {
+          throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
+        }
+        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+        }
+        throw new ServiceError('Erreur ajustement stock', 'INTERNAL', error);
+      }
     },
 
     async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {

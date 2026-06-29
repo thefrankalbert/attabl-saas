@@ -82,6 +82,11 @@ export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border:
     text: 'text-status-info',
     border: 'border-status-info/20',
   },
+  order_restock: {
+    bg: 'bg-status-success-bg',
+    text: 'text-status-success',
+    border: 'border-status-success/20',
+  },
   manual_add: {
     bg: 'bg-status-success-bg',
     text: 'text-status-success',

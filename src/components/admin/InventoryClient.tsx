@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Package, Plus, Search, Check, AlertTriangle, XCircle } from 'lucide-react';
+import { Package, Plus, Search, Check, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -72,6 +72,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   const { toast } = useToast();
   const t = useTranslations('inventory');
@@ -237,6 +239,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     setAdjustNotes('');
     setAdjustSupplierId('');
     setSelectedIngredient(null);
+    setConfirmDeactivate(false);
   };
 
   const openAdd = () => {
@@ -263,11 +266,13 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   };
 
   const handleSave = async () => {
+    if (isSubmitting) return;
     if (!formName.trim()) {
       toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (modalMode === 'add') {
         const input: CreateIngredientInput = {
@@ -297,12 +302,36 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (isSubmitting || !selectedIngredient) return;
+
+    setIsSubmitting(true);
+    try {
+      const r = await actionUpdateIngredient(tenantId, selectedIngredient.id, {
+        is_active: false,
+      });
+      if (r.error) throw new Error(r.error);
+      toast({ title: tc('deletedSuccess') });
+      setModalMode(null);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAdjust = async () => {
+    if (isSubmitting) return;
     if (!selectedIngredient || !adjustQty) return;
 
+    setIsSubmitting(true);
     try {
       const r = await actionAdjustStock(tenantId, {
         ingredient_id: selectedIngredient.id,
@@ -318,6 +347,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -589,19 +620,47 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setModalMode(null);
-                    resetForm();
-                  }}
-                >
-                  {tc('cancel')}
-                </Button>
-                <Button onClick={handleSave} variant="default">
-                  {tc('save')}
-                </Button>
+              <div className="flex justify-between gap-2 mt-6">
+                <div>
+                  {modalMode === 'edit' &&
+                    (confirmDeactivate ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeactivate}
+                          disabled={isSubmitting}
+                        >
+                          {tc('confirm')}
+                        </Button>
+                        <Button variant="ghost" onClick={() => setConfirmDeactivate(false)}>
+                          {tc('cancel')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        onClick={() => setConfirmDeactivate(true)}
+                        className="text-status-error hover:text-status-error gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {tc('delete')}
+                      </Button>
+                    ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setModalMode(null);
+                      resetForm();
+                    }}
+                  >
+                    {tc('cancel')}
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSubmitting} variant="default">
+                    {tc('save')}
+                  </Button>
+                </div>
               </div>
             </AdminModal>
 
@@ -716,7 +775,11 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     >
                       {tc('cancel')}
                     </Button>
-                    <Button onClick={handleAdjust} disabled={!adjustQty} variant="default">
+                    <Button
+                      onClick={handleAdjust}
+                      disabled={!adjustQty || isSubmitting}
+                      variant="default"
+                    >
                       {tc('confirm')}
                     </Button>
                   </div>

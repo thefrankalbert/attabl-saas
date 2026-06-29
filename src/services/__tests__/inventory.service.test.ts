@@ -255,15 +255,15 @@ describe('InventoryService', () => {
   });
 
   describe('setRecipe', () => {
-    it('should validate menu item and ingredients, then delete and insert lines', async () => {
+    it('should validate menu item and ingredients, then save atomically via set_recipe_tx', async () => {
       const lines: RecipeLineInput[] = [
         { ingredient_id: 'ing-1', quantity_needed: 0.5, notes: 'sifted' },
         { ingredient_id: 'ing-2', quantity_needed: 0.1 },
       ];
 
-      let callCount = 0;
+      const rpc = vi.fn().mockResolvedValue({ error: null });
+      supabase.rpc = rpc;
       supabase.from = vi.fn().mockImplementation((table: string) => {
-        callCount++;
         if (table === 'menu_items') {
           const maybeSingleFn = vi.fn().mockResolvedValue({ data: { id: 'mi-1' }, error: null });
           const isFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
@@ -280,19 +280,21 @@ describe('InventoryService', () => {
           const eqTenant = vi.fn().mockReturnValue({ eq: eqActive });
           return { select: vi.fn().mockReturnValue({ eq: eqTenant }) };
         }
-        if (callCount === 3) {
-          const eqTenant = vi.fn().mockResolvedValue({ error: null });
-          const eqMenuItem = vi.fn().mockReturnValue({ eq: eqTenant });
-          return { delete: vi.fn().mockReturnValue({ eq: eqMenuItem }) };
-        }
-        return { insert: vi.fn().mockResolvedValue({ error: null }) };
+        throw new Error(`Unexpected table: ${table}`);
       });
 
       await service.setRecipe('t1', 'mi-1', lines);
 
       expect(supabase.from).toHaveBeenCalledWith('menu_items');
       expect(supabase.from).toHaveBeenCalledWith('ingredients');
-      expect(supabase.from).toHaveBeenCalledWith('recipes');
+      expect(rpc).toHaveBeenCalledWith('set_recipe_tx', {
+        p_tenant_id: 't1',
+        p_menu_item_id: 'mi-1',
+        p_lines: [
+          { ingredient_id: 'ing-1', quantity_needed: 0.5, notes: 'sifted' },
+          { ingredient_id: 'ing-2', quantity_needed: 0.1, notes: null },
+        ],
+      });
     });
 
     it('should reject duplicate ingredients', async () => {
@@ -335,15 +337,13 @@ describe('InventoryService', () => {
   });
 
   describe('adjustStock', () => {
-    it('should call RPC adjust_ingredient_stock and record movement', async () => {
-      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    it('should call adjust_ingredient_stock_tx atomically with signed delta, audit user and supplier', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 10, error: null });
+      supabase.rpc = rpc;
       supabase.auth.getUser = vi.fn().mockResolvedValue({
         data: { user: { id: 'user-1' } },
         error: null,
       });
-
-      const insertFn = vi.fn().mockResolvedValue({ error: null });
-      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
 
       const input: AdjustStockInput = {
         ingredient_id: 'ing-1',
@@ -355,32 +355,44 @@ describe('InventoryService', () => {
 
       await service.adjustStock('t1', input);
 
-      expect(supabase.rpc).toHaveBeenCalledWith('adjust_ingredient_stock', {
+      // Single atomic RPC - no separate stock_movements insert anymore.
+      expect(rpc).toHaveBeenCalledWith('adjust_ingredient_stock_tx', {
         p_tenant_id: 't1',
         p_ingredient_id: 'ing-1',
         p_delta: 10,
-      });
-      expect(supabase.from).toHaveBeenCalledWith('stock_movements');
-      expect(insertFn).toHaveBeenCalledWith({
-        tenant_id: 't1',
-        ingredient_id: 'ing-1',
-        movement_type: 'manual_add',
-        quantity: 10,
-        notes: 'restocking',
-        created_by: 'user-1',
-        supplier_id: 'sup-1',
+        p_movement_type: 'manual_add',
+        p_notes: 'restocking',
+        p_created_by: 'user-1',
+        p_supplier_id: 'sup-1',
       });
     });
 
+    it('should surface INVALID_SUPPLIER from the RPC as a VALIDATION error', async () => {
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INVALID_SUPPLIER' } });
+      supabase.auth.getUser = vi.fn().mockResolvedValue({
+        data: { user: { id: 'u' } },
+        error: null,
+      });
+
+      const input: AdjustStockInput = {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        movement_type: 'manual_add',
+        supplier_id: 'sup-other-tenant',
+      };
+
+      await expect(service.adjustStock('t1', input)).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+
     it('should use negative delta for manual_remove type', async () => {
-      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+      const rpc = vi.fn().mockResolvedValue({ data: 0, error: null });
+      supabase.rpc = rpc;
       supabase.auth.getUser = vi.fn().mockResolvedValue({
         data: { user: { id: 'user-1' } },
         error: null,
       });
-
-      const insertFn = vi.fn().mockResolvedValue({ error: null });
-      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
 
       const input: AdjustStockInput = {
         ingredient_id: 'ing-1',
@@ -390,29 +402,19 @@ describe('InventoryService', () => {
 
       await service.adjustStock('t1', input);
 
-      // manual_remove should produce negative delta
-      expect(supabase.rpc).toHaveBeenCalledWith('adjust_ingredient_stock', {
-        p_tenant_id: 't1',
-        p_ingredient_id: 'ing-1',
-        p_delta: -3,
-      });
-      expect(insertFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          quantity: -3,
-          movement_type: 'manual_remove',
-        }),
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_delta: -3, p_movement_type: 'manual_remove' }),
       );
     });
 
-    it('should get current user for audit trail', async () => {
-      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    it('should pass the current user id to the RPC for the audit trail', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 1, error: null });
+      supabase.rpc = rpc;
       supabase.auth.getUser = vi.fn().mockResolvedValue({
         data: { user: { id: 'audit-user-42' } },
         error: null,
       });
-
-      const insertFn = vi.fn().mockResolvedValue({ error: null });
-      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
 
       const input: AdjustStockInput = {
         ingredient_id: 'ing-1',
@@ -423,11 +425,24 @@ describe('InventoryService', () => {
       await service.adjustStock('t1', input);
 
       expect(supabase.auth.getUser).toHaveBeenCalled();
-      expect(insertFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          created_by: 'audit-user-42',
-        }),
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_created_by: 'audit-user-42' }),
       );
+    });
+  });
+
+  describe('restockOrder', () => {
+    it('should call RPC restock_order and return count', async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({ data: 2, error: null });
+
+      const result = await service.restockOrder('order-1', 't1');
+
+      expect(supabase.rpc).toHaveBeenCalledWith('restock_order', {
+        p_order_id: 'order-1',
+        p_tenant_id: 't1',
+      });
+      expect(result).toBe(2);
     });
   });
 

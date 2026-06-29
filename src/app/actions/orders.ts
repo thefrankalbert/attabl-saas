@@ -2,10 +2,14 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { createOrderService } from '@/services/order.service';
+import { createInventoryService } from '@/services/inventory.service';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from '@/services/errors';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
@@ -156,6 +160,39 @@ export async function actionUpdateOrderStatus(
       parsed.data.tenantId,
       parsed.data.status,
     );
+
+    // On cancellation, restore any ingredient stock that was deducted for this
+    // order (idempotent; only acts on orders that were actually destocked).
+    if (parsed.data.status === 'cancelled') {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('subscription_plan, subscription_status, trial_ends_at')
+        .eq('id', parsed.data.tenantId)
+        .maybeSingle();
+
+      const hasInventory =
+        !!tenant &&
+        canAccessFeature(
+          'canAccessInventory',
+          tenant.subscription_plan as SubscriptionPlan | null,
+          tenant.subscription_status as SubscriptionStatus | null,
+          tenant.trial_ends_at as string | null,
+        );
+
+      if (hasInventory) {
+        // Non-blocking: restock_order needs service_role; status flip already succeeded.
+        const adminSupabase = createAdminClient();
+        createInventoryService(adminSupabase)
+          .restockOrder(parsed.data.orderId, parsed.data.tenantId)
+          .catch((err) => {
+            logger.error('Order cancel: auto-restock failed (non-blocking)', {
+              err,
+              orderId: parsed.data.orderId,
+            });
+          });
+      }
+    }
+
     return { success: true };
   } catch (err) {
     if (err instanceof AuthError) {
