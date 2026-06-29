@@ -113,18 +113,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
-      const errorMessage =
-        error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED'
-          ? t('emailAlreadyRegistered')
-          : error.message;
+      let errorMessage = error.message;
+      let code: string = error.code;
+      if (error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED') {
+        errorMessage = t('emailAlreadyRegistered');
+        code = 'EMAIL_ALREADY_REGISTERED';
+      } else if (error.code === 'CONFLICT' && error.message === 'RESTAURANT_NAME_TAKEN') {
+        errorMessage = t('restaurantNameTaken');
+        code = 'RESTAURANT_NAME_TAKEN';
+      }
       return NextResponse.json(
-        {
-          error: errorMessage,
-          code:
-            error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED'
-              ? 'EMAIL_ALREADY_REGISTERED'
-              : error.code,
-        },
+        { error: errorMessage, code },
         { status: serviceErrorToStatus(error.code) },
       );
     }

@@ -94,8 +94,9 @@ export default async function AdminLayout({
         .eq('is_super_admin', true)
         .eq('is_active', true)
         .is('deleted_at', null)
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!superAdminCheck) {
         redirectToUnauthorized();
