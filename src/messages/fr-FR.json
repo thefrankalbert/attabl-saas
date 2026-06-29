@@ -2076,7 +2076,11 @@
     "zoneKitchen": "Cuisine",
     "zoneBar": "Bar",
     "searchPlaceholder": "Rechercher une commande...",
-    "searchLabel": "Rechercher"
+    "searchLabel": "Rechercher",
+    "courseAppetizer": "Entrees",
+    "courseMain": "Plats",
+    "courseDessert": "Desserts",
+    "courseDrink": "Boissons"
   },
   "pos": {
     "title": "Caisse (POS)",

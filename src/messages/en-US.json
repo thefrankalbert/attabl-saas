@@ -2076,7 +2076,11 @@
     "zoneKitchen": "Kitchen",
     "zoneBar": "Bar",
     "searchPlaceholder": "Search an order...",
-    "searchLabel": "Search"
+    "searchLabel": "Search",
+    "courseAppetizer": "Starters",
+    "courseMain": "Mains",
+    "courseDessert": "Desserts",
+    "courseDrink": "Drinks"
   },
   "pos": {
     "title": "Point of Sale",
