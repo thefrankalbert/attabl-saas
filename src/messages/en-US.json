@@ -45,6 +45,7 @@
     "confirmDelete": "Confirm deletion",
     "close": "Close",
     "loading": "Loading...",
+    "loadMore": "Load more",
     "error": "Error",
     "actions": "Actions",
     "saveChanges": "Save changes",
@@ -1527,7 +1528,8 @@
       "creating": "Creating...",
       "create": "Create establishment",
       "creationError": "Error during creation",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "nameTaken": "This name is already used by another account. Please choose a different name."
     },
     "settings": {
       "paymentMethodsTitle": "Payment methods",
@@ -1977,6 +1979,7 @@
     "sectionCatalog": "CATALOG",
     "sectionMarketing": "MARKETING",
     "switchSpace": "Switch workspace",
+    "addRestaurant": "Add a restaurant",
     "newOrder": "New order",
     "secCatalogue": "Catalog",
     "secGestion": "Management",
@@ -2960,6 +2963,7 @@
     "movementsCount": "{count, plural, one {# movement} other {# movements}}",
     "filterAll": "All",
     "filterOrders": "Orders",
+    "filterRestock": "Restocks",
     "filterAdditions": "Additions",
     "filterWithdrawals": "Withdrawals",
     "filterAdjustments": "Adjustments",
@@ -3538,6 +3542,7 @@
     "launchCTA": "Launch my establishment",
     "saveError": "Error saving progress",
     "completeError": "Error during launch",
+    "nameTaken": "This name is already used by another account. Please choose a different name.",
     "welcomeTitle": "Let's launch {name}.",
     "welcomeSubtitle": "Let's set up your space in a few minutes",
     "welcomeCTA": "Let's go",
@@ -3832,6 +3837,7 @@
     "invalidLoginFields": "Invalid email or password.",
     "signupConfirmation": "A confirmation email has been sent. Please check your inbox.",
     "emailAlreadyRegistered": "An account already exists with this email. Sign in or use Forgot password.",
+    "restaurantNameTaken": "This name is already used by another account. Please choose a different name.",
     "captchaFailed": "Bot verification failed. Reload the page and try again.",
     "invalidDataFallback": "Invalid data"
   },

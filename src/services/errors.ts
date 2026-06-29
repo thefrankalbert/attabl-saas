@@ -25,6 +25,16 @@ export class ServiceError extends Error {
 }
 
 /**
+ * True when a Postgres error is the cross-group tenant-name conflict raised by
+ * the enforce_tenant_name_cross_group_unique trigger (migration 20260629020000).
+ * The trigger uses SQLSTATE 23505 with this exact message, so we match the
+ * message marker to avoid confusing it with a slug unique violation (also 23505).
+ */
+export function isTenantNameConflictError(error: { message?: string } | null | undefined): boolean {
+  return Boolean(error?.message?.includes('tenant_name_cross_group_conflict'));
+}
+
+/**
  * Maps a ServiceError code to an HTTP status code.
  * Used by API routes to translate service errors into responses.
  */

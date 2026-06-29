@@ -114,7 +114,7 @@ export const INGREDIENT_UNITS: Record<IngredientUnit, { label: string; labelShor
 
 export const MOVEMENT_TYPE_LABELS: Record<MovementType, { label: string; color: string }> = {
   order_destock: { label: 'Commande', color: 'text-blue-600' },
-  order_restock: { label: 'Restock annulation', color: 'text-green-600' },
+  order_restock: { label: 'Retour commande', color: 'text-green-600' },
   manual_add: { label: 'Ajout manuel', color: 'text-green-600' },
   manual_remove: { label: 'Retrait manuel', color: 'text-red-600' },
   adjustment: { label: 'Ajustement', color: 'text-amber-600' },

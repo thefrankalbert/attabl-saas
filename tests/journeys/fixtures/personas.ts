@@ -71,34 +71,44 @@ export const CLIENTS: Persona[] = [
 
 export const OWNER = RESTAURANT_TEAM[0];
 
-/** Contexte API anonyme (client non connecte). */
-export function newApiContext(
+/**
+ * Contexte API anonyme ciblant un slug de tenant precis via le Referer.
+ *
+ * Origin localhost: les routes POST publiques (orders, coupons, login) passent par
+ * verifyOrigin (CSRF) et renvoient 403 sans Origin/Referer autorise. En dev, un
+ * Origin localhost est accepte.
+ *
+ * Referer /sites/<slug>/: le middleware (proxy.ts) SUPPRIME tout x-tenant-slug
+ * envoye par le client (anti-spoofing) et derive le tenant du sous-domaine OU, sur
+ * le domaine principal, d'un Referer matchant /sites/{slug}/. En local (localhost,
+ * pas de sous-domaine), c'est le Referer qui injecte le tenant. On peut donc viser
+ * un tenant arbitraire - utile pour la BOLA (08): se connecter en owner de A puis
+ * cibler le tenant B via le Referer pour vraiment exercer la garde cross-tenant.
+ */
+export function newApiContextForSlug(
+  slug: string,
   extraHeaders: Record<string, string> = {},
 ): Promise<APIRequestContext> {
   return request.newContext({
     baseURL: journeyEnv.baseURL,
-    // Origin localhost: les routes POST publiques (orders, coupons, login) passent
-    // par verifyOrigin (CSRF) et renvoient 403 sans Origin/Referer autorise. En dev,
-    // un Origin localhost est accepte.
-    //
-    // Referer /sites/<slug>/: le middleware (proxy.ts) SUPPRIME tout x-tenant-slug
-    // envoye par le client (anti-spoofing) et derive le tenant du sous-domaine OU,
-    // sur le domaine principal, d'un Referer matchant /sites/{slug}/. En local
-    // (localhost, pas de sous-domaine), c'est le Referer qui injecte le tenant.
     extraHTTPHeaders: {
       origin: journeyEnv.baseURL,
-      referer: `${journeyEnv.baseURL}/sites/${journeyEnv.tenantSlug}/`,
+      referer: `${journeyEnv.baseURL}/sites/${slug}/`,
       ...extraHeaders,
     },
   });
 }
 
-/**
- * Connecte un persona via /api/login et renvoie son contexte (cookies conserves).
- * En dev (ALLOW_DEV_AUTH_BYPASS=true), Turnstile est desactive: cfToken ignore.
- */
-export async function loginPersona(p: Persona): Promise<APIRequestContext> {
-  const ctx = await newApiContext();
+/** Contexte API anonyme ciblant le tenant de test par defaut. */
+export function newApiContext(
+  extraHeaders: Record<string, string> = {},
+): Promise<APIRequestContext> {
+  return newApiContextForSlug(journeyEnv.tenantSlug, extraHeaders);
+}
+
+/** Connecte un persona dans un contexte ciblant un slug de tenant precis. */
+export async function loginPersonaForSlug(p: Persona, slug: string): Promise<APIRequestContext> {
+  const ctx = await newApiContextForSlug(slug);
   if (!p.email) return ctx; // client anonyme: pas de login
   const res = await ctx.post('/api/login', {
     data: { email: p.email, password: p.password, cfToken: 'dev-bypass' },
@@ -107,4 +117,12 @@ export async function loginPersona(p: Persona): Promise<APIRequestContext> {
     throw new Error(`Login persona "${p.key}" echoue: ${res.status()} - ${await res.text()}`);
   }
   return ctx;
+}
+
+/**
+ * Connecte un persona via /api/login et renvoie son contexte (cookies conserves).
+ * En dev (ALLOW_DEV_AUTH_BYPASS=true), Turnstile est desactive: cfToken ignore.
+ */
+export function loginPersona(p: Persona): Promise<APIRequestContext> {
+  return loginPersonaForSlug(p, journeyEnv.tenantSlug);
 }

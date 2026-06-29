@@ -32,6 +32,12 @@ La config Playwright force `workers: 1` et `fullyParallel: false` : une journee 
 
 ## Detail par journey
 
+> NOTE (2026-06-29) : ce tableau decrit l'etat INITIAL du harnais (specs 00-07, avant le
+> plan correctif #2). Depuis, les 5 ecarts sont livres et durcis (parcours 08-bola ajoute ;
+> 01/02/04/06/07 ne sont plus des `SKIP dur`). Voir les sections **Ecarts fermes** et
+> **Durcissements** plus bas pour l'etat REEL et a jour. Les cellules ci-dessous marquees
+> "SKIP dur" pour webhook (01), tables/zones et coupon (02) sont desormais implementees.
+
 Convention : tous les `describe` sont `.serial`. "REEL" = tourne reellement ; "SKIP" = `test.skip(...)`. Le seed direct (tenant/menu/equipe) est conditionne par `hasSeedEnv()` (presence de `JOURNEY_SUPABASE_URL` + `JOURNEY_SUPABASE_SERVICE_ROLE_KEY`).
 
 | Journey                       | Test                                  | Etat                | Detail / raison du skip                                                                                                                                                                           |
@@ -152,14 +158,24 @@ JOURNEY_CONFIRM_TEST_DB=yes pnpm test:journey
 
 ## Limites connues, skips et dette technique
 
-1. **Beaucoup de parcours sont des squelettes `test.skip(true)`** avec TODO inline : webhook abonnement (01), creation tables/zones/coupons (02), renouvellement/echec/annulation Stripe (06), price_mismatch et BOLA (07). Couverture annoncee mais non livree.
-2. **Le parcours 06 ne teste pas reellement le cycle de vie abonnement** : il cree une Test Clock et avance le temps, mais ne rattache aucune subscription a l'horloge ni n'asserte de mise a jour en base.
-3. **Champs signup non confirmes** (01) : la tolerance `[200,201,400,409]` peut masquer un signup casse en validant un 400.
-4. **Le test rate limit (07) n'exige pas de 429** ; de plus, le runner local desactive le rate limiting (Upstash vide), donc cet aspect n'est jamais reellement exerce en local.
-5. **Routage KDS partiellement asserte** (04) : la `preparation_zone` est verifiee, mais le push temps reel (broadcast) ne l'est pas.
-6. **BOLA pointe vers un fichier hors harnais** (`security/generated-tests/security-bola.spec.ts`, "a deplacer dans tests/").
-7. **Le snapshot `schema.sql` est un artefact a maintenir a la main** : il fige le schema prod a `FIXTURE_MARKER=20260628000000`. Toute migration future doit garder ce marqueur coherent.
-8. **Confusion de perimetre de branche** : la branche embarque aussi le travail offline-first. Pour une PR "harnais seule", il faudrait isoler les 5 commits journeys.
+1. **Rate limiting (07)** : non exerce par le runner local (Upstash vide -> desactive). Le test exige un vrai 429 UNIQUEMENT avec `JOURNEY_RATE_LIMIT_ACTIVE=yes` (cible avec Upstash branche, ex: staging) ; en local il reste un smoke "pas de 5xx" annonce explicitement (plus de faux vert).
+2. **Le snapshot `schema.sql` est un artefact a maintenir a la main** : il fige le schema prod a `FIXTURE_MARKER=20260628000000`. Toute migration future doit garder ce marqueur coherent.
+3. **CDC KDS local (04)** : le runner ajoute `orders` a la publication `supabase_realtime` + `REPLICA IDENTITY FULL` (etape locale uniquement, la prod publie deja `orders`). En staging, verifier que `orders` est bien publie sinon l'assertion temps reel timeout.
+4. **Webhooks Stripe forges (01/06)** : on signe les events en local avec `STRIPE_WEBHOOK_SECRET` partage (defaut `whsec_journey_local_test`). Le customer/subscription est reel (Test Clock), mais l'echec de paiement (past_due) est pilote par un `invoice.payment_failed` forge plutot que par un vrai echec de carte au renouvellement.
+5. **Confusion de perimetre de branche** : la branche embarque aussi le travail offline-first. Pour une PR "harnais seule", il faudrait isoler les commits journeys.
+
+### Ecarts fermes (2026-06-29)
+
+Les 5 ecarts du plan correctif #2 sont livres : BOLA integre (`08-bola.spec.ts`, 2 tenants seedes), creation tables/zones/coupon (02) + application coupon reelle via `/api/orders` (07), cycle de vie abonnement Stripe complet (01 activation, 06 renouvellement/past_due/annulation via webhooks signes + Test Clock), assertion KDS temps reel reelle (04, CDC postgres_changes), et nettoyage des doublons `test.skip` (07).
+
+### Durcissements (audit 2026-06-29)
+
+- **BOLA (08)** : l'attaquant cible desormais le tenant B via le Referer (`loginPersonaForSlug`) tout en etant authentifie en owner de A. Avant, cibler son propre tenant rendait les mutations no-op par construction (test vert quoi qu'il arrive) ; maintenant la garde cross-tenant est reellement exercee. Assertion STRICTE : chaque tentative DOIT renvoyer 401/403/404 (un 2xx/400 trahirait que la garde n'est pas atteinte) ET la ressource de B reste intacte. Live-verifie : les 4 routes renvoient bien un blocage. Le resend verifie l'invariance `token`/`expires_at` (son vrai effet), pas seulement le statut.
+- **Webhook Stripe (01)** : nouveau test negatif - un event a signature INVALIDE est rejete (400) sans effet de bord (tenant non active, customer non pose). Avant, seul le chemin heureux (signature valide) etait teste, jamais la propriete de securite (rejet de la forgerie).
+- **Stripe (01/06)** : les Test Clocks sont supprimees en teardown (`deleteTestClock`, cascade customer/subscription) - sinon la limite d'horloges de test du compte finit par casser les runs.
+- **Signup (01)** : payload valide + statut strict `[200,201,409]` (un 400 = signup casse) + verification positive que l'utilisateur auth est reellement cree.
+- **Prix falsifie (04)** : `[400,422,429]` au lieu de `>=400` (un 500/crash ne passe plus pour une validation).
+- **Coupon (07)** : nouveau test deterministe sur tenant seede - code bidon -> `valid:false`, code seede -> `valid:true` + `discountAmount>0`.
 
 ## Note 2026-06-29 - retrait du mobile money
 

@@ -32,6 +32,9 @@ export default async function PlatformConsolePage() {
       .select(
         'id, name, slug, subscription_plan, subscription_status, is_active, deleted_at, suspended_at, suspend_reason, created_at',
       )
+      // The private platform tenant hosts the super-admin membership; it is not a
+      // real storefront and must never appear as a manageable tenant.
+      .neq('slug', '__platform')
       .order('created_at', { ascending: false }),
     admin
       .from('admin_users')

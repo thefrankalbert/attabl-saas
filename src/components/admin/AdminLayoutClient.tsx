@@ -10,17 +10,12 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
+import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
 const THEME_STORAGE_KEY = 'attabl-admin-theme';
 
 // ─── Inner Layout ───────────────────────────────────────
-
-interface TenantSwitchOption {
-  id: string;
-  name: string;
-  slug: string;
-}
 
 interface AdminLayoutInnerProps {
   children: React.ReactNode;

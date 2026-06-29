@@ -126,13 +126,15 @@ function AuthForm({ mode }: AuthFormProps) {
 
         if (!response.ok) {
           const apiError =
-            data.code === 'EMAIL_ALREADY_REGISTERED' || response.status === 409
+            data.code === 'EMAIL_ALREADY_REGISTERED'
               ? tErr('emailAlreadyRegistered')
-              : data.code === 'CAPTCHA_FAILED'
-                ? tErr('captchaFailed')
-                : typeof data.error === 'string' && data.error.length > 0
-                  ? data.error
-                  : tErr('signupGeneric');
+              : data.code === 'RESTAURANT_NAME_TAKEN'
+                ? tErr('restaurantNameTaken')
+                : data.code === 'CAPTCHA_FAILED'
+                  ? tErr('captchaFailed')
+                  : typeof data.error === 'string' && data.error.length > 0
+                    ? data.error
+                    : tErr('signupGeneric');
           throw new Error(apiError);
         }
 

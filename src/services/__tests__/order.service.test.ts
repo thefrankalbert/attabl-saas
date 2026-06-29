@@ -852,7 +852,7 @@ describe('OrderService', () => {
       return { client: { from, rpc } as unknown as SupabaseClient, rpc, update };
     }
 
-    it('restocks, unclaims the coupon, then marks cancelled', async () => {
+    it('unclaims the coupon then marks cancelled (restock handled by the caller)', async () => {
       const m = makeSupabase({
         order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
       });
@@ -860,10 +860,8 @@ describe('OrderService', () => {
 
       await service.cancelOrder('o1', 'tenant-123');
 
-      expect(m.rpc).toHaveBeenCalledWith('restock_order', {
-        p_order_id: 'o1',
-        p_tenant_id: 'tenant-123',
-      });
+      // restock is NOT done here - it goes through the service_role path in the action.
+      expect(m.rpc).not.toHaveBeenCalledWith('restock_order', expect.anything());
       expect(m.rpc).toHaveBeenCalledWith('unclaim_coupon_usage', { p_coupon_id: 'c1' });
       expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
     });
@@ -876,8 +874,8 @@ describe('OrderService', () => {
 
       await service.cancelOrder('o1', 'tenant-123');
 
-      expect(m.rpc).toHaveBeenCalledWith('restock_order', expect.anything());
       expect(m.rpc).not.toHaveBeenCalledWith('unclaim_coupon_usage', expect.anything());
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
     });
 
     it('is a no-op when the order is already cancelled', async () => {

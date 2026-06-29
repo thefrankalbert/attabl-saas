@@ -16,9 +16,20 @@ import {
   seedTenantWithMenu,
   seedStaffForTenant,
   getOrderState,
+  newRealtimeClient,
+  setOrderStatus,
   teardownTenantBySlug,
   type SeededMenu,
 } from './fixtures/seed';
+
+/** Petit deferred: une promesse + son resolveur, pour capturer un event realtime. */
+function deferred<T>(): { promise: Promise<T>; resolve: (v: T) => void } {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
 
 const CASHIER = RESTAURANT_TEAM.find((p) => p.role === 'cashier')!;
 
@@ -86,11 +97,13 @@ test.describe.serial('04 - Service & commandes', () => {
           service_type: 'dine_in',
         },
       });
-      // Jamais 2xx: le serveur recalcule le prix et rejette (400 VALIDATION).
+      // Rejet par VALIDATION serveur (400/422). On EXCLUT 500 (un crash n'est pas une
+      // validation) et on tolere 429 (rate limit environnemental). Avant, un >=400
+      // global masquait un 500.
       expect(
-        res.status(),
-        `un prix falsifie ne doit jamais passer (recu ${res.status()})`,
-      ).toBeGreaterThanOrEqual(400);
+        [400, 422, 429],
+        `un prix falsifie doit etre rejete par validation, pas crasher (recu ${res.status()})`,
+      ).toContain(res.status());
       await ctx.dispose();
     });
 
@@ -117,26 +130,99 @@ test.describe.serial('04 - Service & commandes', () => {
       await ctx.dispose();
     });
 
-    test('la commande POS est routee vers la cuisine (KDS)', async () => {
+    test('la commande POS apparait au KDS en temps reel (CDC) et le statut se propage', async () => {
       test.skip(!seeded, 'seed indisponible');
       const item = seeded as SeededMenu;
-      const ctx = await loginPersona(CASHIER);
-      const res = await ctx.post('/api/orders/pos', {
-        data: {
-          table_number: '6',
-          status: 'pending',
-          service_type: 'dine_in',
-          items: [{ menu_item_id: item.menuItemId, quantity: 1 }],
-        },
-      });
-      expect(res.status(), await res.text()).toBe(200);
-      const body = (await res.json()) as { orderId?: string };
-      // La commande existe avec une zone de preparation -> le KDS cuisine la voit.
-      // (le push temps reel est assure par le broadcast applicatif, non asserte ici)
-      const state = await getOrderState(body.orderId as string);
-      expect(state, 'la commande doit exister cote cuisine').toBeTruthy();
-      expect(['kitchen', 'bar', 'both', 'mixed']).toContain(state?.preparation_zone);
-      await ctx.dispose();
+      const tenantId = item.tenantId;
+
+      // Le KDS s'abonne au CDC Postgres: channel kds_orders_<tenantId>, table orders,
+      // filtre tenant_id. On reproduit exactement cet abonnement (cf useKitchenData).
+      const rt = newRealtimeClient();
+      const inserted = deferred<{ id: string }>();
+      const updated = deferred<{ id: string; status: string }>();
+      const channel = rt
+        .channel(`kds_orders_${tenantId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'orders',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          (payload) => inserted.resolve(payload.new as { id: string }),
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          (payload) => updated.resolve(payload.new as { id: string; status: string }),
+        );
+
+      try {
+        // Attend l'abonnement effectif avant de creer la commande (sinon on rate l'event).
+        await new Promise<void>((resolve, reject) => {
+          const t = setTimeout(() => reject(new Error('abonnement realtime: timeout')), 15000);
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              clearTimeout(t);
+              resolve();
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              clearTimeout(t);
+              reject(new Error(`abonnement realtime: ${status}`));
+            }
+          });
+        });
+
+        // Le statut SUBSCRIBED est acquitte avant que le serveur Realtime n'ait fini
+        // de cabler le listener postgres_changes (fenetre connue Supabase): on laisse
+        // le replication slot se mettre en place avant de creer la commande.
+        await new Promise((r) => setTimeout(r, 2500));
+
+        const ctx = await loginPersona(CASHIER);
+        const res = await ctx.post('/api/orders/pos', {
+          data: {
+            table_number: '6',
+            status: 'pending',
+            service_type: 'dine_in',
+            items: [{ menu_item_id: item.menuItemId, quantity: 1 }],
+          },
+        });
+        expect(res.status(), await res.text()).toBe(200);
+        const orderId = ((await res.json()) as { orderId?: string }).orderId as string;
+        await ctx.dispose();
+
+        // 1) La nouvelle commande arrive cote cuisine en live (event INSERT).
+        const insertRow = await Promise.race([
+          inserted.promise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('event INSERT KDS: timeout')), 15000),
+          ),
+        ]);
+        expect(insertRow.id).toBe(orderId);
+
+        // 2) Le changement de statut se propage en live (event UPDATE).
+        await setOrderStatus(tenantId, orderId, 'preparing');
+        const updateRow = await Promise.race([
+          updated.promise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('event UPDATE KDS: timeout')), 15000),
+          ),
+        ]);
+        expect(updateRow.id).toBe(orderId);
+        expect(updateRow.status).toBe('preparing');
+
+        // Sanity DB: zone de preparation valide (le KDS cuisine la voit).
+        const state = await getOrderState(orderId);
+        expect(['kitchen', 'bar', 'both', 'mixed']).toContain(state?.preparation_zone);
+      } finally {
+        await rt.removeAllChannels();
+        await rt.realtime.disconnect();
+      }
     });
   });
 });

@@ -2,10 +2,14 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { createOrderService } from '@/services/order.service';
+import { createInventoryService } from '@/services/inventory.service';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from '@/services/errors';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
@@ -184,10 +188,41 @@ export async function actionUpdateOrderStatus(
       'server',
     ]);
     const service = createOrderService(supabase);
-    // Cancelling must reverse side-effects (stock + coupon), not just flip the
-    // status (audit C7) - route it through cancelOrder.
     if (parsed.data.status === 'cancelled') {
+      // Cancellation reverses side-effects (audit C7), in two halves by design:
+      //  - cancelOrder (authenticated): refuse a paid order, release the coupon,
+      //    set status='cancelled'.
+      //  - stock restock via the canonical service_role path (main's stock-integrity
+      //    feature): restock_order is service_role-only, so it runs via the admin
+      //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
       await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('subscription_plan, subscription_status, trial_ends_at')
+        .eq('id', parsed.data.tenantId)
+        .maybeSingle();
+
+      const hasInventory =
+        !!tenant &&
+        canAccessFeature(
+          'canAccessInventory',
+          tenant.subscription_plan as SubscriptionPlan | null,
+          tenant.subscription_status as SubscriptionStatus | null,
+          tenant.trial_ends_at as string | null,
+        );
+
+      if (hasInventory) {
+        const adminSupabase = createAdminClient();
+        createInventoryService(adminSupabase)
+          .restockOrder(parsed.data.orderId, parsed.data.tenantId)
+          .catch((err) => {
+            logger.error('Order cancel: auto-restock failed (non-blocking)', {
+              err,
+              orderId: parsed.data.orderId,
+            });
+          });
+      }
     } else {
       await service.updateStatus(parsed.data.orderId, parsed.data.tenantId, parsed.data.status);
     }

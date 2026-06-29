@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { ServiceError } from './errors';
+import { ServiceError, isTenantNameConflictError } from './errors';
 import { createTableConfigService } from './table-config.service';
 import { logger } from '@/lib/logger';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
@@ -166,6 +166,9 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
       if (Object.keys(tenantUpdate).length > 0) {
         const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
         if (error) {
+          if (isTenantNameConflictError(error)) {
+            throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', error);
+          }
           logger.error('Failed to update tenant during onboarding save', error);
           throw new ServiceError('Failed to update tenant', 'INTERNAL');
         }
@@ -264,7 +267,12 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
         ),
       ]);
 
-      if (tenantResult.error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
+      if (tenantResult.error) {
+        if (isTenantNameConflictError(tenantResult.error)) {
+          throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', tenantResult.error);
+        }
+        throw new ServiceError('Failed to update tenant', 'INTERNAL');
+      }
       if (progressResult.error) {
         logger.error('Failed to update onboarding progress', progressResult.error);
         // Non-blocking: progress tracking failure should not block completion

@@ -11,6 +11,7 @@
  * GARDE-FOU: assertNotProduction() est appele avant toute ecriture. Le client
  * service_role ne touche QUE la base de test (JOURNEY_SUPABASE_URL).
  */
+import { randomBytes } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import WebSocketImpl from 'ws';
 import { assertNotProduction, hasSeedEnv, journeyEnv } from './env';
@@ -90,6 +91,14 @@ export async function ensureAuthUser(email: string, password: string): Promise<s
   if (!existing) return '';
   await db.auth.admin.updateUserById(existing.id, { email_confirm: true, password });
   return existing.id;
+}
+
+/** true si un utilisateur auth existe pour cet email (verifie un signup reel). */
+export async function authUserExists(email: string): Promise<boolean> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db.auth.admin.listUsers();
+  return Boolean(data?.users.some((u) => u.email === email));
 }
 
 export interface SeededMenu {
@@ -215,4 +224,294 @@ export async function seedStaffForTenant(tenantId: string, personas: Persona[]):
       throw new Error(`seed staff ${p.email} (${DB_ROLE[p.role]}) echec: ${error.message}`);
     }
   }
+}
+
+/**
+ * Retourne admin_users.id (la cle de la ligne staff, PAS le user_id auth) pour un
+ * role donne d'un tenant. invitations.invited_by et table_assignments.server_id
+ * referencent admin_users.id - on en a besoin pour seeder ces lignes.
+ */
+export async function getStaffAdminId(
+  tenantId: string,
+  role: RestaurantRole,
+): Promise<string | null> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db
+    .from('admin_users')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('role', DB_ROLE[role])
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+export interface SeededZoneTable {
+  venueId: string;
+  zoneId: string;
+  tableId: string;
+  tableName: string;
+}
+
+/**
+ * Seed config salle: une venue (zones.venue_id est NOT NULL), une zone, une table.
+ * Sert au parcours 02 (config) et au seed du tenant B pour la BOLA (08).
+ */
+export async function seedZoneAndTable(tenantId: string): Promise<SeededZoneTable> {
+  assertNotProduction();
+  const db = getAdmin();
+
+  const { data: venue, error: vErr } = await db
+    .from('venues')
+    .insert({
+      tenant_id: tenantId,
+      slug: `venue-${tenantId.slice(0, 8)}`,
+      name: 'Salle principale',
+      type: 'restaurant',
+    })
+    .select('id')
+    .single();
+  if (vErr || !venue) throw new Error(`seed venue echec: ${vErr?.message}`);
+
+  const { data: zone, error: zErr } = await db
+    .from('zones')
+    .insert({
+      tenant_id: tenantId,
+      venue_id: venue.id,
+      name: 'Salle',
+      prefix: 'A',
+      display_order: 0,
+    })
+    .select('id')
+    .single();
+  if (zErr || !zone) throw new Error(`seed zone echec: ${zErr?.message}`);
+
+  const tableName = 'A1';
+  const { data: table, error: tErr } = await db
+    .from('tables')
+    .insert({
+      tenant_id: tenantId,
+      zone_id: zone.id,
+      table_number: '1',
+      display_name: tableName,
+      capacity: 2,
+      is_active: true,
+    })
+    .select('id')
+    .single();
+  if (tErr || !table) throw new Error(`seed table echec: ${tErr?.message}`);
+
+  return { venueId: venue.id, zoneId: zone.id, tableId: table.id, tableName };
+}
+
+export interface SeededCoupon {
+  id: string;
+  code: string;
+  discountType: string;
+  discountValue: number;
+}
+
+/**
+ * Seed un coupon valide (actif, sans bornes de date) pour le tenant. Le parcours
+ * 07 verifie ensuite que l'application du code reduit le total via /api/orders.
+ */
+export async function seedCoupon(
+  tenantId: string,
+  opts: { code?: string; discountType?: 'percentage' | 'fixed'; discountValue?: number } = {},
+): Promise<SeededCoupon> {
+  assertNotProduction();
+  const db = getAdmin();
+  const code = (opts.code ?? 'JOURNEY10').toUpperCase();
+  const discountType = opts.discountType ?? 'percentage';
+  const discountValue = opts.discountValue ?? 10;
+
+  const { data, error } = await db
+    .from('coupons')
+    .insert({
+      tenant_id: tenantId,
+      code,
+      discount_type: discountType,
+      discount_value: discountValue,
+      is_active: true,
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(`seed coupon echec: ${error?.message}`);
+
+  return { id: data.id, code, discountType, discountValue };
+}
+
+/**
+ * Insere une commande minimale (cible BOLA pour 08). order_number n'a pas de
+ * contrainte d'unicite mais on le rend unique par tenant pour la lisibilite.
+ */
+export async function seedOrderRow(
+  tenantId: string,
+  opts: { orderNumber?: string; total?: number } = {},
+): Promise<string> {
+  assertNotProduction();
+  const db = getAdmin();
+  const total = opts.total ?? 2500;
+  const { data, error } = await db
+    .from('orders')
+    .insert({
+      tenant_id: tenantId,
+      order_number: opts.orderNumber ?? `JT-${tenantId.slice(0, 8)}-001`,
+      status: 'pending',
+      subtotal: total,
+      tax: 0,
+      total,
+      preparation_zone: 'kitchen',
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(`seed order echec: ${error?.message}`);
+  return data.id;
+}
+
+/**
+ * Insere une invitation pending (cible BOLA). invited_by reference admin_users.id.
+ */
+export async function seedInvitation(
+  tenantId: string,
+  invitedByAdminId: string,
+  opts: { email?: string; role?: 'admin' | 'manager' | 'cashier' | 'chef' | 'waiter' } = {},
+): Promise<string> {
+  assertNotProduction();
+  const db = getAdmin();
+  const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+  const { data, error } = await db
+    .from('invitations')
+    .insert({
+      tenant_id: tenantId,
+      email: opts.email ?? `invitee-${tenantId.slice(0, 8)}@journey.test`,
+      role: opts.role ?? 'waiter',
+      invited_by: invitedByAdminId,
+      token: randomBytes(32).toString('hex'),
+      expires_at: expiresAt,
+      status: 'pending',
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(`seed invitation echec: ${error?.message}`);
+  return data.id;
+}
+
+/**
+ * Insere une assignation table->serveur (cible BOLA). server_id reference
+ * admin_users.id.
+ */
+export async function seedTableAssignment(
+  tenantId: string,
+  tableId: string,
+  serverAdminId: string,
+): Promise<string> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data, error } = await db
+    .from('table_assignments')
+    .insert({ tenant_id: tenantId, table_id: tableId, server_id: serverAdminId })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(`seed table_assignment echec: ${error?.message}`);
+  return data.id;
+}
+
+export interface InvitationRow {
+  id: string;
+  status: string | null;
+  accepted_at: string | null;
+  /** Inclus pour detecter une rotation par resend (le vrai effet, pas le statut). */
+  token: string | null;
+  expires_at: string | null;
+}
+
+/** Lit une invitation (pour verifier qu'une attaque BOLA ne l'a pas modifiee). */
+export async function getInvitationRow(invitationId: string): Promise<InvitationRow | null> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db
+    .from('invitations')
+    .select('id, status, accepted_at, token, expires_at')
+    .eq('id', invitationId)
+    .maybeSingle();
+  return (data as InvitationRow | null) ?? null;
+}
+
+export interface AssignmentRow {
+  id: string;
+  ended_at: string | null;
+}
+
+/** Lit une assignation (pour verifier qu'une attaque BOLA ne l'a pas terminee). */
+export async function getAssignmentRow(assignmentId: string): Promise<AssignmentRow | null> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db
+    .from('table_assignments')
+    .select('id, ended_at')
+    .eq('id', assignmentId)
+    .maybeSingle();
+  return (data as AssignmentRow | null) ?? null;
+}
+
+/**
+ * Cree un client Supabase NEUF (non singleton) avec realtime, pour s'abonner au MEME
+ * CDC postgres_changes que le KDS (parcours 04): channel kds_orders_<tenant>, table
+ * orders, filtre tenant_id.
+ *
+ * NUANCE DE FIDELITE: on s'abonne en service_role (RLS bypass), alors que le KDS reel
+ * s'abonne en session authentifiee (RLS-scoped). Ce test prouve donc le PIPELINE CDC
+ * (publication + filtre tenant + livraison de l'event), pas l'autorisation RLS de la
+ * souscription du KDS - cette derniere est couverte par l'usage prod (useKitchenData).
+ * A `removeAllChannels()` + `realtime.disconnect()` en fin de test.
+ */
+export function newRealtimeClient(): SupabaseClient {
+  assertNotProduction();
+  if (!hasSeedEnv()) {
+    throw new Error('Realtime indisponible: JOURNEY_SUPABASE_URL/SERVICE_ROLE_KEY requis.');
+  }
+  const client = createClient(journeyEnv.supabaseUrl, journeyEnv.supabaseServiceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { params: { eventsPerSecond: 10 } },
+  });
+  // Autorise les postgres_changes en tant que service_role (RLS bypass) -> on recoit
+  // tous les events du tenant cible (cf. nuance de fidelite ci-dessus).
+  client.realtime.setAuth(journeyEnv.supabaseServiceRoleKey);
+  return client;
+}
+
+export interface TenantBilling {
+  subscription_status: string | null;
+  subscription_plan: string | null;
+  is_active: boolean | null;
+  stripe_customer_id: string | null;
+}
+
+/** Lit l'etat de facturation d'un tenant (apres webhook Stripe). */
+export async function getTenantBilling(tenantId: string): Promise<TenantBilling | null> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { data } = await db
+    .from('tenants')
+    .select('subscription_status, subscription_plan, is_active, stripe_customer_id')
+    .eq('id', tenantId)
+    .maybeSingle();
+  return (data as TenantBilling | null) ?? null;
+}
+
+/** Met a jour le statut d'une commande (declenche un event CDC vu par le KDS). */
+export async function setOrderStatus(
+  tenantId: string,
+  orderId: string,
+  status: string,
+): Promise<void> {
+  assertNotProduction();
+  const db = getAdmin();
+  const { error } = await db
+    .from('orders')
+    .update({ status })
+    .eq('id', orderId)
+    .eq('tenant_id', tenantId);
+  if (error) throw new Error(`setOrderStatus echec: ${error.message}`);
 }

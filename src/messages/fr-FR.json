@@ -45,6 +45,7 @@
     "confirmDelete": "Confirmer la suppression",
     "close": "Fermer",
     "loading": "Chargement...",
+    "loadMore": "Charger plus",
     "error": "Erreur",
     "actions": "Actions",
     "saveChanges": "Enregistrer les modifications",
@@ -1527,7 +1528,8 @@
       "creating": "Création...",
       "create": "Créer l'établissement",
       "creationError": "Erreur lors de la création",
-      "unknownError": "Erreur inconnue"
+      "unknownError": "Erreur inconnue",
+      "nameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom."
     },
     "settings": {
       "paymentMethodsTitle": "Modes de paiement",
@@ -1977,6 +1979,7 @@
     "sectionCatalog": "CATALOGUE",
     "sectionMarketing": "MARKETING",
     "switchSpace": "Changer d'espace",
+    "addRestaurant": "Ajouter un restaurant",
     "newOrder": "Nouvelle commande",
     "secCatalogue": "Catalogue",
     "secGestion": "Gestion",
@@ -2960,6 +2963,7 @@
     "movementsCount": "{count, plural, one {# mouvement} other {# mouvements}}",
     "filterAll": "Tous",
     "filterOrders": "Commandes",
+    "filterRestock": "Retours",
     "filterAdditions": "Ajouts",
     "filterWithdrawals": "Retraits",
     "filterAdjustments": "Ajustements",
@@ -3538,6 +3542,7 @@
     "launchCTA": "Lancer mon établissement",
     "saveError": "Erreur lors de la sauvegarde",
     "completeError": "Erreur lors du lancement",
+    "nameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom.",
     "welcomeTitle": "On lance {name}.",
     "welcomeSubtitle": "Configurons votre espace en quelques minutes",
     "welcomeCTA": "C'est parti",
@@ -3832,6 +3837,7 @@
     "invalidLoginFields": "Email ou mot de passe invalide.",
     "signupConfirmation": "Un email de confirmation a ete envoye. Veuillez verifier votre boite mail.",
     "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
+    "restaurantNameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom.",
     "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
     "invalidDataFallback": "Données invalides"
   },

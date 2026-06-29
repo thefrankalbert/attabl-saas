@@ -693,15 +693,10 @@ export function createOrderService(supabase: SupabaseClient) {
         );
       }
 
-      // Reverse side-effects first (both idempotent), then mark cancelled.
-      const { error: restockError } = await supabase.rpc('restock_order', {
-        p_order_id: orderId,
-        p_tenant_id: tenantId,
-      });
-      if (restockError) {
-        throw new ServiceError('Erreur lors du restockage', 'INTERNAL', restockError);
-      }
-
+      // Release the coupon (idempotent). NOTE: ingredient restock is handled by the
+      // caller via the canonical service_role restock_order path (main's
+      // stock-integrity feature) - restock_order is service_role-only, so it cannot
+      // be called from this authenticated service client. See actionUpdateOrderStatus.
       if (order.coupon_id) {
         const { error: unclaimError } = await supabase.rpc('unclaim_coupon_usage', {
           p_coupon_id: order.coupon_id,

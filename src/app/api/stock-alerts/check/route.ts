@@ -63,6 +63,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
+    // Role gate: only managerial roles may trigger alert emails to all admins
+    // (mirrors the inventory Server Actions). Stops a cashier/waiter from spamming.
+    const ALLOWED_ROLES = ['owner', 'admin', 'manager'];
+    if (!ALLOWED_ROLES.includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+
     // Feature gate
     const hasAlerts = canAccessFeature(
       'canAccessInventory',
