@@ -5,11 +5,18 @@ import { tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant } from '@/lib/auth/get-session';
 import { z } from 'zod';
+import { ACTIVE_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
+
+const activeMethods = ACTIVE_PAYMENT_METHOD_IDS as string[];
 
 const updatePaymentMethodsSchema = z.object({
   methods: z
-    .array(z.enum(['cash', 'card', 'wave', 'orange_money', 'mtn_momo', 'free_money']))
-    .min(1, 'Au moins un moyen de paiement requis'),
+    .array(z.string())
+    .min(1, 'Au moins un moyen de paiement requis')
+    .refine(
+      (methods) => methods.every((m) => activeMethods.includes(m)),
+      'Moyen de paiement non supporte',
+    ),
 });
 
 export async function actionUpdatePaymentMethods(

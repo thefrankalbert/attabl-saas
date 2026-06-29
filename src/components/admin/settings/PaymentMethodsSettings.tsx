@@ -7,18 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { actionUpdatePaymentMethods } from '@/app/actions/payment-methods';
+import { ACTIVE_PAYMENT_METHOD_IDS, type PaymentMethodId } from '@/lib/payments/methods';
 import { Loader2 } from 'lucide-react';
-
-const PAYMENT_METHOD_KEYS = [
-  'cash',
-  'card',
-  'wave',
-  'orange_money',
-  'mtn_momo',
-  'free_money',
-] as const;
-
-type PaymentMethodKey = (typeof PAYMENT_METHOD_KEYS)[number];
 
 interface PaymentMethodsSettingsProps {
   initialMethods: string[];
@@ -29,7 +19,7 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
   const [enabled, setEnabled] = useState<Set<string>>(new Set(initialMethods));
   const [isPending, startTransition] = useTransition();
 
-  const toggle = (method: PaymentMethodKey) => {
+  const toggle = (method: PaymentMethodId) => {
     setEnabled((prev) => {
       const next = new Set(prev);
       if (next.has(method)) {
@@ -59,7 +49,7 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
       <p className="text-xs text-app-text-secondary mb-5">{t('paymentMethodsDesc')}</p>
 
       <div className="space-y-4">
-        {PAYMENT_METHOD_KEYS.map((method) => (
+        {ACTIVE_PAYMENT_METHOD_IDS.map((method) => (
           <div key={method} className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <Label
