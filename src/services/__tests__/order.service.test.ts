@@ -721,6 +721,73 @@ describe('OrderService', () => {
     });
   });
 
+  describe('updateStatus (forward-only state machine + optimistic concurrency, H13)', () => {
+    function makeSupabase(currentStatus: string | null, updateRows: unknown[] = [{ id: 'o1' }]) {
+      const maybeSingle = vi.fn().mockResolvedValue({
+        data: currentStatus === null ? null : { status: currentStatus },
+        error: null,
+      });
+      const select = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
+      });
+      const updateSelect = vi.fn().mockResolvedValue({ data: updateRows, error: null });
+      const update = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: updateSelect }) }),
+        }),
+      });
+      const from = vi.fn().mockReturnValue({ select, update });
+      return { client: { from } as unknown as SupabaseClient, update };
+    }
+
+    it('allows a forward transition (preparing -> ready)', async () => {
+      const m = makeSupabase('preparing', [{ id: 'o1' }]);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBeUndefined();
+      expect(m.update).toHaveBeenCalledWith({ status: 'ready' });
+    });
+
+    it('is a no-op when the status is unchanged', async () => {
+      const m = makeSupabase('ready');
+      const service = createOrderService(m.client);
+      await service.updateStatus('o1', 't1', 'ready');
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a backward transition (ready -> preparing)', async () => {
+      const m = makeSupabase('ready');
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'preparing')).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects transitioning a finalised (delivered) order', async () => {
+      const m = makeSupabase('delivered');
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
+    it('throws CONFLICT when another device advanced it first (0 rows)', async () => {
+      const m = makeSupabase('preparing', []); // read preparing, but conditional update matched nothing
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
+    it('throws NOT_FOUND when the order does not exist', async () => {
+      const m = makeSupabase(null);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+  });
+
   describe('cancelOrder (reverses side-effects)', () => {
     // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
     // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.

@@ -61,8 +61,13 @@ describe('order.service multi-tenant isolation', () => {
 
   it('updateStatus on a B-owned order with tenant A id touches ZERO rows', async () => {
     const service = createOrderService(asClient(db));
-    await service.updateStatus('order-B', TENANT_A, 'delivered');
-    expect(db.affected.orders).toBe(0);
+    // updateStatus now reads the order tenant-scoped first; a cross-tenant id
+    // matches nothing -> NOT_FOUND, and crucially performs ZERO writes.
+    await expect(service.updateStatus('order-B', TENANT_A, 'delivered')).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    // No UPDATE ran at all (undefined) - which is itself zero cross-tenant writes.
+    expect(db.affected.orders ?? 0).toBe(0);
     // The B order keeps its original status (no cross-tenant write).
     const orderB = db.rows('orders').find((r) => r.id === 'order-B');
     expect(orderB?.status).toBe('ready');

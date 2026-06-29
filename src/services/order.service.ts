@@ -76,6 +76,19 @@ interface TenantValidationResult {
 }
 
 /**
+ * Forward-only rank of the kitchen/fulfillment axis of order.status (audit H13).
+ * A status may only advance to a higher rank; 'cancelled' is reachable from any
+ * non-terminal state. Prevents a stale concurrent write from reverting a 'ready'
+ * order back to 'preparing'.
+ */
+const ORDER_STATUS_RANK: Record<string, number> = {
+  pending: 0,
+  preparing: 1,
+  ready: 2,
+  delivered: 3,
+};
+
+/**
  * Order service - handles order validation, price verification, and creation.
  *
  * Extracted from /api/orders/route.ts (209 lines → service + thin route).
@@ -564,17 +577,56 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Update an order's status. Always filters by tenant_id for isolation.
+     * Advance an order's status with a forward-only state machine + optimistic
+     * concurrency (audit H13). Rejects backward transitions and races: a stale
+     * KDS write can no longer revert a 'ready' order to 'preparing'. Cancellation
+     * goes through cancelOrder (this still permits ->cancelled defensively).
+     * Always tenant-scoped. markPaid/cancelOrder set their states directly and do
+     * not go through here.
      */
     async updateStatus(orderId: string, tenantId: string, status: string): Promise<void> {
-      const { error } = await supabase
+      const { data: current, error: fetchError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new ServiceError('Erreur lors du chargement du statut', 'INTERNAL', fetchError);
+      }
+      if (!current) {
+        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+      }
+
+      const from = current.status as string;
+      if (from === status) return; // idempotent no-op
+
+      if (from === 'delivered' || from === 'cancelled') {
+        throw new ServiceError('Cette commande est finalisee', 'CONFLICT');
+      }
+
+      const rankFrom = ORDER_STATUS_RANK[from] ?? -1;
+      const rankTo = ORDER_STATUS_RANK[status] ?? -1;
+      if (status !== 'cancelled' && rankTo <= rankFrom) {
+        throw new ServiceError('Transition de statut invalide', 'VALIDATION');
+      }
+
+      // Optimistic concurrency: only apply if the status is still what we read.
+      const { data, error } = await supabase
         .from('orders')
         .update({ status })
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .eq('status', from)
+        .select('id');
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du statut', 'INTERNAL', error);
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        // Another device advanced this order between our read and write.
+        throw new ServiceError('La commande a deja ete mise a jour', 'CONFLICT');
       }
     },
 
