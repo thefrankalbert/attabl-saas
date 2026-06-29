@@ -2970,7 +2970,8 @@
     "loadingError": "Erreur chargement historique",
     "statsAdditions": "Entrées",
     "statsRemovals": "Sorties",
-    "statsProducts": "Produits"
+    "statsProducts": "Produits",
+    "filterRestock": "Restock annulation"
   },
   "screenLock": {
     "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",

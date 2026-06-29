@@ -38,6 +38,13 @@ const MOVEMENT_STYLES: Record<
     text: MOVEMENT_TOKENS.order_destock.text,
     dot: 'bg-status-info',
   },
+  order_restock: {
+    labelKey: 'filterRestock',
+    icon: RefreshCw,
+    bg: MOVEMENT_TOKENS.order_restock.bg,
+    text: MOVEMENT_TOKENS.order_restock.text,
+    dot: 'bg-status-success',
+  },
   manual_add: {
     labelKey: 'filterAdditions',
     icon: Package,
@@ -83,6 +90,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     () => [
       { value: 'all', label: t('filterAll') },
       { value: 'order_destock', label: t('filterOrders') },
+      { value: 'order_restock', label: t('filterRestock') },
       { value: 'manual_add', label: t('filterAdditions') },
       { value: 'manual_remove', label: t('filterWithdrawals') },
       { value: 'adjustment', label: t('filterAdjustments') },

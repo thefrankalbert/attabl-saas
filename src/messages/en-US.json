@@ -2970,7 +2970,8 @@
     "loadingError": "Error loading history",
     "statsAdditions": "In",
     "statsRemovals": "Out",
-    "statsProducts": "Products"
+    "statsProducts": "Products",
+    "filterRestock": "Cancellation restock"
   },
   "screenLock": {
     "lockingIn": "Locking in {time} - move your mouse to stay connected",
