@@ -1,0 +1,22 @@
+-- Drop the now-unused adjust_ingredient_stock RPC.
+--
+-- Superseded by adjust_ingredient_stock_tx (migration 20260629120000), which does
+-- the stock update AND the movement insert atomically and records the actual
+-- applied delta. The application stopped calling adjust_ingredient_stock as of
+-- PR #145 (commit 0f600ff), which is live in production, so this function has no
+-- remaining caller.
+--
+-- Rollback (recreate if ever needed):
+--   CREATE OR REPLACE FUNCTION public.adjust_ingredient_stock(p_tenant_id uuid, p_ingredient_id uuid, p_delta numeric)
+--   RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $f$
+--   BEGIN
+--     PERFORM public.assert_tenant_member(p_tenant_id);
+--     UPDATE public.ingredients
+--     SET current_stock = GREATEST(0, current_stock + p_delta), updated_at = now()
+--     WHERE id = p_ingredient_id AND tenant_id = p_tenant_id;
+--     IF NOT FOUND THEN
+--       RAISE EXCEPTION 'Ingredient not found: % for tenant %', p_ingredient_id, p_tenant_id;
+--     END IF;
+--   END; $f$;
+
+DROP FUNCTION IF EXISTS public.adjust_ingredient_stock(uuid, uuid, numeric);
