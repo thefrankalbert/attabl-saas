@@ -166,4 +166,4 @@ JOURNEY_CONFIRM_TEST_DB=yes pnpm test:journey
 
 ## Note 2026-06-29 - retrait du mobile money
 
-Les parcours 05 (Wave / Orange Money) restent en SKIP : ces moyens de paiement ont ete **retires du produit** (cash uniquement pour l'instant). Voir `MOBILE-MONEY-RETRAIT.md` a la racine. Les squelettes de test sont conserves comme reference pour une re-activation future ; ils ne couvrent rien tant que les providers ne sont pas reactives.
+Les parcours 05 (Wave / Orange Money) restent en SKIP : ces moyens de paiement ont ete **retires du produit** (cash uniquement pour l'instant). Voir `docs/MOBILE-MONEY-RETRAIT.md`. Les squelettes de test sont conserves comme reference pour une re-activation future ; ils ne couvrent rien tant que les providers ne sont pas reactives.
