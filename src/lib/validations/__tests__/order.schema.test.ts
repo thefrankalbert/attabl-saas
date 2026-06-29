@@ -106,6 +106,7 @@ describe('createOrderSchema', () => {
   it('should accept a valid order', () => {
     const result = createOrderSchema.safeParse({
       items: [validItem],
+      tableNumber: '12',
     });
     expect(result.success).toBe(true);
   });
@@ -129,6 +130,7 @@ describe('createOrderSchema', () => {
   it('should accept optional notes', () => {
     const result = createOrderSchema.safeParse({
       items: [validItem],
+      tableNumber: '12',
       notes: 'Sans oignons',
     });
     expect(result.success).toBe(true);
@@ -163,6 +165,7 @@ describe('createOrderSchema', () => {
   it('should accept an optional client_request_id (UUID)', () => {
     const result = createOrderSchema.safeParse({
       items: [validItem],
+      tableNumber: '12',
       client_request_id: '11111111-2222-4333-8444-555555555555',
     });
     expect(result.success).toBe(true);
@@ -203,5 +206,78 @@ describe('createPOSOrderSchema idempotency key', () => {
   it('should accept a POS order without a client_request_id', () => {
     const result = createPOSOrderSchema.safeParse(base);
     expect(result.success).toBe(true);
+  });
+});
+
+describe('order schema - destination required per service type (H5)', () => {
+  const item = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    name: 'Pizza',
+    price: 10,
+    quantity: 1,
+  };
+
+  // ── createOrderSchema (QR) ──
+  // Note: dine_in table requiredness is intentionally not enforced here yet
+  // (storefront defaults to dine_in and table can be a legitimately-absent QR
+  // scan) - it moves to Phase 1 with the table_id model. Here we cover the
+  // delivery/room_service destinations which the schema does enforce.
+  it('accepts dine_in without a table for now (enforced in Phase 1)', () => {
+    const result = createOrderSchema.safeParse({ items: [item], service_type: 'dine_in' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects delivery without an address', () => {
+    const result = createOrderSchema.safeParse({ items: [item], service_type: 'delivery' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts delivery with an address', () => {
+    const result = createOrderSchema.safeParse({
+      items: [item],
+      service_type: 'delivery',
+      delivery_address: 'Rue 12, Ouaga',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects room_service without a room number', () => {
+    const result = createOrderSchema.safeParse({ items: [item], service_type: 'room_service' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts room_service with a room number', () => {
+    const result = createOrderSchema.safeParse({
+      items: [item],
+      service_type: 'room_service',
+      room_number: '204',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts takeaway without table/room/address', () => {
+    const result = createOrderSchema.safeParse({ items: [item], service_type: 'takeaway' });
+    expect(result.success).toBe(true);
+  });
+
+  // ── createPOSOrderSchema ──
+  it('rejects a POS delivery order without an address', () => {
+    const result = createPOSOrderSchema.safeParse({
+      table_number: 'CMD-1',
+      status: 'pending',
+      service_type: 'delivery',
+      items: [{ menu_item_id: '550e8400-e29b-41d4-a716-446655440000', quantity: 1 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a POS room_service order without a room', () => {
+    const result = createPOSOrderSchema.safeParse({
+      table_number: 'CMD-1',
+      status: 'pending',
+      service_type: 'room_service',
+      items: [{ menu_item_id: '550e8400-e29b-41d4-a716-446655440000', quantity: 1 }],
+    });
+    expect(result.success).toBe(false);
   });
 });

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
+import { isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
 import type {
   DashboardStats,
   Order,
@@ -78,7 +79,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, status, created_at')
+                .select('id, total, tip_amount, status, payment_status, created_at')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', today.toISOString()),
             'todayOrders',
@@ -134,7 +135,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, status')
+                .select('id, total, tip_amount, status, payment_status')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', yesterday.toISOString())
                 .lt('created_at', today.toISOString()),
@@ -145,7 +146,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, created_at, status')
+                .select('id, total, tip_amount, created_at, status, payment_status')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', sevenDaysAgo.toISOString()),
             'weekOrders',
@@ -161,9 +162,10 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           supabase
             .from('order_items')
             .select(
-              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
+              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
             )
             .eq('orders.tenant_id', tenantId)
+            .eq('orders.payment_status', 'paid')
             .gte('orders.created_at', today.toISOString())
             .limit(2000),
         'categoryBreakdown',
@@ -173,9 +175,9 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       const ordersData = (ordersRes.data || []) as Array<Record<string, unknown>>;
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
-        revenueToday: ordersData
-          .filter((o) => o.status === 'delivered')
-          .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0),
+        // Revenue = paid orders only (single definition, shared with the SSR
+        // dashboard and the reporting RPCs via src/lib/orders/revenue.ts).
+        revenueToday: sumPaidRevenue(ordersData),
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -207,9 +209,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
 
       // ── Trend calculations ──
       const yesterdayOrders = (yesterdayRes.data || []) as Array<Record<string, unknown>>;
-      const yesterdayRevenue = yesterdayOrders
-        .filter((o) => o.status === 'delivered')
-        .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0);
+      const yesterdayRevenue = sumPaidRevenue(yesterdayOrders);
       const yesterdayCount = yesterdayOrders.length;
 
       if (yesterdayCount > 0) {
@@ -235,8 +235,11 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       for (const o of weekOrders) {
         const key = (o.created_at as string)?.slice(0, 10);
         if (key && dayBuckets[key]) {
+          // count = orders placed (all); revenue = paid orders only.
           dayBuckets[key].count++;
-          dayBuckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
+          if (isPaidOrder(o as { payment_status?: string | null })) {
+            dayBuckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
+          }
         }
       }
       const bucketValues = Object.values(dayBuckets);

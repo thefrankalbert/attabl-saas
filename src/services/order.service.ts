@@ -540,6 +540,12 @@ export function createOrderService(supabase: SupabaseClient) {
      * paid_at, status to 'delivered', and optionally tip_amount.
      * Always filters by tenant_id for isolation.
      *
+     * NOTE: setting status='delivered' couples payment to fulfillment. This is a
+     * deliberate, documented interim: decoupling into orthogonal fulfillment /
+     * payment axes is Phase 3 of the order->payment refonte (audit C3). Removing
+     * it now would leave paid orders lingering on the KDS active board, so it
+     * stays until the fulfillment state machine lands.
+     *
      * Idempotent: the update is scoped to payment_status='pending' (same guard as
      * the POS route applyPosFinalState). A double-tap / network retry on an
      * already-paid order matches 0 rows and is a no-op - it never re-stamps

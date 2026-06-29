@@ -244,7 +244,7 @@ export async function actionMarkOrderPaid(
   orderId: string,
   method: string,
   tipAmount?: number,
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; paid?: boolean; error?: string }> {
   const parsed = markOrderPaidSchema.safeParse({ tenantId, orderId, method, tipAmount });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
@@ -257,11 +257,17 @@ export async function actionMarkOrderPaid(
       'manager',
       'server',
     ]);
-    await createOrderService(supabase).markPaid(parsed.data.orderId, parsed.data.tenantId, {
-      method: parsed.data.method,
-      tipAmount: parsed.data.tipAmount,
-    });
-    return { success: true };
+    // paid=false means the order was already settled (idempotent no-op). The call
+    // still succeeds; callers can use `paid` to skip duplicate side-effects.
+    const { paid } = await createOrderService(supabase).markPaid(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      {
+        method: parsed.data.method,
+        tipAmount: parsed.data.tipAmount,
+      },
+    );
+    return { success: true, paid };
   } catch (err) {
     if (err instanceof AuthError) {
       return { error: err.message };

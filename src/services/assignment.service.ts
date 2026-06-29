@@ -132,7 +132,9 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
 
       if (error) throw new ServiceError('Erreur lors du claim', 'INTERNAL');
       if (!Array.isArray(data) || data.length === 0) {
-        throw new ServiceError('Cette commande est deja prise en charge', 'VALIDATION');
+        // Race lost: another server already owns this order. CONFLICT -> HTTP 409
+        // (a retryable concurrency outcome), not VALIDATION/400 (bad input).
+        throw new ServiceError('Cette commande est deja prise en charge', 'CONFLICT');
       }
     },
   };

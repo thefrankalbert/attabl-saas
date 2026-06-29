@@ -259,7 +259,7 @@ describe('AssignmentService', () => {
       await expect(service.claimOrder(ORDER_ID, SERVER_ID, TENANT_ID)).resolves.toBeUndefined();
     });
 
-    it('should throw VALIDATION when the order is already claimed by another server', async () => {
+    it('should throw CONFLICT when the order is already claimed by another server', async () => {
       const supabase = createMockSupabase();
 
       // No row matched the (server_id IS NULL OR server_id = me) guard -> already taken
@@ -268,7 +268,7 @@ describe('AssignmentService', () => {
       const service = createAssignmentService(asSupabase(supabase));
 
       await expect(service.claimOrder(ORDER_ID, SERVER_ID, TENANT_ID)).rejects.toMatchObject({
-        code: 'VALIDATION',
+        code: 'CONFLICT',
       });
     });
 

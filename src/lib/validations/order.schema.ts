@@ -40,37 +40,76 @@ export const orderItemSchema = z.object({
   course: z.enum(['appetizer', 'main', 'dessert', 'drink']).nullish(),
 });
 
-export const createOrderSchema = z.object({
-  items: z
-    .array(orderItemSchema)
-    .min(1, 'Le panier ne peut pas être vide')
-    .max(50, 'Maximum 50 articles par commande'),
-  notes: z.string().max(500, 'Les notes ne doivent pas dépasser 500 caractères').optional(),
-  tableNumber: z.string().max(50).optional(),
-  customerName: z.string().max(100).optional(),
-  customerPhone: z.string().max(20).optional(),
-  // ─── Production upgrade ──────────────────────────────
-  service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
-  room_number: z.string().max(20).optional(),
-  delivery_address: z.string().max(500).optional(),
-  coupon_code: z
-    .string()
-    .max(50)
-    .regex(
-      /^[A-Z0-9_-]+$/i,
-      'Le code ne peut contenir que lettres, chiffres, tirets et underscores',
-    )
-    .optional(),
-  // server_id is intentionally excluded from the client-accepted schema.
-  // POS orders derive the server from the authenticated session, and QR orders
-  // (this schema) are anonymous. Accepting server_id from the client would let
-  // an attacker attribute orders to an arbitrary staff member.
-  display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
-  tip_amount: z.number().min(0).optional(),
-  // Idempotency key minted client-side when the order is composed. Lets an
-  // offline-replayed order dedupe server-side instead of creating a duplicate.
-  client_request_id: z.string().uuid().optional(),
-});
+export const createOrderSchema = z
+  .object({
+    items: z
+      .array(orderItemSchema)
+      .min(1, 'Le panier ne peut pas être vide')
+      .max(50, 'Maximum 50 articles par commande'),
+    notes: z.string().max(500, 'Les notes ne doivent pas dépasser 500 caractères').optional(),
+    tableNumber: z.string().max(50).optional(),
+    customerName: z.string().max(100).optional(),
+    customerPhone: z.string().max(20).optional(),
+    // ─── Production upgrade ──────────────────────────────
+    service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
+    room_number: z.string().max(20).optional(),
+    delivery_address: z.string().max(500).optional(),
+    coupon_code: z
+      .string()
+      .max(50)
+      .regex(
+        /^[A-Z0-9_-]+$/i,
+        'Le code ne peut contenir que lettres, chiffres, tirets et underscores',
+      )
+      .optional(),
+    // server_id is intentionally excluded from the client-accepted schema.
+    // POS orders derive the server from the authenticated session, and QR orders
+    // (this schema) are anonymous. Accepting server_id from the client would let
+    // an attacker attribute orders to an arbitrary staff member.
+    display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
+    tip_amount: z.number().min(0).optional(),
+    // Idempotency key minted client-side when the order is composed. Lets an
+    // offline-replayed order dedupe server-side instead of creating a duplicate.
+    client_request_id: z.string().uuid().optional(),
+  })
+  .superRefine(requireDestinationForServiceType);
+
+/**
+ * A destination is mandatory per service type: a delivery needs an address, a
+ * room service needs a room. Before this the fields were always optional, so an
+ * order could be submitted with service_type='delivery' and no address at all
+ * (audit H5).
+ *
+ * dine_in table requiredness is intentionally NOT enforced here yet: the
+ * storefront does not send service_type (everything defaults to dine_in) and the
+ * table comes from a localStorage QR scan that can legitimately be absent, so
+ * enforcing it at the schema would block real web orders. Table capture + the
+ * table_id model land in Phase 1, which is where dine_in table requiredness
+ * belongs. Shared by the QR and POS schemas.
+ */
+function requireDestinationForServiceType(
+  data: {
+    service_type: 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
+    delivery_address?: string;
+    room_number?: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if (data.service_type === 'delivery' && !data.delivery_address?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['delivery_address'],
+      message: "L'adresse de livraison est requise pour une commande en livraison",
+    });
+  }
+  if (data.service_type === 'room_service' && !data.room_number?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['room_number'],
+      message: 'Le numero de chambre est requis pour un service en chambre',
+    });
+  }
+}
 
 // ─── POS-specific order schema ──────────────────────────
 // POS orders include payment info and use menu_item_id instead of the full
@@ -88,25 +127,27 @@ const posOrderItemSchema = z.object({
   selected_variant: z.string().max(200).optional(),
 });
 
-export const createPOSOrderSchema = z.object({
-  // tenant_id is derived from the authenticated user's session, NOT from client input (IDOR prevention)
-  table_number: z.string().min(1).max(50),
-  status: z.enum(['pending', 'delivered']),
-  service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
-  room_number: z.string().max(20).optional(),
-  delivery_address: z.string().max(500).optional(),
-  payment_method: z.string().max(50).optional(),
-  tip_amount: z.number().min(0).optional(),
-  notes: z.string().max(500).optional(),
-  coupon_code: z.string().max(50).optional(),
-  items: z
-    .array(posOrderItemSchema)
-    .min(1, 'Cart cannot be empty')
-    .max(50, 'Maximum 50 items per order'),
-  // Idempotency key minted client-side when the order is composed. Lets an
-  // offline-replayed POS order dedupe server-side instead of creating a duplicate.
-  client_request_id: z.string().uuid().optional(),
-});
+export const createPOSOrderSchema = z
+  .object({
+    // tenant_id is derived from the authenticated user's session, NOT from client input (IDOR prevention)
+    table_number: z.string().min(1).max(50),
+    status: z.enum(['pending', 'delivered']),
+    service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
+    room_number: z.string().max(20).optional(),
+    delivery_address: z.string().max(500).optional(),
+    payment_method: z.string().max(50).optional(),
+    tip_amount: z.number().min(0).optional(),
+    notes: z.string().max(500).optional(),
+    coupon_code: z.string().max(50).optional(),
+    items: z
+      .array(posOrderItemSchema)
+      .min(1, 'Cart cannot be empty')
+      .max(50, 'Maximum 50 items per order'),
+    // Idempotency key minted client-side when the order is composed. Lets an
+    // offline-replayed POS order dedupe server-side instead of creating a duplicate.
+    client_request_id: z.string().uuid().optional(),
+  })
+  .superRefine(requireDestinationForServiceType);
 
 /** Cart pre-validation before POST /api/orders (same item shape, no checkout fields). */
 export const orderPreviewSchema = z.object({
