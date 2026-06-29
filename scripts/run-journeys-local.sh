@@ -77,11 +77,36 @@ for f in "$MIG_BAK"/*.sql; do
 done
 psql "$LOCAL_DB" -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 
+# Le snapshot prod ne contient pas l'appartenance a la publication supabase_realtime
+# (pg_dump --schema public l'omet). Sans elle, le CDC postgres_changes ne livre rien
+# en local et l'assertion KDS temps reel (parcours 04) timeout. On publie `orders`
+# (+ REPLICA IDENTITY FULL pour des payloads UPDATE/DELETE complets). LOCAL UNIQUEMENT:
+# en prod `orders` est deja publie (le KDS fonctionne), donc rien a migrer cote prod.
+log "publie orders dans supabase_realtime (CDC KDS, local uniquement)"
+psql "$LOCAL_DB" -q >/dev/null 2>&1 <<'SQL' || true
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'orders'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.orders';
+  END IF;
+END $$;
+ALTER TABLE public.orders REPLICA IDENTITY FULL;
+SQL
+
 # Cles locales (format sb_publishable_/sb_secret_, acceptees par supabase-js)
 eval "$(supabase status -o env 2>/dev/null | sed 's/^/export SB_/')"
 API_URL="${SB_API_URL:-http://127.0.0.1:54321}"
 ANON="${SB_ANON_KEY:?cle anon introuvable}"
 SERVICE="${SB_SERVICE_ROLE_KEY:?cle service_role introuvable}"
+
+# Secret de signature des webhooks Stripe: meme valeur cote app et cote test pour
+# que les events forges et signes (parcours 01/06) verifient. Defaut local si non
+# fourni. La cle Stripe (sk_test_) cote app permet a /api/webhooks/stripe de relire
+# l'abonnement reel via l'API Stripe.
+WEBHOOK_SECRET="${JOURNEY_STRIPE_WEBHOOK_SECRET:-whsec_journey_local_test}"
 
 log "dev server :$DEV_PORT sur le local (override inline, ne touche pas .env.local)"
 # Upstash vide: sinon le rate limiting partage la prod via .env.local, accumule
@@ -92,6 +117,8 @@ NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
   NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON" \
   SUPABASE_SERVICE_ROLE_KEY="$SERVICE" \
   UPSTASH_REDIS_REST_URL="" UPSTASH_REDIS_REST_TOKEN="" \
+  STRIPE_SECRET_KEY="${JOURNEY_STRIPE_SECRET_KEY:-}" \
+  STRIPE_WEBHOOK_SECRET="$WEBHOOK_SECRET" \
   ALLOW_DEV_AUTH_BYPASS=true PORT="$DEV_PORT" pnpm dev >/tmp/journeys-dev.log 2>&1 &
 DEV_PID=$!
 
@@ -109,6 +136,7 @@ JOURNEY_BASE_URL="http://localhost:$DEV_PORT" \
   JOURNEY_SUPABASE_URL="$API_URL" \
   JOURNEY_SUPABASE_SERVICE_ROLE_KEY="$SERVICE" \
   JOURNEY_STRIPE_SECRET_KEY="${JOURNEY_STRIPE_SECRET_KEY:-}" \
+  JOURNEY_STRIPE_WEBHOOK_SECRET="$WEBHOOK_SECRET" \
   JOURNEY_CONFIRM_TEST_DB=yes \
   npx playwright test --config tests/journeys/playwright.config.ts ${1:-}
 RUN_EXIT=$?

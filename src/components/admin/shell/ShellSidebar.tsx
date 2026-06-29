@@ -38,14 +38,9 @@ import {
 import { getHiddenNav } from '@/lib/segment-features';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import type { SettingsTab } from './SettingsDialog';
+import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
 // ─── Types ──────────────────────────────────────────────
-
-interface TenantSwitchOption {
-  id: string;
-  name: string;
-  slug: string;
-}
 
 interface ShellSidebarProps {
   basePath: string;
@@ -300,6 +295,14 @@ export function ShellSidebar({
             ) : (
               <DropdownMenuItem disabled>{tenant.name}</DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="min-h-[44px]"
+              onClick={() => router.push('/admin/tenants')}
+            >
+              <Plus className="size-4 shrink-0" />
+              <span className="flex-1 truncate">{t('addRestaurant')}</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

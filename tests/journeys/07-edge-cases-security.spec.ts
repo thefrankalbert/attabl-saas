@@ -4,8 +4,14 @@
  * authz). Les tests dependant de donnees seedees sont marques TODO.
  */
 import { test, expect } from '@playwright/test';
-import { journeyEnv } from './fixtures/env';
+import { hasRateLimitEnv, hasSeedEnv, journeyEnv } from './fixtures/env';
 import { newApiContext } from './fixtures/personas';
+import {
+  seedCoupon,
+  seedTenantWithMenu,
+  teardownTenantBySlug,
+  type SeededMenu,
+} from './fixtures/seed';
 
 test.describe.serial('07 - Cas limites & securite', () => {
   test('un coupon invalide est refuse', async () => {
@@ -31,15 +37,23 @@ test.describe.serial('07 - Cas limites & securite', () => {
       });
       statuses.push(res.status());
     }
-    // Aucune 5xx, et les statuts restent dans l'attendu (429 = limite atteinte = bon signe).
+    // Aucune 5xx en rafale (toujours vrai).
     expect(
       statuses.every((s) => s < 500),
       `statuts: ${statuses.join(',')}`,
     ).toBeTruthy();
     const got429 = statuses.includes(429);
-    console.log(
-      `[rate-limit] 429 observe: ${got429} | statuts uniques: ${[...new Set(statuses)].join(',')}`,
-    );
+    if (hasRateLimitEnv()) {
+      // Cible avec rate limiting actif (Upstash branche): la rafale DOIT finir limitee.
+      expect(got429, `aucun 429 sur 25 requetes: ${[...new Set(statuses)].join(',')}`).toBe(true);
+    } else {
+      // Runner local: Upstash vide -> rate limiting desactive, on ne peut pas observer
+      // de 429. On l'annonce (vert honnete = smoke "pas de 5xx"), pas un faux "couvert".
+      console.log(
+        `[rate-limit] desactive sur cette cible (Upstash vide). Pose JOURNEY_RATE_LIMIT_ACTIVE=yes ` +
+          `sur un env avec Upstash pour exiger un 429. 429 observe: ${got429}.`,
+      );
+    }
     await ctx.dispose();
   });
 
@@ -50,17 +64,67 @@ test.describe.serial('07 - Cas limites & securite', () => {
     await ctx.dispose();
   });
 
-  test('manipulation de prix rejetee (price_mismatch)', async () => {
-    test.skip(
-      true,
-      'TODO: avec un menu_item_id reel, POST /api/orders en envoyant un price plus bas que le prix DB. Doit etre rejete (validation serveur / price_mismatch).',
-    );
-  });
+  // La manipulation de prix (price_mismatch) est testee en reel dans le parcours 04
+  // (POST /api/orders avec un price abaisse -> rejet). L'isolation cross-tenant
+  // (BOLA) a son propre parcours dedie: 08-bola.spec.ts.
 
-  test('isolation cross-tenant (BOLA)', async () => {
-    test.skip(
-      true,
-      'Voir security/generated-tests/security-bola.spec.ts (test BOLA dedie a deplacer dans tests/).',
-    );
+  test.describe.serial('coupon applique (base de TEST seedee)', () => {
+    let seeded: SeededMenu | null = null;
+
+    test.beforeAll(async () => {
+      test.skip(!hasSeedEnv(), 'JOURNEY_SUPABASE_URL/SERVICE_ROLE_KEY requis (base de TEST).');
+      seeded = await seedTenantWithMenu();
+      await seedCoupon(seeded.tenantId, { code: 'JOURNEY10', discountValue: 10 });
+    });
+
+    test.afterAll(async () => {
+      if (hasSeedEnv()) await teardownTenantBySlug();
+    });
+
+    test('un coupon valide reduit le total de la commande', async () => {
+      test.skip(!seeded, 'seed indisponible');
+      const item = seeded as SeededMenu;
+      const orderItems = [
+        { id: item.menuItemId, name: item.itemName, price: item.price, quantity: 1 },
+      ];
+
+      const ctx = await newApiContext();
+
+      const baseRes = await ctx.post('/api/orders', { data: { items: orderItems } });
+      expect(baseRes.status(), await baseRes.text()).toBeLessThan(400);
+      const baseTotal = ((await baseRes.json()) as { total: number }).total;
+
+      const couponRes = await ctx.post('/api/orders', {
+        data: { items: orderItems, coupon_code: 'JOURNEY10' },
+      });
+      expect(couponRes.status(), await couponRes.text()).toBeLessThan(400);
+      const couponTotal = ((await couponRes.json()) as { total: number }).total;
+
+      // -10% sur l'article: le total avec coupon doit etre strictement inferieur.
+      expect(couponTotal, `base=${baseTotal} coupon=${couponTotal}`).toBeLessThan(baseTotal);
+      await ctx.dispose();
+    });
+
+    test('validation coupon: refuse un code bidon, accepte le code valide', async () => {
+      test.skip(!seeded, 'seed indisponible');
+      const ctx = await newApiContext();
+      const slug = journeyEnv.tenantSlug;
+
+      // Tenant seede existe -> reponse deterministe 200 (plus de 404 ambigu).
+      const bad = await ctx.post('/api/coupons/validate', {
+        data: { code: 'NOPE-INVALID-0000', subtotal: 5000, tenantSlug: slug },
+      });
+      expect(bad.status(), await bad.text()).toBe(200);
+      expect((await bad.json()).valid, 'un code bidon ne doit jamais etre valide').toBe(false);
+
+      const good = await ctx.post('/api/coupons/validate', {
+        data: { code: 'JOURNEY10', subtotal: 5000, tenantSlug: slug },
+      });
+      expect(good.status(), await good.text()).toBe(200);
+      const goodBody = await good.json();
+      expect(goodBody.valid, 'le coupon seede doit etre valide').toBe(true);
+      expect(goodBody.discountAmount, 'remise -10% sur 5000 = 500').toBeGreaterThan(0);
+      await ctx.dispose();
+    });
   });
 });

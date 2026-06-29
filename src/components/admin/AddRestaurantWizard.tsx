@@ -132,6 +132,9 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error === 'RESTAURANT_NAME_TAKEN') {
+          throw new Error(t('addRestaurant.nameTaken'));
+        }
         throw new Error(data.error || t('addRestaurant.creationError'));
       }
 

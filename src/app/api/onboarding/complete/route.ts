@@ -9,6 +9,7 @@ import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
+import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
   try {
@@ -71,6 +72,12 @@ export async function POST(request: Request) {
       slug: result.slug,
     });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: serviceErrorToStatus(error.code) },
+      );
+    }
     logger.error('Onboarding complete error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }

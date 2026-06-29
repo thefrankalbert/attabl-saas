@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ServiceError } from './errors';
+import { ServiceError, isTenantNameConflictError } from './errors';
 
 interface AddRestaurantInput {
   groupId: string;
@@ -66,68 +66,34 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
     /**
      * Add a new restaurant to an existing group.
      *
-     * Steps:
-     * 1. Create tenant with group_id and trial period
-     * 2. Create admin_users entry (role: owner)
-     * 3. Create default venue (best-effort)
+     * Atomic: tenant + admin_users (owner) + default venue are created in a
+     * single transaction by the provision_group_restaurant RPC, so a mid-flight
+     * failure can never leave a tenant without an owner (no orphans).
      */
     async addRestaurantToGroup(input: AddRestaurantInput): Promise<AddRestaurantResult> {
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-
-      // 1. Create tenant
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({
-          slug: input.slug,
-          name: input.name,
-          group_id: input.groupId,
-          subscription_plan: input.plan === 'trial' ? 'starter' : input.plan,
-          subscription_status: input.plan === 'trial' ? 'trial' : 'pending',
-          trial_ends_at: input.plan === 'trial' ? trialEndsAt.toISOString() : null,
-          is_active: true,
-        })
-        .select('id, slug')
-        .single();
-
-      if (tenantError || !tenant) {
-        throw new ServiceError(
-          `Erreur création restaurant: ${tenantError?.message || 'Données manquantes'}`,
-          'INTERNAL',
-          tenantError,
-        );
-      }
-
-      // 2. Create admin_users entry (rollback tenant on failure)
-      const { error: adminError } = await supabase.from('admin_users').insert({
-        tenant_id: tenant.id,
-        user_id: input.userId,
-        email: input.email,
-        full_name: input.name,
-        role: 'owner',
-        is_active: true,
+      const { data, error } = await supabase.rpc('provision_group_restaurant', {
+        p_group_id: input.groupId,
+        p_user_id: input.userId,
+        p_email: input.email,
+        p_name: input.name,
+        p_slug: input.slug,
+        p_type: input.type,
+        p_plan: input.plan,
       });
 
-      if (adminError) {
-        await supabase.from('tenants').delete().eq('id', tenant.id);
-        throw new ServiceError(
-          `Erreur création admin: ${adminError.message}`,
-          'INTERNAL',
-          adminError,
-        );
+      if (error) {
+        if (isTenantNameConflictError(error)) {
+          throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', error);
+        }
+        throw new ServiceError(`Erreur création restaurant: ${error.message}`, 'INTERNAL', error);
       }
 
-      // 3. Create default venue (best-effort, no rollback)
-      await supabase.from('venues').insert({
-        tenant_id: tenant.id,
-        slug: 'main',
-        name: 'Salle principale',
-        name_en: 'Main Dining',
-        type: input.type,
-        is_active: true,
-      });
+      const result = data as { tenantId?: string; slug?: string } | null;
+      if (!result?.tenantId || !result?.slug) {
+        throw new ServiceError('Erreur création restaurant: Données manquantes', 'INTERNAL');
+      }
 
-      return { tenantId: tenant.id, slug: tenant.slug };
+      return { tenantId: result.tenantId, slug: result.slug };
     },
   };
 }
