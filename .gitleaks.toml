@@ -1,20 +1,46 @@
 # Gitleaks config for ATTABL.
-# Extends the default ruleset and allowlists known false positives: high-entropy
-# strings that are test fixtures (fake invitation tokens/passwords in unit tests)
-# and example snippets inside planning docs. These are NOT real secrets.
+# Extends the default ruleset (provider keys: AWS, Stripe, GitHub, private keys,
+# JWT...) AND adds a "hardcoded password/secret" rule - the case the default
+# ruleset does NOT catch (e.g. const password = '...'). Allowlists known false
+# positives: test fixtures, placeholders, autocomplete, docs. These are NOT
+# real secrets.
 [extend]
 useDefault = true
 
+# --- Hardcoded password / secret literal (not covered by default rules) ---
+[[rules]]
+id = "hardcoded-password-or-secret"
+description = "Hardcoded password or secret literal assignment"
+regex = '''(?i)(password|passwd|pwd|mot de passe|client_secret|merchant_key|webhook_secret|api[_-]?key|service_role|secret)['"]?\s*[:=]\s*['"][^'"\n]{6,}['"]'''
+keywords = ["password", "passwd", "pwd", "passe", "secret", "merchant", "webhook", "apikey", "api_key", "api-key", "service_role"]
+
 [allowlist]
-description = "Test fixtures and documentation examples (no real secrets)"
+description = "Test fixtures, placeholders, autocomplete and documentation examples (no real secrets)"
+# Match allowlist regexes against the whole line (so autocomplete attributes and
+# process.env reads are correctly excluded, not just the captured secret).
+regexTarget = "line"
 paths = [
   '''.*__tests__.*\.test\.(ts|tsx)$''',
   '''.*\.test\.(ts|tsx)$''',
+  '''.*\.spec\.(ts|tsx)$''',
   '''docs/.*\.md$''',
+  '''.*\.example$''',
+  '''(^|/)\.husky/''',
+  # i18n translation files contain UI labels ("Mot de passe"), never secrets
+  '''(^|/)messages/''',
+  '''(^|/)(locales|i18n|lang)/''',
 ]
 regexes = [
   # fake invitation token used across schema tests (64-char hex placeholder)
   '''a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2''',
   # fake passwords used in tests/docs
   '''SecurePass123!''',
+  '''(?i)(securepass123|secure_password|secure-password)''',
+  # React autocomplete attribute values (not secrets)
+  '''current-password''',
+  '''new-password''',
+  # placeholders / env reads (not secrets)
+  '''<[^>]{1,40}>''',
+  '''process\.env''',
+  '''(?i)(example|placeholder|change[-_ ]?me|replace[-_ ]?me|your[-_]|xxx+|dummy|sample|fixture|redacted|todo)''',
 ]

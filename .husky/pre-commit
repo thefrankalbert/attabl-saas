@@ -20,6 +20,20 @@ for f in "${CRITICAL_FILES[@]}"; do
   fi
 done
 
+# Gate 0b: Secrets — block any password / key / token / secret from entering git.
+# Local work stays free; secrets must live in .env.local, never in commits.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --redact -v || {
+    echo ""
+    echo "COMMIT BLOCKED: a secret was detected in staged files."
+    echo "Move it to .env.local and read it via process.env. Never commit secrets."
+    echo "Known false positive? add a rule to .gitleaks.toml."
+    exit 1
+  }
+else
+  echo "WARNING: gitleaks not installed, secret scan skipped. Run: brew install gitleaks"
+fi
+
 # Gate 1: TypeScript — catch broken imports/types before commit
 pnpm typecheck || exit 1
 
