@@ -187,10 +187,38 @@ export const pdfImportLimiter = createLimiter(
 /** Assignments: 30 requests / minute per IP */
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 
-/** Invitations: 5 requests / 10 minutes per IP (fail-closed: email-sending abuse target) */
-export const invitationLimiter = createLimiter(
-  'invitation',
-  Ratelimit.slidingWindow(5, '10 m'),
+/**
+ * Invitation management (authenticated: create / list / cancel / resend).
+ * 30 requests / 10 minutes per IP, fail-closed (create/resend send emails).
+ * Kept separate from the public accept/validate buckets so a manager's
+ * dashboard activity never drains an invitee's quota.
+ */
+export const invitationManageLimiter = createLimiter(
+  'invitation-manage',
+  Ratelimit.slidingWindow(30, '10 m'),
+  true,
+);
+
+/**
+ * Invitation token validation (public, read-only on-mount check).
+ * 30 requests / 10 minutes per TOKEN, fail-OPEN: no side effects (no account
+ * creation, no email), so a Redis blip must not block a legitimate invitee.
+ * Keyed by token, not IP, so CGNAT / shared-wifi users never collide.
+ */
+export const invitationValidateLimiter = createLimiter(
+  'invitation-validate',
+  Ratelimit.slidingWindow(30, '10 m'),
+);
+
+/**
+ * Invitation acceptance (public, creates the account).
+ * 10 requests / 10 minutes per token+IP, fail-closed. Keying on the token
+ * scopes the budget to a single invitation, so neighbours behind the same NAT
+ * cannot collectively exhaust each other's retries.
+ */
+export const invitationAcceptLimiter = createLimiter(
+  'invitation-accept',
+  Ratelimit.slidingWindow(10, '10 m'),
   true,
 );
 

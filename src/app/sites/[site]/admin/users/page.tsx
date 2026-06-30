@@ -9,6 +9,7 @@ import {
   type ServerListPagination,
 } from '@/lib/pagination';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
+import type { PermissionMap } from '@/types/permission.types';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 
 export const dynamic = 'force-dynamic';
@@ -78,12 +79,25 @@ export default async function UsersPage({
     total: count ?? users?.length ?? 0,
   };
 
+  // Tenant-level role overrides: used as the baseline against which a member's
+  // individual permission overrides are displayed (the per-user dialog needs to
+  // know what each role grants by default in THIS tenant).
+  const { data: rolePerms } = await supabase
+    .from('role_permissions')
+    .select('role, permissions')
+    .eq('tenant_id', tenant.id);
+  const roleOverrides: Record<string, PermissionMap> = {};
+  for (const rp of rolePerms ?? []) {
+    roleOverrides[rp.role as string] = (rp.permissions ?? {}) as PermissionMap;
+  }
+
   return (
     <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto h-full flex flex-col min-h-0">
       <UsersClient
         tenantId={tenant.id}
         currentUserRole={currentUserData.role as AdminRole}
         initialUsers={(users as AdminUser[]) || []}
+        roleOverrides={roleOverrides}
         serverListPagination={serverListPagination}
       />
     </div>

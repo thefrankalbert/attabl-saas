@@ -20,6 +20,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useToast } from '@/components/ui/use-toast';
 import UsersTable from '@/components/features/users/UsersTable';
 import UserForm from '@/components/features/users/UserForm';
+import UserPermissionsDialog from '@/components/features/users/UserPermissionsDialog';
 import PendingInvitations from '@/components/features/users/PendingInvitations';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { ListPagination } from '@/components/admin/ListPagination';
@@ -30,6 +31,7 @@ import {
   actionUpdateUserEmail,
 } from '@/app/actions/admin';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
+import type { PermissionMap } from '@/types/permission.types';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -37,6 +39,7 @@ interface UsersClientProps {
   tenantId: string;
   currentUserRole: AdminRole;
   initialUsers: AdminUser[];
+  roleOverrides?: Record<string, PermissionMap>;
   serverListPagination?: ServerListPagination;
 }
 
@@ -46,6 +49,7 @@ export default function UsersClient({
   tenantId,
   currentUserRole,
   initialUsers,
+  roleOverrides = {},
   serverListPagination,
 }: UsersClientProps) {
   const router = useRouter();
@@ -119,6 +123,9 @@ export default function UsersClient({
     setEditPassword('');
   };
 
+  // Per-user permission override dialog
+  const [permsUser, setPermsUser] = useState<AdminUser | null>(null);
+
   const handleEditSave = async () => {
     if (!editingUser) return;
     setEditSaving(true);
@@ -189,6 +196,7 @@ export default function UsersClient({
             onToggleStatus={data.handleToggleStatus}
             onDeleteUser={data.handleDeleteUser}
             onEditUser={data.canManageUsers ? openEditModal : undefined}
+            onEditPermissions={data.canManageUsers ? setPermsUser : undefined}
           />
 
           {useServerPagination && serverListPagination && (
@@ -297,6 +305,20 @@ export default function UsersClient({
             </div>
           </div>
         </AdminModal>
+        {/* Per-user permission override dialog (remounts per user via key) */}
+        {permsUser && (
+          <UserPermissionsDialog
+            key={permsUser.id}
+            user={permsUser}
+            tenantId={tenantId}
+            roleOverride={roleOverrides[permsUser.role] ?? {}}
+            onClose={() => setPermsUser(null)}
+            onSaved={() => {
+              setPermsUser(null);
+              window.location.reload();
+            }}
+          />
+        )}
         {ConfirmDialog}
       </div>
     </RoleGuard>

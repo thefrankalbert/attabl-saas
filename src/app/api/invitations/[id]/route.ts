@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
+import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
@@ -16,7 +16,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (originErr) return originErr;
 
     const ip = getClientIp(request);
-    const { success: allowed } = await invitationLimiter.check(ip);
+    const { success: allowed } = await invitationManageLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },

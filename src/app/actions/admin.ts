@@ -280,19 +280,34 @@ export async function actionUpdateAdminUser(
     return { error: t('permissionDenied') };
   }
 
+  // Only send keys that were provided. custom_permissions: an object sets the
+  // overrides, null clears them (member falls back to role permissions),
+  // undefined leaves them untouched.
+  const updatePayload: {
+    role?: AdminRole;
+    full_name?: string;
+    is_active?: boolean;
+    custom_permissions?: Record<string, boolean> | null;
+  } = {
+    role: parsed.data.role,
+    full_name: parsed.data.full_name,
+    is_active: parsed.data.is_active,
+  };
+  if (parsed.data.custom_permissions !== undefined) {
+    updatePayload.custom_permissions = parsed.data.custom_permissions;
+  }
+
   const { error } = await adminClient
     .from('admin_users')
-    .update({
-      role: parsed.data.role,
-      full_name: parsed.data.full_name,
-      is_active: parsed.data.is_active,
-    })
+    .update(updatePayload)
     .eq('id', userId)
     .eq('tenant_id', tenantId); // Safety check
 
   if (error) return { error: error.message };
 
-  // Fire-and-forget audit log
+  // Fire-and-forget audit log. A permission-only change is logged as a
+  // 'permission' entity so it stands out in the audit trail.
+  const permissionsChanged = parsed.data.custom_permissions !== undefined;
   const audit = createAuditService(adminClient, {
     tenantId,
     userId: currentUser?.id,
@@ -301,9 +316,14 @@ export async function actionUpdateAdminUser(
   });
   audit.log({
     action: 'update',
-    entityType: 'user',
+    entityType: permissionsChanged ? 'permission' : 'user',
     entityId: userId,
-    newData: { role: data.role, full_name: data.full_name, is_active: data.is_active },
+    newData: {
+      role: data.role,
+      full_name: data.full_name,
+      is_active: data.is_active,
+      ...(permissionsChanged ? { custom_permissions: parsed.data.custom_permissions } : {}),
+    },
   });
 
   // Revalidate users page cache

@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
+import { invitationAcceptLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { acceptInvitationSchema } from '@/lib/validations/invitation.schema';
@@ -14,8 +14,18 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
+    const body: unknown = await request.json();
+
+    // Rate-limit per token+IP, not per IP alone: scoping the budget to a single
+    // invitation prevents neighbours behind the same NAT/CGNAT from collectively
+    // exhausting each other's acceptance retries. Read the token before schema
+    // validation so the key is stable even on malformed payloads.
+    const tokenForKey =
+      typeof (body as { token?: unknown })?.token === 'string'
+        ? (body as { token: string }).token
+        : '';
     const ip = getClientIp(request);
-    const { success: allowed } = await invitationLimiter.check(ip);
+    const { success: allowed } = await invitationAcceptLimiter.check(`${tokenForKey}:${ip}`);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },
@@ -23,7 +33,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const body: unknown = await request.json();
     const parsed = acceptInvitationSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

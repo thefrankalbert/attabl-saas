@@ -48,21 +48,16 @@ function AcceptInviteForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Validate token on mount
+  // Validate token on mount via the read-only endpoint. It never creates an
+  // account and uses a separate fail-open, token-keyed limiter, so loading or
+  // refreshing the page can never exhaust the acceptance retry budget.
   useEffect(() => {
     if (!token) return;
     async function validateToken() {
       try {
-        const res = await fetch('/api/invitations/accept', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, validate_only: true }),
-        });
-        if (!res.ok) {
-          const data: { error?: string } = await res.json().catch(() => ({}));
-          if (data.error?.toLowerCase().includes('expir') || res.status === 410) {
-            setTokenExpired(true);
-          }
+        const res = await fetch(`/api/invitations/validate?token=${encodeURIComponent(token!)}`);
+        if (res.status === 410) {
+          setTokenExpired(true);
         }
       } catch {
         // Network error - let the actual submit handle it

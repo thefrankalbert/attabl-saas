@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
+import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { canGrantRole } from '@/lib/auth/role-hierarchy';
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     try {
       const ip = getClientIp(request);
-      const { success: allowed } = await invitationLimiter.check(ip);
+      const { success: allowed } = await invitationManageLimiter.check(ip);
       if (!allowed) {
         return NextResponse.json(
           { error: 'Trop de requetes. Reessayez plus tard.' },
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       if (originErr) return originErr;
 
       const ip = getClientIp(request);
-      const { success: allowed } = await invitationLimiter.check(ip);
+      const { success: allowed } = await invitationManageLimiter.check(ip);
       if (!allowed) {
         return NextResponse.json(
           { error: 'Trop de requetes. Reessayez plus tard.' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { UserX, MoreVertical, Check, X, Activity, Pencil } from 'lucide-react';
+import { UserX, MoreVertical, Check, X, Activity, Pencil, ShieldCheck } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,7 @@ interface UsersTableProps {
   onToggleStatus: (user: AdminUser) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
   onEditUser?: (user: AdminUser) => void;
+  onEditPermissions?: (user: AdminUser) => void;
 }
 
 // ─── Component ─────────────────────────────────────────────
@@ -33,6 +34,7 @@ export default function UsersTable({
   onToggleStatus,
   onDeleteUser,
   onEditUser,
+  onEditPermissions,
 }: UsersTableProps) {
   const t = useTranslations('users');
   const tc = useTranslations('common');
@@ -111,6 +113,12 @@ export default function UsersTable({
                         <DropdownMenuItem onClick={() => onEditUser(user)}>
                           <Pencil className="w-4 h-4 mr-2" />
                           {t('editUser')}
+                        </DropdownMenuItem>
+                      )}
+                      {onEditPermissions && (
+                        <DropdownMenuItem onClick={() => onEditPermissions(user)}>
+                          <ShieldCheck className="w-4 h-4 mr-2" />
+                          {t('editPermissions')}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => onToggleStatus(user)}>
