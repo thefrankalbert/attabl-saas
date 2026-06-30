@@ -148,10 +148,18 @@ describe('order.service Wave 26 additions', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('updateStatus filters by tenant_id', async () => {
-    const supabase = buildSupabase({ orders: { data: null, error: null } });
+    // updateStatus now reads the current status (1st orders call) then does a
+    // conditional update (2nd orders call). Provide both results in order.
+    const supabase = buildSupabase({
+      orders: [
+        { data: { status: 'preparing' }, error: null }, // fetch current status
+        { data: [{ id: 'order-1' }], error: null }, // conditional update -> 1 row
+      ],
+    });
     const svc = createOrderService(asSupabase(supabase));
     await svc.updateStatus('order-1', 'tenant-A', 'delivered');
     expect(hasTenantFilter(supabase._chains.orders[0], 'tenant-A')).toBe(true);
+    expect(hasTenantFilter(supabase._chains.orders[1], 'tenant-A')).toBe(true);
   });
 
   it('updateStatus throws ServiceError on DB error', async () => {

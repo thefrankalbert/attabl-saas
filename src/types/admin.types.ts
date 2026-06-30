@@ -18,7 +18,7 @@ export type AdminRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'chef' | 'wa
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
 type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
-export type PaymentStatus = 'pending' | 'paid' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'refunded';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
 export type CurrencyCode = 'XAF' | 'XOF' | 'EUR' | 'USD';
@@ -110,6 +110,9 @@ export interface OrderItem {
   modifiers?: Array<{ name: string; price: number }>;
   // ─── Preparation zone (denormalized from category) ────
   preparation_zone?: PreparationZone;
+  // ─── KDS fire/hold (coursing) ──────────────────────────
+  held?: boolean;
+  fired_at?: string;
 }
 
 export interface Order {

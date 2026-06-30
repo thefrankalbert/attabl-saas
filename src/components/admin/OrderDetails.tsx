@@ -19,12 +19,14 @@ import { Button } from '@/components/ui/button';
 import { actionUpdateOrderStatus } from '@/app/actions/orders';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, OrderStatus, Tenant, CurrencyCode } from '@/types/admin.types';
-import { STATUS_STYLES } from '@/lib/design-tokens';
+import { getStatusStyle } from '@/lib/design-tokens';
 import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrencyMinor } from '@/lib/utils/money';
 import { printReceipt } from '@/lib/printing/receipt';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import PaymentModal from './PaymentModal';
+import OrderPaymentPanel from './OrderPaymentPanel';
 
 interface OrderDetailsProps {
   order: Order;
@@ -50,7 +52,11 @@ export default function OrderDetails({
   const locale = useLocale();
   const { toast } = useToast();
 
-  const fmt = (amount: number) => formatCurrency(amount, currency);
+  // Transactional order/item amounts (total, subtotal, tax, tip, price_at_order)
+  // are integer MINOR units -> format with fmt. Catalog prices that still live in
+  // MAJOR units (a modifier's menu price) use fmtMajor.
+  const fmt = (amount: number) => formatCurrencyMinor(amount, currency);
+  const fmtMajor = (amount: number) => formatCurrency(amount, currency);
 
   const handleStatusUpdate = async (status: OrderStatus) => {
     setLoading(true);
@@ -98,8 +104,7 @@ export default function OrderDetails({
     room_service: t('serviceRoom'),
   };
 
-  const statusStyle =
-    STATUS_STYLES[order.status as keyof typeof STATUS_STYLES] || STATUS_STYLES.pending;
+  const statusStyle = getStatusStyle(order.status);
 
   const itemCount = (order.items || []).reduce((sum, i) => sum + i.quantity, 0);
 
@@ -208,7 +213,7 @@ export default function OrderDetails({
                           <div className="mt-0.5">
                             {item.modifiers.map((m, mi) => (
                               <p key={mi} className="text-[10px] text-status-info">
-                                + {m.name} ({fmt(m.price)})
+                                + {m.name} ({fmtMajor(m.price)})
                               </p>
                             ))}
                           </div>
@@ -359,6 +364,14 @@ export default function OrderDetails({
               </Button>
             </div>
           </div>
+
+          {/* Payment ledger: split/partial tenders + refund (audit H2/H8) */}
+          <OrderPaymentPanel
+            tenantId={order.tenant_id}
+            orderId={order.id}
+            currency={currency}
+            onUpdate={onUpdate}
+          />
         </div>
 
         {/* Warnings */}

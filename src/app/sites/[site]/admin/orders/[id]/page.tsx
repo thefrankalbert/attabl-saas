@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
-import type { Order, ItemStatus, Course } from '@/types/admin.types';
+import type { Order, ItemStatus, Course, CurrencyCode } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,7 +74,10 @@ export default async function SingleOrderPage({ params }: PageProps) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
-      <SingleOrderClient order={transformedOrder} />
+      <SingleOrderClient
+        order={transformedOrder}
+        currency={(order.display_currency as CurrencyCode) || 'XAF'}
+      />
     </div>
   );
 }

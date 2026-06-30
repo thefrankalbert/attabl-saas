@@ -8,7 +8,15 @@ export const CURRENCIES = {
   XAF: {
     code: 'XAF' as const,
     symbol: 'FCFA',
-    name: 'Franc CFA',
+    name: 'Franc CFA (BEAC)',
+    locale: 'fr-FR',
+    decimals: 0,
+    position: 'after' as const,
+  },
+  XOF: {
+    code: 'XOF' as const,
+    symbol: 'FCFA',
+    name: 'Franc CFA (BCEAO)',
     locale: 'fr-FR',
     decimals: 0,
     position: 'after' as const,

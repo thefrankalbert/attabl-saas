@@ -7,9 +7,11 @@ import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { createOrderService } from '@/services/order.service';
+import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
@@ -27,11 +29,37 @@ const markOrderPaidSchema = z.object({
   tipAmount: z.number().min(0).optional(),
 });
 
+const paymentSummarySchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+});
+
+const recordTenderSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  amount: z.number().positive(),
+  method: z.string().min(1).max(50),
+});
+
+const refundOrderSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  amount: z.number().positive(),
+  method: z.string().min(1).max(50),
+});
+
 const updateItemStatusSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
   itemIds: z.array(z.string().uuid()).min(1).max(200),
   status: z.enum(['pending', 'preparing', 'ready', 'served']),
+});
+
+const setCourseHeldSchema = z.object({
+  tenantId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  course: z.enum(['appetizer', 'main', 'dessert', 'drink']),
+  held: z.boolean(),
 });
 
 type ActionResponse = {
@@ -63,10 +91,12 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     return { error: 'Unauthorized' };
   }
 
-  // Verify the user is an admin for the tenant(s) of these orders
+  // Verify the user is an admin for the tenant(s) of these orders.
+  // Pull the financial fields too: paid orders may not be hard-deleted (they are
+  // the financial record), and any deletion is snapshotted into the audit log.
   const { data: orders, error: fetchError } = await supabase
     .from('orders')
-    .select('id, tenant_id')
+    .select('id, tenant_id, order_number, status, payment_status, total, tip_amount, paid_at')
     .in('id', orderIds);
 
   if (fetchError) {
@@ -76,6 +106,16 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (!orders || orders.length === 0) {
     return { error: 'No orders found or access denied' };
+  }
+
+  // Never destroy the financial record of a settled order (audit C7). Paid orders
+  // must be voided/refunded (Phase 4), not deleted.
+  const paidOrders = orders.filter((o) => o.payment_status === 'paid');
+  if (paidOrders.length > 0) {
+    return {
+      error:
+        'Impossible de supprimer une commande payee. Une commande reglee fait partie de l historique financier.',
+    };
   }
 
   // Get the tenant IDs involved
@@ -116,9 +156,11 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   logger.info('Orders deleted successfully', { count: foundIds.length, orderIds: foundIds });
 
-  // Fire-and-forget audit log for each tenant
+  // Fire-and-forget audit log for each tenant. Snapshot the financial fields of
+  // each deleted order so the record is reconstructable (audit C7) - the row is
+  // gone but its totals survive in the audit trail.
   for (const tid of tenantIds) {
-    const idsForTenant = orders.filter((o) => o.tenant_id === tid).map((o) => o.id);
+    const ordersForTenant = orders.filter((o) => o.tenant_id === tid);
     const audit = createAuditService(supabase, {
       tenantId: tid,
       userId: user.id,
@@ -127,7 +169,18 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     audit.log({
       action: 'delete',
       entityType: 'order',
-      oldData: { orderIds: idsForTenant },
+      oldData: {
+        orderIds: ordersForTenant.map((o) => o.id),
+        orders: ordersForTenant.map((o) => ({
+          id: o.id,
+          order_number: o.order_number,
+          status: o.status,
+          payment_status: o.payment_status,
+          total: o.total,
+          tip_amount: o.tip_amount,
+          paid_at: o.paid_at,
+        })),
+      },
     });
   }
 
@@ -155,15 +208,16 @@ export async function actionUpdateOrderStatus(
       'manager',
       'server',
     ]);
-    await createOrderService(supabase).updateStatus(
-      parsed.data.orderId,
-      parsed.data.tenantId,
-      parsed.data.status,
-    );
-
-    // On cancellation, restore any ingredient stock that was deducted for this
-    // order (idempotent; only acts on orders that were actually destocked).
+    const service = createOrderService(supabase);
     if (parsed.data.status === 'cancelled') {
+      // Cancellation reverses side-effects (audit C7), in two halves by design:
+      //  - cancelOrder (authenticated): refuse a paid order, release the coupon,
+      //    set status='cancelled'.
+      //  - stock restock via the canonical service_role path (main's stock-integrity
+      //    feature): restock_order is service_role-only, so it runs via the admin
+      //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
+      await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+
       const { data: tenant } = await supabase
         .from('tenants')
         .select('subscription_plan, subscription_status, trial_ends_at')
@@ -180,7 +234,6 @@ export async function actionUpdateOrderStatus(
         );
 
       if (hasInventory) {
-        // Non-blocking: restock_order needs service_role; status flip already succeeded.
         const adminSupabase = createAdminClient();
         createInventoryService(adminSupabase)
           .restockOrder(parsed.data.orderId, parsed.data.tenantId)
@@ -191,8 +244,9 @@ export async function actionUpdateOrderStatus(
             });
           });
       }
+    } else {
+      await service.updateStatus(parsed.data.orderId, parsed.data.tenantId, parsed.data.status);
     }
-
     return { success: true };
   } catch (err) {
     if (err instanceof AuthError) {
@@ -273,6 +327,46 @@ export async function actionUpdateItemStatus(
 }
 
 /**
+ * Hold or fire a whole course of an order (KDS coursing).
+ */
+export async function actionSetCourseHeld(
+  tenantId: string,
+  orderId: string,
+  course: string,
+  held: boolean,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = setCourseHeldSchema.safeParse({ tenantId, orderId, course, held });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    await createOrderService(supabase).setCourseHeld(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      parsed.data.course,
+      parsed.data.held,
+    );
+    return { success: true };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionSetCourseHeld: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
  * Marks an order as paid.
  * Verifies the current user is a staff member (server or above) for the tenant.
  */
@@ -281,7 +375,7 @@ export async function actionMarkOrderPaid(
   orderId: string,
   method: string,
   tipAmount?: number,
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; paid?: boolean; error?: string }> {
   const parsed = markOrderPaidSchema.safeParse({ tenantId, orderId, method, tipAmount });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
@@ -294,11 +388,17 @@ export async function actionMarkOrderPaid(
       'manager',
       'server',
     ]);
-    await createOrderService(supabase).markPaid(parsed.data.orderId, parsed.data.tenantId, {
-      method: parsed.data.method,
-      tipAmount: parsed.data.tipAmount,
-    });
-    return { success: true };
+    // paid=false means the order was already settled (idempotent no-op). The call
+    // still succeeds; callers can use `paid` to skip duplicate side-effects.
+    const { paid } = await createOrderService(supabase).markPaid(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      {
+        method: parsed.data.method,
+        tipAmount: parsed.data.tipAmount,
+      },
+    );
+    return { success: true, paid };
   } catch (err) {
     if (err instanceof AuthError) {
       return { error: err.message };
@@ -307,6 +407,144 @@ export async function actionMarkOrderPaid(
       return { error: err.message };
     }
     logger.error('actionMarkOrderPaid: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Record one split / partial tender against an order. Multiple calls accumulate
+ * in the append-only payments ledger; the order's payment_status is recomputed
+ * (pending -> partial -> paid) after each tender. Staff (server or above).
+ */
+export async function actionRecordTender(
+  tenantId: string,
+  orderId: string,
+  amount: number,
+  method: string,
+): Promise<{
+  success?: boolean;
+  paymentStatus?: PaymentStatus;
+  net?: number;
+  due?: number;
+  error?: string;
+}> {
+  const parsed = recordTenderSchema.safeParse({ tenantId, orderId, amount, method });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    const summary = await createPaymentService(supabase).recordTender(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      {
+        amount: parsed.data.amount,
+        method: parsed.data.method,
+        createdBy: adminUserId,
+      },
+    );
+    return {
+      success: true,
+      paymentStatus: summary.paymentStatus,
+      net: summary.net,
+      due: summary.due,
+    };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionRecordTender: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Refund part or all of an order's net settled amount. Inserts an offsetting
+ * ledger row and recomputes payment_status (-> partial or refunded). Refunds are
+ * a manager action, so plain 'server' is excluded.
+ */
+export async function actionRefundOrder(
+  tenantId: string,
+  orderId: string,
+  amount: number,
+  method: string,
+): Promise<{ success?: boolean; paymentStatus?: PaymentStatus; error?: string }> {
+  const parsed = refundOrderSchema.safeParse({ tenantId, orderId, amount, method });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+    ]);
+    const summary = await createPaymentService(supabase).refund(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      {
+        amount: parsed.data.amount,
+        method: parsed.data.method,
+        createdBy: adminUserId,
+      },
+    );
+    return { success: true, paymentStatus: summary.paymentStatus };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionRefundOrder: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Read the payment ledger summary for an order (amount due, net settled, status,
+ * the list of tenders). Used by the order detail payment panel. Staff (server or
+ * above) - read-only.
+ */
+export async function actionGetPaymentSummary(
+  tenantId: string,
+  orderId: string,
+): Promise<{ summary?: PaymentSummary; error?: string }> {
+  const parsed = paymentSummarySchema.safeParse({ tenantId, orderId });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
+      'owner',
+      'admin',
+      'manager',
+      'server',
+    ]);
+    const summary = await createPaymentService(supabase).getSummary(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+    );
+    return { summary };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionGetPaymentSummary: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };
   }
 }

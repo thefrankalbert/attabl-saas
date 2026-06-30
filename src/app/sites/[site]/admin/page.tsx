@@ -13,6 +13,7 @@ import type {
 import type { ServiceType } from '@/types/admin.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
+import { isPaidOrder, orderGross, sumPaidRevenue } from '@/lib/orders/revenue';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ function buildBuckets(
     tip_amount?: number | null;
     created_at: string;
     status?: string;
+    payment_status?: string | null;
   }[],
   days: number,
 ): DayBucket[] {
@@ -37,8 +39,9 @@ function buildBuckets(
   for (const o of orders) {
     const key = o.created_at?.slice(0, 10);
     if (!key || !buckets[key]) continue;
+    // count = orders placed (all); revenue = only paid orders (single definition).
     buckets[key].count += 1;
-    buckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
+    if (isPaidOrder(o)) buckets[key].revenue += orderGross(o);
   }
   return Object.values(buckets);
 }
@@ -51,6 +54,7 @@ function buildChannelBuckets(
     tip_amount?: number | null;
     created_at: string;
     service_type?: ServiceType | null;
+    payment_status?: string | null;
   }[],
   days: number,
 ): ChannelBucket[] {
@@ -64,7 +68,9 @@ function buildChannelBuckets(
   for (const o of orders) {
     const key = o.created_at?.slice(0, 10);
     if (!key || !buckets[key]) continue;
-    const amount = Number(o.total || 0) + Number(o.tip_amount || 0);
+    // Revenue split counts paid orders only (single revenue definition).
+    if (!isPaidOrder(o)) continue;
+    const amount = orderGross(o);
     // dine_in + room_service -> Sur place ; takeaway + delivery -> A emporter
     const emporter = o.service_type === 'takeaway' || o.service_type === 'delivery';
     if (emporter) buckets[key].emporter += amount;
@@ -153,7 +159,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       // Today's orders (stats)
       supabase
         .from('orders')
-        .select('id, total, tip_amount, status, created_at')
+        .select('id, total, tip_amount, status, payment_status, created_at')
         .eq('tenant_id', tenant.id)
         .gte('created_at', today.toISOString()),
 
@@ -185,7 +191,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       // Yesterday for delta
       supabase
         .from('orders')
-        .select('id, total, tip_amount, status')
+        .select('id, total, tip_amount, status, payment_status')
         .eq('tenant_id', tenant.id)
         .gte('created_at', yesterday.toISOString())
         .lt('created_at', today.toISOString()),
@@ -193,7 +199,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       // Last 90 days for chart buckets (week/month/quarter ranges)
       supabase
         .from('orders')
-        .select('id, total, tip_amount, created_at, status, service_type')
+        .select('id, total, tip_amount, created_at, status, payment_status, service_type')
         .eq('tenant_id', tenant.id)
         .gte('created_at', ninetyDaysAgo.toISOString()),
 
@@ -206,9 +212,10 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .select(
           `menu_item_id, quantity, price_at_order,
            menu_items(id, name, is_available, category:categories(name)),
-           orders!inner(tenant_id, created_at)`,
+           orders!inner(tenant_id, created_at, payment_status)`,
         )
         .eq('orders.tenant_id', tenant.id)
+        .eq('orders.payment_status', 'paid')
         .gte('orders.created_at', sevenDaysAgo.toISOString()),
 
       // Low stock alerts
@@ -226,22 +233,15 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     const ordersData = ordersRes.data || [];
     initialStats = {
       ordersToday: ordersData.length,
-      revenueToday: ordersData
-        .filter((o) => o.status === 'delivered')
-        .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0),
+      // Revenue = paid orders only (single definition shared with the charts and RPCs).
+      revenueToday: sumPaidRevenue(ordersData),
       activeItems: itemsCountRes.count || 0,
       activeCards: venuesCountRes.count || 0,
     };
 
     // ─── Trend ───────────────────────────────────────────
     const yesterdayOrders = yesterdayRes.data || [];
-    const yesterdayRevenue = yesterdayOrders
-      .filter((o: Record<string, unknown>) => o.status === 'delivered')
-      .reduce(
-        (sum: number, o: Record<string, unknown>) =>
-          sum + Number(o.total || 0) + Number(o.tip_amount || 0),
-        0,
-      );
+    const yesterdayRevenue = sumPaidRevenue(yesterdayOrders);
     const yesterdayCount = yesterdayOrders.length;
     if (yesterdayCount > 0) {
       initialStats.ordersTrend = Math.round(

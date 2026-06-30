@@ -16,6 +16,7 @@ function chainable(result: { count?: number | null; error?: unknown; data?: unkn
   obj.is = vi.fn(() => obj);
   obj.in = vi.fn(() => obj);
   obj.gte = vi.fn(() => obj);
+  obj.neq = vi.fn(() => obj);
   obj.single = vi.fn(() => Promise.resolve(result));
   // Make the chain itself thenable (await-able)
   obj.then = (resolve: (v: unknown) => void, reject?: (e: unknown) => void) =>

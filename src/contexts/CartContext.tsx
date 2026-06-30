@@ -23,6 +23,8 @@ export type CartItem = {
   name_en?: string;
   selectedOption?: { name_fr: string; name_en?: string };
   selectedVariant?: {
+    // Stable DB id; lets the server verify the price by id (audit H4).
+    id?: string;
     name_fr: string;
     name_en?: string;
     price: number;
@@ -31,7 +33,7 @@ export type CartItem = {
   category_id?: string;
   category_name?: string;
   // ─── Phase 3: modifiers, notes, course ────────────────
-  modifiers?: { name: string; price: number; prices?: MultiCurrencyPrices }[];
+  modifiers?: { id?: string; name: string; price: number; prices?: MultiCurrencyPrices }[];
   customerNotes?: string;
   course?: string;
 };
@@ -141,11 +143,11 @@ const getCartItemKey = (item: CartItem): string => {
     key += `-opt-${item.selectedOption.name_fr}`;
   }
   if (item.selectedVariant) {
-    key += `-var-${item.selectedVariant.name_fr}`;
+    key += `-var-${item.selectedVariant.id ?? item.selectedVariant.name_fr}`;
   }
   if (item.modifiers && item.modifiers.length > 0) {
     const modKey = item.modifiers
-      .map((m) => m.name)
+      .map((m) => m.id ?? m.name)
       .sort()
       .join(',');
     key += `-mod-${modKey}`;
@@ -465,8 +467,19 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         service_charge_rate: serviceChargeRate,
       },
       discount,
+      // Round the preview to the tenant's currency so it matches the server
+      // (audit H1: EUR/USD need 2 decimals, XAF/XOF 0).
+      currencyCode,
     );
-  }, [subtotal, enableTax, taxRate, enableServiceCharge, serviceChargeRate, appliedCoupon]);
+  }, [
+    subtotal,
+    enableTax,
+    taxRate,
+    enableServiceCharge,
+    serviceChargeRate,
+    appliedCoupon,
+    currencyCode,
+  ]);
 
   // Backward compat: totalPrice = subtotal
   const totalPrice = subtotal;

@@ -24,6 +24,7 @@ import { PriceStacked } from '@/components/tenant/PriceStacked';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
+import { fromMinorUnits } from '@/lib/utils/money';
 import { logger } from '@/lib/logger';
 
 // --- Types -----------------------------------------------
@@ -76,9 +77,13 @@ interface TrackedOrderRow {
 function OrderConfirmedContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const { slug: tenantSlug, tenantId } = useTenant();
+  const { slug: tenantSlug, tenantId, tenant } = useTenant();
   const t = useTranslations('tenant');
   const { formatDisplayPrice } = useDisplayCurrency();
+  // Order money columns are integer MINOR units; the order base currency is the
+  // tenant currency. Convert to major at the mapping boundary so formatDisplayPrice
+  // (which FX-converts a MAJOR amount) keeps working unchanged.
+  const orderCurrency = tenant?.currency || 'XAF';
 
   const supabaseRef = useRef(createClient());
   const [order, setOrder] = useState<OrderData | null>(null);
@@ -131,23 +136,24 @@ function OrderConfirmedContent() {
         if (cancelled) return;
         const row = ((data as unknown as TrackedOrderRow[] | null) || [])[0];
         if (!error && row) {
+          const toMajor = (minor: number) => fromMinorUnits(minor, orderCurrency);
           const mapped: OrderData = {
             id: row.id,
             order_number: row.order_number,
             table_number: row.table_number,
-            total: row.total,
+            total: toMajor(row.total),
             status: row.status,
             created_at: row.created_at,
-            tip_amount: row.tip_amount ?? 0,
-            subtotal: row.subtotal ?? null,
-            discount_amount: row.discount_amount ?? 0,
-            tax_amount: row.tax_amount ?? 0,
-            service_charge_amount: row.service_charge_amount ?? 0,
+            tip_amount: toMajor(row.tip_amount ?? 0),
+            subtotal: row.subtotal != null ? toMajor(row.subtotal) : null,
+            discount_amount: toMajor(row.discount_amount ?? 0),
+            tax_amount: toMajor(row.tax_amount ?? 0),
+            service_charge_amount: toMajor(row.service_charge_amount ?? 0),
             items: (row.order_items || []).map((oi) => ({
               name: oi.item_name,
               name_en: oi.item_name_en ?? undefined,
               quantity: oi.quantity,
-              price: oi.price_at_order,
+              price: toMajor(oi.price_at_order),
               image_url: oi.image_url ?? null,
             })),
           };
@@ -159,7 +165,7 @@ function OrderConfirmedContent() {
     return () => {
       cancelled = true;
     };
-  }, [orderId, tenantId]);
+  }, [orderId, tenantId, orderCurrency]);
 
   // Realtime: live order status via Broadcast (DB trigger broadcast_order_status).
   // The broadcast carries a non-PII payload ({ id, status }) on a public per-order

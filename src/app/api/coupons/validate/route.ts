@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 
     // 4. Validate coupon using server-derived tenantId
     const couponService = createCouponService(supabase);
-    const result = await couponService.validateCoupon(code, tenant.id, subtotal);
+    const result = await couponService.validateCoupon(code, tenant.id, subtotal, tenant.currency);
 
     return NextResponse.json(result);
   } catch (error: unknown) {

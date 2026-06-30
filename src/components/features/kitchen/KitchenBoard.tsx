@@ -18,6 +18,7 @@ interface KitchenBoardProps {
     allItems: { id: string; item_status?: string }[],
   ) => Promise<void>;
   onMarkAllReady?: (orderId: string, itemIds: string[]) => Promise<void>;
+  onSetCourseHeld?: (orderId: string, course: string, held: boolean) => Promise<void>;
   onUpdate?: () => void;
   /** true = chef/admin full view, false = server/waiter simplified view (ready only) */
   isChefView: boolean;
@@ -43,6 +44,7 @@ export default function KitchenBoard({
   onStatusChange,
   onUpdateItemStatus,
   onMarkAllReady,
+  onSetCourseHeld,
   onUpdate,
   isChefView,
   zoneFilter = 'all',
@@ -83,6 +85,7 @@ export default function KitchenBoard({
                 onStatusChange={onStatusChange}
                 onUpdateItemStatus={onUpdateItemStatus}
                 onMarkAllReady={onMarkAllReady}
+                onSetCourseHeld={onSetCourseHeld}
                 onUpdate={onUpdate}
                 isMock={showMockData}
                 zoneFilter={zoneFilter}

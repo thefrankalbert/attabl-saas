@@ -372,6 +372,63 @@ describe('OrderService', () => {
       expect(result.validatedTotal).toBe(13);
     });
 
+    it('should price a variant by id even when the name no longer matches (H4)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({ data: [], error: null });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [{ id: 'var-1', menu_item_id: 'item-1', variant_name_fr: 'Grande', price: 15 }],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      // The variant was renamed since the cart was built: name will not match, but
+      // the id still does, so the server resolves the correct price by id.
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 15,
+          quantity: 1,
+          selectedVariant: { id: 'var-1', name_fr: 'Ancien Nom', price: 15 },
+        },
+      ] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      expect(result.validatedTotal).toBe(15);
+    });
+
+    it('should price a modifier by id even when the name no longer matches (H4)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [{ id: 'mod-1', menu_item_id: 'item-1', name: 'Extra Cheese', price: 3 }],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({ data: [], error: null });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+          // Stale name, correct id -> server resolves price by id.
+          modifiers: [{ id: 'mod-1', name: 'Renomme', price: 0 }],
+        },
+      ] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      expect(result.validatedTotal).toBe(13);
+    });
+
     it('should reject unknown modifiers', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('menu_items').in.mockResolvedValue({
@@ -580,6 +637,406 @@ describe('OrderService', () => {
         'create_order_with_items',
         expect.objectContaining({ p_client_request_id: null }),
       );
+    });
+
+    it('converts EUR amounts to integer minor units before the RPC (12.50 -> 1250)', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-EUR', error: null }) // generateOrderNumber
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-eur', orderNumber: 'CMD-EUR', total: 1250 },
+          error: null,
+        }); // create_order_with_items
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.createOrderWithItems({
+        tenantId: 'tenant-eur',
+        display_currency: 'EUR',
+        items: [{ id: 'item-1', name: 'Pizza', price: 12.5, quantity: 1 }] as OrderItemInput[],
+        total: 12.5,
+        subtotal: 10,
+        tax_amount: 2,
+        service_charge_amount: 0.5,
+        discount_amount: 0,
+        tip_amount: 1.25,
+      });
+
+      // Returned total is the minor integer the DB stored.
+      expect(result.total).toBe(1250);
+      // Every transactional money field is converted to minor (x100 for EUR).
+      const [, args] = rpc.mock.calls[rpc.mock.calls.length - 1] as [
+        string,
+        Record<string, unknown>,
+      ];
+      expect(args.p_total).toBe(1250);
+      expect(args.p_subtotal).toBe(1000);
+      expect(args.p_tax_amount).toBe(200);
+      expect(args.p_service_charge_amount).toBe(50);
+      expect(args.p_discount_amount).toBe(0);
+      expect(args.p_tip_amount).toBe(125);
+      const items = args.p_items as Array<{ price_at_order: number }>;
+      expect(items[0].price_at_order).toBe(1250);
+    });
+
+    it('keeps XAF amounts identical (zero-decimal: 1000 -> 1000)', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-XAF', error: null })
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-xaf', orderNumber: 'CMD-XAF', total: 1000 },
+          error: null,
+        });
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      await service.createOrderWithItems({
+        tenantId: 'tenant-xaf',
+        display_currency: 'XAF',
+        items: [{ id: 'item-1', name: 'Riz', price: 1000, quantity: 1 }] as OrderItemInput[],
+        total: 1000,
+        tip_amount: 500,
+      });
+
+      const [, args] = rpc.mock.calls[rpc.mock.calls.length - 1] as [
+        string,
+        Record<string, unknown>,
+      ];
+      expect(args.p_total).toBe(1000);
+      expect(args.p_tip_amount).toBe(500);
+      const items = args.p_items as Array<{ price_at_order: number }>;
+      expect(items[0].price_at_order).toBe(1000);
+    });
+  });
+
+  describe('markPaid (idempotency guard)', () => {
+    // Bespoke mock for the update().eq().eq().eq().select() chain.
+    function makeSupabase(selectResult: { data?: unknown; error?: unknown }) {
+      const update = vi.fn();
+      const select = vi.fn().mockResolvedValue(selectResult);
+      const eq3 = vi.fn().mockReturnValue({ select });
+      const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
+      const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+      update.mockReturnValue({ eq: eq1 });
+      const paymentsInsert = vi.fn().mockResolvedValue({ error: null });
+      const from = vi.fn((table: string) => {
+        if (table === 'payments') return { insert: paymentsInsert };
+        return { update };
+      });
+      return {
+        client: { from } as unknown as SupabaseClient,
+        update,
+        eq1,
+        eq2,
+        eq3,
+        select,
+        paymentsInsert,
+      };
+    }
+
+    it('scopes the update to payment_status=pending and returns paid:true when a row flips', async () => {
+      const m = makeSupabase({
+        data: [{ id: 'order-1', total: 1000, tip_amount: 500 }],
+        error: null,
+      });
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 500,
+      });
+
+      expect(res).toEqual({ paid: true });
+      // payment_status='pending' guard present (third .eq)
+      expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
+      // tip recorded when > 0
+      expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
+      // a tender is appended to the ledger (audit H2/H8) with amount = total + tip
+      expect(m.paymentsInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order_id: 'order-1',
+          method: 'cash',
+          status: 'completed',
+          amount: 1500,
+        }),
+      );
+    });
+
+    it('is a no-op (paid:false) on an already-paid order (0 rows matched)', async () => {
+      const m = makeSupabase({ data: [], error: null });
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('order-1', 'tenant-123', { method: 'cash' });
+
+      expect(res).toEqual({ paid: false });
+    });
+
+    it('does not record a zero tip', async () => {
+      const m = makeSupabase({ data: [{ id: 'order-1' }], error: null });
+      const service = createOrderService(m.client);
+
+      await service.markPaid('order-1', 'tenant-123', { method: 'cash', tipAmount: 0 });
+
+      expect(m.update).toHaveBeenCalledWith(expect.not.objectContaining({ tip_amount: 0 }));
+    });
+
+    it('throws INTERNAL on database error', async () => {
+      const m = makeSupabase({ data: null, error: { message: 'DB error' } });
+      const service = createOrderService(m.client);
+
+      await expect(
+        service.markPaid('order-1', 'tenant-123', { method: 'cash' }),
+      ).rejects.toMatchObject({
+        code: 'INTERNAL',
+      });
+    });
+  });
+
+  describe('markPaid - table session closing (C1)', () => {
+    // Multi-table mock: orders.update().eq().eq().eq().select() returns a paid row
+    // with a session; orders.select(count).eq().eq().eq().neq() returns the number
+    // of still-unpaid orders on the session; table_sessions.update().eq().eq().eq().
+    function makeSupabase(remainingUnpaid: number) {
+      const tsUpdateEq3 = vi.fn().mockResolvedValue({ error: null });
+      const tsUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: tsUpdateEq3 }) }),
+      });
+
+      const countNeq = vi.fn().mockResolvedValue({ count: remainingUnpaid, error: null });
+      const ordersSelectCount = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ neq: countNeq }) }),
+        }),
+      });
+
+      const updateSelect = vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
+      const ordersUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: updateSelect }) }),
+        }),
+      });
+
+      const from = vi.fn((table: string) => {
+        if (table === 'orders') return { update: ordersUpdate, select: ordersSelectCount };
+        if (table === 'table_sessions') return { update: tsUpdate };
+        if (table === 'payments') return { insert: vi.fn().mockResolvedValue({ error: null }) };
+        return {};
+      });
+      return { client: { from } as unknown as SupabaseClient, tsUpdate };
+    }
+
+    it('closes the session when no unpaid orders remain', async () => {
+      const m = makeSupabase(0);
+      const service = createOrderService(m.client);
+
+      const res = await service.markPaid('o1', 't1', { method: 'cash' });
+
+      expect(res).toEqual({ paid: true });
+      expect(m.tsUpdate).toHaveBeenCalledWith({ status: 'closed', closed_at: expect.any(String) });
+    });
+
+    it('keeps the session open while other orders are unpaid', async () => {
+      const m = makeSupabase(1);
+      const service = createOrderService(m.client);
+
+      await service.markPaid('o1', 't1', { method: 'cash' });
+
+      expect(m.tsUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateStatus (forward-only state machine + optimistic concurrency, H13)', () => {
+    function makeSupabase(currentStatus: string | null, updateRows: unknown[] = [{ id: 'o1' }]) {
+      const maybeSingle = vi.fn().mockResolvedValue({
+        data: currentStatus === null ? null : { status: currentStatus },
+        error: null,
+      });
+      const select = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
+      });
+      const updateSelect = vi.fn().mockResolvedValue({ data: updateRows, error: null });
+      const update = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: updateSelect }) }),
+        }),
+      });
+      const from = vi.fn().mockReturnValue({ select, update });
+      return { client: { from } as unknown as SupabaseClient, update };
+    }
+
+    it('allows a forward transition (preparing -> ready)', async () => {
+      const m = makeSupabase('preparing', [{ id: 'o1' }]);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBeUndefined();
+      expect(m.update).toHaveBeenCalledWith({ status: 'ready' });
+    });
+
+    it('is a no-op when the status is unchanged', async () => {
+      const m = makeSupabase('ready');
+      const service = createOrderService(m.client);
+      await service.updateStatus('o1', 't1', 'ready');
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a backward transition (ready -> preparing)', async () => {
+      const m = makeSupabase('ready');
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'preparing')).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects transitioning a finalised (delivered) order', async () => {
+      const m = makeSupabase('delivered');
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
+    it('throws CONFLICT when another device advanced it first (0 rows)', async () => {
+      const m = makeSupabase('preparing', []); // read preparing, but conditional update matched nothing
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
+    it('throws NOT_FOUND when the order does not exist', async () => {
+      const m = makeSupabase(null);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+  });
+
+  describe('setCourseHeld (fire/hold a course)', () => {
+    function makeSupabase(error: unknown = null) {
+      const eq3 = vi.fn().mockResolvedValue({ error });
+      const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
+      const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+      const update = vi.fn().mockReturnValue({ eq: eq1 });
+      const from = vi.fn().mockReturnValue({ update });
+      return { client: { from } as unknown as SupabaseClient, update, eq3 };
+    }
+
+    it('holds a course (held=true, no fired_at)', async () => {
+      const m = makeSupabase();
+      const service = createOrderService(m.client);
+      await service.setCourseHeld('o1', 't1', 'dessert', true);
+      expect(m.update).toHaveBeenCalledWith({ held: true });
+      expect(m.eq3).toHaveBeenCalledWith('course', 'dessert');
+    });
+
+    it('fires a course (held=false + fired_at)', async () => {
+      const m = makeSupabase();
+      const service = createOrderService(m.client);
+      await service.setCourseHeld('o1', 't1', 'main', false);
+      expect(m.update).toHaveBeenCalledWith(
+        expect.objectContaining({ held: false, fired_at: expect.any(String) }),
+      );
+    });
+
+    it('throws INTERNAL on DB error', async () => {
+      const m = makeSupabase({ message: 'boom' });
+      const service = createOrderService(m.client);
+      await expect(service.setCourseHeld('o1', 't1', 'main', true)).rejects.toMatchObject({
+        code: 'INTERNAL',
+      });
+    });
+  });
+
+  describe('cancelOrder (reverses side-effects)', () => {
+    // Mock: from('orders').select().eq().eq().maybeSingle() for the fetch,
+    // rpc() for restock/unclaim, from('orders').update().eq().eq() for the flip.
+    function makeSupabase(opts: {
+      order: Record<string, unknown> | null;
+      fetchError?: unknown;
+      restockError?: unknown;
+      unclaimError?: unknown;
+      updateError?: unknown;
+    }) {
+      const maybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: opts.order, error: opts.fetchError ?? null });
+      const select = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
+      });
+      const updateEq2 = vi.fn().mockResolvedValue({ error: opts.updateError ?? null });
+      const update = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: updateEq2 }) });
+      const rpc = vi.fn().mockImplementation((name: string) => {
+        if (name === 'restock_order') return Promise.resolve({ error: opts.restockError ?? null });
+        if (name === 'unclaim_coupon_usage')
+          return Promise.resolve({ error: opts.unclaimError ?? null });
+        return Promise.resolve({ error: null });
+      });
+      const from = vi.fn().mockReturnValue({ select, update });
+      return { client: { from, rpc } as unknown as SupabaseClient, rpc, update };
+    }
+
+    it('unclaims the coupon then marks cancelled (restock handled by the caller)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'preparing', payment_status: 'pending', coupon_id: 'c1' },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      // restock is NOT done here - it goes through the service_role path in the action.
+      expect(m.rpc).not.toHaveBeenCalledWith('restock_order', expect.anything());
+      expect(m.rpc).toHaveBeenCalledWith('unclaim_coupon_usage', { p_coupon_id: 'c1' });
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    });
+
+    it('does not unclaim when the order has no coupon', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'ready', payment_status: 'pending', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      expect(m.rpc).not.toHaveBeenCalledWith('unclaim_coupon_usage', expect.anything());
+      expect(m.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    });
+
+    it('is a no-op when the order is already cancelled', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'cancelled', payment_status: 'pending', coupon_id: 'c1' },
+      });
+      const service = createOrderService(m.client);
+
+      await service.cancelOrder('o1', 'tenant-123');
+
+      expect(m.rpc).not.toHaveBeenCalled();
+      expect(m.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses to cancel a paid order (CONFLICT)', async () => {
+      const m = makeSupabase({
+        order: { id: 'o1', status: 'delivered', payment_status: 'paid', coupon_id: null },
+      });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+      expect(m.rpc).not.toHaveBeenCalled();
+    });
+
+    it('throws NOT_FOUND when the order does not exist', async () => {
+      const m = makeSupabase({ order: null });
+      const service = createOrderService(m.client);
+
+      await expect(service.cancelOrder('o1', 'tenant-123')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
     });
   });
 });

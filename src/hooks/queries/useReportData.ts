@@ -144,9 +144,10 @@ export function useReportData(tenantId: string, period: Period) {
         supabase
           .from('order_items')
           .select(
-            'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
+            'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
           )
           .eq('orders.tenant_id', tenantId)
+          .eq('orders.payment_status', 'paid')
           .gte('orders.created_at', startDate)
           .lte('orders.created_at', endDate + 'T23:59:59'),
         supabase
@@ -155,6 +156,7 @@ export function useReportData(tenantId: string, period: Period) {
             'server_id, total, tip_amount, server:admin_users!orders_server_id_fkey(full_name)',
           )
           .eq('tenant_id', tenantId)
+          .eq('payment_status', 'paid')
           .gte('created_at', startDate)
           .lte('created_at', endDate + 'T23:59:59')
           .not('server_id', 'is', null),

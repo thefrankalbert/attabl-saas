@@ -35,15 +35,19 @@ function createMockSupabase() {
   const mockFrom = vi.fn((table: string) => {
     const chain = getChain(table);
 
-    // update().eq().eq().is() => resolves   (releaseAllForServer, releaseAssignment)
-    // update().eq().eq()     => resolves   (claimOrder - awaited directly)
-    // second .eq() must be both awaitable (claimOrder) and expose .is() (releaseAllForServer)
+    // update().eq().eq().is() => resolves          (releaseAllForServer, releaseAssignment)
+    // update().eq().eq().or().select() => resolves (claimOrder - first-claim-wins)
+    // second .eq() must expose .is() (releaseAllForServer) AND .or().select() (claimOrder)
     const callResolve = chain.resolve as unknown as () => Promise<unknown>;
     const updateChain = {
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockImplementation(() => {
-          const p = callResolve() as Promise<unknown> & { is: () => Promise<unknown> };
+          const p = callResolve() as Promise<unknown> & {
+            is: () => Promise<unknown>;
+            or: () => { select: () => Promise<unknown> };
+          };
           p.is = callResolve;
+          p.or = vi.fn().mockReturnValue({ select: chain.resolve });
           return p;
         }),
         is: chain.resolve,
@@ -242,22 +246,37 @@ describe('AssignmentService', () => {
   });
 
   describe('claimOrder', () => {
-    it('should resolve without error on success', async () => {
+    it('should resolve without error when a row is claimed', async () => {
       const supabase = createMockSupabase();
 
-      // update().eq().eq() resolves directly (no .is())
-      // The chain for orders uses update().eq().eq() - second eq is the terminal
-      supabase._getChain('orders').resolve.mockResolvedValue({ error: null });
+      // update().eq().eq().or().select() returns the claimed row
+      supabase
+        ._getChain('orders')
+        .resolve.mockResolvedValue({ data: [{ id: ORDER_ID }], error: null });
 
       const service = createAssignmentService(asSupabase(supabase));
 
       await expect(service.claimOrder(ORDER_ID, SERVER_ID, TENANT_ID)).resolves.toBeUndefined();
     });
 
+    it('should throw CONFLICT when the order is already claimed by another server', async () => {
+      const supabase = createMockSupabase();
+
+      // No row matched the (server_id IS NULL OR server_id = me) guard -> already taken
+      supabase._getChain('orders').resolve.mockResolvedValue({ data: [], error: null });
+
+      const service = createAssignmentService(asSupabase(supabase));
+
+      await expect(service.claimOrder(ORDER_ID, SERVER_ID, TENANT_ID)).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
+    });
+
     it('should throw INTERNAL on database error', async () => {
       const supabase = createMockSupabase();
 
       supabase._getChain('orders').resolve.mockResolvedValue({
+        data: null,
         error: { message: 'DB error' },
       });
 

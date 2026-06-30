@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { actionMarkOrderPaid } from '@/app/actions/orders';
 import { formatCurrency } from '@/lib/utils/currency';
+import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
@@ -70,7 +71,22 @@ export default function PaymentModal({
   const t = useTranslations('payment');
   const tc = useTranslations('common');
 
-  const finalTotal = total ?? order?.total_price ?? 0;
+  // MONEY UNITS. This modal runs in two modes:
+  //   - ORDER mode (order?.id present): the order's money columns (total_price,
+  //     subtotal, tax_amount, ...) are integer MINOR units read from the DB.
+  //   - CART mode (POS, no order yet): the `total`/`pricing` props are MAJOR units
+  //     computed client-side from menu prices; the order is stored later by the
+  //     POS create path, which converts via the service.
+  // To keep the keypad math + display in ONE consistent unit, everything below
+  // works in MAJOR units: in ORDER mode we convert the minor DB values to major
+  // here at the boundary. The only place we go back to minor is when SENDING the
+  // tip to actionMarkOrderPaid (markPaid stores orders.tip_amount as minor).
+  const isOrderMode = !!order?.id;
+  const orderCurrency = order?.display_currency ?? currency;
+  const toMajor = (v: number | null | undefined) =>
+    isOrderMode ? fromMinorUnits(Number(v ?? 0), orderCurrency) : Number(v ?? 0);
+
+  const finalTotal = total ?? toMajor(order?.total_price) ?? 0;
   const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
   const finalOrderNum = orderNumber ?? (order ? parseInt(order.id.slice(0, 4), 16) : undefined);
 
@@ -147,15 +163,18 @@ export default function PaymentModal({
     setIsProcessing(true);
 
     try {
+      // paid=false means the order had already been settled (idempotent no-op),
+      // e.g. a double-tap or a concurrent cashier - surface a distinct message
+      // instead of implying this tap took a second payment.
+      let alreadySettled = false;
       if (order?.id) {
         try {
-          const result = await actionMarkOrderPaid(
-            order.tenant_id,
-            order.id,
-            method,
-            tipAmount > 0 ? tipAmount : undefined,
-          );
+          // tipAmount is a MAJOR keypad value; markPaid stores orders.tip_amount
+          // in integer MINOR units, so convert at the boundary.
+          const tipMinor = tipAmount > 0 ? toMinorUnits(tipAmount, orderCurrency) : undefined;
+          const result = await actionMarkOrderPaid(order.tenant_id, order.id, method, tipMinor);
           if (result.error) throw new Error(result.error);
+          alreadySettled = result.paid === false;
         } catch (paymentError) {
           const description = paymentError instanceof Error ? paymentError.message : undefined;
           toast({ title: t('paymentError'), description, variant: 'destructive' });
@@ -167,7 +186,7 @@ export default function PaymentModal({
       setIsProcessing(false);
       // For existing orders, payment was persisted above - show success toast
       if (order?.id) {
-        toast({ title: t('paymentSuccess') });
+        toast({ title: alreadySettled ? t('paymentAlreadySettled') : t('paymentSuccess') });
       }
       // For POS orders, pass payment data - the caller handles the toast after order creation
       onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });
@@ -178,11 +197,29 @@ export default function PaymentModal({
     }
   };
 
-  // Price breakdown from order (admin view) or pricing prop (POS view)
-  const subtotal = order?.subtotal ?? pricing?.subtotal;
-  const taxAmount = order?.tax_amount ?? pricing?.taxAmount;
-  const serviceChargeAmount = order?.service_charge_amount ?? pricing?.serviceChargeAmount;
-  const discountAmount = order?.discount_amount ?? pricing?.discountAmount;
+  // Price breakdown from order (admin view, MINOR -> converted to major) or
+  // pricing prop (POS view, already major). In ORDER mode the source is the
+  // order's minor columns; in CART mode it is the major `pricing` prop.
+  const subtotal = isOrderMode
+    ? order?.subtotal != null
+      ? toMajor(order.subtotal)
+      : undefined
+    : pricing?.subtotal;
+  const taxAmount = isOrderMode
+    ? order?.tax_amount != null
+      ? toMajor(order.tax_amount)
+      : undefined
+    : pricing?.taxAmount;
+  const serviceChargeAmount = isOrderMode
+    ? order?.service_charge_amount != null
+      ? toMajor(order.service_charge_amount)
+      : undefined
+    : pricing?.serviceChargeAmount;
+  const discountAmount = isOrderMode
+    ? order?.discount_amount != null
+      ? toMajor(order.discount_amount)
+      : undefined
+    : pricing?.discountAmount;
   const hasBreakdown =
     (subtotal !== undefined && subtotal !== null) ||
     (pricing !== undefined && (pricing.taxAmount > 0 || pricing.serviceChargeAmount > 0));

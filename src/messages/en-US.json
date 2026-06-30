@@ -1,7 +1,7 @@
 {
   "common": {
-    "offlineMode": "Offline mode",
-    "connectionRestored": "Connection restored",
+    "offlineMode": "Offline mode - Showing cached data",
+    "connectionRestored": "Connection restored - Syncing...",
     "outboxPending": "{count} order(s) waiting to send",
     "outboxRejected": "{count} order(s) refused on send. Review and re-enter.",
     "aria": {
@@ -101,8 +101,6 @@
     "noItems": "No items",
     "updateError": "Update error",
     "saving": "Saving...",
-    "offlineMode": "Offline mode - Showing cached data",
-    "connectionRestored": "Connection restored - Syncing...",
     "errorTitle": "Oops, something went wrong",
     "errorDescription": "We apologize for the inconvenience. Please try again or return to the home page.",
     "errorHint": "Don't panic, these things happen.",
@@ -1355,6 +1353,7 @@
     "colPayment": "Payment",
     "payPaid": "Paid",
     "payPending": "Unpaid",
+    "payPartial": "Partial",
     "payRefunded": "Refunded",
     "colColumns": "Columns",
     "colAdd": "Add",
@@ -2081,7 +2080,13 @@
     "zoneKitchen": "Kitchen",
     "zoneBar": "Bar",
     "searchPlaceholder": "Search an order...",
-    "searchLabel": "Search"
+    "searchLabel": "Search",
+    "courseAppetizer": "Starters",
+    "courseMain": "Mains",
+    "courseDessert": "Desserts",
+    "courseDrink": "Drinks",
+    "fireCourse": "Fire",
+    "holdCourse": "Hold"
   },
   "pos": {
     "title": "Point of Sale",
@@ -2149,7 +2154,7 @@
     "sendToKitchen": "Send to kitchen",
     "selectTableFirst": "Please select a table first",
     "server": "Server",
-    "itemsCount": "items",
+    "itemsCount": "{count, plural, one {# item} other {# items}}",
     "printShort": "Kitchen",
     "confirmClearCart": "Are you sure you want to clear the cart?",
     "selectVariant": "Select a variant",
@@ -2157,7 +2162,10 @@
     "addToCart": "Add to cart",
     "orderNote": "Order note",
     "orderNotePlaceholder": "Special instructions for this order...",
-    "couponPlaceholder": "Promo code"
+    "couponPlaceholder": "Promo code",
+    "toSettle": "To settle",
+    "toSettleSubtitle": "Orders awaiting payment",
+    "toSettleEmpty": "No orders to settle"
   },
   "users": {
     "title": "Users",
@@ -2809,7 +2817,25 @@
     "exactAmount": "Exact amount",
     "validatePayment": "Validate payment",
     "amountRemaining": "Still due: {amount}",
-    "quickAdd": "+{amount}"
+    "quickAdd": "+{amount}",
+    "paymentAlreadySettled": "Order already settled",
+    "payPartial": "Partial payment",
+    "recordPartial": "Record a partial payment",
+    "partialRecorded": "Partial payment recorded",
+    "remaining": "Remaining: {amount}",
+    "refund": "Refund",
+    "refundAmount": "Refund amount",
+    "refundConfirm": "Confirm refund",
+    "refunded": "Refund recorded",
+    "refundError": "Refund failed",
+    "ledger": "Payments",
+    "netPaid": "Settled",
+    "tenderHistory": "Payment history",
+    "noTenders": "No payment recorded yet",
+    "recordPayment": "Record payment",
+    "amount": "Amount",
+    "tenderRecorded": "Payment recorded",
+    "loadError": "Could not load payments"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -2972,7 +2998,8 @@
     "loadingError": "Error loading history",
     "statsAdditions": "In",
     "statsRemovals": "Out",
-    "statsProducts": "Products"
+    "statsProducts": "Products",
+    "filterRestock": "Cancellation restock"
   },
   "screenLock": {
     "lockingIn": "Locking in {time} - move your mouse to stay connected",

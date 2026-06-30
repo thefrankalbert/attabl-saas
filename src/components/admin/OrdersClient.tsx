@@ -47,6 +47,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
+import { fromMinorUnits } from '@/lib/utils/money';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { useDevice } from '@/hooks/useDevice';
@@ -76,8 +77,15 @@ export default function OrdersClient({
   const tk = useTranslations('kitchen');
   const ts = useTranslations('shortcuts');
   const format = useFormatter();
-  // Stable number formatter for SSR/CSR parity (avoids toLocaleString() hydration mismatches)
-  const formatNumber = useCallback((n: number) => format.number(n), [format]);
+  const { data: tenantSettings } = useTenantSettings(tenantId);
+  const currency = (tenantSettings?.currency || 'XAF') as CurrencyCode;
+  // Stable number formatter for SSR/CSR parity (avoids toLocaleString() hydration
+  // mismatches). Order totals/tips are integer MINOR units, so convert to major
+  // (identity for XAF) before formatting the bare number.
+  const formatNumber = useCallback(
+    (n: number) => format.number(fromMinorUnits(n, currency)),
+    [format, currency],
+  );
 
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
@@ -119,8 +127,6 @@ export default function OrdersClient({
     },
     [useServerPagination, router, pathname],
   );
-
-  const { data: tenantSettings } = useTenantSettings(tenantId);
 
   const {
     soundEnabled,

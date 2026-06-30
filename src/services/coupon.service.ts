@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Coupon } from '@/types/admin.types';
+import type { CurrencyCode } from '@/lib/constants';
+import { roundForCurrency } from '@/lib/utils/money';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -15,9 +17,16 @@ export interface CouponService {
     code: string,
     tenantId: string,
     orderSubtotal: number,
+    currencyCode?: CurrencyCode | string | null,
   ): Promise<CouponValidationResult>;
   claimUsage(couponId: string): Promise<boolean>;
   unclaimUsage(couponId: string): Promise<void>;
+  recordRedemption(input: {
+    tenantId: string;
+    couponId: string;
+    orderId: string;
+    discountAmount: number;
+  }): Promise<void>;
   createCoupon(
     tenantId: string,
     data: {
@@ -65,6 +74,7 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       code: string,
       tenantId: string,
       orderSubtotal: number,
+      currencyCode?: CurrencyCode | string | null,
     ): Promise<CouponValidationResult> {
       const { data: coupon, error } = await supabase
         .from('coupons')
@@ -125,8 +135,8 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
 
       // Never discount more than subtotal
       discountAmount = Math.min(discountAmount, orderSubtotal);
-      // Round to 2 decimal places
-      discountAmount = Math.round(discountAmount * 100) / 100;
+      // Round to the currency's smallest unit (audit H1: XAF/XOF zero-decimal).
+      discountAmount = roundForCurrency(discountAmount, currencyCode);
 
       return { valid: true, coupon: coupon as Coupon, discountAmount };
     },
@@ -157,6 +167,29 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       });
       if (error) {
         logger.error('Failed to unclaim coupon usage', { couponId, error });
+      }
+    },
+
+    /**
+     * Append an auditable redemption record (audit H11): which coupon was
+     * redeemed on which order, and for how much. The counter (claimUsage) remains
+     * the enforcement; this is the audit trail. Best-effort - a failure here must
+     * not fail the order, so it only logs.
+     */
+    async recordRedemption(input: {
+      tenantId: string;
+      couponId: string;
+      orderId: string;
+      discountAmount: number;
+    }): Promise<void> {
+      const { error } = await supabase.from('coupon_redemptions').insert({
+        tenant_id: input.tenantId,
+        coupon_id: input.couponId,
+        order_id: input.orderId,
+        discount_amount: input.discountAmount,
+      });
+      if (error) {
+        logger.error('Failed to record coupon redemption', { ...input, error });
       }
     },
 
