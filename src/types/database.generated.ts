@@ -1086,7 +1086,6 @@ export type Database = {
           subtotal: number;
           table_id: string | null;
           table_number: string | null;
-          tax: number;
           tax_amount: number | null;
           tenant_id: string;
           tip_amount: number | null;
@@ -1124,7 +1123,6 @@ export type Database = {
           subtotal: number;
           table_id?: string | null;
           table_number?: string | null;
-          tax?: number;
           tax_amount?: number | null;
           tenant_id: string;
           tip_amount?: number | null;
@@ -1162,7 +1160,6 @@ export type Database = {
           subtotal?: number;
           table_id?: string | null;
           table_number?: string | null;
-          tax?: number;
           tax_amount?: number | null;
           tenant_id?: string;
           tip_amount?: number | null;
