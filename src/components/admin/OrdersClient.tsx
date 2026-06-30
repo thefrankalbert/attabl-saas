@@ -765,6 +765,29 @@ export default function OrdersClient({
                           >
                             {config.label}
                           </span>
+                          {/* C3: payment axis shown alongside fulfillment status */}
+                          {order.payment_status && (
+                            <span
+                              className={cn(
+                                'px-2 py-1 rounded-full text-xs font-bold',
+                                order.payment_status === 'paid'
+                                  ? 'bg-status-success-bg text-status-success'
+                                  : order.payment_status === 'refunded'
+                                    ? 'bg-app-bg text-app-text-muted'
+                                    : 'bg-status-warning-bg text-status-warning',
+                              )}
+                            >
+                              {ta(
+                                order.payment_status === 'paid'
+                                  ? 'payPaid'
+                                  : order.payment_status === 'partial'
+                                    ? 'payPartial'
+                                    : order.payment_status === 'refunded'
+                                      ? 'payRefunded'
+                                      : 'payPending',
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
 

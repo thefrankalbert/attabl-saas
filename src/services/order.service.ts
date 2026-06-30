@@ -644,10 +644,16 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Transition de statut invalide', 'VALIDATION');
       }
 
+      // C3: stamp served_at when the order reaches the terminal fulfillment state.
+      const fulfillmentUpdate: Record<string, unknown> = { status };
+      if (status === 'delivered') {
+        fulfillmentUpdate.served_at = new Date().toISOString();
+      }
+
       // Optimistic concurrency: only apply if the status is still what we read.
       const { data, error } = await supabase
         .from('orders')
-        .update({ status })
+        .update(fulfillmentUpdate)
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .eq('status', from)
@@ -753,15 +759,15 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Mark an order as paid - updates payment_method, payment_status,
-     * paid_at, status to 'delivered', and optionally tip_amount.
-     * Always filters by tenant_id for isolation.
+     * Mark an order as paid - updates payment_method, payment_status, paid_at,
+     * and optionally tip_amount. Always filters by tenant_id for isolation.
      *
-     * NOTE: setting status='delivered' couples payment to fulfillment. This is a
-     * deliberate, documented interim: decoupling into orthogonal fulfillment /
-     * payment axes is Phase 3 of the order->payment refonte (audit C3). Removing
-     * it now would leave paid orders lingering on the KDS active board, so it
-     * stays until the fulfillment state machine lands.
+     * C3 (Phase 3): payment is DECOUPLED from fulfillment. markPaid no longer
+     * touches orders.status - the fulfillment axis is driven solely by the KDS/POS
+     * fulfillment actions (updateStatus / applyPosFinalState). This makes "paid but
+     * not yet served" and "served but unpaid" representable, and keeps a paid-but-
+     * unprepared order on the KDS active board (which filters on status, not
+     * payment) instead of wrongly dropping it.
      *
      * Idempotent: the update is scoped to payment_status='pending' (same guard as
      * the POS route applyPosFinalState). A double-tap / network retry on an
@@ -781,7 +787,6 @@ export function createOrderService(supabase: SupabaseClient) {
         payment_method: payload.method,
         payment_status: 'paid',
         paid_at: new Date().toISOString(),
-        status: 'delivered',
       };
       if (payload.tipAmount && payload.tipAmount > 0) {
         update.tip_amount = payload.tipAmount;

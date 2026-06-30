@@ -37,7 +37,11 @@ async function applyPosFinalState(
         payment_method: paymentMethod,
         payment_status: 'paid',
         paid_at: new Date().toISOString(),
-        ...(status !== 'pending' ? { status } : {}),
+        // C3: status here is the POS fulfillment intent (decoupled from payment);
+        // stamp served_at when it reaches the terminal fulfillment state.
+        ...(status !== 'pending'
+          ? { status, ...(status === 'delivered' ? { served_at: new Date().toISOString() } : {}) }
+          : {}),
       })
       .eq('id', orderId)
       // Belt filter: service-role client bypasses RLS, so scope to the tenant.
@@ -78,7 +82,10 @@ async function applyPosFinalState(
   if (status !== 'pending') {
     const { error } = await supabase
       .from('orders')
-      .update({ status })
+      .update({
+        status,
+        ...(status === 'delivered' ? { served_at: new Date().toISOString() } : {}),
+      })
       .eq('id', orderId)
       .eq('tenant_id', tenantId);
     if (error) {

@@ -145,7 +145,8 @@ describe('createPaymentService', () => {
     expect(second.paymentStatus).toBe('paid');
     expect(second.net).toBe(10000);
     expect(mock._order.payment_status).toBe('paid');
-    expect(mock._order.status).toBe('delivered');
+    // C3: payment is decoupled from fulfillment - recompute must NOT touch status.
+    expect(mock._order.status).toBe('ready');
     expect(mock._order.paid_at).not.toBeNull();
   });
 

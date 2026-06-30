@@ -170,9 +170,11 @@ export function createPaymentService(supabase: SupabaseClient) {
   /**
    * Recompute and persist payment_status from the ledger after a tender write.
    * When the order becomes 'paid' (and was not already paid) it also stamps
-   * paid_at (if null) and sets status='delivered' - mirroring markPaid's
-   * deliberate Phase-3 interim coupling of payment to fulfillment, and closes a
-   * fully-settled table session (best-effort). Tenant-scoped.
+   * paid_at (if null) and closes a fully-settled table session (best-effort).
+   * Tenant-scoped.
+   *
+   * C3 (Phase 3): payment is DECOUPLED from fulfillment - this no longer touches
+   * orders.status. Fulfillment is driven solely by the KDS/POS actions.
    */
   async function recompute(order: PaymentOrderRow, tenantId: string): Promise<void> {
     const tenders = await fetchTenders(order.id, tenantId);
@@ -189,9 +191,8 @@ export function createPaymentService(supabase: SupabaseClient) {
     const becomesPaid = newStatus === 'paid' && order.payment_status !== 'paid';
 
     const update: Record<string, unknown> = { payment_status: newStatus };
-    if (becomesPaid) {
-      if (!order.paid_at) update.paid_at = new Date().toISOString();
-      update.status = 'delivered';
+    if (becomesPaid && !order.paid_at) {
+      update.paid_at = new Date().toISOString();
     }
 
     const { error } = await supabase
