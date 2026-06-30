@@ -74,29 +74,38 @@ ALTER TABLE public.orders
     END
   )::bigint;
 
+-- order_items / payments take their currency from the PARENT order. Postgres
+-- forbids a subquery in an ALTER ... USING transform, so scale the EUR/USD rows
+-- in place first (still numeric), then change the type with a plain round().
+UPDATE public.order_items oi
+  SET price_at_order = oi.price_at_order * 100
+  FROM public.orders o
+  WHERE o.id = oi.order_id AND o.display_currency IN ('EUR', 'USD');
+
 ALTER TABLE public.order_items
-  ALTER COLUMN price_at_order TYPE bigint USING round(
-    price_at_order * CASE
-      WHEN (
-        SELECT o.display_currency FROM public.orders o WHERE o.id = order_items.order_id
-      ) IN ('EUR', 'USD') THEN 100
-      ELSE 1
-    END
-  )::bigint;
+  ALTER COLUMN price_at_order TYPE bigint USING round(price_at_order)::bigint;
+
+UPDATE public.payments p
+  SET amount = p.amount * 100
+  FROM public.orders o
+  WHERE o.id = p.order_id AND o.display_currency IN ('EUR', 'USD');
 
 ALTER TABLE public.payments
-  ALTER COLUMN amount TYPE bigint USING round(
-    amount * CASE
-      WHEN (
-        SELECT o.display_currency FROM public.orders o WHERE o.id = payments.order_id
-      ) IN ('EUR', 'USD') THEN 100
-      ELSE 1
-    END
-  )::bigint;
+  ALTER COLUMN amount TYPE bigint USING round(amount)::bigint;
 
 -- ── 2. Recreate create_order_with_items with BIGINT money params ─────────────
 -- Body copied verbatim from 20260630000000_order_table_id_resolution.sql; only
 -- the money types and the price_at_order cast change.
+--
+-- The money params change type (numeric -> bigint), which is a DIFFERENT function
+-- signature, so CREATE OR REPLACE would leave the old numeric-param overload in
+-- place and PostgREST RPC resolution would become ambiguous. Drop the old
+-- signature first so exactly one create_order_with_items remains.
+
+DROP FUNCTION IF EXISTS public.create_order_with_items(
+  uuid, text, numeric, text, text, text, text, text, text, text,
+  numeric, numeric, numeric, numeric, numeric, uuid, uuid, text, text, jsonb, uuid
+);
 
 CREATE OR REPLACE FUNCTION public.create_order_with_items(
   p_tenant_id uuid,
