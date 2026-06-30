@@ -121,6 +121,20 @@ le schema, implementation `cash` seulement).
   append-only (resout H2/H8), `order_items.tenant_id` (H10), `coupon_redemptions` (H11),
   `orders.table_id` peuple et valide.
 - **Phase 2 - Argent en unites mineures** (BIGINT + dinero.js v2) (resout H1).
+  - LIVRE (2026-06-30): les colonnes TRANSACTIONNELLES sont en BIGINT unites mineures -
+    `orders.{total,subtotal,tax_amount,service_charge_amount,discount_amount,tip_amount}`,
+    `order_items.price_at_order`, `payments.amount` ; dinero.js v2 + helpers
+    `toMinorUnits/fromMinorUnits/sumMinor/multiplyMinor/formatCurrencyMinor`. XAF/XOF zero-decimal
+    donc minor == major (identite pour la prod actuelle) ; seuls EUR/USD x100.
+  - FRONTIERE DELIBEREE (decision produit 2026-06-30, clause N/A zero-dette) : les PRIX CATALOGUE
+    (`menu_items.price`, `item_modifiers.price`, `item_price_variants.price`, `coupons.discount_value`,
+    le jsonb `prices` multi-devise) RESTENT en numeric/major. Justification : ce sont des valeurs de
+    configuration, pas l'argent transactionnel vise par H1 (le bug float etait sur les agregats de
+    commandes/paiements, desormais en entiers exacts). Les convertir cascade sur tout l'affichage
+    menu/FX, le panier et la verification de prix anti-fraude (`previewOrderItems`) pour un gain
+    arithmetique nul (aucune somme flottante sur ces valeurs). Conversion major->minor faite au
+    moment de l'entree en commande. A rouvrir seulement si un besoin reel multi-devise EUR/USD
+    apparait sur le catalogue.
 - **Phase 3 - Machines a etats orthogonales + KDS reel** (resout C3, H12, H13): per-item bump,
   coursing + fire/hold, item en realtime, update conditionnel anti-race.
 - **Phase 4 - Abstraction paiement seulement** (PSP hors scope): interface `PaymentProvider`
