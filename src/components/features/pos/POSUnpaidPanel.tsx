@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { X, Receipt, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrencyMinor } from '@/lib/utils/money';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 interface POSUnpaidPanelProps {
@@ -97,7 +97,7 @@ export default function POSUnpaidPanel({
                         </span>
                       </span>
                       <span className="shrink-0 text-sm font-bold text-app-text">
-                        {formatCurrency(order.total_price || 0, currency)}
+                        {formatCurrencyMinor(order.total_price || 0, currency)}
                       </span>
                     </Button>
                   </li>

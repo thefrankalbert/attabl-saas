@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
-import { roundForCurrency } from '@/lib/utils/money';
 import { createOrderService } from './order.service';
 
 /**
@@ -16,6 +15,11 @@ import { createOrderService } from './order.service';
  * Every tender is one append-only row in the payments ledger. payment_status on
  * orders is recomputed from the ledger after each write - never the other way
  * round. All queries are tenant-scoped.
+ *
+ * MONEY UNITS: every amount here (orders.total, orders.tip_amount,
+ * payments.amount, and the derived due/net/completed/refunded) is an integer in
+ * the currency's MINOR units. Comparisons and sums are plain integer arithmetic -
+ * no per-currency rounding is needed (an integer minor amount is already exact).
  */
 
 /** Minimal order shape needed to compute what is owed and to recompute status. */
@@ -43,7 +47,7 @@ export interface PaymentTender {
 /** Aggregated payment state for an order, derived from the ledger. */
 export interface PaymentSummary {
   orderId: string;
-  /** Amount owed = total (excl. tip) + tip, rounded to the currency unit. */
+  /** Amount owed = total (excl. tip) + tip, in integer minor units. */
   due: number;
   /** Sum of completed tenders. */
   completed: number;
@@ -67,15 +71,14 @@ const ORDER_COLUMNS =
 export function createPaymentService(supabase: SupabaseClient) {
   /**
    * Amount owed for an order: total (excl. tip per project convention) + tip,
-   * rounded to the currency's smallest tenderable unit.
+   * in integer minor units. Both columns are already minor integers, so this is
+   * a plain integer add (Math.round is a defensive no-op against any stray
+   * non-integer that slipped in).
    */
   function dueFor(
     order: Pick<PaymentOrderRow, 'total' | 'tip_amount' | 'display_currency'>,
   ): number {
-    return roundForCurrency(
-      Number(order.total || 0) + Number(order.tip_amount || 0),
-      order.display_currency,
-    );
+    return Math.round(Number(order.total || 0) + Number(order.tip_amount || 0));
   }
 
   async function fetchOrder(orderId: string, tenantId: string): Promise<PaymentOrderRow> {
@@ -143,7 +146,7 @@ export function createPaymentService(supabase: SupabaseClient) {
       completed,
       refunded,
       net,
-      paymentStatus: deriveStatus(net, refunded, due, order.display_currency),
+      paymentStatus: deriveStatus(net, refunded, due),
       tenders,
     };
   }
@@ -154,18 +157,13 @@ export function createPaymentService(supabase: SupabaseClient) {
    *   net <= 0                 -> 'pending'    (nothing settled yet)
    *   net < due                -> 'partial'    (some settled, balance remaining)
    *   else                     -> 'paid'       (fully settled)
-   * Comparisons use currency rounding so a 1-unit float drift cannot wedge an
-   * order on 'partial'.
+   * All inputs are integer minor units, so the comparison is exact - no rounding
+   * needed (integer minor amounts cannot carry sub-unit float drift).
    */
-  function deriveStatus(
-    net: number,
-    refunded: number,
-    due: number,
-    currency: string | null,
-  ): PaymentStatus {
+  function deriveStatus(net: number, refunded: number, due: number): PaymentStatus {
     if (net <= 0 && refunded > 0) return 'refunded';
     if (net <= 0) return 'pending';
-    if (roundForCurrency(net, currency) < roundForCurrency(due, currency)) return 'partial';
+    if (net < due) return 'partial';
     return 'paid';
   }
 
@@ -186,7 +184,7 @@ export function createPaymentService(supabase: SupabaseClient) {
       .reduce((sum, t) => sum + t.amount, 0);
     const net = completed - refunded;
     const due = dueFor(order);
-    const newStatus = deriveStatus(net, refunded, due, order.display_currency);
+    const newStatus = deriveStatus(net, refunded, due);
 
     const becomesPaid = newStatus === 'paid' && order.payment_status !== 'paid';
 

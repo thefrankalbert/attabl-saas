@@ -10,6 +10,11 @@
  *
  * orders.total is stored EXCLUDING tip (see api/orders/route.ts and
  * api/orders/pos/route.ts); tip lives in tip_amount. Gross revenue = total + tip.
+ *
+ * MONEY UNITS: orders.total and orders.tip_amount are integer MINOR units (the
+ * currency's smallest unit). These helpers sum minor amounts and return a minor
+ * integer - callers that DISPLAY the result must convert with fromMinorUnits /
+ * formatCurrencyMinor (src/lib/utils/money.ts). No re-rounding to major here.
  */
 
 export const PAID_PAYMENT_STATUS = 'paid';

@@ -36,5 +36,17 @@ describe('orders/revenue', () => {
       expect(sumPaidRevenue([])).toBe(0);
       expect(sumPaidRevenue([{ payment_status: 'pending', total: 1000 }])).toBe(0);
     });
+
+    it('sums EUR minor-unit amounts as exact integers (no major re-rounding)', () => {
+      // EUR amounts are stored in minor units: 12.50 EUR -> total 1250, tip 0.50 -> 50.
+      // orderGross/sumPaidRevenue stay in minor integers; the caller converts for display.
+      expect(orderGross({ total: 1250, tip_amount: 50 })).toBe(1300);
+      const orders = [
+        { payment_status: 'paid', total: 1250, tip_amount: 50 }, // 1300 (13.00 EUR)
+        { payment_status: 'paid', total: 999, tip_amount: 1 }, // 1000 (10.00 EUR)
+        { payment_status: 'pending', total: 5000, tip_amount: 0 }, // excluded
+      ];
+      expect(sumPaidRevenue(orders)).toBe(2300); // 23.00 EUR in minor units
+    });
   });
 });

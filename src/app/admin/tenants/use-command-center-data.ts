@@ -21,7 +21,7 @@ import {
   buildLocations,
   chartWindow,
   sumLocations,
-  toAmount,
+  toMajorAmount,
   type DerivableOrder,
 } from './command-center.derive';
 
@@ -121,18 +121,20 @@ export function useCommandCenterData(
     const [todayRes, yesterdayRes, recentRes] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, order_number, total, status, created_at, tenant_id')
+        .select('id, order_number, total, status, created_at, tenant_id, display_currency')
         .in('tenant_id', tenantIds)
         .gte('created_at', startToday.toISOString()),
       supabase
         .from('orders')
-        .select('id, total, status, tenant_id, created_at')
+        .select('id, total, status, tenant_id, created_at, display_currency')
         .in('tenant_id', tenantIds)
         .gte('created_at', startYesterday.toISOString())
         .lt('created_at', startToday.toISOString()),
       supabase
         .from('orders')
-        .select('id, order_number, total, status, created_at, tenant_id, tenants(name, slug)')
+        .select(
+          'id, order_number, total, status, created_at, tenant_id, display_currency, tenants(name, slug)',
+        )
         .in('tenant_id', tenantIds)
         .order('created_at', { ascending: false })
         .limit(8),
@@ -183,7 +185,7 @@ export function useCommandCenterData(
         return {
           id: o.id,
           order_number: o.order_number || ' - ',
-          total: toAmount(o.total),
+          total: toMajorAmount(o),
           status: o.status || 'pending',
           created_at: o.created_at,
           tenant_name: joined?.name || tenantById.get(o.tenant_id)?.name || '',
@@ -214,7 +216,7 @@ export function useCommandCenterData(
 
       const { data, error: chartError } = await supabase
         .from('orders')
-        .select('total, created_at, status')
+        .select('total, created_at, status, display_currency')
         .in('tenant_id', tenantIds)
         .gte('created_at', startDate.toISOString())
         .neq('status', 'cancelled')
@@ -232,7 +234,7 @@ export function useCommandCenterData(
 
       setChartData(
         bucketChart(
-          (data || []) as Array<Pick<DerivableOrder, 'total' | 'created_at'>>,
+          (data || []) as Array<Pick<DerivableOrder, 'total' | 'created_at' | 'display_currency'>>,
           startDate,
           now,
           groupBy,

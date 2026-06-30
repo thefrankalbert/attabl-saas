@@ -265,7 +265,9 @@ export function OrdersTable({
       new Date(o.created_at).toLocaleString(locale),
       to((STATUS_META[o.status] ?? STATUS_META.pending).labelKey),
       o.payment_status ? t(PAYMENT_META[o.payment_status].labelKey) : '-',
-      String(o.total_price),
+      // total_price is integer minor units - format via formatValue (minor-aware)
+      // so the CSV matches the on-screen amount column.
+      formatValue(o.total_price),
       String((o.items ?? []).reduce((s, it) => s + (it.quantity || 0), 0)),
     ]);
     const csv = [header, ...lines]

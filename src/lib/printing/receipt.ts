@@ -1,5 +1,6 @@
 import type { Order, Tenant } from '@/types/admin.types';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
+import { formatAmountMinor } from '@/lib/utils/money';
 
 /** Escape user-controlled strings before interpolating into HTML. */
 function escapeHtml(str: string): string {
@@ -48,12 +49,13 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
   // ─── Items rows ────────────────────────────────────────
   const itemsHTML = items
     .map((item) => {
+      // item.price is price_at_order (integer MINOR units); line total stays minor.
       const lineTotal = item.price * item.quantity;
       let row = `
         <div class="item-row">
           <span class="item-qty">${item.quantity}</span>
           <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-price">${formatAmount(lineTotal, currency)}</span>
+          <span class="item-price">${formatAmountMinor(lineTotal, currency)}</span>
         </div>`;
 
       if (item.notes) {
@@ -83,35 +85,35 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
   let breakdownHTML = `
     <div class="breakdown-row">
       <span>Sous-total</span>
-      <span>${formatAmount(subtotal, currency)}</span>
+      <span>${formatAmountMinor(subtotal, currency)}</span>
     </div>`;
 
   if (taxAmount > 0) {
     breakdownHTML += `
     <div class="breakdown-row">
       <span>TVA</span>
-      <span>${formatAmount(taxAmount, currency)}</span>
+      <span>${formatAmountMinor(taxAmount, currency)}</span>
     </div>`;
   }
   if (serviceCharge > 0) {
     breakdownHTML += `
     <div class="breakdown-row">
       <span>Service</span>
-      <span>${formatAmount(serviceCharge, currency)}</span>
+      <span>${formatAmountMinor(serviceCharge, currency)}</span>
     </div>`;
   }
   if (discount > 0) {
     breakdownHTML += `
     <div class="breakdown-row breakdown-row--discount">
       <span>Réduction</span>
-      <span>-${formatAmount(discount, currency)}</span>
+      <span>-${formatAmountMinor(discount, currency)}</span>
     </div>`;
   }
   if (tipAmount > 0) {
     breakdownHTML += `
     <div class="breakdown-row breakdown-row--tip">
       <span>Pourboire</span>
-      <span>+${formatAmount(tipAmount, currency)}</span>
+      <span>+${formatAmountMinor(tipAmount, currency)}</span>
     </div>`;
   }
 
@@ -425,7 +427,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
   <div class="total-section">
     <span class="total-label">Total</span>
     <span>
-      <span class="total-amount">${formatAmount(total + tipAmount, currency)}</span>
+      <span class="total-amount">${formatAmountMinor(total + tipAmount, currency)}</span>
       <span class="total-currency">${currencySymbol}</span>
     </span>
   </div>

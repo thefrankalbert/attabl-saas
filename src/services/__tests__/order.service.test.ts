@@ -638,6 +638,77 @@ describe('OrderService', () => {
         expect.objectContaining({ p_client_request_id: null }),
       );
     });
+
+    it('converts EUR amounts to integer minor units before the RPC (12.50 -> 1250)', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-EUR', error: null }) // generateOrderNumber
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-eur', orderNumber: 'CMD-EUR', total: 1250 },
+          error: null,
+        }); // create_order_with_items
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      const result = await service.createOrderWithItems({
+        tenantId: 'tenant-eur',
+        display_currency: 'EUR',
+        items: [{ id: 'item-1', name: 'Pizza', price: 12.5, quantity: 1 }] as OrderItemInput[],
+        total: 12.5,
+        subtotal: 10,
+        tax_amount: 2,
+        service_charge_amount: 0.5,
+        discount_amount: 0,
+        tip_amount: 1.25,
+      });
+
+      // Returned total is the minor integer the DB stored.
+      expect(result.total).toBe(1250);
+      // Every transactional money field is converted to minor (x100 for EUR).
+      const [, args] = rpc.mock.calls[rpc.mock.calls.length - 1] as [
+        string,
+        Record<string, unknown>,
+      ];
+      expect(args.p_total).toBe(1250);
+      expect(args.p_subtotal).toBe(1000);
+      expect(args.p_tax_amount).toBe(200);
+      expect(args.p_service_charge_amount).toBe(50);
+      expect(args.p_discount_amount).toBe(0);
+      expect(args.p_tip_amount).toBe(125);
+      const items = args.p_items as Array<{ price_at_order: number }>;
+      expect(items[0].price_at_order).toBe(1250);
+    });
+
+    it('keeps XAF amounts identical (zero-decimal: 1000 -> 1000)', async () => {
+      const supabase = createMockSupabase();
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-XAF', error: null })
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-xaf', orderNumber: 'CMD-XAF', total: 1000 },
+          error: null,
+        });
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      await service.createOrderWithItems({
+        tenantId: 'tenant-xaf',
+        display_currency: 'XAF',
+        items: [{ id: 'item-1', name: 'Riz', price: 1000, quantity: 1 }] as OrderItemInput[],
+        total: 1000,
+        tip_amount: 500,
+      });
+
+      const [, args] = rpc.mock.calls[rpc.mock.calls.length - 1] as [
+        string,
+        Record<string, unknown>,
+      ];
+      expect(args.p_total).toBe(1000);
+      expect(args.p_tip_amount).toBe(500);
+      const items = args.p_items as Array<{ price_at_order: number }>;
+      expect(items[0].price_at_order).toBe(1000);
+    });
   });
 
   describe('markPaid (idempotency guard)', () => {

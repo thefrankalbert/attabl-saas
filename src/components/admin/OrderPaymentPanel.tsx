@@ -7,7 +7,7 @@ import { Loader2, RotateCcw, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrencyMinor, toMinorUnits, fromMinorUnits } from '@/lib/utils/money';
 import {
   actionGetPaymentSummary,
   actionRecordTender,
@@ -68,16 +68,18 @@ export default function OrderPaymentPanel({
 
   if (!summary) return null;
 
-  const fmt = (amount: number) => formatCurrency(amount, currency);
+  // summary.due / net / remaining and each tender.amount are integer MINOR units.
+  const fmt = (amount: number) => formatCurrencyMinor(amount, currency);
   const remaining = Math.max(0, summary.due - summary.net);
   const canSettle = remaining > 0 && summary.paymentStatus !== 'paid';
   const canRefund = summary.net > 0;
 
   const handleRecord = async () => {
+    // The cashier types a MAJOR-unit amount (e.g. 12.50); the ledger stores minor.
     const amount = parseFloat(tenderAmount);
     if (!Number.isFinite(amount) || amount <= 0) return;
     setLoading(true);
-    const res = await actionRecordTender(tenantId, orderId, amount, 'cash');
+    const res = await actionRecordTender(tenantId, orderId, toMinorUnits(amount, currency), 'cash');
     setLoading(false);
     if (res.error) {
       toast({ title: t('paymentError'), description: res.error, variant: 'destructive' });
@@ -90,10 +92,11 @@ export default function OrderPaymentPanel({
   };
 
   const handleRefund = async () => {
+    // Major-unit input -> minor-unit ledger row.
     const amount = parseFloat(refundAmount);
     if (!Number.isFinite(amount) || amount <= 0) return;
     setLoading(true);
-    const res = await actionRefundOrder(tenantId, orderId, amount, 'cash');
+    const res = await actionRefundOrder(tenantId, orderId, toMinorUnits(amount, currency), 'cash');
     setLoading(false);
     if (res.error) {
       toast({ title: t('refundError'), description: res.error, variant: 'destructive' });
@@ -164,7 +167,7 @@ export default function OrderPaymentPanel({
             type="number"
             inputMode="numeric"
             min={0}
-            placeholder={String(Math.round(remaining))}
+            placeholder={String(fromMinorUnits(remaining, currency))}
             value={tenderAmount}
             onChange={(e) => setTenderAmount(e.target.value)}
             aria-label={t('amount')}
@@ -193,7 +196,7 @@ export default function OrderPaymentPanel({
             type="number"
             inputMode="numeric"
             min={0}
-            placeholder={String(Math.round(summary.net))}
+            placeholder={String(fromMinorUnits(summary.net, currency))}
             value={refundAmount}
             onChange={(e) => setRefundAmount(e.target.value)}
             aria-label={t('refundAmount')}

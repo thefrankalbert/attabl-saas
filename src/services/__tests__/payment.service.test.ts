@@ -245,6 +245,33 @@ describe('createPaymentService', () => {
     ).rejects.toMatchObject({ code: 'VALIDATION' });
   });
 
+  it('EUR order in minor units: due = total + tip; partial then paid', async () => {
+    // EUR is 2-decimal. An order of 10.00 EUR + 2.50 EUR tip is stored as minor
+    // units: total=1000, tip_amount=250. due must be 1250 (plain integer add).
+    const mock = createMockSupabase(
+      baseOrder({ display_currency: 'EUR', total: 1000, tip_amount: 250 }),
+    );
+    const service = createPaymentService(asSupabase(mock));
+
+    const first = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 1000, // 10.00 EUR tendered (minor)
+      method: 'card',
+      createdBy: 'admin-1',
+    });
+    expect(first.due).toBe(1250);
+    expect(first.net).toBe(1000);
+    expect(first.paymentStatus).toBe('partial');
+
+    const second = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 250, // remaining 2.50 EUR (minor)
+      method: 'cash',
+      createdBy: 'admin-1',
+    });
+    expect(second.net).toBe(1250);
+    expect(second.paymentStatus).toBe('paid');
+    expect(mock._order.payment_status).toBe('paid');
+  });
+
   it('refund amount <= 0 -> VALIDATION', async () => {
     const mock = createMockSupabase(baseOrder({ payment_status: 'paid' }), [
       {

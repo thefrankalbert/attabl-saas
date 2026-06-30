@@ -4,6 +4,7 @@ import type { ServiceType, OrderPreparationZone, PreparationZone } from '@/types
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
+import { toMinorUnits } from '@/lib/utils/money';
 
 interface CreateOrderInput {
   tenantId: string;
@@ -36,6 +37,7 @@ interface CreateOrderInput {
 interface CreateOrderResult {
   orderId: string;
   orderNumber: string;
+  /** Order total in integer MINOR units (the value stored in orders.total). */
   total: number;
   /**
    * True when the DB function returned an already-existing order for the
@@ -521,6 +523,12 @@ export function createOrderService(supabase: SupabaseClient) {
     async createOrderWithItems(input: CreateOrderInput): Promise<CreateOrderResult> {
       const orderNumber = await this.generateOrderNumber(input.tenantId);
 
+      // Money crosses the boundary here: CreateOrderInput carries MAJOR-unit
+      // amounts (menu prices, computed pricing) and the DB stores integer MINOR
+      // units. Convert every transactional amount with the order's currency
+      // (orders.display_currency; null -> default XAF, a 0-decimal identity).
+      const currency = input.display_currency;
+
       // Build items array for the DB function
       const itemsJson = input.items.map((item) => {
         const parts: string[] = [];
@@ -534,7 +542,8 @@ export function createOrderService(supabase: SupabaseClient) {
           item_name: item.name,
           item_name_en: item.name_en || null,
           quantity: item.quantity,
-          price_at_order: input.verifiedPrices?.get(item.id) ?? item.price,
+          // price_at_order: server-verified MAJOR menu price -> integer minor units.
+          price_at_order: toMinorUnits(input.verifiedPrices?.get(item.id) ?? item.price, currency),
           customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,
@@ -545,7 +554,7 @@ export function createOrderService(supabase: SupabaseClient) {
       const { data, error } = await supabase.rpc('create_order_with_items', {
         p_tenant_id: input.tenantId,
         p_order_number: orderNumber,
-        p_total: input.total,
+        p_total: toMinorUnits(input.total, currency),
         p_table_number: input.tableNumber || null,
         p_customer_name: input.customerName || null,
         p_customer_phone: input.customerPhone || null,
@@ -553,11 +562,11 @@ export function createOrderService(supabase: SupabaseClient) {
         p_service_type: input.service_type || 'dine_in',
         p_room_number: input.room_number || null,
         p_delivery_address: input.delivery_address || null,
-        p_subtotal: input.subtotal ?? input.total,
-        p_tax_amount: input.tax_amount ?? 0,
-        p_service_charge_amount: input.service_charge_amount ?? 0,
-        p_discount_amount: input.discount_amount ?? 0,
-        p_tip_amount: input.tip_amount ?? 0,
+        p_subtotal: toMinorUnits(input.subtotal ?? input.total, currency),
+        p_tax_amount: toMinorUnits(input.tax_amount ?? 0, currency),
+        p_service_charge_amount: toMinorUnits(input.service_charge_amount ?? 0, currency),
+        p_discount_amount: toMinorUnits(input.discount_amount ?? 0, currency),
+        p_tip_amount: toMinorUnits(input.tip_amount ?? 0, currency),
         p_coupon_id: input.coupon_id || null,
         p_server_id: input.server_id ?? null,
         p_display_currency: input.display_currency || null,
@@ -765,6 +774,9 @@ export function createOrderService(supabase: SupabaseClient) {
       tenantId: string,
       payload: { method: string; tipAmount?: number },
     ): Promise<{ paid: boolean }> {
+      // payload.tipAmount is in integer MINOR units (orders.tip_amount is BIGINT
+      // minor). The caller (PaymentModal -> actionMarkOrderPaid) converts the
+      // major keypad amount with the order currency before sending.
       const update: Record<string, unknown> = {
         payment_method: payload.method,
         payment_status: 'paid',

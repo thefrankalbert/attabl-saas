@@ -9,6 +9,7 @@ import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useCart } from '@/contexts/CartContext';
 import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
+import { fromMinorUnits } from '@/lib/utils/money';
 import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -77,6 +78,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const { addToCart, items } = useCart();
   const { formatDisplayPrice } = useDisplayCurrency();
+  const orderCurrency = tenant?.currency || 'XAF';
   const { toast } = useToast();
   const supabaseRef = useRef(createClient());
 
@@ -95,19 +97,23 @@ export default function OrderDetailPage() {
         if (error || !row) {
           logger.warn('Order detail not found', { orderId });
         } else {
+          // Order money columns are integer MINOR units; convert to major at the
+          // boundary (order base currency = tenant currency) so formatDisplayPrice
+          // and the reorder->cart path (which use major) keep working. Identity for XAF.
+          const toMajor = (minor: number) => fromMinorUnits(minor, orderCurrency);
           setOrder({
             id: row.id,
             order_number: row.order_number,
             table_number: row.table_number,
             status: row.status,
-            total: row.total,
-            subtotal: row.subtotal ?? null,
-            tip_amount: row.tip_amount ?? 0,
+            total: toMajor(row.total),
+            subtotal: row.subtotal != null ? toMajor(row.subtotal) : null,
+            tip_amount: toMajor(row.tip_amount ?? 0),
             created_at: row.created_at,
             items: (row.order_items || []).map((oi) => ({
               name: oi.item_name,
               quantity: oi.quantity,
-              price: oi.price_at_order,
+              price: toMajor(oi.price_at_order),
               menu_item_id: oi.menu_item_id ?? undefined,
               image_url: oi.image_url ?? null,
             })),
@@ -118,7 +124,7 @@ export default function OrderDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [orderId, tenantId]);
+  }, [orderId, tenantId, orderCurrency]);
 
   const subtotal = order
     ? (order.subtotal ?? order.items.reduce((s, i) => s + i.price * i.quantity, 0))
