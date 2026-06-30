@@ -105,6 +105,14 @@ export async function GET(request: Request) {
           logger.warn('Failed to track login', { error: String(loginTrackError) });
         }
 
+        // Platform super-admins only belong to the synthetic __platform tenant
+        // (onboarding_completed=false by design), which would otherwise trip the
+        // needsOnboarding check below. Send them to the platform console instead.
+        const isSuperAdmin = existingAdminRows.some((row) => row.is_super_admin === true);
+        if (isSuperAdmin) {
+          return NextResponse.redirect(`${requestUrl.origin}/admin/platform`);
+        }
+
         // Resume onboarding if ANY tenant is still unfinished; the /onboarding page
         // (getState) then opens the most recent unfinished one. Otherwise go to the hub.
         const needsOnboarding = existingAdminRows.some((row) => {
