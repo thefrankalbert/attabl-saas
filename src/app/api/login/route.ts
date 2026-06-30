@@ -93,6 +93,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, redirect: '/onboarding' });
     }
 
+    // Platform super-admins are not restaurant owners: their only membership is
+    // the synthetic __platform tenant, seeded onboarding_completed=false by
+    // design. That would trip the needsOnboarding check below and bounce them
+    // into the new-restaurant flow. Route them straight to the platform console.
+    const isSuperAdmin = adminUsers.some((au) => au.is_super_admin === true);
+    if (isSuperAdmin) {
+      return NextResponse.json({ success: true, redirect: '/admin/platform' });
+    }
+
     // 4. Determine redirect
     const needsOnboarding = adminUsers.some((au) => {
       // Supabase join type gap
