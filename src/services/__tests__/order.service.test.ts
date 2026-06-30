@@ -372,6 +372,63 @@ describe('OrderService', () => {
       expect(result.validatedTotal).toBe(13);
     });
 
+    it('should price a variant by id even when the name no longer matches (H4)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({ data: [], error: null });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [{ id: 'var-1', menu_item_id: 'item-1', variant_name_fr: 'Grande', price: 15 }],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      // The variant was renamed since the cart was built: name will not match, but
+      // the id still does, so the server resolves the correct price by id.
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 15,
+          quantity: 1,
+          selectedVariant: { id: 'var-1', name_fr: 'Ancien Nom', price: 15 },
+        },
+      ] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      expect(result.validatedTotal).toBe(15);
+    });
+
+    it('should price a modifier by id even when the name no longer matches (H4)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [{ id: 'mod-1', menu_item_id: 'item-1', name: 'Extra Cheese', price: 3 }],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({ data: [], error: null });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+          // Stale name, correct id -> server resolves price by id.
+          modifiers: [{ id: 'mod-1', name: 'Renomme', price: 0 }],
+        },
+      ] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      expect(result.validatedTotal).toBe(13);
+    });
+
     it('should reject unknown modifiers', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('menu_items').in.mockResolvedValue({

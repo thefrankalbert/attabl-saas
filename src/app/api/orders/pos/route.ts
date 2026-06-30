@@ -186,7 +186,7 @@ export async function POST(request: Request) {
         adminSupabase,
         tenant_id,
         itemIds,
-        'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
+        'id, name, name_en, price, is_available, category_id, item_price_variants(id, variant_name_fr, price)',
       ),
       adminSupabase
         .from('tenants')
@@ -219,7 +219,7 @@ export async function POST(request: Request) {
       price: number;
       is_available: boolean;
       category_id: string | null;
-      item_price_variants?: { variant_name_fr: string; price: number }[];
+      item_price_variants?: { id: string; variant_name_fr: string; price: number }[];
     };
 
     const menuItemsMap = new Map(
@@ -250,12 +250,21 @@ export async function POST(request: Request) {
     const serviceItems = items.map((item) => {
       const mi = menuItemsMap.get(item.menu_item_id)!;
       let price = Number(mi.price) || 0;
+      let resolvedVariantId: string | undefined;
 
-      if (item.selected_variant && mi.item_price_variants) {
-        const variants = mi.item_price_variants as { variant_name_fr: string; price: number }[];
-        const variant = variants.find((v) => v.variant_name_fr === item.selected_variant);
+      if ((item.selected_variant_id || item.selected_variant) && mi.item_price_variants) {
+        const variants = mi.item_price_variants as {
+          id: string;
+          variant_name_fr: string;
+          price: number;
+        }[];
+        // Resolve by stable id first (collision/rename-proof), name as fallback (audit H4).
+        const variant =
+          (item.selected_variant_id && variants.find((v) => v.id === item.selected_variant_id)) ||
+          variants.find((v) => v.variant_name_fr === item.selected_variant);
         if (variant) {
           price = variant.price;
+          resolvedVariantId = variant.id;
         }
       }
 
@@ -268,7 +277,7 @@ export async function POST(request: Request) {
         modifiers: item.modifiers || undefined,
         customerNotes: item.customer_notes || undefined,
         selectedVariant: item.selected_variant
-          ? { name_fr: item.selected_variant, price }
+          ? { id: resolvedVariantId, name_fr: item.selected_variant, price }
           : undefined,
       };
     });

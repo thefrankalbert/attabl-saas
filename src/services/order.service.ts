@@ -206,22 +206,39 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la vérification du menu', 'INTERNAL', menuError);
       }
 
+      // Index modifiers/variants BOTH by stable id and by name (audit H4). The
+      // server prefers the id when the cart carries one (collision/rename-proof)
+      // and falls back to name for legacy carts saved before ids were sent.
       const { data: dbModifiers } = modifiersRes;
       const modifiersByItem = new Map<string, Map<string, number>>();
+      const modifiersByItemId = new Map<string, Map<string, number>>();
       for (const mod of dbModifiers || []) {
         if (!modifiersByItem.has(mod.menu_item_id)) {
           modifiersByItem.set(mod.menu_item_id, new Map());
         }
         modifiersByItem.get(mod.menu_item_id)!.set(mod.name.toLowerCase(), mod.price);
+        if (mod.id) {
+          if (!modifiersByItemId.has(mod.menu_item_id)) {
+            modifiersByItemId.set(mod.menu_item_id, new Map());
+          }
+          modifiersByItemId.get(mod.menu_item_id)!.set(mod.id, mod.price);
+        }
       }
 
       const { data: dbVariants } = variantsRes;
       const variantsByItem = new Map<string, Map<string, number>>();
+      const variantsByItemId = new Map<string, Map<string, number>>();
       for (const v of dbVariants || []) {
         if (!variantsByItem.has(v.menu_item_id)) {
           variantsByItem.set(v.menu_item_id, new Map());
         }
         variantsByItem.get(v.menu_item_id)!.set(v.variant_name_fr.toLowerCase(), v.price);
+        if (v.id) {
+          if (!variantsByItemId.has(v.menu_item_id)) {
+            variantsByItemId.set(v.menu_item_id, new Map());
+          }
+          variantsByItemId.get(v.menu_item_id)!.set(v.id, v.price);
+        }
       }
 
       const menuItemsMap = new Map(
@@ -278,8 +295,12 @@ export function createOrderService(supabase: SupabaseClient) {
         // Determine server-verified price: variant price from DB, or base item price
         let expectedPrice = menuItem.price;
         if (item.selectedVariant) {
-          const itemVariants = variantsByItem.get(item.id);
-          const serverVariantPrice = itemVariants?.get(item.selectedVariant.name_fr.toLowerCase());
+          const variantById = item.selectedVariant.id
+            ? variantsByItemId.get(item.id)?.get(item.selectedVariant.id)
+            : undefined;
+          const serverVariantPrice =
+            variantById ??
+            variantsByItem.get(item.id)?.get(item.selectedVariant.name_fr.toLowerCase());
           if (serverVariantPrice !== undefined) {
             expectedPrice = serverVariantPrice;
           } else {
@@ -300,12 +321,14 @@ export function createOrderService(supabase: SupabaseClient) {
           });
         }
 
-        // Verify modifier prices server-side
+        // Verify modifier prices server-side (id-preferred, name fallback)
         const itemModifiers = modifiersByItem.get(item.id);
+        const itemModifiersById = modifiersByItemId.get(item.id);
         let modifiersTotal = 0;
         if (item.modifiers && item.modifiers.length > 0) {
           for (const mod of item.modifiers) {
-            const serverPrice = itemModifiers?.get(mod.name.toLowerCase());
+            const modById = mod.id ? itemModifiersById?.get(mod.id) : undefined;
+            const serverPrice = modById ?? itemModifiers?.get(mod.name.toLowerCase());
             if (serverPrice !== undefined) {
               // Use server price, not client price
               modifiersTotal += serverPrice;

@@ -11,12 +11,17 @@ const orderItemOptionSchema = z.object({
 });
 
 const orderItemVariantSchema = z.object({
+  // Stable DB id of the variant. Server verifies the price by id when present
+  // (collision/rename-proof), falling back to name for legacy carts (audit H4).
+  id: z.string().uuid().optional(),
   name_fr: z.string().min(1).max(200),
   name_en: z.string().max(200).optional(),
   price: z.number().min(0),
 });
 
 const orderItemModifierSchema = z.object({
+  // Stable DB id of the modifier. See orderItemVariantSchema (audit H4).
+  id: z.string().uuid().optional(),
   name: z.string().min(1).max(200),
   price: z.number().min(0),
 });
@@ -125,6 +130,9 @@ const posOrderItemSchema = z.object({
   customer_notes: z.string().max(500).optional(),
   modifiers: z.array(orderItemModifierSchema).max(20).optional(),
   selected_variant: z.string().max(200).optional(),
+  // Stable DB id of the selected variant; server prefers it over the name for
+  // price verification (audit H4). Name kept for legacy/fallback resolution.
+  selected_variant_id: z.string().uuid().optional(),
 });
 
 export const createPOSOrderSchema = z

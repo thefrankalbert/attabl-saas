@@ -24,8 +24,8 @@ import type {
 export type CartItem = MenuItem & {
   quantity: number;
   notes?: string;
-  selectedModifiers?: Array<{ name: string; price: number }>;
-  selectedVariant?: { name: string; price: number };
+  selectedModifiers?: Array<{ id?: string; name: string; price: number }>;
+  selectedVariant?: { id?: string; name: string; price: number };
   cartKey?: string; // unique key when same item has different modifiers/variant
 };
 
@@ -47,18 +47,18 @@ export interface AppliedCoupon {
 
 function getCartKey(
   item: CartItem | MenuItem,
-  mods?: Array<{ name: string; price: number }>,
-  variant?: { name: string; price: number },
+  mods?: Array<{ id?: string; name: string; price: number }>,
+  variant?: { id?: string; name: string; price: number },
 ) {
   let key = item.id;
   const resolvedVariant = variant || (item as CartItem).selectedVariant;
   if (resolvedVariant) {
-    key = `${key}-var-${resolvedVariant.name}`;
+    key = `${key}-var-${resolvedVariant.id ?? resolvedVariant.name}`;
   }
   const modifiers = mods || (item as CartItem).selectedModifiers;
   if (modifiers && modifiers.length > 0) {
     key = `${key}-mod-${modifiers
-      .map((m) => m.name)
+      .map((m) => m.id ?? m.name)
       .sort()
       .join(',')}`;
   }
@@ -277,8 +277,8 @@ export function usePOSData(tenantId: string) {
   const addToCart = useCallback(
     (
       item: MenuItem,
-      modifiers?: Array<{ name: string; price: number }>,
-      variant?: { name: string; price: number },
+      modifiers?: Array<{ id?: string; name: string; price: number }>,
+      variant?: { id?: string; name: string; price: number },
     ) => {
       const key = getCartKey(item, modifiers, variant);
       const hasCustomization = (modifiers && modifiers.length > 0) || !!variant;
@@ -454,6 +454,7 @@ export function usePOSData(tenantId: string) {
           customer_notes: item.notes || null,
           modifiers: item.selectedModifiers,
           selected_variant: item.selectedVariant?.name,
+          selected_variant_id: item.selectedVariant?.id,
         })),
       },
       {
