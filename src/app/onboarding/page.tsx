@@ -316,9 +316,11 @@ export default function OnboardingPage() {
         const errBody = (await res.json().catch(() => ({}))) as { error?: string };
         if (!autoSaveErrorShown.current) {
           autoSaveErrorShown.current = true;
+          const description =
+            errBody.error === 'RESTAURANT_NAME_TAKEN' ? t('nameTaken') : errBody.error || undefined;
           toast({
             title: t('saveError'),
-            description: errBody.error || undefined,
+            description,
             variant: 'destructive',
           });
         }
@@ -456,6 +458,9 @@ export default function OnboardingPage() {
       if (!res.ok) {
         if (result.details && Array.isArray(result.details)) {
           throw new Error(`${t('validationFailed')}: ${result.details.join(', ')}`);
+        }
+        if (result.error === 'RESTAURANT_NAME_TAKEN') {
+          throw new Error(t('nameTaken'));
         }
         throw new Error(result.error || t('completeError'));
       }
