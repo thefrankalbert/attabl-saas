@@ -29,6 +29,13 @@ paths = [
   # i18n translation files contain UI labels ("Mot de passe"), never secrets
   '''(^|/)messages/''',
   '''(^|/)(locales|i18n|lang)/''',
+  # demo/QA/local seed + journey scripts carry intentional demo creds (Demo2024!,
+  # local test webhook secrets), never real secrets. Does NOT allowlist
+  # scripts/create-superadmin.ts - that file stays scanned.
+  '''(^|/)scripts/seed-.*\.(ts|js)$''',
+  '''(^|/)scripts/run-journeys.*\.sh$''',
+  # agent definition docs (examples only)
+  '''(^|/)\.claude/''',
 ]
 regexes = [
   # fake invitation token used across schema tests (64-char hex placeholder)
@@ -43,4 +50,6 @@ regexes = [
   '''<[^>]{1,40}>''',
   '''process\.env''',
   '''(?i)(example|placeholder|change[-_ ]?me|replace[-_ ]?me|your[-_]|xxx+|dummy|sample|fixture|redacted|todo)''',
+  # show/hide-password UI labels (not secrets)
+  '''(?i)(afficher|masquer|show|hide)[^'"]{0,8}(mot de passe|password)''',
 ]
