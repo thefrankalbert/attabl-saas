@@ -5,7 +5,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/rate-limit', () => ({
-  invitationLimiter: { check: vi.fn() },
+  invitationManageLimiter: { check: vi.fn() },
+  invitationValidateLimiter: { check: vi.fn() },
+  invitationAcceptLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
@@ -51,7 +53,7 @@ vi.mock('next/headers', () => ({
 import { GET, POST } from '../invitations/route';
 import { DELETE } from '../invitations/[id]/route';
 import { POST as RESEND_POST } from '../invitations/[id]/resend/route';
-import { invitationLimiter } from '@/lib/rate-limit';
+import { invitationManageLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInvitationService } from '@/services/invitation.service';
@@ -93,10 +95,10 @@ function buildParams(id = TEST_INVITATION_ID): { params: Promise<{ id: string }>
 }
 
 function mockRateLimit(allowed: boolean) {
-  vi.mocked(invitationLimiter.check).mockResolvedValue({
+  vi.mocked(invitationManageLimiter.check).mockResolvedValue({
     success: allowed,
-    limit: 5,
-    remaining: allowed ? 4 : 0,
+    limit: 30,
+    remaining: allowed ? 29 : 0,
     reset: Date.now() + 600_000,
   });
 }
