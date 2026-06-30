@@ -15,8 +15,8 @@ interface POSItemCustomizerProps {
   currency: CurrencyCode;
   onAdd: (
     item: MenuItem,
-    modifiers: Array<{ name: string; price: number }>,
-    variant?: { name: string; price: number },
+    modifiers: Array<{ id?: string; name: string; price: number }>,
+    variant?: { id?: string; name: string; price: number },
   ) => void;
   onClose: () => void;
 }
@@ -82,12 +82,17 @@ export default function POSItemCustomizer({
   // ─── Handle add to cart ─────────────────────────────────
   const handleAdd = () => {
     const modifierPayload = selectedMods.map((m) => ({
+      id: m.id,
       name: m.name,
       price: m.price,
     }));
 
     const variantPayload = selectedVariant
-      ? { name: selectedVariant.variant_name_fr, price: selectedVariant.price }
+      ? {
+          id: selectedVariant.id,
+          name: selectedVariant.variant_name_fr,
+          price: selectedVariant.price,
+        }
       : undefined;
 
     onAdd(item, modifierPayload, variantPayload);

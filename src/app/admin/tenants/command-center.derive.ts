@@ -4,6 +4,7 @@ import type {
   LocationStat,
   Tenant,
 } from '@/types/command-center.types';
+import { fromMinorUnits } from '@/lib/utils/money';
 
 /**
  * Pure, deterministic reducers and helpers for the Command Center data layer.
@@ -17,10 +18,12 @@ import type {
 export interface DerivableOrder {
   id: string;
   order_number: string | null;
+  /** orders.total in integer MINOR units; convert with toMajorAmount before use. */
   total: number | string | null;
   status: string | null;
   created_at: string;
   tenant_id: string;
+  display_currency?: string | null;
 }
 
 /** Per-tenant aggregate for the current day, including a 24-bucket sparkline. */
@@ -60,6 +63,17 @@ export function toAmount(value: number | string | null): number {
 }
 
 /**
+ * orders.total is stored in integer MINOR units. Convert one order's total to a
+ * major-unit number using its own currency (audit H1 Phase 2). XAF/XOF are
+ * zero-decimal so this is identity; EUR/USD divide by 100. (Cross-tenant sums of
+ * these major values still mix currencies - a pre-existing platform limitation -
+ * but each term is now its true value, not 100x for EUR/USD.)
+ */
+export function toMajorAmount(order: Pick<DerivableOrder, 'total' | 'display_currency'>): number {
+  return fromMinorUnits(toAmount(order.total), order.display_currency);
+}
+
+/**
  * Bucket today's orders per tenant: revenue, order count, and an hourly
  * sparkline. Cancelled orders are skipped. Orders whose tenant_id is not in
  * `tenantIds` are ignored (defensive - the query already filters by tenant).
@@ -76,7 +90,7 @@ export function bucketToday(
     if (o.status === 'cancelled') continue;
     const bucket = byTenant.get(o.tenant_id);
     if (!bucket) continue;
-    const amount = toAmount(o.total);
+    const amount = toMajorAmount(o);
     bucket.revenue += amount;
     bucket.orders += 1;
     const h = new Date(o.created_at).getHours();
@@ -103,7 +117,7 @@ export function bucketYesterday(
     if (o.status === 'cancelled') continue;
     const bucket = byTenant.get(o.tenant_id);
     if (!bucket) continue;
-    bucket.revenue += toAmount(o.total);
+    bucket.revenue += toMajorAmount(o);
     bucket.orders += 1;
   }
   return byTenant;
@@ -232,7 +246,7 @@ export function chartWindow(
  * exclude cancelled rows (the query does that), but we stay defensive.
  */
 export function bucketChart(
-  orders: Array<Pick<DerivableOrder, 'total' | 'created_at'>>,
+  orders: Array<Pick<DerivableOrder, 'total' | 'created_at' | 'display_currency'>>,
   startDate: Date,
   now: Date,
   groupBy: 'hour' | 'day',
@@ -247,7 +261,7 @@ export function bucketChart(
       const key = `${String(new Date(o.created_at).getHours()).padStart(2, '0')}h`;
       const b = buckets.get(key);
       if (b) {
-        b.revenue += toAmount(o.total);
+        b.revenue += toMajorAmount(o);
         b.orders += 1;
       }
     }
@@ -263,7 +277,7 @@ export function bucketChart(
       const key = `${d.getDate()}/${d.getMonth() + 1}`;
       const b = buckets.get(key);
       if (b) {
-        b.revenue += toAmount(o.total);
+        b.revenue += toMajorAmount(o);
         b.orders += 1;
       }
     }

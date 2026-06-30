@@ -5,13 +5,17 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import OrderDetails from '@/components/admin/OrderDetails';
-import type { Order } from '@/types/admin.types';
+import type { Order, CurrencyCode } from '@/types/admin.types';
 
 interface SingleOrderClientProps {
   order: Order;
+  currency?: CurrencyCode;
 }
 
-export default function SingleOrderClient({ order: initialOrder }: SingleOrderClientProps) {
+export default function SingleOrderClient({
+  order: initialOrder,
+  currency = 'XAF',
+}: SingleOrderClientProps) {
   const router = useRouter();
   const t = useTranslations('orders');
 
@@ -36,6 +40,7 @@ export default function SingleOrderClient({ order: initialOrder }: SingleOrderCl
 
       <OrderDetails
         order={initialOrder}
+        currency={currency}
         onClose={() => router.back()}
         onUpdate={() => router.refresh()}
       />

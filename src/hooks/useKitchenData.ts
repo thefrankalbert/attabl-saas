@@ -13,7 +13,11 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
-import { actionUpdateOrderStatus, actionUpdateItemStatus } from '@/app/actions/orders';
+import {
+  actionUpdateOrderStatus,
+  actionUpdateItemStatus,
+  actionSetCourseHeld,
+} from '@/app/actions/orders';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -75,6 +79,7 @@ export interface UseKitchenDataReturn {
     allItems: { id: string; item_status?: string }[],
   ) => Promise<void>;
   markAllItemsReady: (orderId: string, itemIds: string[]) => Promise<void>;
+  setCourseHeld: (orderId: string, course: string, held: boolean) => Promise<void>;
   toggleFullscreen: () => void;
   loadOrders: () => Promise<void>;
   goBack: () => void;
@@ -193,6 +198,8 @@ export function useKitchenData({
             course: oi.course as string | undefined,
             modifiers: oi.modifiers as Array<{ name: string; price: number }> | undefined,
             preparation_zone: (oi.preparation_zone as 'kitchen' | 'bar' | 'both') || 'kitchen',
+            held: (oi.held as boolean) ?? false,
+            fired_at: oi.fired_at as string | undefined,
           })),
         }),
       );
@@ -340,6 +347,20 @@ export function useKitchenData({
     }
   };
 
+  // ─── Fire/hold a course (KDS coursing) ──────────────────
+  const setCourseHeld = async (orderId: string, course: string, held: boolean) => {
+    try {
+      const result = await actionSetCourseHeld(tenantId, orderId, course, held);
+      if (result.error) {
+        toast({ title: tc('error'), variant: 'destructive' });
+      }
+      loadOrders();
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+      loadOrders();
+    }
+  };
+
   // ─── Fullscreen (shared hook) ───────────────────────────
 
   // ─── Derived data ───────────────────────────────────────
@@ -464,6 +485,7 @@ export function useKitchenData({
     handleStatusChange,
     updateItemStatus,
     markAllItemsReady,
+    setCourseHeld,
     toggleFullscreen,
     loadOrders,
     goBack,

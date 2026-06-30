@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/table';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import { csvCell } from '@/lib/utils/csv';
 import type { CurrencyCode } from '@/types/admin.types';
 
@@ -94,7 +94,9 @@ function TrendBadge({ value }: { value: number }) {
 
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
   const t = useTranslations('reports');
-  const fmt = useCallback((amount: number) => formatCurrency(amount, currency), [currency]);
+  // All report amounts (revenue, avg basket, avg order, daily/category/server
+  // revenue, RPC sums of order.total + price_at_order) are integer MINOR units.
+  const fmt = useCallback((amount: number) => formatCurrencyMinor(amount, currency), [currency]);
   const [period, setPeriod] = useSessionState<Period>('reports:period', '7d');
   const [exporting, setExporting] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -192,27 +194,30 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const handleExportCSV = () => {
     setExportingCsv(true);
     try {
+      // Revenue values are integer MINOR units; export them in MAJOR units so the
+      // CSV carries real currency amounts (identity for XAF/XOF).
+      const toMajor = (minor: number) => fromMinorUnits(minor, currency);
       const rows: string[] = [];
       rows.push(`${t('activityReport')} - ${periodDisplayLabel}`);
       rows.push(`${t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}`);
       rows.push('');
       rows.push(`${t('revenueLabel')},${t('orders')},${t('averageBasket')}`);
-      rows.push(`${summary.revenue},${summary.orders},${summary.avgBasket}`);
+      rows.push(`${toMajor(summary.revenue)},${summary.orders},${toMajor(summary.avgBasket)}`);
       rows.push('');
       rows.push(`Date,${t('revenueLabel')},${t('orders')}`);
-      dailyStats.forEach((d) => rows.push(`${d.date},${d.revenue},${d.orders}`));
+      dailyStats.forEach((d) => rows.push(`${d.date},${toMajor(d.revenue)},${d.orders}`));
       rows.push('');
       rows.push(`${t('top5Products')}`);
       rows.push(`#,Name,${t('salesCount', { count: 0 })},${t('revenueLabel')}`);
       topItems.forEach((item, i) =>
-        rows.push(`${i + 1},${csvCell(item.name)},${item.quantity},${item.revenue}`),
+        rows.push(`${i + 1},${csvCell(item.name)},${item.quantity},${toMajor(item.revenue)}`),
       );
       if (categories.length > 0) {
         rows.push('');
         rows.push(t('categoryBreakdown'));
         rows.push(`Category,${t('revenueLabel')},%`);
         categories.forEach((cat) =>
-          rows.push(`${csvCell(cat.category)},${cat.revenue},${cat.percentage}%`),
+          rows.push(`${csvCell(cat.category)},${toMajor(cat.revenue)},${cat.percentage}%`),
         );
       }
 

@@ -4,6 +4,7 @@ import type { ServiceType, OrderPreparationZone, PreparationZone } from '@/types
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
+import { toMinorUnits } from '@/lib/utils/money';
 
 interface CreateOrderInput {
   tenantId: string;
@@ -36,6 +37,7 @@ interface CreateOrderInput {
 interface CreateOrderResult {
   orderId: string;
   orderNumber: string;
+  /** Order total in integer MINOR units (the value stored in orders.total). */
   total: number;
   /**
    * True when the DB function returned an already-existing order for the
@@ -76,13 +78,63 @@ interface TenantValidationResult {
 }
 
 /**
+ * Forward-only rank of the kitchen/fulfillment axis of order.status (audit H13).
+ * A status may only advance to a higher rank; 'cancelled' is reachable from any
+ * non-terminal state. Prevents a stale concurrent write from reverting a 'ready'
+ * order back to 'preparing'.
+ */
+const ORDER_STATUS_RANK: Record<string, number> = {
+  pending: 0,
+  preparing: 1,
+  ready: 2,
+  delivered: 3,
+};
+
+/**
  * Order service - handles order validation, price verification, and creation.
  *
  * Extracted from /api/orders/route.ts (209 lines → service + thin route).
  * Key security: server-side price verification prevents price fraud.
  */
 export function createOrderService(supabase: SupabaseClient) {
+  /**
+   * Close a table session once none of its orders are still awaiting payment
+   * (every order paid or cancelled). Tenant-scoped. Best-effort: a failure here
+   * must not fail the payment, so it only logs.
+   */
+  async function closeSessionIfFullySettled(sessionId: string, tenantId: string): Promise<void> {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('session_id', sessionId)
+      .eq('payment_status', 'pending')
+      .neq('status', 'cancelled');
+
+    if (error) {
+      logger.error('Failed to check session settlement', { sessionId, tenantId, error });
+      return;
+    }
+    if ((count ?? 0) > 0) return; // still has unpaid orders -> keep open
+
+    const { error: closeError } = await supabase
+      .from('table_sessions')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'open');
+    if (closeError) {
+      logger.error('Failed to close table session', { sessionId, tenantId, error: closeError });
+    }
+  }
+
   return {
+    /**
+     * Public wrapper so non-markPaid settle paths (the POS route's
+     * applyPosFinalState) can also close a fully-settled table session (audit C1).
+     */
+    closeSessionIfFullySettled,
+
     /**
      * Validates that a tenant exists and is active.
      * Also returns tenant config (currency, tax, subscription) to avoid a second round-trip.
@@ -156,22 +208,39 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la vérification du menu', 'INTERNAL', menuError);
       }
 
+      // Index modifiers/variants BOTH by stable id and by name (audit H4). The
+      // server prefers the id when the cart carries one (collision/rename-proof)
+      // and falls back to name for legacy carts saved before ids were sent.
       const { data: dbModifiers } = modifiersRes;
       const modifiersByItem = new Map<string, Map<string, number>>();
+      const modifiersByItemId = new Map<string, Map<string, number>>();
       for (const mod of dbModifiers || []) {
         if (!modifiersByItem.has(mod.menu_item_id)) {
           modifiersByItem.set(mod.menu_item_id, new Map());
         }
         modifiersByItem.get(mod.menu_item_id)!.set(mod.name.toLowerCase(), mod.price);
+        if (mod.id) {
+          if (!modifiersByItemId.has(mod.menu_item_id)) {
+            modifiersByItemId.set(mod.menu_item_id, new Map());
+          }
+          modifiersByItemId.get(mod.menu_item_id)!.set(mod.id, mod.price);
+        }
       }
 
       const { data: dbVariants } = variantsRes;
       const variantsByItem = new Map<string, Map<string, number>>();
+      const variantsByItemId = new Map<string, Map<string, number>>();
       for (const v of dbVariants || []) {
         if (!variantsByItem.has(v.menu_item_id)) {
           variantsByItem.set(v.menu_item_id, new Map());
         }
         variantsByItem.get(v.menu_item_id)!.set(v.variant_name_fr.toLowerCase(), v.price);
+        if (v.id) {
+          if (!variantsByItemId.has(v.menu_item_id)) {
+            variantsByItemId.set(v.menu_item_id, new Map());
+          }
+          variantsByItemId.get(v.menu_item_id)!.set(v.id, v.price);
+        }
       }
 
       const menuItemsMap = new Map(
@@ -228,8 +297,12 @@ export function createOrderService(supabase: SupabaseClient) {
         // Determine server-verified price: variant price from DB, or base item price
         let expectedPrice = menuItem.price;
         if (item.selectedVariant) {
-          const itemVariants = variantsByItem.get(item.id);
-          const serverVariantPrice = itemVariants?.get(item.selectedVariant.name_fr.toLowerCase());
+          const variantById = item.selectedVariant.id
+            ? variantsByItemId.get(item.id)?.get(item.selectedVariant.id)
+            : undefined;
+          const serverVariantPrice =
+            variantById ??
+            variantsByItem.get(item.id)?.get(item.selectedVariant.name_fr.toLowerCase());
           if (serverVariantPrice !== undefined) {
             expectedPrice = serverVariantPrice;
           } else {
@@ -250,12 +323,14 @@ export function createOrderService(supabase: SupabaseClient) {
           });
         }
 
-        // Verify modifier prices server-side
+        // Verify modifier prices server-side (id-preferred, name fallback)
         const itemModifiers = modifiersByItem.get(item.id);
+        const itemModifiersById = modifiersByItemId.get(item.id);
         let modifiersTotal = 0;
         if (item.modifiers && item.modifiers.length > 0) {
           for (const mod of item.modifiers) {
-            const serverPrice = itemModifiers?.get(mod.name.toLowerCase());
+            const modById = mod.id ? itemModifiersById?.get(mod.id) : undefined;
+            const serverPrice = modById ?? itemModifiers?.get(mod.name.toLowerCase());
             if (serverPrice !== undefined) {
               // Use server price, not client price
               modifiersTotal += serverPrice;
@@ -448,6 +523,12 @@ export function createOrderService(supabase: SupabaseClient) {
     async createOrderWithItems(input: CreateOrderInput): Promise<CreateOrderResult> {
       const orderNumber = await this.generateOrderNumber(input.tenantId);
 
+      // Money crosses the boundary here: CreateOrderInput carries MAJOR-unit
+      // amounts (menu prices, computed pricing) and the DB stores integer MINOR
+      // units. Convert every transactional amount with the order's currency
+      // (orders.display_currency; null -> default XAF, a 0-decimal identity).
+      const currency = input.display_currency;
+
       // Build items array for the DB function
       const itemsJson = input.items.map((item) => {
         const parts: string[] = [];
@@ -461,7 +542,8 @@ export function createOrderService(supabase: SupabaseClient) {
           item_name: item.name,
           item_name_en: item.name_en || null,
           quantity: item.quantity,
-          price_at_order: input.verifiedPrices?.get(item.id) ?? item.price,
+          // price_at_order: server-verified MAJOR menu price -> integer minor units.
+          price_at_order: toMinorUnits(input.verifiedPrices?.get(item.id) ?? item.price, currency),
           customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,
@@ -472,7 +554,7 @@ export function createOrderService(supabase: SupabaseClient) {
       const { data, error } = await supabase.rpc('create_order_with_items', {
         p_tenant_id: input.tenantId,
         p_order_number: orderNumber,
-        p_total: input.total,
+        p_total: toMinorUnits(input.total, currency),
         p_table_number: input.tableNumber || null,
         p_customer_name: input.customerName || null,
         p_customer_phone: input.customerPhone || null,
@@ -480,11 +562,11 @@ export function createOrderService(supabase: SupabaseClient) {
         p_service_type: input.service_type || 'dine_in',
         p_room_number: input.room_number || null,
         p_delivery_address: input.delivery_address || null,
-        p_subtotal: input.subtotal ?? input.total,
-        p_tax_amount: input.tax_amount ?? 0,
-        p_service_charge_amount: input.service_charge_amount ?? 0,
-        p_discount_amount: input.discount_amount ?? 0,
-        p_tip_amount: input.tip_amount ?? 0,
+        p_subtotal: toMinorUnits(input.subtotal ?? input.total, currency),
+        p_tax_amount: toMinorUnits(input.tax_amount ?? 0, currency),
+        p_service_charge_amount: toMinorUnits(input.service_charge_amount ?? 0, currency),
+        p_discount_amount: toMinorUnits(input.discount_amount ?? 0, currency),
+        p_tip_amount: toMinorUnits(input.tip_amount ?? 0, currency),
         p_coupon_id: input.coupon_id || null,
         p_server_id: input.server_id ?? null,
         p_display_currency: input.display_currency || null,
@@ -494,6 +576,12 @@ export function createOrderService(supabase: SupabaseClient) {
       });
 
       if (error) {
+        // DEPLOY-ORDERING: migration 20260629000600 (table_sessions) replaces the
+        // RPC's TABLE_ACTIVE_ORDER raise with find-or-create-session, so this
+        // handler is dead ONCE THAT MIGRATION IS LIVE. It is intentionally kept
+        // until then: prod still runs the old RPC that raises TABLE_ACTIVE_ORDER,
+        // and removing it now would degrade that error to a generic 500. Remove
+        // this branch in the same release that applies migration 20260629000600.
         if (error.message?.includes('TABLE_ACTIVE_ORDER')) {
           throw new ServiceError(
             'Une commande est deja en cours sur cette table',
@@ -521,17 +609,146 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Update an order's status. Always filters by tenant_id for isolation.
+     * Advance an order's status with a forward-only state machine + optimistic
+     * concurrency (audit H13). Rejects backward transitions and races: a stale
+     * KDS write can no longer revert a 'ready' order to 'preparing'. Cancellation
+     * goes through cancelOrder (this still permits ->cancelled defensively).
+     * Always tenant-scoped. markPaid/cancelOrder set their states directly and do
+     * not go through here.
      */
     async updateStatus(orderId: string, tenantId: string, status: string): Promise<void> {
-      const { error } = await supabase
+      const { data: current, error: fetchError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new ServiceError('Erreur lors du chargement du statut', 'INTERNAL', fetchError);
+      }
+      if (!current) {
+        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+      }
+
+      const from = current.status as string;
+      if (from === status) return; // idempotent no-op
+
+      if (from === 'delivered' || from === 'cancelled') {
+        throw new ServiceError('Cette commande est finalisee', 'CONFLICT');
+      }
+
+      const rankFrom = ORDER_STATUS_RANK[from] ?? -1;
+      const rankTo = ORDER_STATUS_RANK[status] ?? -1;
+      if (status !== 'cancelled' && rankTo <= rankFrom) {
+        throw new ServiceError('Transition de statut invalide', 'VALIDATION');
+      }
+
+      // Optimistic concurrency: only apply if the status is still what we read.
+      const { data, error } = await supabase
         .from('orders')
         .update({ status })
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .eq('status', from)
+        .select('id');
 
       if (error) {
         throw new ServiceError('Erreur lors de la mise a jour du statut', 'INTERNAL', error);
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        // Another device advanced this order between our read and write.
+        throw new ServiceError('La commande a deja ete mise a jour', 'CONFLICT');
+      }
+    },
+
+    /**
+     * Hold or fire a whole course of an order (KDS coursing). Held items are not
+     * sent to the kitchen; firing sets held=false and stamps fired_at. Tenant-
+     * scoped directly via order_items.tenant_id.
+     */
+    async setCourseHeld(
+      orderId: string,
+      tenantId: string,
+      course: string,
+      held: boolean,
+    ): Promise<void> {
+      const update: Record<string, unknown> = held
+        ? { held: true }
+        : { held: false, fired_at: new Date().toISOString() };
+
+      const { error } = await supabase
+        .from('order_items')
+        .update(update)
+        .eq('order_id', orderId)
+        .eq('tenant_id', tenantId)
+        .eq('course', course);
+
+      if (error) {
+        throw new ServiceError('Erreur lors du fire/hold du course', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Cancel an order AND reverse its side-effects (audit finding C7): restore
+     * the ingredients that were destocked and release any single-use coupon it
+     * consumed. Before this, cancelling only flipped status='cancelled' and left
+     * stock deducted + the coupon burnt.
+     *
+     * Idempotent: re-cancelling an already-cancelled order is a no-op. A PAID
+     * order cannot be plain-cancelled here - that requires a refund (Phase 4) so
+     * the financial record is preserved; we throw CONFLICT instead of silently
+     * reversing money. restock/unclaim are themselves idempotent, so a partial
+     * failure can be safely retried.
+     */
+    async cancelOrder(orderId: string, tenantId: string): Promise<void> {
+      const { data: order, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, status, payment_status, coupon_id')
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new ServiceError('Erreur lors du chargement de la commande', 'INTERNAL', fetchError);
+      }
+      if (!order) {
+        throw new ServiceError('Commande introuvable', 'NOT_FOUND');
+      }
+      if (order.status === 'cancelled') {
+        return; // already cancelled - no-op
+      }
+      if (order.payment_status === 'paid') {
+        throw new ServiceError(
+          'Une commande payee ne peut pas etre annulee - utiliser un remboursement',
+          'CONFLICT',
+        );
+      }
+
+      // Release the coupon (idempotent). NOTE: ingredient restock is handled by the
+      // caller via the canonical service_role restock_order path (main's
+      // stock-integrity feature) - restock_order is service_role-only, so it cannot
+      // be called from this authenticated service client. See actionUpdateOrderStatus.
+      if (order.coupon_id) {
+        const { error: unclaimError } = await supabase.rpc('unclaim_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+        });
+        if (unclaimError) {
+          throw new ServiceError(
+            'Erreur lors de la liberation du coupon',
+            'INTERNAL',
+            unclaimError,
+          );
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
+      if (updateError) {
+        throw new ServiceError("Erreur lors de l'annulation", 'INTERNAL', updateError);
       }
     },
 
@@ -539,12 +756,27 @@ export function createOrderService(supabase: SupabaseClient) {
      * Mark an order as paid - updates payment_method, payment_status,
      * paid_at, status to 'delivered', and optionally tip_amount.
      * Always filters by tenant_id for isolation.
+     *
+     * NOTE: setting status='delivered' couples payment to fulfillment. This is a
+     * deliberate, documented interim: decoupling into orthogonal fulfillment /
+     * payment axes is Phase 3 of the order->payment refonte (audit C3). Removing
+     * it now would leave paid orders lingering on the KDS active board, so it
+     * stays until the fulfillment state machine lands.
+     *
+     * Idempotent: the update is scoped to payment_status='pending' (same guard as
+     * the POS route applyPosFinalState). A double-tap / network retry on an
+     * already-paid order matches 0 rows and is a no-op - it never re-stamps
+     * paid_at nor overwrites the recorded tip. Returns whether the order was
+     * actually flipped from pending to paid by this call.
      */
     async markPaid(
       orderId: string,
       tenantId: string,
       payload: { method: string; tipAmount?: number },
-    ): Promise<void> {
+    ): Promise<{ paid: boolean }> {
+      // payload.tipAmount is in integer MINOR units (orders.tip_amount is BIGINT
+      // minor). The caller (PaymentModal -> actionMarkOrderPaid) converts the
+      // major keypad amount with the order currency before sending.
       const update: Record<string, unknown> = {
         payment_method: payload.method,
         payment_status: 'paid',
@@ -555,15 +787,48 @@ export function createOrderService(supabase: SupabaseClient) {
         update.tip_amount = payload.tipAmount;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .update(update)
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .eq('payment_status', 'pending')
+        .select('id, session_id, total, tip_amount');
 
       if (error) {
         throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
       }
+
+      const paidRow = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+      if (paidRow) {
+        // Append the tender to the ledger (audit H2/H8): who/what/when, append-only.
+        // Best-effort - payment_status is already flipped; a ledger failure must not
+        // un-settle the order. The amount tendered = order total (excl. tip) + tip.
+        const amount = Number(paidRow.total || 0) + Number(paidRow.tip_amount || 0);
+        const { error: tenderError } = await supabase.from('payments').insert({
+          tenant_id: tenantId,
+          order_id: orderId,
+          amount,
+          method: payload.method,
+          status: 'completed',
+        });
+        if (tenderError) {
+          logger.error('Failed to record payment tender', {
+            orderId,
+            tenantId,
+            error: tenderError,
+          });
+        }
+
+        // Close the table session once every order on it is settled (audit C1).
+        // Leaving it open would let tomorrow's orders attach to today's check.
+        if (paidRow.session_id) {
+          await closeSessionIfFullySettled(paidRow.session_id as string, tenantId);
+        }
+      }
+
+      return { paid: paidRow !== null };
     },
 
     /**

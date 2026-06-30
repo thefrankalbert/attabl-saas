@@ -1,7 +1,7 @@
 {
   "common": {
-    "offlineMode": "Mode hors ligne",
-    "connectionRestored": "Connexion retablie",
+    "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
+    "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "outboxPending": "{count} commande(s) en attente d'envoi",
     "outboxRejected": "{count} commande(s) refusée(s) à l'envoi. Vérifiez et ressaisissez.",
     "aria": {
@@ -101,8 +101,6 @@
     "noItems": "Aucun article",
     "updateError": "Erreur de mise à jour",
     "saving": "Enregistrement...",
-    "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
-    "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "errorTitle": "Oups, une erreur est survenue",
     "errorDescription": "Nous nous excusons pour ce désagrément. Veuillez réessayer ou retourner à l'accueil.",
     "errorHint": "Pas de panique, ce sont des choses qui arrivent.",
@@ -1355,6 +1353,7 @@
     "colPayment": "Paiement",
     "payPaid": "Paye",
     "payPending": "A encaisser",
+    "payPartial": "Partiel",
     "payRefunded": "Rembourse",
     "colColumns": "Colonnes",
     "colAdd": "Ajouter",
@@ -2081,7 +2080,13 @@
     "zoneKitchen": "Cuisine",
     "zoneBar": "Bar",
     "searchPlaceholder": "Rechercher une commande...",
-    "searchLabel": "Rechercher"
+    "searchLabel": "Rechercher",
+    "courseAppetizer": "Entrees",
+    "courseMain": "Plats",
+    "courseDessert": "Desserts",
+    "courseDrink": "Boissons",
+    "fireCourse": "Envoyer",
+    "holdCourse": "Retenir"
   },
   "pos": {
     "title": "Caisse (POS)",
@@ -2149,7 +2154,7 @@
     "sendToKitchen": "Envoyer en cuisine",
     "selectTableFirst": "Veuillez sélectionner une table d'abord",
     "server": "Serveur",
-    "itemsCount": "articles",
+    "itemsCount": "{count, plural, one {# article} other {# articles}}",
     "printShort": "Cuisine",
     "confirmClearCart": "Voulez-vous vraiment vider le panier ?",
     "selectVariant": "Choisir une variante",
@@ -2157,7 +2162,10 @@
     "addToCart": "Ajouter au panier",
     "orderNote": "Note de commande",
     "orderNotePlaceholder": "Instructions speciales pour cette commande...",
-    "couponPlaceholder": "Code promo"
+    "couponPlaceholder": "Code promo",
+    "toSettle": "A encaisser",
+    "toSettleSubtitle": "Commandes en attente de paiement",
+    "toSettleEmpty": "Aucune commande a encaisser"
   },
   "users": {
     "title": "Utilisateurs",
@@ -2809,7 +2817,25 @@
     "exactAmount": "Montant exact",
     "validatePayment": "Valider l'encaissement",
     "amountRemaining": "Il manque {amount}",
-    "quickAdd": "+{amount}"
+    "quickAdd": "+{amount}",
+    "paymentAlreadySettled": "Commande deja reglee",
+    "payPartial": "Paiement partiel",
+    "recordPartial": "Encaisser un acompte",
+    "partialRecorded": "Acompte enregistre",
+    "remaining": "Reste a payer : {amount}",
+    "refund": "Rembourser",
+    "refundAmount": "Montant a rembourser",
+    "refundConfirm": "Confirmer le remboursement",
+    "refunded": "Remboursement enregistre",
+    "refundError": "Erreur lors du remboursement",
+    "ledger": "Paiements",
+    "netPaid": "Encaisse",
+    "tenderHistory": "Historique des paiements",
+    "noTenders": "Aucun paiement enregistre",
+    "recordPayment": "Enregistrer le paiement",
+    "amount": "Montant",
+    "tenderRecorded": "Paiement enregistre",
+    "loadError": "Impossible de charger les paiements"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -2972,7 +2998,8 @@
     "loadingError": "Erreur chargement historique",
     "statsAdditions": "Entrées",
     "statsRemovals": "Sorties",
-    "statsProducts": "Produits"
+    "statsProducts": "Produits",
+    "filterRestock": "Restock annulation"
   },
   "screenLock": {
     "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",

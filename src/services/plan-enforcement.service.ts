@@ -250,11 +250,14 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
         return { count: 0, limit: -1, exceeded: false };
       }
 
+      // Cancelled orders must not consume the monthly quota - they are not real
+      // sales. (A cancelled/duplicate order should never count against the plan.)
       const { count, error } = await supabase
         .from('orders')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
-        .gte('created_at', monthStart.toISOString());
+        .gte('created_at', monthStart.toISOString())
+        .neq('status', 'cancelled');
 
       if (error) {
         throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);

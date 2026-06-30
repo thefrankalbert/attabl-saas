@@ -124,6 +124,22 @@ describe('CouponService', () => {
       expect(result.coupon).toBeDefined();
     });
 
+    it('rounds the discount to the currency unit (XAF zero-decimal by default)', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('coupons').single.mockResolvedValue({
+        data: makeCoupon({ discount_type: 'percentage', discount_value: 7 }),
+        error: null,
+      });
+
+      const service = createCouponService(asSupabase(supabase));
+      // 7% of 333 = 23.31 -> 23 for XAF (no centimes)
+      const xaf = await service.validateCoupon('SEVEN', 'tenant-123', 333, 'XAF');
+      expect(xaf.discountAmount).toBe(23);
+      // ... but 23.31 for a 2-decimal currency
+      const eur = await service.validateCoupon('SEVEN', 'tenant-123', 333, 'EUR');
+      expect(eur.discountAmount).toBe(23.31);
+    });
+
     it('should return invalid when coupon not found', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('coupons').single.mockResolvedValue({
@@ -330,6 +346,44 @@ describe('CouponService', () => {
       const result = await service.claimUsage('coupon-1');
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('recordRedemption', () => {
+    it('inserts an audit row with the redemption details', async () => {
+      const insert = vi.fn().mockResolvedValue({ error: null });
+      const from = vi.fn().mockReturnValue({ insert });
+      const service = createCouponService({ from } as unknown as SupabaseClient);
+
+      await service.recordRedemption({
+        tenantId: 't1',
+        couponId: 'c1',
+        orderId: 'o1',
+        discountAmount: 500,
+      });
+
+      expect(from).toHaveBeenCalledWith('coupon_redemptions');
+      expect(insert).toHaveBeenCalledWith({
+        tenant_id: 't1',
+        coupon_id: 'c1',
+        order_id: 'o1',
+        discount_amount: 500,
+      });
+    });
+
+    it('is best-effort: swallows a DB error without throwing', async () => {
+      const insert = vi.fn().mockResolvedValue({ error: { message: 'boom' } });
+      const from = vi.fn().mockReturnValue({ insert });
+      const service = createCouponService({ from } as unknown as SupabaseClient);
+
+      await expect(
+        service.recordRedemption({
+          tenantId: 't1',
+          couponId: 'c1',
+          orderId: 'o1',
+          discountAmount: 0,
+        }),
+      ).resolves.toBeUndefined();
     });
   });
 });

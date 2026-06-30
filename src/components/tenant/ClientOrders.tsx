@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { fromMinorUnits } from '@/lib/utils/money';
 import { logger } from '@/lib/logger';
 import { ShoppingBag, ArrowLeft, ArrowRight, BellRing, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -139,13 +140,17 @@ export default function ClientOrders({
         if (error) {
           logger.error('Failed to load orders', error);
         } else {
+          // Order money columns are integer MINOR units; convert to major (order
+          // base currency = the tenant currency prop) so formatDisplayPrice keeps
+          // working. Identity for XAF.
+          const toMajor = (minor: number) => fromMinorUnits(minor, currency);
           const mapped: OrderRecord[] = ((data as unknown as TrackedClientRow[]) || []).map(
             (row) => ({
               id: row.id,
               order_number: row.order_number,
               status: row.status,
-              total: row.total,
-              tip_amount: row.tip_amount ?? 0,
+              total: toMajor(row.total),
+              tip_amount: toMajor(row.tip_amount ?? 0),
               table_number: row.table_number,
               created_at: row.created_at,
               service_type: row.service_type,
@@ -153,7 +158,7 @@ export default function ClientOrders({
                 name: oi.item_name,
                 name_en: oi.item_name_en ?? undefined,
                 quantity: oi.quantity,
-                price: oi.price_at_order,
+                price: toMajor(oi.price_at_order),
                 menu_item_id: oi.menu_item_id ?? undefined,
                 image_url: oi.image_url ?? null,
               })),
@@ -167,7 +172,7 @@ export default function ClientOrders({
     return () => {
       cancelled = true;
     };
-  }, [tenantId, tenantSlug]);
+  }, [tenantId, tenantSlug, currency]);
 
   // --- Realtime: listen for status changes on ACTIVE orders only --
 

@@ -118,13 +118,24 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
     },
 
     async claimOrder(orderId: string, serverId: string, tenantId: string): Promise<void> {
-      const { error } = await supabase
+      // Atomic first-claim-wins: only claim an order that is unassigned, or
+      // re-claim one already owned by this same server (idempotent). Without the
+      // server_id guard two waiters claiming at once would silently steal each
+      // other's order (last write wins).
+      const { data, error } = await supabase
         .from('orders')
         .update({ server_id: serverId })
         .eq('id', orderId)
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId)
+        .or(`server_id.is.null,server_id.eq.${serverId}`)
+        .select('id');
 
       if (error) throw new ServiceError('Erreur lors du claim', 'INTERNAL');
+      if (!Array.isArray(data) || data.length === 0) {
+        // Race lost: another server already owns this order. CONFLICT -> HTTP 409
+        // (a retryable concurrency outcome), not VALIDATION/400 (bad input).
+        throw new ServiceError('Cette commande est deja prise en charge', 'CONFLICT');
+      }
     },
   };
 }

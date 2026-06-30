@@ -18,9 +18,16 @@ describe('calculateTax', () => {
     expect(calculateTax(10000, { enable_tax: true, tax_rate: 18 })).toBe(1800);
   });
 
-  it('rounds to 2 decimal places', () => {
-    // 33.33 * 7 / 100 = 2.3331 → should round to 2.33
-    expect(calculateTax(33.33, { enable_tax: true, tax_rate: 7 })).toBe(2.33);
+  it('rounds to 2 decimal places for a 2-decimal currency (EUR)', () => {
+    // 33.33 * 7 / 100 = 2.3331 -> 2.33 for EUR
+    expect(calculateTax(33.33, { enable_tax: true, tax_rate: 7 }, 'EUR')).toBe(2.33);
+  });
+
+  it('rounds to whole units for a zero-decimal currency (XAF, the default)', () => {
+    // 333 * 18 / 100 = 59.94 -> 60 for XAF (no centimes)
+    expect(calculateTax(333, { enable_tax: true, tax_rate: 18 }, 'XAF')).toBe(60);
+    // default (no currency) behaves as XAF
+    expect(calculateTax(333, { enable_tax: true, tax_rate: 18 })).toBe(60);
   });
 });
 

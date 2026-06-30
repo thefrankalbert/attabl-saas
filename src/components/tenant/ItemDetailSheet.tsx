@@ -173,6 +173,7 @@ export default function ItemDetailSheet({
       selectedOption: selectedOption ?? undefined,
       selectedVariant: selectedVariant
         ? {
+            id: selectedVariant.id,
             name_fr: selectedVariant.variant_name_fr,
             name_en: selectedVariant.variant_name_en,
             price: selectedVariant.price,
@@ -181,7 +182,12 @@ export default function ItemDetailSheet({
         : undefined,
       modifiers:
         selectedModifiers.length > 0
-          ? selectedModifiers.map((m) => ({ name: m.name, price: m.price, prices: m.prices }))
+          ? selectedModifiers.map((m) => ({
+              id: m.id,
+              name: m.name,
+              price: m.price,
+              prices: m.prices,
+            }))
           : undefined,
       customerNotes: customerNotes.trim() || undefined,
     };

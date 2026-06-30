@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
-import { formatCurrency, getCurrencyConfig } from '@/lib/utils/currency';
+import { getCurrencyConfig } from '@/lib/utils/currency';
+import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
@@ -41,7 +42,11 @@ export default function DashboardClient(props: DashboardClientProps) {
   const locale = useLocale();
 
   const adminBase = `/sites/${tenantSlug}/admin`;
-  const fmtF = useCallback((n: number) => formatCurrency(n, currency as CurrencyCode), [currency]);
+  // OrdersTable formats order.total_price, which is integer MINOR units.
+  const fmtF = useCallback(
+    (n: number) => formatCurrencyMinor(n, currency as CurrencyCode),
+    [currency],
+  );
   const currencySymbol = getCurrencyConfig(currency as CurrencyCode).symbol;
 
   const { stats, recentOrders, loading, handleStatusChange } = useDashboardData(props);
@@ -70,6 +75,10 @@ export default function DashboardClient(props: DashboardClientProps) {
   const sectionCards: SectionCardData[] = useMemo(() => {
     const fmtNum = (n: number) =>
       Math.round(n).toLocaleString(locale, { maximumFractionDigits: 0 });
+    // Revenue/ticket KPIs come from sums of orders.total + tip_amount, which are
+    // integer MINOR units. Convert to major before display (fmtNum + symbol).
+    // Trends are unit-invariant ratios, so they need no conversion.
+    const fmtMoney = (minor: number) => fmtNum(fromMinorUnits(minor, currency as CurrencyCode));
     const deltaText = (trend: number | undefined) =>
       trend === undefined ? undefined : `${trend >= 0 ? '+' : ''}${trend}%`;
 
@@ -97,7 +106,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     return [
       {
         desc: t('revenueToday'),
-        value: showFin ? fmtNum(revenueToday) : '•••',
+        value: showFin ? fmtMoney(revenueToday) : '•••',
         unit: showFin ? ` ${currencySymbol}` : '',
         deltaText: deltaText(revenueTrend),
         up: (revenueTrend ?? 0) >= 0,
@@ -106,7 +115,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           revenueTrend === undefined ? t('kpiFlat') : revenueTrend >= 0 ? t('kpiUp') : t('kpiDown'),
         line2:
           revYest !== undefined && showFin
-            ? t('kpiVsYesterdayValue', { value: `${fmtNum(revYest)} ${currencySymbol}` })
+            ? t('kpiVsYesterdayValue', { value: `${fmtMoney(revYest)} ${currencySymbol}` })
             : t('pageSubtitle'),
       },
       {
@@ -123,7 +132,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       },
       {
         desc: t('avgTicket'),
-        value: showFin ? fmtNum(ticketToday) : '•••',
+        value: showFin ? fmtMoney(ticketToday) : '•••',
         unit: showFin ? ` ${currencySymbol}` : '',
         deltaText: deltaText(ticketTrend),
         up: (ticketTrend ?? 0) >= 0,
@@ -149,6 +158,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   }, [
     t,
     locale,
+    currency,
     currencySymbol,
     showFin,
     revenueToday,

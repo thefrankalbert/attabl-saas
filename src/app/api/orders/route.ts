@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     const [zoneResult, couponValidation] = await Promise.all([
       orderService.determinePreparationZone(tenantId, categoryIds),
       coupon_code
-        ? couponService.validateCoupon(coupon_code, tenantId, validatedTotal)
+        ? couponService.validateCoupon(coupon_code, tenantId, validatedTotal, tenant?.currency)
         : Promise.resolve(null),
     ]);
 
@@ -171,6 +171,7 @@ export async function POST(request: Request) {
         enable_service_charge: tenant?.enable_service_charge || false,
       },
       discountAmount,
+      tenant?.currency,
     );
 
     // 7. Atomically claim coupon usage BEFORE order creation to prevent double-spend
@@ -243,6 +244,22 @@ export async function POST(request: Request) {
         message: t('orderSuccess'),
         deduplicated: true,
       });
+    }
+
+    // 8b. Record an auditable coupon redemption (audit H11). The counter was
+    // already claimed before insert; this appends the who/which/how-much record.
+    // Only for a freshly-created (non-deduplicated) order with a coupon.
+    const redeemedCouponId = couponResult?.couponId;
+    if (redeemedCouponId) {
+      const redeemedOrderId = result.orderId;
+      after(() =>
+        couponService.recordRedemption({
+          tenantId,
+          couponId: redeemedCouponId,
+          orderId: redeemedOrderId,
+          discountAmount: pricing.discountAmount,
+        }),
+      );
     }
 
     // 9. Create in-app notification for admins (scheduled via after() so Vercel

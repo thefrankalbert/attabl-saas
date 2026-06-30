@@ -31,7 +31,7 @@ async function applyPosFinalState(
   paymentMethod: string | undefined,
 ): Promise<void> {
   if (paymentMethod) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('orders')
       .update({
         payment_method: paymentMethod,
@@ -43,9 +43,35 @@ async function applyPosFinalState(
       // Belt filter: service-role client bypasses RLS, so scope to the tenant.
       .eq('tenant_id', tenantId)
       // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
-      .eq('payment_status', 'pending');
+      .eq('payment_status', 'pending')
+      .select('id, total, tip_amount, session_id');
     if (error) {
       logger.error('POS order: failed to apply payment/status', error, { orderId });
+      return;
+    }
+    // Append the tender to the ledger (audit H2/H8), only when this call actually
+    // flipped the order to paid - keeps the ledger idempotent (no duplicate tender
+    // on replay). amount = total (excl. tip) + tip.
+    const flipped = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    if (flipped) {
+      const amount = Number(flipped.total || 0) + Number(flipped.tip_amount || 0);
+      const { error: tenderError } = await supabase.from('payments').insert({
+        tenant_id: tenantId,
+        order_id: orderId,
+        amount,
+        method: paymentMethod,
+        status: 'completed',
+      });
+      if (tenderError) {
+        logger.error('POS order: failed to record payment tender', tenderError, { orderId });
+      }
+      // Close the table session once fully settled (audit C1) - the POS create+pay
+      // path does not go through markPaid, so it must close the session here too,
+      // otherwise sessions stay open forever and tomorrow's orders attach to today's.
+      const sessionId = (flipped as { session_id?: string | null }).session_id;
+      if (sessionId) {
+        await createOrderService(supabase).closeSessionIfFullySettled(sessionId, tenantId);
+      }
     }
     return;
   }
@@ -160,7 +186,7 @@ export async function POST(request: Request) {
         adminSupabase,
         tenant_id,
         itemIds,
-        'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
+        'id, name, name_en, price, is_available, category_id, item_price_variants(id, variant_name_fr, price)',
       ),
       adminSupabase
         .from('tenants')
@@ -193,7 +219,7 @@ export async function POST(request: Request) {
       price: number;
       is_available: boolean;
       category_id: string | null;
-      item_price_variants?: { variant_name_fr: string; price: number }[];
+      item_price_variants?: { id: string; variant_name_fr: string; price: number }[];
     };
 
     const menuItemsMap = new Map(
@@ -224,12 +250,21 @@ export async function POST(request: Request) {
     const serviceItems = items.map((item) => {
       const mi = menuItemsMap.get(item.menu_item_id)!;
       let price = Number(mi.price) || 0;
+      let resolvedVariantId: string | undefined;
 
-      if (item.selected_variant && mi.item_price_variants) {
-        const variants = mi.item_price_variants as { variant_name_fr: string; price: number }[];
-        const variant = variants.find((v) => v.variant_name_fr === item.selected_variant);
+      if ((item.selected_variant_id || item.selected_variant) && mi.item_price_variants) {
+        const variants = mi.item_price_variants as {
+          id: string;
+          variant_name_fr: string;
+          price: number;
+        }[];
+        // Resolve by stable id first (collision/rename-proof), name as fallback (audit H4).
+        const variant =
+          (item.selected_variant_id && variants.find((v) => v.id === item.selected_variant_id)) ||
+          variants.find((v) => v.variant_name_fr === item.selected_variant);
         if (variant) {
           price = variant.price;
+          resolvedVariantId = variant.id;
         }
       }
 
@@ -242,7 +277,7 @@ export async function POST(request: Request) {
         modifiers: item.modifiers || undefined,
         customerNotes: item.customer_notes || undefined,
         selectedVariant: item.selected_variant
-          ? { name_fr: item.selected_variant, price }
+          ? { id: resolvedVariantId, name_fr: item.selected_variant, price }
           : undefined,
       };
     });
@@ -276,7 +311,12 @@ export async function POST(request: Request) {
     const couponService = createCouponService(adminSupabase);
 
     if (coupon_code) {
-      const validation = await couponService.validateCoupon(coupon_code, tenant_id, validatedTotal);
+      const validation = await couponService.validateCoupon(
+        coupon_code,
+        tenant_id,
+        validatedTotal,
+        tenant.currency,
+      );
       if (!validation.valid) {
         return NextResponse.json({ error: validation.error || 'Coupon invalide' }, { status: 400 });
       }
@@ -294,6 +334,7 @@ export async function POST(request: Request) {
         enable_service_charge: tenant.enable_service_charge || false,
       },
       discountAmount,
+      tenant.currency,
     );
 
     // 10. Atomically claim coupon usage BEFORE order creation
@@ -312,7 +353,11 @@ export async function POST(request: Request) {
       result = await orderService.createOrderWithItems({
         tenantId: tenant_id,
         items: serviceItems,
-        total: pricing.total + tipValue,
+        // orders.total is stored EXCLUDING tip (tip lives in tip_amount), matching the
+        // storefront route (api/orders/route.ts). Revenue aggregates do SUM(total +
+        // tip_amount); storing total+tip here too double-counted POS tips. Keeping a
+        // single consistent semantic is what makes the channels reconcile.
+        total: pricing.total,
         tableNumber: table_number,
         notes,
         service_type,
@@ -365,6 +410,18 @@ export async function POST(request: Request) {
     // 10. Apply POS-specific status/payment fields (idempotent). The service
     // always creates with status='pending'; POS may need 'delivered' + payment.
     await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
+
+    // 10b. Record an auditable coupon redemption (audit H11), best-effort.
+    const redeemedCouponId = couponResult?.couponId;
+    if (redeemedCouponId) {
+      const redeemedOrderId = result.orderId;
+      void couponService.recordRedemption({
+        tenantId: tenant_id,
+        couponId: redeemedCouponId,
+        orderId: redeemedOrderId,
+        discountAmount,
+      });
+    }
 
     // 11. Create in-app notification (fire-and-forget, non-blocking)
     void Promise.resolve(
