@@ -25,6 +25,7 @@ import { printReceipt } from '@/lib/printing/receipt';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import PaymentModal from './PaymentModal';
+import OrderPaymentPanel from './OrderPaymentPanel';
 
 interface OrderDetailsProps {
   order: Order;
@@ -358,6 +359,14 @@ export default function OrderDetails({
               </Button>
             </div>
           </div>
+
+          {/* Payment ledger: split/partial tenders + refund (audit H2/H8) */}
+          <OrderPaymentPanel
+            tenantId={order.tenant_id}
+            orderId={order.id}
+            currency={currency}
+            onUpdate={onUpdate}
+          />
         </div>
 
         {/* Warnings */}
