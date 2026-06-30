@@ -1081,6 +1081,7 @@ export type Database = {
           room_number: string | null;
           server_id: string | null;
           service_charge_amount: number | null;
+          served_at: string | null;
           service_type: string | null;
           status: string;
           subtotal: number;
@@ -1118,6 +1119,7 @@ export type Database = {
           room_number?: string | null;
           server_id?: string | null;
           service_charge_amount?: number | null;
+          served_at?: string | null;
           service_type?: string | null;
           status?: string;
           subtotal: number;
@@ -1155,6 +1157,7 @@ export type Database = {
           room_number?: string | null;
           server_id?: string | null;
           service_charge_amount?: number | null;
+          served_at?: string | null;
           service_type?: string | null;
           status?: string;
           subtotal?: number;

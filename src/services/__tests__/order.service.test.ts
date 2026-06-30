@@ -749,6 +749,8 @@ describe('OrderService', () => {
       });
 
       expect(res).toEqual({ paid: true });
+      // C3: payment is decoupled from fulfillment - markPaid must NOT touch status.
+      expect(m.update.mock.calls[0][0]).not.toHaveProperty('status');
       // payment_status='pending' guard present (third .eq)
       expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
       // tip recorded when > 0
@@ -873,6 +875,15 @@ describe('OrderService', () => {
       const service = createOrderService(m.client);
       await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBeUndefined();
       expect(m.update).toHaveBeenCalledWith({ status: 'ready' });
+    });
+
+    it('stamps served_at when reaching the terminal fulfillment state (delivered, C3)', async () => {
+      const m = makeSupabase('ready', [{ id: 'o1' }]);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'delivered')).resolves.toBeUndefined();
+      expect(m.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'delivered', served_at: expect.any(String) }),
+      );
     });
 
     it('is a no-op when the status is unchanged', async () => {
