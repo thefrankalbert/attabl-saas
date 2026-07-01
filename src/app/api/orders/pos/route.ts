@@ -460,7 +460,7 @@ export async function POST(request: Request) {
     if (hasInventory) {
       const inventoryService = createInventoryService(adminSupabase);
       inventoryService
-        .destockOrder(result.orderId, tenant_id)
+        .destockOrder(result.orderId, tenant_id, user.id)
         .then(() => {
           import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
             checkAndNotifyLowStock(tenant_id).catch((err) => {

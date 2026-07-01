@@ -203,7 +203,7 @@ export async function actionUpdateOrderStatus(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
+    const { supabase, user } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
@@ -236,7 +236,7 @@ export async function actionUpdateOrderStatus(
       if (hasInventory) {
         const adminSupabase = createAdminClient();
         createInventoryService(adminSupabase)
-          .restockOrder(parsed.data.orderId, parsed.data.tenantId)
+          .restockOrder(parsed.data.orderId, parsed.data.tenantId, user.id)
           .catch((err) => {
             logger.error('Order cancel: auto-restock failed (non-blocking)', {
               err,

@@ -37,17 +37,17 @@ Consequences (non negociables) :
 
 ## Ordre d'execution (par dependance)
 
-| PR  | Phase                                  | Lacune            | Effort | Dep    | Fichiers clefs                                                                                              |
-| --- | -------------------------------------- | ----------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------------- |
-| 1   | **Panier client offline**              | #33               | M      | -      | cart/page.tsx -> submitOrder+outbox, indicateur offline convive                                             |
-| 2   | **Ledger canonique** (PIVOT)           | socle #12/#13/#16 | L      | -      | migration (CHECK+reason_code+created_by params destock/restock/opening), inventory.service, inventory.types |
-| 3   | **Anti-vol + bip stock**               | #16, #7           | M      | ledger | created_by affiche (join admin_users), rapport sorties/employe, bip low-stock (SoundContext)                |
-| 4   | **Inventaire physique + ecart**        | #12               | L      | ledger | tables stock_counts/stock_count_lines + RPC commit -> mouvements physical_count                             |
-| 5   | **Pertes structurees**                 | #13               | M      | ledger | reason_code (casse/peremption/prod), recordLoss, rapport par motif                                          |
-| 6   | **Conversion d'unites**                | #15               | M      | -      | ingredients.purchase_unit+units_per_purchase, lib convert-units, reception en casiers                       |
-| 7   | **Import Excel recettes+fournisseurs** | #11               | M      | -      | extend excel-import.service, SuppliersClient/RecipesClient import dialogs                                   |
-| 8   | **Caisse comp/gratuite + note gerant** | #20, #19          | L      | -      | orders.is_comp/comp_reason/comped_by, house_accounts, order_notes, PaymentModal                             |
-| (9) | Multi-etablissement + transferts       | #17               | L      | ledger | STRETCH - gated on validated demand (aucun tenant multi-venue actif). Non construit par defaut.             |
+| PR  | Phase                                  | Lacune            | Effort | Dep    | Fichiers clefs                                                                                                                                            |
+| --- | -------------------------------------- | ----------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Panier client offline**              | #33               | M      | -      | cart/page.tsx -> submitOrder+outbox, indicateur offline convive                                                                                           |
+| 2   | **Ledger canonique** (PIVOT)           | socle #12/#13/#16 | L      | -      | migration (CHECK+reason_code+created_by params destock/restock/opening, verify_stock_ledger + reconcile_stock_ledger), inventory.service, inventory.types |
+| 3   | **Anti-vol + bip stock**               | #16, #7           | M      | ledger | created_by affiche (join admin_users), rapport sorties/employe, bip low-stock (SoundContext)                                                              |
+| 4   | **Inventaire physique + ecart**        | #12               | L      | ledger | tables stock_counts/stock_count_lines + RPC commit -> mouvements physical_count                                                                           |
+| 5   | **Pertes structurees**                 | #13               | M      | ledger | reason_code (casse/peremption/prod), recordLoss, rapport par motif                                                                                        |
+| 6   | **Conversion d'unites**                | #15               | M      | -      | ingredients.purchase_unit+units_per_purchase, lib convert-units, reception en casiers                                                                     |
+| 7   | **Import Excel recettes+fournisseurs** | #11               | M      | -      | extend excel-import.service, SuppliersClient/RecipesClient import dialogs                                                                                 |
+| 8   | **Caisse comp/gratuite + note gerant** | #20, #19          | L      | -      | orders.is_comp/comp_reason/comped_by, house_accounts, order_notes, PaymentModal                                                                           |
+| (9) | Multi-etablissement + transferts       | #17               | L      | ledger | STRETCH - gated on validated demand (aucun tenant multi-venue actif). Non construit par defaut.                                                           |
 
 Chaque PR : migration additive -> service -> UI (shadcn + impeccable) -> tests (unit + `test:db`)
 -> gstack live verify -> 5 portes CI vertes -> merge prod.

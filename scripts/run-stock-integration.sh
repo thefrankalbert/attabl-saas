@@ -48,8 +48,11 @@ log "init + ecarte les migrations repo (sinon supabase start rejoue la chaine ca
 supabase init >/dev/null 2>&1 || true
 mv supabase/migrations/*.sql "$MIG_BAK"/ 2>/dev/null || true
 
-log "supabase start (stack local vierge)"
-supabase start >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
+log "supabase start (stack local vierge, sans edge-runtime)"
+# Exclude edge-runtime: it boots by fetching Deno std deps over the network
+# (https://deno.land/...) and hangs `supabase start` when external DNS is blocked.
+# These tests only need Postgres + PostgREST + GoTrue (auth), never edge functions.
+supabase start -x edge-runtime >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
 
 log "charge le schema prod (snapshot) dans le local"
 psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$SCHEMA_FIXTURE" >/dev/null || { echo "load schema echoue"; exit 1; }
@@ -68,10 +71,12 @@ psql "$LOCAL_DB" -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 eval "$(supabase status -o env 2>/dev/null | sed 's/^/export SB_/')"
 API_URL="${SB_API_URL:-http://127.0.0.1:54321}"
 SERVICE="${SB_SERVICE_ROLE_KEY:?cle service_role introuvable}"
+ANON="${SB_ANON_KEY:-}"
 
 log "vitest integration (real RPC assertions)"
 JOURNEY_SUPABASE_URL="$API_URL" \
   JOURNEY_SUPABASE_SERVICE_ROLE_KEY="$SERVICE" \
+  JOURNEY_SUPABASE_ANON_KEY="$ANON" \
   npx vitest run --config vitest.integration.config.ts
 RUN_EXIT=$?
 

@@ -19,6 +19,9 @@ export const journeyEnv = {
   // Base de TEST (branche Supabase ou projet de staging) - JAMAIS la prod.
   supabaseUrl: process.env.JOURNEY_SUPABASE_URL || '',
   supabaseServiceRoleKey: process.env.JOURNEY_SUPABASE_SERVICE_ROLE_KEY || '',
+  // Anon (publishable) key - lets a test sign in as a real authenticated user to
+  // exercise RLS / assert_tenant_member paths that service_role bypasses.
+  supabaseAnonKey: process.env.JOURNEY_SUPABASE_ANON_KEY || '',
   // Tenant de test (slug) utilise pendant la journee.
   tenantSlug: process.env.JOURNEY_TENANT_SLUG || 'journey-test',
   // Stripe en MODE TEST uniquement (cle sk_test_...).
