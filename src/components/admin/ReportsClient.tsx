@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseTabs from '@/components/admin/AnalyseTabs';
+import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
 import { format } from 'date-fns';
 import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import { csvCell } from '@/lib/utils/csv';
@@ -242,66 +242,63 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
   if (error) {
     return (
-      <div className="h-full flex flex-col">
-        <AnalyseTabs />
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <BarChart3 className="w-10 h-10 text-app-text-muted mb-3" />
-          <p className="text-sm text-status-error">{t('loadError')}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
-            {t('retry')}
-          </Button>
-        </div>
+      <div className="flex flex-1 min-h-0 flex-col items-center justify-center py-20 text-center">
+        <BarChart3 className="w-10 h-10 text-app-text-muted mb-3" />
+        <p className="text-sm text-status-error">{t('loadError')}</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+          {t('retry')}
+        </Button>
       </div>
     );
   }
 
   if (loading || !mounted)
     return (
-      <div className="h-full flex flex-col">
-        <AnalyseTabs />
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
-          <p className="text-sm text-app-text-muted">{t('loadingReports')}</p>
-        </div>
+      <div className="flex flex-1 min-h-0 flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
+        <p className="text-sm text-app-text-muted">{t('loadingReports')}</p>
       </div>
     );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 space-y-4">
-        <AnalyseTabs />
-
-        {/* ── Export buttons ── */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-lg border-app-border/50 text-xs h-8"
-            onClick={handleExportCSV}
-            disabled={exportingCsv}
-          >
-            {exportingCsv ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            CSV
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-lg text-xs h-8"
-            onClick={handleExportPDF}
-            disabled={exporting}
-          >
-            {exporting ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            PDF
-          </Button>
-        </div>
+        <AnalyseSectionHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-app-border/50 text-xs h-8"
+                onClick={handleExportCSV}
+                disabled={exportingCsv}
+              >
+                {exportingCsv ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                CSV
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-lg text-xs h-8"
+                onClick={handleExportPDF}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                PDF
+              </Button>
+            </>
+          }
+        />
 
         {/* ── Period pills ── */}
         <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">

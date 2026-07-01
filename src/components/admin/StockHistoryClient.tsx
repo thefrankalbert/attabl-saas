@@ -25,7 +25,7 @@ import { ResponsiveDataTable, SortableHeader } from '@/components/admin/Responsi
 import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
-import AnalyseTabs from '@/components/admin/AnalyseTabs';
+import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
 import {
   StockHistoryEmpty,
   StockHistoryNoResults,
@@ -281,23 +281,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
   return (
     <RoleGuard permission="canViewStocks">
-      <div className="h-full flex flex-col overflow-hidden">
-        <AnalyseTabs />
-
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
         {/* ── Header row ── */}
         <div className="shrink-0 space-y-4">
-          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <div className="flex flex-col gap-1 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-                <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
-                  {filtered.length}
-                </span>
-              </div>
-              <p className="text-sm text-app-text-muted">{t('subtitle')}</p>
-            </div>
-
-            <div className="flex items-center gap-2 @lg:ml-auto">
+          <AnalyseSectionHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            count={filtered.length}
+            actions={
               <div className="relative w-full @lg:w-52">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
                 <Input
@@ -307,8 +298,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   className="pl-8 h-9 text-sm bg-app-elevated border-app-border/50 rounded-lg"
                 />
               </div>
-            </div>
-          </div>
+            }
+          />
 
           {/* ── Filter pills ── */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
