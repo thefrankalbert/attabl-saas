@@ -165,6 +165,14 @@ export default function TenantsPageClient({
     [router],
   );
   const handleOpenMenu = useCallback((slug: string) => router.push(`/sites/${slug}`), [router]);
+  const handleOpenQr = useCallback(
+    (slug: string) => router.push(`/sites/${slug}/admin/qr-codes`),
+    [router],
+  );
+  const handleOpenItems = useCallback(
+    (slug: string) => router.push(`/sites/${slug}/admin/items`),
+    [router],
+  );
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     router.push('/login');
@@ -231,14 +239,14 @@ export default function TenantsPageClient({
           icon: 'qr',
           title: tSteps('qrTitle'),
           hint: tSteps('qrHint'),
-          onClick: () => handleOpenDashboard(firstSlug),
+          onClick: () => handleOpenQr(firstSlug),
         },
         {
           key: 'dishes',
           icon: 'dishes',
           title: tSteps('dishesTitle'),
           hint: tSteps('dishesHint'),
-          onClick: () => handleOpenDashboard(firstSlug),
+          onClick: () => handleOpenItems(firstSlug),
         },
       ]
     : [];
@@ -339,7 +347,7 @@ export default function TenantsPageClient({
                     planLabel={planLabelOf(loc.tenant_plan)}
                     onManage={() => handleOpenDashboard(loc.tenant_slug)}
                     onViewMenu={() => handleOpenMenu(loc.tenant_slug)}
-                    onQr={() => handleOpenDashboard(loc.tenant_slug)}
+                    onQr={() => handleOpenQr(loc.tenant_slug)}
                   />
                 ))}
               </div>
