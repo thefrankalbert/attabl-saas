@@ -100,7 +100,7 @@ const COLUMN_STYLES = {
     emptyIcon: Utensils,
   },
   ready: {
-    dot: 'bg-emerald-400/60',
+    dot: 'bg-status-success/60',
     countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
     emptyIcon: CheckCircle2,
