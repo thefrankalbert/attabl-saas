@@ -17,8 +17,9 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
 
   // Check if this is the home/dashboard page (path ends with /admin or /admin/)
   const isHome = /\/admin\/?$/.test(pathname ?? '');
-  // Full-bleed pages need minimal padding (service floor plan, etc.)
-  const isFullBleed = pathname?.includes('/admin/service');
+  // Full-bleed pages need minimal padding and NO centered max-width column
+  // (service floor plan, chevalet/supports editor - both are edge-to-edge canvases).
+  const isFullBleed = pathname?.includes('/admin/service') || pathname?.includes('/admin/supports');
 
   // Immersive pages (KDS/POS) - no padding, no animation
   if (isImmersive) {
@@ -45,7 +46,13 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
       <AnimatePresence mode="wait">
         <motion.div
           key={pathname}
-          className="flex-1 min-h-0 flex flex-col"
+          className={cn(
+            'flex-1 min-h-0 flex flex-col w-full',
+            // Canonical content column: full width, capped + centered. Container-query
+            // breakpoints (@xl/@2xl) so the width steps at the SAME thresholds as the
+            // padding above, keeping content position stable across pages/sidebar/scrollbar.
+            !isFullBleed && 'max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto',
+          )}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}

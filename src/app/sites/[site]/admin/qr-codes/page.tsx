@@ -57,7 +57,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   const menuUrl = getTenantUrl(tenant.slug);
 
   return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col">
       <QRCodePage
         tenant={{
           name: tenant.name,

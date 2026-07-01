@@ -30,7 +30,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ site
 
   if (!hasInventory) {
     return (
-      <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+      <div className="flex-1 min-h-0 flex flex-col">
         <FeatureUpgradeWall
           feature="inventory"
           checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
@@ -41,7 +41,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ site
   }
 
   return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col">
       <InventoryClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />
     </div>
   );

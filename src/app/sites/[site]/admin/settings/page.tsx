@@ -47,7 +47,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col w-full">
       <SettingsForm
         initialTab={initialTab}
         initialPaymentMethods={tenant.enabled_payment_methods ?? DEFAULT_PAYMENT_METHODS}

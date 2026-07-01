@@ -30,7 +30,7 @@ export default async function RecipesPage({ params }: { params: Promise<{ site: 
 
   if (!hasRecipes) {
     return (
-      <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+      <div className="flex-1 min-h-0 flex flex-col">
         <FeatureUpgradeWall
           feature="recipes"
           checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
@@ -41,7 +41,7 @@ export default async function RecipesPage({ params }: { params: Promise<{ site: 
   }
 
   return (
-    <div className="h-full flex flex-col min-h-0 max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
+    <div className="h-full flex flex-col min-h-0 w-full">
       <RecipesClient tenantId={tenant.id} />
     </div>
   );

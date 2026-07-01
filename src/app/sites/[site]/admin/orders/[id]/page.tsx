@@ -73,7 +73,7 @@ export default async function SingleOrderPage({ params }: PageProps) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <SingleOrderClient
         order={transformedOrder}
         currency={(order.display_currency as CurrencyCode) || 'XAF'}
