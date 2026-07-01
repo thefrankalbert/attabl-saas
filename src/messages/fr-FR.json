@@ -1688,6 +1688,8 @@
     "loadingRecipeError": "Erreur de chargement de la recette",
     "addProductsFirst": "Ajoutez d'abord des produits",
     "recipesSubtitle": "Gérez les fiches techniques de vos plats",
+    "subtitle": "Suivez vos ingredients et leurs niveaux de stock",
+    "suggestionsSubtitle": "Recommandez des plats a vos clients",
     "withRecipe": "Avec fiche technique",
     "withoutRecipe": "Sans fiche technique",
     "searchDish": "Rechercher un plat...",

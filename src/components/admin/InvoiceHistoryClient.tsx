@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface StripeInvoice {
   id: string;
@@ -133,7 +133,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0">
-        <AnalyseSectionHeader title={t('title')} subtitle={t('subtitle')} count={invoices.length} />
+        <AdminPageHeader title={t('title')} subtitle={t('subtitle')} count={invoices.length} />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">

@@ -47,8 +47,8 @@ export default async function SupportsPage({ params }: { params: Promise<{ site:
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="px-6 py-4 border-b border-app-border shrink-0">
-        <h1 className="text-lg font-bold text-app-text">{t('pageTitle')}</h1>
-        <p className="text-xs text-app-text-muted mt-0.5">{t('pageSubtitle')}</p>
+        <h1 className="text-xl font-bold tracking-tight text-app-text">{t('pageTitle')}</h1>
+        <p className="text-sm text-app-text-muted mt-0.5">{t('pageSubtitle')}</p>
       </div>
 
       {/* Editor - prend toute la hauteur restante */}

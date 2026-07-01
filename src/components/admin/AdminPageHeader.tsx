@@ -1,27 +1,24 @@
 import type { ReactNode } from 'react';
 
-interface AnalyseSectionHeaderProps {
+interface AdminPageHeaderProps {
   title: string;
   subtitle?: string;
   /** Optional count shown as a muted pill next to the title. */
   count?: number;
-  /** Right-aligned toolbar (search, export, filter toggle). */
+  /** Right-aligned toolbar (search, export, filter toggle, primary action). */
   actions?: ReactNode;
 }
 
 /**
- * Shared title row for the four Analyse tabs (Rapports, Historique stock,
- * Factures, Journal d'audit). Centralised so every tab renders the header at
- * the exact same position, size, and rhythm - the tab bar above it lives in the
- * (analyse) layout and never remounts, so switching tabs no longer shifts the
- * heading around.
+ * Canonical page header for admin list/section pages. Centralised so every
+ * admin page renders its title at the exact same position, size, and rhythm -
+ * navigating between pages no longer shifts the heading around.
+ *
+ * Contract for the host page: wrap this in a `shrink-0 space-y-4` block at the
+ * top of a `flex flex-1 min-h-0 flex-col` root, then put the scrollable content
+ * in a sibling `flex-1 min-h-0 overflow-y-auto ... mt-4`.
  */
-export default function AnalyseSectionHeader({
-  title,
-  subtitle,
-  count,
-  actions,
-}: AnalyseSectionHeaderProps) {
+export default function AdminPageHeader({ title, subtitle, count, actions }: AdminPageHeaderProps) {
   return (
     <div className="flex flex-col gap-3 @lg:flex-row @lg:items-start">
       <div className="flex min-w-0 flex-col gap-1">

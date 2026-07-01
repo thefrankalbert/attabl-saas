@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -144,23 +145,25 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 flex items-center">
-        <div className="inline-flex items-center gap-2 border border-app-border rounded-lg px-1.5 py-1">
-          <span className="text-xs font-bold text-app-text-secondary tabular-nums px-1.5 shrink-0">
-            {ads.length}
-          </span>
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            variant="default"
-            size="sm"
-            className="gap-1.5 h-7 rounded-md shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" /> {t('newAd')}
-          </Button>
-        </div>
+      <div className="shrink-0 space-y-4">
+        <AdminPageHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          count={ads.length}
+          actions={
+            <Button
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
+              variant="default"
+              size="sm"
+              className="gap-1.5 h-7 rounded-md shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" /> {t('newAd')}
+            </Button>
+          }
+        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">

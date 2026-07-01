@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import type { SuggestionType } from '@/types/inventory.types';
 import { createSuggestionService } from '@/services/suggestion.service';
 import {
@@ -227,18 +228,46 @@ export default function SuggestionsClient({
       ) : (
         <>
           {/* Header + Search + Bulk actions */}
-          <div className="shrink-0 flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <span className="text-sm text-app-text-muted tabular-nums">({suggestions.length})</span>
-
-            <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-              <Input
-                placeholder={t('searchDish')}
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+          <div className="shrink-0 space-y-4">
+            <AdminPageHeader
+              title={t('suggestions')}
+              subtitle={t('suggestionsSubtitle')}
+              count={suggestions.length}
+              actions={
+                <>
+                  <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                    <Input
+                      placeholder={t('searchDish')}
+                      className="pl-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  {canAutoGenerate && (
+                    <Button
+                      onClick={handleAutoGenerate}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 h-9"
+                      disabled={generating || menuItems.length === 0}
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      {generating ? tc('loading') : t('autoGenerate')}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setShowAdd(true)}
+                    variant="default"
+                    size="sm"
+                    className="gap-2 h-9"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('addSuggestion')}
+                  </Button>
+                </>
+              }
+            />
 
             {/* Bulk actions */}
             {suggestions.length > 0 && (
@@ -266,30 +295,6 @@ export default function SuggestionsClient({
                 )}
               </div>
             )}
-
-            <div className="flex items-center gap-2 lg:ml-auto shrink-0">
-              {canAutoGenerate && (
-                <Button
-                  onClick={handleAutoGenerate}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 h-9"
-                  disabled={generating || menuItems.length === 0}
-                >
-                  <Wand2 className="w-4 h-4" />
-                  {generating ? tc('loading') : t('autoGenerate')}
-                </Button>
-              )}
-              <Button
-                onClick={() => setShowAdd(true)}
-                variant="default"
-                size="sm"
-                className="gap-2 h-9"
-              >
-                <Plus className="w-4 h-4" />
-                {t('addSuggestion')}
-              </Button>
-            </div>
           </div>
 
           {/* Suggestions List */}

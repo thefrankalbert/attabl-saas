@@ -25,7 +25,7 @@ import { ResponsiveDataTable, SortableHeader } from '@/components/admin/Responsi
 import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
-import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
   StockHistoryEmpty,
   StockHistoryNoResults,
@@ -284,7 +284,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
         {/* ── Header row ── */}
         <div className="shrink-0 space-y-4">
-          <AnalyseSectionHeader
+          <AdminPageHeader
             title={t('title')}
             subtitle={t('subtitle')}
             count={filtered.length}

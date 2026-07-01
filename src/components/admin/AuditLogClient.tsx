@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface AuditLogEntry {
   id: string;
@@ -207,7 +207,7 @@ export default function AuditLogClient({
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 space-y-4">
-        <AnalyseSectionHeader
+        <AdminPageHeader
           title={t('title')}
           subtitle={t('subtitle')}
           count={totalCount}

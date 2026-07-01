@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -349,9 +350,8 @@ export function TablesClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-app-text">{t('title')}</h1>
-        <p className="text-app-text-secondary text-sm mt-1">{t('subtitle')}</p>
+      <div className="shrink-0 space-y-4">
+        <AdminPageHeader title={t('title')} subtitle={t('subtitle')} count={zones.length} />
       </div>
 
       {/* Main Layout */}

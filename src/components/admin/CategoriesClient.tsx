@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { CategoryIconPicker } from '@/components/admin/CategoryIconPicker';
 import { cn } from '@/lib/utils';
 import { suggestIconForName, getLucideIcon } from '@/lib/config/lucide-food-icons';
@@ -422,16 +423,23 @@ export default function CategoriesClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 flex items-center gap-3">
-          <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
-            {categories.length}
-          </span>
-          <div className="flex items-center gap-2 ml-auto shrink-0">
-            <Button onClick={openNewModal} variant="default" size="sm" className="gap-1.5 shrink-0">
-              <Plus className="w-4 h-4" />
-              <span className="hidden @sm:inline">{t('newCategory')}</span>
-            </Button>
-          </div>
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            count={categories.length}
+            actions={
+              <Button
+                onClick={openNewModal}
+                variant="default"
+                size="sm"
+                className="gap-1.5 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden @sm:inline">{t('newCategory')}</span>
+              </Button>
+            }
+          />
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 @sm:mt-6">

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useUsersData } from '@/hooks/useUsersData';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useToast } from '@/components/ui/use-toast';
@@ -171,22 +172,22 @@ export default function UsersClient({
   return (
     <RoleGuard permission="canManageUsers">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0">
-          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-              <UserPlus className="w-6 h-6" />
-              {t('teamTitle')}
-            </h1>
-            {data.canManageUsers && (
-              <Button
-                variant="default"
-                onClick={() => data.setIsModalOpen(true)}
-                className="gap-2 @lg:ml-auto shrink-0"
-              >
-                <UserPlus className="w-4 h-4" /> {t('newMember')}
-              </Button>
-            )}
-          </div>
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            actions={
+              data.canManageUsers ? (
+                <Button
+                  variant="default"
+                  onClick={() => data.setIsModalOpen(true)}
+                  className="gap-2 shrink-0"
+                >
+                  <UserPlus className="w-4 h-4" /> {t('newMember')}
+                </Button>
+              ) : undefined
+            }
+          />
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 space-y-6">

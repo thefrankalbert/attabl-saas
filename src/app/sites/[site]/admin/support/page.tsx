@@ -83,7 +83,7 @@ export default function SupportPage() {
               <LifeBuoy className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-app-text">Support & Aide</h1>
+              <h1 className="text-xl font-bold tracking-tight text-app-text">Support & Aide</h1>
               <p className="text-sm text-app-text-secondary mt-0.5">
                 Trouvez des réponses rapides ou contactez notre équipe.
               </p>

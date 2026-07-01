@@ -7,6 +7,7 @@ import { Plus, FileSpreadsheet, FileText, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useMenusData } from '@/hooks/useMenusData';
 import type { MenuFormData } from '@/hooks/useMenusData';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
@@ -130,64 +131,65 @@ export default function MenusClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-3">
-          {/* Search + Actions - single row */}
-          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
-              {menus.length}
-            </span>
-            <div className="relative w-full @lg:w-64 @xl:w-72 @2xl:w-80 shrink-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-              <Input
-                data-search-input
-                placeholder={t('searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-9"
-              />
-            </div>
-            <div className="flex items-center gap-2 @lg:ml-auto shrink-0">
-              {selectedIds.size > 0 && (
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            count={menus.length}
+            actions={
+              <>
+                <div className="relative w-full @lg:w-64 @xl:w-72 @2xl:w-80 shrink-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
+                  <Input
+                    data-search-input
+                    placeholder={t('searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-9"
+                  />
+                </div>
+                {selectedIds.size > 0 && (
+                  <Button
+                    onClick={handleDeleteSelected}
+                    variant="outline"
+                    size="sm"
+                    title="Supprimer"
+                    className="gap-1.5 shrink-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button
-                  onClick={handleDeleteSelected}
+                  onClick={() => setShowImportModal(true)}
                   variant="outline"
                   size="sm"
-                  title="Supprimer"
-                  className="gap-1.5 shrink-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
+                  className="gap-1.5 shrink-0"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span className="hidden @sm:inline">{t('importExcel')}</span>
                 </Button>
-              )}
-              <Button
-                onClick={() => setShowImportModal(true)}
-                variant="outline"
-                size="sm"
-                className="gap-1.5 shrink-0"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span className="hidden @sm:inline">{t('importExcel')}</span>
-              </Button>
-              <Button
-                onClick={() => setShowPdfImportModal(true)}
-                variant="outline"
-                size="sm"
-                className="gap-1.5 shrink-0"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="hidden @sm:inline">{t('importPdf')}</span>
-              </Button>
-              <Button
-                onClick={() => openNewMenuModal()}
-                variant="default"
-                size="sm"
-                disabled={isLimitReached}
-                className="gap-1.5 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden @sm:inline">{t('newMenu')}</span>
-              </Button>
-            </div>
-          </div>
+                <Button
+                  onClick={() => setShowPdfImportModal(true)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden @sm:inline">{t('importPdf')}</span>
+                </Button>
+                <Button
+                  onClick={() => openNewMenuModal()}
+                  variant="default"
+                  size="sm"
+                  disabled={isLimitReached}
+                  className="gap-1.5 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden @sm:inline">{t('newMenu')}</span>
+                </Button>
+              </>
+            }
+          />
 
           {/* Limit warning */}
           {isLimitReached && (

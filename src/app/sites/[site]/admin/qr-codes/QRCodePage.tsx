@@ -105,7 +105,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <div className="p-2 bg-app-elevated rounded-xl">
             <QrCode className="h-5 w-5 text-app-text-secondary" />
           </div>
-          <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
         </div>
         <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
       </div>
