@@ -1193,7 +1193,8 @@
         "topbar": {
           "toggleTheme": "Toggle theme",
           "logout": "Sign out",
-          "refresh": "Refresh data"
+          "refresh": "Refresh data",
+          "account": "Account"
         },
         "micro": {
           "orders": "Orders",

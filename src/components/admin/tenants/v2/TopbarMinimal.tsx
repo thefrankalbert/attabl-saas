@@ -114,7 +114,15 @@ export function TopbarMinimal({
         >
           {userInitials}
         </div>
-        <span>{userName}</span>
+        <span className="flex flex-col leading-tight">
+          <span
+            className="text-[9px] font-medium uppercase tracking-[0.08em]"
+            style={{ color: 'var(--cc-text-3)' }}
+          >
+            {t('account')}
+          </span>
+          <span>{userName}</span>
+        </span>
       </div>
 
       {onLogout && (

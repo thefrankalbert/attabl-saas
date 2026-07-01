@@ -1193,7 +1193,8 @@
         "topbar": {
           "toggleTheme": "Basculer le theme",
           "logout": "Se deconnecter",
-          "refresh": "Rafraichir les données"
+          "refresh": "Rafraichir les données",
+          "account": "Compte"
         },
         "micro": {
           "orders": "Commandes",
