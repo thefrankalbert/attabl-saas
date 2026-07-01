@@ -2,6 +2,10 @@
 
 export type IngredientUnit = 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
 
+// The DB CHECK also allows physical_count / loss / transfer_in / transfer_out
+// (added in the canonical-ledger migration). Those values are added to this
+// union in the later phases that actually produce them (inventory count, losses,
+// transfers), keeping each phase's surface minimal.
 export type MovementType =
   | 'order_destock'
   | 'order_restock'
@@ -9,6 +13,17 @@ export type MovementType =
   | 'manual_remove'
   | 'adjustment'
   | 'opening';
+
+// Structured motif for losses / reconciliation (stock_movements.reason_code).
+export type ReasonCode =
+  | 'expired'
+  | 'breakage'
+  | 'theft'
+  | 'spillage'
+  | 'prep_waste'
+  | 'recount'
+  | 'reconcile'
+  | 'other';
 
 export type SuggestionType = 'pairing' | 'upsell' | 'alternative';
 
@@ -46,6 +61,7 @@ export interface StockMovement {
   quantity: number;
   reference_id: string | null;
   notes: string | null;
+  reason_code?: ReasonCode | null;
   created_by: string | null;
   supplier_id: string | null;
   created_at: string;

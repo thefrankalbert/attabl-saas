@@ -456,6 +456,7 @@ describe('InventoryService', () => {
         p_tenant_id: 't1',
         p_ingredient_id: 'ing-1',
         p_quantity: 50,
+        p_created_by: 'user-1',
       });
     });
   });
