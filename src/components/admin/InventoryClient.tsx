@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Plus, Search, Check, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -81,8 +81,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const tc = useTranslations('common');
   const queryClient = useQueryClient();
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // TanStack Query for ingredients and suppliers
-  const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
+  const { data: ingredients = [], isLoading: isQueryLoading } = useIngredients(tenantId);
+  const loading = !isMounted || isQueryLoading;
   const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
   // ─── Realtime: ingredients updates with low-stock alerts ─
@@ -361,89 +367,85 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   return (
     <RoleGuard permission="canViewStocks">
       <div className="h-full flex flex-col overflow-hidden">
+        {/* Fixed header area */}
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('inventory')}
+            subtitle={t('subtitle')}
+            count={ingredients.length}
+            actions={
+              <>
+                {/* Search - compact */}
+                <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                  <Input
+                    data-search-input
+                    placeholder={t('searchProduct')}
+                    className="pl-9 h-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Add button */}
+                <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
+                  <Plus className="w-4 h-4" />
+                  {t('addIngredient')}
+                </Button>
+              </>
+            }
+          />
+
+          {/* Filter pills */}
+          <div className="flex items-center gap-1.5">
+            {(['all', 'low', 'out'] as const).map((status) => {
+              const count =
+                status === 'low' ? lowCount : status === 'out' ? outCount : ingredients.length;
+              return (
+                <Button
+                  key={status}
+                  variant={filterStatus === status ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus(status)}
+                  className={cn(
+                    'rounded-full h-8 text-xs px-3 gap-1.5',
+                    status === 'out' &&
+                      outCount > 0 &&
+                      filterStatus !== status &&
+                      'border-[var(--border)] text-[var(--destructive)]',
+                    status === 'low' &&
+                      lowCount > 0 &&
+                      filterStatus !== status &&
+                      'border-[var(--border)] text-[var(--warning)]',
+                  )}
+                >
+                  {status === 'all' ? tc('all') : status === 'low' ? t('lowStock') : t('rupture')}
+                  {status !== 'all' && count > 0 && (
+                    <span
+                      className={cn(
+                        'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
+                        filterStatus === status
+                          ? 'bg-app-bg/30'
+                          : status === 'out'
+                            ? 'text-[var(--destructive)]'
+                            : 'text-[var(--warning)]',
+                      )}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-secondary">
             {tc('loading')}
           </div>
         ) : (
           <>
-            {/* Fixed header area */}
-            <div className="shrink-0 space-y-4">
-              <AdminPageHeader
-                title={t('inventory')}
-                subtitle={t('subtitle')}
-                count={ingredients.length}
-                actions={
-                  <>
-                    {/* Search - compact */}
-                    <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                      <Input
-                        data-search-input
-                        placeholder={t('searchProduct')}
-                        className="pl-9 h-9"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-
-                    {/* Add button */}
-                    <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
-                      <Plus className="w-4 h-4" />
-                      {t('addIngredient')}
-                    </Button>
-                  </>
-                }
-              />
-
-              {/* Filter pills */}
-              <div className="flex items-center gap-1.5">
-                {(['all', 'low', 'out'] as const).map((status) => {
-                  const count =
-                    status === 'low' ? lowCount : status === 'out' ? outCount : ingredients.length;
-                  return (
-                    <Button
-                      key={status}
-                      variant={filterStatus === status ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilterStatus(status)}
-                      className={cn(
-                        'rounded-full h-8 text-xs px-3 gap-1.5',
-                        status === 'out' &&
-                          outCount > 0 &&
-                          filterStatus !== status &&
-                          'border-[var(--border)] text-[var(--destructive)]',
-                        status === 'low' &&
-                          lowCount > 0 &&
-                          filterStatus !== status &&
-                          'border-[var(--border)] text-[var(--warning)]',
-                      )}
-                    >
-                      {status === 'all'
-                        ? tc('all')
-                        : status === 'low'
-                          ? t('lowStock')
-                          : t('rupture')}
-                      {status !== 'all' && count > 0 && (
-                        <span
-                          className={cn(
-                            'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
-                            filterStatus === status
-                              ? 'bg-app-bg/30'
-                              : status === 'out'
-                                ? 'text-[var(--destructive)]'
-                                : 'text-[var(--warning)]',
-                          )}
-                        >
-                          {count}
-                        </span>
-                      )}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Table / Cards */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
               <ResponsiveDataTable

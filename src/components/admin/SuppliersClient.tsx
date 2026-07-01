@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
@@ -55,8 +55,14 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const tc = useTranslations('common');
   const queryClient = useQueryClient();
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // TanStack Query for suppliers
-  const { data: suppliers = [], isLoading: loading } = useSuppliers(tenantId);
+  const { data: suppliers = [], isLoading: isQueryLoading } = useSuppliers(tenantId);
+  const loading = !isMounted || isQueryLoading;
 
   const loadSuppliers = () => {
     queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
@@ -298,57 +304,57 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   return (
     <RoleGuard permission="canManageStocks">
       <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            count={suppliers.length}
+            actions={
+              <>
+                <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                  <Input
+                    data-search-input
+                    placeholder={t('searchPlaceholder')}
+                    className="pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex gap-2 shrink-0">
+                  {(['all', 'active', 'inactive'] as const).map((status) => (
+                    <Button
+                      key={status}
+                      variant={filterActive === status ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterActive(status)}
+                      className="rounded-full"
+                    >
+                      {status === 'all'
+                        ? t('filterAll')
+                        : status === 'active'
+                          ? t('filterActive')
+                          : t('filterInactive')}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button onClick={openAdd} variant="default" className="gap-2 shrink-0">
+                  <Plus className="w-4 h-4" />
+                  {t('addSupplier')}
+                </Button>
+              </>
+            }
+          />
+        </div>
+
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-secondary">
             {t('loadingSuppliers')}
           </div>
         ) : (
           <>
-            <div className="shrink-0 space-y-4">
-              <AdminPageHeader
-                title={t('title')}
-                subtitle={t('subtitle')}
-                count={suppliers.length}
-                actions={
-                  <>
-                    <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                      <Input
-                        data-search-input
-                        placeholder={t('searchPlaceholder')}
-                        className="pl-9"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="flex gap-2 shrink-0">
-                      {(['all', 'active', 'inactive'] as const).map((status) => (
-                        <Button
-                          key={status}
-                          variant={filterActive === status ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setFilterActive(status)}
-                          className="rounded-full"
-                        >
-                          {status === 'all'
-                            ? t('filterAll')
-                            : status === 'active'
-                              ? t('filterActive')
-                              : t('filterInactive')}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <Button onClick={openAdd} variant="default" className="gap-2 shrink-0">
-                      <Plus className="w-4 h-4" />
-                      {t('addSupplier')}
-                    </Button>
-                  </>
-                }
-              />
-            </div>
-
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
               {/* Table / Cards */}
               <ResponsiveDataTable
