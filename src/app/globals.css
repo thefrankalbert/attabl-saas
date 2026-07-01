@@ -188,20 +188,20 @@
 
   --app-accent: #006aff;
   --app-accent-hover: #0055cc;
-  --app-accent-muted: rgba(194, 245, 66, 0.12);
-  --app-accent-text: #0a0a0a;
+  --app-accent-muted: rgba(0, 106, 255, 0.12);
+  --app-accent-text: #ffffff;
 
   /* Accent ramp -- Square Blue #006AFF */
-  --accent-50: #f7ffe0;
-  --accent-100: #edfbc7;
-  --accent-200: #dcf78f;
-  --accent-300: #006aff;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #0055cc;
-  --accent-700: #527f0e;
-  --accent-800: #3d5f0a;
-  --accent-900: #273f07;
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #006aff;
+  --accent-700: #0055cc;
+  --accent-800: #1e40af;
+  --accent-900: #1e3a8a;
 
   --app-status-success-bg: rgba(5, 150, 105, 0.15);
   --app-status-warning-bg: rgba(217, 119, 6, 0.15);
@@ -232,22 +232,22 @@
   --app-text-secondary: #57534e;
   --app-text-muted: #a8a29e;
 
-  --app-accent: #65a30d;
+  --app-accent: #006aff;
   --app-accent-hover: #0055cc;
-  --app-accent-muted: rgba(101, 163, 13, 0.12);
+  --app-accent-muted: rgba(0, 106, 255, 0.12);
   --app-accent-text: #ffffff;
 
   /* Accent ramp (light mode) -- Square Blue */
-  --accent-50: #f7fee7;
-  --accent-100: #ecfccb;
-  --accent-200: #d9f99d;
-  --accent-300: #bef264;
-  --accent-400: #a3e635;
-  --accent-500: #84cc16;
-  --accent-600: #65a30d;
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #006aff;
   --accent-700: #0055cc;
-  --accent-800: #3f6212;
-  --accent-900: #365314;
+  --accent-800: #1e40af;
+  --accent-900: #1e3a8a;
 
   --app-status-success-bg: #ecfdf5;
   --app-status-warning-bg: #fffbeb;
@@ -414,21 +414,21 @@
     --app-text-secondary: #57534e;
     --app-text-muted: #a8a29e;
 
-    --app-accent: #65a30d;
+    --app-accent: #006aff;
     --app-accent-hover: #0055cc;
-    --app-accent-muted: rgba(101, 163, 13, 0.12);
+    --app-accent-muted: rgba(0, 106, 255, 0.12);
     --app-accent-text: #ffffff;
 
-    --accent-50: #f7fee7;
-    --accent-100: #ecfccb;
-    --accent-200: #d9f99d;
-    --accent-300: #bef264;
-    --accent-400: #a3e635;
-    --accent-500: #84cc16;
-    --accent-600: #65a30d;
+    --accent-50: #eff6ff;
+    --accent-100: #dbeafe;
+    --accent-200: #bfdbfe;
+    --accent-300: #93c5fd;
+    --accent-400: #60a5fa;
+    --accent-500: #3b82f6;
+    --accent-600: #006aff;
     --accent-700: #0055cc;
-    --accent-800: #3f6212;
-    --accent-900: #365314;
+    --accent-800: #1e40af;
+    --accent-900: #1e3a8a;
 
     --app-status-success-bg: #ecfdf5;
     --app-status-warning-bg: #fffbeb;

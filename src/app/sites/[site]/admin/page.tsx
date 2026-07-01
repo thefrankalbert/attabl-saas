@@ -79,7 +79,7 @@ function buildChannelBuckets(
   return Object.values(buckets);
 }
 
-const TREND_COLORS: ReadonlyArray<TopDishRecord['color']> = ['amber', 'indigo', 'lime', 'rose'];
+const TREND_COLORS: ReadonlyArray<TopDishRecord['color']> = ['amber', 'indigo', 'violet', 'rose'];
 
 function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).slice(0, 2);

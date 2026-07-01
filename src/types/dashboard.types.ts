@@ -32,7 +32,7 @@ export interface TopDishRecord {
   portions: number;
   revenue: number;
   dayCounts: Record<string, number>;
-  color: 'lime' | 'indigo' | 'rose' | 'amber';
+  color: 'violet' | 'indigo' | 'rose' | 'amber';
   initials: string;
   available: boolean;
 }
