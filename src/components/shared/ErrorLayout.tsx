@@ -100,7 +100,7 @@ export function ErrorLayout({
                     cell.filled
                       ? isTenant
                         ? 'bg-[var(--color-brand-light)]'
-                        : 'bg-[#CCFF00]/10 dark:bg-[#CCFF00]/15'
+                        : 'bg-neutral-100 dark:bg-white/10'
                       : isTenant
                         ? 'bg-[var(--color-surface-alt)] border border-[var(--color-divider)]'
                         : 'bg-neutral-100 border border-neutral-200 dark:bg-white/5 dark:border-white/10',
@@ -110,7 +110,9 @@ export function ErrorLayout({
                     <Icon
                       className={cn(
                         'h-6 w-6 sm:h-8 sm:w-8',
-                        isTenant ? 'text-[var(--color-ink)]' : 'text-[#4d7c0f] dark:text-[#CCFF00]',
+                        isTenant
+                          ? 'text-[var(--color-ink)]'
+                          : 'text-neutral-600 dark:text-neutral-400',
                       )}
                     />
                   )}
