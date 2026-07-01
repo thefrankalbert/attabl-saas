@@ -9,7 +9,6 @@ import {
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
@@ -59,12 +58,13 @@ export function AdminBreadcrumbs() {
   // Don't show breadcrumbs on the dashboard (root admin page)
   if (segments.length === 0) return null;
 
-  const crumbs = segments.map((segment, index) => {
-    const href = `${basePath}/${segments.slice(0, index + 1).join('/')}`;
-    const isLast = index === segments.length - 1;
+  // Ancestor segments only — the current page is shown by the page <h1> (AdminPageHeader).
+  // Standard breadcrumb pattern: show the path TO the page, not the page itself.
+  const ancestorSegments = segments.slice(0, -1);
 
-    // Try to get a translated label, fall back to capitalized segment
-    // Detect UUIDs and show a short hash instead
+  const crumbs = ancestorSegments.map((segment, index) => {
+    const href = `${basePath}/${ancestorSegments.slice(0, index + 1).join('/')}`;
+
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
     const labelKey = SEGMENT_LABEL_MAP[segment];
     const label = labelKey
@@ -73,7 +73,7 @@ export function AdminBreadcrumbs() {
         ? `#${segment.slice(0, 8).toUpperCase()}`
         : decodeURIComponent(segment);
 
-    return { href, label, isLast, segment };
+    return { href, label };
   });
 
   return (
@@ -90,13 +90,9 @@ export function AdminBreadcrumbs() {
           <span key={crumb.href} className="contents">
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              {crumb.isLast ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              )}
+              <BreadcrumbLink asChild>
+                <Link href={crumb.href}>{crumb.label}</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
           </span>
         ))}
