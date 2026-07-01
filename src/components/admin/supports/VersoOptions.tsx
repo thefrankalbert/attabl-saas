@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { VersoMode } from '@/types/supports.types';
 
 interface VersoOptionsProps {
@@ -19,23 +20,22 @@ export function VersoOptions({ value, onChange }: VersoOptionsProps) {
   const t = useTranslations('sidebar.supports');
 
   return (
-    <div className="space-y-2">
+    <RadioGroup value={value} onValueChange={(v) => onChange(v as VersoMode)} className="space-y-2">
       {OPTIONS.map((opt) => (
-        <Label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-          {/* eslint-disable-next-line react/forbid-elements -- <input type="radio"> pas d'equivalent shadcn */}
-          <input
-            type="radio"
-            name="verso-mode"
+        <div key={opt.value} className="flex items-center gap-2.5">
+          <RadioGroupItem
+            id={`verso-${opt.value}`}
             value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="accent-accent w-3.5 h-3.5 shrink-0"
+            className="h-3.5 w-3.5 border-accent text-accent"
           />
-          <span className="text-xs text-app-text-secondary group-hover:text-app-text transition-colors">
+          <Label
+            htmlFor={`verso-${opt.value}`}
+            className="cursor-pointer text-xs text-app-text-secondary transition-colors hover:text-app-text"
+          >
             {t(opt.labelKey)}
-          </span>
-        </Label>
+          </Label>
+        </div>
       ))}
-    </div>
+    </RadioGroup>
   );
 }
