@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import type { CouponValidationResult } from '@/services/coupon.service';
 import type { PricingBreakdown } from '@/types/admin.types';
+import { canAccessFeature } from '@/lib/plans/features';
+import { checkAndNotifyLowStock } from '@/services/notification.service';
+import * as Sentry from '@sentry/nextjs';
 
 // ─── Mock external dependencies ────────────────────────────────
 
@@ -112,6 +115,11 @@ vi.mock('@/services/inventory.service', () => ({
 // ─── Notification service mock ─────────────────────────────────
 vi.mock('@/services/notification.service', () => ({
   checkAndNotifyLowStock: vi.fn().mockResolvedValue(undefined),
+}));
+
+// ─── Sentry mock (route.ts captures destock failures) ──────────
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
 }));
 
 // ─── Pricing mock ──────────────────────────────────────────────
@@ -500,5 +508,100 @@ describe('POST /api/orders', () => {
 
     expect(status).toBe(400);
     expect(body.error).toBe('Certains articles ne sont plus valides');
+  });
+});
+
+// ─── Auto-destock wiring ───────────────────────────────────────
+// The stock deduction (destock_order RPC) is scheduled via after() when the
+// tenant plan grants inventory. These tests lock the WIRING: a sale must call
+// destock, a plan without inventory must not, and a destock failure must never
+// break the order (non-blocking) while still surfacing to Sentry.
+describe('POST /api/orders - auto-destock wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
+    mockValidateTenant.mockResolvedValue({
+      id: 'tenant-abc',
+      currency: 'XAF',
+      tax_rate: 0,
+      service_charge_rate: 0,
+      enable_tax: false,
+      enable_service_charge: false,
+      subscription_plan: 'business',
+      subscription_status: 'active',
+      trial_ends_at: null,
+    });
+    mockValidateOrderItems.mockResolvedValue({
+      validatedTotal: 10000,
+      verifiedPrices: new Map(),
+      categoryIds: [],
+      itemCategoryMap: new Map(),
+    });
+    mockDeterminePreparationZone.mockResolvedValue({
+      orderZone: 'kitchen',
+      categoryZoneMap: new Map(),
+    });
+    mockValidateCoupon.mockResolvedValue({ valid: true, discountAmount: 0, coupon: undefined });
+    mockCalculateOrderTotal.mockReturnValue({
+      subtotal: 10000,
+      taxAmount: 0,
+      serviceChargeAmount: 0,
+      discountAmount: 0,
+      total: 10000,
+    });
+    mockCreateOrderWithItems.mockResolvedValue({
+      orderId: 'order-123',
+      orderNumber: 'CMD-20260220-001',
+      total: 10000,
+    });
+  });
+
+  it('destocks the order when the plan grants inventory', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(true);
+    mockDestockOrder.mockResolvedValue(1);
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest(validOrderBody()));
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(200);
+    // Wiring: the sale triggers stock deduction for the created order + tenant.
+    // destock + low-stock check run in a non-awaited after() callback, so wait
+    // for the microtasks (destock resolve + dynamic import) to flush.
+    await vi.waitFor(() => {
+      expect(mockDestockOrder).toHaveBeenCalledWith('order-123', 'tenant-abc');
+      expect(vi.mocked(checkAndNotifyLowStock)).toHaveBeenCalledWith('tenant-abc');
+    });
+  });
+
+  it('does NOT destock when the plan lacks inventory', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(false);
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest(validOrderBody()));
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(200);
+    expect(mockDestockOrder).not.toHaveBeenCalled();
+  });
+
+  it('keeps the order successful and reports to Sentry when destock fails', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(true);
+    mockDestockOrder.mockRejectedValue(new Error('destock RPC boom'));
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest(validOrderBody()));
+    const { status, body } = await parseResponse(response);
+
+    // Non-blocking: the order still succeeds even if destock throws.
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    await vi.waitFor(() => {
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({ tags: { area: 'inventory-destock' } }),
+      );
+    });
   });
 });

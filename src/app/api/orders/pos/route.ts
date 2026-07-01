@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse, after } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
@@ -469,6 +470,10 @@ export async function POST(request: Request) {
         })
         .catch((err) => {
           logger.error('POS order: auto-destock failed (non-blocking)', err);
+          Sentry.captureException(err, {
+            tags: { area: 'inventory-destock' },
+            extra: { orderId: result.orderId, tenantId: tenant_id },
+          });
         });
     }
 

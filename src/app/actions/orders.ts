@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
@@ -241,6 +242,10 @@ export async function actionUpdateOrderStatus(
             logger.error('Order cancel: auto-restock failed (non-blocking)', {
               err,
               orderId: parsed.data.orderId,
+            });
+            Sentry.captureException(err, {
+              tags: { area: 'inventory-restock' },
+              extra: { orderId: parsed.data.orderId, tenantId: parsed.data.tenantId },
             });
           });
       }
