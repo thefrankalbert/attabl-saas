@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
+import { CHART_PALETTE } from '@/lib/design-tokens';
 import type {
   DashboardStats,
   Order,
@@ -275,20 +276,19 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
         categoryMap[name] = (categoryMap[name] || 0) + revenue;
       }
-      const DONUT_COLORS = ['#CCFF00', '#F59E0B', '#3B82F6', '#D4D4D8'];
       const sortedCategories = Object.entries(categoryMap).sort(([, a], [, b]) => b - a);
       const top3 = sortedCategories.slice(0, 3);
       const othersValue = sortedCategories.slice(3).reduce((sum, [, v]) => sum + v, 0);
       const categoryBreakdown: CategoryBreakdown[] = top3.map(([name, value], i) => ({
         name,
         value,
-        color: DONUT_COLORS[i],
+        color: CHART_PALETTE[i % CHART_PALETTE.length],
       }));
       if (othersValue > 0) {
         categoryBreakdown.push({
           name: 'Autres',
           value: othersValue,
-          color: DONUT_COLORS[3],
+          color: CHART_PALETTE[3 % CHART_PALETTE.length],
         });
       }
 

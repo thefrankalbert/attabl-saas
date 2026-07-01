@@ -162,6 +162,52 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Anti-regression design system: interdire la couleur de marque lime (#CCFF00)
+  // et les classes de palette brute lime/green/emerald dans les surfaces ADMIN.
+  // Contexte : #168 a aligne l'admin sur shadcn neutral + accent bleu. Le lime
+  // est la couleur de MARQUE ATTABL, legitime cote tenant/marketing/auth/onboarding
+  // mais INTERDITE dans l'admin. Les fuites passees (ErrorLayout, global-error,
+  // DONUT_COLORS) etaient du lime hardcode invisible en navigation normale.
+  // L'admin utilise les tokens semantiques (text-status-success, bg-status-success-bg)
+  // et CHART_PALETTE pour les charts - JAMAIS de hex brut ni de classe green/lime.
+  // Voir .claude/rules/09-admin-color-system.md
+  {
+    files: [
+      'src/components/admin/**/*.{ts,tsx}',
+      'src/app/admin/**/*.{ts,tsx}',
+      'src/app/sites/**/admin/**/*.{ts,tsx}',
+      'src/hooks/queries/useDashboardStats.ts',
+      'src/hooks/useDashboardData.ts',
+      'src/components/shared/ErrorLayout.tsx',
+      'src/app/global-error.tsx',
+    ],
+    ignores: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/CCFF00/i]',
+          message:
+            'Couleur de marque lime #CCFF00 interdite en admin. Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/CCFF00/i]',
+          message:
+            'Couleur de marque lime #CCFF00 interdite en admin. Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
+        },
+        {
+          selector: 'Literal[value=/-(lime|green|emerald)-[0-9]/]',
+          message:
+            'Classe de palette brute (lime/green/emerald) interdite en admin. Utiliser les tokens semantiques (text-status-success, bg-status-success-bg, etc.).',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/-(lime|green|emerald)-[0-9]/]',
+          message:
+            'Classe de palette brute (lime/green/emerald) interdite en admin. Utiliser les tokens semantiques (text-status-success, bg-status-success-bg, etc.).',
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
