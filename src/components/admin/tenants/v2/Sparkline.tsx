@@ -7,14 +7,41 @@ interface SparklineProps {
   ariaLabel?: string;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 /**
- * Small presentational SVG area + line sparkline.
- * Normalizes the series to the box height. When the series is empty or all
- * zeros it falls back to a flat baseline so the cell never looks broken.
- *
- * Pure SVG, no hooks - safe to render inside a server component.
+ * Builds a smooth cubic-bezier path through the points (Catmull-Rom), so the
+ * sparkline reads as a clean curve instead of a jagged polyline.
  */
-export function Sparkline({ data, className, width = 56, height = 20, ariaLabel }: SparklineProps) {
+function smoothLine(points: Point[]): string {
+  if (points.length < 2) return '';
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+/**
+ * Small presentational SVG area + line sparkline. Renders a smooth curve; when
+ * the series is empty or flat it falls back to a centered baseline so the cell
+ * never looks broken. Pure SVG, no hooks - safe in a server component.
+ * A small vertical inset keeps the 1.5px stroke from clipping at the box edges.
+ */
+export function Sparkline({ data, className, width = 64, height = 24, ariaLabel }: SparklineProps) {
+  const pad = 2;
+  const innerH = height - pad * 2;
   const max = data.length > 0 ? Math.max(...data) : 0;
   const min = data.length > 0 ? Math.min(...data) : 0;
   const isFlat = data.length < 2 || max === min;
@@ -27,7 +54,6 @@ export function Sparkline({ data, className, width = 56, height = 20, ariaLabel 
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
         role="img"
         aria-label={ariaLabel}
       >
@@ -46,14 +72,13 @@ export function Sparkline({ data, className, width = 56, height = 20, ariaLabel 
 
   const span = max - min;
   const stepX = width / (data.length - 1);
-  const points = data.map((value, index) => {
-    const x = index * stepX;
-    const y = height - ((value - min) / span) * height;
-    return { x, y };
-  });
+  const points: Point[] = data.map((value, index) => ({
+    x: index * stepX,
+    y: pad + (innerH - ((value - min) / span) * innerH),
+  }));
 
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-  const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+  const linePath = smoothLine(points);
+  const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
 
   return (
     <svg
@@ -61,15 +86,14 @@ export function Sparkline({ data, className, width = 56, height = 20, ariaLabel 
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
       role="img"
       aria-label={ariaLabel}
     >
-      <path d={areaPath} fill="var(--cc-accent-ink)" fillOpacity={0.12} />
+      <path d={areaPath} fill="var(--cc-viz)" fillOpacity={0.1} stroke="none" />
       <path
         d={linePath}
         fill="none"
-        stroke="var(--cc-accent-ink)"
+        stroke="var(--cc-viz)"
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"

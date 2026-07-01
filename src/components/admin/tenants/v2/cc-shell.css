@@ -9,16 +9,22 @@
  */
 
 .cc-shell {
-  /* Accent = convive brand green (#06c167), aligned on the customer surface.
-   * Two-layer definition: one solid token, one alpha-capable variant for
-   * the soft and dim chip backgrounds. */
-  --cc-accent: #06c167;
+  /* Primary UI accent = neutral near-black/near-white, matching the SaaS admin
+   * neutral primary. Bound to --cc-text so it auto-flips with the theme
+   * (self-contained, unlike the frozen shadcn --primary token). NOT green -
+   * green is reserved for positive/success only (online, trend up, delivered).
+   * Text ON the accent uses --cc-bg (the inverse). */
+  --cc-accent: var(--cc-text);
+  --cc-accent-hover: var(--cc-text-2);
+  --cc-on-accent: var(--cc-bg);
+  /* Green kept ONLY as a positive/success ink + its soft/dim chip backgrounds:
+   * online status, trend-up delta, delivered flux. */
   --cc-accent-soft: rgba(6, 193, 103, 0.1);
   --cc-accent-dim: rgba(6, 193, 103, 0.22);
-  --cc-accent-hover: #05a557;
-  /* Accent ink color used when the accent sits on a text context
-   * (delta chip, live dot). Slightly darker green = WCAG AA contrast. */
   --cc-accent-ink: #05a557;
+  /* Neutral data-visualization stroke (sparklines, chart line, crosshair) -
+   * data viz is neutral, not brand-colored. */
+  --cc-viz: var(--cc-text-2);
 
   --cc-bg: #ffffff;
   --cc-surface: #ffffff;
@@ -55,12 +61,13 @@
   --cc-text-2: #a8a29e;
   --cc-text-3: #6b6560;
   --cc-soft: #57534e;
-  /* Dark mode accent = lifted green (brighter ink against dark surfaces) */
-  --cc-accent: #06c167;
+  /* Neutral primary flips to near-white on dark; green stays only as the
+   * positive/success ink (lifted for contrast on dark surfaces). */
+  --cc-accent: var(--cc-text);
+  --cc-accent-hover: var(--cc-text-2);
   --cc-accent-ink: #1fd47e;
   --cc-accent-soft: rgba(31, 212, 126, 0.12);
   --cc-accent-dim: rgba(31, 212, 126, 0.24);
-  --cc-accent-hover: #1fd47e;
 }
 
 .cc-shell .cc-mono {
@@ -78,7 +85,7 @@
   align-items: center;
   gap: 6px;
   font-size: 10.5px;
-  color: var(--cc-accent-ink);
+  color: var(--cc-viz);
   font-family: var(--cc-mono);
   letter-spacing: 0.04em;
 }
@@ -87,7 +94,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--cc-accent-ink);
+  background: var(--cc-viz);
   animation: cc-blink 1.6s infinite;
 }
 @keyframes cc-blink {
@@ -107,11 +114,11 @@
 }
 .cc-shell .cc-chart-line {
   fill: none;
-  stroke: var(--cc-accent-ink);
+  stroke: var(--cc-viz);
   stroke-width: 1.5;
 }
 .cc-shell[data-cc-theme='dark'] .cc-chart-line {
-  stroke: var(--cc-accent-ink);
+  stroke: var(--cc-viz);
 }
 .cc-shell .cc-chart-grid line {
   stroke: var(--cc-border);
@@ -128,12 +135,12 @@
   stroke-dasharray: 2 3;
 }
 .cc-shell .cc-crosshair-dot {
-  fill: var(--cc-accent-ink);
+  fill: var(--cc-viz);
   stroke: var(--cc-bg);
   stroke-width: 2;
 }
 .cc-shell[data-cc-theme='dark'] .cc-crosshair-dot {
-  fill: var(--cc-accent-ink);
+  fill: var(--cc-viz);
 }
 
 /* Tooltip */

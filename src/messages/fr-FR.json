@@ -1188,7 +1188,18 @@
           "ordersShort": "cmd.",
           "trendLabel": "vs hier",
           "trendNew": "Nouveau",
-          "sparklineLabel": "Activite du jour de {name}"
+          "sparklineLabel": "Activite du jour de {name}",
+          "mineTitle": "Vos établissements",
+          "card": {
+            "manage": "Gérer mon restaurant",
+            "viewMenu": "Voir le menu",
+            "qr": "QR code",
+            "online": "En ligne",
+            "offline": "Hors ligne",
+            "revenueToday": "CA aujourd'hui",
+            "ordersToday": "commandes",
+            "noSales": "Pas encore de ventes"
+          }
         },
         "topbar": {
           "toggleTheme": "Basculer le theme",
@@ -1201,6 +1212,15 @@
           "sites": "Sites",
           "alerts": "Alertes",
           "sitesOnline": "{online} / {total} en ligne"
+        },
+        "firstSteps": {
+          "title": "Premiers pas",
+          "menuTitle": "Voir mon menu public",
+          "menuHint": "Ce que vos clients voient",
+          "qrTitle": "Partager mon QR code",
+          "qrHint": "À poser sur les tables",
+          "dishesTitle": "Ajouter des plats",
+          "dishesHint": "Compléter votre carte"
         }
       }
     },
@@ -2988,7 +3008,7 @@
     "movementsCount": "{count, plural, one {# mouvement} other {# mouvements}}",
     "filterAll": "Tous",
     "filterOrders": "Commandes",
-    "filterRestock": "Retours",
+    "filterRestock": "Restock annulation",
     "filterAdditions": "Ajouts",
     "filterWithdrawals": "Retraits",
     "filterAdjustments": "Ajustements",
@@ -3012,8 +3032,7 @@
     "emptyCta": "Définir mon stock",
     "noResultsTitle": "Aucun mouvement pour ces filtres",
     "noResultsHint": "Essayez un autre filtre ou changez votre recherche.",
-    "clearFilters": "Réinitialiser",
-    "filterRestock": "Restock annulation"
+    "clearFilters": "Réinitialiser"
   },
   "screenLock": {
     "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",

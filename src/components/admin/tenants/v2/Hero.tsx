@@ -87,16 +87,16 @@ export function Hero({
       </div>
 
       <div
-        className="mb-2.5 mt-[14px] flex items-baseline gap-[14px] overflow-hidden text-[clamp(44px,9vw,72px)] font-semibold tabular-nums"
+        className="mb-2 mt-3 flex items-baseline gap-3 overflow-hidden text-[clamp(30px,4.5vw,44px)] font-semibold tabular-nums"
         style={{
           fontFamily: 'var(--cc-sans)',
-          letterSpacing: '-0.04em',
-          lineHeight: 0.95,
+          letterSpacing: '-0.03em',
+          lineHeight: 1,
         }}
       >
         <span className="truncate">{formatMoney(revenueToday, locale)}</span>
         <span
-          className="text-[18px] font-medium sm:text-[20px]"
+          className="text-[14px] font-medium sm:text-[15px]"
           style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}
         >
           {currencyLabel}
