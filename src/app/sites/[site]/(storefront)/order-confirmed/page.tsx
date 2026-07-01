@@ -17,6 +17,7 @@ import {
   Utensils,
   Bell,
   BellRing,
+  UploadCloud,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -77,6 +78,8 @@ interface TrackedOrderRow {
 function OrderConfirmedContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
+  // Set by the cart when an order was queued offline (no server order id yet).
+  const queued = searchParams.get('queued') === '1';
   const { slug: tenantSlug, tenantId, tenant } = useTenant();
   const t = useTranslations('tenant');
   const { formatDisplayPrice } = useDisplayCurrency();
@@ -214,6 +217,49 @@ function OrderConfirmedContent() {
       supabase.removeChannel(channel);
     };
   }, [orderId, tenantId]);
+
+  // --- Offline-queued confirmation ----------------------
+  // The order is durably stored in the outbox and syncs on reconnect. There is
+  // no server order id yet, so the fetch/tracking effects above no-op (they
+  // early-return on !orderId) and we render an optimistic confirmation.
+  if (queued && !orderId) {
+    return (
+      <div className="flex h-full flex-col bg-white">
+        <div className="relative flex flex-1 flex-col items-center justify-center px-7 text-center">
+          <div className="relative flex h-[92px] w-[92px] items-center justify-center rounded-full bg-[var(--color-ink)]">
+            <UploadCloud className="h-11 w-11 text-white" strokeWidth={2} />
+          </div>
+          <h1 className="mt-[26px] text-[24px] font-semibold tracking-[-0.7px] text-[var(--color-ink)]">
+            {t('orderQueuedTitle')}
+          </h1>
+          <p className="mt-2 max-w-[280px] text-[14px] leading-[1.5] text-[var(--color-ink-2)]">
+            {t('orderQueuedSub')}
+          </p>
+        </div>
+        <div
+          className="flex flex-col gap-2.5 px-3.5 pt-3"
+          style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <Button
+            asChild
+            className="h-[54px] w-full justify-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
+          >
+            <Link href={menuPath}>
+              <ArrowLeft className="h-4 w-4" />
+              {t('backToMenu')}
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="h-12 w-full text-[13.5px] font-semibold text-[var(--color-ink-2)]"
+          >
+            <Link href={`/sites/${tenantSlug}`}>{t('backHome')}</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // --- Loading -------------------------------------------
   if (loading) {

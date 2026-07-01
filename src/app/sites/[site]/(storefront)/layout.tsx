@@ -7,6 +7,7 @@ import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import { DEFAULT_FONT } from '@/lib/config/fonts';
 import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
 import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
+import { StorefrontOfflineIndicator } from '@/components/tenant/client/StorefrontOfflineIndicator';
 import { StorefrontUnavailable } from '@/components/tenant/StorefrontUnavailable';
 import { headers } from 'next/headers';
 
@@ -67,6 +68,7 @@ export default async function StorefrontLayout({
                 className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
                 style={{ fontFamily: tenantFontFamily }}
               >
+                <StorefrontOfflineIndicator />
                 <main
                   id="main-content"
                   className="relative flex-1 overflow-y-auto overscroll-contain"

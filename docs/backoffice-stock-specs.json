@@ -1,0 +1,802 @@
+{
+  "specs": [
+    {
+      "id": "phase3-ledger-canonique",
+      "title": "Ledger canonique - stock_movements source de verite (nouveaux types de mouvement, reason_code, created_by systematique, verify/reconcile)",
+      "dependsOn": [],
+      "effort": "L",
+      "tables": [
+        "stock_movements: ADD COLUMN reason_code TEXT NULL + CHECK closed-enum (expired,breakage,theft,spillage,prep_waste,recount,reconcile,other OR NULL)",
+        "stock_movements: CHECK movement_type swap additif -> + physical_count, loss, transfer_in, transfer_out (garde les 6 existants)",
+        "stock_movements.created_by (colonne existante, uuid sans FK) desormais peuplee par destock_order/restock_order/set_opening_stock/record_physical_count_tx (auth.users.id, comme adjust_ingredient_stock_tx)",
+        "ingredients.current_stock: inchange - reste cache mutable autoritatif, reconcilie via ledger (aucun ALTER)"
+      ],
+      "migrationSqlDraft": "-- supabase/migrations/20260701120000_stock_ledger_canonical.sql  (ADDITIVE ONLY)\n-- PIVOT phase 3: stock_movements = source de verite. Convention: chaque\n-- stock_movements.quantity = DELTA signe reellement applique a current_stock,\n-- donc SUM(quantity) par ingredient reconstruit current_stock. current_stock\n-- reste un cache mutable ecrit atomiquement par les RPC (row-lock).\n-- Corps LIVE re-utilises: destock_order=20260629000100 (advisory lock +\n-- idempotence + INSUFFICIENT_STOCK), restock_order=20260629120000,\n-- set_opening_stock=20260623000000 (assert_tenant_member). DROP+CREATE requis\n-- pour ajouter un param trailing p_created_by DEFAULT NULL (appelants nommes non\n-- casses). Re-REVOKE/GRANT obligatoire car DROP efface les grants.\n-- Rollback: DROP les fonctions recreees; les valeurs de CHECK + reason_code peuvent rester.\nBEGIN;\n\n-- 1. CHECK swap additif (nouveaux types)\nALTER TABLE public.stock_movements DROP CONSTRAINT IF EXISTS stock_movements_movement_type_check;\nALTER TABLE public.stock_movements ADD CONSTRAINT stock_movements_movement_type_check\n  CHECK (movement_type IN ('order_destock','order_restock','manual_add','manual_remove',\n    'adjustment','opening','physical_count','loss','transfer_in','transfer_out'));\n\n-- 2. reason_code (motifs structures)\nALTER TABLE public.stock_movements ADD COLUMN IF NOT EXISTS reason_code TEXT;\nALTER TABLE public.stock_movements DROP CONSTRAINT IF EXISTS stock_movements_reason_code_check;\nALTER TABLE public.stock_movements ADD CONSTRAINT stock_movements_reason_code_check\n  CHECK (reason_code IS NULL OR reason_code IN\n    ('expired','breakage','theft','spillage','prep_waste','recount','reconcile','other'));\n\n-- 3. destock_order + p_created_by (systeme=NULL pour storefront anon, user.id pour POS)\nDROP FUNCTION IF EXISTS public.destock_order(uuid, uuid);\nCREATE OR REPLACE FUNCTION public.destock_order(p_order_id uuid, p_tenant_id uuid, p_created_by uuid DEFAULT NULL)\nRETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_count INT:=0; v_item RECORD; v_recipe RECORD; v_new_stock NUMERIC(10,3); v_required NUMERIC(10,3);\nBEGIN\n  PERFORM pg_advisory_xact_lock(hashtext('destock_order:' || p_order_id::text));\n  IF EXISTS (SELECT 1 FROM public.stock_movements WHERE reference_id=p_order_id AND movement_type='order_destock')\n    THEN RETURN 0; END IF;\n  FOR v_item IN SELECT oi.menu_item_id, oi.quantity FROM public.order_items oi\n    JOIN public.orders o ON o.id=oi.order_id WHERE oi.order_id=p_order_id AND o.tenant_id=p_tenant_id LOOP\n    FOR v_recipe IN SELECT r.ingredient_id, r.quantity_needed FROM public.recipes r\n      WHERE r.menu_item_id=v_item.menu_item_id AND r.tenant_id=p_tenant_id LOOP\n      v_required := v_recipe.quantity_needed * v_item.quantity;\n      UPDATE public.ingredients SET current_stock=current_stock - v_required\n        WHERE id=v_recipe.ingredient_id AND tenant_id=p_tenant_id AND current_stock >= v_required\n        RETURNING current_stock INTO v_new_stock;\n      IF NOT FOUND THEN RAISE EXCEPTION 'INSUFFICIENT_STOCK'; END IF;\n      INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,reference_id,created_by)\n        VALUES (p_tenant_id,v_recipe.ingredient_id,'order_destock',-v_required,p_order_id,p_created_by);\n      IF v_new_stock <= 0 THEN\n        UPDATE public.menu_items SET is_available=false WHERE id IN\n          (SELECT r2.menu_item_id FROM public.recipes r2 WHERE r2.ingredient_id=v_recipe.ingredient_id AND r2.tenant_id=p_tenant_id)\n          AND tenant_id=p_tenant_id AND is_available=true;\n      END IF;\n      v_count := v_count + 1;\n    END LOOP;\n  END LOOP;\n  RETURN v_count;\nEND; $$;\nREVOKE ALL ON FUNCTION public.destock_order(uuid,uuid,uuid) FROM PUBLIC, anon, authenticated;\nGRANT EXECUTE ON FUNCTION public.destock_order(uuid,uuid,uuid) TO service_role;\n\n-- 4. restock_order + p_created_by\nDROP FUNCTION IF EXISTS public.restock_order(uuid, uuid);\nCREATE OR REPLACE FUNCTION public.restock_order(p_order_id uuid, p_tenant_id uuid, p_created_by uuid DEFAULT NULL)\nRETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_count INT:=0; v_mov RECORD; v_new_stock NUMERIC(10,3);\nBEGIN\n  FOR v_mov IN SELECT sm.ingredient_id, SUM(sm.quantity) AS net_destocked FROM public.stock_movements sm\n    WHERE sm.reference_id=p_order_id AND sm.tenant_id=p_tenant_id AND sm.movement_type='order_destock'\n    GROUP BY sm.ingredient_id HAVING SUM(sm.quantity) < 0 LOOP\n    IF EXISTS (SELECT 1 FROM public.stock_movements r WHERE r.reference_id=p_order_id AND r.tenant_id=p_tenant_id\n      AND r.movement_type='order_restock' AND r.ingredient_id=v_mov.ingredient_id) THEN CONTINUE; END IF;\n    UPDATE public.ingredients SET current_stock=current_stock + ABS(v_mov.net_destocked)\n      WHERE id=v_mov.ingredient_id AND tenant_id=p_tenant_id RETURNING current_stock INTO v_new_stock;\n    IF NOT FOUND THEN CONTINUE; END IF;\n    INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,reference_id,notes,created_by)\n      VALUES (p_tenant_id,v_mov.ingredient_id,'order_restock',ABS(v_mov.net_destocked),p_order_id,'Annulation / remboursement commande',p_created_by);\n    IF v_new_stock > 0 THEN\n      UPDATE public.menu_items SET is_available=true WHERE id IN\n        (SELECT r2.menu_item_id FROM public.recipes r2 WHERE r2.ingredient_id=v_mov.ingredient_id AND r2.tenant_id=p_tenant_id)\n        AND tenant_id=p_tenant_id AND is_available=false;\n    END IF;\n    v_count := v_count + 1;\n  END LOOP;\n  RETURN v_count;\nEND; $$;\nREVOKE ALL ON FUNCTION public.restock_order(uuid,uuid,uuid) FROM PUBLIC, anon, authenticated;\nGRANT EXECUTE ON FUNCTION public.restock_order(uuid,uuid,uuid) TO service_role;\n\n-- 5. set_opening_stock + p_created_by, enregistre le DELTA (new-before) pour ledger reconstruible\nDROP FUNCTION IF EXISTS public.set_opening_stock(uuid, uuid, numeric);\nCREATE OR REPLACE FUNCTION public.set_opening_stock(p_tenant_id uuid, p_ingredient_id uuid, p_quantity numeric, p_created_by uuid DEFAULT NULL)\nRETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_before NUMERIC(10,3);\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  SELECT current_stock INTO v_before FROM public.ingredients WHERE id=p_ingredient_id AND tenant_id=p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE='P0002'; END IF;\n  UPDATE public.ingredients SET current_stock=p_quantity, updated_at=now() WHERE id=p_ingredient_id AND tenant_id=p_tenant_id;\n  INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,notes,created_by)\n    VALUES (p_tenant_id,p_ingredient_id,'opening',p_quantity - v_before,'Stock d''ouverture',p_created_by);\nEND; $$;\nREVOKE ALL ON FUNCTION public.set_opening_stock(uuid,uuid,numeric,uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.set_opening_stock(uuid,uuid,numeric,uuid) TO authenticated, service_role;\n\n-- 6. adjust_ingredient_stock_tx + p_reason_code + type 'loss'\nDROP FUNCTION IF EXISTS public.adjust_ingredient_stock_tx(uuid,uuid,numeric,text,text,uuid,uuid);\nCREATE OR REPLACE FUNCTION public.adjust_ingredient_stock_tx(p_tenant_id uuid, p_ingredient_id uuid, p_delta numeric,\n  p_movement_type text, p_notes text DEFAULT NULL, p_created_by uuid DEFAULT NULL, p_supplier_id uuid DEFAULT NULL, p_reason_code text DEFAULT NULL)\nRETURNS numeric LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_before NUMERIC(10,3); v_after NUMERIC(10,3);\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  IF p_movement_type NOT IN ('manual_add','manual_remove','adjustment','opening','loss') THEN\n    RAISE EXCEPTION 'INVALID_MOVEMENT_TYPE: %', p_movement_type USING ERRCODE='22023'; END IF;\n  IF p_supplier_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.suppliers s WHERE s.id=p_supplier_id AND s.tenant_id=p_tenant_id)\n    THEN RAISE EXCEPTION 'INVALID_SUPPLIER' USING ERRCODE='22023'; END IF;\n  SELECT current_stock INTO v_before FROM public.ingredients WHERE id=p_ingredient_id AND tenant_id=p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE='P0002'; END IF;\n  v_after := GREATEST(0, v_before + p_delta);\n  UPDATE public.ingredients SET current_stock=v_after, updated_at=now() WHERE id=p_ingredient_id AND tenant_id=p_tenant_id;\n  INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,notes,created_by,supplier_id,reason_code)\n    VALUES (p_tenant_id,p_ingredient_id,p_movement_type,v_after - v_before,p_notes,p_created_by,p_supplier_id,p_reason_code);\n  RETURN v_after;\nEND; $$;\nREVOKE ALL ON FUNCTION public.adjust_ingredient_stock_tx(uuid,uuid,numeric,text,text,uuid,uuid,text) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.adjust_ingredient_stock_tx(uuid,uuid,numeric,text,text,uuid,uuid,text) TO authenticated, service_role;\n\n-- 7. record_physical_count_tx : comptage physique (SET-to-count, enregistre le delta)\nCREATE OR REPLACE FUNCTION public.record_physical_count_tx(p_tenant_id uuid, p_ingredient_id uuid, p_counted numeric,\n  p_notes text DEFAULT NULL, p_created_by uuid DEFAULT NULL, p_reason_code text DEFAULT NULL)\nRETURNS numeric LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_before NUMERIC(10,3); v_after NUMERIC(10,3);\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  IF p_counted IS NULL OR p_counted < 0 THEN RAISE EXCEPTION 'INVALID_QUANTITY' USING ERRCODE='22023'; END IF;\n  SELECT current_stock INTO v_before FROM public.ingredients WHERE id=p_ingredient_id AND tenant_id=p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE='P0002'; END IF;\n  v_after := p_counted;\n  UPDATE public.ingredients SET current_stock=v_after, updated_at=now() WHERE id=p_ingredient_id AND tenant_id=p_tenant_id;\n  INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,notes,created_by,reason_code)\n    VALUES (p_tenant_id,p_ingredient_id,'physical_count',v_after - v_before,p_notes,p_created_by,COALESCE(p_reason_code,'recount'));\n  RETURN v_after;\nEND; $$;\nREVOKE ALL ON FUNCTION public.record_physical_count_tx(uuid,uuid,numeric,text,uuid,text) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.record_physical_count_tx(uuid,uuid,numeric,text,uuid,text) TO authenticated, service_role;\n\n-- 8. verify_stock_ledger : rapport de derive lecture seule (cache vs SUM(deltas))\nCREATE OR REPLACE FUNCTION public.verify_stock_ledger(p_tenant_id uuid)\nRETURNS TABLE(ingredient_id uuid, name text, current_stock numeric, ledger_sum numeric, drift numeric)\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT i.id, i.name, i.current_stock,\n    COALESCE(SUM(sm.quantity),0)::numeric(10,3),\n    (i.current_stock - COALESCE(SUM(sm.quantity),0))::numeric(10,3)\n  FROM public.ingredients i\n  LEFT JOIN public.stock_movements sm ON sm.ingredient_id=i.id AND sm.tenant_id=p_tenant_id\n  WHERE i.tenant_id=p_tenant_id AND i.is_active=true\n  GROUP BY i.id, i.name, i.current_stock\n  HAVING (i.current_stock - COALESCE(SUM(sm.quantity),0)) <> 0\n  ORDER BY i.name;\nEND; $$;\nREVOKE ALL ON FUNCTION public.verify_stock_ledger(uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.verify_stock_ledger(uuid) TO authenticated, service_role;\n\n-- 9. reconcile_stock_ledger : reparation (insere adjustment de la derive, reason 'reconcile')\nCREATE OR REPLACE FUNCTION public.reconcile_stock_ledger(p_tenant_id uuid, p_created_by uuid DEFAULT NULL)\nRETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$\nDECLARE v_row RECORD; v_n INT:=0;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  FOR v_row IN SELECT i.id, (i.current_stock - COALESCE(SUM(sm.quantity),0)) AS drift\n    FROM public.ingredients i LEFT JOIN public.stock_movements sm ON sm.ingredient_id=i.id AND sm.tenant_id=p_tenant_id\n    WHERE i.tenant_id=p_tenant_id AND i.is_active=true GROUP BY i.id, i.current_stock\n    HAVING (i.current_stock - COALESCE(SUM(sm.quantity),0)) <> 0 LOOP\n    INSERT INTO public.stock_movements (tenant_id,ingredient_id,movement_type,quantity,notes,created_by,reason_code)\n      VALUES (p_tenant_id,v_row.id,'adjustment',v_row.drift,'Reconciliation ledger',p_created_by,'reconcile');\n    v_n := v_n + 1;\n  END LOOP;\n  RETURN v_n;\nEND; $$;\nREVOKE ALL ON FUNCTION public.reconcile_stock_ledger(uuid,uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.reconcile_stock_ledger(uuid,uuid) TO authenticated, service_role;\n\nCOMMIT;",
+      "serviceChanges": [
+        "src/services/inventory.service.ts (NON protege): destockOrder(orderId, tenantId, createdBy?) -> passe p_created_by",
+        "src/services/inventory.service.ts: restockOrder(orderId, tenantId, createdBy?) -> passe p_created_by",
+        "src/services/inventory.service.ts: setOpeningStock -> resout auth.getUser() en interne (pattern adjustStock) et passe p_created_by",
+        "src/services/inventory.service.ts: adjustStock -> forward input.reason_code -> p_reason_code (supporte movement_type='loss', delta negatif)",
+        "src/services/inventory.service.ts: NOUVELLE methode recordPhysicalCount(tenantId, ingredientId, counted, notes?, reasonCode?) -> rpc record_physical_count_tx (resout user en interne)",
+        "src/services/inventory.service.ts: NOUVELLE methode verifyLedger(tenantId): Promise<LedgerDriftRow[]> -> rpc verify_stock_ledger",
+        "src/services/inventory.service.ts: NOUVELLE methode reconcileLedger(tenantId): Promise<number> -> rpc reconcile_stock_ledger (resout user en interne)",
+        "src/app/actions/inventory.ts: adjustStockSchema -> ajoute 'loss' a l'enum movement_type + reason_code optionnel (z.enum des 8 reasons); NOUVEAUX actionRecordPhysicalCount / actionVerifyLedger / actionReconcileLedger (roles owner/admin/manager, getAuthenticatedUserForTenant)",
+        "src/app/actions/orders.ts (NON protege): restockOrder(orderId, tenantId, user.id) - recuperer user depuis getAuthenticatedUserForTenant",
+        "src/app/api/orders/pos/route.ts: destockOrder(result.orderId, tenant_id, user.id) - user dispo ligne 115",
+        "src/app/api/orders/route.ts (storefront anon): AUCUN changement - pas d'utilisateur agissant, created_by reste NULL (systeme)"
+      ],
+      "uiComponents": [
+        "src/components/admin/InventoryClient.tsx (partage): ajouter option 'Perte' (loss) au dialog d'ajustement + Select shadcn du reason_code (visible si movement_type=loss). Primitives: Dialog, Select, SelectTrigger/Content/Item, Input, Button, Label",
+        "NOUVEAU src/components/admin/StockLedgerCard.tsx: appelle actionVerifyLedger, affiche derive par ingredient + bouton Reconcilier. Primitives: Card, Table, Badge, Button, AlertDialog (confirmation), etat vide 'Ledger en phase'",
+        "NOUVEAU src/components/admin/PhysicalCountDialog.tsx: saisie comptage physique (valeur absolue) -> actionRecordPhysicalCount. Primitives: Dialog, Input (numerique), Select (reason recount/other), Button. Foundation - UI de comptage complet appartient a 12/13",
+        "src/components/admin/StockHistoryClient.tsx (partage): rendre les 4 nouveaux labels de mouvement + reason_code (badge) + colonne optionnelle 'Par' (created_by resolu via admin_users). Aucun type/select natif",
+        "NOTE: pas d'UI de transfert (transfer_in/out) dans ce chantier - enum reserve pour 12/13/16"
+      ],
+      "i18nKeys": [
+        "inventory.movementType.physicalCount",
+        "inventory.movementType.loss",
+        "inventory.movementType.transferIn",
+        "inventory.movementType.transferOut",
+        "inventory.reason.label",
+        "inventory.reason.expired",
+        "inventory.reason.breakage",
+        "inventory.reason.theft",
+        "inventory.reason.spillage",
+        "inventory.reason.prepWaste",
+        "inventory.reason.recount",
+        "inventory.reason.reconcile",
+        "inventory.reason.other",
+        "inventory.ledger.title",
+        "inventory.ledger.drift",
+        "inventory.ledger.ledgerSum",
+        "inventory.ledger.currentStock",
+        "inventory.ledger.inSync",
+        "inventory.ledger.reconcile",
+        "inventory.ledger.reconcileConfirm",
+        "inventory.ledger.reconcileDone",
+        "inventory.physicalCount.title",
+        "inventory.physicalCount.countedLabel",
+        "inventory.physicalCount.save",
+        "inventory.loss.title",
+        "inventory.history.byUser"
+      ],
+      "testDbCases": [
+        "destock_order avec p_created_by -> le mouvement order_destock porte created_by=<uuid>; sans p_created_by -> created_by IS NULL (chemin systeme storefront)",
+        "destock_order reste idempotent (2e appel = 0, pas de double created_by) et leve INSUFFICIENT_STOCK inchange",
+        "restock_order avec p_created_by -> mouvement order_restock created_by stampe; idempotence conservee",
+        "set_opening_stock enregistre desormais un DELTA (quantity = counted - before) et stamp created_by; apres opening puis adjust, SUM(stock_movements.quantity) == ingredients.current_stock",
+        "adjust_ingredient_stock_tx accepte movement_type='loss' avec reason_code persiste; delta negatif applique; SUM == current_stock",
+        "CHECK reason_code rejette une valeur hors enum ('bogus') -> erreur 23514",
+        "CHECK movement_type accepte insert direct transfer_in/transfer_out/physical_count/loss",
+        "record_physical_count_tx SET current_stock=counted et insere physical_count avec quantity=delta + created_by + reason_code default 'recount'",
+        "verify_stock_ledger renvoie 0 ligne quand tout l'historique passe par les RPC (en phase); renvoie une ligne drift apres un UPDATE direct out-of-band de current_stock",
+        "reconcile_stock_ledger insere un adjustment(reason_code='reconcile') egal a la derive -> verify_stock_ledger renvoie ensuite 0 ligne",
+        "assert_tenant_member: verify_stock_ledger / record_physical_count_tx / reconcile_stock_ledger appeles avec un tenant non-membre -> exception (isolation multi-tenant)",
+        "REVOKE effectif: anon ne peut EXECUTE aucune des fonctions recreees (destock/restock service_role-only, adjust/opening/count/verify/reconcile authenticated+service_role)"
+      ],
+      "unitTestCases": [
+        "inventory.service.test: destockOrder passe {p_created_by} quand createdBy fourni, l'omet (undefined) sinon",
+        "restockOrder passe p_created_by quand fourni",
+        "adjustStock('loss') -> delta negatif + p_reason_code transmis; adjustStock('manual_add') -> delta positif",
+        "setOpeningStock -> appelle auth.getUser() puis rpc set_opening_stock avec p_created_by=user.id",
+        "recordPhysicalCount -> rpc record_physical_count_tx avec p_counted + p_created_by + p_reason_code",
+        "verifyLedger -> mappe les lignes {ingredient_id,name,current_stock,ledger_sum,drift}",
+        "reconcileLedger -> resout user et passe p_created_by, retourne le count",
+        "mapping ServiceError: INVALID_MOVEMENT_TYPE/INVALID_QUANTITY/INGREDIENT_NOT_FOUND -> codes VALIDATION/NOT_FOUND corrects",
+        "actions/inventory: adjustStockSchema rejette reason_code hors enum; accepte movement_type='loss'"
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts",
+        "src/types/inventory.types.ts (MovementType union +4, MOVEMENT_TYPE_LABELS exhaustif +4, StockMovement.reason_code, nouveaux ReasonCode+REASON_CODE_LABELS, AdjustStockInput.reason_code?, PhysicalCountInput, LedgerDriftRow)",
+        "src/app/actions/inventory.ts",
+        "src/app/actions/orders.ts",
+        "src/app/api/orders/pos/route.ts",
+        "src/components/admin/InventoryClient.tsx",
+        "src/components/admin/StockHistoryClient.tsx",
+        "src/messages/fr.json",
+        "src/messages/en.json",
+        "supabase/migrations/ (nouveau fichier - sequencer avant le chantier transfert qui reutilise transfer_in/out sans re-swap du CHECK)",
+        "tests/integration/stock/inventory-rpcs.test.ts",
+        "src/services/__tests__/inventory.service.test.ts",
+        "src/app/actions/__tests__/orders.action.test.ts (mock restockOrder - signature +createdBy)",
+        "src/app/api/__tests__/orders-pos.test.ts (mock destockOrder - signature +createdBy)",
+        "src/app/api/__tests__/orders.test.ts (mock destockOrder)"
+      ],
+      "risks": [
+        "DROP+CREATE efface les grants: re-REVOKE/GRANT dans la MEME migration est obligatoire (fait). Si oublie -> anon/authenticated perdent/gagnent EXECUTE de facon incorrecte",
+        "Le corps recree doit repartir des versions LIVE (destock_order=20260629000100 avec advisory lock+idempotence+INSUFFICIENT_STOCK, restock=20260629120000, opening=20260623000000). Ne PAS repartir du 20260212 sinon regression du row-lock/idempotence",
+        "Changement semantique: set_opening_stock enregistre desormais un DELTA (avant: valeur absolue). Les lignes 'opening' historiques (absolues) generont une derive dans verify_stock_ledger pour les tenants existants -> informatif, resolu par reconcile. MAJ obligatoire de l'assertion opening dans inventory-rpcs.test.ts",
+        "created_by n'a PAS de FK (uuid nu) -> passer user.id est sur meme si l'admin est supprime; la colonne 'Par' de l'historique doit tolerer un id non resolvable",
+        "Conflit de sequencement: deux chantiers ne doivent pas faire deux CHECK swaps concurrents sur movement_type. Ce pivot definit deja transfer_in/out -> le chantier transfert reutilise sans re-swap. Ce chantier DOIT lander en premier",
+        "destock_order/restock_order restent service_role-only SANS assert_tenant_member (appeles via adminSupabase, auth.uid() NULL). Ne pas ajouter assert_tenant_member sinon les commandes cassent",
+        "reason_code = enum ferme via CHECK -> ajouter un motif futur exige une migration (accepte, documente). Alternative: valider seulement en Zod - rejetee au profit de l'integrite DB",
+        "Signature RPC modifiee (params trailing DEFAULT NULL): backward-compat via appels nommes PostgREST OK, mais les mocks de tests (orders-pos.test, orders.action.test) doivent etre mis a jour",
+        "destock non-bloquant via after(): passer created_by ne doit pas changer le comportement fire-and-forget ni bloquer la commande",
+        "reconcile choisit le cache (current_stock) comme verite et insere un mouvement compensatoire; ne PAS reecrire current_stock depuis le ledger (casserait les flips is_available deja cables sur le cache)"
+      ]
+    },
+    {
+      "id": "P1-cart-offline",
+      "title": "Panier client offline (#33): route the storefront cart through the durable IndexedDB outbox",
+      "dependsOn": [],
+      "tables": [
+        "none - no schema change. Reuses existing orders.client_request_id UNIQUE idempotency (migration 20260628010000) already in prod."
+      ],
+      "migrationSqlDraft": "-- No migration for this chantier. Client-side outbox wiring only.\n-- The server safety net it relies on already exists and is additive-in-history:\n--   * migration 20260628010000 added orders.client_request_id + UNIQUE index +\n--     create_order_with_items dedup, and REVOKE PUBLIC/anon + GRANT service_role.\n--   * /api/orders already short-circuits on findOrderByClientRequestId BEFORE any\n--     side effect (coupon claim, insert, destock), so an outbox replay of the same\n--     client_request_id returns {deduplicated:true} and destocks exactly once.\n-- Nothing to add. If a future audit wants replay observability, that is a separate\n-- chantier (additive orders.replayed_at column), explicitly OUT OF SCOPE here.",
+      "serviceChanges": [
+        "none - order.service.ts is PROTECTED and already exposes findOrderByClientRequestId + idempotent createOrderWithItems used by /api/orders. No service method added or modified.",
+        "Reuse (no change): src/lib/offline/submit-order.ts submitOrder() and replayOrderEntry(); src/lib/offline/outbox.ts createOutbox(); src/lib/offline/outbox-idb.ts getOrderOutbox() singleton (shared DB 'attabl-offline'/store 'order-outbox').",
+        "Reuse (no change): src/hooks/useOrderOutbox.ts (drain on mount/online/visibilitychange/interval) and src/hooks/useNetworkStatus.ts."
+      ],
+      "uiComponents": [
+        "EDIT src/app/sites/[site]/(storefront)/cart/page.tsx handleSubmitOrder(): replace the raw fetch('/api/orders') block with submitOrder({ endpoint:'/api/orders', body:{ tableNumber, items:orderItems, notes, display_currency:displayCurrency, tip_amount, coupon_code:appliedCoupon?.code }, clientRequestId: clientRequestIdRef.current }). Remove client_request_id from body (submitOrder injects it). Branch on result.status: 'sent' -> existing path (persist orderId, clearCart, router.push order-confirmed?orderId=...); 'queued' -> retire clientRequestIdRef (order now owned by outbox), clearCart, reset tip, router.push(`/sites/${slug}/order-confirmed?queued=1`); 'rejected' -> setError(result.error) + setPreviewErrors(result.details ?? []), keep cart + keep clientRequestIdRef (retriable); 'failed' -> setError(t('connectionError')).",
+        "EDIT same file: guard the preview call for offline. Wrap the pre-submit fetch('/api/orders/preview') so that when navigator.onLine === false OR the preview fetch throws (transient network), skip validation and fall through to submitOrder (which durably queues). Preview must never block the offline path; server re-validates on replay.",
+        "NEW src/components/tenant/client/StorefrontOfflineIndicator.tsx ('use client'): convive-themed analog of admin OfflineIndicator. Calls useNetworkStatus() + useOrderOutbox(). Renders nothing when isOnline && !wasOffline && pending===0 && rejected.length===0. Offline row: WifiOff + t('tenant.offlineNotice') on bg-[var(--color-ink)] text-white. Restored row: RefreshCw (animate-spin) + common.connectionRestored on bg-[var(--color-brand)] text-white. Pending row: UploadCloud + t('tenant.orderQueued',{count}) on bg-[var(--color-brand-light)] text-[var(--color-brand-dark)]. Rejected row: AlertTriangle + t('tenant.orderQueuedFailed',{count}) on bg-[var(--color-promo)]/10 text-[var(--color-promo)], dismissible via shadcn <Button variant=ghost> calling dismissRejected. Non-fixed: rendered as first child of the flex column so it pushes <main> (do NOT use fixed/h-screen/h-dvh - keep the viewport chain intact).",
+        "EDIT src/app/sites/[site]/(storefront)/layout.tsx: mount <StorefrontOfflineIndicator /> as the FIRST child of the div.tenant-client flex column (before <main id=main-content>), so the outbox drains anywhere in the convive app (menu, cart, order list) and the customer sees pending/rejected state everywhere.",
+        "EDIT src/app/sites/[site]/(storefront)/order-confirmed/page.tsx: add an early branch in OrderConfirmedContent - when !orderId && searchParams.get('queued')==='1', render a QueuedConfirmation view reusing the existing confirmation shell (check-pop circle) but with t('tenant.orderQueuedTitle') + t('tenant.orderQueuedSub'), no order number, no realtime/supabase fetch, and CTAs 'Voir le menu' (Link menuPath) + 'Retour a l'accueil'. This prevents the offline path from hitting the orderNotFound screen. Skip the supabase fetch and realtime effects in queued mode (early return before those effects run / effects already no-op when !orderId).",
+        "shadcn primitives used: Button (dismiss on indicator; CTAs on queued confirmation). Icons: lucide WifiOff/RefreshCw/UploadCloud/AlertTriangle/Check. No native elements."
+      ],
+      "i18nKeys": [
+        "tenant.offlineNotice",
+        "tenant.orderQueued",
+        "tenant.orderQueuedFailed",
+        "tenant.orderQueuedTitle",
+        "tenant.orderQueuedSub"
+      ],
+      "testDbCases": [
+        "tests/integration/stock/cart-offline-idempotency.test.ts (pnpm test:db, real local Supabase seeded via tests/journeys/fixtures/seed.ts): seed a Pro tenant (canAccessInventory=true) with 1 menu_item backed by 1 ingredient recipe and known opening stock. POST /api/orders with client_request_id=X for that item; assert 200 + orderId returned. POST /api/orders AGAIN with the SAME client_request_id=X (simulates outbox replay): assert response.deduplicated===true and same orderId/orderNumber.",
+        "Same test, stock assertion: after the two identical POSTs, assert exactly ONE order row exists for X and the ingredient was destocked exactly once (get_stock_status / stock_movements shows a single order_destock movement for that order, not double). Proves the offline replay path cannot oversell.",
+        "Idempotency-before-side-effect: seed a single-use coupon; POST twice with same client_request_id + coupon_code; assert coupon usage counter incremented once (the dedup short-circuit + unclaimUsage-on-dedup path holds), confirming replay does not double-claim."
+      ],
+      "unitTestCases": [
+        "cart/page submit (Vitest + RTL, mock @/lib/offline/submit-order.submitOrder and next/navigation.useRouter): online success -> submitOrder called once with endpoint '/api/orders', body without client_request_id, clientRequestId===the minted UUID; on {status:'sent',data:{orderId}} clearCart called and router.push to order-confirmed?orderId=...",
+        "offline path: mock navigator.onLine=false; submit -> preview fetch NOT called, submitOrder returns {status:'queued'} -> router.push to order-confirmed?queued=1, clearCart called, and the next submit mints a fresh clientRequestId (ref retired).",
+        "rejected: submitOrder returns {status:'rejected',error,details} -> setError(error) shown, previewErrors===details, clearCart NOT called, same clientRequestId reused on retry (dedupe key preserved).",
+        "failed: submitOrder returns {status:'failed'} -> connectionError shown, cart preserved.",
+        "transient preview blip while online: preview fetch rejects -> handler falls through to submitOrder (queued), no thrown error surfaced to user.",
+        "StorefrontOfflineIndicator (mock useNetworkStatus + useOrderOutbox): returns null when online/no-pending/no-rejected; renders offline banner when isOnline=false; renders pending banner with count when pending>0; renders rejected banner + dismiss button calling dismissRejected when rejected.length>0.",
+        "order-confirmed queued branch: render with searchParams queued=1 and no orderId -> QueuedConfirmation shown (orderQueuedTitle), createClient()/rpc NOT called, orderNotFound NOT shown."
+      ],
+      "sharedFilesTouched": [
+        "src/messages/fr-FR.json (adds 5 tenant.* keys) - HIGH conflict risk: every chantier edits this file",
+        "src/messages/en-US.json (adds 5 tenant.* keys) - HIGH conflict risk",
+        "src/lib/offline/submit-order.ts - REUSED as-is, NOT modified (also used by POS via useCreateOrder); no conflict but shared surface",
+        "src/hooks/useOrderOutbox.ts - REUSED as-is, NOT modified (shared with admin OfflineIndicator)",
+        "src/lib/offline/outbox-idb.ts - REUSED: same IndexedDB singleton is now shared between convive customer and staff POS on one browser (isolated by per-entry endpoint + client_request_id)",
+        "tests/integration/stock/ (adds cart-offline-idempotency.test.ts) - shared test dir with inventory-rpcs.test.ts and other stock chantiers",
+        "tests/journeys/fixtures/seed.ts - only if seed needs a Pro tenant + recipe helper not already present (read-first; extend additively if missing)"
+      ],
+      "effort": "M",
+      "risks": [
+        "clientRequestIdRef MUST be retired on the 'queued' branch (not only 'sent'). If not, a subsequent DIFFERENT cart reusing the same key would dedupe against the queued order and silently drop the new order.",
+        "Offline preview-skip means server-side validation (price/availability) only runs on replay drain. A stale/removed item queued offline is permanently rejected on drain and surfaces via the rejected banner AFTER the customer left the cart. Acceptable (order was never valid) but document; do not silently swallow.",
+        "order-confirmed queued branch must early-return before the supabase fetch + realtime useEffect so no network call fires with a null orderId; verify the existing effects already no-op when !orderId and add the explicit queued view branch cleanly.",
+        "Viewport: the indicator is an in-flow flex child (NOT fixed, NOT h-dvh/h-screen) so it must not break the (storefront) layout chain html/body overflow:hidden -> .tenant-client h-dvh -> main flex-1 overflow-y-auto. Adding an auto-height banner above <main> is safe; a fixed banner would overlap sticky page headers.",
+        "Theme: storefront forces light theme with --color-* convive tokens; the new indicator must use those tokens, NOT the admin dark tokens (bg-app-bg/text-app-text/accent) used by src/components/admin/OfflineIndicator.tsx. Do not reuse the admin component.",
+        "Shared IndexedDB outbox singleton: on a device used for BOTH convive ordering and staff POS (rare), pending entries for /api/orders and /api/orders/pos coexist; they stay isolated by entry.endpoint + client_request_id, but the pending count shown to a customer could include staff orders. Low likelihood on customer phones; note.",
+        "i18n merge conflicts in fr-FR/en-US.json are near-certain across the stock program - land keys in a small isolated block and sequence the JSON edits, or expect a trivial rebase.",
+        "submitLock.current + isSubmitting must be reset in finally for the queued path too, so the CTA re-enables and no double-submit occurs before navigation."
+      ]
+    },
+    {
+      "id": "antivol-bip",
+      "title": "Anti-vol: author (created_by) in stock history + 'sorties par employe' report + audible bip on low-stock realtime alert",
+      "dependsOn": ["ledger"],
+      "tables": [
+        "stock_movements: NO schema change (created_by uuid + supplier_id uuid already exist from 20260212000001 / 20260215000001; created_by has no FK). This chantier ONLY adds two read RPCs on top of the existing table.",
+        "admin_users: read-only, joined on (user_id = stock_movements.created_by AND tenant_id = stock_movements.tenant_id) to resolve full_name. No change.",
+        "OPTIONAL additive index (perf for report): CREATE INDEX IF NOT EXISTS idx_stock_movements_created_by ON public.stock_movements(tenant_id, created_by) WHERE created_by IS NOT NULL;"
+      ],
+      "migrationSqlDraft": "-- Migration: 20260701120000_stock_author_and_staff_report.sql\n-- ADDITIVE ONLY: two SECURITY DEFINER read RPCs + one partial index. No drops.\n-- Rollback: DROP FUNCTION get_stock_movements_page(uuid,int,int),\n--           get_staff_stock_report(uuid,timestamptz,timestamptz); DROP INDEX idx_stock_movements_created_by;\n-- NOTE: author_name is only populated for movements whose created_by is set.\n--   Manual movements already stamp created_by (adjust_ingredient_stock_tx).\n--   order_destock / order_restock / opening only carry an author AFTER the\n--   'ledger' chantier stamps created_by on those RPCs -> hard dependency.\n\n-- 0. Perf index for the per-author report -----------------------------------\nCREATE INDEX IF NOT EXISTS idx_stock_movements_created_by\n  ON public.stock_movements(tenant_id, created_by)\n  WHERE created_by IS NOT NULL;\n\n-- 1. Enriched, paginated movement feed (adds author_name + flattens joins) ---\n-- Replaces the client-side PostgREST select (which cannot embed admin_users:\n-- created_by has no FK, and user_id is not unique across tenants). Scalar\n-- subqueries avoid any join fan-out. Tenant-scoped by assert_tenant_member.\nCREATE OR REPLACE FUNCTION public.get_stock_movements_page(\n  p_tenant_id uuid,\n  p_limit int DEFAULT 200,\n  p_offset int DEFAULT 0\n)\nRETURNS TABLE (\n  id uuid,\n  tenant_id uuid,\n  ingredient_id uuid,\n  movement_type text,\n  quantity numeric,\n  reference_id uuid,\n  notes text,\n  created_by uuid,\n  supplier_id uuid,\n  created_at timestamptz,\n  ingredient_name text,\n  ingredient_unit text,\n  supplier_name text,\n  author_name text\n)\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path TO 'public'\nAS $$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT\n    sm.id, sm.tenant_id, sm.ingredient_id, sm.movement_type, sm.quantity,\n    sm.reference_id, sm.notes, sm.created_by, sm.supplier_id, sm.created_at,\n    (SELECT i.name FROM public.ingredients i WHERE i.id = sm.ingredient_id) AS ingredient_name,\n    (SELECT i.unit FROM public.ingredients i WHERE i.id = sm.ingredient_id) AS ingredient_unit,\n    (SELECT s.name FROM public.suppliers s WHERE s.id = sm.supplier_id) AS supplier_name,\n    (SELECT au.full_name FROM public.admin_users au\n       WHERE au.user_id = sm.created_by AND au.tenant_id = sm.tenant_id\n       LIMIT 1) AS author_name\n  FROM public.stock_movements sm\n  WHERE sm.tenant_id = p_tenant_id\n  ORDER BY sm.created_at DESC\n  LIMIT GREATEST(COALESCE(p_limit, 200), 0)\n  OFFSET GREATEST(COALESCE(p_offset, 0), 0);\nEND;\n$$;\nREVOKE ALL ON FUNCTION public.get_stock_movements_page(uuid, int, int) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.get_stock_movements_page(uuid, int, int) TO authenticated, service_role;\n\n-- 2. 'Sorties par employe' aggregate report ----------------------------------\n-- Groups movements by author over a date window. out_qty = total withdrawn\n-- (abs of negative quantities), in_qty = total added, plus a per-type breakdown\n-- so the anti-theft view can isolate manual_remove / negative adjustments.\nCREATE OR REPLACE FUNCTION public.get_staff_stock_report(\n  p_tenant_id uuid,\n  p_start timestamptz,\n  p_end timestamptz\n)\nRETURNS TABLE (\n  author_id uuid,\n  author_name text,\n  out_qty numeric,\n  in_qty numeric,\n  movements_count bigint,\n  manual_remove_qty numeric,\n  adjustment_out_qty numeric,\n  order_destock_qty numeric\n)\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path TO 'public'\nAS $$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT\n    sm.created_by AS author_id,\n    (SELECT au.full_name FROM public.admin_users au\n       WHERE au.user_id = sm.created_by AND au.tenant_id = sm.tenant_id\n       LIMIT 1) AS author_name,\n    COALESCE(SUM(CASE WHEN sm.quantity < 0 THEN -sm.quantity ELSE 0 END), 0) AS out_qty,\n    COALESCE(SUM(CASE WHEN sm.quantity > 0 THEN  sm.quantity ELSE 0 END), 0) AS in_qty,\n    COUNT(*) AS movements_count,\n    COALESCE(SUM(CASE WHEN sm.movement_type = 'manual_remove' THEN -sm.quantity ELSE 0 END), 0) AS manual_remove_qty,\n    COALESCE(SUM(CASE WHEN sm.movement_type = 'adjustment' AND sm.quantity < 0 THEN -sm.quantity ELSE 0 END), 0) AS adjustment_out_qty,\n    COALESCE(SUM(CASE WHEN sm.movement_type = 'order_destock' THEN -sm.quantity ELSE 0 END), 0) AS order_destock_qty\n  FROM public.stock_movements sm\n  WHERE sm.tenant_id = p_tenant_id\n    AND sm.created_by IS NOT NULL\n    AND sm.created_at >= p_start\n    AND sm.created_at <  p_end\n  GROUP BY sm.created_by\n  ORDER BY out_qty DESC;\nEND;\n$$;\nREVOKE ALL ON FUNCTION public.get_staff_stock_report(uuid, timestamptz, timestamptz) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.get_staff_stock_report(uuid, timestamptz, timestamptz) TO authenticated, service_role;",
+      "serviceChanges": [
+        "src/services/inventory.service.ts (NOT protected - extend): add getStockMovementsPage(tenantId, opts?: {limit?; offset?}) that calls supabase.rpc('get_stock_movements_page', {p_tenant_id, p_limit, p_offset}) and maps each flat row -> StockMovement (nesting ingredient:{name,unit}, supplier:{id,name}, author_name). Add getStaffStockReport(tenantId, startISO, endISO) that calls supabase.rpc('get_staff_stock_report', ...) and returns StaffStockReportRow[]. Add both to the InventoryService interface.",
+        "src/services/inventory.service.ts: extract a pure exported helper mapStockMovementRow(row): StockMovement so the client hook and the service share one mapper (unit-testable, no duplication).",
+        "NO change to order.service.ts (protected). created_by stamping on order movements is owned by the 'ledger' chantier via destock_order/restock_order - out of scope here; this chantier only reads created_by."
+      ],
+      "uiComponents": [
+        "src/hooks/queries/useStockMovements.ts (EDIT): swap the raw .from('stock_movements').select(...embed...) for supabase.rpc('get_stock_movements_page', {p_tenant_id, p_limit: PAGE_SIZE, p_offset: pageParam*PAGE_SIZE}); map rows via mapStockMovementRow. Keep the same InfiniteQuery return shape so StockHistoryClient is untouched by the fetch swap.",
+        "src/hooks/queries/useStaffStockReport.ts (NEW): useQuery keyed ['staff-stock-report', tenantId, startISO, endISO] calling supabase.rpc('get_staff_stock_report', ...); enabled only when the dialog is open. staleTime 2min.",
+        "src/hooks/queries/index.ts (EDIT): re-export useStaffStockReport.",
+        "src/components/admin/StockHistoryClient.tsx (EDIT): (a) add an 'author' column to the columns useMemo -> renders movement.author_name with a small lucide User/UserCircle icon; falls back to a muted em-dash-free '-' (system/unattributed). Add author line to the mobile renderCard meta row. (b) add a shadcn <Button variant=outline size=sm> in the header row (near search) labelled t('staffReportCta') that opens the report dialog (useState open).",
+        "src/components/admin/StaffStockReportDialog.tsx (NEW): shadcn <Dialog>/<DialogContent>/<DialogHeader>. A period <Select> (7j / 30j / mois en cours) computing startISO/endISO, feeding useStaffStockReport. Body = shadcn <Table> via ResponsiveDataTable (author_name, out_qty, in_qty, movements_count, with a subtle manual_remove/adjustment_out breakdown), sorted by out_qty desc. Loading (Loader2) + empty state (reuse StockHistoryEmptyState pattern) + error/retry. Rows with author_name null render t('unattributed').",
+        "src/components/admin/InventoryClient.tsx (EDIT): import { useSound } from '@/contexts/SoundContext' (SoundProvider already wraps the admin layout at src/app/sites/[site]/admin/layout.tsx). In the existing useRealtimeSubscription onUpdate low-stock branch, alongside the toast, call play(). Guard against bip spam with a useRef Map (ingredientId -> last-bip timestamp), min 30s between bips per ingredient; no new listener/interval so no cleanup needed.",
+        "shadcn primitives used: Button, Dialog (Dialog/DialogContent/DialogHeader/DialogTitle/DialogDescription), Select, Table (via ResponsiveDataTable), Input already present. No native elements."
+      ],
+      "i18nKeys": [
+        "stockHistory.columnAuthor",
+        "stockHistory.unattributed",
+        "stockHistory.staffReportCta",
+        "stockHistory.staffReportTitle",
+        "stockHistory.staffReportSubtitle",
+        "stockHistory.staffReportPeriod7",
+        "stockHistory.staffReportPeriod30",
+        "stockHistory.staffReportPeriodMonth",
+        "stockHistory.staffReportColAuthor",
+        "stockHistory.staffReportColOut",
+        "stockHistory.staffReportColIn",
+        "stockHistory.staffReportColCount",
+        "stockHistory.staffReportColManualRemove",
+        "stockHistory.staffReportColAdjustment",
+        "stockHistory.staffReportEmpty",
+        "inventory.lowStockBip (optional aria/label only; bip reuses existing sound, no visible copy)"
+      ],
+      "testDbCases": [
+        "get_stock_movements_page: seed ingredient + manual adjust via adjust_ingredient_stock_tx with p_created_by = a seeded admin_users.user_id -> RPC returns that row with author_name = seeded full_name and correct ingredient_name/unit.",
+        "get_stock_movements_page: movement with created_by NULL (e.g. order_destock today) -> author_name IS NULL (proves the 'ledger' dependency boundary is handled gracefully).",
+        "get_stock_movements_page: tenant isolation - two tenants, tenant A call returns only A's movements; a movement stamped with a user_id belonging to tenant B does not leak B's full_name into A (scalar subquery is tenant-scoped).",
+        "get_stock_movements_page: p_limit/p_offset paginate deterministically over >200 seeded movements (newest-first, no dup/gap across pages).",
+        "get_stock_movements_page: no row fan-out even if a duplicate-ish admin_users situation exists (assert exactly N movements returned for N inserted).",
+        "get_staff_stock_report: two authors, mixed manual_add/manual_remove/adjustment(+/-)/order_destock in-window -> out_qty = sum abs(negatives), in_qty = sum positives, per-type breakdown columns correct, ordered by out_qty desc.",
+        "get_staff_stock_report: movements outside [p_start, p_end) excluded (boundary: p_end is exclusive).",
+        "get_staff_stock_report: created_by NULL movements excluded from aggregation.",
+        "get_staff_stock_report: tenant isolation - A's report excludes B's movements.",
+        "both RPCs: callable under service_role in the test:db harness (assert_tenant_member bypasses for service_role) - matches existing inventory-rpcs.test.ts pattern."
+      ],
+      "unitTestCases": [
+        "mapStockMovementRow: flat RPC row -> StockMovement with nested ingredient {name,unit}, supplier {id,name} (null when supplier_id null), author_name passthrough (string and null).",
+        "inventory.service.getStaffStockReport: mocked supabase.rpc resolves rows -> returns typed StaffStockReportRow[]; rpc error -> throws ServiceError('INTERNAL').",
+        "inventory.service.getStockMovementsPage: mocked rpc -> maps rows via mapStockMovementRow; passes p_limit/p_offset through; rpc error -> ServiceError.",
+        "StaffStockReportDialog period selector: selecting 7j/30j/mois computes the expected startISO/endISO passed to the hook (mock useStaffStockReport, assert query args).",
+        "InventoryClient bip throttle: simulate two low-stock onUpdate events for the same ingredient within 30s -> play() called once; after 30s -> called again (fake timers, mock useSound)."
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts (also touched by other stock chantiers - append new methods, do not reorder existing)",
+        "src/types/inventory.types.ts (add author_name?: string|null to StockMovement + new StaffStockReportRow interface - high-contention file across stock chantiers)",
+        "src/hooks/queries/useStockMovements.ts (fetch swap - may conflict with any chantier changing the movements query)",
+        "src/hooks/queries/index.ts (barrel export)",
+        "src/components/admin/StockHistoryClient.tsx (shared with stock-history redesign work - add column + CTA only, preserve existing JSX/tokens)",
+        "src/components/admin/InventoryClient.tsx (shared with inventory chantiers - additive useSound + throttle only)",
+        "src/messages/fr-FR.json + src/messages/en-US.json (stockHistory section - shared with every i18n-touching chantier)",
+        "supabase/migrations/ (new dated file - additive, no ordering conflict)",
+        "tests/integration/stock/inventory-rpcs.test.ts (append cases) OR new tests/integration/stock/stock-author-report.test.ts (preferred to avoid merge conflicts)"
+      ],
+      "effort": "M",
+      "risks": [
+        "HARD DEPENDENCY on 'ledger' chantier: author_name for order_destock/order_restock/opening stays NULL until ledger stamps created_by. UI must render '-'/unattributed gracefully (designed in). Ship-order: ledger first, or ship this with the caveat that only manual movements show an author initially.",
+        "PostgREST embedding is impossible for author (created_by has no FK; user_id not unique across tenants) - hence the RPC. Swapping useStockMovements from .from().select() to .rpc() changes the fetch path; must keep the InfiniteQuery return shape identical to avoid a StockHistoryClient regression (getNextPageParam still keys on page length === PAGE_SIZE).",
+        "Bip reuses the SAME sound as the order-ready bell (per instruction). Restaurateurs may confuse a low-stock bip with a new-order bip; acceptable per scope but note for UX - a distinct sound would need SoundContext work (out of scope, would touch a near-protected context).",
+        "Sound only plays if soundEnabled (per-tenant localStorage, default true) and after the audio-unlock user gesture - a low-stock event before any click is silent (toast still shows). Expected browser-autoplay limitation, not a bug.",
+        "Bip spam: multiple ingredients crossing threshold in one realtime burst -> per-ingredient 30s throttle ref prevents a machine-gun of bips; no setInterval/listener added so no cleanup leak.",
+        "PII: author full_name is now surfaced in the history table and report - already tenant-scoped via RLS/assert_tenant_member, and full_name is not sensitive PII, but confirm it is not logged.",
+        "Report semantics: 'order_destock' is order-driven, not a deliberate employee withdrawal; including it in out_qty could over-attribute. Mitigated by separate breakdown columns (manual_remove_qty / adjustment_out_qty) so the anti-theft view can focus on manual actions.",
+        "File-size: StockHistoryClient.tsx is already 526 lines (>400 rule). Adding a column + CTA nudges it further; extract the columns definition or the report trigger if lint/size review flags it (StaffStockReportDialog is already a separate file, which helps)."
+      ]
+    },
+    {
+      "id": "chantier-12-physical-count",
+      "title": "#12 Inventaire physique + ecart (stock reconciliation, ERPNext-style)",
+      "dependsOn": ["ledger"],
+      "tables": [
+        "stock_counts (NEW): id uuid pk, tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE, reference text NULL (libelle libre saisi par l'operateur), status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','committed','cancelled')), created_by uuid NULL, committed_by uuid NULL, committed_at timestamptz NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()",
+        "stock_count_lines (NEW): id uuid pk, tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE, count_id uuid NOT NULL REFERENCES stock_counts(id) ON DELETE CASCADE, ingredient_id uuid NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE, theoretical_qty NUMERIC(10,3) NOT NULL (snapshot du current_stock a l'ouverture), counted_qty NUMERIC(10,3) NULL (saisie physique, NULL tant que non compte), variance NUMERIC(10,3) GENERATED ALWAYS AS (counted_qty - theoretical_qty) STORED (informatif), created_at timestamptz DEFAULT now(), UNIQUE(count_id, ingredient_id)",
+        "stock_movements (ALTER, additif): ajout de la valeur 'physical_count' au CHECK movement_type (coordonne avec le chantier 'ledger' qui possede aussi ce CHECK)"
+      ],
+      "migrationSqlDraft": "-- 20260701040000_physical_stock_count.sql  (ADDITIVE ONLY)\n-- Depends on chantier 'ledger'. If 'ledger' already added 'physical_count' to the\n-- movement_type CHECK, the ALTER below simply re-states the full allowed list.\n\n-- 1. movement_type: allow 'physical_count' (additive re-statement of the CHECK)\nALTER TABLE public.stock_movements\n  DROP CONSTRAINT IF EXISTS stock_movements_movement_type_check;\nALTER TABLE public.stock_movements\n  ADD CONSTRAINT stock_movements_movement_type_check\n  CHECK (movement_type IN (\n    'order_destock','order_restock','manual_add','manual_remove',\n    'adjustment','opening','physical_count'\n  ));\n\n-- 2. stock_counts (session)\nCREATE TABLE IF NOT EXISTS public.stock_counts (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,\n  reference TEXT,\n  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','committed','cancelled')),\n  created_by UUID,\n  committed_by UUID,\n  committed_at TIMESTAMPTZ,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()\n);\nCREATE INDEX idx_stock_counts_tenant ON public.stock_counts(tenant_id);\nCREATE INDEX idx_stock_counts_tenant_status ON public.stock_counts(tenant_id, status);\n-- at most one open session per tenant (avoids overlapping snapshots)\nCREATE UNIQUE INDEX uniq_stock_counts_one_open\n  ON public.stock_counts(tenant_id) WHERE status = 'open';\n\n-- 3. stock_count_lines\nCREATE TABLE IF NOT EXISTS public.stock_count_lines (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,\n  count_id UUID NOT NULL REFERENCES public.stock_counts(id) ON DELETE CASCADE,\n  ingredient_id UUID NOT NULL REFERENCES public.ingredients(id) ON DELETE CASCADE,\n  theoretical_qty NUMERIC(10,3) NOT NULL DEFAULT 0,\n  counted_qty NUMERIC(10,3),\n  variance NUMERIC(10,3) GENERATED ALWAYS AS (counted_qty - theoretical_qty) STORED,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  UNIQUE(count_id, ingredient_id)\n);\nCREATE INDEX idx_stock_count_lines_tenant ON public.stock_count_lines(tenant_id);\nCREATE INDEX idx_stock_count_lines_count ON public.stock_count_lines(count_id);\nCREATE INDEX idx_stock_count_lines_ingredient ON public.stock_count_lines(ingredient_id);\n\n-- reuse the existing updated_at trigger fn pattern\nCREATE TRIGGER trigger_stock_counts_updated_at\n  BEFORE UPDATE ON public.stock_counts\n  FOR EACH ROW EXECUTE FUNCTION public.update_ingredients_updated_at();\n\n-- 4. RLS (tenant-scoped via admin_users, same shape as inventory_engine)\nALTER TABLE public.stock_counts ENABLE ROW LEVEL SECURITY;\nALTER TABLE public.stock_count_lines ENABLE ROW LEVEL SECURITY;\nCREATE POLICY stock_counts_select ON public.stock_counts FOR SELECT\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_counts_insert ON public.stock_counts FOR INSERT\n  WITH CHECK (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_counts_update ON public.stock_counts FOR UPDATE\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()))\n  WITH CHECK (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_counts_delete ON public.stock_counts FOR DELETE\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_count_lines_select ON public.stock_count_lines FOR SELECT\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_count_lines_insert ON public.stock_count_lines FOR INSERT\n  WITH CHECK (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_count_lines_update ON public.stock_count_lines FOR UPDATE\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()))\n  WITH CHECK (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_count_lines_delete ON public.stock_count_lines FOR DELETE\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\n\n-- 5. RPC: open a count (snapshot current theoretical for active ingredients)\nCREATE OR REPLACE FUNCTION public.open_stock_count(\n  p_tenant_id uuid,\n  p_reference text DEFAULT NULL,\n  p_created_by uuid DEFAULT NULL,\n  p_ingredient_ids uuid[] DEFAULT NULL   -- NULL = all active ingredients\n) RETURNS uuid\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'\nAS $fn$\nDECLARE v_count_id uuid;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  IF EXISTS (SELECT 1 FROM public.stock_counts WHERE tenant_id = p_tenant_id AND status = 'open') THEN\n    RAISE EXCEPTION 'OPEN_COUNT_EXISTS' USING ERRCODE = '22023';\n  END IF;\n  INSERT INTO public.stock_counts (tenant_id, reference, status, created_by)\n  VALUES (p_tenant_id, NULLIF(p_reference,''), 'open', p_created_by)\n  RETURNING id INTO v_count_id;\n\n  INSERT INTO public.stock_count_lines (tenant_id, count_id, ingredient_id, theoretical_qty)\n  SELECT p_tenant_id, v_count_id, i.id, i.current_stock\n  FROM public.ingredients i\n  WHERE i.tenant_id = p_tenant_id AND i.is_active = true\n    AND (p_ingredient_ids IS NULL OR i.id = ANY(p_ingredient_ids));\n\n  IF NOT EXISTS (SELECT 1 FROM public.stock_count_lines WHERE count_id = v_count_id) THEN\n    RAISE EXCEPTION 'NO_INGREDIENTS' USING ERRCODE = '22023';\n  END IF;\n  RETURN v_count_id;\nEND;\n$fn$;\nREVOKE ALL ON FUNCTION public.open_stock_count(uuid, text, uuid, uuid[]) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.open_stock_count(uuid, text, uuid, uuid[]) TO authenticated, service_role;\n\n-- 6. RPC: batch save counted quantities (only while open)\nCREATE OR REPLACE FUNCTION public.save_stock_count_lines(\n  p_tenant_id uuid, p_count_id uuid, p_lines jsonb\n) RETURNS void\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'\nAS $fn$\nDECLARE v_line jsonb; v_status text;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  SELECT status INTO v_status FROM public.stock_counts\n    WHERE id = p_count_id AND tenant_id = p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'COUNT_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;\n  IF v_status <> 'open' THEN RAISE EXCEPTION 'COUNT_NOT_OPEN' USING ERRCODE = '22023'; END IF;\n\n  FOR v_line IN SELECT * FROM jsonb_array_elements(COALESCE(p_lines,'[]'::jsonb))\n  LOOP\n    IF (v_line->>'counted_qty') IS NOT NULL AND (v_line->>'counted_qty')::numeric < 0 THEN\n      RAISE EXCEPTION 'INVALID_COUNTED_QTY' USING ERRCODE = '22023';\n    END IF;\n    UPDATE public.stock_count_lines\n      SET counted_qty = NULLIF(v_line->>'counted_qty','')::numeric\n      WHERE count_id = p_count_id AND tenant_id = p_tenant_id\n        AND ingredient_id = (v_line->>'ingredient_id')::uuid;\n  END LOOP;\nEND;\n$fn$;\nREVOKE ALL ON FUNCTION public.save_stock_count_lines(uuid, uuid, jsonb) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.save_stock_count_lines(uuid, uuid, jsonb) TO authenticated, service_role;\n\n-- 7. RPC: commit (generate physical_count movements for real applied delta,\n--    computed against LIVE current_stock at commit time so the ledger stays\n--    reconcilable even if stock moved between open and commit). Idempotent.\nCREATE OR REPLACE FUNCTION public.commit_stock_count(\n  p_tenant_id uuid, p_count_id uuid, p_committed_by uuid DEFAULT NULL\n) RETURNS integer\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'\nAS $fn$\nDECLARE v_status text; v_line RECORD; v_before NUMERIC(10,3); v_delta NUMERIC(10,3); v_n INT := 0;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  SELECT status INTO v_status FROM public.stock_counts\n    WHERE id = p_count_id AND tenant_id = p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'COUNT_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;\n  IF v_status <> 'open' THEN RAISE EXCEPTION 'COUNT_ALREADY_CLOSED' USING ERRCODE = '22023'; END IF;\n\n  FOR v_line IN\n    SELECT scl.ingredient_id, scl.counted_qty\n    FROM public.stock_count_lines scl\n    WHERE scl.count_id = p_count_id AND scl.tenant_id = p_tenant_id\n      AND scl.counted_qty IS NOT NULL\n  LOOP\n    SELECT current_stock INTO v_before FROM public.ingredients\n      WHERE id = v_line.ingredient_id AND tenant_id = p_tenant_id FOR UPDATE;\n    IF NOT FOUND THEN CONTINUE; END IF;\n    v_delta := v_line.counted_qty - v_before;\n    IF v_delta = 0 THEN CONTINUE; END IF;\n\n    UPDATE public.ingredients SET current_stock = v_line.counted_qty, updated_at = now()\n      WHERE id = v_line.ingredient_id AND tenant_id = p_tenant_id;\n    INSERT INTO public.stock_movements\n      (tenant_id, ingredient_id, movement_type, quantity, reference_id, notes, created_by)\n    VALUES\n      (p_tenant_id, v_line.ingredient_id, 'physical_count', v_delta, p_count_id,\n       'Inventaire physique', p_committed_by);\n\n    IF v_line.counted_qty <= 0 THEN\n      UPDATE public.menu_items SET is_available = false\n        WHERE tenant_id = p_tenant_id AND is_available = true AND id IN (\n          SELECT r.menu_item_id FROM public.recipes r\n          WHERE r.ingredient_id = v_line.ingredient_id AND r.tenant_id = p_tenant_id);\n    ELSE\n      UPDATE public.menu_items SET is_available = true\n        WHERE tenant_id = p_tenant_id AND is_available = false AND id IN (\n          SELECT r.menu_item_id FROM public.recipes r\n          WHERE r.ingredient_id = v_line.ingredient_id AND r.tenant_id = p_tenant_id);\n    END IF;\n    v_n := v_n + 1;\n  END LOOP;\n\n  UPDATE public.stock_counts\n    SET status = 'committed', committed_at = now(), committed_by = p_committed_by, updated_at = now()\n    WHERE id = p_count_id AND tenant_id = p_tenant_id;\n  RETURN v_n;\nEND;\n$fn$;\nREVOKE ALL ON FUNCTION public.commit_stock_count(uuid, uuid, uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.commit_stock_count(uuid, uuid, uuid) TO authenticated, service_role;\n\n-- 8. RPC: cancel an open count (so no session is ever stuck open)\nCREATE OR REPLACE FUNCTION public.cancel_stock_count(p_tenant_id uuid, p_count_id uuid)\nRETURNS void\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'\nAS $fn$\nDECLARE v_status text;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  SELECT status INTO v_status FROM public.stock_counts\n    WHERE id = p_count_id AND tenant_id = p_tenant_id FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'COUNT_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;\n  IF v_status <> 'open' THEN RAISE EXCEPTION 'COUNT_NOT_OPEN' USING ERRCODE = '22023'; END IF;\n  UPDATE public.stock_counts SET status = 'cancelled', updated_at = now()\n    WHERE id = p_count_id AND tenant_id = p_tenant_id;\nEND;\n$fn$;\nREVOKE ALL ON FUNCTION public.cancel_stock_count(uuid, uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.cancel_stock_count(uuid, uuid) TO authenticated, service_role;",
+      "serviceChanges": [
+        "src/services/inventory.service.ts (EXTEND, not protected): add to InventoryService interface + factory: openStockCount(tenantId, input:{reference?:string; ingredientIds?:string[]}) -> string (rpc open_stock_count, passes created_by from supabase.auth.getUser like adjustStock does); listStockCounts(tenantId) -> StockCount[] (.from('stock_counts').eq('tenant_id',tenantId).order('created_at',{ascending:false}).limit(50)); getStockCount(tenantId, countId) -> {count:StockCount; lines:StockCountLine[]} (fetch session filtered by id+tenant_id, then lines with ingredient:ingredients(name,unit) join filtered by count_id+tenant_id, ordered by ingredient name); saveStockCountLines(tenantId, countId, lines:StockCountLineInput[]) -> void (rpc save_stock_count_lines with p_lines jsonb); commitStockCount(tenantId, countId) -> number (rpc commit_stock_count, created_by from getUser); cancelStockCount(tenantId, countId) -> void (rpc cancel_stock_count). Map rpc errors to ServiceError codes: OPEN_COUNT_EXISTS/COUNT_ALREADY_CLOSED/COUNT_NOT_OPEN -> 'CONFLICT', COUNT_NOT_FOUND -> 'NOT_FOUND', INVALID_COUNTED_QTY/NO_INGREDIENTS -> 'VALIDATION'",
+        "src/app/actions/stock-count.ts (NEW): actionOpenStockCount / actionSaveStockCountLines / actionCommitStockCount / actionCancelStockCount. Reuse the exact permission pattern from inventory.ts: getAuthenticatedUserForTenant(tenantId,['owner','admin','manager']) wrapped in try/catch on AuthError; derive tenant server-side; Zod-validate via stock-count.schema.ts; call createInventoryService(supabase). Commit/cancel/open gated to owner/admin/manager (mutating); read handled by page-level requireAdminPermission('inventory.view')",
+        "src/lib/validations/stock-count.schema.ts (NEW): openStockCountSchema {tenantId:uuid, reference:string.max(120).optional(), ingredientIds:uuid[].optional()}; saveStockCountLinesSchema {tenantId:uuid, countId:uuid, lines: array of {ingredient_id:uuid, counted_qty: number.finite().nonnegative().nullable()}}; commitStockCountSchema/cancelStockCountSchema {tenantId:uuid, countId:uuid}",
+        "src/hooks/queries/ (NEW hook file, e.g. useStockCounts.ts): useStockCounts(tenantId) + useStockCount(tenantId, countId) TanStack Query hooks calling the actions/service via existing query-hook pattern; export from src/hooks/queries/index.ts (shared barrel touch)"
+      ],
+      "uiComponents": [
+        "src/app/sites/[site]/admin/inventory/counts/page.tsx (NEW route): Server Component mirroring inventory/page.tsx - requireAdminPermission(site,'inventory.view'), getTenant, canAccessFeature('canAccessInventory') FeatureUpgradeWall gate, wrapper div 'flex-1 min-h-0 flex flex-col', renders StockCountClient tenantId+currency",
+        "src/app/sites/[site]/admin/inventory/counts/[countId]/page.tsx (NEW route): same guards, renders StockCountSheetClient tenantId+countId",
+        "src/components/admin/StockCountClient.tsx (NEW): sessions list using ResponsiveDataTable (columns: reference, status via StatusBadge with BadgeTone, created_at, nb lines/variance summary, action link to sheet). Header + primary Button 'Nouvel inventaire' opening an AdminModal (reference Input + optional scope). Empty state (reuse StockHistoryEmptyState style). Uses useStockCounts + useToast + useTranslations('inventory'); Button/Input/Label/Select/AdminModal shadcn primitives",
+        "src/components/admin/StockCountSheetClient.tsx (NEW): the counting sheet. shadcn Table (Table/TableHeader/TableRow/TableHead/TableBody/TableCell) with columns Produit, Unite, Theorique, Compte (numeric Input per row), Ecart (computed counted-theoretical, cn() highlight: variance<0 text-red-600, >0 text-amber-600, 0 muted). Sticky commit bar (h-14 touch target) with 'Enregistrer' (saveStockCountLines) and 'Valider l'inventaire' opening a confirmation Dialog listing nb produits avec ecart before commitStockCount. Read-only when status!=='open'. Debounced autosave or explicit save Button. Responsive: mobile-first, min-h-[44px] inputs. Uses useStockCount, actions, useToast, useTranslations",
+        "src/lib/layout/navigation-config.ts (SHARED edit): add child entry under the inventory group -> path '/inventory/counts', labelKey inventory nav key, permissionCode 'inventory.view'",
+        "src/lib/auth/admin-route-permissions.ts (SHARED edit): add rule { test: /^\\/inventory\\/counts(\\/|$)/, permission: 'inventory.view' } BEFORE the generic /inventory rule is fine (both map to inventory.view; ordering neutral)"
+      ],
+      "i18nKeys": [
+        "inventory.physicalCount",
+        "inventory.newCount",
+        "inventory.countSheet",
+        "inventory.countReference",
+        "inventory.countReferencePlaceholder",
+        "inventory.theoreticalQty",
+        "inventory.countedQty",
+        "inventory.variance",
+        "inventory.commitCount",
+        "inventory.commitConfirmTitle",
+        "inventory.commitConfirmBody",
+        "inventory.saveCount",
+        "inventory.countStatusOpen",
+        "inventory.countStatusCommitted",
+        "inventory.countStatusCancelled",
+        "inventory.cancelCount",
+        "inventory.noVariance",
+        "inventory.countsEmptyTitle",
+        "inventory.countsEmptyBody",
+        "inventory.openCountExists",
+        "inventory.itemsWithVariance",
+        "inventory.countCommitted",
+        "inventory.movementPhysicalCount"
+      ],
+      "testDbCases": [
+        "open_stock_count: opening for a tenant with N active ingredients creates a stock_counts row status='open' and N stock_count_lines with theoretical_qty == each ingredient.current_stock and counted_qty NULL",
+        "open_stock_count with p_ingredient_ids subset: only the passed ingredients get lines",
+        "open_stock_count raises OPEN_COUNT_EXISTS when a session is already open for the tenant (partial unique index enforced)",
+        "open_stock_count raises NO_INGREDIENTS when tenant has no active ingredient",
+        "save_stock_count_lines: sets counted_qty on the targeted lines; raises COUNT_NOT_OPEN after commit; raises INVALID_COUNTED_QTY on negative",
+        "commit variance path: ingredient current_stock=10, counted_qty=7 -> after commit current_stock==7, exactly one 'physical_count' movement with quantity=-3 and reference_id=count_id; SUM(quantity) of all movements for that ingredient reconstructs current_stock",
+        "commit positive variance: counted_qty > current -> current_stock rises to counted, movement quantity positive",
+        "commit no-variance line (counted==current): no movement inserted, count still transitions to committed",
+        "commit computes delta against LIVE stock: after open (snapshot theoretical=10), simulate destock_order dropping stock to 8, then commit counted_qty=7 -> movement quantity=-1 (7-8) and current_stock==7 (ledger stays reconcilable)",
+        "commit idempotency: second commit_stock_count on same id raises COUNT_ALREADY_CLOSED; no duplicate movements",
+        "menu availability: counted_qty=0 on an ingredient used by a recipe flips its menu_items.is_available to false; recount>0 in a later session flips it back to true",
+        "tenant isolation: open_stock_count / commit_stock_count called with a foreign tenant_id (non-member via authenticated client) raises access denied (assert_tenant_member); lines never reference another tenant's ingredient",
+        "cancel_stock_count sets status='cancelled'; commit_stock_count on a cancelled count raises COUNT_ALREADY_CLOSED"
+      ],
+      "unitTestCases": [
+        "inventory.service openStockCount: passes p_created_by from supabase.auth.getUser().id and maps OPEN_COUNT_EXISTS rpc error to ServiceError('CONFLICT')",
+        "inventory.service commitStockCount: returns rpc numeric count; maps COUNT_ALREADY_CLOSED->CONFLICT, COUNT_NOT_FOUND->NOT_FOUND",
+        "inventory.service saveStockCountLines: serializes lines to the p_lines jsonb shape (ingredient_id, counted_qty), maps INVALID_COUNTED_QTY->VALIDATION",
+        "inventory.service getStockCount: filters both session and lines by tenant_id (isolation assertion with mocked supabase)",
+        "stock-count.schema openStockCountSchema: rejects reference over max length, accepts omitted reference/ingredientIds",
+        "stock-count.schema saveStockCountLinesSchema: rejects negative counted_qty, accepts null counted_qty, rejects non-uuid ingredient_id",
+        "stock-count.schema commit/cancel schemas: reject non-uuid countId/tenantId",
+        "actions: actionCommitStockCount returns {error:'Permissions insuffisantes'} when getAuthenticatedUserForTenant throws AuthError(403), {error:'Non authentifie'} on 401"
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts (EXTENDED - also touched by other inventory chantiers)",
+        "src/types/inventory.types.ts (add 'physical_count' to MovementType union + entry in MOVEMENT_TYPE_LABELS, add StockCount/StockCountLine/StockCountLineInput/OpenStockCountInput interfaces - MovementType + MOVEMENT_TYPE_LABELS are consumed by StockHistoryClient + InventoryClient; the 'ledger' chantier likely also edits this union => coordinate)",
+        "src/messages/fr-FR.json + src/messages/en-US.json (inventory block - high co-edit contention across all stock chantiers)",
+        "src/lib/layout/navigation-config.ts (add /inventory/counts nav entry)",
+        "src/lib/auth/admin-route-permissions.ts (add /inventory/counts rule)",
+        "src/hooks/queries/index.ts (barrel export for new hooks)",
+        "supabase/migrations/* (new file; the stock_movements movement_type CHECK ALTER is co-owned with the 'ledger' chantier - sequence AFTER ledger to avoid a duplicate/conflicting CHECK statement)",
+        "tests/integration/stock/ (new spec file added to the pnpm test:db harness alongside inventory-rpcs.test.ts)"
+      ],
+      "effort": "L",
+      "risks": [
+        "CHECK-constraint collision with 'ledger' chantier: both DROP+ADD stock_movements_movement_type_check. Must merge after ledger and re-state the FULL allowed list including any type ledger added, or the later migration silently drops the other's value. HARD dependency.",
+        "Ledger reconciliation invariant: commit must compute delta against LIVE current_stock (FOR UPDATE) not the snapshot theoretical_qty, else SUM(movements) stops reconstructing current_stock (same bug class M1 fixed in 20260629120000). Snapshot theoretical is display-only.",
+        "MovementType union + MOVEMENT_TYPE_LABELS edit in inventory.types.ts is a merge hotspot with the ledger chantier and StockHistory; a missing label key would make StockHistoryClient render an undefined color/label.",
+        "Race between open and commit: an order destock or manual adjust between the two changes current_stock; handled by live-delta commit, but the operator's on-screen 'ecart' (counted - theoretical snapshot) will differ from the actual applied movement - surface this in the commit confirmation Dialog.",
+        "Partial unique index (one open count per tenant) can surprise users if a prior session was left open; cancel_stock_count + a clear empty/open-session banner mitigate. Ensure the UI always exposes cancel.",
+        "assert_tenant_member requires the querying role to keep EXECUTE (authenticated) - do NOT over-revoke, or RLS/RPC breaks (documented lesson from SECDEF grants work).",
+        "get_stock_status is unaffected but is_low recomputes after commit; realtime is enabled on ingredients so the inventory list refreshes, but stock_counts/stock_count_lines are NOT in supabase_realtime - the sheet relies on query invalidation, not realtime (acceptable, document).",
+        "File-size rule (<400 lines): the counting sheet + list should be split (StockCountClient vs StockCountSheetClient) to stay under the limit; extract row + commit-dialog subcomponents if needed."
+      ]
+    },
+    {
+      "id": "pertes-structurees",
+      "title": "#13 Pertes structurees - loss movement type + reason_code + report",
+      "dependsOn": ["ledger"],
+      "tables": [
+        "stock_movements: ADD COLUMN reason_code stock_loss_reason NULL (native enum casse|peremption|ecart_production|autre); movement_type CHECK extended with 'loss'; new CHECK stock_movements_loss_reason_check ((movement_type='loss') = (reason_code IS NOT NULL)); partial index idx_stock_movements_loss ON (tenant_id, reason_code) WHERE movement_type='loss'. No new table - reuses stock_movements ledger. New enum TYPE public.stock_loss_reason."
+      ],
+      "migrationSqlDraft": "-- 20260701000000_stock_losses.sql  (ADDITIVE ONLY)\n-- Depends on chantier 'ledger' (shared movement-write path). Safe to apply before\n-- code is wired: new enum value/column/RPCs are inert until the service calls them.\n\n-- 1. reason enum (additive; enum values cannot be dropped -> additive-safe)\nDO $$\nBEGIN\n  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'stock_loss_reason') THEN\n    CREATE TYPE public.stock_loss_reason AS ENUM\n      ('casse','peremption','ecart_production','autre');\n  END IF;\nEND$$;\n\n-- 2. allow 'loss' as a movement type (re-add full CHECK incl. prior values)\nALTER TABLE public.stock_movements\n  DROP CONSTRAINT IF EXISTS stock_movements_movement_type_check;\nALTER TABLE public.stock_movements\n  ADD CONSTRAINT stock_movements_movement_type_check\n  CHECK (movement_type IN (\n    'order_destock','order_restock','manual_add','manual_remove',\n    'adjustment','opening','loss'\n  ));\n\n-- 3. reason_code column (NULL for non-loss rows -> backfill-free / additive)\nALTER TABLE public.stock_movements\n  ADD COLUMN IF NOT EXISTS reason_code public.stock_loss_reason;\n\n-- 4. integrity: reason_code present iff movement is a loss\nALTER TABLE public.stock_movements\n  DROP CONSTRAINT IF EXISTS stock_movements_loss_reason_check;\nALTER TABLE public.stock_movements\n  ADD CONSTRAINT stock_movements_loss_reason_check\n  CHECK ((movement_type = 'loss') = (reason_code IS NOT NULL));\n\nCREATE INDEX IF NOT EXISTS idx_stock_movements_loss\n  ON public.stock_movements(tenant_id, reason_code)\n  WHERE movement_type = 'loss';\n\n-- 5. record_loss_tx: atomic decrement + reconcilable ledger movement.\n--    Mirrors adjust_ingredient_stock_tx (records ACTUAL applied delta after the\n--    >=0 clamp so sum(movements)=current_stock) and mirrors destock_order's\n--    auto-unavailable flip when an ingredient hits 0.\nCREATE OR REPLACE FUNCTION public.record_loss_tx(\n  p_tenant_id uuid,\n  p_ingredient_id uuid,\n  p_quantity numeric,\n  p_reason_code public.stock_loss_reason,\n  p_notes text DEFAULT NULL,\n  p_created_by uuid DEFAULT NULL\n)\nRETURNS numeric\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path TO 'public'\nAS $function$\nDECLARE\n  v_before NUMERIC(10,3);\n  v_after  NUMERIC(10,3);\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n\n  IF p_quantity IS NULL OR p_quantity <= 0 THEN\n    RAISE EXCEPTION 'INVALID_QUANTITY' USING ERRCODE = '22023';\n  END IF;\n  IF p_reason_code IS NULL THEN\n    RAISE EXCEPTION 'INVALID_REASON' USING ERRCODE = '22023';\n  END IF;\n\n  SELECT current_stock INTO v_before\n  FROM public.ingredients\n  WHERE id = p_ingredient_id AND tenant_id = p_tenant_id\n  FOR UPDATE;\n\n  IF NOT FOUND THEN\n    RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE = 'P0002';\n  END IF;\n\n  v_after := GREATEST(0, v_before - p_quantity);\n\n  UPDATE public.ingredients\n  SET current_stock = v_after, updated_at = now()\n  WHERE id = p_ingredient_id AND tenant_id = p_tenant_id;\n\n  INSERT INTO public.stock_movements\n    (tenant_id, ingredient_id, movement_type, quantity, reason_code, notes, created_by)\n  VALUES\n    (p_tenant_id, p_ingredient_id, 'loss', v_after - v_before, p_reason_code, p_notes, p_created_by);\n\n  -- Bring dependent menu items down if the ingredient is now depleted.\n  IF v_after <= 0 THEN\n    UPDATE public.menu_items\n    SET is_available = false\n    WHERE id IN (\n      SELECT r.menu_item_id FROM public.recipes r\n      WHERE r.ingredient_id = p_ingredient_id AND r.tenant_id = p_tenant_id\n    )\n    AND tenant_id = p_tenant_id AND is_available = true;\n  END IF;\n\n  RETURN v_after;\nEND;\n$function$;\n\nREVOKE ALL ON FUNCTION public.record_loss_tx(uuid, uuid, numeric, public.stock_loss_reason, text, uuid)\n  FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.record_loss_tx(uuid, uuid, numeric, public.stock_loss_reason, text, uuid)\n  TO authenticated, service_role;\n\n-- 6. get_losses_by_reason: report aggregation (count / qty / valued cost).\n--    cost_per_unit is the legacy NUMERIC(10,2) column on ingredients.\nCREATE OR REPLACE FUNCTION public.get_losses_by_reason(\n  p_tenant_id uuid,\n  p_start timestamptz DEFAULT NULL,\n  p_end   timestamptz DEFAULT NULL\n)\nRETURNS TABLE (\n  reason_code public.stock_loss_reason,\n  nb_movements bigint,\n  total_qty numeric,\n  total_cost_value numeric\n)\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path TO 'public'\nAS $function$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT\n    sm.reason_code,\n    COUNT(*)::bigint,\n    COALESCE(SUM(ABS(sm.quantity)), 0),\n    COALESCE(SUM(ABS(sm.quantity) * i.cost_per_unit), 0)\n  FROM public.stock_movements sm\n  JOIN public.ingredients i\n    ON i.id = sm.ingredient_id AND i.tenant_id = sm.tenant_id\n  WHERE sm.tenant_id = p_tenant_id\n    AND sm.movement_type = 'loss'\n    AND (p_start IS NULL OR sm.created_at >= p_start)\n    AND (p_end   IS NULL OR sm.created_at <= p_end)\n  GROUP BY sm.reason_code\n  ORDER BY 4 DESC;\nEND;\n$function$;\n\nREVOKE ALL ON FUNCTION public.get_losses_by_reason(uuid, timestamptz, timestamptz)\n  FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.get_losses_by_reason(uuid, timestamptz, timestamptz)\n  TO authenticated, service_role;",
+      "serviceChanges": [
+        "src/services/inventory.service.ts: add to InventoryService interface + impl: recordLoss(tenantId, input: RecordLossInput) -> rpc('record_loss_tx', {p_tenant_id, p_ingredient_id, p_quantity: Math.abs(qty), p_reason_code, p_notes, p_created_by: (await supabase.auth.getUser()).data.user?.id}); map INGREDIENT_NOT_FOUND->NOT_FOUND, INVALID_REASON/INVALID_QUANTITY->VALIDATION, else INTERNAL (mirror adjustStock)",
+        "src/services/inventory.service.ts: add getLossesByReason(tenantId, filters?: {startDate?; endDate?}) -> rpc('get_losses_by_reason', {p_tenant_id, p_start, p_end}); return LossByReason[] or throw ServiceError('INTERNAL')",
+        "src/app/actions/inventory.ts: add recordLossSchema (z.object tenantId uuid, ingredient_id uuid, quantity number.finite.positive, reason_code z.enum(['casse','peremption','ecart_production','autre']), notes string.optional) + actionRecordLoss(tenantId, input) reusing checkInventoryPermissions (owner/admin/manager) then service.recordLoss",
+        "src/app/actions/inventory.ts: add actionGetLossesByReason(tenantId, filters?) reusing checkInventoryPermissions -> service.getLossesByReason (used by the report Server Component / client refetch)"
+      ],
+      "uiComponents": [
+        "src/components/admin/InventoryClient.tsx (EDIT, shared): add ModalMode 'loss'; add openLoss(ing); add loss state (lossQty, lossReason:LossReasonCode='casse', lossNotes); add handleRecordLoss calling actionRecordLoss + toast + queryClient.invalidateQueries(ingredients); add a 'Declarer une perte' Button (variant='outline', lucide TrendingDown icon) in row actions and mobile card next to +/-; add a loss AdminModal with shadcn Select (reason: SelectTrigger/SelectContent/SelectItem over LOSS_REASON_LABELS), Input (qty, wrapped in Label), Textarea (notes)",
+        "src/components/admin/LossesReportClient.tsx (NEW): client component rendering losses-by-reason via shadcn Table (Table/TableHeader/TableBody/TableRow/TableCell) - columns reason label, nb movements, total qty, valued cost (formatCurrency); date-range filter with two Input type=date + Button; empty state card; reuses StatusBadge tone for reason",
+        "src/app/sites/[site]/admin/stock/pertes/page.tsx (NEW): Server Component - resolve tenant from x-tenant-slug, getAuthenticatedUserForTenant, call inventory.service.getLossesByReason for default range, render <LossesReportClient> (keeps StockHistoryClient untouched to avoid conflict)",
+        "OPTIONAL src/components/admin/StockHistoryClient.tsx (EDIT, shared): 'loss' auto-renders via MOVEMENT_TYPE_LABELS; add reason_code chip in the movement row when movement_type==='loss' + a 'loss' entry in the type filter"
+      ],
+      "i18nKeys": [
+        "inventory.declareLoss",
+        "inventory.lossQty",
+        "inventory.lossReason",
+        "inventory.lossNotes",
+        "inventory.lossRecorded",
+        "inventory.lossError",
+        "inventory.movementLoss",
+        "losses.title",
+        "losses.subtitle",
+        "losses.reason",
+        "losses.reasonCasse",
+        "losses.reasonPeremption",
+        "losses.reasonEcartProduction",
+        "losses.reasonAutre",
+        "losses.nbMovements",
+        "losses.totalQty",
+        "losses.valuedCost",
+        "losses.empty",
+        "losses.from",
+        "losses.to",
+        "losses.apply"
+      ],
+      "testDbCases": [
+        "record_loss_tx decrements current_stock by exact qty and writes a negative-quantity 'loss' movement carrying reason_code; SUM(quantity) over movements == ingredients.current_stock (ledger reconciles)",
+        "record_loss_tx clamps at 0: loss qty > current_stock leaves stock=0 and the movement quantity == -(before) (actual applied delta), never negative stock",
+        "record_loss_tx auto-flips menu_items.is_available=false for items whose recipe uses the ingredient once stock hits 0 (mirror of destock_order)",
+        "record_loss_tx with p_quantity<=0 raises INVALID_QUANTITY (22023); reason NULL rejected by CHECK/INVALID_REASON",
+        "direct INSERT into stock_movements with movement_type='loss' and reason_code NULL is rejected by stock_movements_loss_reason_check; and reason_code set on a non-loss row is rejected",
+        "record_loss_tx for an ingredient of another tenant -> INGREDIENT_NOT_FOUND (P0002); assert_tenant_member blocks a non-member caller under a user JWT",
+        "get_losses_by_reason returns one row per reason with correct nb_movements, total_qty=SUM(ABS(qty)) and total_cost_value=SUM(ABS(qty)*cost_per_unit); respects p_start/p_end window and is tenant-scoped (cross-tenant losses excluded)"
+      ],
+      "unitTestCases": [
+        "recordLoss calls supabase.rpc('record_loss_tx') with p_quantity=Math.abs(input.quantity), p_reason_code, p_notes, p_created_by from getUser()",
+        "recordLoss maps rpc error INGREDIENT_NOT_FOUND -> ServiceError code NOT_FOUND; INVALID_REASON and INVALID_QUANTITY -> VALIDATION; generic error -> INTERNAL",
+        "getLossesByReason returns rpc data array on success and throws ServiceError INTERNAL on rpc error",
+        "recordLossSchema (actions) rejects reason_code not in enum, quantity<=0, non-uuid ingredient_id; accepts a valid payload",
+        "actionRecordLoss returns {error:'Permissions insuffisantes'} when checkInventoryPermissions fails and {success:true} on the happy path (mocked service)"
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts",
+        "src/app/actions/inventory.ts",
+        "src/types/inventory.types.ts",
+        "src/components/admin/InventoryClient.tsx",
+        "src/components/admin/StockHistoryClient.tsx",
+        "src/messages/fr-FR.json",
+        "src/messages/en-US.json",
+        "supabase/migrations/ (new file)",
+        "src/services/__tests__/inventory.service.test.ts",
+        "tests/integration/stock/ (new file)"
+      ],
+      "effort": "M",
+      "risks": [
+        "types/inventory.types.ts is edited by nearly every stock chantier (MovementType union, MOVEMENT_TYPE_LABELS, new LossReasonCode/RecordLossInput/LossByReason types) -> high merge-conflict surface; coordinate a single owner for the union edit",
+        "movement_type CHECK is re-created by both this migration and the 'ledger' chantier; must depend on ledger and include the union of ALL values ('loss' + any ledger adds) to avoid a migration that drops a sibling's value (violates additive-only)",
+        "InventoryClient.tsx (794 lines) and StockHistoryClient.tsx are touched by multiple chantiers - localize edits to new ModalMode/state/handler blocks to keep diffs conflict-free",
+        "cost_per_unit is legacy NUMERIC(10,2), NOT BIGINT minor units; valued-loss cost bypasses the dinero.js money contract - flag as intentional (report only, no ledger money write) or reconcile in a later money-normalization chantier",
+        "adjust_ingredient_stock_tx explicitly rejects 'loss' (whitelist manual_add/manual_remove/adjustment/opening) so losses MUST route through record_loss_tx; do not widen that whitelist or a manual adjust could forge a reason-less loss",
+        "record_loss_tx flips menu_items.is_available=false but there is no auto-restore-on-loss path (unlike restock_order); a loss that depletes an item leaves it unavailable until a manual_add/restock - acceptable but document it",
+        "authenticated GRANT relies on assert_tenant_member for isolation; RLS INSERT policy on stock_movements also gates - verify SECURITY DEFINER owner keeps RLS behavior consistent (function runs as definer, assert_tenant_member is the real guard)"
+      ]
+    },
+    {
+      "id": "phase6-chantier-15-unit-conversion",
+      "title": "#15 Conversion d'unites - purchase_unit + units_per_purchase on ingredients, receive-in-cases",
+      "dependsOn": [],
+      "effort": "M",
+      "tables": [
+        "ALTER public.ingredients ADD COLUMN purchase_unit TEXT (nullable free-text label: casier/sac/carton; NULL = bought in base unit)",
+        "ALTER public.ingredients ADD COLUMN units_per_purchase NUMERIC(10,3) NOT NULL DEFAULT 1 CHECK (> 0) (how many base ingredients.unit are in one purchase_unit; casier=24 bouteille, sac=5 kg)",
+        "No new table. stock_movements UNCHANGED (ledger stays in base unit). get_stock_status RPC UNCHANGED (receive UI reads inventory.service.getIngredients, not the RPC)."
+      ],
+      "migrationSqlDraft": "-- supabase/migrations/20260701120000_ingredient_purchase_unit_conversion.sql\n-- Chantier #15 Conversion d'unites. ADDITIVE ONLY: 2 new columns on the existing\n-- RLS-protected ingredients table. No new RPC on purpose - the purchase->base\n-- conversion is a pure TS helper, so stock_movements keeps its \"always in base\n-- unit\" invariant and adjust_ingredient_stock_tx's reconcilable ledger is untouched.\n-- RLS/index: none needed (columns live on an already-policied table; no lookups\n-- by these columns). idx_ingredients_tenant already covers tenant scoping.\n--\n-- Rollback: ALTER TABLE public.ingredients\n--   DROP CONSTRAINT IF EXISTS ingredients_units_per_purchase_positive,\n--   DROP COLUMN IF EXISTS units_per_purchase, DROP COLUMN IF EXISTS purchase_unit;\n\nALTER TABLE public.ingredients\n  ADD COLUMN IF NOT EXISTS purchase_unit TEXT,\n  ADD COLUMN IF NOT EXISTS units_per_purchase NUMERIC(10,3) NOT NULL DEFAULT 1;\n\nALTER TABLE public.ingredients\n  DROP CONSTRAINT IF EXISTS ingredients_units_per_purchase_positive;\nALTER TABLE public.ingredients\n  ADD CONSTRAINT ingredients_units_per_purchase_positive\n  CHECK (units_per_purchase > 0);\n\nCOMMENT ON COLUMN public.ingredients.purchase_unit IS\n  'Optional purchasing-unit label (casier, sac, carton). NULL = purchased in base unit.';\nCOMMENT ON COLUMN public.ingredients.units_per_purchase IS\n  'Base units (ingredients.unit) contained in one purchase_unit. Default 1.';",
+      "serviceChanges": [
+        "src/lib/inventory/unit-conversion.ts (NEW): export convertToBaseUnit({ quantity, baseUnit, purchaseUnit, unitsPerPurchase }): number and isSiConvertible(a,b): boolean. Logic: if purchaseUnit is null/equal to baseUnit -> quantity; else if both baseUnit and purchaseUnit are SI-convertible (g/kg, cl/L only in current enum) -> use convert-units lib convert(qty).from(purchaseUnit).to(baseUnit); else custom unit (casier/sac/bouteille/piece) -> quantity * unitsPerPurchase. Round result to 3 decimals (matches NUMERIC(10,3)). Throw RangeError on qty<0 or unitsPerPurchase<=0. Pure function, no Supabase, no Next imports.",
+        "src/services/inventory.service.ts (NOT protected - extend): (a) add purchase_unit, units_per_purchase to the explicit select column lists in getIngredients/createIngredient/updateIngredient; (b) persist both in createIngredient insert and pass-through in updateIngredient; (c) NEW method receiveStock(tenantId, { ingredient_id, quantity, inPurchaseUnit }): fetch ingredient (unit, purchase_unit, units_per_purchase) filtered by tenant_id; compute baseQty via convertToBaseUnit when inPurchaseUnit; then reuse the existing manual_add path by calling adjust_ingredient_stock_tx via the same code as adjustStock (movement_type='manual_add', delta=+baseQty, note e.g. 'Recu: 2 casier (48 bouteille)'). Do NOT touch order.service.ts.",
+        "src/app/actions/inventory.ts (extend): add purchase_unit (z.string().max(40).nullable().optional()) + units_per_purchase (z.number().finite().positive().optional()) to createIngredientSchema and updateIngredientSchema; NEW actionReceiveStock(tenantId, { ingredient_id, quantity, inPurchaseUnit }) with receiveStockSchema (quantity positive, inPurchaseUnit boolean), same checkInventoryPermissions(ALLOWED_ROLES) gate, delegates to service.receiveStock. Never accept tenant_id from client body beyond the existing derive-and-verify pattern.",
+        "src/types/inventory.types.ts (extend): Ingredient += purchase_unit: string | null; units_per_purchase: number; CreateIngredientInput/UpdateIngredientInput += purchase_unit?, units_per_purchase?; add ReceiveStockInput { ingredient_id: string; quantity: number; inPurchaseUnit: boolean }."
+      ],
+      "uiComponents": [
+        "src/components/admin/InventoryClient.tsx (edit): create/edit ingredient form - add optional Purchase unit field (shadcn Select over base units + casier/sac/carton or free-text Input) and Units-per-purchase (shadcn Input type=number step=0.001) with a live hint '1 casier = 24 bouteille'. Persist via existing actionCreate/actionUpdate.",
+        "InventoryClient.tsx adjust dialog (edit): when adjustType==='manual_add' AND selectedIngredient.purchase_unit is set, render a shadcn Select 'Saisir en:' with two options (base unit label / purchase_unit label) and a computed converted hint (t('convertedTo') -> convertToBaseUnit preview, e.g. '= 48 bouteille'). On confirm: if purchase unit chosen call actionReceiveStock({ inPurchaseUnit: true }); otherwise keep the current actionAdjustStock path. Reuse existing AdminModal, Button, Input, Label, Select/SelectTrigger/SelectContent/SelectItem. No native elements. ASCII only.",
+        "Column display unchanged; the ingredients table keeps showing current_stock in base unit (single source of truth)."
+      ],
+      "i18nKeys": [
+        "inventory.purchaseUnit",
+        "inventory.purchaseUnitOptional",
+        "inventory.unitsPerPurchase",
+        "inventory.unitsPerPurchaseHint",
+        "inventory.receiveStock",
+        "inventory.enterIn",
+        "inventory.enterInBaseUnit",
+        "inventory.enterInPurchaseUnit",
+        "inventory.convertedTo",
+        "inventory.purchaseFactorInvalid"
+      ],
+      "testDbCases": [
+        "Migration applied: SELECT purchase_unit, units_per_purchase FROM ingredients returns default NULL and 1 for a freshly seeded ingredient (columns exist, correct defaults).",
+        "CHECK constraint: INSERT/UPDATE ingredients SET units_per_purchase = 0 (and -5) is rejected by ingredients_units_per_purchase_positive.",
+        "Column round-trip via service_role: insert ingredient with purchase_unit='casier', units_per_purchase=24 then re-select returns exactly those values.",
+        "Regression: get_stock_status(p_tenant_id) still returns the same shape/values after the migration (untouched RPC keeps working with the new columns present).",
+        "Ledger stays base-unit: manually apply adjust_ingredient_stock_tx with the pre-converted base delta (48) for a casier=24 ingredient and assert current_stock += 48 and one manual_add movement of +48 (proves conversion happens before the ledger, ledger has no unit awareness). Note: run through the same DB path the integration suite already uses; membership-asserting RPCs are covered by seeding admin_users as the existing harness does."
+      ],
+      "unitTestCases": [
+        "convertToBaseUnit: 2 casier (units_per_purchase=24, base bouteille) -> 48.",
+        "convertToBaseUnit: 3 sac (units_per_purchase=5, base kg) -> 15.",
+        "convertToBaseUnit SI path: 500 g into base kg -> 0.5 (via convert-units).",
+        "convertToBaseUnit SI path: 150 cl into base L -> 1.5.",
+        "convertToBaseUnit identity: purchaseUnit null or equal to baseUnit -> quantity unchanged.",
+        "convertToBaseUnit rounding: fractional factor produces value rounded to 3 decimals (e.g. 1 sac * 5.333 -> 5.333).",
+        "convertToBaseUnit edge: quantity 0 -> 0; negative quantity throws; units_per_purchase<=0 throws.",
+        "service.receiveStock: reads ingredient, converts, calls adjust_ingredient_stock_tx (mocked rpc) with movement_type='manual_add' and delta = converted base qty; asserts note contains purchase-unit breakdown.",
+        "service.receiveStock: ingredient without purchase_unit config with inPurchaseUnit=false passes quantity through unchanged.",
+        "service.receiveStock: ingredient not found -> ServiceError NOT_FOUND.",
+        "service.createIngredient persists purchase_unit + units_per_purchase (mock insert payload asserted).",
+        "actionReceiveStock: receiveStockSchema rejects negative quantity and non-boolean inPurchaseUnit; create/update schemas reject units_per_purchase<=0."
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts (shared with most other stock chantiers - append-only, coordinate merge order)",
+        "src/components/admin/InventoryClient.tsx (large 794-line shared client; high conflict risk with any other UI chantier - edit distinct dialog/form regions)",
+        "src/app/actions/inventory.ts (shared action file - add new export + extend two schemas)",
+        "src/types/inventory.types.ts (shared - extend Ingredient/inputs; conflict risk with any chantier adding fields)",
+        "src/messages/fr.json + src/messages/en.json (i18n - shared, merge-conflict prone)",
+        "package.json + lockfile (new dependency convert-units - single-writer, sequence before parallel chantiers)",
+        "supabase/migrations/ (new timestamped file - order-sensitive vs other chantiers' migrations)",
+        "tests/integration/stock/ (new or extended spec alongside inventory-rpcs.test.ts)"
+      ],
+      "risks": [
+        "New dependency justification is WEAK for the current 6-unit enum: only g<->kg and cl<->L are SI-convertible (2 factors). convert-units may be over-engineering vs a 4-line internal factor map - flag for the subtraction-bias rule. Mitigation: isolate the SI branch inside unit-conversion.ts so the lib can be swapped for a small map without touching callers; get sign-off before adding the dep. convert-units is MIT, ~zero transitive deps, deterministic; real value only if more SI units (mg/mL/oz/lb) arrive with Excel import.",
+        "adjust_ingredient_stock_tx calls assert_tenant_member (auth.uid()). Integration tests running as service_role have null auth.uid(); the membership-asserting ledger write is only reachable if the harness seeds admin_users + a session - keep pure conversion arithmetic in unit tests, keep DB tests to column/constraint/round-trip which run under service_role.",
+        "InventoryClient.tsx is 794 lines (>400 rule already breached pre-existing) - adding fields worsens it; consider extracting the receive/adjust dialog into a subcomponent to avoid growing a protected-by-convention large file.",
+        "Free-text purchase_unit + convert-units can mismatch: if a user types an SI-looking label (e.g. 'g') as purchase_unit for a non-SI base, isSiConvertible must gate strictly and fall back to units_per_purchase to avoid double-converting. Cover with a unit test.",
+        "Rounding drift: base stock is NUMERIC(10,3); convertToBaseUnit must round to 3 decimals before the ledger write so sum(movements) still reconstructs current_stock (the ledger invariant M1/M2 relies on).",
+        "get_stock_status does not expose the new columns - do NOT edit that SECURITY DEFINER RPC; the receive UI must source purchase_unit from getIngredients only (documented decision, prevents an unnecessary protected-RPC change)."
+      ]
+    },
+    {
+      "id": "P7-11",
+      "title": "#11 Import Excel recettes (fiches techniques) + fournisseurs",
+      "dependsOn": [],
+      "effort": "M",
+      "tables": [
+        "No NEW tables. Reuses existing suppliers, ingredients, recipes (recipes already has UNIQUE(menu_item_id, ingredient_id)), menu_items.",
+        "ALTER (additive index only): CREATE INDEX idx_ingredients_tenant_lower_name ON public.ingredients (tenant_id, lower(name)) - deterministic case-insensitive get-or-create of ingredients during recipe import.",
+        "No new columns. No new movement_type values (import moves no stock)."
+      ],
+      "migrationSqlDraft": "-- supabase/migrations/20260701120000_recipe_import_tx.sql\n-- ADDITIVE ONLY. Adds a lookup index + one SECURITY DEFINER RPC for atomic\n-- recipe (fiche technique) Excel import with get-or-create of missing ingredients.\n-- No new tables/columns, no destructive change. Safe to apply before code is wired\n-- (nothing calls the RPC until recipe-import.service.ts ships).\n-- Rollback: DROP FUNCTION public.import_recipes_tx(uuid, jsonb);\n--           DROP INDEX IF EXISTS public.idx_ingredients_tenant_lower_name;\n\nCREATE INDEX IF NOT EXISTS idx_ingredients_tenant_lower_name\n  ON public.ingredients (tenant_id, lower(name));\n\nCREATE OR REPLACE FUNCTION public.import_recipes_tx(\n  p_tenant_id uuid,\n  p_rows jsonb\n)\nRETURNS jsonb\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path TO 'public'\nAS $function$\nDECLARE\n  v_row jsonb;\n  v_menu_item_id uuid;\n  v_ing_name text;\n  v_ing_unit text;\n  v_qty numeric;\n  v_notes text;\n  v_ingredient_id uuid;\n  v_existed boolean;\n  v_recipes_created int := 0;\n  v_recipes_updated int := 0;\n  v_ingredients_created int := 0;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n\n  FOR v_row IN SELECT * FROM jsonb_array_elements(COALESCE(p_rows, '[]'::jsonb))\n  LOOP\n    v_menu_item_id := (v_row->>'menu_item_id')::uuid;\n    v_ing_name     := btrim(v_row->>'ingredient_name');\n    v_ing_unit     := v_row->>'unit';\n    v_qty          := (v_row->>'quantity_needed')::numeric;\n    v_notes        := NULLIF(btrim(COALESCE(v_row->>'notes','')), '');\n\n    -- Defensive re-validation (service pre-validates + pre-resolves menu_item_id).\n    IF v_qty IS NULL OR v_qty <= 0 THEN\n      RAISE EXCEPTION 'INVALID_QUANTITY' USING ERRCODE = '22023';\n    END IF;\n    IF v_ing_unit NOT IN ('kg','L','piece_unit','cl','g','bouteille') THEN\n      -- NB: real enum value for piece uses the accented form already in the\n      -- CHECK constraint from 20260212000001; keep it identical there.\n      RAISE EXCEPTION 'INVALID_UNIT: %', v_ing_unit USING ERRCODE = '22023';\n    END IF;\n    IF NOT EXISTS (SELECT 1 FROM public.menu_items mi\n                   WHERE mi.id = v_menu_item_id AND mi.tenant_id = p_tenant_id) THEN\n      RAISE EXCEPTION 'MENU_ITEM_NOT_FOUND' USING ERRCODE = 'P0002';\n    END IF;\n\n    -- get-or-create ingredient (case-insensitive per tenant, prefer active)\n    SELECT id INTO v_ingredient_id\n    FROM public.ingredients\n    WHERE tenant_id = p_tenant_id AND lower(name) = lower(v_ing_name)\n    ORDER BY is_active DESC, created_at\n    LIMIT 1;\n\n    IF v_ingredient_id IS NULL THEN\n      INSERT INTO public.ingredients (tenant_id, name, unit)\n      VALUES (p_tenant_id, v_ing_name, v_ing_unit)\n      RETURNING id INTO v_ingredient_id;\n      v_ingredients_created := v_ingredients_created + 1;\n    END IF;\n\n    SELECT EXISTS (SELECT 1 FROM public.recipes\n                   WHERE menu_item_id = v_menu_item_id\n                     AND ingredient_id = v_ingredient_id) INTO v_existed;\n\n    -- merge-upsert (recipes.UNIQUE(menu_item_id, ingredient_id))\n    INSERT INTO public.recipes (tenant_id, menu_item_id, ingredient_id, quantity_needed, notes)\n    VALUES (p_tenant_id, v_menu_item_id, v_ingredient_id, v_qty, v_notes)\n    ON CONFLICT (menu_item_id, ingredient_id)\n    DO UPDATE SET quantity_needed = EXCLUDED.quantity_needed, notes = EXCLUDED.notes;\n\n    IF v_existed THEN v_recipes_updated := v_recipes_updated + 1;\n    ELSE v_recipes_created := v_recipes_created + 1;\n    END IF;\n  END LOOP;\n\n  RETURN jsonb_build_object(\n    'recipes_created', v_recipes_created,\n    'recipes_updated', v_recipes_updated,\n    'ingredients_created', v_ingredients_created\n  );\nEND;\n$function$;\n\nREVOKE ALL ON FUNCTION public.import_recipes_tx(uuid, jsonb) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.import_recipes_tx(uuid, jsonb) TO authenticated, service_role;\n\n-- IMPORTANT: in the real file, replace 'piece_unit' with the exact accented\n-- unit literal used by the existing CHECK in 20260212000001_inventory_engine.sql\n-- (the DB enum contains the accented \"piece\" value). Kept ASCII here only to\n-- avoid a non-ASCII literal in this planning artefact.\n-- Suppliers import needs NO migration: dedup done in service by lower(name)\n-- against the existing suppliers table (no unique index added - existing data\n-- may contain duplicate names, so a partial UNIQUE index could fail to create).",
+      "serviceChanges": [
+        "NEW src/lib/excel-parse.ts: extract/host shared low-level parse helpers used by the two new services - normalizeHeader(), mapHeaders(aliases, headers), parseNumericCell(), parseBooleanCell(), readFirstSheetRows(buffer) returning aoa. Leaves the ALREADY 539-line excel-import.service.ts UNMODIFIED (anti-regression + <400-line rule); new services import from this lib instead of duplicating.",
+        "NEW src/services/supplier-import.service.ts: createSupplierImportService(supabase) -> parseExcel(buffer): {rows: ParsedSupplierRow[]; errors}; importFromExcel(tenantId, buffer): SupplierImportResult; generateTemplate(): Buffer. Dedup/upsert per tenant by lower(name): load existing suppliers once, INSERT missing, UPDATE matched (only provided fields), collect row errors. Zod row schema (name required, email format-lenient, phone<=50).",
+        "NEW src/services/recipe-import.service.ts: createRecipeImportService(supabase) -> parseExcel(buffer): {rows: ParsedRecipeRow[]; errors}; importFromExcel(tenantId, buffer): RecipeImportResult; generateTemplate(): Buffer. Pipeline: parse (Zod: dishName+ingredientName required, unit mapped to IngredientUnit enum, quantity>0) -> load menu_items(id,name) once, build lower(name)->id map, flag unknown/ambiguous dish as row errors -> build clean JSONB payload {menu_item_id, ingredient_name, unit, quantity_needed, notes} -> call supabase.rpc('import_recipes_tx', {p_tenant_id, p_rows}) -> map counts + merge parse errors. Maps RPC errors INVALID_UNIT/INVALID_QUANTITY/MENU_ITEM_NOT_FOUND -> ServiceError VALIDATION/NOT_FOUND.",
+        "NEW src/app/api/supplier-import/route.ts: POST (import) + GET (blank template / GET returns generateTemplate buffer). Mirrors api/menu-import: verifyOrigin -> excelImportLimiter.check(ip) (REUSE existing limiter, do NOT touch protected rate-limit.ts) -> getAuthenticatedUserWithTenant -> plan gate canAccessFeature('canAccessInventory') -> role gate (owner/admin/manager via admin_users) -> file size/ext/mime validation -> service call -> revalidateTag(CACHE_TAG_SUPPLIERS if present else none).",
+        "NEW src/app/api/recipe-import/route.ts: POST + GET template. Same guard chain as above; plan gate canAccessInventory; role gate owner/admin/manager; no menuId param (recipes grouped by dish name inside the sheet).",
+        "supplier.service.ts and inventory.service.ts: NOT modified (import services own their batched upsert / delegate to the RPC). order.service.ts, signup.service.ts untouched (protected)."
+      ],
+      "uiComponents": [
+        "NEW src/components/features/inventory/SupplierImportExcel.tsx: 1:1 clone of MenuImportExcel.tsx layout (dashed drop-zone with <input type=file> documented exception, file-size/type guard, result panel with created/updated/skipped counts + per-row error list). No menu Select. shadcn: Button, Label, use-toast. POSTs to /api/supplier-import; GET /api/supplier-import for template download link.",
+        "NEW src/components/features/inventory/RecipeImportExcel.tsx: same drop-zone/preview/error pattern; result shows recipesCreated/recipesUpdated/ingredientsCreated/itemsSkipped. No target-menu Select. shadcn: Button, Label, use-toast. POSTs to /api/recipe-import.",
+        "EDIT src/components/admin/SuppliersClient.tsx: add an 'Importer Excel' Button that opens a shadcn Dialog (DialogContent/DialogHeader/DialogTitle) hosting SupplierImportExcel; onImportComplete refetches suppliers.",
+        "EDIT src/components/admin/RecipesClient.tsx: add 'Importer fiches techniques' Button opening a Dialog hosting RecipeImportExcel; onImportComplete refreshes recipes overview.",
+        "shadcn primitives used: Button, Dialog, DialogContent, DialogHeader, DialogTitle, Label, use-toast, lucide icons (Upload/Download/CheckCircle2/AlertCircle/Loader2). No native elements except the file input (documented exception)."
+      ],
+      "i18nKeys": [
+        "inventoryImport.suppliersTitle",
+        "inventoryImport.recipesTitle",
+        "inventoryImport.downloadTemplate",
+        "inventoryImport.dragAndDrop",
+        "inventoryImport.maxFileSize",
+        "inventoryImport.importExcel",
+        "inventoryImport.importing",
+        "inventoryImport.importError",
+        "inventoryImport.importSuccess",
+        "inventoryImport.suppliersCreated",
+        "inventoryImport.suppliersUpdated",
+        "inventoryImport.suppliersSkipped",
+        "inventoryImport.recipesCreated",
+        "inventoryImport.recipesUpdated",
+        "inventoryImport.ingredientsCreated",
+        "inventoryImport.itemsSkipped",
+        "inventoryImport.errorsFound",
+        "inventoryImport.rowError",
+        "inventoryImport.unknownDish",
+        "inventoryImport.ambiguousDish",
+        "inventoryImport.invalidUnit",
+        "inventoryImport.cancel",
+        "suppliers.importExcel",
+        "recipes.importTechnicalSheets"
+      ],
+      "testDbCases": [
+        "import_recipes_tx: unknown ingredient name -> creates ingredient (ingredients_created=1) with the sheet unit, inserts recipe line (recipes_created=1).",
+        "import_recipes_tx: existing (menu_item, ingredient) line -> ON CONFLICT updates quantity_needed + notes, returns recipes_updated=1, recipes_created=0, ingredients_created=0.",
+        "import_recipes_tx: ingredient name matched case-insensitively ('Tomate' vs existing 'tomate') -> reuses existing id, no dupe created.",
+        "import_recipes_tx: menu_item_id from another tenant -> raises MENU_ITEM_NOT_FOUND (P0002); no rows written (atomic rollback of whole call).",
+        "import_recipes_tx: called as a non-member (assert_tenant_member) -> raises, zero writes.",
+        "import_recipes_tx: quantity_needed<=0 or unit not in enum in any row -> whole call rolls back (all-or-nothing on the clean set).",
+        "supplier import via service against real DB: new names inserted, existing lower(name) matches updated, tenant B suppliers never returned/affected (isolation).",
+        "recipe import service end-to-end (real RPC): 3-row sheet for one dish -> 3 recipe lines + auto-created ingredients; re-import same sheet with changed qty -> updates, no duplicate lines."
+      ],
+      "unitTestCases": [
+        "excel-parse lib: normalizeHeader strips accents/whitespace/case; parseNumericCell handles '12,50', '$12.50', '', null; parseBooleanCell handles Oui/Non/Y/N/1/0/true/false with default.",
+        "supplier-import.service.parseExcel: tolerant FR/EN header mapping (Nom/Supplier Name, Telephone/Phone, Actif/Active); missing required 'name' column -> ServiceError VALIDATION; empty rows skipped; bad email -> row error collected, others still parsed.",
+        "supplier-import.service.importFromExcel (mocked supabase): existing supplier by lower(name) -> update branch; new -> insert branch; counts (created/updated/skipped) correct; parse errors merged into result.",
+        "recipe-import.service.parseExcel: groups rows by dish; unit alias mapping ('pcs'/'piece'/'unite' -> piece enum, 'litre'->'L'); unknown unit -> row error; quantity<=0 -> row error; missing ingredient name -> row error.",
+        "recipe-import.service.importFromExcel (mocked supabase): unknown dish name -> row error, not sent to RPC; ambiguous dish (two menu_items same name) -> row error; rpc payload contains only clean rows; rpc counts mapped to result.",
+        "recipe-import.service: rpc returns INVALID_UNIT/MENU_ITEM_NOT_FOUND error -> mapped to ServiceError with correct code.",
+        "generateTemplate (both services): returns a Buffer with correct header row + example rows, ASCII-safe headers."
+      ],
+      "sharedFilesTouched": [
+        "src/messages/fr.json (add inventoryImport.* namespace - conflict with every chantier adding keys)",
+        "src/messages/en.json (same)",
+        "src/types/inventory.types.ts (add ParsedRecipeRow, ParsedSupplierRow, RecipeImportResult, SupplierImportResult, RecipeImportRpcRow - conflict with other stock chantiers editing this file)",
+        "src/components/admin/SuppliersClient.tsx (add import button+dialog - conflict if a suppliers chantier edits it)",
+        "src/components/admin/RecipesClient.tsx (add import button+dialog - conflict if a recipes/fiches chantier edits it)",
+        "supabase/migrations/ (new timestamped file - must be sequenced after any earlier phase-7 migration; pick a later YYYYMMDDHHMMSS)",
+        "src/services/excel-import.service.ts (ONLY if the program decides to DRY-extract helpers into excel-parse.ts; PRIMARY plan leaves it untouched to avoid menu-import regression - listed as low-risk optional)",
+        "src/lib/rate-limit.ts (PROTECTED - reuse excelImportLimiter READ-ONLY, never modify)"
+      ],
+      "risks": [
+        "excel-import.service.ts is already 539 lines (>400 rule) and is a shared/high-traffic file: DO NOT append supplier/recipe logic to it. Create sibling services + a shared lib instead; leaving the menu importer untouched removes the regression + conflict risk.",
+        "No unique constraint on ingredients.name or suppliers.name: concurrent imports could create duplicate ingredients/suppliers. Mitigated by case-insensitive lower(name) match inside import_recipes_tx and in the supplier service, plus the new lookup index; residual race is low-impact (harmless 0-stock dupe).",
+        "Unit enum contains an accented literal ('piece' accented) already in the DB CHECK from 20260212000001. New parser must map user unit text to that exact literal; the migration/type literals must reuse the existing accented value (not a new ASCII one) or the CHECK/enum will reject inserts. The planning draft used an ASCII placeholder - real file must use the existing literal.",
+        "import_recipes_tx is all-or-nothing on the rows passed to it: the service MUST pre-filter invalid rows (unknown/ambiguous dish, bad unit, qty<=0) and report them as row errors, sending only clean rows, otherwise one bad row rolls back the whole file. This matches the audited stock-engine atomicity pattern.",
+        "Menu-item name ambiguity: two active menu_items with the same name make dish->id resolution ambiguous; must be surfaced as a row error, never silently pick one.",
+        "Recipe import is MERGE (upsert), not REPLACE: re-importing a sheet with a line removed will NOT delete the old line (set_recipe_tx replaces; import_recipes_tx merges by design). Document this so users know import only adds/updates.",
+        "New write routes must enforce plan gate (canAccessInventory) AND role gate (owner/admin/manager) like the suppliers page, or lower-privileged staff could bulk-write ingredients/recipes/suppliers. menu-import only gates plan; inventory writes need the extra role check.",
+        "Migration ordering: this file must sort AFTER any other phase-7 migration touching ingredients/recipes; coordinate timestamp with sibling chantiers to avoid apply-order surprises in test:db snapshot replay."
+      ]
+    },
+    {
+      "id": "phase8-comp-note-ardoise",
+      "title": "Gratuite/comp (#20) + note gerant/ardoise (#19): close orders without a tender (keeps destock, excluded from revenue, distinct comp line) + manager notes + running house-account tab",
+      "dependsOn": [],
+      "tables": [
+        "orders (ALTER, additive): + is_comp boolean NOT NULL DEFAULT false; + comp_reason text; + comped_by uuid FK admin_users(id) ON DELETE SET NULL; + comped_at timestamptz; + comp_amount bigint (minor-unit snapshot of the value offered, for reporting stability); + house_account_id uuid FK house_accounts(id) ON DELETE SET NULL",
+        "orders.orders_payment_status_check widened: ('pending','paid','partial','refunded') -> add 'comp'",
+        "house_accounts (NEW multi-tenant): id uuid PK, tenant_id uuid FK tenants ON DELETE CASCADE, name text NOT NULL (who owes), description text (why unpaid), status text CHECK('open','settled') DEFAULT 'open', created_by uuid FK admin_users, created_at timestamptz DEFAULT now(), settled_at timestamptz, settled_by uuid FK admin_users; idx (tenant_id), idx (tenant_id,status)",
+        "order_notes (NEW multi-tenant, append-only audit): id uuid PK, tenant_id uuid FK tenants ON DELETE CASCADE, order_id uuid FK orders ON DELETE CASCADE, note text NOT NULL, created_by uuid FK admin_users (who left it), created_at timestamptz DEFAULT now(); idx (tenant_id,order_id); NO update/delete policy (immutable trail)",
+        "New SECDEF RPCs: get_daily_comps(p_tenant_id,p_start,p_end) -> (day date, comp_total bigint, comp_count bigint) over is_comp orders; get_house_account_balances(p_tenant_id) -> (account_id, name, status, open_orders bigint, outstanding bigint = SUM(due - ledger net) over attached non-paid/non-comp/non-cancelled orders)"
+      ],
+      "migrationSqlDraft": "-- supabase/migrations/20260702000000_comp_order_notes_house_account.sql\n-- Phase 8: comp/offert (#20) + manager note / house account ardoise (#19).\n-- Additive only (new columns, new payment_status value, 2 tables, 2 SECDEF RPCs).\n-- APPLY TO PROD BACKUP-FIRST. Do NOT redefine assert_tenant_member /\n-- get_my_tenant_ids_array here - only reference them.\n\n-- 1. orders: comp columns + house account link (additive)\nALTER TABLE public.orders\n  ADD COLUMN IF NOT EXISTS is_comp      boolean NOT NULL DEFAULT false,\n  ADD COLUMN IF NOT EXISTS comp_reason  text,\n  ADD COLUMN IF NOT EXISTS comped_by    uuid REFERENCES public.admin_users(id) ON DELETE SET NULL,\n  ADD COLUMN IF NOT EXISTS comped_at    timestamptz,\n  ADD COLUMN IF NOT EXISTS comp_amount  bigint,\n  ADD COLUMN IF NOT EXISTS house_account_id uuid;\n\n-- 2. widen payment_status to include 'comp' (offered orders are closed but NOT paid,\n--    so they stay excluded from get_daily_revenue/get_order_summary/get_top_items\n--    which all filter payment_status='paid')\nALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_payment_status_check;\nALTER TABLE public.orders\n  ADD CONSTRAINT orders_payment_status_check\n  CHECK (payment_status IN ('pending','paid','partial','refunded','comp'));\n\n-- 3. house_accounts (ardoise / running tab)\nCREATE TABLE IF NOT EXISTS public.house_accounts (\n  id          uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),\n  tenant_id   uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,\n  name        text NOT NULL,\n  description text,\n  status      text NOT NULL DEFAULT 'open' CHECK (status IN ('open','settled')),\n  created_by  uuid REFERENCES public.admin_users(id) ON DELETE SET NULL,\n  created_at  timestamptz NOT NULL DEFAULT now(),\n  settled_at  timestamptz,\n  settled_by  uuid REFERENCES public.admin_users(id) ON DELETE SET NULL\n);\nCREATE INDEX IF NOT EXISTS idx_house_accounts_tenant        ON public.house_accounts (tenant_id);\nCREATE INDEX IF NOT EXISTS idx_house_accounts_tenant_status ON public.house_accounts (tenant_id, status);\n\n-- FK from orders now that house_accounts exists\nALTER TABLE public.orders\n  DROP CONSTRAINT IF EXISTS orders_house_account_id_fkey,\n  ADD CONSTRAINT orders_house_account_id_fkey\n    FOREIGN KEY (house_account_id) REFERENCES public.house_accounts(id) ON DELETE SET NULL;\nCREATE INDEX IF NOT EXISTS idx_orders_house_account\n  ON public.orders (tenant_id, house_account_id) WHERE house_account_id IS NOT NULL;\n\nALTER TABLE public.house_accounts ENABLE ROW LEVEL SECURITY;\nDROP POLICY IF EXISTS \"house_accounts_tenant_select\" ON public.house_accounts;\nCREATE POLICY \"house_accounts_tenant_select\" ON public.house_accounts\n  FOR SELECT TO authenticated USING (tenant_id = ANY (public.get_my_tenant_ids_array()));\nDROP POLICY IF EXISTS \"house_accounts_tenant_insert\" ON public.house_accounts;\nCREATE POLICY \"house_accounts_tenant_insert\" ON public.house_accounts\n  FOR INSERT TO authenticated WITH CHECK (tenant_id = ANY (public.get_my_tenant_ids_array()));\nDROP POLICY IF EXISTS \"house_accounts_tenant_update\" ON public.house_accounts;\nCREATE POLICY \"house_accounts_tenant_update\" ON public.house_accounts\n  FOR UPDATE TO authenticated\n  USING (tenant_id = ANY (public.get_my_tenant_ids_array()))\n  WITH CHECK (tenant_id = ANY (public.get_my_tenant_ids_array()));\nDROP POLICY IF EXISTS \"house_accounts_tenant_delete\" ON public.house_accounts;\nCREATE POLICY \"house_accounts_tenant_delete\" ON public.house_accounts\n  FOR DELETE TO authenticated USING (tenant_id = ANY (public.get_my_tenant_ids_array()));\nGRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.house_accounts TO authenticated;\nGRANT ALL ON TABLE public.house_accounts TO service_role;\n\n-- 4. order_notes (manager annotations, append-only, records who left the note)\nCREATE TABLE IF NOT EXISTS public.order_notes (\n  id         uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),\n  tenant_id  uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,\n  order_id   uuid NOT NULL REFERENCES public.orders(id)  ON DELETE CASCADE,\n  note       text NOT NULL,\n  created_by uuid REFERENCES public.admin_users(id) ON DELETE SET NULL,\n  created_at timestamptz NOT NULL DEFAULT now()\n);\nCREATE INDEX IF NOT EXISTS idx_order_notes_tenant_order ON public.order_notes (tenant_id, order_id);\nALTER TABLE public.order_notes ENABLE ROW LEVEL SECURITY;\n-- append-only: SELECT + INSERT only (no UPDATE/DELETE -> audit trail preserved)\nDROP POLICY IF EXISTS \"order_notes_tenant_select\" ON public.order_notes;\nCREATE POLICY \"order_notes_tenant_select\" ON public.order_notes\n  FOR SELECT TO authenticated USING (tenant_id = ANY (public.get_my_tenant_ids_array()));\nDROP POLICY IF EXISTS \"order_notes_tenant_insert\" ON public.order_notes;\nCREATE POLICY \"order_notes_tenant_insert\" ON public.order_notes\n  FOR INSERT TO authenticated WITH CHECK (tenant_id = ANY (public.get_my_tenant_ids_array()));\nGRANT SELECT, INSERT ON TABLE public.order_notes TO authenticated;\nGRANT ALL ON TABLE public.order_notes TO service_role;\n\n-- 5. RPC: daily comps report (offered value, kept OUT of revenue)\nCREATE OR REPLACE FUNCTION public.get_daily_comps(\n  p_tenant_id uuid, p_start_date timestamptz, p_end_date timestamptz\n) RETURNS TABLE (day date, comp_total bigint, comp_count bigint)\nLANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT DATE(o.comped_at) AS day,\n         COALESCE(SUM(o.comp_amount),0)::bigint AS comp_total,\n         COUNT(o.id)::bigint AS comp_count\n  FROM orders o\n  WHERE o.tenant_id = p_tenant_id\n    AND o.is_comp = true\n    AND o.comped_at >= p_start_date AND o.comped_at <= p_end_date\n  GROUP BY DATE(o.comped_at)\n  ORDER BY day ASC;\nEND; $$;\nREVOKE ALL ON FUNCTION public.get_daily_comps(uuid,timestamptz,timestamptz) FROM PUBLIC;\nREVOKE ALL ON FUNCTION public.get_daily_comps(uuid,timestamptz,timestamptz) FROM anon;\nGRANT EXECUTE ON FUNCTION public.get_daily_comps(uuid,timestamptz,timestamptz) TO authenticated, service_role;\n\n-- 6. RPC: house account outstanding balances (running tab: due - ledger net)\nCREATE OR REPLACE FUNCTION public.get_house_account_balances(p_tenant_id uuid)\nRETURNS TABLE (account_id uuid, name text, status text, open_orders bigint, outstanding bigint)\nLANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT ha.id, ha.name, ha.status,\n    COUNT(o.id) FILTER (\n      WHERE o.payment_status NOT IN ('paid','comp') AND o.status <> 'cancelled'\n    )::bigint AS open_orders,\n    COALESCE(SUM(\n      CASE WHEN o.payment_status NOT IN ('paid','comp') AND o.status <> 'cancelled'\n        THEN (o.total + COALESCE(o.tip_amount,0))\n             - COALESCE((SELECT SUM(CASE WHEN p.status='refunded' THEN -p.amount ELSE p.amount END)\n                         FROM payments p WHERE p.order_id = o.id), 0)\n        ELSE 0 END), 0)::bigint AS outstanding\n  FROM house_accounts ha\n  LEFT JOIN orders o ON o.house_account_id = ha.id AND o.tenant_id = ha.tenant_id\n  WHERE ha.tenant_id = p_tenant_id\n  GROUP BY ha.id, ha.name, ha.status, ha.created_at\n  ORDER BY ha.created_at DESC;\nEND; $$;\nREVOKE ALL ON FUNCTION public.get_house_account_balances(uuid) FROM PUBLIC;\nREVOKE ALL ON FUNCTION public.get_house_account_balances(uuid) FROM anon;\nGRANT EXECUTE ON FUNCTION public.get_house_account_balances(uuid) TO authenticated, service_role;",
+      "serviceChanges": [
+        "src/services/payment.service.ts (EXTEND - NOT protected): add compOrder(orderId, tenantId, { reason, compedBy }): fetchOrder; throw CONFLICT if status==='cancelled' or payment_status==='paid' (use refund) ; idempotent no-op if already payment_status==='comp'; UPDATE orders SET payment_status='comp', is_comp=true, comp_reason, comped_by, comped_at=now(), comp_amount=dueFor(order) WHERE id/tenant AND payment_status='pending' (optimistic guard); best-effort closeSessionIfFullySettled; returns getSummary. Also patch summarize()/recompute so an order whose stored payment_status==='comp' surfaces paymentStatus:'comp' (short-circuit before deriveStatus, which would otherwise mislabel a comp order 'pending'). NEVER modify order.service.ts - comp is done here, destock already ran at order creation so nothing to re-trigger.",
+        "src/services/order-annotation.service.ts (NEW): createOrderAnnotationService(supabase) -> addOrderNote(orderId, tenantId, { note, createdBy }); listOrderNotes(orderId, tenantId) [tenant+order scoped, order created_at asc]; createHouseAccount(tenantId, { name, description, createdBy }); listHouseAccountsWithBalances(tenantId) [calls rpc get_house_account_balances]; attachOrderToHouseAccount(orderId, tenantId, accountId) [verify account.tenant_id, UPDATE orders.house_account_id scoped]; detachOrderFromHouseAccount(orderId, tenantId); settleHouseAccount(accountId, tenantId, { settledBy }) [UPDATE status='settled', settled_at, settled_by]. All tenant-scoped, throws ServiceError.",
+        "src/app/actions/orders.ts (EXTEND): actionCompOrder(tenantId, orderId, reason) gated to ['owner','admin','manager'] (comp is a manager privilege - NOT plain 'server'); createPaymentService.compOrder + createAuditService.log({action:'update',entityType:'order',entityId,metadata:{comp:true,reason}}). actionAddOrderNote(tenantId, orderId, note) ['owner','admin','manager','server']. actionListOrderNotes(tenantId, orderId).",
+        "src/app/actions/house-accounts.ts (NEW): actionCreateHouseAccount, actionListHouseAccounts, actionAttachOrderToHouseAccount, actionDetachOrder, actionSettleHouseAccount - all deriving tenant via getAuthenticatedUserForTenant, adminUserId for created_by/settled_by, manager+ gating for create/settle, ServiceError->message mapping like existing actions.",
+        "src/lib/validations/house-account.schema.ts (NEW) + comp/note schemas in orders (compOrderSchema {tenantId uuid, orderId uuid, reason string min1 max500}, orderNoteSchema {..., note min1 max1000}, houseAccountSchema {name min1 max120, description max500 optional}).",
+        "src/types/inventory.types.ts / src/types/admin.types.ts: no inventory type change; PaymentStatus union widened (see sharedFilesTouched)."
+      ],
+      "uiComponents": [
+        "src/components/admin/OrderPaymentPanel.tsx (EDIT): (1) 'Offrir la commande' Button (manager) opening a shadcn Dialog with a Textarea for comp_reason -> actionCompOrder, then refetch summary + onUpdate; when summary.paymentStatus==='comp' render a Badge 'Offert' and HIDE the settle/refund inputs. (2) Manager note block: Textarea + 'Ajouter' Button -> actionAddOrderNote, and a list of notes (note + who + date) from actionListOrderNotes via useQuery. (3) 'Mettre sur l'ardoise' Select of open house accounts + inline create -> actionAttachOrderToHouseAccount. Uses Button/Input/Textarea/Dialog/Select/Badge.",
+        "src/components/admin/PaymentModal.tsx (EDIT, ORDER mode only): add a secondary 'Offrir' Button next to Validate that opens a small Dialog (reason Textarea) -> actionCompOrder(order.tenant_id, order.id, reason) then onSuccess(); plus an optional quick note field wired to actionAddOrderNote. Gate the comp button visibility on a manager-capable prop passed by the caller (do not expose to plain servers). shadcn Button/Textarea/Dialog.",
+        "src/components/admin/HouseAccountsClient.tsx (NEW): shadcn Table/Card listing open tabs from listHouseAccountsWithBalances (name=who owes, description=why, open_orders, outstanding via formatCurrencyMinor), 'Nouvelle ardoise' Dialog (name+description), per-row 'Solder' (settle) Button with confirm AlertDialog, responsive card view on mobile. Uses Table/Card/Dialog/AlertDialog/Button/Input/Badge.",
+        "src/app/sites/[site]/admin/orders/house-accounts/page.tsx (NEW route, Server Component): derive tenant, feature-gate, render HouseAccountsClient; add a link/tab from the orders list. h-full (no h-dvh/h-screen), scroll only via main-content.",
+        "OrdersClient.tsx / OrderDetails.tsx (light EDIT): show an 'Offert' Badge and a house-account indicator on comped / on-tab orders in the orders list/detail."
+      ],
+      "i18nKeys": [
+        "payment.compOrder",
+        "payment.compReason",
+        "payment.compReasonPlaceholder",
+        "payment.compConfirm",
+        "payment.comped",
+        "payment.compedBadge",
+        "payment.compSuccess",
+        "payment.compError",
+        "payment.cannotCompPaid",
+        "orderNote.title",
+        "orderNote.add",
+        "orderNote.placeholder",
+        "orderNote.empty",
+        "orderNote.by",
+        "orderNote.added",
+        "houseAccount.title",
+        "houseAccount.new",
+        "houseAccount.name",
+        "houseAccount.namePlaceholder",
+        "houseAccount.description",
+        "houseAccount.descriptionPlaceholder",
+        "houseAccount.attach",
+        "houseAccount.detach",
+        "houseAccount.openOrders",
+        "houseAccount.outstanding",
+        "houseAccount.settle",
+        "houseAccount.settleConfirm",
+        "houseAccount.settled",
+        "houseAccount.statusOpen",
+        "houseAccount.statusSettled",
+        "houseAccount.empty",
+        "houseAccount.created",
+        "houseAccount.error"
+      ],
+      "testDbCases": [
+        "comp keeps destock: seed Pro tenant + ingredient + recipe + menu item, create order via create_order_with_items (destock runs), call compOrder -> assert orders.payment_status='comp', is_comp=true, comp_reason/comped_by/comped_at/comp_amount set; assert stock_movements 'order_destock' rows for the order are UNCHANGED (ingredients stay consumed).",
+        "comp excluded from revenue, present in comps report: after comp, get_daily_revenue/get_order_summary return 0 for that order (payment_status<>'paid'); get_daily_comps returns comp_total=order due and comp_count=1 for the comped_at day.",
+        "comp guards: compOrder on a payment_status='paid' order raises CONFLICT; on 'cancelled' raises CONFLICT; re-calling compOrder on an already-comp order is an idempotent no-op (row unchanged, no second audit side-effect).",
+        "house account balance = due - net: create account, attach 2 pending orders (due 2500 + 4000), record a partial 1000 tender via payments on order#1, get_house_account_balances returns open_orders=2, outstanding = (2500-1000)+4000 = 5500; mark order#2 paid -> outstanding drops to 1500, open_orders=1.",
+        "settle house account: settleHouseAccount sets status='settled', settled_at, settled_by; a settled account still returns its (now 0 or residual) balance row.",
+        "RLS isolation: tenant B (get_my_tenant_ids_array) cannot SELECT tenant A order_notes or house_accounts; get_house_account_balances(tenantA) called as tenant B fails assert_tenant_member.",
+        "order_notes append-only: authenticated UPDATE/DELETE on order_notes is denied by RLS (no policy); INSERT + SELECT succeed within tenant."
+      ],
+      "unitTestCases": [
+        "payment.service compOrder: sets payment_status='comp' + is_comp + comp_reason + comped_by + comped_at + comp_amount=dueFor(order) via mocked supabase update chain scoped to tenant_id AND payment_status='pending'.",
+        "payment.service compOrder throws ServiceError CONFLICT when order.payment_status==='paid' and when status==='cancelled'; returns summary (no update) when already 'comp'.",
+        "payment.service summarize/getSummary: when fetched order.payment_status==='comp', PaymentSummary.paymentStatus==='comp' (short-circuit, not deriveStatus's 'pending').",
+        "payment.service compOrder is tenant-scoped: update called with .eq('tenant_id', tenantId).",
+        "order-annotation.service addOrderNote inserts { tenant_id, order_id, note, created_by } and listOrderNotes filters by tenant_id+order_id ordered by created_at.",
+        "order-annotation.service attachOrderToHouseAccount verifies the account belongs to the tenant before UPDATE and scopes the orders update by tenant_id; settleHouseAccount sets status='settled'+settled_by+settled_at.",
+        "Zod: compOrderSchema rejects empty/>500 reason; orderNoteSchema rejects empty/>1000 note; houseAccountSchema rejects empty name and >120 chars.",
+        "actions: actionCompOrder rejects role 'server' (manager+ only) and maps AuthError/ServiceError to { error }."
+      ],
+      "sharedFilesTouched": [
+        "src/types/admin.types.ts (PaymentStatus union widened to add 'comp' - HIGH conflict: any chantier reading/rendering payment_status)",
+        "src/services/payment.service.ts (extended - conflict with any payment/settlement chantier)",
+        "src/app/actions/orders.ts (extended - high-churn shared file)",
+        "src/components/admin/PaymentModal.tsx (edited - shared with POS chantiers)",
+        "src/components/admin/OrderPaymentPanel.tsx (edited)",
+        "src/components/admin/OrdersClient.tsx + OrderDetails.tsx (light badge edits - shared with orders-list chantiers)",
+        "src/messages/fr-FR.json + src/messages/en-US.json (always shared)",
+        "src/types/database.generated.ts (regenerated after migration - shared)",
+        "supabase/migrations/* (new file; ALTER public.orders touches a table many chantiers alter - sequence so only one migration per orders-ALTER lands at a time)",
+        "src/hooks/usePosUnpaidOrders.ts (verify: filters payment_status='pending' so comp orders drop off automatically - read-only check, no edit expected)"
+      ],
+      "effort": "L",
+      "risks": [
+        "PaymentStatus type widening (+'comp') ripples to every switch/badge over payment_status; missing a case leaves comp orders rendered as 'pending'. Grep all consumers and add the 'comp' branch.",
+        "deriveStatus in payment.service would relabel a comp order 'pending' on any recompute; comp MUST never go through recordTender/refund and summarize must short-circuit on stored 'comp' - otherwise a comp silently reverts.",
+        "Do NOT record the comp in the payments ledger: summarize() maps any non-'refunded' status to 'completed', so a 'comp' ledger row would inflate net and revenue. Comp is columns-only + get_daily_comps.",
+        "Revenue exclusion depends on the paid-only predicate in get_daily_revenue/get_order_summary/get_top_items; a future report added elsewhere that counts non-cancelled orders would leak comps into revenue - keep the payment_status='paid' contract.",
+        "Migration ordering vs other orders-ALTER chantiers: two migrations both dropping/recreating orders_payment_status_check can clobber each other; land serially and re-add all values.",
+        "House-account outstanding uses a correlated subquery over payments per order; on large ledgers verify with EXPLAIN and lean on idx_payments_order (already exists).",
+        "comped_by/created_by/settled_by are admin_users.id (from getAuthenticatedUserForTenant.adminUserId), NOT auth user id - reuse the same id-space as payments.created_by to avoid the historical FK mismatch bug.",
+        "PaymentModal comp button must be gated to manager-capable callers; exposing comp to plain 'server' role would let staff zero out checks (fraud surface).",
+        "test:db harness only loads migrations after its schema marker + runs tests/integration/stock/*.test.ts; place the new migration after the marker and the integration file in that dir or it won't be exercised."
+      ]
+    },
+    {
+      "id": "chantier-17-stock-per-venue-transfers",
+      "title": "#17 Stock par etablissement + transferts inter-venues (STRETCH, phase 9, demand-gated)",
+      "dependsOn": ["ledger"],
+      "tables": [
+        "ingredients: ADD COLUMN venue_id UUID NULL REFERENCES venues(id) ON DELETE CASCADE (NULL = stock du venue principal du tenant; evite un backfill massif)",
+        "stock_movements: ADD COLUMN venue_id UUID NULL REFERENCES venues(id) ON DELETE SET NULL (localise chaque mouvement; NULL = venue principal)",
+        "stock_movements.movement_type CHECK: ajout des valeurs 'transfer_out' et 'transfer_in' (additif, meme pattern que 'order_restock' en 20260629120000)",
+        "stock_transfers (NOUVELLE, optionnelle - entete de transfert): id, tenant_id, from_venue_id, to_venue_id, created_by, notes, created_at; regroupe les paires transfer_out/transfer_in via reference_id",
+        "PAS de nouvelle table de stock-par-venue dans ce sketch: on reutilise ingredients.venue_id. VOIR risks pour la collision recipes<->venue"
+      ],
+      "migrationSqlDraft": "-- Migration ADDITIVE uniquement. Aucun DROP. venue_id NULLABLE = pas de backfill obligatoire.\n-- Depend de 'ledger' (20260629120000): reutilise assert_tenant_member + convention reference_id.\n\n-- 1. Localisation du stock (nullable -> NULL == venue principal du tenant, zero backfill).\nALTER TABLE public.ingredients\n  ADD COLUMN IF NOT EXISTS venue_id UUID REFERENCES public.venues(id) ON DELETE CASCADE;\nALTER TABLE public.stock_movements\n  ADD COLUMN IF NOT EXISTS venue_id UUID REFERENCES public.venues(id) ON DELETE SET NULL;\n\nCREATE INDEX IF NOT EXISTS idx_ingredients_venue ON public.ingredients(tenant_id, venue_id);\nCREATE INDEX IF NOT EXISTS idx_stock_movements_venue ON public.stock_movements(tenant_id, venue_id);\n\n-- 2. Nouveaux types de mouvement pour les transferts (additif au CHECK existant).\nALTER TABLE public.stock_movements\n  DROP CONSTRAINT IF EXISTS stock_movements_movement_type_check;\nALTER TABLE public.stock_movements\n  ADD CONSTRAINT stock_movements_movement_type_check\n  CHECK (movement_type IN (\n    'order_destock','order_restock','manual_add','manual_remove',\n    'adjustment','opening','transfer_out','transfer_in'\n  ));\n\n-- 3. Entete de transfert (optionnel mais recommande pour l'affichage groupe).\nCREATE TABLE IF NOT EXISTS public.stock_transfers (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,\n  from_venue_id UUID NOT NULL REFERENCES public.venues(id) ON DELETE CASCADE,\n  to_venue_id UUID NOT NULL REFERENCES public.venues(id) ON DELETE CASCADE,\n  created_by UUID,\n  notes TEXT,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  CHECK (from_venue_id <> to_venue_id)\n);\nCREATE INDEX IF NOT EXISTS idx_stock_transfers_tenant ON public.stock_transfers(tenant_id);\n\nALTER TABLE public.stock_transfers ENABLE ROW LEVEL SECURITY;\nCREATE POLICY stock_transfers_select ON public.stock_transfers FOR SELECT\n  USING (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\nCREATE POLICY stock_transfers_insert ON public.stock_transfers FOR INSERT\n  WITH CHECK (tenant_id IN (SELECT au.tenant_id FROM public.admin_users au WHERE au.user_id = auth.uid()));\n\n-- 4. RPC transfert atomique: paire transfer_out (source) / transfer_in (destination).\n--    SECURITY DEFINER + assert_tenant_member + verrou source FOR UPDATE (anti double-clic).\nCREATE OR REPLACE FUNCTION public.transfer_stock_between_venues(\n  p_tenant_id uuid, p_ingredient_id uuid,\n  p_from_venue_id uuid, p_to_venue_id uuid,\n  p_quantity numeric, p_notes text DEFAULT NULL, p_created_by uuid DEFAULT NULL\n) RETURNS uuid\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $fn$\nDECLARE v_from_stock NUMERIC(10,3); v_dest_id UUID; v_transfer_id UUID;\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  IF p_quantity IS NULL OR p_quantity <= 0 THEN\n    RAISE EXCEPTION 'INVALID_QUANTITY' USING ERRCODE = '22023'; END IF;\n  IF p_from_venue_id = p_to_venue_id THEN\n    RAISE EXCEPTION 'SAME_VENUE' USING ERRCODE = '22023'; END IF;\n  -- Les deux venues doivent appartenir au tenant.\n  IF (SELECT count(*) FROM public.venues v\n      WHERE v.id IN (p_from_venue_id, p_to_venue_id) AND v.tenant_id = p_tenant_id) <> 2 THEN\n    RAISE EXCEPTION 'INVALID_VENUE' USING ERRCODE = '22023'; END IF;\n\n  -- Verrou + controle de solde sur la ligne ingredient de la venue source.\n  SELECT current_stock INTO v_from_stock FROM public.ingredients\n  WHERE tenant_id = p_tenant_id AND id = p_ingredient_id AND venue_id IS NOT DISTINCT FROM p_from_venue_id\n  FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'INGREDIENT_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;\n  IF v_from_stock < p_quantity THEN RAISE EXCEPTION 'INSUFFICIENT_STOCK' USING ERRCODE = '22023'; END IF;\n\n  -- Ligne ingredient miroir cote destination (creee a la volee si absente).\n  SELECT id INTO v_dest_id FROM public.ingredients\n  WHERE tenant_id = p_tenant_id AND venue_id IS NOT DISTINCT FROM p_to_venue_id\n    AND name = (SELECT name FROM public.ingredients WHERE id = p_ingredient_id);\n  IF v_dest_id IS NULL THEN\n    INSERT INTO public.ingredients (tenant_id, venue_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category)\n    SELECT tenant_id, p_to_venue_id, name, unit, 0, min_stock_alert, cost_per_unit, category\n    FROM public.ingredients WHERE id = p_ingredient_id RETURNING id INTO v_dest_id;\n  END IF;\n\n  INSERT INTO public.stock_transfers (tenant_id, from_venue_id, to_venue_id, created_by, notes)\n  VALUES (p_tenant_id, p_from_venue_id, p_to_venue_id, p_created_by, p_notes) RETURNING id INTO v_transfer_id;\n\n  UPDATE public.ingredients SET current_stock = current_stock - p_quantity, updated_at = now() WHERE id = p_ingredient_id;\n  UPDATE public.ingredients SET current_stock = current_stock + p_quantity, updated_at = now() WHERE id = v_dest_id;\n\n  INSERT INTO public.stock_movements (tenant_id, ingredient_id, venue_id, movement_type, quantity, reference_id, notes, created_by)\n  VALUES (p_tenant_id, p_ingredient_id, p_from_venue_id, 'transfer_out', -p_quantity, v_transfer_id, p_notes, p_created_by),\n         (p_tenant_id, v_dest_id,      p_to_venue_id,   'transfer_in',   p_quantity, v_transfer_id, p_notes, p_created_by);\n  RETURN v_transfer_id;\nEND; $fn$;\nREVOKE ALL ON FUNCTION public.transfer_stock_between_venues(uuid,uuid,uuid,uuid,numeric,text,uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.transfer_stock_between_venues(uuid,uuid,uuid,uuid,numeric,text,uuid) TO authenticated, service_role;\n\n-- 5. Vue consolidee multi-venues (agregat + detail par venue).\nCREATE OR REPLACE FUNCTION public.get_stock_status_by_venue(p_tenant_id uuid)\nRETURNS TABLE (venue_id uuid, venue_name text, ingredient_name text, unit text,\n               current_stock numeric, min_stock_alert numeric, is_low boolean)\nLANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $fn$\nBEGIN\n  PERFORM public.assert_tenant_member(p_tenant_id);\n  RETURN QUERY\n  SELECT i.venue_id, v.name, i.name, i.unit, i.current_stock, i.min_stock_alert,\n         (i.current_stock <= i.min_stock_alert AND i.min_stock_alert > 0)\n  FROM public.ingredients i\n  LEFT JOIN public.venues v ON v.id = i.venue_id AND v.tenant_id = p_tenant_id\n  WHERE i.tenant_id = p_tenant_id AND i.is_active = true\n  ORDER BY v.name NULLS FIRST, i.name;\nEND; $fn$;\nREVOKE ALL ON FUNCTION public.get_stock_status_by_venue(uuid) FROM PUBLIC, anon;\nGRANT EXECUTE ON FUNCTION public.get_stock_status_by_venue(uuid) TO authenticated, service_role;",
+      "serviceChanges": [
+        "inventory.service.ts (NON protege - extend): ajout getStockStatusByVenue(tenantId) -> RPC get_stock_status_by_venue",
+        "inventory.service.ts: ajout transferStock(tenantId, {ingredientId, fromVenueId, toVenueId, quantity, notes}) -> RPC transfer_stock_between_venues, mappe INSUFFICIENT_STOCK->CONFLICT, INVALID_VENUE/SAME_VENUE/INVALID_QUANTITY->VALIDATION, INGREDIENT_NOT_FOUND->NOT_FOUND (memes patterns que adjustStock existant l.242-250)",
+        "inventory.service.ts: getIngredients/createIngredient acceptent un venueId optionnel (filtre .eq('venue_id', venueId) ou .is('venue_id', null) pour le venue principal); getStockMovements accepte un filtre venueId",
+        "NOUVEAU venue.service.ts OU reutilisation: methode listVenues(tenantId) (SELECT id,name,slug FROM venues WHERE tenant_id) pour alimenter les selecteurs - order.service.ts reste INTOUCHE",
+        "app/actions/inventory.ts: nouvelle Server Action actionTransferStock (auth getUser -> derive tenant via admin_users -> Zod -> service). Le venue_id/venue source/dest ne viennent JAMAIS du client sans re-validation d'appartenance au tenant (faite dans le RPC)"
+      ],
+      "uiComponents": [
+        "InventoryClient.tsx (partage): ajout d'un Select (shadcn Select) de venue en tete de page quand le tenant a >1 venue, sinon composant invisible (retro-compatibilite mono-venue)",
+        "NOUVEAU StockTransferDialog.tsx: Dialog shadcn (Dialog/DialogContent/DialogHeader), Select ingredient, Select venue source, Select venue destination, Input quantite (NUMERIC), Textarea notes, Button confirmer. Empeche source==destination cote client (garde miroir du CHECK DB)",
+        "NOUVEAU MultiVenueStockView.tsx: Table shadcn groupee par venue (venue_name en section), colonnes ingredient/stock/seuil/alerte, badge is_low. Alimente par getStockStatusByVenue",
+        "StockHistoryClient.tsx (partage): colonne/badge venue + libelles transfer_out/transfer_in (via MOVEMENT_TYPE_LABELS etendu)",
+        "Route: nouvel onglet 'Par etablissement' dans le dashboard stock admin, visible seulement si tenant multi-venue (gate produit)"
+      ],
+      "i18nKeys": [
+        "stock.venue.selectorLabel",
+        "stock.venue.allVenues",
+        "stock.venue.primaryVenue",
+        "stock.transfer.title",
+        "stock.transfer.cta",
+        "stock.transfer.fromVenue",
+        "stock.transfer.toVenue",
+        "stock.transfer.ingredient",
+        "stock.transfer.quantity",
+        "stock.transfer.notes",
+        "stock.transfer.confirm",
+        "stock.transfer.success",
+        "stock.transfer.errorInsufficient",
+        "stock.transfer.errorSameVenue",
+        "stock.transfer.errorInvalidVenue",
+        "stock.movementType.transferOut",
+        "stock.movementType.transferIn",
+        "stock.multiVenue.tabLabel",
+        "stock.multiVenue.emptyState"
+      ],
+      "testDbCases": [
+        "tests/integration/stock/transfer.test.ts: seed 1 tenant + 2 venues + 1 ingredient@venueA stock=10 -> transfer_stock_between_venues(qty=4) -> venueA=6, venueB=4, 1 stock_transfers row, 2 stock_movements (transfer_out -4, transfer_in +4) referencant le meme reference_id",
+        "transfer INSUFFICIENT_STOCK: stock=3, transfer qty=5 -> RPC raise 22023, aucun mouvement ecrit, stocks inchanges (atomicite)",
+        "transfer cree la ligne ingredient miroir cote destination si absente (meme name/unit/cost, stock initial 0 puis +qty)",
+        "isolation cross-tenant: RPC avec un venue appartenant a un autre tenant -> INVALID_VENUE (assert_tenant_member + verif venues.tenant_id)",
+        "grants: anon ne peut PAS EXECUTE transfer_stock_between_venues ni get_stock_status_by_venue (REVOKE verifie)",
+        "ledger reconciliation: SUM(quantity) des movements du reference_id de transfert == 0 (conservation de masse inter-venues)",
+        "get_stock_status_by_venue retourne les lignes venue_id NULL (venue principal) ET les lignes par venue, is_low correct"
+      ],
+      "unitTestCases": [
+        "inventory.service transferStock: appelle rpc('transfer_stock_between_venues') avec les bons params, retourne l'id de transfert",
+        "transferStock mappe l'erreur INSUFFICIENT_STOCK -> ServiceError code CONFLICT",
+        "transferStock mappe SAME_VENUE/INVALID_VENUE/INVALID_QUANTITY -> VALIDATION, INGREDIENT_NOT_FOUND -> NOT_FOUND",
+        "getStockStatusByVenue: rpc appele avec p_tenant_id, retourne [] si data null",
+        "getIngredients avec venueId filtre .eq('venue_id', venueId); sans venueId conserve le comportement actuel (retro-compat)",
+        "Zod transferStockSchema: rejette quantity<=0, from==to, uuid invalides; accepte notes optionnelle",
+        "MOVEMENT_TYPE_LABELS contient transfer_out/transfer_in (evite un rendu 'undefined')"
+      ],
+      "sharedFilesTouched": [
+        "src/services/inventory.service.ts",
+        "src/types/inventory.types.ts (ajout MovementType 'transfer_out'|'transfer_in', venue_id? sur Ingredient/StockMovement, MOVEMENT_TYPE_LABELS, VenueStockStatus)",
+        "src/components/admin/InventoryClient.tsx",
+        "src/components/admin/StockHistoryClient.tsx",
+        "src/app/actions/inventory.ts",
+        "src/lib/validations/inventory.schema.ts (ou stock.schema.ts) - schema transfert",
+        "src/messages/fr.json + src/messages/en.json",
+        "supabase/migrations/* (nouvelle migration - conflit d'ordre potentiel avec les autres chantiers stock)"
+      ],
+      "effort": "L",
+      "risks": [
+        "POURQUOI DERNIER + DEMAND-GATED: aucun tenant multi-venue n'utilise aujourd'hui de stock par venue (ingredients.venue_id n'existe pas). Complexite reelle non amortie tant que la demande n'est pas validee. Doit rester une esquisse.",
+        "COLLISION MODELE (majeure): recipes.ingredient_id + destock_order/restock_order (20260212000001 + 20260629120000, ce dernier PROTEGE via order.service cote route) sont tenant-wide et NE connaissent PAS venue_id. Mettre venue_id sur ingredients cree des lignes ingredient par venue -> quelle ligne destocke une commande? destock_order tomberait sur des lignes venue_id NULL ou en dupliquerait. Il faut soit (a) resoudre le venue depuis orders.venue_id dans une NOUVELLE RPC destock (jamais toucher order.service.ts), soit (b) separer definition tenant-wide et stock par venue dans une table dediee ingredient_venue_stock. Le sketch choisit venue_id nullable (NULL=principal) pour rester additif SANS casser le destock existant, mais le vrai multi-venue exige la decision (b) - a trancher AVANT dev.",
+        "BACKFILL: choix NULL=venue principal evite un backfill destructif. Mais si un tenant a deja 2 venues, son stock actuel reste 'global' (NULL) jusqu'a migration explicite opt-in. Documenter que NULL != un venue nomme.",
+        "get_stock_status existant (non-venue) reste la source pour les tenants mono-venue: ne pas le remplacer, l'AUGMENTER (get_stock_status_by_venue en plus) pour zero regression.",
+        "Realtime: ingredients est dans supabase_realtime; les nouvelles lignes miroir par venue emettront des events - verifier que InventoryClient filtre par venue courante pour ne pas afficher le stock d'un autre venue.",
+        "Conflit de merge quasi-certain avec les autres chantiers stock sur inventory.service.ts, inventory.types.ts, InventoryClient.tsx, messages/*.json et l'ordre des migrations -> sequencer APRES tous les autres chantiers (d'ou depends 'ledger' + position phase 9).",
+        "order.service.ts / order-side destock est PROTEGE: toute logique venue liee aux commandes doit vivre dans une nouvelle RPC ou la couche route/action, jamais dans order.service.ts."
+      ]
+    }
+  ]
+}
