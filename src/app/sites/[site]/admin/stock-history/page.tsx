@@ -30,7 +30,7 @@ export default async function StockHistoryPage({ params }: { params: Promise<{ s
 
   if (!hasInventory) {
     return (
-      <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+      <div className="flex-1 min-h-0 flex flex-col">
         <FeatureUpgradeWall
           feature="inventory"
           checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
@@ -41,7 +41,7 @@ export default async function StockHistoryPage({ params }: { params: Promise<{ s
   }
 
   return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col">
       <StockHistoryClient tenantId={tenant.id} />
     </div>
   );

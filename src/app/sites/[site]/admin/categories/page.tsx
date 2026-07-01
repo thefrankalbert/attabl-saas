@@ -68,7 +68,7 @@ export default async function CategoriesPage({
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
+    <div className="h-full flex flex-col min-h-0 overflow-hidden w-full">
       <CategoriesClient
         tenantId={tenant.id}
         tenantSlug={tenantSlug}

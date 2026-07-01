@@ -108,7 +108,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   }
 
   return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
+    <div className="flex-1 min-h-0 flex flex-col">
       <TablesClient
         tenantId={tenantId}
         venueId={venueId}

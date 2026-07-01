@@ -70,7 +70,7 @@ export default async function ItemsPage({
   };
 
   return (
-    <div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto w-full">
+    <div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden w-full">
       <ItemsClient
         tenantId={tenant.id}
         tenantSlug={tenantSlug}
