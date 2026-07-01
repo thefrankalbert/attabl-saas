@@ -438,7 +438,7 @@ export default function PaymentModal({
                 setCustomTip('');
               }}
               className={cn(
-                'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold',
+                'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
                 !showCustomTip && tipFixed === 0
                   ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
@@ -456,7 +456,7 @@ export default function PaymentModal({
                   setCustomTip('');
                 }}
                 className={cn(
-                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold tabular-nums',
+                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold tabular-nums',
                   !showCustomTip && tipFixed === amount
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
@@ -472,7 +472,7 @@ export default function PaymentModal({
                 setTipFixed(0);
               }}
               className={cn(
-                'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold',
+                'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
                 showCustomTip
                   ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-app-border bg-app-elevated/30 text-app-text-secondary',

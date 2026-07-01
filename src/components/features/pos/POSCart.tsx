@@ -405,7 +405,7 @@ export default function POSCart({
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder={t('couponPlaceholder') || 'Code promo'}
-                    className="h-7 text-[10px] flex-1 min-w-0"
+                    className="h-7 text-xs flex-1 min-w-0"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
                     }}
@@ -414,7 +414,7 @@ export default function POSCart({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 px-2 text-[10px] shrink-0"
+                    className="h-7 px-2 text-xs shrink-0"
                     disabled={!couponCode.trim() || couponLoading || cart.length === 0}
                     onClick={() => onValidateCoupon(couponCode)}
                   >
