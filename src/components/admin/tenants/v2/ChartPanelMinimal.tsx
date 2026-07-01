@@ -260,8 +260,9 @@ function Segmented<K extends string>({ value, options, onChange }: SegmentedProp
             style={
               active
                 ? {
-                    background: 'var(--cc-accent-soft)',
-                    color: 'var(--cc-accent-ink)',
+                    background: 'var(--cc-surface)',
+                    color: 'var(--cc-text)',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.06)',
                   }
                 : { color: 'var(--cc-text-3)' }
             }

@@ -1188,7 +1188,18 @@
           "ordersShort": "ord.",
           "trendLabel": "vs yesterday",
           "trendNew": "New",
-          "sparklineLabel": "{name} today activity"
+          "sparklineLabel": "{name} today activity",
+          "mineTitle": "Your establishments",
+          "card": {
+            "manage": "Manage my restaurant",
+            "viewMenu": "View menu",
+            "qr": "QR code",
+            "online": "Online",
+            "offline": "Offline",
+            "revenueToday": "Revenue today",
+            "ordersToday": "orders",
+            "noSales": "No sales yet"
+          }
         },
         "topbar": {
           "toggleTheme": "Toggle theme",
@@ -1201,6 +1212,15 @@
           "sites": "Sites",
           "alerts": "Alerts",
           "sitesOnline": "{online} / {total} online"
+        },
+        "firstSteps": {
+          "title": "First steps",
+          "menuTitle": "View my public menu",
+          "menuHint": "What your customers see",
+          "qrTitle": "Share my QR code",
+          "qrHint": "Put it on the tables",
+          "dishesTitle": "Add dishes",
+          "dishesHint": "Complete your menu"
         }
       }
     },
@@ -2988,7 +3008,7 @@
     "movementsCount": "{count, plural, one {# movement} other {# movements}}",
     "filterAll": "All",
     "filterOrders": "Orders",
-    "filterRestock": "Restocks",
+    "filterRestock": "Cancellation restock",
     "filterAdditions": "Additions",
     "filterWithdrawals": "Withdrawals",
     "filterAdjustments": "Adjustments",
@@ -3012,8 +3032,7 @@
     "emptyCta": "Set my stock",
     "noResultsTitle": "No movements match these filters",
     "noResultsHint": "Try another filter or change your search.",
-    "clearFilters": "Clear filters",
-    "filterRestock": "Cancellation restock"
+    "clearFilters": "Clear filters"
   },
   "screenLock": {
     "lockingIn": "Locking in {time} - move your mouse to stay connected",
