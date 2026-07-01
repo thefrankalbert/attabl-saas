@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useState, useCallback, useRef, useMemo, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
+import { submitOrder } from '@/lib/offline/submit-order';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -255,74 +256,108 @@ export default function CartPage() {
       const tableNumber = localStorage.getItem(`attabl_${tenantSlug}_table`) || undefined;
       const orderItems = mapCartItemsForOrderApi(items);
 
-      const previewResponse = await fetch('/api/orders/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: orderItems }),
-      });
-      const previewData = await previewResponse.json();
-      if (!previewResponse.ok) {
-        setError(previewData.error || t('orderError'));
-        if (previewData.details && Array.isArray(previewData.details)) {
-          setPreviewErrors(previewData.details);
+      // Server-side pre-validation. Skipped when the browser is offline (or on a
+      // transient network blip during the preview) so the order can still be
+      // queued in the durable outbox; the same validation runs server-side when
+      // the outbox drains the order on reconnect.
+      const online = typeof navigator === 'undefined' || navigator.onLine;
+      if (online) {
+        try {
+          const previewResponse = await fetch('/api/orders/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: orderItems }),
+          });
+          const previewData = await previewResponse.json();
+          if (!previewResponse.ok) {
+            setError(previewData.error || t('orderError'));
+            if (previewData.details && Array.isArray(previewData.details)) {
+              setPreviewErrors(previewData.details);
+            }
+            return;
+          }
+          if (!applyPreviewResult(previewData)) {
+            setError(t('cartStaleItems'));
+            return;
+          }
+        } catch (previewErr) {
+          // Transient network failure during preview: fall through so submitOrder
+          // can queue the order durably instead of blocking it.
+          logger.warn('Cart preview skipped (offline/transient)', { error: previewErr });
         }
-        return;
-      }
-      if (!applyPreviewResult(previewData)) {
-        setError(t('cartStaleItems'));
-        return;
       }
 
       if (!clientRequestIdRef.current) {
         clientRequestIdRef.current = crypto.randomUUID();
       }
 
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Route through the durable outbox: sent when online, queued in IndexedDB
+      // when the network is unreachable / the server is transiently failing. The
+      // client_request_id keeps replay idempotent server-side (migration
+      // 20260628010000), so a queued-then-sent order never duplicates.
+      const result = await submitOrder({
+        endpoint: '/api/orders',
+        clientRequestId: clientRequestIdRef.current,
+        body: {
           tableNumber,
           items: orderItems,
           notes: notes || undefined,
           display_currency: displayCurrency,
           tip_amount: tipAmount > 0 ? tipAmount : undefined,
           coupon_code: appliedCoupon?.code,
-          client_request_id: clientRequestIdRef.current,
-        }),
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.details && Array.isArray(data.details)) {
-          setPreviewErrors(data.details);
+      if (result.status === 'rejected') {
+        // Server refused (validation/price/coupon): keep the cart AND the same
+        // idempotency key so a corrected retry dedupes against nothing new.
+        if (result.details && Array.isArray(result.details)) {
+          setPreviewErrors(result.details);
         }
-        setError(data.error || t('orderError'));
+        setError(result.error || t('orderError'));
         return;
       }
 
-      // Namespace the stored order IDs per tenant slug. The order is already
-      // created server-side at this point, so a corrupt/unavailable localStorage
-      // must NOT block clearCart + redirect (else the user could re-submit a dup).
-      try {
-        const orderIdsStorageKey = `attabl_${tenantSlug}_order_ids`;
-        const raw = localStorage.getItem(orderIdsStorageKey);
-        const parsed = raw ? JSON.parse(raw) : [];
-        const storedIds: string[] = Array.isArray(parsed) ? parsed : [];
-        if (data.orderId && !storedIds.includes(data.orderId)) {
-          storedIds.push(data.orderId);
-          localStorage.setItem(orderIdsStorageKey, JSON.stringify(storedIds));
-        }
-      } catch (storageErr) {
-        logger.warn('Could not persist order id to localStorage', { error: storageErr });
+      if (result.status === 'failed') {
+        // Could neither send nor queue (no durable store): keep the cart.
+        setError(t('connectionError'));
+        return;
       }
 
-      // Order succeeded: retire this idempotency key so the next order is fresh.
+      if (result.status === 'sent') {
+        // Order created server-side. A corrupt/unavailable localStorage must NOT
+        // block clearCart + redirect (else the user could re-submit a dup).
+        const data = (result.data ?? {}) as { orderId?: string };
+        try {
+          const orderIdsStorageKey = `attabl_${tenantSlug}_order_ids`;
+          const raw = localStorage.getItem(orderIdsStorageKey);
+          const parsed = raw ? JSON.parse(raw) : [];
+          const storedIds: string[] = Array.isArray(parsed) ? parsed : [];
+          if (data.orderId && !storedIds.includes(data.orderId)) {
+            storedIds.push(data.orderId);
+            localStorage.setItem(orderIdsStorageKey, JSON.stringify(storedIds));
+          }
+        } catch (storageErr) {
+          logger.warn('Could not persist order id to localStorage', { error: storageErr });
+        }
+      }
+
+      // Retire the idempotency key on BOTH sent and queued: a queued order now
+      // owns this key in the outbox, so the next cart must mint a fresh one -
+      // otherwise a different order would dedupe against the queued one and be
+      // silently dropped.
       clientRequestIdRef.current = null;
       clearCart();
       setTipPreset(0);
       setCustomTipInput('');
-      router.push(`/sites/${tenantSlug}/order-confirmed?orderId=${data.orderId}`);
+
+      if (result.status === 'sent') {
+        const data = (result.data ?? {}) as { orderId?: string };
+        router.push(`/sites/${tenantSlug}/order-confirmed?orderId=${data.orderId}`);
+      } else {
+        // Queued offline: confirm optimistically; the outbox will sync it.
+        router.push(`/sites/${tenantSlug}/order-confirmed?queued=1`);
+      }
     } catch (err) {
       logger.error('Order submission error:', err);
       setError(t('connectionError'));
