@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useLocale } from 'next-intl';
 import {
@@ -25,6 +26,10 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
+import {
+  StockHistoryEmpty,
+  StockHistoryNoResults,
+} from '@/components/admin/StockHistoryEmptyState';
 
 // ─── Movement type visual config ─────────────────────────
 const MOVEMENT_STYLES: Record<
@@ -85,6 +90,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   const t = useTranslations('stockHistory');
   const tc = useTranslations('common');
   const locale = useLocale();
+  const pathname = usePathname();
+  const inventoryHref = pathname.replace(/\/stock-history.*$/, '/inventory');
 
   const movementFilters = useMemo<{ value: MovementType | 'all'; label: string }[]>(
     () => [
@@ -184,20 +191,15 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           <SortableHeader column={column}>{t('columnIngredient')}</SortableHeader>
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-app-elevated flex items-center justify-center shrink-0">
-              <Box className="w-3.5 h-3.5 text-app-text-muted" />
-            </div>
-            <div className="min-w-0">
-              <span className="font-medium text-sm text-app-text block truncate">
-                {row.original.ingredient?.name || '-'}
+          <div className="min-w-0">
+            <span className="font-medium text-sm text-app-text block truncate">
+              {row.original.ingredient?.name || '-'}
+            </span>
+            {row.original.ingredient?.unit && (
+              <span className="text-[10px] text-app-text-muted uppercase tracking-wider">
+                {row.original.ingredient.unit}
               </span>
-              {row.original.ingredient?.unit && (
-                <span className="text-[10px] text-app-text-muted uppercase tracking-wider">
-                  {row.original.ingredient.unit}
-                </span>
-              )}
-            </div>
+            )}
           </div>
         ),
       },
@@ -285,11 +287,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         {/* ── Header row ── */}
         <div className="shrink-0 space-y-4">
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <div className="flex items-center gap-3 shrink-0">
-              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
-                {filtered.length}
-              </span>
+            <div className="flex flex-col gap-1 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
+                <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+                  {filtered.length}
+                </span>
+              </div>
+              <p className="text-sm text-app-text-muted">{t('subtitle')}</p>
             </div>
 
             <div className="flex items-center gap-2 @lg:ml-auto">
@@ -306,10 +311,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           </div>
 
           {/* ── Filter pills ── */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
             {movementFilters.map((f) => {
               const isActive = filterType === f.value;
-              const style = f.value !== 'all' ? MOVEMENT_STYLES[f.value as MovementType] : null;
               return (
                 <Button
                   key={f.value}
@@ -318,15 +322,12 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   size="sm"
                   onClick={() => setFilterType(f.value)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 h-auto text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                    'inline-flex items-center px-3 py-1.5 h-auto text-xs rounded-lg whitespace-nowrap transition-colors border',
                     isActive
-                      ? 'bg-app-text text-app-bg border-app-text shadow-sm'
-                      : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
+                      ? 'bg-app-text text-app-bg border-app-text font-semibold'
+                      : 'bg-app-card text-app-text-secondary border-app-border/50 font-medium hover:border-app-border hover:bg-app-elevated hover:text-app-text',
                   )}
                 >
-                  {style && !isActive && (
-                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', style.dot)} />
-                  )}
                   {f.label}
                 </Button>
               );
@@ -334,38 +335,60 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           </div>
 
           {/* ── Quick stats strip ── */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-status-success-bg border border-status-success/10 rounded-lg">
-              <ArrowUpRight className="w-4 h-4 text-status-success shrink-0" />
+          <div className="flex items-stretch rounded-xl border border-app-border/60 bg-app-card divide-x divide-app-border/60 overflow-hidden">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
+              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+                <ArrowUpRight
+                  className={cn(
+                    'w-4 h-4',
+                    stats.additions > 0 ? 'text-status-success' : 'text-app-text-muted',
+                  )}
+                />
+              </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold text-status-success tabular-nums leading-tight">
+                <p
+                  className={cn(
+                    'text-xl font-bold tabular-nums leading-none',
+                    stats.additions > 0 ? 'text-status-success' : 'text-app-text-muted',
+                  )}
+                >
                   +{stats.additions}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                <p className="mt-1 text-xs font-medium text-app-text-muted">
                   {t('statsAdditions')}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-status-error-bg border border-status-error/10 rounded-lg">
-              <ArrowDownRight className="w-4 h-4 text-status-error shrink-0" />
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
+              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+                <ArrowDownRight
+                  className={cn(
+                    'w-4 h-4',
+                    stats.removals > 0 ? 'text-status-error' : 'text-app-text-muted',
+                  )}
+                />
+              </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold text-status-error tabular-nums leading-tight">
+                <p
+                  className={cn(
+                    'text-xl font-bold tabular-nums leading-none',
+                    stats.removals > 0 ? 'text-status-error' : 'text-app-text-muted',
+                  )}
+                >
                   -{stats.removals}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
-                  {t('statsRemovals')}
-                </p>
+                <p className="mt-1 text-xs font-medium text-app-text-muted">{t('statsRemovals')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-app-elevated border border-app-border/50 rounded-lg">
-              <Box className="w-4 h-4 text-app-text-muted shrink-0" />
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
+              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+                <Box className="w-4 h-4 text-app-text-muted" />
+              </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
+                <p className="text-xl font-bold text-app-text tabular-nums leading-none">
                   {stats.uniqueIngredients}
                 </p>
-                <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
-                  {t('statsProducts')}
-                </p>
+                <p className="mt-1 text-xs font-medium text-app-text-muted">{t('statsProducts')}</p>
               </div>
             </div>
           </div>
@@ -386,6 +409,17 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 {tc('retry')}
               </Button>
             </div>
+          ) : filtered.length === 0 ? (
+            movements.length === 0 ? (
+              <StockHistoryEmpty inventoryHref={inventoryHref} />
+            ) : (
+              <StockHistoryNoResults
+                onClear={() => {
+                  setFilterType('all');
+                  setSearchQuery('');
+                }}
+              />
+            )
           ) : (
             <>
               <ResponsiveDataTable

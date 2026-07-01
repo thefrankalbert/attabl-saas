@@ -3006,6 +3006,13 @@
     "statsAdditions": "Entrées",
     "statsRemovals": "Sorties",
     "statsProducts": "Produits",
+    "subtitle": "Chaque entrée et sortie de votre stock, tracée et datée.",
+    "emptyTitle": "Pas encore de mouvement",
+    "emptyDescription": "Dès qu'une commande passe ou que vous ajustez votre stock, tout s'affiche ici. Commencez par définir votre stock de départ.",
+    "emptyCta": "Définir mon stock",
+    "noResultsTitle": "Aucun mouvement pour ces filtres",
+    "noResultsHint": "Essayez un autre filtre ou changez votre recherche.",
+    "clearFilters": "Réinitialiser",
     "filterRestock": "Restock annulation"
   },
   "screenLock": {
