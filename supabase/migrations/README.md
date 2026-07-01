@@ -44,6 +44,29 @@ supabase migration new nom_de_la_migration
 4. Appliquer en production : `supabase db push`
 5. Verifier : se connecter au dashboard Supabase pour confirmer
 
+## Tests d'integration du moteur de stock (`pnpm test:db`)
+
+Les tests unitaires (Vitest) mockent `supabase.rpc`, donc la logique SQL des RPC de
+stock (`destock_order`, `restock_order`, `set_opening_stock`, `get_stock_status`) n'est
+jamais executee. Pour la verrouiller reellement :
+
+```bash
+pnpm test:db     # Docker requis
+```
+
+Ce script (`scripts/run-stock-integration.sh`) monte un Supabase LOCAL, charge le
+snapshot du schema prod (`tests/journeys/fixtures/schema.sql`) puis rejoue les migrations
+posterieures au marqueur, et execute la suite `tests/integration/stock/` qui appelle les
+VRAIS RPC et asserte les lignes resultantes (decrementation recette x quantite, idempotence,
+bascule `is_available`/`is_low`, restock a l'annulation, isolation multi-tenant).
+
+- N'est PAS dans les 5 portes CI : depend de Docker + du snapshot prod (les migrations du
+  repo ne reconstruisent pas une base vierge - schema initial etabli en prod avant tracking).
+- Meme raison que le harness `run-journeys-local.sh` (memes fixtures/env, garde-fou anti-prod).
+- Suivi (hors scope de ce lot) : activer un job CI dedie une fois la reproductibilite du
+  snapshot durcie (backfill des migrations de base). En attendant, lancer `pnpm test:db`
+  localement avant tout changement touchant le moteur de stock.
+
 ## Structure des tables
 
 Voir `agent_docs/database-conventions.md` pour les conventions detaillees.
