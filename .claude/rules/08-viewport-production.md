@@ -18,7 +18,7 @@ html (height: 100%, overflow: hidden)
 1. `html` and `body` MUST have `height: 100%; overflow: hidden;` in globals.css
 2. ONLY `<main#main-content>` is allowed to scroll (`overflow-y-auto`)
 3. Child pages MUST use `h-full` to fill their parent - NEVER `h-screen` or `100vh`
-4. The admin layout uses `h-dvh` as the single viewport anchor - no other component may use `h-dvh` or `h-screen`
+4. `h-dvh` is the viewport anchor for top-level, non-nested shells only: AdminLayoutClient (tenant dashboard), PlatformConsole (/admin/platform), CommandCenterShell (/admin/tenants). Each is independent and owns exactly one scrolling `<main#main-content>`. No other component may use `h-dvh` or `h-screen`
 5. NEVER add `overflow: auto/scroll` on intermediate containers between body and main-content
 
 ## Dev/Prod Parity (CRITICAL)
@@ -32,7 +32,7 @@ Turbopack (dev) and Webpack (prod/Vercel) handle CSS differently. Follow these r
 
 ## Forbidden Patterns
 
-- `h-screen` or `100vh` on any element (use `h-dvh` ONLY on AdminLayoutClient root)
+- `h-screen` or `100vh` on any element (use `h-dvh` ONLY on a top-level shell root: AdminLayoutClient, PlatformConsole, CommandCenterShell)
 - `overflow-y-auto` or `overflow-y-scroll` on anything other than `<main#main-content>` or explicitly scrollable lists
 - Removing `overflow: hidden` from `html` or `body`
 - Using `min-h-screen` as a layout fix - it masks the real problem
