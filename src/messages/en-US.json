@@ -3006,6 +3006,13 @@
     "statsAdditions": "In",
     "statsRemovals": "Out",
     "statsProducts": "Products",
+    "subtitle": "Every stock movement, traced and timestamped.",
+    "emptyTitle": "No movements yet",
+    "emptyDescription": "As soon as an order comes in or you adjust your stock, it shows up here. Start by setting your opening stock.",
+    "emptyCta": "Set my stock",
+    "noResultsTitle": "No movements match these filters",
+    "noResultsHint": "Try another filter or change your search.",
+    "clearFilters": "Clear filters",
     "filterRestock": "Cancellation restock"
   },
   "screenLock": {
