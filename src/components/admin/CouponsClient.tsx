@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Tag, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import CouponForm from '@/components/admin/CouponForm';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
 
@@ -89,29 +90,26 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header - single line on desktop */}
-      <div className="shrink-0">
-        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-          <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <Tag className="w-6 h-6" />
-            {t('title')}
-            <span className="text-base font-normal text-app-text-secondary">
-              ({coupons.length})
-            </span>
-          </h1>
-
-          <Button
-            onClick={() => {
-              setEditingCoupon(null);
-              setShowForm(true);
-            }}
-            variant="default"
-            className="gap-2 lg:ml-auto shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            {t('newCoupon')}
-          </Button>
-        </div>
+      {/* Header */}
+      <div className="shrink-0 space-y-4">
+        <AdminPageHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          count={coupons.length}
+          actions={
+            <Button
+              onClick={() => {
+                setEditingCoupon(null);
+                setShowForm(true);
+              }}
+              variant="default"
+              className="gap-2 shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              {t('newCoupon')}
+            </Button>
+          }
+        />
       </div>
 
       {/* Coupons List */}

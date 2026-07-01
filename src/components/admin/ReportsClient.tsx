@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { format } from 'date-fns';
 import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import { csvCell } from '@/lib/utils/csv';
@@ -263,7 +263,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 space-y-4">
-        <AnalyseSectionHeader
+        <AdminPageHeader
           title={t('title')}
           subtitle={t('subtitle')}
           actions={

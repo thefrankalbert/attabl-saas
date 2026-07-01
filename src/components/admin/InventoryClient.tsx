@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Package, Plus, Search, Check, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
+import { Plus, Search, Check, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -38,6 +38,7 @@ import type {
 } from '@/types/inventory.types';
 import { INGREDIENT_UNITS, MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { StatusBadge, type BadgeTone } from '@/components/admin/shared/StatusBadge';
 import type { LucideIcon } from 'lucide-react';
 
@@ -367,88 +368,79 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         ) : (
           <>
             {/* Fixed header area */}
-            <div className="shrink-0 space-y-3">
-              {/* Row 1: Title + Search + Filters + Add - all on one line (desktop) */}
-              <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-                {/* Title */}
-                <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                  <Package className="w-5 h-5" />
-                  {t('inventory')}
-                  <span className="text-sm font-normal text-app-text-muted">
-                    ({ingredients.length})
-                  </span>
-                </h1>
+            <div className="shrink-0 space-y-4">
+              <AdminPageHeader
+                title={t('inventory')}
+                subtitle={t('subtitle')}
+                count={ingredients.length}
+                actions={
+                  <>
+                    {/* Search - compact */}
+                    <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                      <Input
+                        data-search-input
+                        placeholder={t('searchProduct')}
+                        className="pl-9 h-9"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
 
-                {/* Search - compact */}
-                <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                  <Input
-                    data-search-input
-                    placeholder={t('searchProduct')}
-                    className="pl-9 h-9"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                    {/* Add button */}
+                    <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
+                      <Plus className="w-4 h-4" />
+                      {t('addIngredient')}
+                    </Button>
+                  </>
+                }
+              />
 
-                {/* Filter pills */}
-                <div className="flex items-center gap-1.5">
-                  {(['all', 'low', 'out'] as const).map((status) => {
-                    const count =
-                      status === 'low'
-                        ? lowCount
-                        : status === 'out'
-                          ? outCount
-                          : ingredients.length;
-                    return (
-                      <Button
-                        key={status}
-                        variant={filterStatus === status ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterStatus(status)}
-                        className={cn(
-                          'rounded-full h-8 text-xs px-3 gap-1.5',
-                          status === 'out' &&
-                            outCount > 0 &&
-                            filterStatus !== status &&
-                            'border-[var(--border)] text-[var(--destructive)]',
-                          status === 'low' &&
-                            lowCount > 0 &&
-                            filterStatus !== status &&
-                            'border-[var(--border)] text-[var(--warning)]',
-                        )}
-                      >
-                        {status === 'all'
-                          ? tc('all')
-                          : status === 'low'
-                            ? t('lowStock')
-                            : t('rupture')}
-                        {status !== 'all' && count > 0 && (
-                          <span
-                            className={cn(
-                              'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
-                              filterStatus === status
-                                ? 'bg-app-bg/30'
-                                : status === 'out'
-                                  ? 'text-[var(--destructive)]'
-                                  : 'text-[var(--warning)]',
-                            )}
-                          >
-                            {count}
-                          </span>
-                        )}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                {/* Add button - pushed right */}
-                <div className="@lg:ml-auto shrink-0">
-                  <Button onClick={openAdd} variant="default" className="gap-2 h-9">
-                    <Plus className="w-4 h-4" />
-                    {t('addIngredient')}
-                  </Button>
-                </div>
+              {/* Filter pills */}
+              <div className="flex items-center gap-1.5">
+                {(['all', 'low', 'out'] as const).map((status) => {
+                  const count =
+                    status === 'low' ? lowCount : status === 'out' ? outCount : ingredients.length;
+                  return (
+                    <Button
+                      key={status}
+                      variant={filterStatus === status ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterStatus(status)}
+                      className={cn(
+                        'rounded-full h-8 text-xs px-3 gap-1.5',
+                        status === 'out' &&
+                          outCount > 0 &&
+                          filterStatus !== status &&
+                          'border-[var(--border)] text-[var(--destructive)]',
+                        status === 'low' &&
+                          lowCount > 0 &&
+                          filterStatus !== status &&
+                          'border-[var(--border)] text-[var(--warning)]',
+                      )}
+                    >
+                      {status === 'all'
+                        ? tc('all')
+                        : status === 'low'
+                          ? t('lowStock')
+                          : t('rupture')}
+                      {status !== 'all' && count > 0 && (
+                        <span
+                          className={cn(
+                            'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
+                            filterStatus === status
+                              ? 'bg-app-bg/30'
+                              : status === 'out'
+                                ? 'text-[var(--destructive)]'
+                                : 'text-[var(--warning)]',
+                          )}
+                        >
+                          {count}
+                        </span>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 

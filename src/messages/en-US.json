@@ -1688,6 +1688,8 @@
     "loadingRecipeError": "Error loading recipe",
     "addProductsFirst": "Add products first",
     "recipesSubtitle": "Manage your dish recipes",
+    "subtitle": "Track your ingredients and their stock levels",
+    "suggestionsSubtitle": "Recommend dishes to your customers",
     "withRecipe": "With recipe",
     "withoutRecipe": "Without recipe",
     "searchDish": "Search for a dish...",

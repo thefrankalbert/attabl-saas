@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { logger } from '@/lib/logger';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
   DEFAULT_PERMISSIONS,
   type PermissionCode,
@@ -253,9 +254,8 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-app-text">{t('title')}</h1>
-        <p className="text-app-text-secondary text-sm mt-1">{t('subtitle')}</p>
+      <div className="shrink-0 space-y-4">
+        <AdminPageHeader title={t('title')} subtitle={t('subtitle')} />
       </div>
 
       {/* Saving indicator */}

@@ -1,7 +1,7 @@
 /**
  * Content-only skeleton for the Analyse tabs. The tab bar is rendered by the
  * (analyse) layout above this Suspense boundary, so it stays visible while this
- * shows. The header row and rhythm mirror AnalyseSectionHeader so nothing shifts
+ * shows. The header row and rhythm mirror AdminPageHeader so nothing shifts
  * when the real content streams in.
  */
 export default function AnalyseLoading() {

@@ -44,6 +44,7 @@ import {
   actionToggleMenuItemFeatured,
 } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import {
@@ -383,59 +384,57 @@ export default function ItemsClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="shrink-0">
-          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-              {seg.items}
-              <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
-            </h1>
+        <div className="shrink-0 space-y-4">
+          <AdminPageHeader
+            title={t('title')}
+            subtitle={t('subtitle')}
+            count={items.length}
+            actions={
+              <>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <Select
+                    value={categoryFilterValue}
+                    onValueChange={(value) => {
+                      setListPage(0);
+                      setFilterCategory(value);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 w-full @sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                      <SelectValue placeholder={t('allCategories')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('allCategories')}</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={availableFilterValue}
+                    onValueChange={(value) => {
+                      setListPage(0);
+                      setFilterAvailable(value);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 w-full @sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                      <SelectValue placeholder={t('all')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('all')}</SelectItem>
+                      <SelectItem value="available">{t('inStock')}</SelectItem>
+                      <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Select
-                value={categoryFilterValue}
-                onValueChange={(value) => {
-                  setListPage(0);
-                  setFilterCategory(value);
-                }}
-              >
-                <SelectTrigger className="h-9 w-full @sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
-                  <SelectValue placeholder={t('allCategories')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allCategories')}</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={availableFilterValue}
-                onValueChange={(value) => {
-                  setListPage(0);
-                  setFilterAvailable(value);
-                }}
-              >
-                <SelectTrigger className="h-9 w-full @sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
-                  <SelectValue placeholder={t('all')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all')}</SelectItem>
-                  <SelectItem value="available">{t('inStock')}</SelectItem>
-                  <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={openNewModal}
-              variant="default"
-              className="gap-2 h-9 lg:ml-auto shrink-0"
-            >
-              <Plus className="w-4 h-4" /> {seg.addItem}
-            </Button>
-          </div>
+                <Button onClick={openNewModal} variant="default" className="gap-2 h-9 shrink-0">
+                  <Plus className="w-4 h-4" /> {seg.addItem}
+                </Button>
+              </>
+            }
+          />
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 @sm:mt-6">

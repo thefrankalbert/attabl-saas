@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
@@ -255,41 +256,39 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         </div>
       ) : (
         <>
-          <div className="shrink-0 space-y-3">
-            <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-              <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                <BookOpenCheck className="w-6 h-6" />
-                {t('recipesTech')}
-                <span className="text-base font-normal text-app-text-secondary">
-                  ({itemsWithRecipes.size}/{menuItems.length})
-                </span>
-              </h1>
+          <div className="shrink-0 space-y-4">
+            <AdminPageHeader
+              title={t('recipesTech')}
+              subtitle={t('recipesSubtitle')}
+              actions={
+                <>
+                  <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                    <Input
+                      data-search-input
+                      placeholder={t('searchDish')}
+                      className="pl-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
 
-              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                <Input
-                  data-search-input
-                  placeholder={t('searchDish')}
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2 shrink-0">
-                {(['all', 'with', 'without'] as const).map((f) => (
-                  <Button
-                    key={f}
-                    variant={filterRecipe === f ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterRecipe(f)}
-                    className="rounded-full"
-                  >
-                    {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
-                  </Button>
-                ))}
-              </div>
-            </div>
+                  <div className="flex gap-2 shrink-0">
+                    {(['all', 'with', 'without'] as const).map((f) => (
+                      <Button
+                        key={f}
+                        variant={filterRecipe === f ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterRecipe(f)}
+                        className="rounded-full"
+                      >
+                        {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
+                      </Button>
+                    ))}
+                  </div>
+                </>
+              }
+            />
 
             {ingredients.length === 0 && (
               <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-secondary">
