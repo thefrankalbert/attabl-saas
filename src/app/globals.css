@@ -263,7 +263,14 @@
    shell is mounted, so PORTALED content (shadcn Dialog/Popover/DropdownMenu render
    into document.body, outside .admin-shell) inherits the neutral admin palette
    instead of the brand accent. Convive (no .admin-shell) is unaffected. */
-.admin-shell,
+/* IMPORTANT: use `.admin-shell:not(.dark)` (not bare `.admin-shell`) for the
+   element-scoped light rule. Lightning CSS compiles the grouped selector into
+   `:is(.admin-shell, :root:has(...))`, and `:is()` inherits the specificity of
+   its most specific branch (the `:has()` one = 0,3,0). A bare `.admin-shell`
+   would therefore outrank `.admin-shell.dark` (0,2,0) and the dark tokens would
+   never apply on the shell element - the whole admin dark mode stayed light.
+   `:not(.dark)` keeps the branches symmetric so the dark block wins in dark. */
+.admin-shell:not(.dark),
 :root:has(.admin-shell:not(.dark)) {
   color-scheme: light;
   --radius: 0.625rem;
