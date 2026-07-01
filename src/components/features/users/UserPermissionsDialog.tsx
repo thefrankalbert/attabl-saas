@@ -175,7 +175,7 @@ export default function UserPermissionsDialog({
                             variant="ghost"
                             onClick={() => resetPerm(perm)}
                             aria-label={t('useRoleDefault')}
-                            className="inline-flex items-center gap-1 text-[10px] text-app-text-secondary hover:text-app-text h-auto px-1 py-0"
+                            className="inline-flex items-center gap-1 text-xs text-app-text-secondary hover:text-app-text h-auto px-1 py-0"
                           >
                             <RotateCcw className="w-2.5 h-2.5" />
                             {t('useRoleDefault')}
