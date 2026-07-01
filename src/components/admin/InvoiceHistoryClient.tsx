@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseTabs from '@/components/admin/AnalyseTabs';
+import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
 
 interface StripeInvoice {
   id: string;
@@ -131,15 +131,9 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <AnalyseTabs />
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0">
-        <div className="flex items-center gap-3 shrink-0">
-          <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
-          <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
-            {invoices.length}
-          </span>
-        </div>
+        <AnalyseSectionHeader title={t('title')} subtitle={t('subtitle')} count={invoices.length} />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">

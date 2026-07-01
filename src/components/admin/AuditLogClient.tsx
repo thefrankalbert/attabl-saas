@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import AnalyseTabs from '@/components/admin/AnalyseTabs';
+import AnalyseSectionHeader from '@/components/admin/AnalyseSectionHeader';
 
 interface AuditLogEntry {
   id: string;
@@ -205,27 +205,25 @@ export default function AuditLogClient({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <AnalyseTabs />
-      <div className="shrink-0 space-y-3">
-        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-          <div className="flex items-center gap-3 shrink-0">
-            <h1 className="text-lg sm:text-xl font-bold text-app-text">{t('title')}</h1>
-            <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
-              {totalCount}
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            type="button"
-            className={cn('@lg:ml-auto shrink-0', showFilters && 'bg-app-bg')}
-          >
-            <Filter className="w-4 h-4 mr-1.5" />
-            {t('filters')}
-          </Button>
-        </div>
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 space-y-4">
+        <AnalyseSectionHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          count={totalCount}
+          actions={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              type="button"
+              className={cn(showFilters && 'bg-app-bg')}
+            >
+              <Filter className="w-4 h-4 mr-1.5" />
+              {t('filters')}
+            </Button>
+          }
+        />
 
         {/* Filters */}
         {showFilters && (
