@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { Plus, Search } from 'lucide-react';
+import { AlertTriangle, Plus, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
