@@ -515,4 +515,67 @@ describe('InventoryService', () => {
       expect(result).toEqual(mockMovements);
     });
   });
+
+  // ─── mapStockMovementRow ──────────────────────────────
+
+  describe('mapStockMovementRow', () => {
+    // Import the pure mapper directly so we test it in isolation
+    it('maps a flat RPC row with all fields', async () => {
+      const { mapStockMovementRow } = await import('../inventory.service');
+      const row: Record<string, unknown> = {
+        id: 'mov-1',
+        tenant_id: 't1',
+        ingredient_id: 'ing-1',
+        movement_type: 'manual_remove',
+        quantity: -2,
+        reference_id: null,
+        notes: 'Retrait manuel',
+        reason_code: 'breakage',
+        created_by: 'user-1',
+        supplier_id: 'sup-1',
+        created_at: '2026-07-03T10:00:00Z',
+        author_name: 'Amadou Diallo',
+        ingredient_name: 'Eau minerale',
+        ingredient_unit: 'L',
+        supplier_name: 'FourniPro',
+      };
+
+      const result = mapStockMovementRow(row);
+
+      expect(result.id).toBe('mov-1');
+      expect(result.movement_type).toBe('manual_remove');
+      expect(result.reason_code).toBe('breakage');
+      expect(result.author_name).toBe('Amadou Diallo');
+      expect(result.ingredient).toEqual({ name: 'Eau minerale', unit: 'L' });
+      expect(result.supplier).toEqual({ id: 'sup-1', name: 'FourniPro' });
+    });
+
+    it('maps a row with no ingredient_name to undefined ingredient', async () => {
+      const { mapStockMovementRow } = await import('../inventory.service');
+      const row: Record<string, unknown> = {
+        id: 'mov-2',
+        tenant_id: 't1',
+        ingredient_id: 'ing-2',
+        movement_type: 'order_destock',
+        quantity: -1,
+        reference_id: null,
+        notes: null,
+        reason_code: null,
+        created_by: null,
+        supplier_id: null,
+        created_at: '2026-07-03T11:00:00Z',
+        author_name: null,
+        ingredient_name: null,
+        ingredient_unit: null,
+        supplier_name: null,
+      };
+
+      const result = mapStockMovementRow(row);
+
+      expect(result.ingredient).toBeUndefined();
+      expect(result.supplier).toBeNull();
+      expect(result.author_name).toBeNull();
+      expect(result.reason_code).toBeNull();
+    });
+  });
 });

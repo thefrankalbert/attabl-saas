@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useLocale } from 'next-intl';
@@ -15,6 +15,7 @@ import {
   Loader2,
   Box,
   BarChart3,
+  Users,
 } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import {
   StockHistoryEmpty,
   StockHistoryNoResults,
 } from '@/components/admin/StockHistoryEmptyState';
+import StaffStockReportDialog from '@/components/admin/StaffStockReportDialog';
 
 // ─── Movement type visual config ─────────────────────────
 const MOVEMENT_STYLES: Record<
@@ -92,6 +94,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   const locale = useLocale();
   const pathname = usePathname();
   const inventoryHref = pathname.replace(/\/stock-history.*$/, '/inventory');
+
+  const [staffReportOpen, setStaffReportOpen] = useState(false);
 
   const movementFilters = useMemo<{ value: MovementType | 'all'; label: string }[]>(
     () => [
@@ -266,6 +270,15 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         enableSorting: false,
       },
       {
+        id: 'author_name',
+        accessorFn: (row) => row.author_name ?? '',
+        header: () => t('columnAuthor'),
+        cell: ({ row }) => (
+          <span className="text-app-text-secondary text-sm">{row.original.author_name || '-'}</span>
+        ),
+        enableSorting: false,
+      },
+      {
         accessorKey: 'notes',
         header: () => t('columnNotes'),
         cell: ({ row }) => (
@@ -289,14 +302,26 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             title={t('title')}
             count={loading || error ? undefined : (totalCount ?? undefined)}
             actions={
-              <div className="relative w-full @lg:w-52">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
-                <Input
-                  placeholder={t('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-9 text-sm bg-app-elevated border-app-border/50 rounded-lg"
-                />
+              <div className="flex items-center gap-2 w-full @lg:w-auto">
+                <div className="relative flex-1 @lg:w-52">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
+                  <Input
+                    placeholder={t('searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 text-sm bg-app-elevated border-app-border/50 rounded-lg"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-9 shrink-0"
+                  onClick={() => setStaffReportOpen(true)}
+                  aria-label={t('staffReportCta')}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span className="hidden @md:inline">{t('staffReportCta')}</span>
+                </Button>
               </div>
             }
           />
@@ -479,12 +504,20 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                         {/* Bottom: meta */}
                         <div className="flex items-center justify-between text-[11px] text-app-text-muted pt-1 border-t border-app-border/40">
                           <span>{formatDate(movement.created_at)}</span>
-                          {movement.supplier?.name && (
-                            <span className="flex items-center gap-1">
-                              <Truck className="w-3 h-3" />
-                              {movement.supplier.name}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {movement.author_name && (
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {movement.author_name}
+                              </span>
+                            )}
+                            {movement.supplier?.name && (
+                              <span className="flex items-center gap-1">
+                                <Truck className="w-3 h-3" />
+                                {movement.supplier.name}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {movement.notes && (
@@ -512,6 +545,12 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           )}
         </div>
       </div>
+
+      <StaffStockReportDialog
+        tenantId={tenantId}
+        open={staffReportOpen}
+        onOpenChange={setStaffReportOpen}
+      />
     </RoleGuard>
   );
 }

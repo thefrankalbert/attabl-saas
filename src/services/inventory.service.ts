@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger';
 import { withActiveMenuItems } from '@/lib/menu-items-query';
 import type {
   Ingredient,
+  IngredientUnit,
   Recipe,
   StockMovement,
   StockStatus,
@@ -16,7 +17,40 @@ import type {
   RecipeLineInput,
   AdjustStockInput,
   LedgerDriftRow,
+  MovementType,
+  ReasonCode,
 } from '@/types/inventory.types';
+
+// ─── Pure row mapper ─────────────────────────────────────
+// Shared between the service and the client hook so the flat RPC row
+// is transformed in exactly one place.
+export function mapStockMovementRow(row: Record<string, unknown>): StockMovement {
+  return {
+    id: row.id as string,
+    tenant_id: row.tenant_id as string,
+    ingredient_id: row.ingredient_id as string,
+    movement_type: row.movement_type as MovementType,
+    quantity: row.quantity as number,
+    reference_id: (row.reference_id as string | null) ?? null,
+    notes: (row.notes as string | null) ?? null,
+    reason_code: (row.reason_code as ReasonCode | null) ?? null,
+    created_by: (row.created_by as string | null) ?? null,
+    supplier_id: (row.supplier_id as string | null) ?? null,
+    created_at: row.created_at as string,
+    author_name: (row.author_name as string | null) ?? null,
+    ingredient:
+      row.ingredient_name != null
+        ? {
+            name: row.ingredient_name as string,
+            unit: row.ingredient_unit as IngredientUnit,
+          }
+        : undefined,
+    supplier:
+      row.supplier_id != null && row.supplier_name != null
+        ? { id: row.supplier_id as string, name: row.supplier_name as string }
+        : null,
+  };
+}
 
 export interface InventoryService {
   getIngredients(tenantId: string): Promise<Ingredient[]>;

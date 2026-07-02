@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { AlertTriangle, Plus, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import InventoryFormModal from '@/components/admin/inventory/InventoryFormModal'
 import InventoryAdjustModal from '@/components/admin/inventory/InventoryAdjustModal';
 import { useInventoryColumns } from '@/components/admin/inventory/use-inventory-columns';
 import { useInventoryActions } from '@/components/admin/inventory/use-inventory-actions';
+import { useSound } from '@/contexts/SoundContext';
 
 interface InventoryClientProps {
   tenantId: string;
@@ -41,6 +42,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Low-stock bip reuses the shared notification sound (respects the tenant's
+  // soundEnabled toggle + the audio-unlock gesture handled by SoundContext).
+  const { play } = useSound();
+  // Throttle per-ingredient bip to once every 30 seconds.
+  const lastBipRef = useRef<Map<string, number>>(new Map());
 
   // TanStack Query for ingredients and suppliers
   const {
@@ -96,6 +103,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       const stock = record.current_stock as number | undefined;
       const minAlert = record.min_stock_alert as number | undefined;
       if (stock != null && minAlert != null && stock <= minAlert && stock > 0) {
+        // Throttle bip per ingredient: max once every 30 seconds
+        const ingredientId = String(record.id ?? '');
+        const now = Date.now();
+        const lastBip = lastBipRef.current.get(ingredientId) ?? 0;
+        if (now - lastBip > 30_000) {
+          lastBipRef.current.set(ingredientId, now);
+          play();
+        }
         toast({
           title: t('lowStock'),
           description: `${String(record.name)} - ${String(stock)} ${String(record.unit || '')}`,
