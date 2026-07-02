@@ -155,6 +155,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       topDishesRes,
       lowStockRes,
       tablesRes,
+      openSessionsRes,
     ] = await Promise.all([
       // Today's orders (stats)
       supabase
@@ -225,8 +226,22 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .eq('tenant_id', tenant.id)
         .limit(60),
 
-      // Active tables = venues.tables count vs occupied (best-effort; falls back to venues count)
-      supabase.from('tables').select('id, status', { count: 'exact' }).eq('tenant_id', tenant.id),
+      // Active tables total. The `tables` table has no `status` column
+      // (occupancy is derived, see components/admin/service/service-status.ts),
+      // so total = count of active tables...
+      supabase
+        .from('tables')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true),
+
+      // ...and occupied = tables with an open service session (the canonical
+      // "table is busy until fully settled" marker from the payment refonte).
+      supabase
+        .from('table_sessions')
+        .select('table_number')
+        .eq('tenant_id', tenant.id)
+        .eq('status', 'open'),
     ]);
 
     // ─── Today stats ─────────────────────────────────────
@@ -355,11 +370,13 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     initialStockAlerts = rawAlerts.sort((a, b) => a.current - b.current).slice(0, 3);
 
     // ─── Tables ────────────────────────────────────────
-    const tablesList = (tablesRes.data || []) as Array<{ status?: string }>;
-    activeTablesTotal = tablesRes.count ?? tablesList.length;
-    activeTablesUsed = tablesList.filter(
-      (t) => t.status && t.status !== 'free' && t.status !== 'available',
-    ).length;
+    activeTablesTotal = tablesRes.count ?? 0;
+    const openSessions = (openSessionsRes.data || []) as Array<{ table_number: string | null }>;
+    // Distinct tables with an open session (guard against >1 row per table).
+    const occupied = new Set(
+      openSessions.map((s) => s.table_number).filter((n): n is string => Boolean(n)),
+    ).size;
+    activeTablesUsed = Math.min(occupied, activeTablesTotal);
   } catch (err) {
     // logger signature: (message, error, context)
     logger.error(
