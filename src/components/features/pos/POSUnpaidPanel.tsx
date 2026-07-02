@@ -75,6 +75,9 @@ export default function POSUnpaidPanel({
               {orders.map((order) => {
                 const label = order.order_number || order.table_number || order.id.slice(0, 6);
                 const itemCount = (order.items || []).reduce((n, i) => n + (i.quantity || 0), 0);
+                // Tableless POS orders store a "CMD-<n>" ticket id in table_number
+                // (the column is NOT NULL server-side) - do not title them "Table CMD-n".
+                const isRealTable = !!order.table_number && !/^CMD-/i.test(order.table_number);
                 return (
                   <li key={order.id}>
                     <Button
@@ -87,13 +90,15 @@ export default function POSUnpaidPanel({
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold text-app-text">
-                          {order.table_number
-                            ? `${t('tableNumber')} ${order.table_number}`
+                          {isRealTable
+                            ? t('tableWithNumber', { table: order.table_number })
                             : `#${label}`}
                         </span>
                         <span className="block truncate text-xs text-app-text-muted">
-                          {order.order_number ? `#${order.order_number} - ` : ''}
-                          {t('itemsCount', { count: itemCount })}
+                          {/* Do not repeat the order number when it is already the title */}
+                          {isRealTable && order.order_number
+                            ? `#${order.order_number} - ${t('itemsCount', { count: itemCount })}`
+                            : t('itemsCount', { count: itemCount })}
                         </span>
                       </span>
                       <span className="shrink-0 text-sm font-bold text-app-text">

@@ -115,9 +115,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                         : 'text-app-text-muted',
                     )}
                   >
-                    {t('searchProduct')
-                      ? t('searchProduct').split('...')[0] || 'Produits'
-                      : 'Produits'}
+                    {t('productsTab')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -138,7 +136,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   </Button>
                 </div>
               ) : (
-                <h1 className="text-sm font-semibold text-app-text">{t('title') || 'POS'}</h1>
+                <h1 className="text-sm font-semibold text-app-text">{t('title')}</h1>
               )}
 
               {/* A encaisser: orders awaiting payment (incl. QR/served) */}

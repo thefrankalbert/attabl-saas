@@ -179,7 +179,7 @@ export default function POSCart({
           <span className="font-bold text-sm text-app-text tracking-tight">{t('cart')}</span>
           <span
             className="text-xs font-mono bg-app-elevated text-app-text-muted px-1.5 py-0.5 rounded"
-            title={t('cart')}
+            title={t('ticketNumberTooltip', { number: orderNumber })}
           >
             {String(orderNumber).padStart(2, '0')}
           </span>
@@ -187,7 +187,7 @@ export default function POSCart({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Delete"
+          aria-label={tc('delete')}
           onClick={() => {
             if (cart.length === 0) {
               onClearCart();
@@ -310,7 +310,7 @@ export default function POSCart({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="Decrease"
+                          aria-label={t('decreaseQty')}
                           onClick={() => onUpdateQuantity(itemKey, -1)}
                           className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
                         >
@@ -322,7 +322,7 @@ export default function POSCart({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="Increase"
+                          aria-label={t('increaseQty')}
                           disabled={item.quantity >= MAX_ITEM_QTY}
                           onClick={() => onUpdateQuantity(itemKey, 1)}
                           className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
@@ -392,7 +392,7 @@ export default function POSCart({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Remove coupon"
+                    aria-label={t('removeCoupon')}
                     onClick={onRemoveCoupon}
                     className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
                   >
@@ -404,7 +404,7 @@ export default function POSCart({
                   <Input
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder={t('couponPlaceholder') || 'Code promo'}
+                    placeholder={t('couponPlaceholder')}
                     className="h-7 text-xs flex-1 min-w-0"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
@@ -456,7 +456,7 @@ export default function POSCart({
           <div className="space-y-1">
             <div className="flex justify-between items-baseline">
               <span className="text-[11px] text-app-text-muted">
-                {tc('subtotal')} ({totalItems} {t('itemsCount')})
+                {tc('subtotal')} ({t('itemsCount', { count: totalItems })})
               </span>
               <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
                 {formatCurrency(pricing.subtotal, currency)}
@@ -502,7 +502,7 @@ export default function POSCart({
               pricing.serviceChargeAmount <= 0 &&
               pricing.discountAmount <= 0 && (
                 <span className="text-[10px] text-app-text-muted">
-                  ({totalItems} {t('itemsCount')})
+                  ({t('itemsCount', { count: totalItems })})
                 </span>
               )}
           </div>
@@ -555,7 +555,7 @@ export default function POSCart({
                 {/* Zone Column */}
                 <div className="w-36 flex flex-col shrink-0">
                   <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
-                    Zone
+                    {t('zone')}
                   </Label>
                   <div className="flex-1 overflow-y-auto space-y-1">
                     {zones.map((zone) => (
@@ -583,7 +583,7 @@ export default function POSCart({
                 {/* Tables Grid */}
                 <div className="flex-1 flex flex-col min-w-0">
                   <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
-                    Tables
+                    {t('tables')}
                   </Label>
                   <div className="flex-1 overflow-y-auto">
                     {pickerTables.length > 0 ? (
@@ -616,7 +616,7 @@ export default function POSCart({
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-full text-app-text-muted text-sm">
-                        {pickerZoneId ? t('noResults') : t('selectTable')}
+                        {pickerZoneId ? t('noTablesInZone') : t('selectTable')}
                       </div>
                     )}
                   </div>
@@ -625,8 +625,8 @@ export default function POSCart({
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-app-text-muted">
                 <LayoutGrid className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm font-medium">{t('noResults')}</p>
-                <p className="text-xs mt-1 text-app-text-muted">{tc('save')}</p>
+                <p className="text-sm font-medium">{t('noZonesConfigured')}</p>
+                <p className="text-xs mt-1 text-app-text-muted">{t('noZonesHint')}</p>
               </div>
             )}
           </div>

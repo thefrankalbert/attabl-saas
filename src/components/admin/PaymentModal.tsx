@@ -88,7 +88,12 @@ export default function PaymentModal({
 
   const finalTotal = total ?? toMajor(order?.total_price) ?? 0;
   const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
-  const finalOrderNum = orderNumber ?? (order ? parseInt(order.id.slice(0, 4), 16) : undefined);
+  // Prefer the human order number (CMD-...) over a hex slice of the UUID,
+  // which reads as a random number to the cashier.
+  const finalOrderNum: string | number | undefined =
+    orderNumber ?? order?.order_number ?? undefined;
+  // In ORDER mode amounts come from the order's currency, not the prop default.
+  const displayCurrency = isOrderMode ? orderCurrency : currency;
 
   const method: PaymentMethod = 'cash';
   const [amountReceived, setAmountReceived] = useState<string>('');
@@ -220,9 +225,13 @@ export default function PaymentModal({
       ? toMajor(order.discount_amount)
       : undefined
     : pricing?.discountAmount;
-  const hasBreakdown =
-    (subtotal !== undefined && subtotal !== null) ||
-    (pricing !== undefined && (pricing.taxAmount > 0 || pricing.serviceChargeAmount > 0));
+  // The items receipt (cart mode) already ends with its own Total row. Only
+  // show the breakdown block when it adds information (taxes, service charge,
+  // discount) or when there is no items receipt to display the total at all.
+  const showItemsReceipt = !!cartItems && cartItems.length > 0;
+  const hasExtras =
+    (taxAmount ?? 0) > 0 || (serviceChargeAmount ?? 0) > 0 || (discountAmount ?? 0) > 0;
+  const hasBreakdown = hasExtras || (!showItemsReceipt && subtotal !== undefined);
 
   return (
     <div className="fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden animate-in fade-in duration-200">
@@ -243,7 +252,8 @@ export default function PaymentModal({
             <span className="text-xs font-mono text-app-text-muted">#{finalOrderNum}</span>
           )}
         </div>
-        {finalTable && (
+        {/* "CMD-<n>" is a tableless POS ticket id, not a table - do not label it "Table" */}
+        {finalTable && !/^CMD-/i.test(finalTable) && (
           <span className="text-xs sm:text-sm text-app-text-muted">
             {t('tableLabel', { table: finalTable })}
           </span>
@@ -260,11 +270,11 @@ export default function PaymentModal({
               {t('amountToPay')}
             </p>
             <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-app-text tabular-nums tracking-tight">
-              {formatCurrency(totalWithTip, currency)}
+              {formatCurrency(totalWithTip, displayCurrency)}
             </p>
             {tipAmount > 0 && (
               <p className="mt-1 text-xs text-app-text-muted">
-                {t('tipAmount', { amount: formatCurrency(tipAmount, currency) })}
+                {t('tipAmount', { amount: formatCurrency(tipAmount, displayCurrency) })}
               </p>
             )}
           </div>
@@ -290,16 +300,18 @@ export default function PaymentModal({
                     )}
                   </div>
                   <span className="text-app-text-secondary tabular-nums font-mono text-xs shrink-0">
-                    {formatCurrency(item.price * item.quantity, currency)}
+                    {formatCurrency(item.price * item.quantity, displayCurrency)}
                   </span>
                 </div>
               ))}
-              <div className="flex justify-between border-t border-app-border pt-2 text-sm font-bold text-app-text">
-                <span>{t('total')}</span>
-                <span className="tabular-nums font-mono">
-                  {formatCurrency(finalTotal, currency)}
-                </span>
-              </div>
+              {!hasBreakdown && (
+                <div className="flex justify-between border-t border-app-border pt-2 text-sm font-bold text-app-text">
+                  <span>{t('total')}</span>
+                  <span className="tabular-nums font-mono">
+                    {formatCurrency(finalTotal, displayCurrency)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -309,14 +321,14 @@ export default function PaymentModal({
               <div className="flex justify-between text-app-text-secondary text-xs">
                 <span>{t('subtotal')}</span>
                 <span className="tabular-nums font-mono">
-                  {formatCurrency(subtotal!, currency)}
+                  {formatCurrency(subtotal!, displayCurrency)}
                 </span>
               </div>
               {taxAmount !== undefined && taxAmount !== null && taxAmount > 0 && (
                 <div className="flex justify-between text-app-text-secondary text-xs">
                   <span>{t('taxes')}</span>
                   <span className="tabular-nums font-mono">
-                    {formatCurrency(taxAmount, currency)}
+                    {formatCurrency(taxAmount, displayCurrency)}
                   </span>
                 </div>
               )}
@@ -326,7 +338,7 @@ export default function PaymentModal({
                   <div className="flex justify-between text-app-text-secondary text-xs">
                     <span>{t('service')}</span>
                     <span className="tabular-nums font-mono">
-                      {formatCurrency(serviceChargeAmount, currency)}
+                      {formatCurrency(serviceChargeAmount, displayCurrency)}
                     </span>
                   </div>
                 )}
@@ -334,14 +346,14 @@ export default function PaymentModal({
                 <div className="flex justify-between text-[var(--success)] text-xs">
                   <span>{t('discount')}</span>
                   <span className="tabular-nums font-mono">
-                    -{formatCurrency(discountAmount, currency)}
+                    -{formatCurrency(discountAmount, displayCurrency)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between border-t border-app-border pt-2 font-bold text-app-text text-sm">
                 <span>{t('total')}</span>
                 <span className="tabular-nums font-mono">
-                  {formatCurrency(finalTotal, currency)}
+                  {formatCurrency(finalTotal, displayCurrency)}
                 </span>
               </div>
             </div>
@@ -424,7 +436,7 @@ export default function PaymentModal({
               {t('amountToPay')}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-app-text tabular-nums">
-              {formatCurrency(totalWithTip, currency)}
+              {formatCurrency(totalWithTip, displayCurrency)}
             </p>
           </div>
 
@@ -490,11 +502,13 @@ export default function PaymentModal({
                   {t('received')}
                 </p>
                 <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
-                  {formatCurrency(receivedAmount, currency)}
+                  {formatCurrency(receivedAmount, displayCurrency)}
                 </p>
                 {!cashIsValid && amountRemaining > 0 && (
                   <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
-                    {t('amountRemaining', { amount: formatCurrency(amountRemaining, currency) })}
+                    {t('amountRemaining', {
+                      amount: formatCurrency(amountRemaining, displayCurrency),
+                    })}
                   </p>
                 )}
               </div>
@@ -520,7 +534,7 @@ export default function PaymentModal({
                     cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
                   )}
                 >
-                  {formatCurrency(change, currency)}
+                  {formatCurrency(change, displayCurrency)}
                 </p>
               </div>
             </div>
@@ -530,7 +544,7 @@ export default function PaymentModal({
                 type="button"
                 variant="outline"
                 onClick={setExactCashAmount}
-                className="min-h-[44px] rounded-lg border-accent/40 bg-accent/10 text-accent text-xs font-bold px-3"
+                className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-accent text-xs font-bold px-3 hover:bg-app-elevated"
               >
                 {t('exactAmount')}
               </Button>

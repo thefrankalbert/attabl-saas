@@ -162,7 +162,7 @@ export function usePOSData(tenantId: string) {
   // ─── Load tenant currency and suggestions ───────────────
   const loadExtras = useCallback(async () => {
     try {
-      const [tenantRes, suggestionsRes, venuesRes] = await Promise.all([
+      const [tenantRes, suggestionsRes, zonesRes] = await Promise.all([
         supabase
           .from('tenants')
           .select(
@@ -177,7 +177,13 @@ export function usePOSData(tenantId: string) {
           )
           .eq('tenant_id', tenantId)
           .eq('is_active', true),
-        supabase.from('venues').select('id').eq('tenant_id', tenantId).limit(1).single(),
+        // Tenant-scoped via venues join: a tenant can have several venues and
+        // the dine-in picker must list every zone, not just the first venue's.
+        supabase
+          .from('zones')
+          .select('*, venues!inner(tenant_id)')
+          .eq('venues.tenant_id', tenantId)
+          .order('display_order'),
       ]);
 
       if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
@@ -203,27 +209,19 @@ export function usePOSData(tenantId: string) {
         );
       }
 
-      // Fetch zones and tables for the dine-in table picker
-      if (venuesRes.data?.id) {
-        const venueId = venuesRes.data.id as string;
-        const { data: zonesData } = await supabase
-          .from('zones')
+      // Fetch tables for the dine-in table picker (zones loaded above)
+      const zonesData = zonesRes.data;
+      if (zonesData && zonesData.length > 0) {
+        setZones(zonesData as Zone[]);
+        const zoneIds = zonesData.map((z: Record<string, unknown>) => z.id as string);
+        const { data: tablesData } = await supabase
+          .from('tables')
           .select('*')
-          .eq('venue_id', venueId)
-          .order('display_order');
+          .in('zone_id', zoneIds)
+          .eq('is_active', true)
+          .order('table_number');
 
-        if (zonesData && zonesData.length > 0) {
-          setZones(zonesData as Zone[]);
-          const zoneIds = zonesData.map((z: Record<string, unknown>) => z.id as string);
-          const { data: tablesData } = await supabase
-            .from('tables')
-            .select('*')
-            .in('zone_id', zoneIds)
-            .eq('is_active', true)
-            .order('table_number');
-
-          if (tablesData) setAllTables(tablesData as Table[]);
-        }
+        if (tablesData) setAllTables(tablesData as Table[]);
       }
     } catch {
       // Non-critical - suggestions, currency, and tables are optional enhancements
@@ -378,17 +376,17 @@ export function usePOSData(tenantId: string) {
           });
           setCouponCode('');
         } else {
-          setCouponError(data.error || 'Coupon invalide');
+          setCouponError(data.error || t('couponInvalid'));
         }
       } catch (err) {
         logger.error('Coupon validation failed', err);
-        setCouponError('Erreur de validation');
+        setCouponError(t('couponValidationError'));
       } finally {
         clearTimeout(timeoutId);
         setCouponLoading(false);
       }
     },
-    [total],
+    [total, t],
   );
 
   const removeCoupon = useCallback(() => {
