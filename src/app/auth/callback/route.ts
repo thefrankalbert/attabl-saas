@@ -64,12 +64,25 @@ export async function GET(request: Request) {
       // Check if user already has a tenant (existing user login). Fetch ALL rows:
       // a multi-tenant owner has several, and .single() would error -> wrongly fall
       // through to the new-user branch and create a duplicate tenant.
-      const { data: existingAdminRows } = await supabase
+      const { data: existingAdminRows, error: adminRowsError } = await supabase
         .from('admin_users')
         .select(
           'id, tenant_id, is_super_admin, role, tenants(slug, onboarding_completed, created_at)',
         )
         .eq('user_id', session.user.id);
+
+      // A transient DB error must NOT fall through to the new-user branch below:
+      // that would create a duplicate tenant for an existing user.
+      if (adminRowsError) {
+        logger.error('OAuth callback - failed to fetch admin_users', {
+          userId: session.user.id,
+          errorMessage: adminRowsError.message,
+          errorCode: adminRowsError.code,
+        });
+        return NextResponse.redirect(
+          `${requestUrl.origin}/login?error=oauth_failed&reason=db_error`,
+        );
+      }
 
       if (existingAdminRows && existingAdminRows.length > 0) {
         // Deterministic pick for login tracking: most recent unfinished tenant.

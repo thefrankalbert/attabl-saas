@@ -200,11 +200,12 @@ export async function actionImpersonateTenant(tenantId: string): Promise<Imperso
     const service = createPlatformAdminService(admin);
     await service.recordImpersonation(parsed.data.tenantId, { userId: user.id, email: user.email });
 
-    const { data } = await admin
+    const { data, error: slugError } = await admin
       .from('tenants')
       .select('slug')
       .eq('id', parsed.data.tenantId)
       .maybeSingle();
+    if (slugError) return { error: "Echec de l'acces" };
     return { success: true, slug: data?.slug };
   } catch (err) {
     return { error: toMessage(err, "Echec de l'acces") };

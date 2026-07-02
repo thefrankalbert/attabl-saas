@@ -465,7 +465,8 @@ html (height: 100%, overflow: hidden)  -- globals.css
 - INTERDIT : `overflow-y-auto` ou `overflow-y-scroll` en dehors de `main#main-content` ou listes scrollables explicites
 - INTERDIT : Retirer `overflow: hidden` de html ou body
 - INTERDIT : Ajouter `overflow: auto/scroll` sur des conteneurs intermediaires
-- h-dvh est reserve aux shells de plus haut niveau qui ancrent leur propre viewport : AdminLayoutClient (dashboard tenant), PlatformConsole (/admin/platform) et CommandCenterShell (/admin/tenants). Chacun est un shell independant (non imbrique) avec un seul `<main#main-content>` scrollable. Aucun autre composant ne doit utiliser h-dvh ou h-screen.
+- h-dvh est reserve aux shells de plus haut niveau qui ancrent leur propre viewport : AdminLayoutClient (dashboard tenant), PlatformConsole (/admin/platform) et CommandCenterShell (/admin/tenants). Chacun est un shell independant (non imbrique) avec un seul `<main#main-content>` scrollable. Aucun autre composant DANS un shell ne doit utiliser h-dvh ou h-screen.
+- Exception validee (audit 2026-07-01) : les routes plein ecran autonomes hors de tout shell ancrent leur propre viewport et peuvent utiliser h-dvh/min-h-dvh (jamais h-screen/100vh) : app/error.tsx, app/global-error.tsx (100dvh inline), app/loading.tsx, app/not-found.tsx, app/unauthorized, checkout success/cancel, app/onboarding, le layout storefront (sites/[site]/(storefront)) et StorefrontUnavailable.
 - Les pages enfants utilisent `h-full` pour remplir leur parent
 
 #### 2. Design System shadcn/ui

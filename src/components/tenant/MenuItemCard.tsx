@@ -66,7 +66,7 @@ export default function MenuItemCard({
     );
 
   // Initialize the default price variant
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional: sets variant default from item props on mount; useEffect avoids stale closure vs useState initializer (2026-05-04) */
+
   useEffect(() => {
     if (item.price_variants?.length) {
       const defaultVariant =
@@ -74,7 +74,6 @@ export default function MenuItemCard({
       setSelectedVariant(defaultVariant);
     }
   }, [item.price_variants]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const currentPrice = selectedVariant ? selectedVariant.price : item.price;
 
@@ -87,7 +86,7 @@ export default function MenuItemCard({
 
   // Compute "new" flag: created within the last 14 days.
   const [isNew, setIsNew] = useState(false);
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional: Date.now() is impure and must run client-side to avoid hydration mismatch; cannot use useState initializer (2026-05-04) */
+
   useEffect(() => {
     if (!item.created_at) return;
     const created = new Date(item.created_at).getTime();
@@ -95,7 +94,6 @@ export default function MenuItemCard({
     const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
     setIsNew(Date.now() - created < fourteenDaysMs);
   }, [item.created_at]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const description = getTranslatedContent(language, item.description || '', item.description_en);
   const formattedPrice =

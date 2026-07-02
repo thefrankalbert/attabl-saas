@@ -46,7 +46,9 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
           .order('display_order'),
         supabase
           .from('admin_users')
-          .select('*')
+          // Floor view only renders id/full_name/role/is_active - do not pull
+          // email/phone/permissions for every team member.
+          .select('id, tenant_id, user_id, full_name, role, is_active')
           .eq('tenant_id', tenantId)
           .in('role', ['waiter', 'manager', 'admin', 'owner'])
           .order('full_name'),
