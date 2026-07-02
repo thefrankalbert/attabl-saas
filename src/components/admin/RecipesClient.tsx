@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { BookOpenCheck, Search, Plus, Trash2, Check } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { BookOpenCheck, Circle, CircleCheck, Search, Plus, Trash2, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -129,6 +129,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     [tenantId, inventoryService, toast, t, tc],
   );
 
+  const editorPanelRef = useRef<HTMLDivElement | null>(null);
+
   const handleSelectItem = (itemId: string) => {
     if (selectedItemId === itemId) {
       setSelectedItemId(null);
@@ -137,6 +139,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     }
     setSelectedItemId(itemId);
     loadRecipe(itemId);
+    // On stacked layouts (mobile/tablet) the editor panel sits below the list,
+    // out of view - bring it into view so tapping a dish gives visible feedback.
+    // block:'nearest' makes this a no-op on the side-by-side desktop layout.
+    requestAnimationFrame(() => {
+      editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   };
 
   const usedIngredientIds = useMemo(
@@ -259,40 +267,39 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0">
+      <div className="shrink-0 space-y-4">
         <AdminPageHeader
           title={t('recipesTech')}
-          subtitle={t('recipesSubtitle')}
           count={`${itemsWithRecipes.size}/${menuItems.length}`}
-          actions={
-            <>
-              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                <Input
-                  data-search-input
-                  placeholder={t('searchDish')}
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2 shrink-0">
-                {(['all', 'with', 'without'] as const).map((f) => (
-                  <Button
-                    key={f}
-                    variant={filterRecipe === f ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterRecipe(f)}
-                    className="rounded-full"
-                  >
-                    {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
-                  </Button>
-                ))}
-              </div>
-            </>
-          }
         />
+
+        {/* Toolbar on its own row (never crushes the title, like StockHistory) */}
+        <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center">
+          <div className="relative w-full @lg:w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+            <Input
+              data-search-input
+              placeholder={t('searchDish')}
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex shrink-0 gap-2 overflow-x-auto scrollbar-hide">
+            {(['all', 'with', 'without'] as const).map((f) => (
+              <Button
+                key={f}
+                variant={filterRecipe === f ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterRecipe(f)}
+                className="rounded-full whitespace-nowrap"
+              >
+                {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -318,10 +325,13 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               )}
             </div>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 pb-4">
-            <div className="flex flex-col @lg:flex-row gap-6">
-              <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
-                <div className="max-h-[400px] @md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
+          {/* Stacked (mobile/tablet): this wrapper is THE single page scroller.
+              Side-by-side (@3xl): wrapper stops scrolling, each panel fills the
+              height and scrolls its own list internally - no nested scroll. */}
+          <div className="flex-1 min-h-0 overflow-y-auto @3xl:overflow-hidden scrollbar-hide mt-4 @sm:mt-6 pb-4 @3xl:pb-0">
+            <div className="flex flex-col @3xl:flex-row gap-4 @3xl:gap-6 @3xl:h-full @3xl:min-h-0">
+              <div className="flex-1 min-w-0 bg-app-card rounded-xl border border-app-border overflow-hidden @3xl:flex @3xl:flex-col @3xl:min-h-0">
+                <div className="max-h-[420px] @3xl:max-h-none @3xl:flex-1 @3xl:min-h-0 overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
                     const hasRecipe = itemsWithRecipes.has(item.id);
                     const isSelected = selectedItemId === item.id;
@@ -332,32 +342,29 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         variant="ghost"
                         onClick={() => handleSelectItem(item.id)}
                         className={cn(
-                          'w-full text-left px-4 py-3 h-auto flex items-center justify-between transition-colors rounded-none',
-                          isSelected
-                            ? 'bg-accent-muted border-l-4 border-accent'
-                            : 'hover:bg-app-bg border-l-4 border-transparent',
+                          'w-full text-left px-4 py-3 h-auto flex items-center gap-3 transition-colors rounded-none',
+                          isSelected ? 'bg-accent-muted' : 'hover:bg-app-bg',
                         )}
                       >
-                        <div>
-                          <p
-                            className={cn(
-                              'font-medium text-sm',
-                              isSelected ? 'text-accent' : 'text-app-text',
-                            )}
-                          >
-                            {item.name}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
-                            hasRecipe
-                              ? 'border border-[var(--border)] text-[var(--success)]'
-                              : 'bg-app-bg text-app-text-secondary',
-                          )}
-                        >
+                        {hasRecipe ? (
+                          <CircleCheck
+                            aria-hidden
+                            className="h-4 w-4 shrink-0 text-status-success"
+                          />
+                        ) : (
+                          <Circle aria-hidden className="h-4 w-4 shrink-0 text-app-text-muted/60" />
+                        )}
+                        <span className="sr-only">
                           {hasRecipe ? t('hasRecipe') : t('noRecipe')}
                         </span>
+                        <p
+                          className={cn(
+                            'min-w-0 flex-1 truncate text-sm',
+                            isSelected ? 'font-semibold text-accent' : 'font-medium text-app-text',
+                          )}
+                        >
+                          {item.name}
+                        </p>
                       </Button>
                     );
                   })}
@@ -369,19 +376,23 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 </div>
               </div>
 
-              <div className="@md:w-80 @lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div
+                ref={editorPanelRef}
+                className="w-full @3xl:w-[26rem] shrink-0 bg-app-card rounded-xl border border-app-border overflow-hidden @3xl:flex @3xl:flex-col @3xl:min-h-0"
+              >
                 {selectedItemId && selectedItem ? (
-                  <div className="flex flex-col h-full">
+                  <div className="flex flex-col h-full @3xl:min-h-0">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">
-                      <h3 className="font-bold text-sm text-app-text">
-                        {t('recipeFor')} {selectedItem.name}
+                      <h3 className="truncate font-bold text-sm text-app-text">
+                        <span className="sr-only">{t('recipeFor')} </span>
+                        {selectedItem.name}
                       </h3>
                     </div>
 
                     {loadingRecipe ? (
                       <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
                     ) : (
-                      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[300px] @md:max-h-[400px]">
+                      <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto max-h-[320px] @3xl:max-h-none">
                         {recipeLines.map((line) => {
                           const availableIngredients = ingredients.filter(
                             (ing) =>
@@ -504,7 +515,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center p-12 text-app-text-secondary">
+                  <div className="flex h-full flex-col items-center justify-center p-12 text-app-text-secondary">
                     <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
                     <p className="text-sm font-medium">{t('selectDish')}</p>
                     <p className="text-xs mt-1">{t('defineRecipe')}</p>
