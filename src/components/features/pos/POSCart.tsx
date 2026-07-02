@@ -316,7 +316,7 @@ export default function POSCart({
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="w-7 text-center text-xs font-bold tabular-nums text-app-text">
+                        <span className="min-w-7 px-1 text-center text-xs font-bold tabular-nums text-app-text">
                           {item.quantity}
                         </span>
                         <Button
