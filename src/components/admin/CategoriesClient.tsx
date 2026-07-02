@@ -426,7 +426,6 @@ export default function CategoriesClient({
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            subtitle={t('subtitle')}
             count={categories.length}
             actions={
               <Button

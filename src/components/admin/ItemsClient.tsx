@@ -387,7 +387,6 @@ export default function ItemsClient({
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            subtitle={t('subtitle')}
             count={items.length}
             actions={
               <>

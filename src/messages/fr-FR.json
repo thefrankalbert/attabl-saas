@@ -1692,8 +1692,6 @@
     "goToInventory": "Gérer les produits en stock",
     "loadingRecipeError": "Erreur de chargement de la recette",
     "addProductsFirst": "Ajoutez d'abord des produits",
-    "subtitle": "Suivez vos ingrédients et leurs niveaux de stock",
-    "suggestionsSubtitle": "Recommandez des plats à vos clients",
     "withRecipe": "Avec fiche technique",
     "withoutRecipe": "Sans fiche technique",
     "searchDish": "Rechercher un plat...",
@@ -2016,7 +2014,6 @@
     "navSupports": "Supports",
     "supports": {
       "pageTitle": "Chevalet standard",
-      "pageSubtitle": "Tente de table 21,7 x 11 cm - prete a imprimer",
       "sectionBackground": "Fond",
       "sectionLogo": "Logo",
       "sectionName": "Nom de l'établissement",
@@ -2210,7 +2207,6 @@
   },
   "users": {
     "title": "Utilisateurs",
-    "subtitle": "Gérez les membres de votre équipe",
     "addUser": "Ajouter un utilisateur",
     "editUser": "Modifier l'utilisateur",
     "editPermissions": "Gérer les permissions",
@@ -2287,7 +2283,6 @@
   },
   "reports": {
     "title": "Rapports",
-    "subtitle": "Analysez les performances de votre établissement",
     "periodToday": "Aujourd'hui",
     "periodWeek": "Cette semaine",
     "periodMonth": "Ce mois",
@@ -2352,7 +2347,6 @@
   },
   "permissions": {
     "title": "Permissions par role",
-    "subtitle": "Personnalisez les acces pour chaque role",
     "permissionColumn": "Permission",
     "saving": "Sauvegarde...",
     "loadError": "Erreur lors du chargement des permissions",
@@ -2408,7 +2402,6 @@
   },
   "coupons": {
     "title": "Coupons",
-    "subtitle": "Gérez vos codes promotionnels",
     "addCoupon": "Ajouter un coupon",
     "editCoupon": "Modifier le coupon",
     "code": "Code",
@@ -2474,7 +2467,6 @@
   },
   "suppliers": {
     "title": "Fournisseurs",
-    "subtitle": "Gérez vos fournisseurs",
     "addSupplier": "Ajouter un fournisseur",
     "editSupplier": "Modifier le fournisseur",
     "name": "Nom",
@@ -2527,7 +2519,6 @@
   },
   "announcements": {
     "title": "Annonces",
-    "subtitle": "Gérez vos annonces et promotions",
     "addAnnouncement": "Ajouter une annonce",
     "editAnnouncement": "Modifier l'annonce",
     "content": "Contenu",
@@ -2574,7 +2565,6 @@
   },
   "ads": {
     "title": "Publicités & Bannières",
-    "subtitle": "Gérez les bannières promotionnelles de votre page d'accueil.",
     "newAd": "Nouvelle Publicité",
     "orderLabel": "Ordre: {order}",
     "disable": "Désactiver",
@@ -2599,7 +2589,6 @@
   },
   "categories": {
     "title": "Catégories",
-    "subtitle": "Structurez vos menus par catégories",
     "menu": "Menu",
     "newCategory": "Nouvelle catégorie",
     "categoryCount": "{count} catégorie(s)",
@@ -2642,7 +2631,6 @@
   },
   "items": {
     "title": "Plats & Articles",
-    "subtitle": "Gérez votre carte complète",
     "newItem": "Nouveau plat",
     "allCategories": "Toutes les catégories",
     "all": "Tous",
@@ -2700,7 +2688,6 @@
   },
   "menus": {
     "title": "Cartes / Menus",
-    "subtitle": "Gérez vos cartes, sous-cartes et leur contenu",
     "newMenu": "Nouvelle carte",
     "viewMenu": "Voir la carte",
     "limitReached": "Vous avez atteint la limite de {max} cartes pour votre plan.",
@@ -2883,7 +2870,6 @@
   },
   "qrCodes": {
     "title": "QR Codes",
-    "subtitle": "Générez et personnalisez vos QR codes pour chaque table",
     "stepSelection": "Sélection",
     "stepCustomization": "Personnalisation",
     "stepDownload": "Téléchargement",
@@ -3043,7 +3029,6 @@
     "statsAdditions": "Entrées",
     "statsRemovals": "Sorties",
     "statsProducts": "Produits",
-    "subtitle": "Chaque entrée et sortie de votre stock, tracée et datée.",
     "emptyTitle": "Pas encore de mouvement",
     "emptyDescription": "Dès qu'une commande passe ou que vous ajustez votre stock, tout s'affiche ici. Commencez par définir votre stock de départ.",
     "emptyCta": "Définir mon stock",
@@ -3450,7 +3435,6 @@
   },
   "tables": {
     "title": "Configuration des tables",
-    "subtitle": "Gérez les zones et tables de votre restaurant",
     "zonesHeader": "Zones",
     "zoneCount": "{count} zone(s)",
     "addZone": "Ajouter une zone",
@@ -3670,7 +3654,6 @@
   },
   "auditLog": {
     "title": "Journal d'audit",
-    "subtitle": "Historique de toutes les modifications apportées à votre espace",
     "empty": "Aucune entrée",
     "emptyDesc": "Les actions seront enregistrées ici automatiquement.",
     "filters": "Filtres",
@@ -3704,7 +3687,6 @@
   },
   "invoices": {
     "title": "Historique des factures",
-    "subtitle": "Consultez et téléchargez vos factures d'abonnement",
     "empty": "Aucune facture",
     "emptyDesc": "Les factures apparaîtront ici une fois votre abonnement actif.",
     "fetchError": "Impossible de charger les factures",

@@ -287,7 +287,6 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            subtitle={t('subtitle')}
             count={loading || error ? undefined : (totalCount ?? undefined)}
             actions={
               <div className="relative w-full @lg:w-52">

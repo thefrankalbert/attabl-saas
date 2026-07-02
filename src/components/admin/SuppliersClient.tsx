@@ -312,7 +312,6 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            subtitle={t('subtitle')}
             count={loading || isError ? undefined : suppliers.length}
             actions={
               <>

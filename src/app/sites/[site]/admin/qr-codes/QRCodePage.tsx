@@ -99,16 +99,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 bg-app-elevated rounded-xl">
-            <QrCode className="h-5 w-5 text-app-text-secondary" />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
-        </div>
-        <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
-      </div>
+      {/* Title kept for screen readers only - the nav + tabs already say where
+          you are, so we don't repeat a heading + subtitle on screen. */}
+      <h1 className="sr-only">{t('title')}</h1>
 
       {/* ─── Tabs Navigation ─── */}
       <Tabs defaultValue="choose" className="flex flex-col flex-1 min-h-0">

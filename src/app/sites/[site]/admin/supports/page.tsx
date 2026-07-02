@@ -45,11 +45,9 @@ export default async function SupportsPage({ params }: { params: Promise<{ site:
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-app-border shrink-0">
-        <h1 className="text-xl font-bold tracking-tight text-app-text">{t('pageTitle')}</h1>
-        <p className="text-sm text-app-text-muted mt-0.5">{t('pageSubtitle')}</p>
-      </div>
+      {/* Title kept for screen readers only - the nav already identifies the
+          page, so we don't repeat a heading + subtitle on screen. */}
+      <h1 className="sr-only">{t('pageTitle')}</h1>
 
       {/* Editor - prend toute la hauteur restante */}
       <div className="flex-1 min-h-0">
