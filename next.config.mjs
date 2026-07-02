@@ -9,7 +9,13 @@ const withPWA = withPWAInit({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: false,
+  // Activate a newly deployed service worker immediately instead of parking it in
+  // the "waiting" state until every attabl.com tab is closed. With skipWaiting
+  // false, a fresh deploy kept serving the OLD cached bundle on returning devices
+  // (a refresh was not enough), so shipped fixes looked like they "never reached
+  // production". true => the new SW takes control and the next reload serves the
+  // fresh build.
+  skipWaiting: true,
 });
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
