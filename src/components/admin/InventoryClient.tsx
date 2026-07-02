@@ -87,7 +87,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   }, []);
 
   // TanStack Query for ingredients and suppliers
-  const { data: ingredients = [], isLoading: isQueryLoading } = useIngredients(tenantId);
+  const { data: ingredients = [], isLoading: isQueryLoading, isError } = useIngredients(tenantId);
   const loading = !isMounted || isQueryLoading;
   const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
@@ -372,7 +372,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           <AdminPageHeader
             title={t('inventory')}
             subtitle={t('subtitle')}
-            count={loading ? undefined : ingredients.length}
+            count={loading || isError ? undefined : ingredients.length}
             actions={
               <>
                 {/* Search - compact */}

@@ -41,6 +41,15 @@ const SEGMENT_LABEL_MAP: Record<string, string> = {
   tables: 'navTables',
 };
 
+/** decodeURIComponent throws URIError on malformed input (e.g. "%E0"); fall back to the raw segment. */
+function safeDecodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 export function AdminBreadcrumbs() {
   const pathname = usePathname();
   const params = useParams();
@@ -51,8 +60,11 @@ export function AdminBreadcrumbs() {
 
   const basePath = `/sites/${site}/admin`;
 
-  // Strip the base path to get relative segments
-  const relativePath = pathname.replace(basePath, '');
+  // Strip the base path to get relative segments. Anchored guard: if the
+  // pathname does not start with the rewritten base (e.g. middleware behavior
+  // change), render nothing rather than bogus crumbs from a no-op replace.
+  if (!pathname.startsWith(basePath)) return null;
+  const relativePath = pathname.slice(basePath.length);
   const segments = relativePath.split('/').filter(Boolean);
 
   // Ancestor segments only - the current page is shown by the page <h1> (AdminPageHeader).
@@ -72,7 +84,7 @@ export function AdminBreadcrumbs() {
       ? t(labelKey)
       : isUuid
         ? `#${segment.slice(0, 8).toUpperCase()}`
-        : decodeURIComponent(segment);
+        : safeDecodeSegment(segment);
 
     return { href, label };
   });
