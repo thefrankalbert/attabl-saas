@@ -426,8 +426,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico (favicon file)
+     * - sw.js (self-destructing service worker route - must be served verbatim,
+     *   never rewritten to a tenant path)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|sounds/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|wav|mp3|ogg|pdf|xlsx|xls|csv|woff|woff2|ttf|eot)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|sounds/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|wav|mp3|ogg|pdf|xlsx|xls|csv|woff|woff2|ttf|eot)$).*)',
   ],
 };

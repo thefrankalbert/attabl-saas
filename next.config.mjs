@@ -1,22 +1,17 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
-import withPWAInit from '@ducanh2912/next-pwa';
 
 const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
 
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  // Activate a newly deployed service worker immediately instead of parking it in
-  // the "waiting" state until every attabl.com tab is closed. With skipWaiting
-  // false, a fresh deploy kept serving the OLD cached bundle on returning devices
-  // (a refresh was not enough), so shipped fixes looked like they "never reached
-  // production". true => the new SW takes control and the next reload serves the
-  // fresh build.
-  skipWaiting: true,
-});
+// PWA/service worker removed: @ducanh2912/next-pwa is a Webpack plugin and the
+// production build runs on Turbopack, so it silently generated NO service worker
+// (attabl.com/sw.js returned 404). Devices that had registered an old SW from a
+// past Webpack build kept serving stale cached JS and could never update, so
+// shipped fixes "never reached production". A self-destructing /sw.js
+// (src/app/sw.js/route.ts) now unregisters those orphaned workers. The app stays
+// installable via manifest.json; real offline caching can be re-added later with
+// a Turbopack-compatible tool (e.g. @serwist/next).
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -85,7 +80,7 @@ const nextConfig = {
   // async rewrites() { ... }
 };
 
-export default withSentryConfig(analyze(withPWA(withNextIntl(nextConfig))), {
+export default withSentryConfig(analyze(withNextIntl(nextConfig)), {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 

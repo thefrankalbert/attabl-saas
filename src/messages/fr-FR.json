@@ -117,12 +117,7 @@
     "service": "Service",
     "discount": "Remise",
     "previous": "Précédent",
-    "next": "Suivant",
-    "appUpdate": {
-      "title": "Nouvelle version disponible",
-      "description": "Une mise à jour d'ATTABL est prête.",
-      "action": "Mettre à jour"
-    }
+    "next": "Suivant"
   },
   "checkout": {
     "successTitle": "Paiement réussi !",
