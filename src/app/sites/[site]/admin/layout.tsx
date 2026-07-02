@@ -21,6 +21,8 @@ import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
 import { getPlanLimits } from '@/lib/plans/features';
 import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
+import type { PermissionCode, RolePermissions } from '@/types/permission.types';
+import { getEffectivePermissions } from '@/lib/permissions';
 import { determineTrialEventKey, sendTrialEmailForKey } from '@/services/trigger-emails.service';
 import { logger } from '@/lib/logger';
 
@@ -243,6 +245,26 @@ export default async function AdminLayout({
 
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
+  // Effective permissions for sidebar nav filtering. Reflects the full 3-level
+  // resolution (per-user custom_permissions -> per-tenant role_permissions
+  // override -> default matrix) so the sidebar hides links the member cannot
+  // open, instead of showing them and bouncing to /unauthorized on click.
+  // Owner short-circuits to all-true inside getEffectivePermissions.
+  let navRoleOverride: RolePermissions | null = null;
+  if (userRole !== 'owner') {
+    const { data: ro } = await supabase
+      .from('role_permissions')
+      .select('permissions')
+      .eq('tenant_id', tenant.id)
+      .eq('role', userRole)
+      .maybeSingle();
+    navRoleOverride = ro ? ({ permissions: ro.permissions } as unknown as RolePermissions) : null;
+  }
+  const navPermissions: Record<PermissionCode, boolean> = getEffectivePermissions(
+    { role: userRole, custom_permissions: adminUser?.custom_permissions ?? null } as never,
+    navRoleOverride,
+  );
+
   return (
     <div>
       {showOnboardingResume && <OnboardingResumeDialog />}
@@ -255,6 +277,7 @@ export default async function AdminLayout({
             isDevMode={false}
             basePath={`/sites/${tenantSlug}/admin`}
             role={userRole}
+            navPermissions={navPermissions}
             tenant={{
               name: tenant.name,
               slug: tenant.slug,

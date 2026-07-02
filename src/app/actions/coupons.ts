@@ -28,7 +28,7 @@ const couponPayloadSchema = z.object({
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
     return { error: null };
   } catch (err) {
     if (err instanceof AuthError) {

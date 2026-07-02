@@ -23,7 +23,7 @@ export async function actionUpdatePaymentMethods(
   methods: string[],
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
 
     const validated = updatePaymentMethodsSchema.safeParse({ methods });
     if (!validated.success) {

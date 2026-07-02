@@ -24,7 +24,11 @@ type ActionResponse = {
 async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['owner', 'admin']) {
   const t = await getTranslations('errors');
   try {
-    const { user, role, adminUserId } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
+    const { user, role, adminUserId } = await getAuthenticatedUserForTenant(
+      tenantId,
+      allowedRoles,
+      'team.manage',
+    );
     return { error: null, user, role, adminUserId };
   } catch (err) {
     if (err instanceof AuthError) {

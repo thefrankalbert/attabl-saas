@@ -203,12 +203,11 @@ export async function actionUpdateOrderStatus(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
     const service = createOrderService(supabase);
     if (parsed.data.status === 'cancelled') {
       // Cancellation reverses side-effects (audit C7), in two halves by design:
@@ -284,12 +283,11 @@ export async function actionUpdateItemStatus(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
 
     // Verify the order belongs to the verified tenant before touching its items.
     const { data: order, error: orderError } = await supabase
@@ -346,12 +344,11 @@ export async function actionSetCourseHeld(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
     await createOrderService(supabase).setCourseHeld(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -387,12 +384,11 @@ export async function actionMarkOrderPaid(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
     // paid=false means the order was already settled (idempotent no-op). The call
     // still succeeds; callers can use `paid` to skip duplicate side-effects.
     const { paid } = await createOrderService(supabase).markPaid(
@@ -439,12 +435,11 @@ export async function actionRecordTender(
   }
 
   try {
-    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
     const summary = await createPaymentService(supabase).recordTender(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -489,11 +484,11 @@ export async function actionRefundOrder(
   }
 
   try {
-    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-    ]);
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager'],
+      'orders.manage',
+    );
     const summary = await createPaymentService(supabase).refund(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -531,12 +526,11 @@ export async function actionGetPaymentSummary(
   }
 
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(parsed.data.tenantId, [
-      'owner',
-      'admin',
-      'manager',
-      'server',
-    ]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
     const summary = await createPaymentService(supabase).getSummary(
       parsed.data.orderId,
       parsed.data.tenantId,

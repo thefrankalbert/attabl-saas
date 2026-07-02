@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
+import type { PermissionCode } from '@/types/permission.types';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
@@ -38,6 +39,8 @@ interface AdminLayoutInnerProps {
   breadcrumbs?: React.ReactNode;
   /** Real nav badge counts (open orders / in-kitchen / active items) */
   navCounts?: { orders?: number; kitchen?: number; items?: number };
+  /** Effective permissions (3-level resolved) for hiding nav links the member cannot open */
+  navPermissions?: Record<PermissionCode, boolean>;
 }
 
 function AdminLayoutInner({
@@ -52,6 +55,7 @@ function AdminLayoutInner({
   notifications,
   breadcrumbs,
   navCounts,
+  navPermissions,
 }: AdminLayoutInnerProps) {
   const { isMobile, isTablet } = useDeviceContext();
   const pathname = usePathname();
@@ -159,6 +163,7 @@ function AdminLayoutInner({
           collapsed={sidebarCollapsed}
           onOpenSettings={openSettings}
           counts={navCounts}
+          navPermissions={navPermissions}
         />
       )}
 
@@ -239,6 +244,7 @@ interface AdminLayoutClientProps {
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
   navCounts?: { orders?: number; kitchen?: number; items?: number };
+  navPermissions?: Record<PermissionCode, boolean>;
 }
 
 export function AdminLayoutClient({
@@ -254,6 +260,7 @@ export function AdminLayoutClient({
   notifications,
   breadcrumbs,
   navCounts,
+  navPermissions,
 }: AdminLayoutClientProps) {
   return (
     <DeviceProvider>
@@ -269,6 +276,7 @@ export function AdminLayoutClient({
         notifications={notifications}
         breadcrumbs={breadcrumbs}
         navCounts={navCounts}
+        navPermissions={navPermissions}
       >
         {children}
       </AdminLayoutInner>

@@ -76,7 +76,11 @@ async function checkInventoryPermissions(
   tenantId: string,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(tenantId, [...ALLOWED_ROLES]);
+    const { supabase } = await getAuthenticatedUserForTenant(
+      tenantId,
+      [...ALLOWED_ROLES],
+      'inventory.edit',
+    );
     return { error: null, supabase };
   } catch (err) {
     if (err instanceof AuthError) {
