@@ -3,8 +3,9 @@ import type { ReactNode } from 'react';
 interface AdminPageHeaderProps {
   title: string;
   subtitle?: string;
-  /** Optional count shown as a muted pill next to the title. */
-  count?: number;
+  /** Optional count shown as a muted pill next to the title. A string allows
+   * ratio-style counts like "3/12" (e.g. dishes with recipes / total). */
+  count?: number | string;
   /** Right-aligned toolbar (search, export, filter toggle, primary action). */
   actions?: ReactNode;
 }

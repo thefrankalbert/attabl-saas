@@ -263,6 +263,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         <AdminPageHeader
           title={t('recipesTech')}
           subtitle={t('recipesSubtitle')}
+          count={`${itemsWithRecipes.size}/${menuItems.length}`}
           actions={
             <>
               <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
