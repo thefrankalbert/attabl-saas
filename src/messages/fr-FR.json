@@ -2187,7 +2187,21 @@
     "couponPlaceholder": "Code promo",
     "toSettle": "A encaisser",
     "toSettleSubtitle": "Commandes en attente de paiement",
-    "toSettleEmpty": "Aucune commande a encaisser"
+    "toSettleEmpty": "Aucune commande a encaisser",
+    "zone": "Zone",
+    "tables": "Tables",
+    "decreaseQty": "Diminuer la quantité",
+    "increaseQty": "Augmenter la quantité",
+    "removeCoupon": "Retirer le code promo",
+    "noTablesInZone": "Aucune table dans cette zone",
+    "noZonesConfigured": "Aucune zone configurée",
+    "noZonesHint": "Créez vos zones et tables dans Paramètres > Tables",
+    "tableWithNumber": "Table {table}",
+    "fromPrice": "Dès {price}",
+    "ticketNumberTooltip": "Ticket {number} du jour",
+    "productsTab": "Produits",
+    "couponInvalid": "Coupon invalide",
+    "couponValidationError": "Erreur de validation"
   },
   "users": {
     "title": "Utilisateurs",

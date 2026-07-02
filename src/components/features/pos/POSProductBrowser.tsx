@@ -287,7 +287,13 @@ export default function POSProductBrowser({
                     >
                       <div className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
                         {item.image_url ? (
-                          <Image src={item.image_url} alt="" fill className="object-cover" />
+                          <Image
+                            src={item.image_url}
+                            alt=""
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                          />
                         ) : (
                           <Utensils className="w-5 h-5 text-app-text-muted/40" />
                         )}
@@ -298,10 +304,12 @@ export default function POSProductBrowser({
                         </h3>
                         <p className="text-[11px] font-bold text-app-text-secondary mt-0.5">
                           {item.price_variants && item.price_variants.length > 0
-                            ? `${formatCurrency(
-                                Math.min(item.price, ...item.price_variants.map((v) => v.price)),
-                                currency,
-                              )}+`
+                            ? t('fromPrice', {
+                                price: formatCurrency(
+                                  Math.min(item.price, ...item.price_variants.map((v) => v.price)),
+                                  currency,
+                                ),
+                              })
                             : formatCurrency(item.price, currency)}
                         </p>
                       </div>

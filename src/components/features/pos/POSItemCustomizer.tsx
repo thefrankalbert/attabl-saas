@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { X, Utensils, Plus } from 'lucide-react';
+import { X, Utensils, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -105,7 +105,7 @@ export default function POSItemCustomizer({
         <div className="flex items-start gap-3 p-4 border-b border-app-border">
           <div className="h-14 w-14 shrink-0 bg-app-elevated rounded-lg flex items-center justify-center relative overflow-hidden">
             {item.image_url ? (
-              <Image src={item.image_url} alt="" fill className="object-cover" />
+              <Image src={item.image_url} alt="" fill sizes="56px" className="object-cover" />
             ) : (
               <Utensils className="w-5 h-5 text-app-text-muted/40" />
             )}
@@ -191,7 +191,7 @@ export default function POSItemCustomizer({
                               : 'border-app-border bg-transparent',
                           )}
                         >
-                          {isSelected && <Plus className="w-3 h-3 text-accent-text rotate-45" />}
+                          {isSelected && <Check className="w-3 h-3 text-accent-text" />}
                         </div>
                         <span className="font-medium">{modifier.name}</span>
                       </div>

@@ -437,7 +437,10 @@ export async function POST(request: Request) {
         tenant_id,
         user_id: null,
         type: 'info',
-        title: `Nouvelle commande POS - Table ${table_number}`,
+        // "CMD-<n>" is a tableless POS ticket id, not a table number
+        title: /^CMD-/i.test(table_number)
+          ? `Nouvelle commande POS #${table_number}`
+          : `Nouvelle commande POS - Table ${table_number}`,
         body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
         link: '/orders',
       }),

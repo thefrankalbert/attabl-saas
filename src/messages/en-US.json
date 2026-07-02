@@ -2187,7 +2187,21 @@
     "couponPlaceholder": "Promo code",
     "toSettle": "To settle",
     "toSettleSubtitle": "Orders awaiting payment",
-    "toSettleEmpty": "No orders to settle"
+    "toSettleEmpty": "No orders to settle",
+    "zone": "Zone",
+    "tables": "Tables",
+    "decreaseQty": "Decrease quantity",
+    "increaseQty": "Increase quantity",
+    "removeCoupon": "Remove promo code",
+    "noTablesInZone": "No tables in this zone",
+    "noZonesConfigured": "No zones configured",
+    "noZonesHint": "Create your zones and tables in Settings > Tables",
+    "tableWithNumber": "Table {table}",
+    "fromPrice": "From {price}",
+    "ticketNumberTooltip": "Ticket #{number} of the day",
+    "productsTab": "Products",
+    "couponInvalid": "Invalid coupon",
+    "couponValidationError": "Validation error"
   },
   "users": {
     "title": "Users",
