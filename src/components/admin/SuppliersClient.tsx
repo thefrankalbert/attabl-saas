@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -61,7 +61,12 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   }, []);
 
   // TanStack Query for suppliers
-  const { data: suppliers = [], isLoading: isQueryLoading, isError } = useSuppliers(tenantId);
+  const {
+    data: suppliers = [],
+    isLoading: isQueryLoading,
+    isError,
+    refetch,
+  } = useSuppliers(tenantId);
   const loading = !isMounted || isQueryLoading;
 
   const loadSuppliers = () => {
@@ -352,6 +357,14 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-secondary">
             {t('loadingSuppliers')}
+          </div>
+        ) : isError ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+            <AlertTriangle className="w-10 h-10 text-app-text-muted" />
+            <p className="text-sm text-status-error">{tc('loadingError')}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              {tc('retry')}
+            </Button>
           </div>
         ) : (
           <>

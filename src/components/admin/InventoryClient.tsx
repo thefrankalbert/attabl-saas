@@ -43,7 +43,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   }, []);
 
   // TanStack Query for ingredients and suppliers
-  const { data: ingredients = [], isLoading: isQueryLoading, isError } = useIngredients(tenantId);
+  const {
+    data: ingredients = [],
+    isLoading: isQueryLoading,
+    isError,
+    refetch,
+  } = useIngredients(tenantId);
   const loading = !isMounted || isQueryLoading;
   const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
@@ -163,6 +168,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-secondary">
             {tc('loading')}
+          </div>
+        ) : isError ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+            <AlertTriangle className="w-10 h-10 text-app-text-muted" />
+            <p className="text-sm text-status-error">{tc('loadingError')}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              {tc('retry')}
+            </Button>
           </div>
         ) : (
           <>
