@@ -66,13 +66,18 @@ export async function actionCreateMenu(
 
   try {
     // Check plan limits
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
         'id, name, slug, is_active, created_at, subscription_plan, subscription_status, trial_ends_at',
       )
       .eq('id', tenantId)
       .single();
+
+    // Fail closed: a failed tenant read must not silently skip plan enforcement.
+    if (tenantError) {
+      return { error: 'Erreur serveur' };
+    }
 
     if (tenant) {
       const enforcement = createPlanEnforcementService(supabase);

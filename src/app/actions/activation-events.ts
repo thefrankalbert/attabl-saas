@@ -9,11 +9,22 @@ export async function actionTrackActivationEvent(event: string): Promise<void> {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
-    const { data: tenant } = await supabase
+    const { data: tenant, error: readError } = await supabase
       .from('tenants')
       .select('activation_events')
       .eq('id', tenantId)
       .single();
+
+    // A failed read must not proceed: current would be {} and the update below
+    // would overwrite (lose) all previously recorded activation events.
+    if (readError) {
+      logger.warn('actionTrackActivationEvent: failed to read activation_events', {
+        error: readError,
+        tenantId,
+        event,
+      });
+      return;
+    }
 
     const current = (tenant?.activation_events as Record<string, string>) ?? {};
     if (current[event]) return;

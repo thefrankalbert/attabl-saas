@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 import type { Invitation } from '@/types/invitation.types';
 
 interface CreateInvitationInput {
@@ -133,7 +134,18 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       }
 
       if (new Date(invitation.expires_at) < new Date()) {
-        await supabase.from('invitations').update({ status: 'expired' }).eq('id', invitation.id);
+        // Best-effort cleanup: the throw below already rejects the token for this
+        // request; a failed update only leaves the row 'pending' until next listing.
+        const { error: expireError } = await supabase
+          .from('invitations')
+          .update({ status: 'expired' })
+          .eq('id', invitation.id);
+        if (expireError) {
+          logger.warn('validateToken: failed to mark invitation expired', {
+            invitationId: invitation.id,
+            error: expireError,
+          });
+        }
         throw new ServiceError('Cette invitation a expire', 'VALIDATION');
       }
 
@@ -275,7 +287,17 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
       }
 
       if (expiredIds.length > 0) {
-        await supabase.from('invitations').update({ status: 'expired' }).in('id', expiredIds);
+        const { error: expireError } = await supabase
+          .from('invitations')
+          .update({ status: 'expired' })
+          .in('id', expiredIds);
+        if (expireError) {
+          logger.warn('getPendingInvitations: failed to mark invitations expired', {
+            tenantId,
+            expiredCount: expiredIds.length,
+            error: expireError,
+          });
+        }
       }
 
       return { invitations: valid, total: count ?? valid.length };

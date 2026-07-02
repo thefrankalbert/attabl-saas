@@ -95,7 +95,6 @@ export function DataTable<TData>({
   const sorting = storageKey ? sortingSession : sortingLocal;
   const setSorting = storageKey ? setSortingSession : setSortingLocal;
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table v8 known React Compiler limitation
   const table = useReactTable({
     data,
     columns,
