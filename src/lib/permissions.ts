@@ -53,7 +53,7 @@ export interface RolePermissions {
   // Config
   canManageSettings: boolean;
   canConfigureKitchen: boolean;
-  canConfigurePOS: boolean;
+  canUsePOS: boolean;
 
   // Views
   availableViews: ViewType[];
@@ -84,7 +84,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: true,
     canConfigureKitchen: true,
-    canConfigurePOS: true,
+    canUsePOS: true,
     availableViews: ['standard', 'pos', 'kitchen', 'server'],
     defaultView: 'standard',
   },
@@ -110,7 +110,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: true,
     canConfigureKitchen: true,
-    canConfigurePOS: true,
+    canUsePOS: true,
     availableViews: ['standard', 'pos', 'kitchen', 'server'],
     defaultView: 'standard',
   },
@@ -136,7 +136,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: false,
     canConfigureKitchen: true,
-    canConfigurePOS: true,
+    canUsePOS: true,
     availableViews: ['standard', 'pos', 'kitchen', 'server'],
     defaultView: 'standard',
   },
@@ -162,7 +162,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: false,
     canConfigureKitchen: true,
-    canConfigurePOS: false,
+    canUsePOS: false,
     availableViews: ['standard', 'kitchen'],
     defaultView: 'kitchen',
   },
@@ -188,7 +188,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: false,
     canConfigureKitchen: false,
-    canConfigurePOS: false,
+    canUsePOS: false,
     availableViews: ['standard', 'server'],
     defaultView: 'server',
   },
@@ -214,7 +214,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canViewOwnOrders: true,
     canManageSettings: false,
     canConfigureKitchen: false,
-    canConfigurePOS: true,
+    canUsePOS: true,
     availableViews: ['standard', 'pos'],
     defaultView: 'pos',
   },

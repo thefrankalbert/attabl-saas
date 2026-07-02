@@ -83,7 +83,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const router = useRouter();
 
   return (
-    <RoleGuard permission="canConfigurePOS">
+    <RoleGuard permission="canUsePOS">
       <div className="h-full flex flex-col overflow-hidden bg-app-bg">
         {!mounted || pos.loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-muted">
@@ -257,7 +257,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 onClose={() => setShowPaymentModal(false)}
                 orderNumber={pos.orderNumber}
                 total={pos.pricing.total}
-                tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
+                tableNumber={
+                  pos.serviceType === 'dine_in' && pos.selectedTable ? pos.selectedTable : undefined
+                }
                 pricing={pos.pricing}
                 cartItems={pos.cart.map((item) => ({
                   name: item.name,

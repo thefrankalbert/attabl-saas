@@ -110,9 +110,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate user + derive tenant from session (IDOR prevention)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- role kept in destructure to force auth assertion; POS endpoint doesn't gate by role yet
-    const { tenantId: tenant_id, user, role } = await getAuthenticatedUserWithTenant('pos.use');
+    // 2. Authenticate user + derive tenant from session (IDOR prevention).
+    // 'pos.use' gates by fine-grained permission (role defaults + per-user overrides).
+    const { tenantId: tenant_id, user } = await getAuthenticatedUserWithTenant('pos.use');
 
     // 3. Parse and validate input with Zod
     let body: unknown;
@@ -437,10 +437,9 @@ export async function POST(request: Request) {
         tenant_id,
         user_id: null,
         type: 'info',
-        // "CMD-<n>" is a tableless POS ticket id, not a table number
-        title: /^CMD-/i.test(table_number)
-          ? `Nouvelle commande POS #${table_number}`
-          : `Nouvelle commande POS - Table ${table_number}`,
+        title: table_number
+          ? `Nouvelle commande POS - Table ${table_number}`
+          : `Nouvelle commande POS - ${result.orderNumber}`,
         body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
         link: '/orders',
       }),

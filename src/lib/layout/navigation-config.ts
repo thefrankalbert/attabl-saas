@@ -166,7 +166,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     directPath: '/pos',
     highlight: true,
     items: [],
-    requiredPermission: 'canConfigurePOS',
+    requiredPermission: 'canUsePOS',
     permissionCode: 'pos.use',
     sectionKey: 'operations',
   },

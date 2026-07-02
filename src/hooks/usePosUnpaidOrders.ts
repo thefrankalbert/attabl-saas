@@ -25,13 +25,20 @@ export function usePosUnpaidOrders(tenantId: string) {
 
   const load = useCallback(async () => {
     try {
+      // Cash-desk scope: only orders from the last 7 days, capped at 100. An
+      // unpaid order older than that is a bookkeeping problem, not something
+      // the cashier settles from the register - unbounded history made the
+      // panel unusable (90+ stale test orders) and the query ever-growing.
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('tenant_id', tenantId)
         .eq('payment_status', 'pending')
         .neq('status', 'cancelled')
-        .order('created_at', { ascending: true });
+        .gte('created_at', since)
+        .order('created_at', { ascending: true })
+        .limit(100);
 
       if (error) throw error;
 

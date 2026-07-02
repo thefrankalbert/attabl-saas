@@ -87,7 +87,9 @@ export default function PaymentModal({
     isOrderMode ? fromMinorUnits(Number(v ?? 0), orderCurrency) : Number(v ?? 0);
 
   const finalTotal = total ?? toMajor(order?.total_price) ?? 0;
-  const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
+  // Display-only: tableless orders (takeaway, delivery, counter sales) are
+  // legitimate - a table is never required to take a payment.
+  const finalTable = tableNumber ?? order?.table_number ?? undefined;
   // Prefer the human order number (CMD-...) over a hex slice of the UUID,
   // which reads as a random number to the cashier.
   const finalOrderNum: string | number | undefined =
@@ -160,11 +162,6 @@ export default function PaymentModal({
   );
 
   const handleProcessPayment = async () => {
-    if (!finalTable || finalTable === t('unknownTable')) {
-      toast({ title: t('tableRequired'), variant: 'destructive' });
-      return;
-    }
-
     setIsProcessing(true);
 
     try {

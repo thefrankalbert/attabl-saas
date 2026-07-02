@@ -435,7 +435,12 @@ export function usePOSData(tenantId: string) {
     createOrder.mutate(
       {
         clientRequestId,
-        table_number: selectedTable || `CMD-${orderNumber}`,
+        // Dine-in only, like room_number/delivery_address below: a table picked
+        // in a previous dine-in compose must not tag a takeaway order. No pseudo
+        // "CMD-<n>" fallback either: tableless orders store table_number NULL
+        // (the server order_number is the ticket id). The old fallback also
+        // created ghost table_sessions for nonexistent "CMD-n" tables.
+        table_number: serviceType === 'dine_in' && selectedTable ? selectedTable : undefined,
         status,
         total,
         service_type: serviceType,
@@ -457,6 +462,9 @@ export function usePOSData(tenantId: string) {
       },
       {
         onSuccess: (order: { orderNumber?: string; queued?: boolean }) => {
+          // Close the payment modal first: the sale is recorded, leaving the
+          // keypad open with a zeroed total reads as a stuck payment.
+          options?.onPaymentModalClose?.();
           if (order?.queued) {
             // Offline: durably captured, will sync on reconnect. Clear the cart
             // anyway - the order now lives in the outbox; re-submitting would mint
