@@ -1,486 +1,53 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-
-import {
-  Palette,
-  UtensilsCrossed,
-  Rocket,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
-  LayoutGrid,
-  Check,
-} from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
-import { TablesStep } from '@/components/onboarding/TablesStep';
 import { BrandingStep } from '@/components/onboarding/BrandingStep';
-import { MenuStep } from '@/components/onboarding/MenuStep';
+import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
-import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
+import { MenuStep } from '@/components/onboarding/MenuStep';
+import { OnboardingBottomNav } from '@/components/onboarding/OnboardingBottomNav';
+import { OnboardingLoadingSkeleton } from '@/components/onboarding/OnboardingLoadingSkeleton';
+import { OnboardingTopNav } from '@/components/onboarding/OnboardingTopNav';
 import { PhonePreview } from '@/components/onboarding/PhonePreview';
+import { StepErrorBoundary } from '@/components/onboarding/StepErrorBoundary';
+import { TablesStep } from '@/components/onboarding/TablesStep';
+import { useOnboarding } from '@/components/onboarding/use-onboarding';
+import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import { getSegmentFeatures } from '@/lib/segment-features';
-import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 
-// ─── Phase / sub-screen definitions ────────────────────────────────────────────
-
-type ScreenKey = 'establishment' | 'branding' | 'details' | 'tables' | 'menu' | 'qr' | 'summary';
-
-interface PhaseDefinition {
-  labelKey: string;
-  icon: typeof Palette;
-  subScreens: ScreenKey[];
-}
-
-/** Map screen key → old API step number for saving */
-const SCREEN_TO_API_STEP: Record<ScreenKey, number> = {
-  establishment: 1,
-  branding: 3,
-  details: 1,
-  tables: 2,
-  menu: 4,
-  qr: 5,
-  summary: 5,
-};
-
-/** Convert old saved step → new phase/subScreen */
-function oldStepToPhaseScreen(oldStep: number): { phase: number; subScreen: number } {
-  switch (oldStep) {
-    case 1:
-      return { phase: 1, subScreen: 0 };
-    case 2:
-      return { phase: 2, subScreen: 0 };
-    case 3:
-      return { phase: 1, subScreen: 1 };
-    case 4:
-      return { phase: 2, subScreen: 1 };
-    case 5:
-      return { phase: 3, subScreen: 0 };
-    default:
-      return { phase: 0, subScreen: 0 };
-  }
-}
-
-// ─── Exported data interface (used by child components) ────────────────────────
-
-export interface OnboardingData {
-  // Step 1: Establishment
-  establishmentType: string;
-  address: string;
-  city: string;
-  country: string;
-  phone: string;
-  tableCount: number;
-  language: string;
-  currency: string;
-  // Step 1: Type-specific fields
-  starRating?: number;
-  hasRestaurant?: boolean;
-  hasTerrace?: boolean;
-  hasWifi?: boolean;
-  registerCount?: number;
-  hasDelivery?: boolean;
-  totalCapacity?: number;
-  // Step 2: Tables
-  tableConfigMode: 'complete' | 'minimum' | 'skip';
-  tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
-  // Step 3: Branding
-  logoUrl: string;
-  primaryColor: string;
-  secondaryColor: string;
-  description: string;
-  // Step 4: Menu
-  menuOption: 'manual' | 'import' | 'template' | 'skip';
-  menuItems: Array<{ name: string; price: number; category: string; imageUrl?: string }>;
-  // Step 5: QR customization
-  qrTemplate: 'standard' | 'chevalet' | 'carte' | 'minimal' | 'elegant' | 'neon';
-  qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
-  qrCta: string;
-  qrDescription: string;
-  // Tenant info
-  tenantId: string;
-  tenantSlug: string;
-  tenantName: string;
-}
-
-// ─── Step Error Boundary ──────────────────────────────────────────────────────
-
-class StepErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback?: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        this.props.fallback || (
-          <div className="p-8 text-center">
-            <p className="text-red-500">Une erreur est survenue. Rechargez la page.</p>
-          </div>
-        )
-      );
-    }
-    return this.props.children;
-  }
-}
+export type { OnboardingData } from '@/components/onboarding/types';
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const tc = useTranslations('common');
-  const { toast } = useToast();
 
-  // Navigation state: phase 0 = welcome, 1-3 = studio phases
-  const [phase, setPhase] = useState(0);
-  const [subScreen, setSubScreen] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const touchStartX = useRef(0);
-  const lastSavedPayload = useRef<string>('');
-  const autoSaveErrorShown = useRef(false);
-  /** Skip native "leave site?" dialog when redirecting after successful completion */
-  const skipUnloadWarningRef = useRef(false);
-
-  const [data, setData] = useState<OnboardingData>({
-    establishmentType: 'restaurant',
-    address: '',
-    city: '',
-    country: 'Cameroun',
-    phone: '',
-    tableCount: 10,
-    language: 'fr-FR',
-    currency: 'EUR',
-    starRating: undefined,
-    hasRestaurant: undefined,
-    hasTerrace: undefined,
-    hasWifi: undefined,
-    registerCount: undefined,
-    hasDelivery: undefined,
-    totalCapacity: undefined,
-    tableConfigMode: 'skip',
-    tableZones: [],
-    logoUrl: '',
-    primaryColor: '#4d7c0f',
-    secondaryColor: '#000000',
-    description: '',
-    menuOption: 'skip',
-    menuItems: [],
-    qrTemplate: 'standard',
-    qrStyle: 'branded',
-    qrCta: 'Scannez pour commander',
-    qrDescription: '',
-    tenantId: '',
-    tenantSlug: '',
-    tenantName: '',
-  });
-
-  // ─── Derived values ────────────────────────────────────────────────────────
-
-  // Compute adaptive phases based on establishment type
-  const segmentFeatures = getSegmentFeatures(data.establishmentType);
-  const phases: PhaseDefinition[] = [
-    {
-      labelKey: 'phaseIdentity',
-      icon: Palette,
-      subScreens: ['establishment', 'branding', 'details'],
-    },
-    {
-      labelKey: 'phaseMenu',
-      icon: UtensilsCrossed,
-      subScreens: segmentFeatures.showTables ? ['tables', 'menu'] : ['menu'],
-    },
-    { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
-  ];
-
-  const currentPhase = phase >= 1 && phase <= 3 ? phases[phase - 1] : null;
-  const screenKey: ScreenKey | null = currentPhase
-    ? (currentPhase.subScreens[subScreen] ?? null)
-    : null;
-  const apiStep = screenKey ? SCREEN_TO_API_STEP[screenKey] : 0;
-
-  const isLastScreen = phase === 3 && subScreen === phases[2].subScreens.length - 1;
-
-  // ─── Step completeness check (adapted for phases) ──────────────────────────
-
-  const phaseIsComplete = (p: number): boolean => {
-    switch (p) {
-      case 1:
-        return !!data.tenantName && !!data.establishmentType && !!data.primaryColor;
-      case 2:
-        return true;
-      case 3:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  // ─── Fetch saved state ─────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const fetchOnboardingState = async () => {
-      try {
-        const res = await fetch('/api/onboarding/state');
-        if (res.ok) {
-          const state = await res.json();
-          const restoredData = state.data || {};
-
-          // Extract navigation position metadata from the draft (if saved)
-          const savedPhase =
-            typeof restoredData._phase === 'number' ? restoredData._phase : undefined;
-          const savedSubScreen =
-            typeof restoredData._subScreen === 'number' ? restoredData._subScreen : undefined;
-
-          // Clean metadata keys before setting data state
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { _phase: _p, _subScreen: _s, ...cleanData } = restoredData;
-
-          setData((prev) => ({
-            ...prev,
-            tenantId: state.tenantId,
-            tenantSlug: state.tenantSlug,
-            tenantName: state.tenantName,
-            ...cleanData,
-          }));
-
-          // Restore exact position from draft metadata, or fall back to step-based mapping
-          if (savedPhase !== undefined && savedSubScreen !== undefined) {
-            setPhase(savedPhase);
-            setSubScreen(savedSubScreen);
-          } else {
-            const { phase: restoredPhase, subScreen: restoredSub } = oldStepToPhaseScreen(
-              state.step || 0,
-            );
-            setPhase(restoredPhase);
-            setSubScreen(restoredSub);
-          }
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        toast({ title: t('saveError'), description: message, variant: 'destructive' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOnboardingState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load saved onboarding state once on mount; re-running on toast/t changes would refetch and clobber in-progress edits (2026-06-18)
-  }, []);
-
-  // ─── Auto-save debounced ───────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (loading || phase === 0 || isLastScreen) return;
-    const timer = setTimeout(async () => {
-      // Deduplicate: skip save if payload hasn't changed since last save
-      const draftPayload = {
-        ...data,
-        _phase: phase,
-        _subScreen: subScreen,
-      };
-      const payloadJson = JSON.stringify({ step: apiStep, data: draftPayload });
-      if (payloadJson === lastSavedPayload.current) return;
-
-      setAutoSaveStatus('saving');
-      try {
-        const res = await fetch('/api/onboarding/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payloadJson,
-        });
-        if (res.ok) {
-          lastSavedPayload.current = payloadJson;
-          autoSaveErrorShown.current = false;
-          setAutoSaveStatus('saved');
-          setTimeout(() => setAutoSaveStatus('idle'), 2000);
-          return;
-        }
-
-        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
-        if (!autoSaveErrorShown.current) {
-          autoSaveErrorShown.current = true;
-          const description =
-            errBody.error === 'RESTAURANT_NAME_TAKEN' ? t('nameTaken') : errBody.error || undefined;
-          toast({
-            title: t('saveError'),
-            description,
-            variant: 'destructive',
-          });
-        }
-        if (res.status === 401 || res.status === 403) {
-          lastSavedPayload.current = payloadJson;
-        }
-      } catch {
-        setAutoSaveStatus('idle');
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: toast/t are referenced only on the error path and are stable across renders; including them would reset the 2s auto-save debounce on every locale/toast identity change (2026-06-18)
-  }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
-
-  // ─── Save on tab close / navigate away (beacon API for reliability) ──────
-
-  useEffect(() => {
-    if (loading || phase === 0) return;
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Warn when leaving mid-flow, but not after "Lancer mon etablissement" (redirect)
-      if (phase > 0 && !skipUnloadWarningRef.current) {
-        e.preventDefault();
-      }
-      // Persist draft via beacon regardless
-      const draftPayload = {
-        ...data,
-        _phase: phase,
-        _subScreen: subScreen,
-      };
-      const body = JSON.stringify({ step: apiStep, data: draftPayload });
-      void fetch('/api/onboarding/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        keepalive: true,
-      });
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [data, phase, subScreen, loading, apiStep]);
-
-  // ─── Data update callback ─────────────────────────────────────────────────
-
-  const updateData = useCallback((newData: Partial<OnboardingData>) => {
-    setData((prev) => ({ ...prev, ...newData }));
-  }, []);
-
-  const scrollToTop = () => {
-    document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
-  };
-
-  // ─── Navigation ───────────────────────────────────────────────────────────
-
-  const goNext = () => {
-    // Establishment name is required; block advancing (button click OR swipe) with an
-    // empty name so onboarding never completes with a nameless tenant.
-    if (screenKey === 'establishment' && !data.tenantName.trim()) {
-      setError(t('nameRequired'));
-      return;
-    }
-
-    setError(null);
-    setDirection('forward');
-
-    // No explicit saveStep() here - the debounced auto-save handles persistence
-    // whenever data or navigation changes, avoiding double-save token waste.
-
-    if (currentPhase && subScreen < currentPhase.subScreens.length - 1) {
-      setSubScreen((s) => s + 1);
-    } else if (phase < 3) {
-      setPhase((p) => p + 1);
-      setSubScreen(0);
-    }
-    scrollToTop();
-  };
-
-  const goPrev = () => {
-    setError(null);
-    setDirection('backward');
-
-    if (subScreen > 0) {
-      setSubScreen((s) => s - 1);
-    } else if (phase > 1) {
-      const prevPhase = phases[phase - 2];
-      setPhase((p) => p - 1);
-      setSubScreen(prevPhase.subScreens.length - 1);
-    }
-    scrollToTop();
-  };
-
-  // ─── Keyboard navigation ──────────────────────────────────────────────────
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'ArrowRight' && phase >= 1 && !isLastScreen) {
-        goNext();
-      }
-      if (e.key === 'ArrowLeft' && (phase > 1 || (phase === 1 && subScreen > 0))) {
-        goPrev();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: goNext/goPrev are recreated each render but close over phase/subScreen which are already deps; listing them would re-bind the keydown listener on every render with no behavior change (2026-06-18)
-  }, [phase, subScreen, isLastScreen]);
-
-  const goToPhase = (targetPhase: number) => {
-    if (targetPhase >= phase) return; // only allow going to completed phases
-    setError(null);
-    setDirection('backward');
-    setPhase(targetPhase);
-    setSubScreen(0);
-    scrollToTop();
-  };
-
-  // ─── Complete onboarding ──────────────────────────────────────────────────
-
-  const completeOnboarding = async () => {
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data }),
-      });
-
-      const result = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        details?: string[];
-        slug?: string;
-      };
-
-      if (!res.ok) {
-        if (result.details && Array.isArray(result.details)) {
-          throw new Error(`${t('validationFailed')}: ${result.details.join(', ')}`);
-        }
-        if (result.error === 'RESTAURANT_NAME_TAKEN') {
-          throw new Error(t('nameTaken'));
-        }
-        throw new Error(result.error || t('completeError'));
-      }
-
-      const slug = (result.slug || data.tenantSlug || '').trim();
-      if (!slug || isReservedSiteSlug(slug)) {
-        throw new Error(t('completeError'));
-      }
-
-      skipUnloadWarningRef.current = true;
-      const origin = window.location.origin;
-      window.location.href = `${origin}/sites/${slug}/admin`;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('completeError');
-      setError(message);
-      toast({ title: t('completeError'), description: message, variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    phase,
+    subScreen,
+    loading,
+    saving,
+    error,
+    setError,
+    direction,
+    autoSaveStatus,
+    data,
+    updateData,
+    phases,
+    screenKey,
+    isLastScreen,
+    canGoBack,
+    touchStartXRef,
+    phaseIsComplete,
+    goNext,
+    goPrev,
+    goToPhase,
+    completeOnboarding,
+    startStudio,
+  } = useOnboarding();
 
   // ─── Content rendering ────────────────────────────────────────────────────
 
@@ -507,43 +74,7 @@ export default function OnboardingPage() {
   // ─── Loading skeleton ─────────────────────────────────────────────────────
 
   if (loading) {
-    return (
-      /* Standalone page - h-dvh is intentional */
-      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
-        {/* Top strip skeleton */}
-        <header className="shrink-0 h-14 bg-app-card/80 border-b border-app-border/50 flex items-center px-4 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-app-elevated animate-pulse" />
-            <div className="h-4 w-24 rounded bg-app-elevated animate-pulse" />
-          </div>
-          <div className="flex-1 flex justify-center gap-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-8 rounded-full bg-app-elevated animate-pulse"
-                style={{ width: `${80 + i * 10}px` }}
-              />
-            ))}
-          </div>
-          <div className="h-4 w-12 rounded bg-app-elevated animate-pulse" />
-        </header>
-
-        {/* Two-column skeleton */}
-        <div className="flex-1 min-h-0 flex">
-          <div className="flex-1 p-6 space-y-6 animate-pulse">
-            <div className="h-7 w-64 rounded-lg bg-app-elevated/30" />
-            <div className="h-4 w-96 rounded bg-app-elevated/20" />
-            <div className="space-y-4">
-              <div className="h-48 rounded-xl bg-app-elevated/20" />
-              <div className="h-32 rounded-xl bg-app-elevated/20" />
-            </div>
-          </div>
-          <div className="hidden lg:flex w-80 items-center justify-center p-6">
-            <div className="w-56 h-110 rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
+    return <OnboardingLoadingSkeleton />;
   }
 
   // ─── Welcome screen (phase 0) ─────────────────────────────────────────────
@@ -552,96 +83,25 @@ export default function OnboardingPage() {
     return (
       /* Standalone page - h-dvh is intentional */
       <div className="h-dvh overflow-hidden flex flex-col bg-app-bg relative">
-        <WelcomeStep
-          tenantName={data.tenantName}
-          onStart={() => {
-            setDirection('forward');
-            setPhase(1);
-            setSubScreen(0);
-          }}
-        />
+        <WelcomeStep tenantName={data.tenantName} onStart={startStudio} />
       </div>
     );
   }
 
   // ─── Studio layout (phases 1-3) ───────────────────────────────────────────
 
-  const canGoBack = phase > 1 || subScreen > 0;
-
   return (
     /* Standalone page - h-dvh is intentional */
     <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
-      {/* ═══ Floating top navigation strip ═══ */}
-      <header className="shrink-0 h-14 bg-app-card/80 backdrop-blur-xl border-b border-app-border/50 flex items-center px-4 sm:px-6 z-10">
-        {/* Left: logo link + tenant name */}
-        <div className="flex items-center gap-2 min-w-0 shrink-0">
-          <Link
-            href="/"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
-            title="Accueil"
-          >
-            <LayoutGrid className="w-4 h-4 text-app-text-muted" />
-          </Link>
-          <span className="text-sm font-semibold text-app-text hidden sm:inline">
-            {data.tenantName || 'ATTABL'}
-          </span>
-        </div>
-
-        {/* Center: 3 phase tabs */}
-        <div className="flex-1 flex justify-center gap-1">
-          {phases.map((phaseDef, idx) => {
-            const phaseNum = idx + 1;
-            const isActive = phase === phaseNum;
-            const isCompleted = phase > phaseNum;
-            const isFuture = phase < phaseNum;
-            const Icon = phaseDef.icon;
-
-            return (
-              <Button
-                key={phaseNum}
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  if (isCompleted && phaseIsComplete(phaseNum)) goToPhase(phaseNum);
-                }}
-                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors h-auto ${
-                  isActive
-                    ? 'text-accent'
-                    : isCompleted
-                      ? 'text-app-text-secondary hover:bg-app-hover cursor-pointer'
-                      : 'text-app-text-muted opacity-40 cursor-default'
-                }`}
-                disabled={isFuture}
-              >
-                {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{t(phaseDef.labelKey)}</span>
-
-                {/* Bottom accent line for active tab - single clean line */}
-                {isActive && (
-                  <span className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
-                )}
-              </Button>
-            );
-          })}
-        </div>
-
-        {/* Right: auto-save status + theme toggle */}
-        <div className="flex items-center gap-2 shrink-0">
-          {autoSaveStatus === 'saving' && (
-            <span className="text-[10px] text-app-text-muted flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="hidden sm:inline">{t('autoSaving')}</span>
-            </span>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-accent flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              <span className="hidden sm:inline">{t('autoSaved')}</span>
-            </span>
-          )}
-          <ThemeToggle />
-        </div>
-      </header>
+      <OnboardingTopNav
+        phases={phases}
+        phase={phase}
+        tenantName={data.tenantName}
+        autoSaveStatus={autoSaveStatus}
+        t={t}
+        phaseIsComplete={phaseIsComplete}
+        goToPhase={goToPhase}
+      />
 
       {/* ═══ Content area: config panel + phone preview ═══ */}
       <div className="flex-1 min-h-0 flex">
@@ -651,10 +111,10 @@ export default function OnboardingPage() {
             className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
             data-onboarding-scroll
             onTouchStart={(e) => {
-              touchStartX.current = e.touches[0].clientX;
+              touchStartXRef.current = e.touches[0].clientX;
             }}
             onTouchEnd={(e) => {
-              const diff = touchStartX.current - e.changedTouches[0].clientX;
+              const diff = touchStartXRef.current - e.changedTouches[0].clientX;
               if (Math.abs(diff) > 80) {
                 if (diff > 0 && !isLastScreen) goNext();
                 if (diff < 0 && canGoBack) goPrev();
@@ -699,60 +159,17 @@ export default function OnboardingPage() {
             </div>
           </main>
 
-          {/* ═══ Fixed bottom navigation bar ═══ */}
-          <div className="shrink-0 border-t border-app-border/50 bg-app-card/80 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center justify-between">
-              {/* Back button */}
-              {canGoBack ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('back')}</span>
-                </Button>
-              ) : (
-                <span />
-              )}
-
-              {/* Continue / Launch button */}
-              {isLastScreen ? (
-                <Button
-                  variant="default"
-                  onClick={completeOnboarding}
-                  disabled={saving}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {t('launchCTA')}
-                      <Rocket className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  variant="default"
-                  onClick={goNext}
-                  disabled={saving || (screenKey === 'establishment' && !data.tenantName.trim())}
-                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {t('next')}
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+          <OnboardingBottomNav
+            canGoBack={canGoBack}
+            isLastScreen={isLastScreen}
+            saving={saving}
+            screenKey={screenKey}
+            tenantName={data.tenantName}
+            t={t}
+            goPrev={goPrev}
+            goNext={goNext}
+            completeOnboarding={completeOnboarding}
+          />
         </div>
 
         {/* Phone preview - desktop only */}
