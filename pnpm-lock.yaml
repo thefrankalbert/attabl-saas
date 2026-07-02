@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@anthropic-ai/sdk@>=0.79.0 <0.91.1': '>=0.91.1'
+  '@anthropic-ai/sdk@>=0.79.0 <0.91.1': 0.109.0
   '@babel/core@<=7.29.0': '>=7.29.6'
   '@opentelemetry/core@<2.8.0': '>=2.8.0'
   brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
@@ -34,8 +34,8 @@ importers:
   .:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: '>=0.91.1'
-        version: 0.109.1(zod@4.3.6)
+        specifier: 0.109.0
+        version: 0.109.0(zod@4.3.6)
       '@dinero.js/currencies':
         specifier: 2.0.0-alpha.14
         version: 2.0.0-alpha.14
@@ -326,8 +326,8 @@ packages:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
 
-  '@anthropic-ai/sdk@0.109.1':
-    resolution: {integrity: sha512-q9OnEKLr5H9nxSuXdgDgJhxfYMiE+AaUEBze2Gk91UcaaLnsN+Lx5fbCYywiqurU/APLdwv23x03Wm6WN3EBsg==}
+  '@anthropic-ai/sdk@0.109.0':
+    resolution: {integrity: sha512-y7P4eLyW5uNut4fXpOUEHqhJwx7dnxrWAfCQE4Lcgm0hSFQuIeHa7CWEKE5dFolEjQJE/RFKkppjri05r2OK/Q==}
     hasBin: true
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
@@ -7183,7 +7183,7 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@anthropic-ai/sdk@0.109.1(zod@4.3.6)':
+  '@anthropic-ai/sdk@0.109.0(zod@4.3.6)':
     dependencies:
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.0.0
