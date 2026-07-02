@@ -46,6 +46,11 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
       setLoading(false);
       return;
     }
+    // Reset state on (re)entry so the retry button actually recovers:
+    // without this, a past error sticks and the error screen persists
+    // even after a successful refetch.
+    setError(null);
+    setLoading(true);
     try {
       const res = await fetch('/api/invoices');
       if (!res.ok) throw new Error('Failed to fetch');
@@ -133,7 +138,11 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0">
-        <AdminPageHeader title={t('title')} subtitle={t('subtitle')} count={invoices.length} />
+        <AdminPageHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          count={loading || error ? undefined : invoices.length}
+        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
