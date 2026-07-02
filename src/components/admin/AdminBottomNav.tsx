@@ -76,6 +76,7 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
             <Link
               key={group.id}
               href={href}
+              prefetch={false}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full',
                 'text-app-text-muted transition-colors duration-150',
