@@ -63,7 +63,10 @@ const ORDER_ID = '33333333-3333-4333-a333-333333333333';
 describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUserForTenant.mockResolvedValue({ supabase: mockAuthedSupabase });
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: mockAuthedSupabase,
+      user: { id: 'user-9' },
+    });
     mockAuthedSupabase.from.mockReturnValue(
       makeChain({
         data: {
@@ -87,7 +90,7 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     expect(result.success).toBe(true);
     expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
     await vi.waitFor(() => {
-      expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+      expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
     });
   });
 

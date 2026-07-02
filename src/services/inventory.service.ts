@@ -15,6 +15,7 @@ import type {
   UpdateIngredientInput,
   RecipeLineInput,
   AdjustStockInput,
+  LedgerDriftRow,
 } from '@/types/inventory.types';
 
 export interface InventoryService {
@@ -27,10 +28,12 @@ export interface InventoryService {
   ): Promise<Ingredient>;
   getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]>;
   setRecipe(tenantId: string, menuItemId: string, lines: RecipeLineInput[]): Promise<void>;
-  destockOrder(orderId: string, tenantId: string): Promise<number>;
-  restockOrder(orderId: string, tenantId: string): Promise<number>;
+  destockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
+  restockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
   adjustStock(tenantId: string, input: AdjustStockInput): Promise<void>;
   setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
+  verifyLedger(tenantId: string): Promise<LedgerDriftRow[]>;
+  reconcileLedger(tenantId: string): Promise<number>;
   getStockStatus(tenantId: string): Promise<StockStatus[]>;
   getStockMovements(
     tenantId: string,
@@ -183,10 +186,13 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
 
     // ─── Stock Operations ─────────────────────────────────
 
-    async destockOrder(orderId: string, tenantId: string): Promise<number> {
+    async destockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number> {
       const { data, error } = await supabase.rpc('destock_order', {
         p_order_id: orderId,
         p_tenant_id: tenantId,
+        // Acting user for traceability (anti-vol). NULL for the anon storefront
+        // path (no operator); the POS/admin paths pass the authenticated user.
+        p_created_by: createdBy || undefined,
       });
 
       if (error) {
@@ -202,12 +208,13 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return count;
     },
 
-    async restockOrder(orderId: string, tenantId: string): Promise<number> {
+    async restockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number> {
       // Reverses a prior destock when an order is cancelled/refunded. Idempotent:
       // the RPC skips ingredients already restocked for this order.
       const { data, error } = await supabase.rpc('restock_order', {
         p_order_id: orderId,
         p_tenant_id: tenantId,
+        p_created_by: createdBy || undefined,
       });
 
       if (error) throw new ServiceError('Erreur restockage commande', 'INTERNAL', error);
@@ -251,13 +258,49 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
     },
 
     async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {
+      // Stamp the acting user on the ledger movement (anti-vol traceability).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { error } = await supabase.rpc('set_opening_stock', {
         p_tenant_id: tenantId,
         p_ingredient_id: ingredientId,
         p_quantity: quantity,
+        p_created_by: user?.id || undefined,
       });
 
-      if (error) throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
+      if (error) {
+        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+        }
+        throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
+      }
+    },
+
+    async verifyLedger(tenantId: string): Promise<LedgerDriftRow[]> {
+      const { data, error } = await supabase.rpc('verify_stock_ledger', {
+        p_tenant_id: tenantId,
+      });
+
+      if (error) throw new ServiceError('Erreur verification ledger', 'INTERNAL', error);
+      return (data as LedgerDriftRow[]) || [];
+    },
+
+    async reconcileLedger(tenantId: string): Promise<number> {
+      // Resolve the acting user in-service and stamp it on the reconciliation
+      // movements (anti-vol traceability), mirroring setOpeningStock.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase.rpc('reconcile_stock_ledger', {
+        p_tenant_id: tenantId,
+        p_created_by: user?.id || undefined,
+      });
+
+      if (error) throw new ServiceError('Erreur reconciliation ledger', 'INTERNAL', error);
+      return (data as number) ?? 0;
     },
 
     // ─── Stock Status & Movements ─────────────────────────

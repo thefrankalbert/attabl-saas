@@ -224,7 +224,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
 
     expect(status).toBe(200);
     await vi.waitFor(() => {
-      expect(mockDestockOrder).toHaveBeenCalledWith('order-pos-1', 'tenant-abc');
+      expect(mockDestockOrder).toHaveBeenCalledWith('order-pos-1', 'tenant-abc', 'user-1');
       expect(vi.mocked(checkAndNotifyLowStock)).toHaveBeenCalledWith('tenant-abc');
     });
   });
