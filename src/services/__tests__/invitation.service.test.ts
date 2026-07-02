@@ -18,6 +18,7 @@ function createMockSupabase(
     adminUsersInsertError?: boolean;
     invitationInsertError?: boolean;
     invitationSelectResult?: Record<string, unknown> | null;
+    existingPendingInvitation?: Record<string, unknown> | null;
     invitationUpdateError?: boolean;
     tokenLookupResult?: Record<string, unknown> | null;
     tokenLookupError?: boolean;
@@ -66,18 +67,22 @@ function createMockSupabase(
               ),
           }),
         }),
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              single: vi
-                .fn()
-                .mockResolvedValue(
-                  options.tokenLookupError
-                    ? { data: null, error: { code: 'PGRST116', message: 'Not found' } }
-                    : { data: options.tokenLookupResult ?? invitationRow, error: null },
-                ),
-            }),
-          }),
+        // Self-chaining select: supports validateToken (eq.eq.single) AND the
+        // duplicate-pending guard (eq.eq.eq.maybeSingle) on the same table.
+        select: vi.fn(() => {
+          const selChain: Record<string, unknown> = {};
+          selChain.eq = vi.fn(() => selChain);
+          selChain.single = vi
+            .fn()
+            .mockResolvedValue(
+              options.tokenLookupError
+                ? { data: null, error: { code: 'PGRST116', message: 'Not found' } }
+                : { data: options.tokenLookupResult ?? invitationRow, error: null },
+            );
+          selChain.maybeSingle = vi
+            .fn()
+            .mockResolvedValue({ data: options.existingPendingInvitation ?? null, error: null });
+          return selChain;
         }),
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -192,6 +197,23 @@ describe('InvitationService', () => {
 
       // Should have queried invitations table, not admin_users
       expect(supabase.from).toHaveBeenCalledWith('invitations');
+    });
+
+    it('should reject a duplicate pending invitation for the same tenant+email', async () => {
+      const supabase = createMockSupabase({
+        existingAuthUser: null,
+        existingPendingInvitation: { id: 'inv-existing' },
+      });
+      const service = createInvitationService(supabase);
+
+      await expect(
+        service.createInvitation({
+          tenantId: 'tenant-xyz',
+          email: 'new@example.com',
+          role: 'staff',
+          invitedBy: 'owner-123',
+        }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
     });
 
     it('should add directly to admin_users and return accepted invitation when user already exists in auth', async () => {

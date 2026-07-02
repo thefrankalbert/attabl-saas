@@ -19,7 +19,8 @@ export async function actionUpdateTenantSettings(formData: FormData) {
   const t = await getTranslations('errors');
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
-    const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
+    const { tenantId, supabase, user, role } =
+      await getAuthenticatedUserWithTenant('settings.edit');
 
     // 1b. Role gate: only owner/admin/manager may change tenant settings
     // (name, branding, billing rates, custom domain, ...). Without this, any

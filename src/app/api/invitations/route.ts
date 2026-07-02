@@ -209,7 +209,11 @@ export async function POST(request: Request) {
         customPermissions: parsed.data.custom_permissions,
       });
 
-      // Send invitation email only if the invitation is pending (not direct-add)
+      // Send invitation email only if the invitation is pending (not direct-add).
+      // A delivery failure must NOT lose the created invitation (the admin can
+      // resend): isolate the send, log the failure, and report emailSent so the
+      // UI can warn "invitation creee mais email non envoye".
+      let emailSent = true;
       if (invitation.status === 'pending') {
         const { data: tenant } = await adminClient
           .from('tenants')
@@ -219,18 +223,37 @@ export async function POST(request: Request) {
 
         const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com'}/auth/accept-invite?token=${invitation.token}`;
 
-        await sendInvitationEmail(parsed.data.email, {
-          restaurantName: tenant?.name || 'Restaurant',
-          restaurantLogoUrl: tenant?.logo_url || undefined,
-          role: parsed.data.role,
-          inviteUrl,
-        });
+        try {
+          const sent = await sendInvitationEmail(parsed.data.email, {
+            restaurantName: tenant?.name || 'Restaurant',
+            restaurantLogoUrl: tenant?.logo_url || undefined,
+            role: parsed.data.role,
+            inviteUrl,
+          });
+          if (!sent) {
+            emailSent = false;
+            logger.error('Invitation email send failed', {
+              tenantId,
+              invitationId: invitation.id,
+            });
+          }
+        } catch (emailError) {
+          emailSent = false;
+          logger.error('Invitation email send threw', {
+            tenantId,
+            invitationId: invitation.id,
+            error: emailError,
+          });
+        }
       }
 
       // Strip sensitive token field before returning
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { token: _token, ...sanitizedInvitation } = invitation;
-      return NextResponse.json({ success: true, invitation: sanitizedInvitation }, { status: 201 });
+      return NextResponse.json(
+        { success: true, invitation: sanitizedInvitation, emailSent },
+        { status: 201 },
+      );
     } catch (error) {
       if (error instanceof ServiceError) {
         if (error.details) {

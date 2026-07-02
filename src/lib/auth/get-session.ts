@@ -1,6 +1,9 @@
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { hasPermission } from '@/lib/permissions';
+import type { AdminRole, AdminUser } from '@/types/admin.types';
+import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 
 /**
  * Authentication & authorization helpers.
@@ -27,6 +30,45 @@ export interface AuthenticatedUserWithTenant extends AuthenticatedUser {
    * user id (`user.id` == `admin_users.user_id`).
    */
   adminUserId: string;
+}
+
+/**
+ * Enforce a fine-grained permission code for a resolved membership, using the
+ * same 3-level resolution as `hasPermission` (individual custom_permissions ->
+ * tenant role_permissions override -> default matrix). Throws 403 on failure.
+ *
+ * Shared by getAuthenticatedUserWithTenant and getAuthenticatedUserForTenant so
+ * per-user and per-role permission overrides bite at the mutation boundary.
+ */
+async function enforceTenantPermission(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tenantId: string,
+  role: string,
+  customPermissions: AdminUser['custom_permissions'],
+  requiredPermission: PermissionCode,
+): Promise<void> {
+  const principal = {
+    role: role as AdminRole,
+    custom_permissions: customPermissions,
+  } as AdminUser;
+
+  // Owner short-circuits inside hasPermission; skip the override lookup.
+  let override: RolePermissions | null = null;
+  if (principal.role !== 'owner') {
+    const { data: roleOverride } = await supabase
+      .from('role_permissions')
+      .select('permissions')
+      .eq('tenant_id', tenantId)
+      .eq('role', principal.role)
+      .maybeSingle();
+    override = roleOverride
+      ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
+      : null;
+  }
+
+  if (!hasPermission(principal, requiredPermission, override)) {
+    throw new AuthError('Permissions insuffisantes', 403);
+  }
 }
 
 /**
@@ -59,7 +101,9 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
  * @throws {AuthError} with status 401 if not authenticated
  * @throws {AuthError} with status 403 if user has no tenant
  */
-export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUserWithTenant> {
+export async function getAuthenticatedUserWithTenant(
+  requiredPermission?: PermissionCode,
+): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 
   // Prefer the tenant of the CURRENT request context. The middleware injects
@@ -78,13 +122,22 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
     if (tenant?.id) {
       const { data: scoped } = await supabase
         .from('admin_users')
-        .select('id, tenant_id, role')
+        .select('id, tenant_id, role, custom_permissions')
         .eq('user_id', user.id)
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .maybeSingle();
 
       if (scoped) {
+        if (requiredPermission) {
+          await enforceTenantPermission(
+            supabase,
+            scoped.tenant_id,
+            scoped.role,
+            scoped.custom_permissions,
+            requiredPermission,
+          );
+        }
         return {
           user,
           tenantId: scoped.tenant_id,
@@ -104,7 +157,7 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
   // raise PGRST116 in that case and return a misleading 403.
   const { data: adminUser, error } = await supabase
     .from('admin_users')
-    .select('id, tenant_id, role')
+    .select('id, tenant_id, role, custom_permissions')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -115,6 +168,16 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
   if (error || !adminUser) {
     logger.warn('User has no tenant association', { userId: user.id });
     throw new AuthError('Accès non autorisé - aucun tenant associé', 403);
+  }
+
+  if (requiredPermission) {
+    await enforceTenantPermission(
+      supabase,
+      adminUser.tenant_id,
+      adminUser.role,
+      adminUser.custom_permissions,
+      requiredPermission,
+    );
   }
 
   return {
@@ -132,19 +195,27 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
  * verify the user actually has access to that tenant (IDOR prevention).
  *
  * @param clientTenantId - The tenant ID provided by the client
- * @param allowedRoles - Roles that are allowed to perform the action
+ * @param allowedRoles - Roles that are allowed to perform the action (coarse gate)
+ * @param requiredPermission - Optional fine-grained permission code. When set, the
+ *   action ALSO requires this permission via the 3-level resolution
+ *   (individual custom_permissions -> tenant role_permissions override -> default
+ *   matrix). This is what makes per-user and per-role permission overrides actually
+ *   bite at the mutation boundary: without it, only the coarse role gate applied and
+ *   a member's revoked permission was ignored on writes.
  * @throws {AuthError} with status 401 if not authenticated
- * @throws {AuthError} with status 403 if user does not belong to the tenant or has wrong role
+ * @throws {AuthError} with status 403 if user does not belong to the tenant, has a
+ *   disallowed role, or lacks the required permission
  */
 export async function getAuthenticatedUserForTenant(
   clientTenantId: string,
   allowedRoles: string[] = ['owner', 'admin'],
+  requiredPermission?: PermissionCode,
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 
   const { data: adminUser, error } = await supabase
     .from('admin_users')
-    .select('id, tenant_id, role')
+    .select('id, tenant_id, role, custom_permissions')
     .eq('user_id', user.id)
     .eq('tenant_id', clientTenantId)
     .eq('is_active', true)
@@ -160,6 +231,16 @@ export async function getAuthenticatedUserForTenant(
 
   if (!allowedRoles.includes(adminUser.role)) {
     throw new AuthError('Permissions insuffisantes', 403);
+  }
+
+  if (requiredPermission) {
+    await enforceTenantPermission(
+      supabase,
+      adminUser.tenant_id,
+      adminUser.role,
+      adminUser.custom_permissions,
+      requiredPermission,
+    );
   }
 
   return {

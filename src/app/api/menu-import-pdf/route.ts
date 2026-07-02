@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Authenticate user and derive tenant from session (not from header)
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('menu.edit');
 
     // 3. Parse FormData
     let formData: FormData;

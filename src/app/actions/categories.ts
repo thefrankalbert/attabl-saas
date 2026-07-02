@@ -33,7 +33,11 @@ async function checkCategoryPermissions(
   allowedRoles: AdminRole[] = ['owner', 'admin', 'manager'],
 ) {
   try {
-    const { user, supabase, role } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
+    const { user, supabase, role } = await getAuthenticatedUserForTenant(
+      tenantId,
+      allowedRoles,
+      'menu.edit',
+    );
     return { error: null, supabase, user, role };
   } catch (err) {
     if (err instanceof AuthError) {

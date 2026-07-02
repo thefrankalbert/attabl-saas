@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getHiddenNav } from '@/lib/segment-features';
+import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import type { SettingsTab } from './SettingsDialog';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
@@ -60,6 +61,12 @@ interface ShellSidebarProps {
   onOpenSettings?: (tab: SettingsTab) => void;
   /** Real counts shown as nav badges (maquette: Commandes/KDS/Plats) */
   counts?: Partial<Record<NavCountKey, number>>;
+  /**
+   * Effective permissions (3-level resolved server-side). Nav items whose route
+   * requires a permission the member lacks are hidden. Absent = show everything
+   * (fail-open on the UI only; the middleware + actions still enforce access).
+   */
+  navPermissions?: Record<string, boolean>;
 }
 
 type NavCountKey = 'orders' | 'kitchen' | 'items';
@@ -144,6 +151,7 @@ export function ShellSidebar({
   className,
   onOpenSettings,
   counts,
+  navPermissions,
 }: ShellSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -163,8 +171,17 @@ export function ShellSidebar({
   const { groupIds: hiddenGroupIds, itemPaths: hiddenItemPaths } = getHiddenNav(
     tenant.establishment_type,
   );
+  // Permission-based visibility: hide a link if its route needs a permission
+  // the member lacks (per effective 3-level resolution passed from the server).
+  // Fail-open when navPermissions is absent so a data gap never blanks the nav.
+  const lacksPermission = (item: ShellNavItem) => {
+    if (!navPermissions) return false;
+    const required = permissionForAdminSubPath(item.path);
+    return required != null && navPermissions[required] === false;
+  };
+
   const isHidden = (item: ShellNavItem) =>
-    hiddenGroupIds.has(item.groupId) || hiddenItemPaths.has(item.path);
+    hiddenGroupIds.has(item.groupId) || hiddenItemPaths.has(item.path) || lacksPermission(item);
 
   const visible = (items: ShellNavItem[]) => items.filter((i) => !isHidden(i));
 

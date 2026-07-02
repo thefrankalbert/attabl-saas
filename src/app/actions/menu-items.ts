@@ -36,7 +36,7 @@ export async function actionCreateMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -107,7 +107,7 @@ export async function actionUpdateMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -147,7 +147,7 @@ export async function actionDeleteMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -188,7 +188,7 @@ export async function actionToggleMenuItemAvailable(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -229,7 +229,7 @@ export async function actionToggleMenuItemFeatured(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -270,7 +270,7 @@ export async function actionUpdateMenuItemPrice(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };

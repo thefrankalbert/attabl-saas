@@ -213,9 +213,9 @@ export function createEmailService(): EmailService {
     async sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult> {
       const roleLabels: Record<string, string> = {
         admin: 'Administrateur',
-        manager: 'Manager',
+        manager: 'Gerant',
         cashier: 'Caissier',
-        chef: 'Chef Cuisine',
+        chef: 'Chef de cuisine',
         waiter: 'Serveur',
       };
       const roleLabel = roleLabels[data.role] || data.role;
@@ -228,11 +228,11 @@ export function createEmailService(): EmailService {
           `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Vous avez ete invite</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;"><strong style="color:#111827;">${safeName}</strong> vous invite a rejoindre son equipe en tant que <strong style="color:#111827;">${safeRole}</strong>.</p>
           ${cta(data.inviteUrl, "Accepter l'invitation")}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Cette invitation est valide pendant 72 heures.</p>`,
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Cette invitation est valide pendant 24 heures.</p>`,
         ),
       );
 
-      const text = `Invitation - ${data.restaurantName}\n\n${data.restaurantName} vous invite en tant que ${roleLabel}.\n\nAcceptez ici : ${data.inviteUrl}\n\nValide 72 heures.\n\n${FOOTER}`;
+      const text = `Invitation - ${data.restaurantName}\n\n${data.restaurantName} vous invite en tant que ${roleLabel}.\n\nAcceptez ici : ${data.inviteUrl}\n\nValide 24 heures.\n\n${FOOTER}`;
 
       return send(to, `Invitation : rejoignez ${data.restaurantName} sur ATTABL`, html, text);
     },

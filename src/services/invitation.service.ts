@@ -89,6 +89,25 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         };
       }
 
+      // Reject a duplicate pending invitation for the same (tenant, email): the
+      // token UNIQUE constraint does not prevent multiple pending rows for one
+      // email, which clutters the pending list and confuses the invitee about
+      // which link is valid. To re-send, use the resend action (fresh token).
+      const { data: existingPending } = await supabase
+        .from('invitations')
+        .select('id')
+        .eq('tenant_id', input.tenantId)
+        .eq('email', input.email)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (existingPending) {
+        throw new ServiceError(
+          'Une invitation est deja en attente pour cet email. Renvoyez-la ou annulez-la avant d en creer une nouvelle.',
+          'VALIDATION',
+        );
+      }
+
       // New user - create invitation with token
       const token = generateToken();
       const expiresAt = getExpiresAt();

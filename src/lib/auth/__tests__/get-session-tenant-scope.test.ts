@@ -93,3 +93,58 @@ describe('getAuthenticatedUserWithTenant - tenant scoping', () => {
     expect(res.adminUserId).toBe('membership-A');
   });
 });
+
+describe('getAuthenticatedUserWithTenant - permission enforcement (overrides bite)', () => {
+  it('throws 403 when a per-user custom_permissions override revokes the required permission', async () => {
+    mockHeaderGet.mockReturnValue('tenant-a-slug');
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'tenants') return chain({ data: { id: 'tenant-A' } });
+      if (table === 'role_permissions') return chain({ data: null });
+      // manager whose custom_permissions explicitly revoke menu.edit
+      return chain({
+        data: {
+          id: 'm-1',
+          tenant_id: 'tenant-A',
+          role: 'manager',
+          custom_permissions: { 'menu.edit': false },
+        },
+      });
+    });
+
+    await expect(getAuthenticatedUserWithTenant('menu.edit')).rejects.toMatchObject({
+      status: 403,
+    });
+  });
+
+  it('throws 403 when a per-tenant role_permissions override revokes the permission', async () => {
+    mockHeaderGet.mockReturnValue('tenant-a-slug');
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'tenants') return chain({ data: { id: 'tenant-A' } });
+      if (table === 'role_permissions')
+        return chain({ data: { permissions: { 'menu.edit': false } } });
+      return chain({
+        data: { id: 'm-1', tenant_id: 'tenant-A', role: 'manager', custom_permissions: null },
+      });
+    });
+
+    await expect(getAuthenticatedUserWithTenant('menu.edit')).rejects.toMatchObject({
+      status: 403,
+    });
+  });
+
+  it('allows when the role has the permission by default and no override revokes it', async () => {
+    mockHeaderGet.mockReturnValue('tenant-a-slug');
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'tenants') return chain({ data: { id: 'tenant-A' } });
+      if (table === 'role_permissions') return chain({ data: null });
+      return chain({
+        data: { id: 'm-1', tenant_id: 'tenant-A', role: 'manager', custom_permissions: null },
+      });
+    });
+
+    // manager has menu.edit in the default matrix -> resolves without throwing
+    const res = await getAuthenticatedUserWithTenant('menu.edit');
+    expect(res.tenantId).toBe('tenant-A');
+    expect(res.role).toBe('manager');
+  });
+});
