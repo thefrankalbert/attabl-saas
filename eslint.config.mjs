@@ -185,15 +185,21 @@ const eslintConfig = defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        // Hex ban = brand lime #CCFF00 + the full Tailwind lime scale (50..900),
+        // so nobody can sneak lime back in via a neighbouring hex value.
+        // Other green hexes stay allowed on purpose (e.g. the sanctioned emerald
+        // avatar gradients #059669 in components/admin/tenants).
         {
-          selector: 'Literal[value=/CCFF00/i]',
+          selector:
+            'Literal[value=/CCFF00|F7FEE7|ECFCCB|D9F99D|BEF264|A3E635|84CC16|65A30D|4D7C0F|3F6212|365314/i]',
           message:
-            'Couleur de marque lime #CCFF00 interdite en admin. Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
+            'Hex lime interdit en admin (#CCFF00 et toute la gamme lime Tailwind). Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
         },
         {
-          selector: 'TemplateElement[value.raw=/CCFF00/i]',
+          selector:
+            'TemplateElement[value.raw=/CCFF00|F7FEE7|ECFCCB|D9F99D|BEF264|A3E635|84CC16|65A30D|4D7C0F|3F6212|365314/i]',
           message:
-            'Couleur de marque lime #CCFF00 interdite en admin. Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
+            'Hex lime interdit en admin (#CCFF00 et toute la gamme lime Tailwind). Utiliser les tokens neutres/bleus ou CHART_PALETTE (@/lib/design-tokens). Le lime est reserve au tenant/marketing.',
         },
         {
           selector: 'Literal[value=/-(lime|green|emerald)-[0-9]/]',
