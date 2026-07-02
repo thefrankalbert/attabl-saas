@@ -255,7 +255,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     <div className="space-y-6">
       {/* Header */}
       <div className="shrink-0 space-y-4">
-        <AdminPageHeader title={t('title')} subtitle={t('subtitle')} />
+        <AdminPageHeader title={t('title')} />
       </div>
 
       {/* Saving indicator */}

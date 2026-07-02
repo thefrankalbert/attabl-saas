@@ -4,7 +4,6 @@ import {
   ClipboardList,
   CreditCard,
   Mail,
-  LifeBuoy,
   ExternalLink,
   Laptop,
   QrCode,
@@ -77,18 +76,9 @@ export default function SupportPage() {
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto max-w-3xl py-8 px-4 space-y-8">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-muted flex items-center justify-center">
-              <LifeBuoy className="w-5 h-5 text-accent" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-app-text">Support & Aide</h1>
-              <p className="text-sm text-app-text-secondary mt-0.5">
-                Trouvez des réponses rapides ou contactez notre équipe.
-              </p>
-            </div>
-          </div>
+          {/* Title kept for screen readers only - the nav already identifies
+              the page, so we don't repeat a heading + subtitle on screen. */}
+          <h1 className="sr-only">Support &amp; Aide</h1>
 
           {/* Quick Links */}
           <section>

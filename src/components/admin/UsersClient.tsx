@@ -175,7 +175,6 @@ export default function UsersClient({
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            subtitle={t('subtitle')}
             actions={
               data.canManageUsers ? (
                 <Button

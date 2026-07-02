@@ -1692,8 +1692,6 @@
     "goToInventory": "Manage stock products",
     "loadingRecipeError": "Error loading recipe",
     "addProductsFirst": "Add products first",
-    "subtitle": "Track your ingredients and their stock levels",
-    "suggestionsSubtitle": "Recommend dishes to your customers",
     "withRecipe": "With recipe",
     "withoutRecipe": "Without recipe",
     "searchDish": "Search for a dish...",
@@ -2016,7 +2014,6 @@
     "navSupports": "Print Materials",
     "supports": {
       "pageTitle": "Standard tent card",
-      "pageSubtitle": "21.7 x 11 cm table tent - print ready",
       "sectionBackground": "Background",
       "sectionLogo": "Logo",
       "sectionName": "Establishment name",
@@ -2210,7 +2207,6 @@
   },
   "users": {
     "title": "Users",
-    "subtitle": "Manage your team members",
     "addUser": "Add user",
     "editUser": "Edit user",
     "editPermissions": "Manage permissions",
@@ -2287,7 +2283,6 @@
   },
   "reports": {
     "title": "Reports",
-    "subtitle": "Analyze your establishment's performance",
     "periodToday": "Today",
     "periodWeek": "This week",
     "periodMonth": "This month",
@@ -2352,7 +2347,6 @@
   },
   "permissions": {
     "title": "Permissions by Role",
-    "subtitle": "Customize access for each role",
     "permissionColumn": "Permission",
     "saving": "Saving...",
     "loadError": "Error loading permissions",
@@ -2408,7 +2402,6 @@
   },
   "coupons": {
     "title": "Coupons",
-    "subtitle": "Manage your promo codes",
     "addCoupon": "Add coupon",
     "editCoupon": "Edit coupon",
     "code": "Code",
@@ -2474,7 +2467,6 @@
   },
   "suppliers": {
     "title": "Suppliers",
-    "subtitle": "Manage your suppliers",
     "addSupplier": "Add supplier",
     "editSupplier": "Edit supplier",
     "name": "Name",
@@ -2527,7 +2519,6 @@
   },
   "announcements": {
     "title": "Announcements",
-    "subtitle": "Manage your announcements and promotions",
     "addAnnouncement": "Add announcement",
     "editAnnouncement": "Edit announcement",
     "content": "Content",
@@ -2574,7 +2565,6 @@
   },
   "ads": {
     "title": "Ads & Banners",
-    "subtitle": "Manage the promotional banners on your homepage.",
     "newAd": "New Ad",
     "orderLabel": "Order: {order}",
     "disable": "Disable",
@@ -2599,7 +2589,6 @@
   },
   "categories": {
     "title": "Categories",
-    "subtitle": "Organize your menus by category",
     "menu": "Menu",
     "newCategory": "New category",
     "categoryCount": "{count} category(ies)",
@@ -2642,7 +2631,6 @@
   },
   "items": {
     "title": "Dishes & Items",
-    "subtitle": "Manage your full menu",
     "newItem": "New dish",
     "allCategories": "All categories",
     "all": "All",
@@ -2700,7 +2688,6 @@
   },
   "menus": {
     "title": "Menus & Cards",
-    "subtitle": "Manage your menus, sub-menus and their content",
     "newMenu": "New menu",
     "viewMenu": "View menu",
     "limitReached": "You have reached the limit of {max} menus for your plan.",
@@ -2883,7 +2870,6 @@
   },
   "qrCodes": {
     "title": "QR Codes",
-    "subtitle": "Generate and customize QR codes for each table",
     "stepSelection": "Selection",
     "stepCustomization": "Customization",
     "stepDownload": "Download",
@@ -3043,7 +3029,6 @@
     "statsAdditions": "In",
     "statsRemovals": "Out",
     "statsProducts": "Products",
-    "subtitle": "Every stock movement, traced and timestamped.",
     "emptyTitle": "No movements yet",
     "emptyDescription": "As soon as an order comes in or you adjust your stock, it shows up here. Start by setting your opening stock.",
     "emptyCta": "Set my stock",
@@ -3450,7 +3435,6 @@
   },
   "tables": {
     "title": "Table Configuration",
-    "subtitle": "Manage the zones and tables of your restaurant",
     "zonesHeader": "Zones",
     "zoneCount": "{count} zone(s)",
     "addZone": "Add a zone",
@@ -3670,7 +3654,6 @@
   },
   "auditLog": {
     "title": "Audit Log",
-    "subtitle": "History of all changes made in your workspace",
     "empty": "No entries",
     "emptyDesc": "Actions will be logged here automatically.",
     "filters": "Filters",
@@ -3704,7 +3687,6 @@
   },
   "invoices": {
     "title": "Invoice History",
-    "subtitle": "View and download your subscription invoices",
     "empty": "No invoices",
     "emptyDesc": "Invoices will appear here once your subscription is active.",
     "fetchError": "Failed to load invoices",

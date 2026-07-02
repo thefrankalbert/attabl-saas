@@ -140,7 +140,6 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
       <div className="shrink-0">
         <AdminPageHeader
           title={t('title')}
-          subtitle={t('subtitle')}
           count={loading || error ? undefined : invoices.length}
         />
       </div>
