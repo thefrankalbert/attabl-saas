@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { BookOpenCheck, Circle, CircleCheck, Search, Plus, Trash2, Check } from 'lucide-react';
+import {
+  AlertTriangle,
+  BookOpenCheck,
+  Circle,
+  CircleCheck,
+  Search,
+  Plus,
+  Trash2,
+  Check,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -81,14 +90,23 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const supabase = createClient();
   const inventoryService = useMemo(() => createInventoryService(supabase), [supabase]);
 
-  const { data: ingredients = [] } = useIngredients(tenantId);
+  const {
+    data: ingredients = [],
+    isError: ingredientsError,
+    refetch: refetchIngredients,
+  } = useIngredients(tenantId);
 
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const { data: recipeData, isLoading: isQueryLoading } = useQuery({
+  const {
+    data: recipeData,
+    isLoading: isQueryLoading,
+    isError: overviewError,
+    refetch: refetchOverview,
+  } = useQuery({
     queryKey: ['recipes-data', tenantId],
     queryFn: async () => {
       const svc = createInventoryService(createClient());
@@ -105,11 +123,18 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const itemsWithRecipes: Set<string> =
     rawRecipeIds instanceof Set ? rawRecipeIds : EMPTY_RECIPE_IDS;
 
+  // Guards against out-of-order responses: only the latest load may write state
+  // (two quick clicks on different dishes would otherwise show dish A's recipe
+  // under dish B's title when the slower request resolves last).
+  const loadSeqRef = useRef(0);
+
   const loadRecipe = useCallback(
     async (menuItemId: string) => {
+      const seq = ++loadSeqRef.current;
       setLoadingRecipe(true);
       try {
         const recipes = await inventoryService.getRecipesForItem(menuItemId, tenantId);
+        if (seq !== loadSeqRef.current) return;
         const lines: RecipeLine[] = recipes.map((r: Recipe) => ({
           lineId: newLineId(),
           ingredient_id: r.ingredient_id,
@@ -120,10 +145,11 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         }));
         setRecipeLines(lines);
       } catch (err) {
+        if (seq !== loadSeqRef.current) return;
         const message = err instanceof ServiceError ? err.message : t('loadingRecipeError');
         toast({ title: message, variant: 'destructive' });
       } finally {
-        setLoadingRecipe(false);
+        if (seq === loadSeqRef.current) setLoadingRecipe(false);
       }
     },
     [tenantId, inventoryService, toast, t, tc],
@@ -133,8 +159,10 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   const handleSelectItem = (itemId: string) => {
     if (selectedItemId === itemId) {
+      loadSeqRef.current += 1;
       setSelectedItemId(null);
       setRecipeLines([]);
+      setLoadingRecipe(false);
       return;
     }
     setSelectedItemId(itemId);
@@ -154,10 +182,6 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   const addLine = () => {
     if (!canEdit) return;
-    if (ingredients.length === 0) {
-      toast({ title: t('addProductsFirst'), variant: 'destructive' });
-      return;
-    }
     const nextIngredient = ingredients.find((ing) => !usedIngredientIds.has(ing.id));
     if (!nextIngredient) {
       toast({ title: t('recipeAllIngredientsUsed'), variant: 'destructive' });
@@ -270,7 +294,9 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       <div className="shrink-0 space-y-4">
         <AdminPageHeader
           title={t('recipesTech')}
-          count={`${itemsWithRecipes.size}/${menuItems.length}`}
+          count={
+            loading || overviewError ? undefined : `${itemsWithRecipes.size}/${menuItems.length}`
+          }
         />
 
         {/* Toolbar on its own row (never crushes the title, like StockHistory) */}
@@ -305,6 +331,21 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-app-text-secondary">
           {tc('loading')}
+        </div>
+      ) : overviewError || ingredientsError ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+          <AlertTriangle className="w-10 h-10 text-app-text-muted" />
+          <p className="text-sm text-status-error">{tc('loadingError')}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (overviewError) refetchOverview();
+              if (ingredientsError) refetchIngredients();
+            }}
+          >
+            {tc('retry')}
+          </Button>
         </div>
       ) : (
         <>
@@ -398,6 +439,15 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             (ing) =>
                               ing.id === line.ingredient_id || !usedIngredientIds.has(ing.id),
                           );
+                          // A recipe can reference an ingredient that was deactivated
+                          // since (the active-only list no longer contains it). Without
+                          // a matching item the Select trigger renders blank.
+                          const lineIngredientKnown = ingredients.some(
+                            (ing) => ing.id === line.ingredient_id,
+                          );
+                          const lineUnitShort =
+                            INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
+                              ?.labelShort || line.unit;
 
                           return (
                             <div
@@ -426,6 +476,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
+                                    {!lineIngredientKnown && line.ingredient_id && (
+                                      <SelectItem value={line.ingredient_id}>
+                                        {line.ingredient_name}
+                                        {lineUnitShort ? ` (${lineUnitShort})` : ''}
+                                      </SelectItem>
+                                    )}
                                     {availableIngredients.map((ing) => (
                                       <SelectItem key={ing.id} value={ing.id}>
                                         {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
@@ -451,8 +507,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                                     className="h-8 text-sm flex-1"
                                   />
                                   <span className="text-xs text-app-text-secondary self-center w-10">
-                                    {INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
-                                      ?.labelShort || line.unit}
+                                    {lineUnitShort}
                                   </span>
                                 </div>
                                 <Textarea
@@ -485,18 +540,27 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           </p>
                         )}
 
-                        {canEdit && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={addLine}
-                            className="w-full gap-2"
-                            disabled={ingredients.length === 0}
-                          >
-                            <Plus className="w-4 h-4" />
-                            {t('addIngredient2')}
-                          </Button>
-                        )}
+                        {canEdit &&
+                          (ingredients.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-app-border p-4 text-center">
+                              <p className="text-sm text-app-text-secondary">
+                                {t('addProductsFirst')}
+                              </p>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={inventoryHref}>{t('goToInventory')}</Link>
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={addLine}
+                              className="w-full gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              {t('addIngredient2')}
+                            </Button>
+                          ))}
                       </div>
                     )}
 
