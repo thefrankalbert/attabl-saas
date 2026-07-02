@@ -22,6 +22,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollRestoration from '@/components/shared/ScrollRestoration';
 import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
+import { ServiceWorkerUpdatePrompt } from '@/components/shared/ServiceWorkerUpdatePrompt';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -208,6 +209,7 @@ export default async function RootLayout({
             </Suspense>
             {children}
             <Toaster />
+            <ServiceWorkerUpdatePrompt />
             <AgentationOverlay />
           </ThemeProvider>
         </NextIntlClientProvider>

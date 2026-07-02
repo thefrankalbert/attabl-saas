@@ -117,7 +117,12 @@
     "service": "Service",
     "discount": "Discount",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "appUpdate": {
+      "title": "New version available",
+      "description": "An ATTABL update is ready.",
+      "action": "Update now"
+    }
   },
   "checkout": {
     "successTitle": "Payment successful!",
