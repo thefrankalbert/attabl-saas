@@ -68,6 +68,9 @@ export interface StockMovement {
   // Joined fields
   ingredient?: Pick<Ingredient, 'name' | 'unit'>;
   supplier?: { id: string; name: string } | null;
+  // Resolved from admin_users by get_stock_movements_page (anti-vol trail).
+  // NULL for system / unattributed movements (created_by not set or unresolvable).
+  author_name?: string | null;
 }
 
 export interface StockStatus {
@@ -91,6 +94,19 @@ export interface LedgerDriftRow {
   current_stock: number;
   ledger_sum: number;
   drift: number;
+}
+
+// One row of the 'sorties par employe' anti-theft report
+// (get_staff_stock_report): stock movements aggregated per operator.
+export interface StaffStockReportRow {
+  author_id: string | null;
+  author_name: string | null;
+  out_qty: number;
+  in_qty: number;
+  movements_count: number;
+  manual_remove_qty: number;
+  adjustment_out_qty: number;
+  order_destock_qty: number;
 }
 
 // ─── Input types for service methods ────────────────────
