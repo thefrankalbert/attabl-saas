@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useFormatter } from 'next-intl';
@@ -9,52 +9,30 @@ import { useOrders } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
-import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Search,
-  Volume2,
-  VolumeX,
-  ChevronRight,
-  Eye,
-  ShoppingBag,
-  Check,
-  Lock,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { useSound } from '@/contexts/SoundContext';
-import { SOUND_LIBRARY } from '@/lib/sounds/sound-library';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
+import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
-import { cn } from '@/lib/utils';
-import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
+import type { VisibilityState } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Order, CurrencyCode } from '@/types/admin.types';
-import { STATUS_STYLES } from '@/lib/design-tokens';
 import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
 import { fromMinorUnits } from '@/lib/utils/money';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { useDevice } from '@/hooks/useDevice';
-import { actionDeleteOrders } from '@/app/actions/orders';
-import { logger } from '@/lib/logger';
 import { ListPagination } from '@/components/admin/ListPagination';
 import type { ServerListPagination } from '@/lib/pagination';
+import { useOrderStatusConfig } from '@/components/admin/orders/use-order-status-config';
+import { useOrdersColumns } from '@/components/admin/orders/use-orders-columns';
+import { useBulkDeleteOrders } from '@/components/admin/orders/use-bulk-delete-orders';
+import OrdersToolbar from '@/components/admin/orders/OrdersToolbar';
+import OrdersBulkActionBar from '@/components/admin/orders/OrdersBulkActionBar';
+import OrdersBulkDeleteDialog from '@/components/admin/orders/OrdersBulkDeleteDialog';
+import OrderMobileCard from '@/components/admin/orders/OrderMobileCard';
 
 interface OrdersClientProps {
   tenantId: string;
@@ -72,8 +50,6 @@ export default function OrdersClient({
   const useServerPagination = !!serverListPagination;
   const t = useTranslations('orders');
   const tc = useTranslations('common');
-  const ta = useTranslations('admin');
-  const seg = useSegmentTerms();
   const tk = useTranslations('kitchen');
   const ts = useTranslations('shortcuts');
   const format = useFormatter();
@@ -99,7 +75,6 @@ export default function OrdersClient({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [clientPage, setClientPage] = useState(0);
   const PAGE_SIZE = serverListPagination?.pageSize ?? 50;
   const page = useServerPagination
@@ -128,46 +103,7 @@ export default function OrdersClient({
     [useServerPagination, router, pathname],
   );
 
-  const {
-    soundEnabled,
-    toggleSound,
-    play: playNotification,
-    preview: previewSound,
-    currentSoundId,
-    setSoundId,
-  } = useSound();
-
-  const [showSoundPicker, setShowSoundPicker] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTriggered = useRef(false);
-  const { effectivePlan } = useSubscription();
-  const isPremium =
-    effectivePlan === 'pro' || effectivePlan === 'business' || effectivePlan === 'enterprise';
-
-  const handleSoundPointerDown = useCallback(() => {
-    longPressTriggered.current = false;
-    longPressTimer.current = setTimeout(() => {
-      longPressTriggered.current = true;
-      setShowSoundPicker(true);
-    }, 500);
-  }, []);
-
-  const handleSoundPointerUp = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (!longPressTriggered.current) {
-      toggleSound();
-    }
-  }, [toggleSound]);
-
-  const handleSoundPointerLeave = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
+  const { play: playNotification } = useSound();
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -241,70 +177,7 @@ export default function OrdersClient({
     return result;
   }, [orders, statusFilter, debouncedSearch]);
 
-  // Status badge config - uses semantic design tokens for colors
-  const statusConfig: Record<
-    string,
-    {
-      label: string;
-      bg: string;
-      text: string;
-      nextStatus: OrderStatus | null;
-      nextLabel: string | null;
-    }
-  > = useMemo(
-    () => ({
-      pending: {
-        label: t('statusPendingCard'),
-        bg: STATUS_STYLES.pending.bg,
-        text: STATUS_STYLES.pending.text,
-        nextStatus: 'preparing',
-        nextLabel: t('actionPrepare'),
-      },
-      preparing: {
-        label: t('statusPreparingCard'),
-        bg: STATUS_STYLES.preparing.bg,
-        text: STATUS_STYLES.preparing.text,
-        nextStatus: 'ready',
-        nextLabel: t('actionReady'),
-      },
-      ready: {
-        label: t('statusReadyCard'),
-        bg: STATUS_STYLES.ready.bg,
-        text: STATUS_STYLES.ready.text,
-        nextStatus: 'delivered',
-        nextLabel: t('actionDeliver'),
-      },
-      delivered: {
-        label: t('statusDeliveredCard'),
-        bg: STATUS_STYLES.delivered.bg,
-        text: STATUS_STYLES.delivered.text,
-        nextStatus: null,
-        nextLabel: null,
-      },
-      cancelled: {
-        label: t('statusCancelledCard'),
-        bg: STATUS_STYLES.cancelled.bg,
-        text: STATUS_STYLES.cancelled.text,
-        nextStatus: null,
-        nextLabel: null,
-      },
-    }),
-    [t],
-  );
-
-  // Safe lookup: unknown/null status falls back to a neutral terminal config
-  // so the component never crashes on unexpected DB values.
-  const getStatusConfig = useCallback(
-    (status: string | null | undefined) =>
-      (status && statusConfig[status]) || {
-        label: status ?? '-',
-        bg: 'bg-app-elevated',
-        text: 'text-app-text-muted',
-        nextStatus: null as OrderStatus | null,
-        nextLabel: null as string | null,
-      },
-    [statusConfig],
-  );
+  const getStatusConfig = useOrderStatusConfig();
 
   const handleStatusChange = useCallback(
     (orderId: string, newStatus: OrderStatus) => {
@@ -314,178 +187,22 @@ export default function OrdersClient({
   );
 
   // TanStack Table column definitions
-  const columns = useMemo<ColumnDef<Order, unknown>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <Checkbox
-            aria-label={tc('selectAll')}
-            checked={
-              filteredOrders.length > 0 && filteredOrders.every((o) => selectedIds.has(o.id))
-            }
-            onCheckedChange={(checked) => {
-              const next = new Set(selectedIds);
-              if (checked) {
-                filteredOrders.forEach((o) => next.add(o.id));
-              } else {
-                filteredOrders.forEach((o) => next.delete(o.id));
-              }
-              setSelectedIds(next);
-            }}
-          />
-        ),
-        cell: ({ row }: { row: { original: Order } }) => (
-          <Checkbox
-            aria-label={tc('select')}
-            checked={selectedIds.has(row.original.id)}
-            onCheckedChange={(checked) => {
-              const next = new Set(selectedIds);
-              if (checked) next.add(row.original.id);
-              else next.delete(row.original.id);
-              setSelectedIds(next);
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ),
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'table_number',
-        header: ({ column }) => <SortableHeader column={column}>{t('tableHeader')}</SortableHeader>,
-        cell: ({ row }) => {
-          const label = row.original.table_number?.trim() || '-';
-          return (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex min-w-[2rem] h-8 px-2 items-center justify-center font-bold text-app-text text-xs bg-app-bg rounded-lg">
-                {label}
-              </span>
-              {row.original.preparation_zone === 'bar' && (
-                <span className="px-1.5 py-0.5 rounded text-xs font-medium border border-[var(--border)] text-[var(--muted-foreground)]">
-                  BAR
-                </span>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'total_price',
-        header: ({ column }) => (
-          <SortableHeader column={column} className="ml-auto">
-            {tc('total')}
-          </SortableHeader>
-        ),
-        cell: ({ row }) => {
-          const total =
-            row.original.total_price ?? row.original.total ?? row.original.total_amount ?? 0;
-          const tip = row.original.tip_amount ?? 0;
-          return (
-            <div className="text-right">
-              <span className="font-mono font-bold text-app-text">{formatNumber(total + tip)}</span>
-              {tip > 0 && (
-                <span className="block text-xs text-[var(--success)] font-medium">
-                  +{formatNumber(tip)} {ta('tipLabel')}
-                </span>
-              )}
-            </div>
-          );
-        },
-        meta: { className: 'text-right' },
-      },
-      {
-        id: 'actions',
-        header: () => <span className="w-full text-right block">{tc('actions')}</span>,
-        cell: ({ row }) => {
-          const order = row.original;
-          const config = getStatusConfig(order.status);
-          return (
-            <div className="flex justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedOrder(order);
-                }}
-                className="text-xs gap-1 min-h-[44px]"
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              {config.nextStatus && (
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusChange(order.id, config.nextStatus!);
-                  }}
-                  className="text-xs gap-1 min-h-[44px]"
-                >
-                  {config.nextLabel} <ChevronRight className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      },
-    ],
-    [t, tc, ta, getStatusConfig, formatNumber, selectedIds, filteredOrders, handleStatusChange],
-  );
+  const columns = useOrdersColumns({
+    selectedIds,
+    setSelectedIds,
+    filteredOrders,
+    setSelectedOrder,
+    getStatusConfig,
+    formatNumber,
+    handleStatusChange,
+  });
 
-  // NOTE: order_items and related records are deleted via ON DELETE CASCADE
-  // in the database schema. No manual cleanup needed.
-  const handleBulkDelete = useCallback(async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-
-    // Snapshot current data for rollback on error
-    const previousOrders = queryClient.getQueryData<Order[]>(['orders', tenantId]);
-
-    // Optimistic update: remove deleted orders from cache immediately
-    const idsSet = new Set(ids);
-    queryClient.setQueryData<Order[]>(['orders', tenantId], (old) =>
-      old ? old.filter((o) => !idsSet.has(o.id)) : old,
-    );
-    setSelectedIds(new Set());
-    setShowDeleteConfirm(false);
-
-    setIsDeleting(true);
-    try {
-      const result = await actionDeleteOrders(ids);
-
-      if (result.error) {
-        logger.error('Bulk delete orders failed', new Error(result.error), { orderIds: ids });
-        // Rollback optimistic update
-        queryClient.setQueryData(['orders', tenantId], previousOrders);
-        setSelectedIds(new Set(ids));
-        toast({
-          title: t('bulkDeleteError'),
-          description: result.error,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      toast({
-        title: t('bulkDeleteSuccess', { count: result.deletedCount ?? ids.length }),
-      });
-      // Revalidate in background to sync with server
-      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
-    } catch (err) {
-      logger.error('Bulk delete orders unexpected error', err as Error, { orderIds: ids });
-      // Rollback optimistic update
-      queryClient.setQueryData(['orders', tenantId], previousOrders);
-      setSelectedIds(new Set(ids));
-      toast({
-        title: t('bulkDeleteError'),
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [selectedIds, tenantId, queryClient, toast, t]);
+  const { handleBulkDelete, isDeleting } = useBulkDeleteOrders({
+    tenantId,
+    selectedIds,
+    setSelectedIds,
+    setShowDeleteConfirm,
+  });
 
   // Hide less important columns on tablet portrait to prevent horizontal scroll
   const { isTablet } = useDevice();
@@ -501,217 +218,29 @@ export default function OrdersClient({
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
         <h1 className="sr-only">{t('title')}</h1>
-        <div className="shrink-0">
-          {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
-          <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 @sm:gap-3 overflow-x-auto scrollbar-hide">
-            <div className="relative w-full @lg:w-auto @lg:min-w-48 shrink-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
-              <Input
-                data-search-input
-                placeholder={t('searchTable')}
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+        <OrdersToolbar
+          search={search}
+          setSearch={setSearch}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
 
-            <Tabs
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-              className="shrink-0 max-w-full"
-            >
-              <TabsList className="overflow-x-auto scrollbar-hide">
-                <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
-                <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
-                <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
-                <TabsTrigger value="preparing">{seg.inProduction}</TabsTrigger>
-                <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
-                <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
-              </TabsList>
-            </Tabs>
+        <OrdersBulkActionBar
+          selectedIds={selectedIds}
+          orders={orders}
+          getStatusConfig={getStatusConfig}
+          handleStatusChange={handleStatusChange}
+          setSelectedIds={setSelectedIds}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+        />
 
-            <div className="relative shrink-0 ml-auto">
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="Sound settings"
-                onPointerDown={handleSoundPointerDown}
-                onPointerUp={handleSoundPointerUp}
-                onPointerLeave={handleSoundPointerLeave}
-                className={cn(
-                  'select-none',
-                  soundEnabled && 'text-accent border-accent bg-accent-muted',
-                )}
-                title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-              >
-                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              </Button>
-
-              {/* Sound picker popover - opens on long press */}
-              {showSoundPicker && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowSoundPicker(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-app-card border border-app-border rounded-xl shadow-lg overflow-hidden">
-                    <div className="px-3 py-2 border-b border-app-border">
-                      <p className="text-xs font-bold text-app-text">
-                        {t('soundPicker') || 'Sonnerie de notification'}
-                      </p>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5">
-                      {SOUND_LIBRARY.map((sound) => {
-                        const isLocked = sound.isPremium && !isPremium;
-                        const isActive = currentSoundId === sound.id;
-                        return (
-                          <Button
-                            key={sound.id}
-                            type="button"
-                            variant="ghost"
-                            disabled={isLocked}
-                            onClick={() => {
-                              if (!isLocked) {
-                                setSoundId(sound.id);
-                                previewSound(sound.id);
-                              }
-                            }}
-                            className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm h-auto whitespace-normal',
-                              isActive
-                                ? 'bg-accent-muted text-accent'
-                                : 'text-app-text hover:bg-app-hover',
-                              isLocked && 'opacity-50 cursor-not-allowed',
-                            )}
-                          >
-                            <span className="flex-1 min-w-0">
-                              <span className="block text-xs font-medium break-words">
-                                {sound.name}
-                              </span>
-                              <span className="block text-[10px] text-app-text-muted break-words">
-                                {sound.description}
-                              </span>
-                            </span>
-                            {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            {isLocked && <Lock className="w-3 h-3 shrink-0 text-app-text-muted" />}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Bulk action bar - inline above table */}
-        <div
-          className={cn(
-            'flex items-center gap-2 h-8 mt-3 transition-opacity duration-150',
-            selectedIds.size > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none',
-          )}
-        >
-          <span className="text-xs font-medium text-app-text tabular-nums">
-            {t('selected', { count: selectedIds.size })}
-          </span>
-          <div className="w-px h-4 bg-app-border" />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Next"
-            onClick={() => {
-              const ids = Array.from(selectedIds);
-              const selectedOrders = ids
-                .map((id) => orders.find((o) => o.id === id))
-                .filter(Boolean) as Order[];
-
-              // Filter out orders that can't be advanced (already delivered/cancelled)
-              const eligibleOrders = selectedOrders.filter(
-                (o) => o.status !== 'delivered' && o.status !== 'cancelled',
-              );
-              if (eligibleOrders.length === 0) {
-                toast({
-                  title: t('noEligibleOrders') || 'Aucune commande eligible',
-                  variant: 'destructive',
-                });
-                return;
-              }
-              if (eligibleOrders.length < selectedOrders.length) {
-                toast({
-                  title:
-                    t('someOrdersSkipped', {
-                      count: selectedOrders.length - eligibleOrders.length,
-                    }) ||
-                    `${selectedOrders.length - eligibleOrders.length} commande(s) non-eligible(s) ignoree(s)`,
-                });
-              }
-
-              eligibleOrders.forEach((order) => {
-                const config = getStatusConfig(order.status);
-                if (config.nextStatus) {
-                  handleStatusChange(order.id, config.nextStatus);
-                }
-              });
-              setSelectedIds(new Set());
-            }}
-            title={t('advanceStatus')}
-            className="h-8 w-8 text-accent hover:bg-accent-muted"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Delete"
-            onClick={() => setShowDeleteConfirm(true)}
-            title={tc('delete')}
-            className="h-8 w-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Cancel selection"
-            onClick={() => {
-              setSelectedIds(new Set());
-            }}
-            title={tc('cancel')}
-            className="h-8 w-8 text-app-text-muted"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Bulk delete confirmation dialog */}
-        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-app-text">
-                {t('bulkDeleteConfirm', { count: selectedIds.size })}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-app-text-muted py-2">
-                {t('bulkDeleteDesc')}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
-              >
-                {tc('cancel')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleBulkDelete}
-                disabled={isDeleting}
-                className="gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" />
-                {isDeleting ? tc('loading') : tc('delete')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <OrdersBulkDeleteDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          selectedCount={selectedIds.size}
+          isDeleting={isDeleting}
+          onConfirm={handleBulkDelete}
+        />
 
         {/* Orders Table / Cards */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
@@ -734,116 +263,14 @@ export default function OrdersClient({
               storageKey="orders"
               columnVisibility={columnVisibility}
               mobileConfig={{
-                renderCard: (order) => {
-                  const config = getStatusConfig(order.status);
-                  const total =
-                    (order.total_price ?? order.total ?? order.total_amount ?? 0) +
-                    (order.tip_amount ?? 0);
-                  const items = order.items || [];
-                  return (
-                    <div className="border-b border-app-border py-4 space-y-3 active:bg-app-hover transition-colors">
-                      {/* Row 1: Table + Status + Time */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex min-w-[2rem] h-8 px-2 items-center justify-center font-bold text-app-text text-xs bg-app-bg rounded-lg">
-                            {order.table_number?.trim() || '-'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-app-text-muted">
-                            {new Date(order.created_at).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          <span
-                            className={cn(
-                              'px-2 py-1 rounded-full text-xs font-bold',
-                              config.bg,
-                              config.text,
-                            )}
-                          >
-                            {config.label}
-                          </span>
-                          {/* C3: payment axis shown alongside fulfillment status */}
-                          {order.payment_status && (
-                            <span
-                              className={cn(
-                                'px-2 py-1 rounded-full text-xs font-bold',
-                                order.payment_status === 'paid'
-                                  ? 'bg-status-success-bg text-status-success'
-                                  : order.payment_status === 'refunded'
-                                    ? 'bg-app-bg text-app-text-muted'
-                                    : 'bg-status-warning-bg text-status-warning',
-                              )}
-                            >
-                              {ta(
-                                order.payment_status === 'paid'
-                                  ? 'payPaid'
-                                  : order.payment_status === 'partial'
-                                    ? 'payPartial'
-                                    : order.payment_status === 'refunded'
-                                      ? 'payRefunded'
-                                      : 'payPending',
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Row 2: Item names summary */}
-                      {items.length > 0 && (
-                        <p className="text-xs text-app-text-secondary">
-                          {items
-                            .slice(0, 3)
-                            .map((i) => `${i.quantity}× ${i.name}`)
-                            .join(', ')}
-                          {items.length > 3 && (
-                            <span className="text-app-text-muted"> +{items.length - 3}</span>
-                          )}
-                        </p>
-                      )}
-
-                      {/* Row 3: Server + Items count + Total */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-app-text-muted break-words">
-                          {order.server?.full_name ?? ' - '}
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-app-text-secondary">
-                            {items.reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
-                          </span>
-                          <div className="text-right">
-                            <span className="font-mono font-bold text-app-text">
-                              {formatNumber(total)}
-                            </span>
-                            {(order.tip_amount ?? 0) > 0 && (
-                              <span className="block text-xs text-[var(--success)] font-medium">
-                                +{formatNumber(order.tip_amount ?? 0)} {ta('tipLabel')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row 3: Actions */}
-                      {config.nextStatus && (
-                        <div className="flex justify-end pt-1">
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStatusChange(order.id, config.nextStatus!);
-                            }}
-                            className="text-xs gap-1 min-h-[44px]"
-                          >
-                            {config.nextLabel} <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                },
+                renderCard: (order) => (
+                  <OrderMobileCard
+                    order={order}
+                    getStatusConfig={getStatusConfig}
+                    formatNumber={formatNumber}
+                    handleStatusChange={handleStatusChange}
+                  />
+                ),
               }}
             />
           )}
