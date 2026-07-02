@@ -55,11 +55,12 @@ export function AdminBreadcrumbs() {
   const relativePath = pathname.replace(basePath, '');
   const segments = relativePath.split('/').filter(Boolean);
 
-  // Don't show breadcrumbs on the dashboard (root admin page)
-  if (segments.length === 0) return null;
-
-  // Ancestor segments only — the current page is shown by the page <h1> (AdminPageHeader).
+  // Ancestor segments only - the current page is shown by the page <h1> (AdminPageHeader).
   // Standard breadcrumb pattern: show the path TO the page, not the page itself.
+  // Hide entirely on the dashboard and on depth-1 pages: with no ancestor beyond
+  // the dashboard root, a lone Home icon carries no navigation value.
+  if (segments.length < 2) return null;
+
   const ancestorSegments = segments.slice(0, -1);
 
   const crumbs = ancestorSegments.map((segment, index) => {

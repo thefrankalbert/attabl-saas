@@ -308,7 +308,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           <AdminPageHeader
             title={t('title')}
             subtitle={t('subtitle')}
-            count={suppliers.length}
+            count={loading ? undefined : suppliers.length}
             actions={
               <>
                 <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">

@@ -372,7 +372,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           <AdminPageHeader
             title={t('inventory')}
             subtitle={t('subtitle')}
-            count={ingredients.length}
+            count={loading ? undefined : ingredients.length}
             actions={
               <>
                 {/* Search - compact */}
