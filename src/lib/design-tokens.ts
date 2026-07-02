@@ -80,6 +80,13 @@ function generateChartColors(count: number, startHue = 128): string[] {
 /** Default 8-color palette for reports/charts */
 export const CHART_PALETTE = generateChartColors(8);
 
+/**
+ * Neutral slice for catch-all chart buckets ("Autres" / "Others").
+ * Gray on purpose: the catch-all is not a real category, so it must not
+ * compete visually with the palette hues.
+ */
+export const CHART_NEUTRAL = 'oklch(0.85 0 0)';
+
 /** Stock movement type styles using semantic tokens */
 export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   order_destock: {

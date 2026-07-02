@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
-import { CHART_PALETTE } from '@/lib/design-tokens';
+import { CHART_PALETTE, CHART_NEUTRAL } from '@/lib/design-tokens';
 import type {
   DashboardStats,
   Order,
@@ -288,7 +288,8 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         categoryBreakdown.push({
           name: 'Autres',
           value: othersValue,
-          color: CHART_PALETTE[3 % CHART_PALETTE.length],
+          // Neutral gray on purpose: "Autres" is a catch-all bucket, not a category.
+          color: CHART_NEUTRAL,
         });
       }
 
