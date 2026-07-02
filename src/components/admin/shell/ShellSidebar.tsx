@@ -209,6 +209,12 @@ export function ShellSidebar({
       <Link
         key={item.path || 'home'}
         href={`${basePath}${item.path}`}
+        // Every admin route is force-dynamic and runs an auth + permission
+        // resolution server-side. Default prefetch eagerly renders all ~15
+        // sidebar targets in the background (a burst of getUser + admin_users +
+        // role_permissions round-trips) which saturates slow connections and
+        // can time out the page the user actually clicked. Load on click.
+        prefetch={false}
         title={collapsed ? text : undefined}
         className={cn(
           'flex items-center gap-2 h-8 rounded-[0.625rem] text-[13px] transition-colors',
@@ -329,6 +335,7 @@ export function ShellSidebar({
           <div className="flex flex-col py-2">
             <Link
               href={`${basePath}/pos`}
+              prefetch={false}
               title={collapsed ? t('newOrder') : undefined}
               className={cn(
                 'mb-1 flex h-8 items-center gap-2 rounded-[0.625rem] bg-[var(--primary)] text-[13px] font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90',
@@ -422,14 +429,14 @@ export function ShellSidebar({
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild>
-                  <Link href={`${basePath}/settings`}>
+                  <Link href={`${basePath}/settings`} prefetch={false}>
                     <CircleUser className="size-4" />
                     {t('accountMenu')}
                   </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link href={`${basePath}/subscription`}>
+                <Link href={`${basePath}/subscription`} prefetch={false}>
                   <CreditCard className="size-4" />
                   <span className="flex-1">{t('navSubscription')}</span>
                   <span className="rounded bg-[var(--secondary)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--secondary-foreground)]">
@@ -438,7 +445,7 @@ export function ShellSidebar({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`${basePath}/support`}>
+                <Link href={`${basePath}/support`} prefetch={false}>
                   <LifeBuoy className="size-4" />
                   {t('navSupport')}
                 </Link>
