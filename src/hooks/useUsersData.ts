@@ -200,7 +200,21 @@ export function useUsersData({
         throw new Error(errorMessage);
       }
 
-      toast({ title: t('inviteSentTo', { email: inviteEmail }) });
+      // The invitation row is created even if the email failed to send; the API
+      // reports emailSent so we warn the admin (who can resend) instead of
+      // wrongly claiming the email left.
+      const okData: unknown = await response.json();
+      const emailSent = !(
+        okData &&
+        typeof okData === 'object' &&
+        'emailSent' in okData &&
+        (okData as { emailSent: unknown }).emailSent === false
+      );
+      toast(
+        emailSent
+          ? { title: t('inviteSentTo', { email: inviteEmail }) }
+          : { title: t('inviteEmailNotSent'), variant: 'destructive' },
+      );
       setInviteEmail('');
       setInviteRole('waiter');
       setIsModalOpen(false);

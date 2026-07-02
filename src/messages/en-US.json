@@ -2262,6 +2262,7 @@
     "passwordHint": "Leave blank to keep the current password.",
     "emailRequired": "Please enter an email address",
     "inviteSentTo": "Invitation sent to {email}",
+    "inviteEmailNotSent": "Invitation created, but the email did not send. Resend it from the list.",
     "invitationResent": "Invitation resent",
     "invitationCancelled": "Invitation cancelled"
   },

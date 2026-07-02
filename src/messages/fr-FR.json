@@ -2262,6 +2262,7 @@
     "passwordHint": "Laissez vide pour conserver le mot de passe actuel.",
     "emailRequired": "Veuillez saisir une adresse email",
     "inviteSentTo": "Invitation envoyée à {email}",
+    "inviteEmailNotSent": "Invitation créée, mais l'email n'est pas parti. Renvoyez-la depuis la liste.",
     "invitationResent": "Invitation renvoyée",
     "invitationCancelled": "Invitation annulée"
   },
