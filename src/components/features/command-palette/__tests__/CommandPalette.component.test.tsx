@@ -25,7 +25,7 @@ const mockPermissions = {
   canViewOrders: true,
   canViewStocks: true,
   canManageStocks: true,
-  canConfigurePOS: true,
+  canUsePOS: true,
   canConfigureKitchen: true,
   canViewAllStats: true,
   canManageOrders: true,

@@ -138,7 +138,10 @@ const posOrderItemSchema = z.object({
 export const createPOSOrderSchema = z
   .object({
     // tenant_id is derived from the authenticated user's session, NOT from client input (IDOR prevention)
-    table_number: z.string().min(1).max(50),
+    // Optional: takeaway/delivery/room-service and counter sales have no table.
+    // The whole chain accepts NULL (service tableNumber?, RPC p_table_number DEFAULT NULL,
+    // nullable column); requiring it here forced the POS to invent "CMD-<n>" pseudo-tables.
+    table_number: z.string().min(1).max(50).optional(),
     status: z.enum(['pending', 'delivered']),
     service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
     room_number: z.string().max(20).optional(),

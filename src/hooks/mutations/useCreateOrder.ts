@@ -10,7 +10,8 @@ interface CreateOrderInput {
   tenant_id?: string; // Deprecated: tenant_id is now derived server-side from session
   /** Idempotency key minted at order compose. Survives the network-retry/outbox replay. */
   clientRequestId: string;
-  table_number: string;
+  /** Absent for tableless orders (takeaway, delivery, room service, counter sales). */
+  table_number?: string;
   status: 'pending' | 'delivered';
   service_type: string;
   room_number?: string;
