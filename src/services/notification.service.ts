@@ -53,12 +53,22 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const ingredientIds = alertItems.map((i) => i.id);
 
-  const { data: recentAlerts } = await supabase
+  const { data: recentAlerts, error: recentError } = await supabase
     .from('stock_alert_notifications')
     .select('ingredient_id')
     .eq('tenant_id', tenantId)
     .in('ingredient_id', ingredientIds)
     .gte('sent_at', oneHourAgo);
+
+  // Fail-safe: if the rate-limit state is unknown, skip this run rather than
+  // risk re-sending the same alert emails.
+  if (recentError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch recent alerts', {
+      tenantId,
+      error: recentError,
+    });
+    return;
+  }
 
   const alreadyNotified = new Set((recentAlerts || []).map((a) => a.ingredient_id));
   const itemsToNotify = alertItems.filter((i) => !alreadyNotified.has(i.id));
@@ -66,34 +76,56 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
   if (itemsToNotify.length === 0) return;
 
   // 3. Fetch admin emails for this tenant
-  const { data: adminUsers } = await supabase
+  const { data: adminUsers, error: adminUsersError } = await supabase
     .from('admin_users')
     .select('user_id')
     .eq('tenant_id', tenantId);
 
+  if (adminUsersError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch admin users', {
+      tenantId,
+      error: adminUsersError,
+    });
+    return;
+  }
   if (!adminUsers || adminUsers.length === 0) return;
 
   const userIds = adminUsers.map((au) => au.user_id);
 
   // Fetch emails directly from admin_users table (avoids auth API pagination issues)
-  const { data: emailData } = await supabase
+  const { data: emailData, error: emailError } = await supabase
     .from('admin_users')
     .select('email')
     .eq('tenant_id', tenantId)
     .in('user_id', userIds)
     .not('email', 'is', null);
 
+  if (emailError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch admin emails', {
+      tenantId,
+      error: emailError,
+    });
+    return;
+  }
+
   const emails = (emailData || []).map((u) => u.email).filter(Boolean) as string[];
 
   if (emails.length === 0) return;
 
   // 4. Fetch tenant info for email
-  const { data: tenant } = await supabase
+  const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
     .select('name, slug')
     .eq('id', tenantId)
     .single();
 
+  if (tenantError) {
+    logger.error('checkAndNotifyLowStock: failed to fetch tenant', {
+      tenantId,
+      error: tenantError,
+    });
+    return;
+  }
   if (!tenant) return;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
@@ -127,7 +159,13 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     read: false,
   }));
 
-  await supabase.from('notifications').insert(notifRows);
+  const { error: notifInsertError } = await supabase.from('notifications').insert(notifRows);
+  if (notifInsertError) {
+    logger.error('checkAndNotifyLowStock: failed to insert in-app notifications', {
+      tenantId,
+      error: notifInsertError,
+    });
+  }
 
   // 7. Record notifications for rate-limiting
   const notificationRows = itemsToNotify.map((i) => ({
@@ -137,5 +175,15 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     sent_to: emails,
   }));
 
-  await supabase.from('stock_alert_notifications').insert(notificationRows);
+  // If this insert fails, the rate-limit record is missing and the next check
+  // would re-send the same emails - surface it instead of swallowing it.
+  const { error: rateLimitInsertError } = await supabase
+    .from('stock_alert_notifications')
+    .insert(notificationRows);
+  if (rateLimitInsertError) {
+    logger.error('checkAndNotifyLowStock: failed to record sent alerts', {
+      tenantId,
+      error: rateLimitInsertError,
+    });
+  }
 }

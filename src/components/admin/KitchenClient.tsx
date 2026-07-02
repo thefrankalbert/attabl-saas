@@ -46,7 +46,7 @@ export default function KitchenClient({
     }
     // Hydrating from localStorage after SSR default - the documented pattern for
     // avoiding hydration mismatch. One setState per mount, not a render cascade.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: localStorage hydration after SSR default; client-only read cannot run in a useState initializer (2026-06-18)
+
     setZoneFilter(initial);
   }, [tenantId]);
 
@@ -80,7 +80,7 @@ export default function KitchenClient({
       // sessionStorage unavailable
     }
     // Same hydration-from-storage pattern as zoneFilter above.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: sessionStorage hydration after SSR default; client-only read cannot run in a useState initializer (2026-06-18)
+
     setSoundUnlocked(initial);
   }, []);
 

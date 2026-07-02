@@ -18,8 +18,9 @@ html (height: 100%, overflow: hidden)
 1. `html` and `body` MUST have `height: 100%; overflow: hidden;` in globals.css
 2. ONLY `<main#main-content>` is allowed to scroll (`overflow-y-auto`)
 3. Child pages MUST use `h-full` to fill their parent - NEVER `h-screen` or `100vh`
-4. `h-dvh` is the viewport anchor for top-level, non-nested shells only: AdminLayoutClient (tenant dashboard), PlatformConsole (/admin/platform), CommandCenterShell (/admin/tenants). Each is independent and owns exactly one scrolling `<main#main-content>`. No other component may use `h-dvh` or `h-screen`
-5. NEVER add `overflow: auto/scroll` on intermediate containers between body and main-content
+4. `h-dvh` is the viewport anchor for top-level, non-nested shells only: AdminLayoutClient (tenant dashboard), PlatformConsole (/admin/platform), CommandCenterShell (/admin/tenants). Each is independent and owns exactly one scrolling `<main#main-content>`. No other component inside a shell may use `h-dvh` or `h-screen`
+5. Standalone full-page routes that render OUTSIDE any shell anchor their own viewport and may use `h-dvh`/`min-h-dvh` (never `h-screen`/`100vh`): app/error.tsx, app/global-error.tsx (inline `100dvh`), app/loading.tsx, app/not-found.tsx, app/unauthorized, checkout success/cancel, app/onboarding, the storefront layout (sites/[site]/(storefront)) and StorefrontUnavailable. Audited and approved 2026-07-01
+6. NEVER add `overflow: auto/scroll` on intermediate containers between body and main-content
 
 ## Dev/Prod Parity (CRITICAL)
 
@@ -32,7 +33,7 @@ Turbopack (dev) and Webpack (prod/Vercel) handle CSS differently. Follow these r
 
 ## Forbidden Patterns
 
-- `h-screen` or `100vh` on any element (use `h-dvh` ONLY on a top-level shell root: AdminLayoutClient, PlatformConsole, CommandCenterShell)
+- `h-screen` or `100vh` on any element (use `h-dvh` on a top-level shell root - AdminLayoutClient, PlatformConsole, CommandCenterShell - or on a standalone full-page route per rule 5)
 - `overflow-y-auto` or `overflow-y-scroll` on anything other than `<main#main-content>` or explicitly scrollable lists
 - Removing `overflow: hidden` from `html` or `body`
 - Using `min-h-screen` as a layout fix - it masks the real problem

@@ -86,7 +86,7 @@ export default function ItemDetailSheet({
   const [showSuccess, setShowSuccess] = useState(false);
 
   // --- Reset state when item changes ------------------------------------
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional: syncing multiple state fields when item prop changes; item is an external boundary requiring full reset on each new selection (2026-05-04) */
+
   useEffect(() => {
     if (!item) return;
 
@@ -111,7 +111,6 @@ export default function ItemDetailSheet({
       setSelectedOption(null);
     }
   }, [item]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // --- Body scroll lock --------------------------------------------------
   useEffect(() => {

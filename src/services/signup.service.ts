@@ -115,7 +115,7 @@ export function createSignupService(supabase: SupabaseClient) {
      * Creates the default venue for a new tenant.
      */
     async createDefaultVenue(tenantId: string): Promise<void> {
-      await supabase.from('venues').insert({
+      const { error: venueError } = await supabase.from('venues').insert({
         tenant_id: tenantId,
         slug: 'main',
         name: 'Salle principale',
@@ -123,6 +123,13 @@ export function createSignupService(supabase: SupabaseClient) {
         type: 'restaurant',
         is_active: true,
       });
+
+      // Surface the failure: the onboarding-recovery caller already wraps this
+      // call in a try/catch (venue may legitimately exist), which was dead code
+      // while this insert swallowed its error.
+      if (venueError) {
+        throw new ServiceError(`Erreur Venue: ${venueError.message}`, 'INTERNAL', venueError);
+      }
     },
 
     /**
