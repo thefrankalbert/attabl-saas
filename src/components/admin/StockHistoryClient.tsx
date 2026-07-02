@@ -114,6 +114,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
   const {
     data: movements = [],
+    totalCount,
     isLoading: loading,
     error,
     refetch,
@@ -287,7 +288,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           <AdminPageHeader
             title={t('title')}
             subtitle={t('subtitle')}
-            count={loading || error ? undefined : filtered.length}
+            count={loading || error ? undefined : (totalCount ?? undefined)}
             actions={
               <div className="relative w-full @lg:w-52">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
