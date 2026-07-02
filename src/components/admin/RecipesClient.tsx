@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { BookOpenCheck, Search, Plus, Trash2, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -83,7 +83,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   const { data: ingredients = [] } = useIngredients(tenantId);
 
-  const { data: recipeData, isLoading: loading } = useQuery({
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const { data: recipeData, isLoading: isQueryLoading } = useQuery({
     queryKey: ['recipes-data', tenantId],
     queryFn: async () => {
       const svc = createInventoryService(createClient());
@@ -93,8 +98,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     enabled: !!tenantId,
   });
 
+  const loading = !isMounted || isQueryLoading;
+
   const menuItems = recipeData?.menuItems ?? [];
-  const itemsWithRecipes = recipeData?.recipeIds ?? EMPTY_RECIPE_IDS;
+  const rawRecipeIds = recipeData?.recipeIds;
+  const itemsWithRecipes: Set<string> =
+    rawRecipeIds instanceof Set ? rawRecipeIds : EMPTY_RECIPE_IDS;
 
   const loadRecipe = useCallback(
     async (menuItemId: string) => {
@@ -250,62 +259,64 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <div className="shrink-0">
+        <AdminPageHeader
+          title={t('recipesTech')}
+          subtitle={t('recipesSubtitle')}
+          actions={
+            <>
+              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                <Input
+                  data-search-input
+                  placeholder={t('searchDish')}
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2 shrink-0">
+                {(['all', 'with', 'without'] as const).map((f) => (
+                  <Button
+                    key={f}
+                    variant={filterRecipe === f ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterRecipe(f)}
+                    className="rounded-full"
+                  >
+                    {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
+                  </Button>
+                ))}
+              </div>
+            </>
+          }
+        />
+      </div>
+
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-app-text-secondary">
           {tc('loading')}
         </div>
       ) : (
         <>
-          <div className="shrink-0 space-y-4">
-            <AdminPageHeader
-              title={t('recipesTech')}
-              subtitle={t('recipesSubtitle')}
-              actions={
-                <>
-                  <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                    <Input
-                      data-search-input
-                      placeholder={t('searchDish')}
-                      className="pl-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 shrink-0">
-                    {(['all', 'with', 'without'] as const).map((f) => (
-                      <Button
-                        key={f}
-                        variant={filterRecipe === f ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterRecipe(f)}
-                        className="rounded-full"
-                      >
-                        {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
-                      </Button>
-                    ))}
-                  </div>
-                </>
-              }
-            />
-
-            {ingredients.length === 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-secondary">
-                <span>{t('addProductsFirst')}</span>
-                {siteSlug && (
-                  <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                    <Link href={inventoryHref}>{t('goToInventory')}</Link>
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {!canEdit && (
-              <p className="text-sm text-app-text-secondary">{t('recipeReadOnlyHint')}</p>
-            )}
-          </div>
-
+          {(ingredients.length === 0 || !canEdit) && (
+            <div className="shrink-0 mt-4 space-y-4">
+              {ingredients.length === 0 && (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-secondary">
+                  <span>{t('addProductsFirst')}</span>
+                  {siteSlug && (
+                    <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                      <Link href={inventoryHref}>{t('goToInventory')}</Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+              {!canEdit && (
+                <p className="text-sm text-app-text-secondary">{t('recipeReadOnlyHint')}</p>
+              )}
+            </div>
+          )}
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 pb-4">
             <div className="flex flex-col @lg:flex-row gap-6">
               <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
