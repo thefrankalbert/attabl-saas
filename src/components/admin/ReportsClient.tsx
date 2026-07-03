@@ -300,7 +300,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         />
 
         {/* ── Period pills ── */}
-        <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">
+        <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-3 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
             <Button
               key={pill.value}
@@ -320,7 +320,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* ── KPI Cards ── */}
-        <div className="grid grid-cols-1 @xl:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {/* Revenue */}
           <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
@@ -373,9 +373,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         <div className="space-y-4">
           {/* Chart & Top Items */}
-          <div className="grid grid-cols-1 @3xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {/* Revenue chart */}
-            <div className="@3xl:col-span-2 bg-app-card border border-app-border/60 rounded-xl p-4">
+            <div className="lg:col-span-2 bg-app-card border border-app-border/60 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-app-text-muted" />
@@ -524,7 +524,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           )}
 
           {/* Category Breakdown + Server Performance side by side */}
-          <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* Category Breakdown */}
             <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
               <h3 className="text-sm font-bold text-app-text mb-4">{t('categoryBreakdown')}</h3>

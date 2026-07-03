@@ -19,6 +19,27 @@ Utiliser EXCLUSIVEMENT les breakpoints Tailwind definis dans `src/lib/layout/bre
 - `xl:` → 1280px (desktop)
 - `2xl:` → 1536px (grand ecran)
 
+## Breakpoints VIEWPORT en admin - STANDARD FORT (enforce CI)
+
+REGLE ABSOLUE : le layout de page de l'admin utilise les breakpoints VIEWPORT
+(`sm/md/lg/xl/2xl`), le standard du marche pour un dashboard a sidebar. Un vrai
+desktop (1280) DOIT recevoir le layout desktop, automatiquement.
+
+- INTERDIT en admin : les container-queries pour le layout de page - `@container`
+  sur un conteneur de shell, et les classes `@sm:/@md:/@lg:/@xl:/@2xl:/@3xl:...`.
+  Raison : une `@container` de shell = "viewport moins sidebar", donc keyer le layout
+  dessus fait rendre le layout TABLETTE sur un vrai desktop (la zone de contenu est
+  plus etroite que la fenetre). Incident 2026-07-03 (desktop affiche en tablette).
+- Enforce par ESLint `attabl/no-container-query-in-admin-layout` (bloquant, scope
+  TOUT l'admin : `components/admin/**`, `app/sites/**/admin/**`, `features/settings|users`).
+- SEULE exception : un composant IMMERSIF plein-ecran et autonome qui possede SA
+  PROPRE `@container` (POS `POSClient`, KDS `kitchen/**`, `PaymentModal`, `features/pos/**`)
+  - la, le conteneur ≈ viewport, les container-queries sont correctes. Ces fichiers
+  sont exclus du guard.
+- Les container-queries restent legitimes SI et seulement si elles wrappent UN
+  composant reutilisable isole avec sa propre `@container` (jamais une seule
+  `@container` de shell qui gouverne toutes les pages).
+
 ## Approche Mobile-First (OBLIGATOIRE)
 
 - TOUJOURS ecrire les styles de base pour mobile SANS prefixe responsive

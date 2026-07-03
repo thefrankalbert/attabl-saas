@@ -118,7 +118,7 @@ export function useInventoryColumns(
               aria-label={t('declareLoss')}
             >
               <TrendingDown className="w-3.5 h-3.5" />
-              <span className="hidden @xl:inline">{t('declareLoss')}</span>
+              <span className="hidden lg:inline">{t('declareLoss')}</span>
             </Button>
             <Button
               variant="ghost"

@@ -189,7 +189,7 @@ export default function UsersClient({
           />
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">
           <UsersTable
             users={data.users}
             canManageUsers={data.canManageUsers}

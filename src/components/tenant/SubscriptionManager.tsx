@@ -237,7 +237,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
       {/* Plan comparison (scrollable) */}
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         {/* Section title + billing toggle */}
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap @sm:flex-nowrap">
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap sm:flex-nowrap">
           <h2 className="text-sm font-semibold text-app-text shrink-0">
             {t('subscription.changePlan')}
           </h2>
@@ -261,7 +261,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
         </div>
 
         {/* Plan cards */}
-        <div className="grid grid-cols-1 @5xl:grid-cols-3 gap-3 pb-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 pb-4">
           {SELF_SERVICE_PLANS.map((plan) => {
             const isCurrent = currentPlan === plan;
             const isPro = plan === 'pro';

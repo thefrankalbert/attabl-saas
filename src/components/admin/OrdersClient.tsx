@@ -243,7 +243,7 @@ export default function OrdersClient({
         />
 
         {/* Orders Table / Cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />

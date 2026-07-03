@@ -1,50 +1,36 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 
-// Viewport breakpoints forbidden in admin/features components.
-// Admin components live inside a @container, so they MUST use container
-// queries (@sm:, @md:, @lg:, @xl:, @2xl:) - NOT viewport queries
-// (sm:, md:, lg:, xl:, 2xl:).
-// Using viewport queries makes layout depend on window size instead of
-// the available container width, breaking tablet layouts where the
-// sidebar shrinks the content area below the viewport breakpoint.
-const noViewportInAdminRule = {
+// Container queries forbidden for admin PAGE layout.
+// Market standard for a sidebar dashboard = viewport breakpoints
+// (sm:, md:, lg:, xl:, 2xl:). A single shell @container equals
+// "viewport minus sidebar", so keying layout to it makes a real desktop
+// render the tablet layout (the content area is narrower than the window).
+// Container queries are correct ONLY on self-contained immersive surfaces
+// that own their @container (POS, KDS, fullscreen PaymentModal) - those are
+// excluded from this rule's file scope below.
+// See .claude/rules/03-responsive-design.md
+const noContainerQueryInAdminLayoutRule = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        'Disallow viewport breakpoints (sm:, md:, lg:, xl:, 2xl:) in admin/features components. Use container queries (@sm:, @md:, @lg:, @xl:, @2xl:) instead.',
+        'Disallow container queries (@container, @sm:, @md:, @lg:, @xl:, ...) in admin page-layout components. Use viewport breakpoints (sm:, md:, lg:, xl:) instead.',
     },
     messages: {
-      useContainerQuery:
-        'Found viewport query "{{vq}}" - use container query "{{cq}}" instead in admin/features. ' +
-        'Admin components are inside a @container; viewport queries ignore the sidebar width.',
+      useViewport:
+        'Container query "{{cq}}" is banned in admin layout - use a viewport breakpoint ' +
+        '(sm:/md:/lg:/xl:) instead. A shell @container is viewport-minus-sidebar and makes ' +
+        'desktop render the tablet layout. Container queries belong only on self-contained ' +
+        'immersive surfaces (POS/KDS/modal) that own their @container.',
     },
     schema: [],
   },
   create(context) {
-    const VP_TO_CQ = {
-      'sm:': '@sm:',
-      'md:': '@md:',
-      'lg:': '@lg:',
-      'xl:': '@xl:',
-      '2xl:': '@2xl:',
-    };
-
-    // Patterns that are legitimately viewport-based even inside admin components:
-    // - sm:max-w-* / sm:w-* : Dialog/Sheet sizing (modal overlays the viewport)
-    // - lg:hidden / lg:flex / lg:block : sidebar show/hide is viewport-driven
-    // - lg:flex-row / lg:flex-col : top-level shell flex direction
-    const ALLOWED =
-      /(?:sm:|md:|lg:|xl:)(?:max-w-|min-w-|w-\[|hidden|flex$|block$|flex-row|flex-col|flex-col$)/;
-
     function checkString(node, value) {
-      const matches = value.match(/(?<![/@\w])(?:2xl|xl|lg|md|sm):/g);
+      const matches = value.match(/@container\b|@(?:sm|md|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl):/g);
       if (!matches) return;
-      // Skip if the whole value is a known-allowed pattern
-      if (ALLOWED.test(value)) return;
-      for (const vq of matches) {
-        const cq = VP_TO_CQ[vq];
-        if (cq) context.report({ node, messageId: 'useContainerQuery', data: { vq, cq } });
+      for (const cq of matches) {
+        context.report({ node, messageId: 'useViewport', data: { cq } });
       }
     }
 
@@ -110,17 +96,33 @@ const eslintConfig = defineConfig([
       'jsx-a11y/scope': 'error',
     },
   },
-  // Responsive guardrail: interdire les viewport queries dans les composants dashboard.
-  // Ces composants sont rendus dans un @container (main-content, AdminLayoutClient:133).
-  // Viewport queries (sm:, md:, lg:) ignorent la sidebar et brisent le layout tablette.
-  // Regle scopee a dashboard/ uniquement pour eviter les faux positifs sur les Dialogs
-  // et AdminLayoutClient qui eux utilisent legitiment les viewport queries.
+  // Responsive guardrail (STRONG - all admin, not just dashboard): admin page
+  // layout must use viewport breakpoints, the market standard. Container queries
+  // are banned here because a shell @container is viewport-minus-sidebar and made
+  // desktop render the tablet layout (incident 2026-07-03). Immersive surfaces that
+  // legitimately own their own @container (POS, KDS, fullscreen PaymentModal) are
+  // excluded. See .claude/rules/03-responsive-design.md + 11-deploy-visual-safety.md
   {
-    files: ['src/components/admin/dashboard/**/*.{ts,tsx}'],
-    ignores: ['**/__tests__/**'],
-    plugins: { attabl: { rules: { 'no-viewport-in-admin': noViewportInAdminRule } } },
+    files: [
+      'src/components/admin/**/*.{ts,tsx}',
+      'src/app/sites/**/admin/**/*.{ts,tsx}',
+      'src/components/features/settings/**/*.{ts,tsx}',
+      'src/components/features/users/**/*.{ts,tsx}',
+    ],
+    ignores: [
+      '**/__tests__/**',
+      'src/components/admin/POSClient.tsx',
+      'src/components/admin/PaymentModal.tsx',
+      'src/components/features/pos/**',
+      'src/components/features/kitchen/**',
+    ],
+    plugins: {
+      attabl: {
+        rules: { 'no-container-query-in-admin-layout': noContainerQueryInAdminLayoutRule },
+      },
+    },
     rules: {
-      'attabl/no-viewport-in-admin': 'error',
+      'attabl/no-container-query-in-admin-layout': 'error',
     },
   },
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui

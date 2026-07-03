@@ -63,8 +63,8 @@ export default function OrdersToolbar({
   return (
     <div className="shrink-0">
       {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
-      <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 @sm:gap-3 overflow-x-auto scrollbar-hide">
-        <div className="relative w-full @lg:w-auto @lg:min-w-48 shrink-0">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+        <div className="relative w-full md:w-auto md:min-w-48 shrink-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
           <Input
             data-search-input

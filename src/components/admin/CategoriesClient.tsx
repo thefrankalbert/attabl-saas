@@ -434,13 +434,13 @@ export default function CategoriesClient({
                 className="gap-1.5 shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden @sm:inline">{t('newCategory')}</span>
+                <span className="hidden sm:inline">{t('newCategory')}</span>
               </Button>
             }
           />
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 @sm:mt-6">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 sm:mt-6">
           {loading ? (
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1">
               {[1, 2, 3].map((i) => (
@@ -655,7 +655,7 @@ export default function CategoriesClient({
             <div className="space-y-1.5">
               <Label className="text-app-text">{t('preparationZone')}</Label>
               <p className="text-xs text-app-text-muted">{t('preparationZoneDesc')}</p>
-              <div className="grid grid-cols-1 @sm:grid-cols-3 gap-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                 {(
                   [
                     { value: 'kitchen', icon: ChefHat, label: seg.productionZone },

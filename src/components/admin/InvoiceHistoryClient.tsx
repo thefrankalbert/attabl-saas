@@ -164,7 +164,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
         ) : (
           <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
             {/* Desktop table */}
-            <div className="hidden @md:block">
+            <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-app-border/60 bg-app-bg/50">
@@ -255,7 +255,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
             </div>
 
             {/* Mobile cards */}
-            <div className="@md:hidden divide-y divide-app-border">
+            <div className="md:hidden divide-y divide-app-border">
               {invoices.map((inv) => (
                 <div key={inv.id} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">

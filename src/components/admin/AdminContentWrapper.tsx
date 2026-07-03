@@ -38,8 +38,8 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
       className={cn(
         'flex-1 min-h-0 w-full flex flex-col overflow-hidden',
         isFullBleed
-          ? 'px-2 py-2 @sm:px-3 @sm:py-3'
-          : 'px-4 py-4 @sm:px-6 @sm:py-6 @lg:px-8 @lg:py-8 @xl:px-12 @xl:py-10 @2xl:px-16 @2xl:py-12',
+          ? 'px-2 py-2 sm:px-3 sm:py-3'
+          : 'px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-12 lg:py-10 2xl:px-16 2xl:py-12',
       )}
     >
       {chrome}
@@ -48,10 +48,10 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
           key={pathname}
           className={cn(
             'flex-1 min-h-0 flex flex-col w-full',
-            // Canonical content column: full width, capped + centered. Container-query
-            // breakpoints (@xl/@2xl) so the width steps at the SAME thresholds as the
-            // padding above, keeping content position stable across pages/sidebar/scrollbar.
-            !isFullBleed && 'max-w-7xl @xl:max-w-[90rem] @2xl:max-w-[100rem] mx-auto',
+            // Canonical content column: full width, capped + centered. Viewport
+            // breakpoints (lg/2xl) per .claude/rules/03-responsive-design.md - the
+            // admin must adapt to the VIEWPORT, not the sidebar-shrunk content width.
+            !isFullBleed && 'max-w-7xl lg:max-w-[90rem] 2xl:max-w-[100rem] mx-auto',
           )}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

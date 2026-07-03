@@ -65,7 +65,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
         <div className="text-sm font-semibold">{labels.title}</div>
         <div className="text-[13px] text-[var(--muted-foreground)]">{labels.desc}</div>
         <div className="absolute right-6 top-6 flex items-center gap-3">
-          <div className="hidden items-center gap-[14px] text-xs text-[var(--muted-foreground)] @lg:flex">
+          <div className="hidden items-center gap-[14px] text-xs text-[var(--muted-foreground)] md:flex">
             <span className="flex items-center gap-1.5">
               <span
                 className="size-2.5 rounded-[3px]"
@@ -89,7 +89,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
             onValueChange={(v) => {
               if (v) setRange(v as RangeKey);
             }}
-            className="hidden overflow-hidden rounded-[var(--radius)] border border-[var(--input)] @md:inline-flex"
+            className="hidden overflow-hidden rounded-[var(--radius)] border border-[var(--input)] md:inline-flex"
           >
             <ToggleGroupItem
               value="quarter"
@@ -112,7 +112,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
           </ToggleGroup>
           {/* Mobile: maquette swaps the toggle for a compact select under 768px */}
           <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
-            <SelectTrigger className="h-8 w-[140px] text-[13px] @md:hidden">
+            <SelectTrigger className="h-8 w-[140px] text-[13px] md:hidden">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

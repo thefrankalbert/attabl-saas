@@ -226,7 +226,7 @@ export default function AuditLogClient({
         {/* Filters */}
         {showFilters && (
           <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
-            <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterAction')}
@@ -332,7 +332,7 @@ export default function AuditLogClient({
           <>
             <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
               {/* Desktop table */}
-              <div className="hidden @md:block">
+              <div className="hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-app-border/60 bg-app-bg/50">
@@ -390,7 +390,7 @@ export default function AuditLogClient({
               </div>
 
               {/* Mobile cards */}
-              <div className="@md:hidden divide-y divide-app-border/60">
+              <div className="md:hidden divide-y divide-app-border/60">
                 {logs.map((entry) => (
                   <div key={entry.id} className="p-4 space-y-1.5">
                     <div className="flex items-center justify-between">

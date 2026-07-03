@@ -295,8 +295,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         <AdminPageHeader title={t('recipesTech')} />
 
         {/* Toolbar on its own row (never crushes the title, like StockHistory) */}
-        <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center">
-          <div className="relative w-full @lg:w-64">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
             <Input
               data-search-input
@@ -364,10 +364,10 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           {/* Stacked (mobile/tablet): this wrapper is THE single page scroller.
               Side-by-side (@3xl): wrapper stops scrolling, each panel fills the
               height and scrolls its own list internally - no nested scroll. */}
-          <div className="flex-1 min-h-0 overflow-y-auto @3xl:overflow-hidden scrollbar-hide mt-4 @sm:mt-6 pb-4 @3xl:pb-0">
-            <div className="flex flex-col @3xl:flex-row gap-4 @3xl:gap-6 @3xl:h-full @3xl:min-h-0">
-              <div className="flex-1 min-w-0 bg-app-card rounded-xl border border-app-border overflow-hidden @3xl:flex @3xl:flex-col @3xl:min-h-0">
-                <div className="max-h-[420px] @3xl:max-h-none @3xl:flex-1 @3xl:min-h-0 overflow-y-auto divide-y divide-app-border">
+          <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden scrollbar-hide mt-4 sm:mt-6 pb-4 lg:pb-0">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-full lg:min-h-0">
+              <div className="flex-1 min-w-0 bg-app-card rounded-xl border border-app-border overflow-hidden lg:flex lg:flex-col lg:min-h-0">
+                <div className="max-h-[420px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
                     const hasRecipe = itemsWithRecipes.has(item.id);
                     const isSelected = selectedItemId === item.id;
@@ -414,10 +414,10 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
               <div
                 ref={editorPanelRef}
-                className="w-full @3xl:w-[26rem] shrink-0 bg-app-card rounded-xl border border-app-border overflow-hidden @3xl:flex @3xl:flex-col @3xl:min-h-0"
+                className="w-full lg:w-[26rem] shrink-0 bg-app-card rounded-xl border border-app-border overflow-hidden lg:flex lg:flex-col lg:min-h-0"
               >
                 {selectedItemId && selectedItem ? (
-                  <div className="flex flex-col h-full @3xl:min-h-0">
+                  <div className="flex flex-col h-full lg:min-h-0">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">
                       <h3 className="truncate font-bold text-sm text-app-text">
                         <span className="sr-only">{t('recipeFor')} </span>
@@ -428,7 +428,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     {loadingRecipe ? (
                       <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
                     ) : (
-                      <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto max-h-[320px] @3xl:max-h-none">
+                      <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto max-h-[320px] lg:max-h-none">
                         {recipeLines.map((line) => {
                           const availableIngredients = ingredients.filter(
                             (ing) =>
