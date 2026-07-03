@@ -234,6 +234,42 @@ export interface LossByReason {
   total_cost_value: number;
 }
 
+// ─── Recipe (fiche technique) Excel import (#11) ────────
+
+import type { ImportRowError } from '@/lib/excel-parse';
+
+/** One validated recipe line parsed from an Excel sheet (dish grouped by name). */
+export interface ParsedRecipeRow {
+  rowNumber: number;
+  dishName: string;
+  ingredientName: string;
+  unit: IngredientUnit;
+  quantityNeeded: number;
+  notes: string | null;
+}
+
+/**
+ * A clean row sent to the import_recipes_tx RPC. The service pre-resolves the
+ * dish name to a tenant-scoped menu_item_id and only forwards valid rows (the
+ * RPC is all-or-nothing).
+ */
+export interface RecipeImportRpcRow {
+  menu_item_id: string;
+  ingredient_name: string;
+  unit: IngredientUnit;
+  quantity_needed: number;
+  notes: string | null;
+}
+
+/** Result of a recipe Excel import (merge/upsert, get-or-create ingredients). */
+export interface RecipeImportResult {
+  recipesCreated: number;
+  recipesUpdated: number;
+  ingredientsCreated: number;
+  itemsSkipped: number;
+  errors: ImportRowError[];
+}
+
 // ─── Unit labels for UI ─────────────────────────────────
 
 export const INGREDIENT_UNITS: Record<IngredientUnit, { label: string; labelShort: string }> = {

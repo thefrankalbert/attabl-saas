@@ -1762,7 +1762,8 @@
     "lossReason": "Loss reason",
     "lossNotes": "Notes (optional)",
     "lossRecorded": "Loss recorded",
-    "lossError": "Failed to record the loss"
+    "lossError": "Failed to record the loss",
+    "importTechnicalSheets": "Import technical sheets"
   },
   "losses": {
     "title": "Losses by reason",
@@ -2572,7 +2573,8 @@
     "ingredientNamePlaceholder": "E.g.: Chicken, Rice, Oil...",
     "categoryPlaceholder": "E.g.: Meats, Vegetables...",
     "adjustReasonPlaceholder": "E.g.: Supplier delivery, loss...",
-    "qtyPlaceholder": "Qty"
+    "qtyPlaceholder": "Qty",
+    "importExcel": "Import Excel"
   },
   "announcements": {
     "title": "Announcements",
@@ -4094,5 +4096,24 @@
   "updateBanner": {
     "message": "A new version is available.",
     "sidebarLabel": "New version"
+  },
+  "inventoryImport": {
+    "downloadTemplate": "Download Excel template",
+    "dragAndDrop": "Drag and drop a .xlsx file here or click to browse",
+    "maxFileSize": "Max size: 5 MB",
+    "importExcel": "Import Excel",
+    "importing": "Importing...",
+    "importError": "Error during import",
+    "importSuccess": "Import completed successfully",
+    "suppliersCreated": "{count} supplier(s) created",
+    "suppliersUpdated": "{count} supplier(s) updated",
+    "suppliersSkipped": "{count} row(s) skipped",
+    "recipesCreated": "{count} recipe line(s) created",
+    "recipesUpdated": "{count} recipe line(s) updated",
+    "ingredientsCreated": "{count} product(s) created",
+    "itemsSkipped": "{count} row(s) skipped",
+    "errorsFound": "{count} error(s) found",
+    "rowError": "Row {row}: {message}",
+    "cancel": "Cancel"
   }
 }

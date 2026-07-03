@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import SupplierImportExcel from '@/components/features/inventory/SupplierImportExcel';
 import {
   actionCreateSupplier,
   actionUpdateSupplier,
@@ -38,6 +39,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -343,6 +345,15 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   ))}
                 </div>
 
+                <Button
+                  onClick={() => setShowImportModal(true)}
+                  variant="outline"
+                  className="gap-2 shrink-0"
+                >
+                  <Upload className="w-4 h-4" />
+                  {t('importExcel')}
+                </Button>
+
                 <Button onClick={openAdd} variant="default" className="gap-2 shrink-0">
                   <Plus className="w-4 h-4" />
                   {t('addSupplier')}
@@ -528,6 +539,21 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             </AdminModal>
           </>
         )}
+
+        {/* Import Excel Modal */}
+        <AdminModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          title={t('importExcel')}
+          size="lg"
+        >
+          {showImportModal && (
+            <SupplierImportExcel
+              onImportComplete={loadSuppliers}
+              onCancel={() => setShowImportModal(false)}
+            />
+          )}
+        </AdminModal>
       </div>
     </RoleGuard>
   );
