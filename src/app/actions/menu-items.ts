@@ -10,6 +10,7 @@ import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
+import { menuItemCreateSchema, menuItemUpdateSchema } from '@/lib/validations/menu-item.schema';
 
 const tenantIdSchema = z.string().uuid();
 const itemIdSchema = z.string().uuid();
@@ -45,6 +46,11 @@ export async function actionCreateMenuItem(
     return { error: t('permissionDenied') };
   }
 
+  const parsedPayload = menuItemCreateSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    return { error: t('validationError') };
+  }
+
   const adminClient = createAdminClient();
 
   try {
@@ -73,7 +79,7 @@ export async function actionCreateMenuItem(
   try {
     const supabase = await createClient();
     const menuItemService = createMenuItemService(supabase);
-    const itemId = await menuItemService.createMenuItem(tenantId, payload);
+    const itemId = await menuItemService.createMenuItem(tenantId, parsedPayload.data);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { itemId };
   } catch (err) {
@@ -116,10 +122,15 @@ export async function actionUpdateMenuItem(
     return { error: t('permissionDenied') };
   }
 
+  const parsedPayload = menuItemUpdateSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    return { error: t('validationError') };
+  }
+
   try {
     const supabase = await createClient();
     const menuItemService = createMenuItemService(supabase);
-    await menuItemService.updateMenuItem(itemId, tenantId, payload);
+    await menuItemService.updateMenuItem(itemId, tenantId, parsedPayload.data);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
