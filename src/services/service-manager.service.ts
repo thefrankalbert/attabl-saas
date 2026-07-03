@@ -9,6 +9,12 @@ type ServiceZoneRow = Zone & {
   venues: { tenant_id: string };
 };
 
+/** An open table session - the canonical "table is occupied" signal (keyed by table_number). */
+export interface OpenTableSession {
+  table_number: string;
+  opened_at: string;
+}
+
 export interface ServiceManagerService {
   loadDashboard(tenantId: string): Promise<{
     zones: ServiceZoneRow[];
@@ -16,7 +22,9 @@ export interface ServiceManagerService {
     // readyOrders is typed unknown[] because it is produced by the protected
     // order.service (listReadyOrdersToday), whose signature is out of scope here.
     readyOrders: unknown[];
+    openSessions: OpenTableSession[];
   }>;
+  listOpenSessions(tenantId: string): Promise<OpenTableSession[]>;
 }
 
 /**
@@ -31,14 +39,17 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
      * Load the initial service-manager dashboard state:
      * - zones (with their tables) for the tenant's venues
      * - servers (admin_users with a service-floor role)
-     * - today's ready orders
+     * - today's ready orders (kitchen-ready, for the "ready to serve" list)
+     * - open table sessions (the canonical "table occupied" signal, same one
+     *   the tenant dashboard uses; a dine-in order opens one, settling closes it)
      */
     async loadDashboard(tenantId: string): Promise<{
       zones: ServiceZoneRow[];
       servers: AdminUser[];
       readyOrders: unknown[];
+      openSessions: OpenTableSession[];
     }> {
-      const [zonesResult, serversResult, readyOrders] = await Promise.all([
+      const [zonesResult, serversResult, sessionsResult, readyOrders] = await Promise.all([
         supabase
           .from('zones')
           .select('*, tables(*), venues!inner(tenant_id)')
@@ -52,6 +63,11 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
           .eq('tenant_id', tenantId)
           .in('role', ['waiter', 'manager', 'admin', 'owner'])
           .order('full_name'),
+        supabase
+          .from('table_sessions')
+          .select('table_number, opened_at')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'open'),
         orderService.listReadyOrdersToday(tenantId),
       ]);
 
@@ -61,12 +77,32 @@ export function createServiceManagerService(supabase: SupabaseClient): ServiceMa
       if (serversResult.error) {
         throw new ServiceError('Erreur chargement serveurs', 'INTERNAL', serversResult.error);
       }
+      if (sessionsResult.error) {
+        throw new ServiceError('Erreur chargement sessions', 'INTERNAL', sessionsResult.error);
+      }
 
       return {
         zones: (zonesResult.data as ServiceZoneRow[]) || [],
         servers: (serversResult.data as AdminUser[]) || [],
         readyOrders,
+        openSessions: (sessionsResult.data as OpenTableSession[]) || [],
       };
+    },
+
+    /**
+     * Reload just the open table sessions (occupancy signal). Used by the
+     * realtime subscription: an order insert opens a session, settling closes it.
+     */
+    async listOpenSessions(tenantId: string): Promise<OpenTableSession[]> {
+      const { data, error } = await supabase
+        .from('table_sessions')
+        .select('table_number, opened_at')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'open');
+      if (error) {
+        throw new ServiceError('Erreur chargement sessions', 'INTERNAL', error);
+      }
+      return (data as OpenTableSession[]) || [];
     },
   };
 }

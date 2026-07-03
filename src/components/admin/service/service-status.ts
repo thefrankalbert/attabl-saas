@@ -1,4 +1,5 @@
-import type { AdminUser, Order, Table, TableAssignment, Zone } from '@/types/admin.types';
+import type { AdminUser, Table, TableAssignment, Zone } from '@/types/admin.types';
+import type { OpenTableSession } from '@/services/service-manager.service';
 import type {
   ServiceServerStatus,
   ServiceServerVM,
@@ -8,9 +9,12 @@ import type {
 
 /**
  * Derive a table's service status from backend state.
- * The backend has no `status` column, so this is computed client-side.
+ * The backend has no `status` column, so this is computed client-side from the
+ * SAME canonical signal the tenant dashboard uses: an open `table_sessions` row.
+ * A dine-in order (POS or storefront) opens the session; settling it closes the
+ * session. A server assignment also counts as occupied.
  *
- * - `occupied`: an active assignment OR an active order exists
+ * - `occupied`: an active assignment OR an open table session exists
  * - `free`: otherwise
  *
  * `reserved` and `cleaning` are reserved for future backend support and
@@ -18,9 +22,9 @@ import type {
  */
 function deriveTableStatus(
   assignment: TableAssignment | undefined,
-  order: Order | undefined,
+  hasOpenSession: boolean,
 ): ServiceTableStatus {
-  if (assignment || (order && order.status !== 'delivered' && order.status !== 'cancelled')) {
+  if (assignment || hasOpenSession) {
     return 'occupied';
   }
   return 'free';
@@ -35,23 +39,15 @@ function deriveServerStatus(server: AdminUser, hasAssignment: boolean): ServiceS
 export function buildTableVMs(
   zones: Array<Zone & { tables: Table[] }>,
   assignments: TableAssignment[],
-  orders: Order[],
+  openSessions: OpenTableSession[],
 ): ServiceTableVM[] {
   const assignmentByTable = new Map(assignments.map((a) => [a.table_id, a]));
-  const tableIdByLabel = new Map<string, string>();
-  for (const zone of zones) {
-    for (const table of zone.tables) {
-      tableIdByLabel.set(table.table_number, table.id);
-      if (table.display_name) {
-        tableIdByLabel.set(table.display_name, table.id);
-      }
-    }
-  }
-  const orderByTable = new Map<string, Order>();
-  for (const o of orders) {
-    if (o.status === 'delivered' || o.status === 'cancelled') continue;
-    const tableKey = o.table_id ?? tableIdByLabel.get(o.table_number);
-    if (tableKey) orderByTable.set(tableKey, o);
+
+  // A session carries one table_number (text). A table may be referenced by its
+  // table_number or its display_name, so below we look up the session under both.
+  const sessionOpenedByLabel = new Map<string, string>();
+  for (const s of openSessions) {
+    if (s.table_number) sessionOpenedByLabel.set(s.table_number, s.opened_at);
   }
 
   const out: ServiceTableVM[] = [];
@@ -59,14 +55,15 @@ export function buildTableVMs(
     for (const table of zone.tables) {
       if (!table.is_active) continue;
       const assignment = assignmentByTable.get(table.id);
-      const order = orderByTable.get(table.id);
+      const sessionOpenedAt =
+        sessionOpenedByLabel.get(table.table_number) ??
+        (table.display_name ? sessionOpenedByLabel.get(table.display_name) : undefined);
       out.push({
         table,
         zone,
         assignment,
-        order,
-        status: deriveTableStatus(assignment, order),
-        since: assignment?.started_at ?? order?.created_at ?? undefined,
+        status: deriveTableStatus(assignment, sessionOpenedAt !== undefined),
+        since: assignment?.started_at ?? sessionOpenedAt ?? undefined,
       });
     }
   }

@@ -1,7 +1,7 @@
-import type { AdminUser, Order, Table, TableAssignment, Zone } from '@/types/admin.types';
+import type { AdminUser, Table, TableAssignment, Zone } from '@/types/admin.types';
 
 /**
- * UI-level status derived from backend state (assignments + orders).
+ * UI-level status derived from backend state (assignments + open table sessions).
  * The backend does not persist a `status` column on tables.
  */
 export type ServiceTableStatus = 'free' | 'occupied' | 'reserved' | 'cleaning';
@@ -16,7 +16,6 @@ export interface ServiceTableVM {
   zone: Zone | undefined;
   status: ServiceTableStatus;
   assignment: TableAssignment | undefined;
-  order: Order | undefined;
   since: string | undefined;
 }
 
