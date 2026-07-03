@@ -40,6 +40,8 @@ interface AdminLayoutInnerProps {
   breadcrumbs?: React.ReactNode;
   /** Effective permissions (3-level resolved) for hiding nav links the member cannot open */
   navPermissions?: Record<PermissionCode, boolean>;
+  /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
+  appVersion?: string;
 }
 
 function AdminLayoutInner({
@@ -54,6 +56,7 @@ function AdminLayoutInner({
   notifications,
   breadcrumbs,
   navPermissions,
+  appVersion,
 }: AdminLayoutInnerProps) {
   const { isMobile, isTablet } = useDeviceContext();
   const belowLg = isMobile || isTablet;
@@ -196,6 +199,7 @@ function AdminLayoutInner({
           collapsed={sidebarCollapsed}
           onOpenSettings={openSettings}
           navPermissions={navPermissions}
+          appVersion={appVersion}
         />
       )}
 
@@ -220,6 +224,7 @@ function AdminLayoutInner({
               collapsed={false}
               onOpenSettings={openSettings}
               navPermissions={navPermissions}
+              appVersion={appVersion}
             />
           </div>
         </div>
@@ -302,6 +307,8 @@ interface AdminLayoutClientProps {
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
   navPermissions?: Record<PermissionCode, boolean>;
+  /** Server-baked deploy sha (APP_VERSION), forwarded to ShellSidebar. */
+  appVersion?: string;
 }
 
 export function AdminLayoutClient({
@@ -317,6 +324,7 @@ export function AdminLayoutClient({
   notifications,
   breadcrumbs,
   navPermissions,
+  appVersion,
 }: AdminLayoutClientProps) {
   return (
     <DeviceProvider>
@@ -332,6 +340,7 @@ export function AdminLayoutClient({
         notifications={notifications}
         breadcrumbs={breadcrumbs}
         navPermissions={navPermissions}
+        appVersion={appVersion}
       >
         {children}
       </AdminLayoutInner>

@@ -4093,6 +4093,6 @@
   },
   "updateBanner": {
     "message": "A new version is available.",
-    "refresh": "Refresh"
+    "sidebarLabel": "New version"
   }
 }

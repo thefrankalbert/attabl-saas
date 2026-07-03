@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface UpdateAvailableBannerProps {
   /** Deploy sha the current page was served with (from APP_VERSION, server-baked). */
   currentVersion: string;
+  /** When the sidebar is collapsed, render icon-only (label hidden, kept in tooltip). */
+  collapsed?: boolean;
 }
 
 const POLL_INTERVAL_MS = 60_000;
@@ -18,8 +21,14 @@ const POLL_INTERVAL_MS = 60_000;
  * style). Polls /api/version on an interval and whenever the tab regains focus,
  * so a staff member who leaves the dashboard open picks up updates without a
  * service worker (the SW was removed - it served stale cache; see PR #201).
+ *
+ * Rendered as a discreet row at the bottom of the sidebar, just under the
+ * account block. Clicking the row reloads to the new deploy.
  */
-export function UpdateAvailableBanner({ currentVersion }: UpdateAvailableBannerProps) {
+export function UpdateAvailableBanner({
+  currentVersion,
+  collapsed = false,
+}: UpdateAvailableBannerProps) {
   const t = useTranslations('updateBanner');
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
@@ -58,14 +67,19 @@ export function UpdateAvailableBanner({ currentVersion }: UpdateAvailableBannerP
   if (!updateAvailable) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-4">
-      <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
-        <RefreshCw className="h-4 w-4 shrink-0 text-status-info" aria-hidden="true" />
-        <span className="text-sm text-foreground">{t('message')}</span>
-        <Button size="sm" onClick={() => window.location.reload()}>
-          {t('refresh')}
-        </Button>
-      </div>
-    </div>
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={() => window.location.reload()}
+      title={t('message')}
+      aria-label={t('message')}
+      className={cn(
+        'mt-1 flex h-9 w-full items-center gap-2 rounded-[0.625rem] text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]',
+        collapsed ? 'justify-center px-0' : 'justify-start px-2',
+      )}
+    >
+      <RefreshCw className="size-3.5 shrink-0 text-status-info" aria-hidden="true" />
+      {!collapsed && <span className="truncate text-[13px] font-medium">{t('sidebarLabel')}</span>}
+    </Button>
   );
 }

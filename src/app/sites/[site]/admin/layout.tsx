@@ -10,7 +10,6 @@ import { SubscriptionBanners } from '@/components/admin/SubscriptionBanners';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
-import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import { APP_VERSION } from '@/lib/app-version';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
@@ -263,10 +262,10 @@ export default async function AdminLayout({
             userTenants={userTenants}
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
             breadcrumbs={<AdminBreadcrumbs />}
+            appVersion={APP_VERSION}
           >
             <PermissionsProvider role={userRole}>
               <OfflineIndicator />
-              <UpdateAvailableBanner currentVersion={APP_VERSION} />
               <CommandPalette />
               <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
                 <AdminIdleWrapper
