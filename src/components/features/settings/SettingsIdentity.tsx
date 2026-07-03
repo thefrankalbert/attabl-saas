@@ -138,7 +138,7 @@ export default function SettingsIdentity({
   return (
     <TabsContent value="identity" className="mt-0">
       <div className="space-y-6">
-        <div className="grid grid-cols-1 @md:grid-cols-2 gap-4 @sm:gap-6">
+        <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-4 @sm:gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">{seg.identityLabel}</Label>
@@ -200,7 +200,7 @@ export default function SettingsIdentity({
         {/* Slug (read-only display) */}
         <div className="space-y-2">
           <Label htmlFor="slug">{t('slug') ?? 'Slug'}</Label>
-          <div className="flex flex-col @sm:flex-row @sm:items-center gap-2">
+          <div className="flex flex-col @xl:flex-row @xl:items-center gap-2">
             <span className="text-sm text-app-text-muted">https://</span>
             <Input
               id="slug"

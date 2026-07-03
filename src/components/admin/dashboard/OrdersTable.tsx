@@ -60,8 +60,8 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50];
 // Override the shadcn Table defaults (uppercase 12px th / 14px td) to match the
 // maquette: normal-case 13px/500 muted headers, 13px cells with 10px/12px padding.
 const HEAD_CLS =
-  'h-10 px-3 text-[13px] font-medium normal-case tracking-normal text-[var(--muted-foreground)]';
-const CELL_CLS = 'px-3 py-2.5 text-[13px]';
+  'h-10 px-3 text-[13px] font-medium normal-case tracking-normal whitespace-nowrap text-[var(--muted-foreground)]';
+const CELL_CLS = 'px-3 py-2.5 text-[13px] whitespace-nowrap';
 
 // Elapsed-time pill tones (maquette u-gray / u-orange / u-red)
 const TONE = {

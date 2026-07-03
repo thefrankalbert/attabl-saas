@@ -149,7 +149,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             actions={
               <>
                 {/* Search - compact */}
-                <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
+                <div className="relative w-full @5xl:w-56 @7xl:w-80 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input

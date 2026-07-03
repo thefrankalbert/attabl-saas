@@ -513,7 +513,7 @@ export default function ItemsClient({
                     <div
                       key={item.id}
                       onClick={() => setSelectedItem(item)}
-                      className="flex flex-wrap @md:flex-nowrap items-center gap-2 @sm:gap-3 md:gap-4 px-3 @sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                      className="flex flex-wrap @3xl:flex-nowrap items-center gap-2 @sm:gap-3 md:gap-4 px-3 @sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                     >
                       <Checkbox
                         aria-label={`${tc('select') || 'Select'} ${item.name}`}

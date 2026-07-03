@@ -8,7 +8,7 @@ export default function OrderDetailLoading() {
       </div>
 
       {/* Body: left (info + items) + right (actions panel) */}
-      <div className="flex flex-col @md:flex-row gap-4 flex-1 min-h-0">
+      <div className="flex flex-col @2xl:flex-row gap-4 flex-1 min-h-0">
         {/* Left: status bar, info chips, items list */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* Status + total + time row */}
@@ -62,7 +62,7 @@ export default function OrderDetailLoading() {
         </div>
 
         {/* Right: actions panel */}
-        <div className="@lg:w-56 shrink-0 space-y-3">
+        <div className="@2xl:w-56 shrink-0 space-y-3">
           {/* Status actions */}
           <div className="rounded-xl border border-app-border bg-app-card p-3 space-y-2">
             <div className="h-3 w-20 bg-app-elevated rounded" />

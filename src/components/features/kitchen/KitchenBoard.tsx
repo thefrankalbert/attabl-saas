@@ -74,7 +74,7 @@ export default function KitchenBoard({
           className={cn(
             'grid gap-3',
             isChefView
-              ? 'grid-cols-1 @sm:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4 @xl:grid-cols-5'
+              ? 'grid-cols-1 @xl:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5'
               : 'grid-cols-1 max-w-3xl mx-auto',
           )}
         >

@@ -315,7 +315,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             count={loading || isError ? undefined : suppliers.length}
             actions={
               <>
-                <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                <div className="relative w-full @5xl:w-56 @7xl:w-64 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input
