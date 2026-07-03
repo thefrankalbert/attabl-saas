@@ -525,13 +525,13 @@ export default function POSCart({
           </Button>
           <Button
             variant="default"
-            className="col-span-5 min-h-[48px] rounded-xl text-sm font-bold touch-manipulation"
+            className="col-span-5 min-h-[48px] rounded-xl px-2 @sm:px-4 text-xs @sm:text-sm font-bold touch-manipulation"
             disabled={cart.length === 0}
             onClick={onCheckout}
           >
-            <Check className="w-4 h-4 shrink-0" />
+            <Check className="w-4 h-4 shrink-0 hidden @sm:inline" />
             <span className="truncate">{t('validatePayment')}</span>
-            <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80" />
+            <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80 hidden @sm:inline" />
           </Button>
         </div>
       </div>

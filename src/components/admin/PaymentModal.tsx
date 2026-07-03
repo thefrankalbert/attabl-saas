@@ -361,7 +361,7 @@ export default function PaymentModal({
             <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
               {t('tip')}
             </p>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -438,7 +438,7 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          <div className="flex gap-1.5 mb-3 @3xl:hidden shrink-0">
+          <div className="flex flex-wrap gap-1.5 mb-3 @3xl:hidden shrink-0">
             <Button
               variant="outline"
               onClick={() => {
