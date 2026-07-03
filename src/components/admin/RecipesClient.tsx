@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   Check,
+  Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -29,6 +30,8 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import AdminModal from '@/components/admin/AdminModal';
+import RecipeImportExcel from '@/components/features/inventory/RecipeImportExcel';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
@@ -72,6 +75,7 @@ function parseQuantity(value: number | string): number {
 export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRecipe, setFilterRecipe] = useState<'all' | 'with' | 'without'>('all');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [recipeLines, setRecipeLines] = useState<RecipeLine[]>([]);
@@ -279,6 +283,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     }
   };
 
+  const handleImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['recipes-data', tenantId] });
+    refetchIngredients();
+    if (selectedItemId) loadRecipe(selectedItemId);
+  };
+
   const filteredItems = menuItems.filter((item) => {
     if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterRecipe === 'with' && !itemsWithRecipes.has(item.id)) return false;
@@ -320,6 +330,18 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </Button>
             ))}
           </div>
+
+          {canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImportModal(true)}
+              className="gap-2 shrink-0 whitespace-nowrap lg:ml-auto"
+            >
+              <Upload className="w-4 h-4" />
+              {t('importTechnicalSheets')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -585,6 +607,21 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
           </div>
         </>
       )}
+
+      {/* Import fiches techniques Modal */}
+      <AdminModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title={t('importTechnicalSheets')}
+        size="lg"
+      >
+        {showImportModal && (
+          <RecipeImportExcel
+            onImportComplete={handleImportComplete}
+            onCancel={() => setShowImportModal(false)}
+          />
+        )}
+      </AdminModal>
     </div>
   );
 }

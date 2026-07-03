@@ -1762,7 +1762,8 @@
     "lossReason": "Motif de la perte",
     "lossNotes": "Notes (facultatif)",
     "lossRecorded": "Perte enregistrée",
-    "lossError": "Erreur lors de l'enregistrement de la perte"
+    "lossError": "Erreur lors de l'enregistrement de la perte",
+    "importTechnicalSheets": "Importer fiches techniques"
   },
   "losses": {
     "title": "Pertes par motif",
@@ -2572,7 +2573,8 @@
     "ingredientNamePlaceholder": "Ex: Poulet, Riz, Huile...",
     "categoryPlaceholder": "Ex: Viandes, Légumes...",
     "adjustReasonPlaceholder": "Ex: Livraison fournisseur, perte...",
-    "qtyPlaceholder": "Qté"
+    "qtyPlaceholder": "Qté",
+    "importExcel": "Importer Excel"
   },
   "announcements": {
     "title": "Annonces",
@@ -4094,5 +4096,24 @@
   "updateBanner": {
     "message": "Une nouvelle version est disponible.",
     "sidebarLabel": "Nouvelle version"
+  },
+  "inventoryImport": {
+    "downloadTemplate": "Télécharger le modèle Excel",
+    "dragAndDrop": "Glissez-déposez un fichier .xlsx ici ou cliquez pour parcourir",
+    "maxFileSize": "Taille max : 5 Mo",
+    "importExcel": "Importer Excel",
+    "importing": "Importation en cours...",
+    "importError": "Erreur lors de l'import",
+    "importSuccess": "Import terminé avec succès",
+    "suppliersCreated": "{count} fournisseur(s) créé(s)",
+    "suppliersUpdated": "{count} fournisseur(s) mis à jour",
+    "suppliersSkipped": "{count} ligne(s) ignorée(s)",
+    "recipesCreated": "{count} ligne(s) de fiche créée(s)",
+    "recipesUpdated": "{count} ligne(s) de fiche mise(s) à jour",
+    "ingredientsCreated": "{count} produit(s) créé(s)",
+    "itemsSkipped": "{count} ligne(s) ignorée(s)",
+    "errorsFound": "{count} erreur(s) trouvée(s)",
+    "rowError": "Ligne {row} : {message}",
+    "cancel": "Annuler"
   }
 }
