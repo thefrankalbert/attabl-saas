@@ -171,7 +171,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
               <Area
                 dataKey="surplace"
                 name={labels.surplace}
-                type="natural"
+                type="monotone"
                 fill="url(#fillSurplace)"
                 stroke="var(--color-surplace)"
                 strokeWidth={1.5}
@@ -180,7 +180,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
               <Area
                 dataKey="emporter"
                 name={labels.emporter}
-                type="natural"
+                type="monotone"
                 fill="url(#fillEmporter)"
                 stroke="var(--color-emporter)"
                 strokeWidth={1.5}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { ShellHeader } from './shell/ShellHeader';
 import { AdminBottomNav } from './AdminBottomNav';
@@ -55,10 +56,34 @@ function AdminLayoutInner({
   navPermissions,
 }: AdminLayoutInnerProps) {
   const { isMobile, isTablet } = useDeviceContext();
+  const belowLg = isMobile || isTablet;
+  const commonT = useTranslations('common');
   const pathname = usePathname();
   const isHome = isAdminHome(pathname, basePath);
   const immersive = isImmersivePage(pathname);
-  const showBottomNav = (isMobile || isTablet) && !isHome && !immersive;
+  const showBottomNav = belowLg && !isHome && !immersive;
+
+  // Mobile/tablet nav drawer. Below lg the inline sidebar is display:none, so the
+  // header toggle opens the sidebar as a slide-in overlay instead of collapsing a
+  // hidden element (which looked like a dead button on tablet portrait).
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Close the drawer whenever the route changes (a nav link was tapped) or when
+  // the viewport grows to desktop (inline sidebar takes over).
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!belowLg) setMobileNavOpen(false);
+  }, [belowLg]);
+  // Close the drawer on Escape for keyboard/a11y parity with the backdrop.
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileNavOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileNavOpen]);
 
   // Sidebar collapsed state - persisted to localStorage, respected across navigations
   // Use false as SSR default to avoid hydration mismatch, then sync from localStorage after mount
@@ -104,6 +129,16 @@ function AdminLayoutInner({
     });
   }, []);
 
+  // Header toggle: on desktop it collapses/expands the inline sidebar; below lg it
+  // opens/closes the overlay drawer (the inline sidebar is hidden there).
+  const handleHeaderToggle = useCallback(() => {
+    if (belowLg) {
+      setMobileNavOpen((prev) => !prev);
+    } else {
+      handleToggleCollapsed();
+    }
+  }, [belowLg, handleToggleCollapsed]);
+
   // Admin-local light/dark theme. Independent of the convive (which stays
   // forced-light). The `dark` class is toggled on the .admin-shell root only,
   // so the oklch neutral tokens scoped under .admin-shell.dark take effect.
@@ -148,7 +183,8 @@ function AdminLayoutInner({
         isDark && 'dark',
       )}
     >
-      {/* Sidebar - tablet & desktop, hidden on immersive pages */}
+      {/* Inline sidebar - desktop only (>=lg). Below lg it is display:none and the
+          drawer overlay below takes over. */}
       {!immersive && (
         <ShellSidebar
           basePath={basePath}
@@ -163,13 +199,39 @@ function AdminLayoutInner({
         />
       )}
 
+      {/* Mobile/tablet nav drawer - overlay slide-in below lg. Opened by the header
+          toggle; closes on backdrop tap, Escape, or route change. */}
+      {!immersive && mobileNavOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          {/* eslint-disable-next-line react/forbid-elements -- full-bleed invisible drawer backdrop; a shadcn <Button> would impose button chrome (padding/focus ring/min-size) on a 100%-area overlay. Keyboard close is handled by the Escape listener above (2026-07-03) */}
+          <button
+            type="button"
+            aria-label={commonT('aria.close')}
+            onClick={() => setMobileNavOpen(false)}
+            className="absolute inset-0 bg-black/50"
+          />
+          <div className="absolute left-0 top-0 h-full w-64 max-w-[85vw] bg-[var(--sidebar)] shadow-xl">
+            <ShellSidebar
+              basePath={basePath}
+              tenant={tenant}
+              userName={userName}
+              userEmail={userEmail}
+              userTenants={userTenants}
+              collapsed={false}
+              onOpenSettings={openSettings}
+              navPermissions={navPermissions}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Inset panel. Explicit height (parent uses items-start per the maquette,
           so flex stretch does not apply); h-[calc(100dvh-1rem)] = viewport minus
           the 0.5rem top/bottom margins, matching Dashboard.html calc(100svh-16px). */}
       <div className="flex h-[calc(100dvh-1rem)] min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-[0_1px_3px_0_rgb(0_0_0/0.06),0_1px_2px_-1px_rgb(0_0_0/0.06)] m-2 lg:my-2 lg:ml-0 lg:mr-2">
         {!immersive && (
           <ShellHeader
-            onToggleSidebar={handleToggleCollapsed}
+            onToggleSidebar={handleHeaderToggle}
             isDark={isDark}
             onToggleTheme={handleToggleTheme}
             title={breadcrumbs}
