@@ -111,7 +111,10 @@ const eslintConfig = defineConfig([
     ],
     ignores: [
       '**/__tests__/**',
+      // Immersive full-screen surfaces (no sidebar) that OWN their @container -
+      // there the container ~ viewport, so container queries are correct.
       'src/components/admin/POSClient.tsx',
+      'src/components/admin/KitchenClient.tsx',
       'src/components/admin/PaymentModal.tsx',
       'src/components/features/pos/**',
       'src/components/features/kitchen/**',
