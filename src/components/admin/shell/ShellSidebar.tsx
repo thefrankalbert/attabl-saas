@@ -174,6 +174,10 @@ export function ShellSidebar({
       .join('') || 'AB';
 
   const planRaw = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
+  const planName = tenant.subscription_plan
+    ? tenant.subscription_plan.charAt(0).toUpperCase() +
+      tenant.subscription_plan.slice(1).toLowerCase()
+    : t('planFree');
 
   const renderItem = (item: ShellNavItem) => {
     const Icon = item.icon;
@@ -345,7 +349,7 @@ export function ShellSidebar({
                         {userName || t('accountMenu')}
                       </span>
                       <span className="truncate text-xs text-[var(--muted-foreground)]">
-                        {userEmail || `${tenant.slug}.attabl.com`}
+                        {t('planLabel', { plan: planName })}
                       </span>
                     </span>
                     <ChevronsUpDown className="size-3.5 shrink-0 text-[var(--muted-foreground)]" />

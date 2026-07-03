@@ -2068,6 +2068,8 @@
     "secGestion": "Management",
     "usageMonthlyOrders": "Orders / month",
     "accountMenu": "Account",
+    "planLabel": "{plan} plan",
+    "planFree": "Free",
     "navSupports": "Print Materials",
     "navInventoryCounts": "Physical inventory",
     "supports": {
@@ -4134,7 +4136,7 @@
   },
   "updateBanner": {
     "message": "A new version is available.",
-    "sidebarLabel": "New version"
+    "sidebarLabel": "Update available"
   },
   "inventoryImport": {
     "downloadTemplate": "Download Excel template",

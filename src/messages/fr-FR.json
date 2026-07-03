@@ -2068,6 +2068,8 @@
     "secGestion": "Gestion",
     "usageMonthlyOrders": "Commandes / mois",
     "accountMenu": "Mon compte",
+    "planLabel": "Plan {plan}",
+    "planFree": "Gratuit",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
@@ -4134,7 +4136,7 @@
   },
   "updateBanner": {
     "message": "Une nouvelle version est disponible.",
-    "sidebarLabel": "Nouvelle version"
+    "sidebarLabel": "Mise a jour disponible"
   },
   "inventoryImport": {
     "downloadTemplate": "Télécharger le modèle Excel",
