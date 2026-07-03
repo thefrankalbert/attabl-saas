@@ -123,7 +123,6 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
       <div className="shrink-0">
         <AdminPageHeader
           title={t('physicalCount')}
-          count={counts.length}
           actions={
             <Button size="sm" className="min-h-[44px]" onClick={() => setIsNewCountOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
