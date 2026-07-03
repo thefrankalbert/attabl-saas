@@ -35,6 +35,10 @@ interface InventoryFormModalProps {
   setFormCostPerUnit: Dispatch<SetStateAction<string>>;
   formCategory: string;
   setFormCategory: Dispatch<SetStateAction<string>>;
+  formPurchaseUnit: string;
+  setFormPurchaseUnit: Dispatch<SetStateAction<string>>;
+  formUnitsPerPurchase: string;
+  setFormUnitsPerPurchase: Dispatch<SetStateAction<string>>;
   confirmDeactivate: boolean;
   setConfirmDeactivate: Dispatch<SetStateAction<boolean>>;
   isSubmitting: boolean;
@@ -58,6 +62,10 @@ export default function InventoryFormModal({
   setFormCostPerUnit,
   formCategory,
   setFormCategory,
+  formPurchaseUnit,
+  setFormPurchaseUnit,
+  formUnitsPerPurchase,
+  setFormUnitsPerPurchase,
   confirmDeactivate,
   setConfirmDeactivate,
   isSubmitting,
@@ -66,6 +74,11 @@ export default function InventoryFormModal({
 }: InventoryFormModalProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
+  const baseUnitShort = INGREDIENT_UNITS[formUnit]?.labelShort ?? formUnit;
+  const parsedUpp = parseFloat(formUnitsPerPurchase);
+  const hasPurchaseUnit = formPurchaseUnit.trim() !== '';
+  const showPurchaseHint = hasPurchaseUnit && parsedUpp > 0;
+  const showFactorError = hasPurchaseUnit && !(parsedUpp > 0);
   return (
     <AdminModal
       isOpen={isOpen}
@@ -157,6 +170,45 @@ export default function InventoryFormModal({
             placeholder={t('categoryPlaceholder')}
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              {t('purchaseUnitOptional')}
+            </Label>
+            <Input
+              value={formPurchaseUnit}
+              onChange={(e) => setFormPurchaseUnit(e.target.value)}
+              placeholder={t('purchaseUnit')}
+              maxLength={40}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              {t('unitsPerPurchase')}
+            </Label>
+            <Input
+              type="number"
+              step="0.001"
+              min="0"
+              value={formUnitsPerPurchase}
+              onChange={(e) => setFormUnitsPerPurchase(e.target.value)}
+              placeholder="1"
+            />
+          </div>
+        </div>
+        {showPurchaseHint && (
+          <p className="text-xs text-app-text-muted">
+            {t('unitsPerPurchaseHint', {
+              purchaseUnit: formPurchaseUnit.trim(),
+              units: parsedUpp,
+              baseUnit: baseUnitShort,
+            })}
+          </p>
+        )}
+        {showFactorError && (
+          <p className="text-xs text-status-error">{t('purchaseFactorInvalid')}</p>
+        )}
       </div>
 
       <div className="flex justify-between gap-2 mt-6">

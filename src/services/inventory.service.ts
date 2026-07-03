@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { withActiveMenuItems } from '@/lib/menu-items-query';
+import { convertToBaseUnit } from '@/lib/inventory/unit-conversion';
 import type {
   Ingredient,
   IngredientUnit,
@@ -14,6 +15,7 @@ import type {
   StockStatus,
   CreateIngredientInput,
   UpdateIngredientInput,
+  ReceiveStockInput,
   RecipeLineInput,
   AdjustStockInput,
   RecordLossInput,
@@ -71,6 +73,7 @@ export interface InventoryService {
   destockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
   restockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
   adjustStock(tenantId: string, input: AdjustStockInput): Promise<void>;
+  receiveStock(tenantId: string, input: ReceiveStockInput): Promise<void>;
   recordLoss(tenantId: string, input: RecordLossInput): Promise<void>;
   getLossesByReason(
     tenantId: string,
@@ -117,7 +120,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       const { data, error } = await supabase
         .from('ingredients')
         .select(
-          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
         )
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
@@ -138,9 +141,11 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           min_stock_alert: input.min_stock_alert ?? 0,
           cost_per_unit: input.cost_per_unit ?? 0,
           category: input.category || null,
+          purchase_unit: input.purchase_unit ?? null,
+          units_per_purchase: input.units_per_purchase ?? 1,
         })
         .select(
-          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
         )
         .single();
 
@@ -159,7 +164,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         .eq('id', ingredientId)
         .eq('tenant_id', tenantId)
         .select(
-          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
         )
         .single();
 
@@ -313,6 +318,85 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
           throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
         }
         throw new ServiceError('Erreur ajustement stock', 'INTERNAL', error);
+      }
+    },
+
+    async receiveStock(tenantId: string, input: ReceiveStockInput): Promise<void> {
+      // Load the ingredient (tenant-scoped) to read its base unit + purchase
+      // conversion config. The ledger stays in base unit, so any purchase-unit
+      // quantity is converted here BEFORE the manual_add path.
+      const { data: ingredient, error: fetchError } = await supabase
+        .from('ingredients')
+        .select('id, unit, purchase_unit, units_per_purchase')
+        .eq('id', input.ingredient_id)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError)
+        throw new ServiceError('Erreur chargement ingredient', 'INTERNAL', fetchError);
+      if (!ingredient) throw new ServiceError('Ingredient introuvable', 'NOT_FOUND');
+
+      const ing = ingredient as Pick<
+        Ingredient,
+        'id' | 'unit' | 'purchase_unit' | 'units_per_purchase'
+      >;
+
+      let baseQty: number;
+      let autoNote: string;
+      if (input.inPurchaseUnit) {
+        try {
+          baseQty = convertToBaseUnit({
+            quantity: input.quantity,
+            baseUnit: ing.unit,
+            purchaseUnit: ing.purchase_unit,
+            unitsPerPurchase: Number(ing.units_per_purchase),
+          });
+        } catch {
+          throw new ServiceError('Facteur de conversion invalide', 'VALIDATION');
+        }
+        // ASCII-only ledger note describing the receipt, e.g. "Recu: 2 casier (48 bouteille)".
+        autoNote = `Recu: ${input.quantity} ${ing.purchase_unit ?? ing.unit} (${baseQty} ${ing.unit})`;
+      } else {
+        baseQty = convertToBaseUnit({
+          quantity: input.quantity,
+          baseUnit: ing.unit,
+          purchaseUnit: null,
+          unitsPerPurchase: Number(ing.units_per_purchase),
+        });
+        autoNote = `Recu: ${baseQty} ${ing.unit}`;
+      }
+
+      // Keep the auto breakdown for the ledger trail; append the operator's
+      // typed note when present (ASCII hyphen separator).
+      const userNote = input.notes?.trim();
+      const note = userNote ? `${autoNote} - ${userNote}` : autoNote;
+
+      // Get the acting user for the audit trail (anti-vol traceability).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // Reuse the canonical manual-add ledger path: same atomic RPC as
+      // adjustStock (clamps at >=0, records the applied delta, reconcilable).
+      // supplier_id is forwarded for supplier attribution (validated by the RPC).
+      const { error } = await supabase.rpc('adjust_ingredient_stock_tx', {
+        p_tenant_id: tenantId,
+        p_ingredient_id: input.ingredient_id,
+        p_delta: baseQty,
+        p_movement_type: 'manual_add',
+        p_notes: note,
+        p_created_by: user?.id || undefined,
+        p_supplier_id: input.supplier_id || undefined,
+      });
+
+      if (error) {
+        if (error.message?.includes('INVALID_SUPPLIER')) {
+          throw new ServiceError('Fournisseur invalide', 'VALIDATION', error);
+        }
+        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+        }
+        throw new ServiceError('Erreur reception stock', 'INTERNAL', error);
       }
     },
 
