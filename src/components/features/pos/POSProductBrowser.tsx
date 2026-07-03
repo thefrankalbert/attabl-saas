@@ -298,7 +298,7 @@ export default function POSProductBrowser({
                           <Utensils className="w-5 h-5 text-app-text-muted/40" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-5">
                         <h3 className="font-semibold text-xs text-app-text leading-tight">
                           {item.name}
                         </h3>
@@ -314,7 +314,12 @@ export default function POSProductBrowser({
                         </p>
                       </div>
                       {cartQuantityMap.has(item.id) && (
-                        <div className="absolute -top-1 -right-1 bg-accent text-accent-text min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums">
+                        // Inside the card (top-1 right-1), NOT -top-1 -right-1: the badge
+                        // used to overflow the card and get clipped by the scroll
+                        // container's overflow-y-auto and hidden behind the sticky
+                        // category header (z-20) on the top row. Kept inside so it is
+                        // always fully visible; pr-5 on the text column reserves its space.
+                        <div className="absolute top-1 right-1 bg-accent text-accent-text min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums">
                           {cartQuantityMap.get(item.id) || 0}
                         </div>
                       )}
