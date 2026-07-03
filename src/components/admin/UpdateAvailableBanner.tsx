@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -74,12 +73,12 @@ export function UpdateAvailableBanner({
       title={t('message')}
       aria-label={t('message')}
       className={cn(
-        'mt-1 flex h-9 w-full items-center gap-2 rounded-[0.625rem] text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]',
+        'mt-1 flex h-8 w-full items-center gap-2 rounded-[0.625rem] text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]',
         collapsed ? 'justify-center px-0' : 'justify-start px-2',
       )}
     >
-      <RefreshCw className="size-3.5 shrink-0 text-status-info" aria-hidden="true" />
-      {!collapsed && <span className="truncate text-[13px] font-medium">{t('sidebarLabel')}</span>}
+      <span className="size-1.5 shrink-0 rounded-full bg-status-info" aria-hidden="true" />
+      {!collapsed && <span className="truncate text-xs">{t('sidebarLabel')}</span>}
     </Button>
   );
 }
