@@ -93,7 +93,7 @@ export default async function AdminLayout({
       // only a LIVE super-admin membership counts.
       const { data: superAdminCheck } = await supabase
         .from('admin_users')
-        .select('id, user_id, tenant_id, role, name, custom_permissions, is_super_admin')
+        .select('id, user_id, tenant_id, role, full_name, custom_permissions, is_super_admin')
         .eq('user_id', user.id)
         .eq('is_super_admin', true)
         .eq('is_active', true)
@@ -112,7 +112,7 @@ export default async function AdminLayout({
         user_id: superAdminCheck.user_id,
         tenant_id: tenant.id,
         role: 'owner' as AdminRole,
-        name: superAdminCheck.name,
+        name: superAdminCheck.full_name ?? undefined,
         custom_permissions: null,
       };
     }
