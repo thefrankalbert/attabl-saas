@@ -108,6 +108,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         permissionCode: 'inventory.view',
       },
       {
+        path: '/inventory/counts',
+        icon: ClipboardList,
+        labelKey: 'navInventoryCounts',
+        requiredPermission: 'canViewStocks',
+        permissionCode: 'inventory.view',
+      },
+      {
         path: '/recipes',
         icon: BookOpenCheck,
         labelKey: 'navRecipes',

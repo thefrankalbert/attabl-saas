@@ -19,6 +19,10 @@ import type {
   LedgerDriftRow,
   MovementType,
   ReasonCode,
+  StockCount,
+  StockCountLine,
+  StockCountLineInput,
+  OpenStockCountInput,
 } from '@/types/inventory.types';
 
 // ─── Pure row mapper ─────────────────────────────────────
@@ -82,6 +86,20 @@ export interface InventoryService {
     }[];
     recipeItemIds: Set<string>;
   }>;
+  // ─── Physical Stock Count (#12) ──────────────────────
+  openStockCount(tenantId: string, input: OpenStockCountInput): Promise<string>;
+  listStockCounts(tenantId: string): Promise<StockCount[]>;
+  getStockCount(
+    tenantId: string,
+    countId: string,
+  ): Promise<{ count: StockCount; lines: StockCountLine[] }>;
+  saveStockCountLines(
+    tenantId: string,
+    countId: string,
+    lines: StockCountLineInput[],
+  ): Promise<void>;
+  commitStockCount(tenantId: string, countId: string): Promise<number>;
+  cancelStockCount(tenantId: string, countId: string): Promise<void>;
 }
 
 export function createInventoryService(supabase: SupabaseClient): InventoryService {
@@ -416,6 +434,143 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         (recipesRes.data || []).map((r: { menu_item_id: string }) => r.menu_item_id),
       );
       return { menuItems, recipeItemIds };
+    },
+
+    // ─── Physical Stock Count (#12) ──────────────────────
+
+    async openStockCount(tenantId: string, input: OpenStockCountInput): Promise<string> {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase.rpc('open_stock_count', {
+        p_tenant_id: tenantId,
+        p_reference: input.reference ?? null,
+        p_created_by: user?.id ?? null,
+        p_ingredient_ids: input.ingredientIds ?? null,
+      });
+
+      if (error) {
+        // The app-level open-check is racy; the partial unique index
+        // (uniq_stock_counts_one_open) is the real guard and raises 23505 on a
+        // concurrent open. Map both to the same CONFLICT so the UI stays coherent.
+        if (error.message?.includes('OPEN_COUNT_EXISTS') || error.code === '23505') {
+          throw new ServiceError('Un inventaire est deja ouvert', 'CONFLICT', error);
+        }
+        if (error.message?.includes('NO_INGREDIENTS')) {
+          throw new ServiceError('Aucun ingredient disponible', 'VALIDATION', error);
+        }
+        throw new ServiceError('Erreur creation inventaire', 'INTERNAL', error);
+      }
+      return data as string;
+    },
+
+    async listStockCounts(tenantId: string): Promise<StockCount[]> {
+      const { data, error } = await supabase
+        .from('stock_counts')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw new ServiceError('Erreur chargement inventaires', 'INTERNAL', error);
+      return (data as StockCount[]) || [];
+    },
+
+    async getStockCount(
+      tenantId: string,
+      countId: string,
+    ): Promise<{ count: StockCount; lines: StockCountLine[] }> {
+      const { data: countData, error: countError } = await supabase
+        .from('stock_counts')
+        .select('*')
+        .eq('id', countId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (countError)
+        throw new ServiceError('Erreur chargement inventaire', 'INTERNAL', countError);
+      if (!countData) throw new ServiceError('Inventaire introuvable', 'NOT_FOUND');
+
+      const { data: linesData, error: linesError } = await supabase
+        .from('stock_count_lines')
+        .select('*, ingredient:ingredients(name, unit)')
+        .eq('count_id', countId)
+        .eq('tenant_id', tenantId);
+
+      if (linesError)
+        throw new ServiceError('Erreur chargement lignes inventaire', 'INTERNAL', linesError);
+
+      const lines = ((linesData as StockCountLine[]) || []).sort((a, b) =>
+        (a.ingredient?.name ?? '').localeCompare(b.ingredient?.name ?? ''),
+      );
+
+      return { count: countData as StockCount, lines };
+    },
+
+    async saveStockCountLines(
+      tenantId: string,
+      countId: string,
+      lines: StockCountLineInput[],
+    ): Promise<void> {
+      const { error } = await supabase.rpc('save_stock_count_lines', {
+        p_tenant_id: tenantId,
+        p_count_id: countId,
+        p_lines: lines,
+      });
+
+      if (error) {
+        if (error.message?.includes('COUNT_NOT_FOUND')) {
+          throw new ServiceError('Inventaire introuvable', 'NOT_FOUND', error);
+        }
+        if (error.message?.includes('COUNT_NOT_OPEN')) {
+          throw new ServiceError('Inventaire non ouvert', 'CONFLICT', error);
+        }
+        if (error.message?.includes('INVALID_COUNTED_QTY')) {
+          throw new ServiceError('Quantite comptee invalide', 'VALIDATION', error);
+        }
+        throw new ServiceError('Erreur sauvegarde lignes inventaire', 'INTERNAL', error);
+      }
+    },
+
+    async commitStockCount(tenantId: string, countId: string): Promise<number> {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase.rpc('commit_stock_count', {
+        p_tenant_id: tenantId,
+        p_count_id: countId,
+        p_committed_by: user?.id ?? null,
+      });
+
+      if (error) {
+        if (error.message?.includes('COUNT_NOT_FOUND')) {
+          throw new ServiceError('Inventaire introuvable', 'NOT_FOUND', error);
+        }
+        if (error.message?.includes('COUNT_ALREADY_CLOSED')) {
+          throw new ServiceError('Inventaire deja clos', 'CONFLICT', error);
+        }
+        throw new ServiceError('Erreur validation inventaire', 'INTERNAL', error);
+      }
+      return (data as number) ?? 0;
+    },
+
+    async cancelStockCount(tenantId: string, countId: string): Promise<void> {
+      const { error } = await supabase.rpc('cancel_stock_count', {
+        p_tenant_id: tenantId,
+        p_count_id: countId,
+      });
+
+      if (error) {
+        if (error.message?.includes('COUNT_NOT_FOUND')) {
+          throw new ServiceError('Inventaire introuvable', 'NOT_FOUND', error);
+        }
+        if (error.message?.includes('COUNT_NOT_OPEN')) {
+          throw new ServiceError('Inventaire non ouvert', 'CONFLICT', error);
+        }
+        throw new ServiceError('Erreur annulation inventaire', 'INTERNAL', error);
+      }
     },
   };
 }
