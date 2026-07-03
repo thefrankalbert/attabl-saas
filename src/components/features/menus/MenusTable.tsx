@@ -74,6 +74,7 @@ function MenuRow({
   onAddChild,
 }: MenuRowProps) {
   const t = useTranslations('menus');
+  const tc = useTranslations('common');
   const {
     attributes,
     listeners,
@@ -98,7 +99,7 @@ function MenuRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-3 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
+        'flex flex-wrap items-center gap-3 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
         isDragging && 'bg-app-bg shadow-sm',
       )}
     >
@@ -125,7 +126,7 @@ function MenuRow({
       </Button>
 
       {/* Menu name + badge */}
-      <div className="flex-1 min-w-0 flex items-center gap-3 py-1">
+      <div className="flex-1 min-w-40 flex items-center gap-3 py-1">
         <span className="flex-1 min-w-0 flex items-center gap-2">
           <span className="font-medium text-sm text-app-text break-words">{menu.name}</span>
           {childCount > 0 && (
@@ -159,16 +160,16 @@ function MenuRow({
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0">
         {/* Open menu detail */}
-        <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            title={t('viewMenu')}
-            className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
-          >
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
+        >
+          <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`} title={t('viewMenu')}>
             <ExternalLink className="w-4 h-4" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         {/* Edit menu name */}
         <Button
           variant="ghost"
@@ -206,8 +207,8 @@ function MenuRow({
           variant="ghost"
           size="sm"
           onClick={onDelete}
-          title="Supprimer"
-          className="h-9 w-9 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
+          title={tc('delete')}
+          className="h-9 w-9 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
         >
           <Trash2 className="w-4 h-4" />
         </Button>

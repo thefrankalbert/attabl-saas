@@ -190,7 +190,6 @@ export default function AnnouncementsClient({
       <div className="shrink-0 space-y-4">
         <AdminPageHeader
           title={t('title')}
-          count={announcements.length}
           actions={
             <Button
               onClick={() => {

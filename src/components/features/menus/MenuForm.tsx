@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Globe, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -94,7 +95,6 @@ export default function MenuForm({
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             placeholder={t('nameFrPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-[var(--ring)]"
             required
           />
         </div>
@@ -107,7 +107,6 @@ export default function MenuForm({
             value={formNameEn}
             onChange={(e) => setFormNameEn(e.target.value)}
             placeholder={t('nameEnPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-[var(--ring)]"
           />
         </div>
       </div>
@@ -122,7 +121,6 @@ export default function MenuForm({
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
             placeholder={t('descriptionFrPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-[var(--ring)]"
           />
         </div>
         <div className="space-y-1.5">
@@ -134,7 +132,6 @@ export default function MenuForm({
             value={formDescriptionEn}
             onChange={(e) => setFormDescriptionEn(e.target.value)}
             placeholder={t('descriptionEnPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-[var(--ring)]"
           />
         </div>
       </div>
@@ -150,7 +147,7 @@ export default function MenuForm({
               if (next) setFormVenueId(null);
             }}
           />
-          <Globe className="w-4 h-4 text-[var(--muted-foreground)] flex-shrink-0" />
+          <Globe className="w-4 h-4 text-app-text-muted flex-shrink-0" />
           <div>
             <Label htmlFor="menu-shared" className="text-app-text font-medium">
               {t('sharedMenu')}
@@ -161,7 +158,7 @@ export default function MenuForm({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className={`space-y-1.5 ${formIsShared ? 'opacity-50' : ''}`}>
+        <div className={cn('space-y-1.5', formIsShared && 'opacity-50')}>
           <Label htmlFor="menu-venue" className="text-app-text">
             {t('spaceOptional')}
           </Label>

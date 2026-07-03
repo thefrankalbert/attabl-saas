@@ -231,7 +231,6 @@ export default function SuggestionsClient({
           <div className="shrink-0 space-y-4">
             <AdminPageHeader
               title={t('suggestions')}
-              count={suggestions.length}
               actions={
                 <>
                   <div className="relative w-full @5xl:w-56 @7xl:w-64 shrink-0">

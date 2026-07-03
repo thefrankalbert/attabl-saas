@@ -292,12 +292,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 space-y-4">
-        <AdminPageHeader
-          title={t('recipesTech')}
-          count={
-            loading || overviewError ? undefined : `${itemsWithRecipes.size}/${menuItems.length}`
-          }
-        />
+        <AdminPageHeader title={t('recipesTech')} />
 
         {/* Toolbar on its own row (never crushes the title, like StockHistory) */}
         <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center">

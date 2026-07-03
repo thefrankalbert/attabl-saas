@@ -60,6 +60,7 @@ function formatPrice(price: number): string {
 
 export default function MenuImportPDF({ menus, onImportComplete, onCancel }: MenuImportPDFProps) {
   const t = useTranslations('menus');
+  const tc = useTranslations('common');
   const { toast } = useToast();
 
   const [step, setStep] = useState<Step>('upload');
@@ -331,7 +332,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-medium uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
                       {item.category}
                     </span>
                   </div>
@@ -349,9 +350,9 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                     variant="ghost"
                     size="icon"
                     onClick={() => removeItem(index)}
-                    className="p-1 h-auto w-auto text-app-text-muted hover:text-[var(--destructive)] hover:bg-status-error/10"
-                    title="Supprimer"
-                    aria-label="Remove"
+                    className="p-1 h-auto w-auto text-app-text-muted hover:text-status-error hover:bg-status-error/10"
+                    title={tc('delete')}
+                    aria-label={tc('delete')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -402,32 +403,32 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
         <>
           <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
             {importResult.categoriesCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-[var(--success)]">
+              <div className="flex items-center gap-2 text-sm text-status-success">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('categoriesCreated', { count: importResult.categoriesCreated })}
               </div>
             )}
             {importResult.itemsCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-[var(--success)]">
+              <div className="flex items-center gap-2 text-sm text-status-success">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('itemsCreated', { count: importResult.itemsCreated })}
               </div>
             )}
             {importResult.itemsSkipped > 0 && (
-              <div className="flex items-center gap-2 text-sm text-[var(--warning)]">
+              <div className="flex items-center gap-2 text-sm text-status-warning">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {t('itemsSkipped', { count: importResult.itemsSkipped })}
               </div>
             )}
             {importResult.errors.length > 0 && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--destructive)]">
+                <div className="flex items-center gap-2 text-sm font-medium text-status-error">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {t('errorsFound', { count: importResult.errors.length })}
                 </div>
                 <ul className="ml-6 space-y-0.5">
                   {importResult.errors.map((err, i) => (
-                    <li key={i} className="text-xs text-[var(--destructive)]">
+                    <li key={i} className="text-xs text-status-error">
                       {err.message}
                     </li>
                   ))}

@@ -177,7 +177,7 @@ export default function MenuImportExcel({
         className={cn(
           'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all',
           isDragOver
-            ? 'border-[var(--border)] bg-app-hover'
+            ? 'border-app-border bg-app-hover'
             : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
         )}
       >
@@ -211,32 +211,32 @@ export default function MenuImportExcel({
       {importResult && (
         <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
           {importResult.categoriesCreated > 0 && (
-            <div className="flex items-center gap-2 text-sm text-[var(--success)]">
+            <div className="flex items-center gap-2 text-sm text-status-success">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('categoriesCreated', { count: importResult.categoriesCreated })}
             </div>
           )}
           {importResult.itemsCreated > 0 && (
-            <div className="flex items-center gap-2 text-sm text-[var(--success)]">
+            <div className="flex items-center gap-2 text-sm text-status-success">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('itemsCreated', { count: importResult.itemsCreated })}
             </div>
           )}
           {importResult.itemsSkipped > 0 && (
-            <div className="flex items-center gap-2 text-sm text-[var(--warning)]">
+            <div className="flex items-center gap-2 text-sm text-status-warning">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {t('itemsSkipped', { count: importResult.itemsSkipped })}
             </div>
           )}
           {importResult.errors.length > 0 && (
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--destructive)]">
+              <div className="flex items-center gap-2 text-sm font-medium text-status-error">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {t('errorsFound', { count: importResult.errors.length })}
               </div>
               <ul className="ml-6 space-y-0.5">
                 {importResult.errors.map((err, i) => (
-                  <li key={i} className="text-xs text-[var(--destructive)]">
+                  <li key={i} className="text-xs text-status-error">
                     {t('rowError', { row: err.row, message: err.message })}
                   </li>
                 ))}

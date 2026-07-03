@@ -145,7 +145,6 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('inventory')}
-            count={loading || isError ? undefined : ingredients.length}
             actions={
               <>
                 {/* Search - compact */}
