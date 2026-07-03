@@ -38,6 +38,7 @@ import {
 import { getHiddenNav } from '@/lib/segment-features';
 import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import { getSegmentFamily } from '@/lib/segment-terms';
+import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { SettingsTab } from './SettingsDialog';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
@@ -65,6 +66,8 @@ interface ShellSidebarProps {
    * (fail-open on the UI only; the middleware + actions still enforce access).
    */
   navPermissions?: Record<string, boolean>;
+  /** Server-baked deploy sha, forwarded to the update-available row in the footer. */
+  appVersion?: string;
 }
 
 type ShellNavItem = {
@@ -123,6 +126,7 @@ export function ShellSidebar({
   className,
   onOpenSettings,
   navPermissions,
+  appVersion,
 }: ShellSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -422,6 +426,11 @@ export function ShellSidebar({
               </form>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* New-version pill - discreet, just under the account block */}
+          {appVersion && (
+            <UpdateAvailableBanner currentVersion={appVersion} collapsed={collapsed} />
+          )}
         </div>
       </div>
     </aside>
