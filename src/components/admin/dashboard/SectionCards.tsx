@@ -31,7 +31,7 @@ export function SectionCards({ cards }: SectionCardsProps) {
         return (
           <div
             key={i}
-            className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] [background-image:linear-gradient(to_top,color-mix(in_oklab,var(--primary)_5%,transparent),var(--card))] dark:[background-image:none]"
+            className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] [background-image:linear-gradient(to_top,var(--muted),var(--card))] dark:[background-image:none]"
           >
             <div className="grid gap-1.5 px-6 pt-6">
               <div className="flex items-start justify-between gap-2">
