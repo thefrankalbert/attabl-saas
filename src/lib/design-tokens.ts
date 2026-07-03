@@ -115,4 +115,9 @@ export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border:
     border: 'border-status-warning/20',
   },
   opening: { bg: 'bg-status-info-bg', text: 'text-status-info', border: 'border-status-info/20' },
+  physical_count: {
+    bg: 'bg-status-info-bg',
+    text: 'text-status-info',
+    border: 'border-status-info/20',
+  },
 };

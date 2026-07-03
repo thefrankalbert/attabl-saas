@@ -8,3 +8,4 @@ export { useReportData } from './useReportData';
 export { useStockMovements } from './useStockMovements';
 export { useStaffStockReport } from './useStaffStockReport';
 export { useMenus } from './useMenus';
+export { useStockCounts, useStockCount } from './useStockCounts';

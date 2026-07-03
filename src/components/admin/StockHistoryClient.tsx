@@ -80,6 +80,13 @@ const MOVEMENT_STYLES: Record<
     text: MOVEMENT_TOKENS.opening.text,
     dot: 'bg-status-info',
   },
+  physical_count: {
+    labelKey: 'filterPhysicalCount',
+    icon: ClipboardList,
+    bg: MOVEMENT_TOKENS.physical_count.bg,
+    text: MOVEMENT_TOKENS.physical_count.text,
+    dot: 'bg-status-info',
+  },
 };
 
 // ─── Component ──────────────────────────────────────────
@@ -106,6 +113,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       { value: 'manual_remove', label: t('filterWithdrawals') },
       { value: 'adjustment', label: t('filterAdjustments') },
       { value: 'opening', label: t('filterOpening') },
+      { value: 'physical_count', label: t('filterPhysicalCount') },
     ],
     [t],
   );

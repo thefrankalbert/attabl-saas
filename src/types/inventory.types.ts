@@ -2,17 +2,18 @@
 
 export type IngredientUnit = 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
 
-// The DB CHECK also allows physical_count / loss / transfer_in / transfer_out
-// (added in the canonical-ledger migration). Those values are added to this
-// union in the later phases that actually produce them (inventory count, losses,
-// transfers), keeping each phase's surface minimal.
+// The DB CHECK also allows loss / transfer_in / transfer_out (added in the
+// canonical-ledger migration). Those values are added to this union in the later
+// phases that actually produce them (losses, transfers), keeping each phase's
+// surface minimal. 'physical_count' is produced by the inventory-count phase.
 export type MovementType =
   | 'order_destock'
   | 'order_restock'
   | 'manual_add'
   | 'manual_remove'
   | 'adjustment'
-  | 'opening';
+  | 'opening'
+  | 'physical_count';
 
 // Structured motif for losses / reconciliation (stock_movements.reason_code).
 export type ReasonCode =
@@ -109,6 +110,45 @@ export interface StaffStockReportRow {
   order_destock_qty: number;
 }
 
+// ─── Physical stock count (#12) ─────────────────────────
+
+export type StockCountStatus = 'open' | 'committed' | 'cancelled';
+
+export interface StockCount {
+  id: string;
+  tenant_id: string;
+  reference: string | null;
+  status: StockCountStatus;
+  created_by: string | null;
+  committed_by: string | null;
+  committed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockCountLine {
+  id: string;
+  tenant_id: string;
+  count_id: string;
+  ingredient_id: string;
+  theoretical_qty: number;
+  counted_qty: number | null;
+  variance: number | null;
+  created_at: string;
+  // Joined field
+  ingredient?: Pick<Ingredient, 'name' | 'unit'>;
+}
+
+export interface OpenStockCountInput {
+  reference?: string;
+  ingredientIds?: string[];
+}
+
+export interface StockCountLineInput {
+  ingredient_id: string;
+  counted_qty: number | null;
+}
+
 // ─── Input types for service methods ────────────────────
 
 export interface CreateIngredientInput {
@@ -161,4 +201,5 @@ export const MOVEMENT_TYPE_LABELS: Record<MovementType, { label: string; color: 
   manual_remove: { label: 'Retrait manuel', color: 'text-red-600' },
   adjustment: { label: 'Ajustement', color: 'text-amber-600' },
   opening: { label: "Stock d'ouverture", color: 'text-purple-600' },
+  physical_count: { label: 'Inventaire physique', color: 'text-purple-600' },
 };

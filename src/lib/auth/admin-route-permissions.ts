@@ -22,6 +22,7 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCod
   { test: /^\/audit-logs(\/|$)/, permission: 'settings.view' },
   { test: /^\/invoices(\/|$)/, permission: 'settings.view' },
   { test: /^\/reports(\/|$)/, permission: 'reports.view' },
+  { test: /^\/inventory\/counts(\/|$)/, permission: 'inventory.view' },
   { test: /^\/inventory(\/|$)/, permission: 'inventory.view' },
   { test: /^\/stock-history(\/|$)/, permission: 'inventory.view' },
   { test: /^\/suppliers(\/|$)/, permission: 'inventory.view' },
