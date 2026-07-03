@@ -237,36 +237,28 @@ export default function POSProductBrowser({
           />
         </div>
 
-        <div className="relative">
-          <div
-            ref={pillBarRef}
-            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide scroll-px-4"
+        <div ref={pillBarRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <Button
+            ref={(el) => setPillRef('all', el)}
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleCategoryClick('all')}
+            className="rounded-full min-h-[44px]"
           >
+            {tc('all')}
+          </Button>
+          {activeCategories.map((cat) => (
             <Button
-              ref={(el) => setPillRef('all', el)}
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              key={cat.id}
+              ref={(el) => setPillRef(cat.id, el)}
+              variant={selectedCategory === cat.id ? 'default' : 'outline'}
               size="sm"
-              onClick={() => handleCategoryClick('all')}
-              className="rounded-full min-h-[44px]"
+              onClick={() => handleCategoryClick(cat.id)}
+              className="rounded-full whitespace-nowrap min-h-[44px]"
             >
-              {tc('all')}
+              {cat.name}
             </Button>
-            {activeCategories.map((cat) => (
-              <Button
-                key={cat.id}
-                ref={(el) => setPillRef(cat.id, el)}
-                variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleCategoryClick(cat.id)}
-                className="rounded-full whitespace-nowrap min-h-[44px]"
-              >
-                {cat.name}
-              </Button>
-            ))}
-          </div>
-          {/* Edge fades so partially-scrolled pills dissolve instead of hard-clipping */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-app-bg to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-app-bg to-transparent" />
+          ))}
         </div>
       </div>
 
