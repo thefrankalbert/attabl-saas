@@ -206,7 +206,7 @@ export default function POSCart({
       <div className="flex-1 overflow-y-auto min-h-0">
         {/* ━━━ SERVICE TYPE ━━━ */}
         <div className="p-3 border-b border-app-border space-y-2">
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+          <div className="grid grid-cols-2 @lg:grid-cols-4 gap-1.5">
             {SERVICE_TYPES.map((st) => (
               <Button
                 key={st.value}
@@ -214,14 +214,14 @@ export default function POSCart({
                 variant={serviceType === st.value ? 'default' : 'outline'}
                 onClick={() => setServiceType(st.value)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] whitespace-nowrap text-xs font-medium',
+                  'flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 min-h-[44px] text-xs font-medium',
                   serviceType === st.value
                     ? 'bg-accent text-accent-text'
                     : 'text-app-text-secondary hover:bg-app-hover',
                 )}
               >
                 {st.icon}
-                <span>{st.label}</span>
+                <span className="truncate">{st.label}</span>
               </Button>
             ))}
           </div>
@@ -304,39 +304,59 @@ export default function POSCart({
                       </div>
                     </div>
 
-                    {/* Line 2: Quantity controls + Note button */}
-                    <div className="flex items-center justify-between mt-1.5">
-                      <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('decreaseQty')}
-                          onClick={() => onUpdateQuantity(itemKey, -1)}
-                          className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="min-w-7 px-1 text-center text-xs font-bold tabular-nums text-app-text">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('increaseQty')}
-                          disabled={item.quantity >= MAX_ITEM_QTY}
-                          onClick={() => onUpdateQuantity(itemKey, 1)}
-                          className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
+                    {/* Line 2: Note (left) + quantity controls & remove (right) */}
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
                       <Button
                         variant="ghost"
                         onClick={() => onEditNotes(itemKey, item.notes || '')}
-                        className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 touch-manipulation"
+                        className={cn(
+                          'flex items-center gap-1 min-w-0 h-8 px-1.5 text-[11px] font-medium touch-manipulation',
+                          item.notes
+                            ? 'text-[var(--warning)] hover:text-[var(--warning)]'
+                            : 'text-app-text-muted hover:text-app-text',
+                        )}
                       >
-                        {item.notes ? tc('edit') : seg.productionNote}
+                        <StickyNote className="w-3 h-3 shrink-0" />
+                        <span className="truncate">
+                          {item.notes ? tc('edit') : seg.productionNote}
+                        </span>
                       </Button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('decreaseQty')}
+                            onClick={() => onUpdateQuantity(itemKey, -1)}
+                            className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="min-w-7 px-1 text-center text-xs font-bold tabular-nums text-app-text">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('increaseQty')}
+                            disabled={item.quantity >= MAX_ITEM_QTY}
+                            onClick={() => onUpdateQuantity(itemKey, 1)}
+                            className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={tc('delete')}
+                          title={tc('delete')}
+                          onClick={() => onUpdateQuantity(itemKey, -item.quantity)}
+                          className="w-8 h-8 text-app-text-muted hover:text-status-error touch-manipulation"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
