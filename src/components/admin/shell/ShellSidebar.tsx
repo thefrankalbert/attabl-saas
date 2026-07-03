@@ -103,10 +103,6 @@ const ANALYSE: ShellNavItem[] = [
   { path: '/reports', groupId: 'analyse', icon: ChartColumn, labelKey: 'navReports' },
 ];
 
-const FOOT: ShellNavItem[] = [
-  { path: '/settings', groupId: 'settings', icon: Settings, labelKey: 'navSettings' },
-];
-
 function isPathActive(pathname: string, basePath: string, itemPath: string): boolean {
   const fullPath = `${basePath}${itemPath}`;
   if (itemPath === '') {
@@ -164,7 +160,6 @@ export function ShellSidebar({
   const catalogue = visible(CATALOGUE);
   const gestion = visible(GESTION);
   const analyse = visible(ANALYSE);
-  const foot = visible(FOOT);
 
   const initials =
     (userName || tenant.name)
@@ -321,28 +316,6 @@ export function ShellSidebar({
           {renderGroup('secCatalogue', catalogue)}
           {renderGroup('secGestion', gestion)}
           {renderGroup('groupAnalyse', analyse)}
-          {onOpenSettings && foot.length > 0 ? (
-            <div className="flex flex-col py-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => onOpenSettings('compte')}
-                title={collapsed ? t('navSettings') : undefined}
-                className={cn(
-                  'h-8 justify-start gap-2 rounded-[0.625rem] px-2 text-[13px] font-normal text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]',
-                  collapsed && 'justify-center px-0',
-                )}
-              >
-                <Settings
-                  className="size-4 shrink-0 text-[var(--muted-foreground)]"
-                  strokeWidth={2}
-                />
-                {!collapsed && <span className="truncate">{t('navSettings')}</span>}
-              </Button>
-            </div>
-          ) : (
-            renderGroup(null, foot)
-          )}
         </div>
 
         {/* ── Footer: user dropdown ── */}
@@ -393,17 +366,31 @@ export function ShellSidebar({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {onOpenSettings ? (
-                <DropdownMenuItem onClick={() => onOpenSettings('compte')}>
-                  <CircleUser className="size-4" />
-                  {t('accountMenu')}
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem asChild>
-                  <Link href={`${basePath}/settings`} prefetch={false}>
+                <>
+                  <DropdownMenuItem onClick={() => onOpenSettings('compte')}>
                     <CircleUser className="size-4" />
                     {t('accountMenu')}
-                  </Link>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onOpenSettings('etablissement')}>
+                    <Settings className="size-4" />
+                    {t('navSettings')}
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href={`${basePath}/settings`} prefetch={false}>
+                      <CircleUser className="size-4" />
+                      {t('accountMenu')}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`${basePath}/settings`} prefetch={false}>
+                      <Settings className="size-4" />
+                      {t('navSettings')}
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem asChild>
                 <Link href={`${basePath}/subscription`} prefetch={false}>
