@@ -50,9 +50,19 @@ vi.mock('@/services/inventory.service', () => ({
   createInventoryService: vi.fn(() => ({ restockOrder: mockRestockOrder })),
 }));
 
-// Imported by the action module but unused on this path.
-vi.mock('@/services/audit.service', () => ({ createAuditService: vi.fn() }));
-vi.mock('@/services/payment.service', () => ({ createPaymentService: vi.fn() }));
+const mockAuditLog = vi.fn();
+vi.mock('@/services/audit.service', () => ({
+  createAuditService: vi.fn(() => ({ log: mockAuditLog })),
+}));
+
+const mockCompOrder = vi.fn();
+vi.mock('@/services/payment.service', () => ({
+  createPaymentService: vi.fn(() => ({ compOrder: mockCompOrder })),
+}));
+
+vi.mock('@/services/order-annotation.service', () => ({
+  createOrderAnnotationService: vi.fn(() => ({})),
+}));
 
 vi.mock('@/lib/plans/features', () => ({ canAccessFeature: vi.fn(() => false) }));
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
@@ -132,5 +142,63 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
         expect.objectContaining({ tags: { area: 'inventory-restock' } }),
       );
     });
+  });
+});
+
+describe('actionCompOrder - manager gating + audit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: mockAuthedSupabase,
+      user: { id: 'user-9', email: 'boss@resto.test' },
+      adminUserId: 'admin-9',
+    });
+    mockCompOrder.mockResolvedValue({
+      summary: { paymentStatus: 'comp' },
+      comped: true,
+    });
+  });
+
+  it('is gated to owner/admin/manager (NOT server) and derives compedBy = adminUserId', async () => {
+    const { actionCompOrder } = await import('@/app/actions/orders');
+    const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
+
+    expect(result.success).toBe(true);
+    expect(result.paymentStatus).toBe('comp');
+    // The role gate excludes plain 'server'.
+    expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
+      TENANT_ID,
+      ['owner', 'admin', 'manager'],
+      'orders.manage',
+    );
+    expect(mockCompOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, {
+      reason: 'Geste commercial',
+      compedBy: 'admin-9',
+    });
+    // A real comp transition is audited.
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'update', entityType: 'order', entityId: ORDER_ID }),
+    );
+  });
+
+  it('rejects a disallowed role (AuthError) and maps it to { error }', async () => {
+    mockGetAuthUserForTenant.mockRejectedValue(new MockAuthError('Permissions insuffisantes'));
+
+    const { actionCompOrder } = await import('@/app/actions/orders');
+    const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'x');
+
+    expect(result.error).toBe('Permissions insuffisantes');
+    expect(result.success).toBeUndefined();
+    expect(mockCompOrder).not.toHaveBeenCalled();
+  });
+
+  it('does NOT audit an idempotent replay (comped=false)', async () => {
+    mockCompOrder.mockResolvedValue({ summary: { paymentStatus: 'comp' }, comped: false });
+
+    const { actionCompOrder } = await import('@/app/actions/orders');
+    const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'x');
+
+    expect(result.success).toBe(true);
+    expect(mockAuditLog).not.toHaveBeenCalled();
   });
 });

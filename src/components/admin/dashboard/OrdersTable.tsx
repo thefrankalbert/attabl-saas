@@ -116,6 +116,7 @@ const PAYMENT_META: Record<PaymentStatus, { labelKey: string; color: string }> =
   pending: { labelKey: 'payPending', color: 'text-[var(--warning)]' },
   partial: { labelKey: 'payPartial', color: 'text-[var(--warning)]' },
   refunded: { labelKey: 'payRefunded', color: 'text-[var(--muted-foreground)]' },
+  comp: { labelKey: 'payComped', color: 'text-status-info' },
 };
 
 type ColKey = 'type' | 'payment' | 'items';

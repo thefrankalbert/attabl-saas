@@ -10,6 +10,7 @@ import { actionMarkOrderPaid } from '@/app/actions/orders';
 import { formatCurrency } from '@/lib/utils/currency';
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
+import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────
@@ -32,6 +33,12 @@ interface PaymentModalProps {
   total?: number;
   tableNumber?: string;
   orderNumber?: number;
+  /**
+   * Whether the actor may comp (offer) the order. Comp is a MANAGER privilege -
+   * the caller passes true only for owner/admin/manager. Never exposed to a plain
+   * server (a server zeroing out checks = fraud). ORDER mode only.
+   */
+  canComp?: boolean;
   onSuccess: (paymentData?: PaymentData) => void;
   cartItems?: CartDisplayItem[];
   currency?: CurrencyCode;
@@ -67,6 +74,7 @@ export default function PaymentModal({
   cartItems,
   currency = 'XAF',
   pricing,
+  canComp = false,
 }: PaymentModalProps) {
   const t = useTranslations('payment');
   const tc = useTranslations('common');
@@ -604,6 +612,16 @@ export default function PaymentModal({
               )}
               {t('validatePayment')}
             </Button>
+
+            {/* Offrir (comp) - MANAGER only, ORDER mode only. Closes the order for
+                free without a tender; the server re-checks the role. */}
+            {isOrderMode && canComp && order?.id && order.tenant_id && (
+              <CompOrderDialog
+                tenantId={order.tenant_id}
+                orderId={order.id}
+                onComped={() => onSuccess()}
+              />
+            )}
           </div>
 
           {/* Cancel - especes : la validation se fait via le bouton ci-dessus */}

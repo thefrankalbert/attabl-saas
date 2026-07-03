@@ -10,10 +10,12 @@ import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session
 import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
+import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
+import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -544,6 +546,135 @@ export async function actionGetPaymentSummary(
       return { error: err.message };
     }
     logger.error('actionGetPaymentSummary: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Comp / offer an order (close it for FREE). This is a MANAGER privilege - the
+ * fraud surface of letting a plain 'server' zero out checks is why the role gate
+ * excludes 'server'. Comp is columns-only on the order (never a payments row) and
+ * is auto-excluded from revenue (payment_status='comp' is not 'paid'). A comped
+ * transition is snapshotted into the audit log; an idempotent replay is not.
+ */
+export async function actionCompOrder(
+  tenantId: string,
+  orderId: string,
+  reason: string,
+): Promise<{ success?: boolean; paymentStatus?: PaymentStatus; error?: string }> {
+  const parsed = compOrderSchema.safeParse({ tenantId, orderId, reason });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase, user, adminUserId } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager'],
+      'orders.manage',
+    );
+    const result = await createPaymentService(supabase).compOrder(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      { reason: parsed.data.reason, compedBy: adminUserId },
+    );
+
+    // Audit only a real comp transition (skip idempotent replays).
+    if (result.comped) {
+      createAuditService(supabase, {
+        tenantId: parsed.data.tenantId,
+        userId: user.id,
+        userEmail: user.email ?? undefined,
+      }).log({
+        action: 'update',
+        entityType: 'order',
+        entityId: parsed.data.orderId,
+        metadata: { comp: true, reason: parsed.data.reason },
+      });
+    }
+
+    return { success: true, paymentStatus: result.summary.paymentStatus };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionCompOrder: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * Append a manager note to an order (immutable audit trail). Staff (server or
+ * above) may leave a note. The note is stamped with the actor's admin_users.id.
+ */
+export async function actionAddOrderNote(
+  tenantId: string,
+  orderId: string,
+  note: string,
+): Promise<{ success?: boolean; note?: OrderNote; error?: string }> {
+  const parsed = orderNoteSchema.safeParse({ tenantId, orderId, note });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
+    const created = await createOrderAnnotationService(supabase).addOrderNote(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+      { note: parsed.data.note, createdBy: adminUserId },
+    );
+    return { success: true, note: created };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionAddOrderNote: unexpected error', { err, tenantId, orderId });
+    return { error: 'Erreur interne' };
+  }
+}
+
+/**
+ * List the manager notes of an order (oldest first). Read-only, staff or above.
+ */
+export async function actionListOrderNotes(
+  tenantId: string,
+  orderId: string,
+): Promise<{ notes?: OrderNote[]; error?: string }> {
+  const parsed = paymentSummarySchema.safeParse({ tenantId, orderId });
+  if (!parsed.success) {
+    return { error: 'Donnees invalides' };
+  }
+
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(
+      parsed.data.tenantId,
+      ['owner', 'admin', 'manager', 'server'],
+      'orders.manage',
+    );
+    const notes = await createOrderAnnotationService(supabase).listOrderNotes(
+      parsed.data.orderId,
+      parsed.data.tenantId,
+    );
+    return { notes };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: err.message };
+    }
+    if (err instanceof ServiceError) {
+      return { error: err.message };
+    }
+    logger.error('actionListOrderNotes: unexpected error', { err, tenantId, orderId });
     return { error: 'Erreur interne' };
   }
 }

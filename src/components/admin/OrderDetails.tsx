@@ -25,8 +25,11 @@ import { formatCurrencyMinor } from '@/lib/utils/money';
 import { printReceipt } from '@/lib/printing/receipt';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
+import { usePermissions } from '@/hooks/usePermissions';
 import PaymentModal from './PaymentModal';
 import OrderPaymentPanel from './OrderPaymentPanel';
+
+const COMP_CAPABLE_ROLES = ['owner', 'admin', 'manager'] as const;
 
 interface OrderDetailsProps {
   order: Order;
@@ -48,9 +51,13 @@ export default function OrderDetails({
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
+  const th = useTranslations('houseAccount');
   const seg = useSegmentTerms();
   const locale = useLocale();
   const { toast } = useToast();
+  const { role } = usePermissions();
+  const canComp = (COMP_CAPABLE_ROLES as readonly string[]).includes(role);
+  const isComp = order.payment_status === 'comp';
 
   // Transactional order/item amounts (total, subtotal, tax, tip, price_at_order)
   // are integer MINOR units -> format with fmt. Catalog prices that still live in
@@ -130,6 +137,16 @@ export default function OrderDetails({
               {order.service_type && order.service_type !== 'dine_in' && (
                 <Badge variant="outline" className="text-[10px]">
                   {serviceLabels[order.service_type] || order.service_type}
+                </Badge>
+              )}
+              {isComp && (
+                <Badge className="bg-status-info-bg text-status-info border-0 text-[10px]">
+                  {ta('payComped')}
+                </Badge>
+              )}
+              {order.house_account_id && (
+                <Badge variant="outline" className="text-[10px]">
+                  {th('onTab')}
                 </Badge>
               )}
               <span className="text-lg font-bold text-app-text ml-auto">
@@ -320,14 +337,16 @@ export default function OrderDetails({
                   <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
                   {t('statusButtonReady')}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowPayment(true)}
-                  disabled={loading}
-                  className="bg-status-success hover:bg-status-success/90 text-accent-text h-8 text-xs"
-                >
-                  <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonCheckout')}
-                </Button>
+                {!isComp && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowPayment(true)}
+                    disabled={loading}
+                    className="bg-status-success hover:bg-status-success/90 text-accent-text h-8 text-xs"
+                  >
+                    <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonCheckout')}
+                  </Button>
+                )}
               </div>
 
               {order.status !== 'ready' && (
@@ -370,6 +389,7 @@ export default function OrderDetails({
             tenantId={order.tenant_id}
             orderId={order.id}
             currency={currency}
+            canComp={canComp}
             onUpdate={onUpdate}
           />
         </div>
@@ -387,6 +407,7 @@ export default function OrderDetails({
         <PaymentModal
           onClose={() => setShowPayment(false)}
           order={order}
+          canComp={canComp}
           onSuccess={() => {
             handleStatusUpdate('delivered');
             setShowPayment(false);

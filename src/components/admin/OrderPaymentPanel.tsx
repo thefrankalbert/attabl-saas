@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Loader2, RotateCcw, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrencyMinor, toMinorUnits, fromMinorUnits } from '@/lib/utils/money';
 import {
@@ -13,6 +14,9 @@ import {
   actionRecordTender,
   actionRefundOrder,
 } from '@/app/actions/orders';
+import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
+import OrderNotesSection from '@/components/admin/orders/OrderNotesSection';
+import AttachToHouseAccount from '@/components/admin/orders/AttachToHouseAccount';
 import type { PaymentSummary } from '@/services/payment.service';
 import type { CurrencyCode } from '@/types/admin.types';
 
@@ -20,7 +24,13 @@ interface OrderPaymentPanelProps {
   tenantId: string;
   orderId: string;
   currency?: CurrencyCode;
-  /** Called after a tender/refund so the parent can refresh the order. */
+  /**
+   * Whether the current actor may comp (offer) the order. Comp is a MANAGER
+   * privilege - the caller passes true only for owner/admin/manager. The server
+   * action re-checks, so this only controls button visibility.
+   */
+  canComp?: boolean;
+  /** Called after a tender/refund/comp so the parent can refresh the order. */
   onUpdate: () => void;
 }
 
@@ -34,6 +44,7 @@ export default function OrderPaymentPanel({
   tenantId,
   orderId,
   currency = 'XAF',
+  canComp = false,
   onUpdate,
 }: OrderPaymentPanelProps) {
   const t = useTranslations('payment');
@@ -71,8 +82,14 @@ export default function OrderPaymentPanel({
   // summary.due / net / remaining and each tender.amount are integer MINOR units.
   const fmt = (amount: number) => formatCurrencyMinor(amount, currency);
   const remaining = Math.max(0, summary.due - summary.net);
-  const canSettle = remaining > 0 && summary.paymentStatus !== 'paid';
+  const isComp = summary.paymentStatus === 'comp';
+  // A comped order is closed for free: hide the settle/refund inputs.
+  const canSettle = remaining > 0 && summary.paymentStatus !== 'paid' && !isComp;
   const canRefund = summary.net > 0;
+  // Comp only applies to a fully-unsettled order (the server rejects partial).
+  const canOfferComp = canComp && summary.paymentStatus === 'pending';
+  // Put an unpaid order on a running tab (never once paid or comped).
+  const canAttach = summary.paymentStatus !== 'paid' && !isComp;
 
   const handleRecord = async () => {
     // The cashier types a MAJOR-unit amount (e.g. 12.50); the ledger stores minor.
@@ -109,111 +126,140 @@ export default function OrderPaymentPanel({
   };
 
   return (
-    <div className="rounded-xl border border-app-border p-3 space-y-3">
-      <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
-        {t('ledger')}
-      </p>
+    <div className="space-y-3">
+      <div className="rounded-xl border border-app-border p-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+            {t('ledger')}
+          </p>
+          {isComp && (
+            <Badge className="bg-status-info-bg text-status-info border-0 text-[10px]">
+              {t('compedBadge')}
+            </Badge>
+          )}
+        </div>
 
-      {/* Totals */}
-      <div className="space-y-1 text-xs">
-        <div className="flex justify-between text-app-text-muted">
-          <span>{t('amountDue')}</span>
-          <span className="tabular-nums font-mono text-app-text">{fmt(summary.due)}</span>
+        {/* Totals */}
+        <div className="space-y-1 text-xs">
+          <div className="flex justify-between text-app-text-muted">
+            <span>{t('amountDue')}</span>
+            <span className="tabular-nums font-mono text-app-text">{fmt(summary.due)}</span>
+          </div>
+          <div className="flex justify-between text-app-text-muted">
+            <span>{t('netPaid')}</span>
+            <span className="tabular-nums font-mono text-app-text">{fmt(summary.net)}</span>
+          </div>
+          {remaining > 0 && (
+            <div className="flex justify-between font-semibold text-[var(--warning)]">
+              <span>{t('remaining')}</span>
+              <span className="tabular-nums font-mono">{fmt(remaining)}</span>
+            </div>
+          )}
         </div>
-        <div className="flex justify-between text-app-text-muted">
-          <span>{t('netPaid')}</span>
-          <span className="tabular-nums font-mono text-app-text">{fmt(summary.net)}</span>
+
+        {/* Tender history */}
+        <div className="space-y-1">
+          <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+            {t('tenderHistory')}
+          </p>
+          {summary.tenders.length === 0 ? (
+            <p className="text-xs text-app-text-muted">{t('noTenders')}</p>
+          ) : (
+            <ul className="divide-y divide-app-border">
+              {summary.tenders.map((tender) => (
+                <li key={tender.id} className="flex items-center justify-between py-1 text-xs">
+                  <span className="text-app-text-muted">{tender.method}</span>
+                  <span
+                    className={
+                      tender.status === 'refunded'
+                        ? 'tabular-nums font-mono text-[var(--muted-foreground)]'
+                        : 'tabular-nums font-mono text-app-text'
+                    }
+                  >
+                    {tender.status === 'refunded' ? '-' : ''}
+                    {fmt(tender.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        {remaining > 0 && (
-          <div className="flex justify-between font-semibold text-[var(--warning)]">
-            <span>{t('remaining')}</span>
-            <span className="tabular-nums font-mono">{fmt(remaining)}</span>
+
+        {/* Record a (partial) payment */}
+        {canSettle && (
+          <div className="flex gap-1.5">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder={String(fromMinorUnits(remaining, currency))}
+              value={tenderAmount}
+              onChange={(e) => setTenderAmount(e.target.value)}
+              aria-label={t('amount')}
+              className="h-9 text-sm"
+            />
+            <Button
+              size="sm"
+              onClick={handleRecord}
+              disabled={loading || !tenderAmount}
+              className="h-9 text-xs shrink-0"
+            >
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {t('recordPayment')}
+            </Button>
           </div>
         )}
-      </div>
 
-      {/* Tender history */}
-      <div className="space-y-1">
-        <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
-          {t('tenderHistory')}
-        </p>
-        {summary.tenders.length === 0 ? (
-          <p className="text-xs text-app-text-muted">{t('noTenders')}</p>
-        ) : (
-          <ul className="divide-y divide-app-border">
-            {summary.tenders.map((tender) => (
-              <li key={tender.id} className="flex items-center justify-between py-1 text-xs">
-                <span className="text-app-text-muted">{tender.method}</span>
-                <span
-                  className={
-                    tender.status === 'refunded'
-                      ? 'tabular-nums font-mono text-[var(--muted-foreground)]'
-                      : 'tabular-nums font-mono text-app-text'
-                  }
-                >
-                  {tender.status === 'refunded' ? '-' : ''}
-                  {fmt(tender.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
+        {/* Refund */}
+        {canRefund && (
+          <div className="flex gap-1.5">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder={String(fromMinorUnits(summary.net, currency))}
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              aria-label={t('refundAmount')}
+              className="h-9 text-sm"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefund}
+              disabled={loading || !refundAmount}
+              className="h-9 text-xs shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              {t('refund')}
+            </Button>
+          </div>
+        )}
+
+        {/* Comp / offrir (manager) - only for a still-unsettled order */}
+        {canOfferComp && (
+          <CompOrderDialog
+            tenantId={tenantId}
+            orderId={orderId}
+            onComped={async () => {
+              await load();
+              onUpdate();
+            }}
+          />
         )}
       </div>
 
-      {/* Record a (partial) payment */}
-      {canSettle && (
-        <div className="flex gap-1.5">
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder={String(fromMinorUnits(remaining, currency))}
-            value={tenderAmount}
-            onChange={(e) => setTenderAmount(e.target.value)}
-            aria-label={t('amount')}
-            className="h-9 text-sm"
-          />
-          <Button
-            size="sm"
-            onClick={handleRecord}
-            disabled={loading || !tenderAmount}
-            className="h-9 text-xs shrink-0"
-          >
-            {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {t('recordPayment')}
-          </Button>
-        </div>
+      {/* Put the order on a running house-account tab */}
+      {canAttach && (
+        <AttachToHouseAccount tenantId={tenantId} orderId={orderId} onAttached={onUpdate} />
       )}
 
-      {/* Refund */}
-      {canRefund && (
-        <div className="flex gap-1.5">
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder={String(fromMinorUnits(summary.net, currency))}
-            value={refundAmount}
-            onChange={(e) => setRefundAmount(e.target.value)}
-            aria-label={t('refundAmount')}
-            className="h-9 text-sm"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefund}
-            disabled={loading || !refundAmount}
-            className="h-9 text-xs shrink-0"
-          >
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-            {t('refund')}
-          </Button>
-        </div>
-      )}
+      {/* Manager notes (append-only trail) */}
+      <OrderNotesSection tenantId={tenantId} orderId={orderId} />
     </div>
   );
 }

@@ -18,7 +18,7 @@ export type AdminRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'chef' | 'wa
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
 type PaymentMethod = 'cash' | 'card' | 'wave' | 'orange_money' | 'mtn_momo' | 'free_money';
-export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'refunded' | 'comp';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
 export type CurrencyCode = 'XAF' | 'XOF' | 'EUR' | 'USD';
@@ -145,6 +145,11 @@ export interface Order {
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;
   paid_at?: string;
+  // ─── Comp / offert (order closed for free) ────────────
+  is_comp?: boolean;
+  comp_reason?: string;
+  comp_amount?: number;
+  house_account_id?: string;
   // ─── Currency ─────────────────────────────────────────
   display_currency?: CurrencyCode;
   // ─── Coupon ────────────────────────────────────────────
