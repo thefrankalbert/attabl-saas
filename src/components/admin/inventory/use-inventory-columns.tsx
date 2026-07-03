@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { TrendingDown } from 'lucide-react';
+import { TrendingDown, Pencil } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -114,19 +114,21 @@ export function useInventoryColumns(
               variant="outline"
               size="sm"
               onClick={() => openLoss(row.original)}
-              className="text-xs gap-1"
+              className="text-xs"
               aria-label={t('declareLoss')}
+              title={t('declareLoss')}
             >
               <TrendingDown className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">{t('declareLoss')}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => openEdit(row.original)}
               className="text-xs"
+              aria-label={tc('edit')}
+              title={tc('edit')}
             >
-              {tc('edit')}
+              <Pencil className="w-3.5 h-3.5" />
             </Button>
           </div>
         ),
