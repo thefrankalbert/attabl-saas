@@ -75,6 +75,10 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     setFormCostPerUnit,
     formCategory,
     setFormCategory,
+    formPurchaseUnit,
+    setFormPurchaseUnit,
+    formUnitsPerPurchase,
+    setFormUnitsPerPurchase,
     adjustQty,
     setAdjustQty,
     adjustType,
@@ -83,6 +87,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    receiveUnitMode,
+    setReceiveUnitMode,
     lossQty,
     setLossQty,
     lossReason,
@@ -239,6 +245,10 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               setFormCostPerUnit={setFormCostPerUnit}
               formCategory={formCategory}
               setFormCategory={setFormCategory}
+              formPurchaseUnit={formPurchaseUnit}
+              setFormPurchaseUnit={setFormPurchaseUnit}
+              formUnitsPerPurchase={formUnitsPerPurchase}
+              setFormUnitsPerPurchase={setFormUnitsPerPurchase}
               confirmDeactivate={confirmDeactivate}
               setConfirmDeactivate={setConfirmDeactivate}
               isSubmitting={isSubmitting}
@@ -259,6 +269,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               setAdjustNotes={setAdjustNotes}
               adjustSupplierId={adjustSupplierId}
               setAdjustSupplierId={setAdjustSupplierId}
+              receiveUnitMode={receiveUnitMode}
+              setReceiveUnitMode={setReceiveUnitMode}
               activeSuppliers={activeSuppliers}
               isSubmitting={isSubmitting}
               handleAdjust={handleAdjust}

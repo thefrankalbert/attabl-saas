@@ -8,6 +8,7 @@ import {
   actionCreateIngredient,
   actionUpdateIngredient,
   actionAdjustStock,
+  actionReceiveStock,
   actionRecordLoss,
 } from '@/app/actions/inventory';
 import type {
@@ -31,12 +32,19 @@ export function useInventoryActions(tenantId: string) {
   const [formMinAlert, setFormMinAlert] = useState('');
   const [formCostPerUnit, setFormCostPerUnit] = useState('');
   const [formCategory, setFormCategory] = useState('');
+  // Purchase-unit conversion config (#15). Empty label = bought in base unit.
+  const [formPurchaseUnit, setFormPurchaseUnit] = useState('');
+  const [formUnitsPerPurchase, setFormUnitsPerPurchase] = useState('1');
 
   // Adjust stock fields
   const [adjustQty, setAdjustQty] = useState('');
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
+  // When receiving a manual_add on an ingredient that has a purchase_unit, the
+  // quantity can be entered in the base unit ('base') or the purchase unit
+  // ('purchase'); 'purchase' routes to actionReceiveStock (server converts).
+  const [receiveUnitMode, setReceiveUnitMode] = useState<'base' | 'purchase'>('base');
 
   // Loss declaration fields
   const [lossQty, setLossQty] = useState('');
@@ -58,10 +66,13 @@ export function useInventoryActions(tenantId: string) {
     setFormMinAlert('');
     setFormCostPerUnit('');
     setFormCategory('');
+    setFormPurchaseUnit('');
+    setFormUnitsPerPurchase('1');
     setAdjustQty('');
     setAdjustType('manual_add');
     setAdjustNotes('');
     setAdjustSupplierId('');
+    setReceiveUnitMode('base');
     setLossQty('');
     setLossReason('breakage');
     setLossNotes('');
@@ -81,6 +92,8 @@ export function useInventoryActions(tenantId: string) {
     setFormMinAlert(String(ing.min_stock_alert));
     setFormCostPerUnit(String(ing.cost_per_unit));
     setFormCategory(ing.category || '');
+    setFormPurchaseUnit(ing.purchase_unit || '');
+    setFormUnitsPerPurchase(String(ing.units_per_purchase ?? 1));
     setModalMode('edit');
   };
 
@@ -89,6 +102,7 @@ export function useInventoryActions(tenantId: string) {
     setAdjustQty('');
     setAdjustType('manual_add');
     setAdjustNotes('');
+    setReceiveUnitMode('base');
     setModalMode('adjust');
   };
 
@@ -112,6 +126,11 @@ export function useInventoryActions(tenantId: string) {
       return;
     }
 
+    // Purchase-unit config (#15): empty label = bought in base unit (identity).
+    const purchaseUnit = formPurchaseUnit.trim() || null;
+    const parsedUpp = parseFloat(formUnitsPerPurchase);
+    const unitsPerPurchase = Number.isFinite(parsedUpp) && parsedUpp > 0 ? parsedUpp : 1;
+
     setIsSubmitting(true);
     try {
       if (modalMode === 'add') {
@@ -122,6 +141,8 @@ export function useInventoryActions(tenantId: string) {
           min_stock_alert: parseFloat(formMinAlert) || 0,
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || undefined,
+          purchase_unit: purchaseUnit,
+          units_per_purchase: unitsPerPurchase,
         };
         const r = await actionCreateIngredient(tenantId, input);
         if (r.error) throw new Error(r.error);
@@ -133,6 +154,8 @@ export function useInventoryActions(tenantId: string) {
           min_stock_alert: parseFloat(formMinAlert) || 0,
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || null,
+          purchase_unit: purchaseUnit,
+          units_per_purchase: unitsPerPurchase,
         });
         if (r.error) throw new Error(r.error);
         toast({ title: t('productUpdated') });
@@ -171,15 +194,31 @@ export function useInventoryActions(tenantId: string) {
     if (isSubmitting) return;
     if (!selectedIngredient || !adjustQty) return;
 
+    // Receiving in the purchase unit routes to actionReceiveStock, which
+    // converts to the base unit server-side before the ledger write. Only
+    // manual_add on an ingredient that has a purchase_unit offers this mode.
+    const isPurchaseReceipt =
+      adjustType === 'manual_add' &&
+      !!selectedIngredient.purchase_unit &&
+      receiveUnitMode === 'purchase';
+
     setIsSubmitting(true);
     try {
-      const r = await actionAdjustStock(tenantId, {
-        ingredient_id: selectedIngredient.id,
-        quantity: parseFloat(adjustQty),
-        movement_type: adjustType,
-        notes: adjustNotes.trim() || undefined,
-        supplier_id: adjustSupplierId || undefined,
-      });
+      const r = isPurchaseReceipt
+        ? await actionReceiveStock(tenantId, {
+            ingredient_id: selectedIngredient.id,
+            quantity: parseFloat(adjustQty),
+            inPurchaseUnit: true,
+            supplier_id: adjustSupplierId || undefined,
+            notes: adjustNotes.trim() || undefined,
+          })
+        : await actionAdjustStock(tenantId, {
+            ingredient_id: selectedIngredient.id,
+            quantity: parseFloat(adjustQty),
+            movement_type: adjustType,
+            notes: adjustNotes.trim() || undefined,
+            supplier_id: adjustSupplierId || undefined,
+          });
       if (r.error) throw new Error(r.error);
       toast({ title: t('stockAdjusted') });
       setModalMode(null);
@@ -234,6 +273,10 @@ export function useInventoryActions(tenantId: string) {
     setFormCostPerUnit,
     formCategory,
     setFormCategory,
+    formPurchaseUnit,
+    setFormPurchaseUnit,
+    formUnitsPerPurchase,
+    setFormUnitsPerPurchase,
     adjustQty,
     setAdjustQty,
     adjustType,
@@ -242,6 +285,8 @@ export function useInventoryActions(tenantId: string) {
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    receiveUnitMode,
+    setReceiveUnitMode,
     lossQty,
     setLossQty,
     lossReason,

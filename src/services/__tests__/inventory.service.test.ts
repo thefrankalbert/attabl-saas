@@ -108,7 +108,7 @@ describe('InventoryService', () => {
 
       expect(supabase.from).toHaveBeenCalledWith('ingredients');
       expect(selectFn).toHaveBeenCalledWith(
-        'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+        'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, purchase_unit, units_per_purchase, created_at, updated_at',
       );
       expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
       expect(eqIsActive).toHaveBeenCalledWith('is_active', true);
@@ -162,8 +162,33 @@ describe('InventoryService', () => {
         min_stock_alert: 0,
         cost_per_unit: 0,
         category: null,
+        purchase_unit: null,
+        units_per_purchase: 1,
       });
       expect(result).toEqual(createdIngredient);
+    });
+
+    it('persists purchase_unit and units_per_purchase (defaulting to null/1)', async () => {
+      const singleFn = vi.fn().mockResolvedValue({ data: { id: 'ing-p' }, error: null });
+      const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+      const insertFn = vi.fn().mockReturnValue({ select: selectFn });
+      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
+
+      await service.createIngredient('t1', {
+        name: 'Coca',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      expect(insertFn).toHaveBeenCalledWith(
+        expect.objectContaining({ purchase_unit: 'casier', units_per_purchase: 24 }),
+      );
+
+      // Omitted -> null label + identity factor 1.
+      await service.createIngredient('t1', { name: 'Sel', unit: 'kg' });
+      expect(insertFn).toHaveBeenLastCalledWith(
+        expect.objectContaining({ purchase_unit: null, units_per_purchase: 1 }),
+      );
     });
 
     it('should throw INTERNAL ServiceError on insert error', async () => {
@@ -429,6 +454,166 @@ describe('InventoryService', () => {
         'adjust_ingredient_stock_tx',
         expect.objectContaining({ p_created_by: 'audit-user-42' }),
       );
+    });
+  });
+
+  describe('receiveStock', () => {
+    function mockIngredientFetch(ingredient: Record<string, unknown> | null) {
+      const maybeSingleFn = vi.fn().mockResolvedValue({ data: ingredient, error: null });
+      const eqTenant = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+      const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+      const selectFn = vi.fn().mockReturnValue({ eq: eqId });
+      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
+      return { selectFn, eqId, eqTenant };
+    }
+
+    it('converts a purchase-unit receipt and calls adjust_ingredient_stock_tx with the base delta', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 48, error: null });
+      supabase.rpc = rpc;
+      supabase.auth.getUser = vi
+        .fn()
+        .mockResolvedValue({ data: { user: { id: 'user-7' } }, error: null });
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 2,
+        inPurchaseUnit: true,
+      });
+
+      expect(rpc).toHaveBeenCalledTimes(1);
+      const [fn, args] = rpc.mock.calls[0];
+      expect(fn).toBe('adjust_ingredient_stock_tx');
+      expect(args).toMatchObject({
+        p_tenant_id: 't1',
+        p_ingredient_id: 'ing-1',
+        p_delta: 48,
+        p_movement_type: 'manual_add',
+        p_created_by: 'user-7',
+      });
+      // Note carries the purchase-unit breakdown for the ledger trail.
+      expect(String(args.p_notes)).toContain('casier');
+      expect(String(args.p_notes)).toContain('48');
+    });
+
+    it('filters the ingredient fetch by id AND tenant_id', async () => {
+      const { eqId, eqTenant } = mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'kg',
+        purchase_unit: null,
+        units_per_purchase: 1,
+      });
+      supabase.rpc = vi.fn().mockResolvedValue({ data: 5, error: null });
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        inPurchaseUnit: false,
+      });
+
+      expect(eqId).toHaveBeenCalledWith('id', 'ing-1');
+      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
+    });
+
+    it('passes the quantity through unchanged when not receiving in purchase unit', async () => {
+      mockIngredientFetch({ id: 'ing-1', unit: 'kg', purchase_unit: null, units_per_purchase: 1 });
+      const rpc = vi.fn().mockResolvedValue({ data: 5, error: null });
+      supabase.rpc = rpc;
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 5,
+        inPurchaseUnit: false,
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'adjust_ingredient_stock_tx',
+        expect.objectContaining({ p_delta: 5, p_movement_type: 'manual_add' }),
+      );
+    });
+
+    it('throws NOT_FOUND when the ingredient does not exist for the tenant', async () => {
+      mockIngredientFetch(null);
+      supabase.rpc = vi.fn();
+
+      await expect(
+        service.receiveStock('t1', { ingredient_id: 'ing-x', quantity: 1, inPurchaseUnit: true }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('forwards supplier_id and appends the operator note to the auto breakdown', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 48, error: null });
+      supabase.rpc = rpc;
+      supabase.auth.getUser = vi
+        .fn()
+        .mockResolvedValue({ data: { user: { id: 'user-7' } }, error: null });
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 2,
+        inPurchaseUnit: true,
+        supplier_id: 'sup-1',
+        notes: 'livraison du matin',
+      });
+
+      const [, args] = rpc.mock.calls[0];
+      expect(args.p_supplier_id).toBe('sup-1');
+      // Auto breakdown preserved AND the user note appended after an ASCII hyphen.
+      expect(String(args.p_notes)).toBe('Recu: 2 casier (48 bouteille) - livraison du matin');
+    });
+
+    it('keeps just the auto breakdown when no operator note is typed', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'bouteille',
+        purchase_unit: 'casier',
+        units_per_purchase: 24,
+      });
+      const rpc = vi.fn().mockResolvedValue({ data: 48, error: null });
+      supabase.rpc = rpc;
+
+      await service.receiveStock('t1', {
+        ingredient_id: 'ing-1',
+        quantity: 2,
+        inPurchaseUnit: true,
+        notes: '   ',
+      });
+
+      const [, args] = rpc.mock.calls[0];
+      expect(String(args.p_notes)).toBe('Recu: 2 casier (48 bouteille)');
+      expect(args.p_supplier_id).toBeUndefined();
+    });
+
+    it('maps INVALID_SUPPLIER from the RPC to a VALIDATION error', async () => {
+      mockIngredientFetch({
+        id: 'ing-1',
+        unit: 'kg',
+        purchase_unit: null,
+        units_per_purchase: 1,
+      });
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INVALID_SUPPLIER' } });
+
+      await expect(
+        service.receiveStock('t1', {
+          ingredient_id: 'ing-1',
+          quantity: 5,
+          inPurchaseUnit: false,
+          supplier_id: 'sup-other-tenant',
+        }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
     });
   });
 

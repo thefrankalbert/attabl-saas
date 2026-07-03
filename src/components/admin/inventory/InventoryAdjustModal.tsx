@@ -16,6 +16,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { INGREDIENT_UNITS, MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
 import type { Ingredient, MovementType } from '@/types/inventory.types';
 import type { Supplier } from '@/types/supplier.types';
+import { convertToBaseUnit } from '@/lib/inventory/unit-conversion';
 
 interface InventoryAdjustModalProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ interface InventoryAdjustModalProps {
   setAdjustNotes: Dispatch<SetStateAction<string>>;
   adjustSupplierId: string;
   setAdjustSupplierId: Dispatch<SetStateAction<string>>;
+  receiveUnitMode: 'base' | 'purchase';
+  setReceiveUnitMode: Dispatch<SetStateAction<'base' | 'purchase'>>;
   activeSuppliers: Supplier[];
   isSubmitting: boolean;
   handleAdjust: () => void;
@@ -46,14 +49,52 @@ export default function InventoryAdjustModal({
   setAdjustNotes,
   adjustSupplierId,
   setAdjustSupplierId,
+  receiveUnitMode,
+  setReceiveUnitMode,
   activeSuppliers,
   isSubmitting,
   handleAdjust,
 }: InventoryAdjustModalProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
+
+  // Only manual_add on an ingredient with a purchase_unit offers the unit choice.
+  const canReceiveInPurchaseUnit =
+    adjustType === 'manual_add' && !!selectedIngredient?.purchase_unit;
+  const baseUnitShort = selectedIngredient
+    ? (INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort ?? selectedIngredient.unit)
+    : '';
+
+  // Live preview of the converted base-unit quantity when receiving in the
+  // purchase unit. convertToBaseUnit throws on qty < 0 or unitsPerPurchase <= 0
+  // (unreachable given the NOT NULL DEFAULT 1 + CHECK > 0, but guard the render
+  // path anyway - never throw during render). Show nothing until inputs are valid.
+  let convertedHint: string | null = null;
+  if (
+    canReceiveInPurchaseUnit &&
+    receiveUnitMode === 'purchase' &&
+    selectedIngredient &&
+    adjustQty.trim() !== ''
+  ) {
+    const qty = parseFloat(adjustQty);
+    const unitsPerPurchase = Number(selectedIngredient.units_per_purchase);
+    if (Number.isFinite(qty) && qty >= 0 && unitsPerPurchase > 0) {
+      const converted = convertToBaseUnit({
+        quantity: qty,
+        baseUnit: selectedIngredient.unit,
+        purchaseUnit: selectedIngredient.purchase_unit,
+        unitsPerPurchase,
+      });
+      convertedHint = t('convertedTo', { qty: converted, unit: baseUnitShort });
+    }
+  }
   return (
-    <AdminModal isOpen={isOpen} onClose={onClose} title={t('adjustStock')} size="lg">
+    <AdminModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={canReceiveInPurchaseUnit ? t('receiveStock') : t('adjustStock')}
+      size="lg"
+    >
       {selectedIngredient && (
         <>
           <p className="text-sm text-app-text-secondary mb-4">
@@ -88,6 +129,30 @@ export default function InventoryAdjustModal({
               </Select>
             </div>
 
+            {canReceiveInPurchaseUnit && selectedIngredient && (
+              <div>
+                <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  {t('enterIn')}
+                </Label>
+                <Select
+                  value={receiveUnitMode}
+                  onValueChange={(val) => setReceiveUnitMode(val as 'base' | 'purchase')}
+                >
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="base">
+                      {t('enterInBaseUnit', { unit: baseUnitShort })}
+                    </SelectItem>
+                    <SelectItem value="purchase">
+                      {t('enterInPurchaseUnit', { unit: selectedIngredient.purchase_unit ?? '' })}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
               <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                 {tc('quantity')}
@@ -100,6 +165,7 @@ export default function InventoryAdjustModal({
                 placeholder="0"
                 autoFocus
               />
+              {convertedHint && <p className="text-xs text-app-text-muted mt-1">{convertedHint}</p>}
             </div>
 
             {adjustType === 'manual_add' && activeSuppliers.length > 0 && (

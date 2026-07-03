@@ -53,6 +53,10 @@ export interface Ingredient {
   cost_per_unit: number;
   category: string | null;
   is_active: boolean;
+  // Optional purchasing-unit label (casier, sac, carton). NULL = bought in base unit.
+  purchase_unit: string | null;
+  // Base units (Ingredient.unit) contained in one purchase_unit. Default 1.
+  units_per_purchase: number;
   created_at: string;
   updated_at: string;
 }
@@ -173,6 +177,8 @@ export interface CreateIngredientInput {
   min_stock_alert?: number;
   cost_per_unit?: number;
   category?: string;
+  purchase_unit?: string | null;
+  units_per_purchase?: number;
 }
 
 export interface UpdateIngredientInput {
@@ -182,6 +188,20 @@ export interface UpdateIngredientInput {
   cost_per_unit?: number;
   category?: string | null;
   is_active?: boolean;
+  purchase_unit?: string | null;
+  units_per_purchase?: number;
+}
+
+// Receiving a stock delivery. When inPurchaseUnit is true, `quantity` is
+// expressed in the ingredient's purchase_unit and converted to the base unit
+// (via convertToBaseUnit) before the ledger write. supplier_id + notes carry
+// the same supplier attribution / audit trail as a base-unit manual_add.
+export interface ReceiveStockInput {
+  ingredient_id: string;
+  quantity: number;
+  inPurchaseUnit: boolean;
+  supplier_id?: string | null;
+  notes?: string;
 }
 
 export interface RecipeLineInput {

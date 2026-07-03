@@ -9,6 +9,7 @@ import type {
   Ingredient,
   CreateIngredientInput,
   UpdateIngredientInput,
+  ReceiveStockInput,
   RecipeLineInput,
   AdjustStockInput,
   RecordLossInput,
@@ -61,6 +62,8 @@ const createIngredientSchema = z.object({
   min_stock_alert: z.number().finite().nonnegative().optional(),
   cost_per_unit: z.number().finite().nonnegative().optional(),
   category: z.string().optional(),
+  purchase_unit: z.string().max(40).nullable().optional(),
+  units_per_purchase: z.number().finite().positive().optional(),
 });
 
 const updateIngredientSchema = z.object({
@@ -72,6 +75,18 @@ const updateIngredientSchema = z.object({
   cost_per_unit: z.number().finite().nonnegative().optional(),
   category: z.string().nullable().optional(),
   is_active: z.boolean().optional(),
+  purchase_unit: z.string().max(40).nullable().optional(),
+  units_per_purchase: z.number().finite().positive().optional(),
+});
+
+const receiveStockSchema = z.object({
+  tenantId: z.string().uuid(),
+  ingredient_id: z.string().uuid(),
+  quantity: z.number().finite().positive(),
+  inPurchaseUnit: z.boolean(),
+  supplier_id: z.string().uuid().nullable().optional(),
+  // Capped so the operator note appended to the auto receipt breakdown stays bounded.
+  notes: z.string().max(500).optional(),
 });
 
 const setRecipeSchema = z.object({
@@ -159,6 +174,41 @@ export async function actionAdjustStock(
   try {
     const service = createInventoryService(supabase);
     await service.adjustStock(tenantId, input);
+    return { success: true };
+  } catch (err) {
+    if (err instanceof ServiceError) return { error: err.message };
+    return { error: 'Erreur serveur' };
+  }
+}
+
+/**
+ * SECURITY: Receives a stock delivery for an ingredient, optionally expressed
+ * in the ingredient's purchase unit (converted to base unit server-side before
+ * the ledger write). Receiving stock is a WRITE - gated at inventory.edit.
+ * Session membership for the given tenant is verified server-side.
+ */
+export async function actionReceiveStock(
+  tenantId: string,
+  input: ReceiveStockInput,
+): Promise<ActionResult> {
+  const parsed = receiveStockSchema.safeParse({ tenantId, ...input });
+  if (!parsed.success) {
+    return { error: 'Invalid input' };
+  }
+
+  const { error: permError, supabase } = await checkInventoryPermissions(tenantId);
+  if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
+
+  try {
+    const service = createInventoryService(supabase);
+    // Forward the VALIDATED payload (not the raw input) to the service.
+    await service.receiveStock(tenantId, {
+      ingredient_id: parsed.data.ingredient_id,
+      quantity: parsed.data.quantity,
+      inPurchaseUnit: parsed.data.inPurchaseUnit,
+      supplier_id: parsed.data.supplier_id,
+      notes: parsed.data.notes,
+    });
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
