@@ -65,6 +65,23 @@ interface TenderInput {
   createdBy?: string | null;
 }
 
+interface CompInput {
+  /** Free-text reason (Zod-validated upstream). */
+  reason: string;
+  /** admin_users.id of the manager offering the order (NOT the auth user id). */
+  compedBy?: string | null;
+}
+
+/**
+ * Result of a comp attempt. `comped` is true when a state transition actually
+ * happened; false on an idempotent replay (the order was already 'comp'), which
+ * lets the action skip a second audit-log side-effect.
+ */
+export interface CompResult {
+  summary: PaymentSummary;
+  comped: boolean;
+}
+
 const ORDER_COLUMNS =
   'id, total, tip_amount, display_currency, payment_status, paid_at, session_id, status';
 
@@ -140,13 +157,20 @@ export function createPaymentService(supabase: SupabaseClient) {
     const net = completed - refunded;
     const due = dueFor(order);
 
+    // A comped order (offert) is closed for FREE: its stored payment_status is
+    // authoritative and must NOT be re-derived from the (empty) ledger. Without
+    // this short-circuit deriveStatus would relabel it 'pending' and silently
+    // revert the comp. Comp is columns-only on orders - never a payments row.
+    const paymentStatus: PaymentStatus =
+      order.payment_status === 'comp' ? 'comp' : deriveStatus(net, refunded, due);
+
     return {
       orderId: order.id,
       due,
       completed,
       refunded,
       net,
-      paymentStatus: deriveStatus(net, refunded, due),
+      paymentStatus,
       tenders,
     };
   }
@@ -308,6 +332,86 @@ export function createPaymentService(supabase: SupabaseClient) {
 
       await recompute(order, tenantId);
       return this.getSummary(orderId, tenantId);
+    },
+
+    /**
+     * Comp / offer an order: close it for FREE (no tender). This is a MANAGER
+     * privilege (fraud surface) - the action layer gates it to owner/admin/manager.
+     *
+     * Comp is COLUMNS-ONLY on orders (payment_status='comp', is_comp, comp_reason,
+     * comped_by, comped_at, comp_amount). It is NEVER written to the payments
+     * ledger: summarize() maps any non-'refunded' tender row to 'completed', so a
+     * comp ledger row would inflate net revenue. Because payment_status becomes
+     * 'comp' (not 'paid'), the order is auto-excluded from get_daily_revenue /
+     * get_order_summary / get_top_items (all filter payment_status='paid') and
+     * surfaces only in get_daily_comps.
+     *
+     * Destock already ran at order creation - a comped order still consumed its
+     * ingredients, so this does NOT touch stock (order.service is never called for
+     * comp). Tenant-scoped, optimistic (only a 'pending' order can be comped).
+     */
+    async compOrder(
+      orderId: string,
+      tenantId: string,
+      { reason, compedBy }: CompInput,
+    ): Promise<CompResult> {
+      const order = await fetchOrder(orderId, tenantId);
+
+      if (order.status === 'cancelled') {
+        throw new ServiceError('Impossible d offrir une commande annulee', 'CONFLICT');
+      }
+      if (order.payment_status === 'paid') {
+        throw new ServiceError(
+          'Cette commande est deja payee. Utilisez un remboursement.',
+          'CONFLICT',
+        );
+      }
+      if (order.payment_status === 'comp') {
+        // Idempotent replay: already offered. No second write, no second audit
+        // side-effect (the action reads `comped` to decide whether to log).
+        return { summary: await this.getSummary(orderId, tenantId), comped: false };
+      }
+
+      // comp_amount snapshots the value offered (total + tip) at comp time.
+      const compAmount = dueFor(order);
+
+      const { data: updated, error } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'comp',
+          is_comp: true,
+          comp_reason: reason,
+          comped_by: compedBy ?? null,
+          comped_at: new Date().toISOString(),
+          comp_amount: compAmount,
+        })
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .eq('payment_status', 'pending')
+        .select('id');
+
+      if (error) {
+        throw new ServiceError('Erreur lors de l offre de la commande', 'INTERNAL', error);
+      }
+      if (!updated || updated.length === 0) {
+        // Not 'pending' at write time (partial/refunded, or a concurrent change):
+        // a partially-settled order must be refunded before it can be offered.
+        throw new ServiceError(
+          'Impossible d offrir une commande deja encaissee en partie',
+          'CONFLICT',
+        );
+      }
+
+      if (order.session_id) {
+        // Best-effort: closing the table session must not fail the comp.
+        try {
+          await createOrderService(supabase).closeSessionIfFullySettled(order.session_id, tenantId);
+        } catch (err) {
+          logger.error('Failed to close table session after comp', { orderId, tenantId, err });
+        }
+      }
+
+      return { summary: await this.getSummary(orderId, tenantId), comped: true };
     },
   };
 }

@@ -290,4 +290,146 @@ describe('createPaymentService', () => {
       service.refund(ORDER_ID, TENANT, { amount: 0, method: 'cash', createdBy: 'admin-1' }),
     ).rejects.toMatchObject({ code: 'VALIDATION' });
   });
+
+  it('summarize/getSummary short-circuits a stored comp -> paymentStatus comp', async () => {
+    // A comped order has an EMPTY ledger; deriveStatus would relabel it 'pending'.
+    // The short-circuit must surface 'comp' from the stored payment_status.
+    const mock = createMockSupabase(baseOrder({ payment_status: 'comp' }));
+    const service = createPaymentService(asSupabase(mock));
+
+    const summary = await service.getSummary(ORDER_ID, TENANT);
+    expect(summary.paymentStatus).toBe('comp');
+    expect(summary.net).toBe(0);
+    expect(summary.due).toBe(10000);
+  });
+});
+
+/**
+ * Dedicated in-memory double for compOrder: it exercises the optimistic
+ * update().eq('id').eq('tenant_id').eq('payment_status','pending').select('id')
+ * chain (the shared createMockSupabase only models a 2-eq update). Records the
+ * update patch and the eq filters so tenant-scoping can be asserted.
+ */
+function createCompMock(order: OrderRow) {
+  const calls = {
+    updatePatch: null as Record<string, unknown> | null,
+    updateEqs: [] as Array<[string, unknown]>,
+    updateCount: 0,
+  };
+
+  const from = vi.fn((table: string) => {
+    if (table === 'orders') {
+      return {
+        select: vi.fn(() => {
+          const b: Record<string, unknown> = {};
+          b.eq = vi.fn(() => b);
+          b.maybeSingle = vi.fn(async () => ({ data: order, error: null }));
+          return b;
+        }),
+        update: vi.fn((patch: Record<string, unknown>) => {
+          calls.updateCount += 1;
+          calls.updatePatch = patch;
+          const b: Record<string, unknown> = {};
+          b.eq = vi.fn((col: string, val: unknown) => {
+            calls.updateEqs.push([col, val]);
+            return b;
+          });
+          b.select = vi.fn(async () => {
+            // Optimistic guard: only a 'pending' row matches.
+            if (order.payment_status === 'pending') {
+              Object.assign(order, patch);
+              return { data: [{ id: order.id }], error: null };
+            }
+            return { data: [], error: null };
+          });
+          return b;
+        }),
+      };
+    }
+    if (table === 'payments') {
+      return {
+        select: vi.fn(() => {
+          const b: Record<string, unknown> = {};
+          b.eq = vi.fn(() => b);
+          b.order = vi.fn(async () => ({ data: [], error: null }));
+          return b;
+        }),
+      };
+    }
+    throw new Error(`Unexpected table ${table}`);
+  });
+
+  return { from, _order: order, _calls: calls };
+}
+
+describe('createPaymentService - compOrder', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sets comp fields on a pending order, tenant-scoped, comp_amount = due', async () => {
+    const mock = createCompMock(baseOrder({ total: 8000, tip_amount: 500 }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    const result = await service.compOrder(ORDER_ID, TENANT, {
+      reason: 'Geste commercial',
+      compedBy: 'admin-7',
+    });
+
+    expect(result.comped).toBe(true);
+    expect(result.summary.paymentStatus).toBe('comp');
+    expect(mock._order.payment_status).toBe('comp');
+    // comp is columns-only.
+    expect(mock._calls.updatePatch).toMatchObject({
+      payment_status: 'comp',
+      is_comp: true,
+      comp_reason: 'Geste commercial',
+      comped_by: 'admin-7',
+      comp_amount: 8500, // total + tip
+    });
+    expect(mock._calls.updatePatch?.comped_at).toBeTruthy();
+    // tenant scoping + optimistic pending guard on the update.
+    expect(mock._calls.updateEqs).toEqual([
+      ['id', ORDER_ID],
+      ['tenant_id', TENANT],
+      ['payment_status', 'pending'],
+    ]);
+  });
+
+  it('throws CONFLICT on a paid order (use refund)', async () => {
+    const mock = createCompMock(baseOrder({ payment_status: 'paid', paid_at: 'x' }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    await expect(
+      service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(mock._calls.updateCount).toBe(0);
+  });
+
+  it('throws CONFLICT on a cancelled order', async () => {
+    const mock = createCompMock(baseOrder({ status: 'cancelled' }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    await expect(
+      service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(mock._calls.updateCount).toBe(0);
+  });
+
+  it('is an idempotent no-op when already comp (no update, no second side-effect)', async () => {
+    const mock = createCompMock(baseOrder({ payment_status: 'comp' }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    const result = await service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' });
+    expect(result.comped).toBe(false);
+    expect(result.summary.paymentStatus).toBe('comp');
+    expect(mock._calls.updateCount).toBe(0);
+  });
+
+  it('throws CONFLICT when the order is partially settled (optimistic guard misses)', async () => {
+    const mock = createCompMock(baseOrder({ payment_status: 'partial' }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    await expect(
+      service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
 });

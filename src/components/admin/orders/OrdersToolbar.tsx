@@ -3,10 +3,12 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Volume2, VolumeX } from 'lucide-react';
+import { Search, Volume2, VolumeX, NotebookTabs } from 'lucide-react';
 import { useSound } from '@/contexts/SoundContext';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { cn } from '@/lib/utils';
@@ -28,8 +30,11 @@ export default function OrdersToolbar({
 }: OrdersToolbarProps) {
   const t = useTranslations('orders');
   const tc = useTranslations('common');
+  const th = useTranslations('houseAccount');
   const seg = useSegmentTerms();
   const { soundEnabled, toggleSound } = useSound();
+  const params = useParams<{ site: string }>();
+  const houseAccountsHref = `/sites/${params?.site ?? ''}/admin/orders/house-accounts`;
 
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,7 +91,14 @@ export default function OrdersToolbar({
           </TabsList>
         </Tabs>
 
-        <div className="relative shrink-0 ml-auto">
+        <Button asChild variant="outline" size="sm" className="shrink-0 ml-auto">
+          <Link href={houseAccountsHref}>
+            <NotebookTabs className="h-4 w-4 mr-1.5" />
+            {th('title')}
+          </Link>
+        </Button>
+
+        <div className="relative shrink-0">
           <Button
             variant="outline"
             size="icon"

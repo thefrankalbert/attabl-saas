@@ -54,12 +54,14 @@ Chaque PR : migration additive -> service -> UI (shadcn + impeccable) -> tests (
 
 ## Etat
 
-- [x] PR1 offline-cart
-- [ ] PR2 ledger
-- [ ] PR3 antivol-bip
-- [ ] PR4 physical-count
-- [ ] PR5 pertes
-- [ ] PR6 unit-conversion
-- [ ] PR7 excel-import
-- [ ] PR8 comp-note
-- (9) transfers - deferred
+- [x] PR1 offline-cart (#167)
+- [x] PR2 ledger (#171)
+- [x] PR3 antivol-bip (#200)
+- [x] PR4 physical-count (#204)
+- [x] PR5 pertes (#215)
+- [x] PR6 unit-conversion (#217)
+- [x] PR7 excel-import (#219)
+- [x] PR8 comp-note (this PR)
+- (9) transfers - deferred (stretch, no active multi-venue tenant)
+
+Programme complet 8/8. Chantier (9) reste differe (aucun tenant multi-etablissement actif).
