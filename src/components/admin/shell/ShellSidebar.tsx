@@ -59,8 +59,6 @@ interface ShellSidebarProps {
   className?: string;
   /** Opens the settings hub dialog on the given tab (Parametres + account menu) */
   onOpenSettings?: (tab: SettingsTab) => void;
-  /** Real counts shown as nav badges (maquette: Commandes/KDS/Plats) */
-  counts?: Partial<Record<NavCountKey, number>>;
   /**
    * Effective permissions (3-level resolved server-side). Nav items whose route
    * requires a permission the member lacks are hidden. Absent = show everything
@@ -69,8 +67,6 @@ interface ShellSidebarProps {
   navPermissions?: Record<string, boolean>;
 }
 
-type NavCountKey = 'orders' | 'kitchen' | 'items';
-
 type ShellNavItem = {
   /** Relative path appended to basePath ('' = dashboard home) */
   path: string;
@@ -78,42 +74,22 @@ type ShellNavItem = {
   groupId: string;
   icon: typeof LayoutDashboard;
   labelKey: string;
-  /** Optional real-count badge key */
-  countKey?: NavCountKey;
 };
 
 // ─── Nav structure (mirrors the maquette sections) ──────
 
 const MAIN: ShellNavItem[] = [
   { path: '', groupId: 'dashboard', icon: LayoutDashboard, labelKey: 'navDashboard' },
-  {
-    path: '/orders',
-    groupId: 'orders',
-    icon: ReceiptText,
-    labelKey: 'navOrders',
-    countKey: 'orders',
-  },
+  { path: '/orders', groupId: 'orders', icon: ReceiptText, labelKey: 'navOrders' },
   { path: '/pos', groupId: 'pos', icon: CreditCard, labelKey: 'navPos' },
-  {
-    path: '/kitchen',
-    groupId: 'kitchen',
-    icon: ChefHat,
-    labelKey: 'navKitchen',
-    countKey: 'kitchen',
-  },
+  { path: '/kitchen', groupId: 'kitchen', icon: ChefHat, labelKey: 'navKitchen' },
   { path: '/service', groupId: 'service', icon: HandPlatter, labelKey: 'navService' },
 ];
 
 const CATALOGUE: ShellNavItem[] = [
   { path: '/menus', groupId: 'organization', icon: BookOpen, labelKey: 'navMenus' },
   { path: '/categories', groupId: 'organization', icon: LayoutGrid, labelKey: 'navCategories' },
-  {
-    path: '/items',
-    groupId: 'organization',
-    icon: UtensilsCrossed,
-    labelKey: 'navDishes',
-    countKey: 'items',
-  },
+  { path: '/items', groupId: 'organization', icon: UtensilsCrossed, labelKey: 'navDishes' },
 ];
 
 const GESTION: ShellNavItem[] = [
@@ -150,7 +126,6 @@ export function ShellSidebar({
   collapsed = false,
   className,
   onOpenSettings,
-  counts,
   navPermissions,
 }: ShellSidebarProps) {
   const pathname = usePathname();
@@ -232,11 +207,6 @@ export function ShellSidebar({
           strokeWidth={2}
         />
         {!collapsed && <span className="truncate">{text}</span>}
-        {!collapsed && item.countKey && counts?.[item.countKey] != null && (
-          <span className="ml-auto text-[11px] text-[var(--muted-foreground)]">
-            {counts[item.countKey]}
-          </span>
-        )}
       </Link>
     );
   };

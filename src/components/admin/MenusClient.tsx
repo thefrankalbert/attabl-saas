@@ -134,7 +134,6 @@ export default function MenusClient({
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            count={menus.length}
             actions={
               <>
                 <div className="relative w-full @5xl:w-64 @7xl:w-80 shrink-0">
@@ -152,8 +151,8 @@ export default function MenusClient({
                     onClick={handleDeleteSelected}
                     variant="outline"
                     size="sm"
-                    title="Supprimer"
-                    className="gap-1.5 shrink-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
+                    title={tc('delete')}
+                    className="gap-1.5 shrink-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

@@ -209,7 +209,6 @@ export default function AuditLogClient({
       <div className="shrink-0 space-y-4">
         <AdminPageHeader
           title={t('title')}
-          count={totalCount}
           actions={
             <Button
               variant="outline"

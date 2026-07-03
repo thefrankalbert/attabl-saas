@@ -37,8 +37,6 @@ interface AdminLayoutInnerProps {
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
-  /** Real nav badge counts (open orders / in-kitchen / active items) */
-  navCounts?: { orders?: number; kitchen?: number; items?: number };
   /** Effective permissions (3-level resolved) for hiding nav links the member cannot open */
   navPermissions?: Record<PermissionCode, boolean>;
 }
@@ -54,7 +52,6 @@ function AdminLayoutInner({
   userTenants,
   notifications,
   breadcrumbs,
-  navCounts,
   navPermissions,
 }: AdminLayoutInnerProps) {
   const { isMobile, isTablet } = useDeviceContext();
@@ -162,7 +159,6 @@ function AdminLayoutInner({
           className="hidden lg:flex"
           collapsed={sidebarCollapsed}
           onOpenSettings={openSettings}
-          counts={navCounts}
           navPermissions={navPermissions}
         />
       )}
@@ -243,7 +239,6 @@ interface AdminLayoutClientProps {
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
-  navCounts?: { orders?: number; kitchen?: number; items?: number };
   navPermissions?: Record<PermissionCode, boolean>;
 }
 
@@ -259,7 +254,6 @@ export function AdminLayoutClient({
   userTenants,
   notifications,
   breadcrumbs,
-  navCounts,
   navPermissions,
 }: AdminLayoutClientProps) {
   return (
@@ -275,7 +269,6 @@ export function AdminLayoutClient({
         userTenants={userTenants}
         notifications={notifications}
         breadcrumbs={breadcrumbs}
-        navCounts={navCounts}
         navPermissions={navPermissions}
       >
         {children}

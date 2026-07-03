@@ -387,7 +387,6 @@ export default function ItemsClient({
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
-            count={items.length}
             actions={
               <>
                 <div className="flex flex-wrap items-center gap-2 shrink-0">

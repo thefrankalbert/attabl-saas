@@ -83,7 +83,7 @@ export default function WizardStepCategories({
                 <p className="text-sm font-medium text-app-text">{cat.name}</p>
               </div>
               {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium normal-case border border-[var(--border)] text-[var(--muted-foreground)]">
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium normal-case border border-app-border text-app-text-muted">
                   {cat.preparation_zone === 'bar' ? (
                     <Wine className="w-3 h-3" />
                   ) : (
@@ -117,7 +117,6 @@ export default function WizardStepCategories({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t('wizardCategoryPlaceholder')}
-            className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
             required
             autoFocus
           />
