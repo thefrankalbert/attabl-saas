@@ -206,7 +206,7 @@ export default function AnnouncementsClient({
         />
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 @sm:mt-4">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
         {announcements.length > 0 ? (
           <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
             {announcements.map((ann) => (

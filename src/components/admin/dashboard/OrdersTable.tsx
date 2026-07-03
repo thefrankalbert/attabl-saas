@@ -296,7 +296,7 @@ export function OrdersTable({
   };
 
   return (
-    <div className="px-3 @sm:px-5">
+    <div className="px-3 sm:px-5">
       {/* Toolbar: tabs + selection count */}
       <div className="mb-3 flex items-center gap-2">
         <div className="inline-flex gap-0.5 rounded-[0.625rem] bg-[var(--muted)] p-[3px]">

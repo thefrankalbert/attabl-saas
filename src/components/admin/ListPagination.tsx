@@ -39,7 +39,7 @@ export function ListPagination({
   return (
     <div
       className={cn(
-        'flex flex-col @sm:flex-row items-center justify-between gap-3 shrink-0 border-t border-app-border bg-app-card px-4 py-3',
+        'flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 border-t border-app-border bg-app-card px-4 py-3',
         className,
       )}
     >

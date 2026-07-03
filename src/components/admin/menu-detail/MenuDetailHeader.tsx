@@ -14,7 +14,7 @@ export function MenuDetailHeader({ vm }: Props) {
   const { tenantSlug, t, menu, toggleMenuActive } = vm;
 
   return (
-    <div className="shrink-0 flex items-center justify-between gap-3 mb-4 @sm:mb-6">
+    <div className="shrink-0 flex items-center justify-between gap-3 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 text-sm min-w-0">
         <Link
           href={`/sites/${tenantSlug}/admin/menus`}

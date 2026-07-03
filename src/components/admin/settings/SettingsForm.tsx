@@ -93,7 +93,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
               <TabsTrigger
                 key={key}
                 value={key}
-                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 @sm:px-4 @lg:px-6 @xl:px-8 py-3 min-h-[44px] text-xs @sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
+                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 sm:px-4 md:px-6 lg:px-8 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
               >
                 {t(labelKey)}
               </TabsTrigger>
@@ -102,7 +102,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
 
           <div
             ref={scrollRef}
-            className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6"
+            className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6"
           >
             {/* Identity tab (includes domain + language) */}
             <SettingsIdentity
@@ -160,7 +160,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
               type="submit"
               variant="default"
               disabled={saving || uploading}
-              className="min-w-[120px] @sm:min-w-[150px] min-h-[44px]"
+              className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
             >
               {saving ? (
                 <>

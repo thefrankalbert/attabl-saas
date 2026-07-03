@@ -44,7 +44,7 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
   };
 
   return (
-    <section className="rounded-xl border border-app-border bg-app-card p-4 @sm:p-5">
+    <section className="rounded-xl border border-app-border bg-app-card p-4 sm:p-5">
       <h2 className="text-sm font-semibold text-app-text mb-1">{t('paymentMethodsTitle')}</h2>
       <p className="text-xs text-app-text-secondary mb-5">{t('paymentMethodsDesc')}</p>
 

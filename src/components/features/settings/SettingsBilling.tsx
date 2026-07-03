@@ -71,7 +71,7 @@ export default function SettingsBilling({ form, t, initialPaymentMethods }: Sett
               }
             }}
           >
-            <SelectTrigger id="currency" className="h-10 min-h-[44px] w-full @sm:max-w-xs">
+            <SelectTrigger id="currency" className="h-10 min-h-[44px] w-full sm:max-w-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

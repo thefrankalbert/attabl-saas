@@ -136,7 +136,7 @@ export default function MenusClient({
             title={t('title')}
             actions={
               <>
-                <div className="relative w-full @5xl:w-64 @7xl:w-80 shrink-0">
+                <div className="relative w-full xl:w-64 2xl:w-80 shrink-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
                   <Input
                     data-search-input
@@ -164,7 +164,7 @@ export default function MenusClient({
                   className="gap-1.5 shrink-0"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
-                  <span className="hidden @sm:inline">{t('importExcel')}</span>
+                  <span className="hidden sm:inline">{t('importExcel')}</span>
                 </Button>
                 <Button
                   onClick={() => setShowPdfImportModal(true)}
@@ -173,7 +173,7 @@ export default function MenusClient({
                   className="gap-1.5 shrink-0"
                 >
                   <FileText className="w-4 h-4" />
-                  <span className="hidden @sm:inline">{t('importPdf')}</span>
+                  <span className="hidden sm:inline">{t('importPdf')}</span>
                 </Button>
                 <Button
                   onClick={() => openNewMenuModal()}
@@ -183,7 +183,7 @@ export default function MenusClient({
                   className="gap-1.5 shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden @sm:inline">{t('newMenu')}</span>
+                  <span className="hidden sm:inline">{t('newMenu')}</span>
                 </Button>
               </>
             }
@@ -205,7 +205,7 @@ export default function MenusClient({
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
           {/* Menu list */}
           <MenusTable
             tenantSlug={tenantSlug}

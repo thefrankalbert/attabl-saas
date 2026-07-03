@@ -163,7 +163,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             actions={
               <>
                 {/* Search - compact */}
-                <div className="relative w-full @5xl:w-56 @7xl:w-80 shrink-0">
+                <div className="relative w-full xl:w-56 2xl:w-80 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input
@@ -208,7 +208,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         ) : (
           <>
             {/* Table / Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
               <ResponsiveDataTable
                 columns={columns}
                 data={filtered}

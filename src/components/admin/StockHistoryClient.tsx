@@ -317,8 +317,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           <AdminPageHeader
             title={t('title')}
             actions={
-              <div className="flex items-center gap-2 w-full @5xl:w-auto">
-                <div className="relative flex-1 @5xl:w-52">
+              <div className="flex items-center gap-2 w-full xl:w-auto">
+                <div className="relative flex-1 xl:w-52">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
                   <Input
                     placeholder={t('searchPlaceholder')}
@@ -335,7 +335,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   aria-label={t('staffReportCta')}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span className="hidden @md:inline">{t('staffReportCta')}</span>
+                  <span className="hidden md:inline">{t('staffReportCta')}</span>
                 </Button>
               </div>
             }
@@ -367,8 +367,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
           {/* ── Quick stats strip ── */}
           <div className="flex items-stretch rounded-xl border border-app-border/60 bg-app-card divide-x divide-app-border/60 overflow-hidden">
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
-              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
+              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
                 <ArrowUpRight
                   className={cn(
                     'w-4 h-4',
@@ -390,8 +390,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 </p>
               </div>
             </div>
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
-              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
+              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
                 <ArrowDownRight
                   className={cn(
                     'w-4 h-4',
@@ -411,8 +411,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 <p className="mt-1 text-xs font-medium text-app-text-muted">{t('statsRemovals')}</p>
               </div>
             </div>
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 @sm:gap-3 px-3 @sm:px-4 py-3">
-              <div className="hidden @sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
+              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
                 <Box className="w-4 h-4 text-app-text-muted" />
               </div>
               <div className="min-w-0">

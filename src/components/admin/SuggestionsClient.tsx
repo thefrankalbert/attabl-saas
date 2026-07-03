@@ -233,7 +233,7 @@ export default function SuggestionsClient({
               title={t('suggestions')}
               actions={
                 <>
-                  <div className="relative w-full @5xl:w-56 @7xl:w-64 shrink-0">
+                  <div className="relative w-full xl:w-56 2xl:w-64 shrink-0">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                     <Input
                       placeholder={t('searchDish')}
@@ -406,7 +406,7 @@ export default function SuggestionsClient({
                 <Label className="text-sm font-medium text-app-text mb-1.5 block">
                   {t('suggestionType')}
                 </Label>
-                <div className="grid grid-cols-1 @sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {SUGGESTION_TYPES.map((st) => (
                     <Button
                       key={st.value}

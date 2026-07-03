@@ -272,7 +272,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
           {/* Sticky Header Row */}
           <TableHeader>
             <TableRow className="bg-app-bg border-b border-app-border">
-              <TableHead className="text-left text-sm font-semibold text-app-text px-5 py-3.5 min-w-[180px] @lg:min-w-[220px] sticky left-0 bg-app-bg z-10">
+              <TableHead className="text-left text-sm font-semibold text-app-text px-5 py-3.5 min-w-[180px] md:min-w-[220px] sticky left-0 bg-app-bg z-10">
                 {t('permissionColumn')}
               </TableHead>
               {/* Owner column (locked) */}
@@ -283,7 +283,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
               </TableHead>
               {/* Editable role columns with individual restore */}
               {EDITABLE_ROLES.map((role) => (
-                <TableHead key={role} className="text-center px-3 py-3.5 min-w-20 @lg:min-w-28">
+                <TableHead key={role} className="text-center px-3 py-3.5 min-w-20 md:min-w-28">
                   <div className="flex flex-col items-center gap-1.5">
                     <span
                       className={cn(

@@ -62,7 +62,7 @@ export default function SettingsOpeningHours({ form, t }: SettingsOpeningHoursPr
           return (
             <div
               key={key}
-              className="flex flex-wrap items-center gap-3 border-b border-app-border pb-3 @sm:gap-4"
+              className="flex flex-wrap items-center gap-3 border-b border-app-border pb-3 sm:gap-4"
             >
               <div className="flex min-w-[150px] items-center gap-3">
                 <Switch
