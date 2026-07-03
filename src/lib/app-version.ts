@@ -7,5 +7,7 @@
  * older build sees its baked sha diverge from the endpoint and prompts a refresh.
  *
  * 'dev' locally (no deploy sha) - the update banner stays hidden.
+ *
+ * Fallback order: VERCEL_GIT_COMMIT_SHA (Vercel) then 'dev'.
  */
 export const APP_VERSION = process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev';
