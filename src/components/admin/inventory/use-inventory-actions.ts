@@ -8,12 +8,14 @@ import {
   actionCreateIngredient,
   actionUpdateIngredient,
   actionAdjustStock,
+  actionRecordLoss,
 } from '@/app/actions/inventory';
 import type {
   Ingredient,
   IngredientUnit,
   CreateIngredientInput,
   MovementType,
+  LossReasonCode,
 } from '@/types/inventory.types';
 import type { ModalMode } from './InventoryFormModal';
 
@@ -35,6 +37,12 @@ export function useInventoryActions(tenantId: string) {
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
+
+  // Loss declaration fields
+  const [lossQty, setLossQty] = useState('');
+  const [lossReason, setLossReason] = useState<LossReasonCode>('breakage');
+  const [lossNotes, setLossNotes] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
@@ -54,6 +62,9 @@ export function useInventoryActions(tenantId: string) {
     setAdjustType('manual_add');
     setAdjustNotes('');
     setAdjustSupplierId('');
+    setLossQty('');
+    setLossReason('breakage');
+    setLossNotes('');
     setSelectedIngredient(null);
     setConfirmDeactivate(false);
   };
@@ -79,6 +90,14 @@ export function useInventoryActions(tenantId: string) {
     setAdjustType('manual_add');
     setAdjustNotes('');
     setModalMode('adjust');
+  };
+
+  const openLoss = (ing: Ingredient) => {
+    setSelectedIngredient(ing);
+    setLossQty('');
+    setLossReason('breakage');
+    setLossNotes('');
+    setModalMode('loss');
   };
 
   const closeModal = () => {
@@ -173,6 +192,33 @@ export function useInventoryActions(tenantId: string) {
     }
   };
 
+  const handleRecordLoss = async () => {
+    if (isSubmitting) return;
+    if (!selectedIngredient || !lossQty) return;
+
+    setIsSubmitting(true);
+    try {
+      const r = await actionRecordLoss(tenantId, {
+        ingredient_id: selectedIngredient.id,
+        quantity: parseFloat(lossQty),
+        reason_code: lossReason,
+        notes: lossNotes.trim() || undefined,
+      });
+      if (r.error) {
+        toast({ title: t('lossError'), description: r.error, variant: 'destructive' });
+        return;
+      }
+      toast({ title: t('lossRecorded') });
+      setModalMode(null);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
+    } catch {
+      toast({ title: t('lossError'), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
     modalMode,
     selectedIngredient,
@@ -196,15 +242,23 @@ export function useInventoryActions(tenantId: string) {
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    lossQty,
+    setLossQty,
+    lossReason,
+    setLossReason,
+    lossNotes,
+    setLossNotes,
     isSubmitting,
     confirmDeactivate,
     setConfirmDeactivate,
     openAdd,
     openEdit,
     openAdjust,
+    openLoss,
     closeModal,
     handleSave,
     handleDeactivate,
     handleAdjust,
+    handleRecordLoss,
   };
 }

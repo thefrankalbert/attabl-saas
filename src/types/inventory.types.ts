@@ -13,7 +13,8 @@ export type MovementType =
   | 'manual_remove'
   | 'adjustment'
   | 'opening'
-  | 'physical_count';
+  | 'physical_count'
+  | 'loss';
 
 // Structured motif for losses / reconciliation (stock_movements.reason_code).
 export type ReasonCode =
@@ -25,6 +26,20 @@ export type ReasonCode =
   | 'recount'
   | 'reconcile'
   | 'other';
+
+// Loss reasons are the subset of ReasonCode that a manual loss declaration can
+// carry (recount / reconcile belong to physical_count / reconciliation, not a
+// declared loss). Backed by the stock_movements_reason_code_check DB vocabulary.
+export const LOSS_REASONS = [
+  'breakage',
+  'expired',
+  'theft',
+  'spillage',
+  'prep_waste',
+  'other',
+] as const;
+
+export type LossReasonCode = (typeof LOSS_REASONS)[number];
 
 export type SuggestionType = 'pairing' | 'upsell' | 'alternative';
 
@@ -183,6 +198,22 @@ export interface AdjustStockInput {
   supplier_id?: string;
 }
 
+export interface RecordLossInput {
+  ingredient_id: string;
+  quantity: number;
+  reason_code: LossReasonCode;
+  notes?: string;
+}
+
+// One row of the losses-by-reason report (get_losses_by_reason).
+// total_cost_value uses the legacy NUMERIC cost_per_unit (report only).
+export interface LossByReason {
+  reason_code: LossReasonCode;
+  nb_movements: number;
+  total_qty: number;
+  total_cost_value: number;
+}
+
 // ─── Unit labels for UI ─────────────────────────────────
 
 export const INGREDIENT_UNITS: Record<IngredientUnit, { label: string; labelShort: string }> = {
@@ -202,4 +233,5 @@ export const MOVEMENT_TYPE_LABELS: Record<MovementType, { label: string; color: 
   adjustment: { label: 'Ajustement', color: 'text-amber-600' },
   opening: { label: "Stock d'ouverture", color: 'text-purple-600' },
   physical_count: { label: 'Inventaire physique', color: 'text-purple-600' },
+  loss: { label: 'Perte', color: 'text-red-600' },
 };

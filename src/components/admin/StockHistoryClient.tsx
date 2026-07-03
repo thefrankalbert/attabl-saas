@@ -16,6 +16,7 @@ import {
   Box,
   BarChart3,
   Users,
+  TrendingDown,
 } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,13 @@ const MOVEMENT_STYLES: Record<
     text: MOVEMENT_TOKENS.physical_count.text,
     dot: 'bg-status-info',
   },
+  loss: {
+    labelKey: 'filterLoss',
+    icon: TrendingDown,
+    bg: MOVEMENT_TOKENS.loss.bg,
+    text: MOVEMENT_TOKENS.loss.text,
+    dot: 'bg-status-error',
+  },
 };
 
 // ─── Component ──────────────────────────────────────────
@@ -114,6 +122,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       { value: 'adjustment', label: t('filterAdjustments') },
       { value: 'opening', label: t('filterOpening') },
       { value: 'physical_count', label: t('filterPhysicalCount') },
+      { value: 'loss', label: t('filterLoss') },
     ],
     [t],
   );

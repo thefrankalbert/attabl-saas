@@ -11,9 +11,19 @@ import type {
   UpdateIngredientInput,
   RecipeLineInput,
   AdjustStockInput,
+  RecordLossInput,
+  LossByReason,
 } from '@/types/inventory.types';
+import { LOSS_REASONS } from '@/types/inventory.types';
 
 const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
+
+// READ surfaces (reports) are gated purely on the permission, not a coarse role
+// list - mirroring the page's requireAdminPermission('inventory.view'). Passing
+// every role makes the role gate a no-op so any role holding inventory.view
+// (default: owner/admin/manager/chef; or cashier/waiter via a tenant/user
+// override) can load AND filter the report, matching the page + nav + RoleGuard.
+const VIEW_ROLES = ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 
 const adjustStockSchema = z.object({
   tenantId: z.string().uuid(),
@@ -25,6 +35,20 @@ const adjustStockSchema = z.object({
   movement_type: z.enum(['manual_add', 'manual_remove', 'adjustment', 'opening']),
   notes: z.string().optional(),
   supplier_id: z.string().uuid().optional(),
+});
+
+const recordLossSchema = z.object({
+  tenantId: z.string().uuid(),
+  ingredient_id: z.string().uuid(),
+  quantity: z.number().finite().positive(),
+  reason_code: z.enum(LOSS_REASONS),
+  notes: z.string().optional(),
+});
+
+const lossesFilterSchema = z.object({
+  tenantId: z.string().uuid(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 const ingredientUnitEnum = z.enum(['kg', 'L', 'pièce', 'cl', 'g', 'bouteille']);
@@ -92,6 +116,31 @@ async function checkInventoryPermissions(
 }
 
 /**
+ * READ-level guard for inventory report surfaces. Gates on 'inventory.view'
+ * (not the 'inventory.edit' write helper) so a view-only member (e.g. a chef,
+ * or a custom role granted the view override) can load AND refetch the report,
+ * mirroring the page's requireAdminPermission('inventory.view').
+ */
+async function checkInventoryViewPermissions(
+  tenantId: string,
+): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
+  try {
+    const { supabase } = await getAuthenticatedUserForTenant(
+      tenantId,
+      [...VIEW_ROLES],
+      'inventory.view',
+    );
+    return { error: null, supabase };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      if (err.status === 401) return { error: 'Non authentifie', supabase: null };
+      return { error: 'Permissions insuffisantes', supabase: null };
+    }
+    return { error: 'Permissions insuffisantes', supabase: null };
+  }
+}
+
+/**
  * SECURITY: Adjusts stock for an ingredient.
  * Session membership for the given tenant is verified server-side.
  */
@@ -111,6 +160,56 @@ export async function actionAdjustStock(
     const service = createInventoryService(supabase);
     await service.adjustStock(tenantId, input);
     return { success: true };
+  } catch (err) {
+    if (err instanceof ServiceError) return { error: err.message };
+    return { error: 'Erreur serveur' };
+  }
+}
+
+/**
+ * SECURITY: Records a structured stock loss for an ingredient.
+ * Session membership for the given tenant is verified server-side.
+ */
+export async function actionRecordLoss(
+  tenantId: string,
+  input: RecordLossInput,
+): Promise<ActionResult> {
+  const parsed = recordLossSchema.safeParse({ tenantId, ...input });
+  if (!parsed.success) {
+    return { error: 'Invalid input' };
+  }
+
+  const { error: permError, supabase } = await checkInventoryPermissions(tenantId);
+  if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
+
+  try {
+    const service = createInventoryService(supabase);
+    await service.recordLoss(tenantId, input);
+    return { success: true };
+  } catch (err) {
+    if (err instanceof ServiceError) return { error: err.message };
+    return { error: 'Erreur serveur' };
+  }
+}
+
+/**
+ * SECURITY: Returns the losses-by-reason report for the tenant.
+ * Session membership verified server-side.
+ */
+export async function actionGetLossesByReason(
+  tenantId: string,
+  filters?: { startDate?: string; endDate?: string },
+): Promise<ActionResult<LossByReason[]>> {
+  const parsed = lossesFilterSchema.safeParse({ tenantId, ...filters });
+  if (!parsed.success) return { error: 'Invalid input' };
+
+  const { error: permError, supabase } = await checkInventoryViewPermissions(tenantId);
+  if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
+
+  try {
+    const service = createInventoryService(supabase);
+    const data = await service.getLossesByReason(tenantId, filters);
+    return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
     return { error: 'Erreur serveur' };

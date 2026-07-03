@@ -120,4 +120,9 @@ export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border:
     text: 'text-status-info',
     border: 'border-status-info/20',
   },
+  loss: {
+    bg: 'bg-status-error-bg',
+    text: 'text-status-error',
+    border: 'border-status-error/20',
+  },
 };

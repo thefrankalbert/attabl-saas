@@ -25,6 +25,7 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCod
   { test: /^\/inventory\/counts(\/|$)/, permission: 'inventory.view' },
   { test: /^\/inventory(\/|$)/, permission: 'inventory.view' },
   { test: /^\/stock-history(\/|$)/, permission: 'inventory.view' },
+  { test: /^\/stock-losses(\/|$)/, permission: 'inventory.view' },
   { test: /^\/suppliers(\/|$)/, permission: 'inventory.view' },
   { test: /^\/recipes(\/|$)/, permission: 'inventory.view' },
   { test: /^\/pos(\/|$)/, permission: 'pos.use' },

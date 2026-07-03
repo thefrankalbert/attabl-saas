@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { TrendingDown } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -16,6 +17,7 @@ export function useInventoryColumns(
   currency: string,
   openAdjust: (ing: Ingredient) => void,
   openEdit: (ing: Ingredient) => void,
+  openLoss: (ing: Ingredient) => void,
 ) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
@@ -107,6 +109,16 @@ export function useInventoryColumns(
               className="text-xs"
             >
               +/-
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openLoss(row.original)}
+              className="text-xs gap-1"
+              aria-label={t('declareLoss')}
+            >
+              <TrendingDown className="w-3.5 h-3.5" />
+              <span className="hidden @xl:inline">{t('declareLoss')}</span>
             </Button>
             <Button
               variant="ghost"

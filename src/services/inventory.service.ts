@@ -16,6 +16,8 @@ import type {
   UpdateIngredientInput,
   RecipeLineInput,
   AdjustStockInput,
+  RecordLossInput,
+  LossByReason,
   LedgerDriftRow,
   MovementType,
   ReasonCode,
@@ -69,6 +71,11 @@ export interface InventoryService {
   destockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
   restockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number>;
   adjustStock(tenantId: string, input: AdjustStockInput): Promise<void>;
+  recordLoss(tenantId: string, input: RecordLossInput): Promise<void>;
+  getLossesByReason(
+    tenantId: string,
+    filters?: { startDate?: string; endDate?: string },
+  ): Promise<LossByReason[]>;
   setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void>;
   verifyLedger(tenantId: string): Promise<LedgerDriftRow[]>;
   reconcileLedger(tenantId: string): Promise<number>;
@@ -307,6 +314,52 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         }
         throw new ServiceError('Erreur ajustement stock', 'INTERNAL', error);
       }
+    },
+
+    async recordLoss(tenantId: string, input: RecordLossInput): Promise<void> {
+      // Stamp the acting user on the ledger movement (anti-vol traceability).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // Atomic RPC: clamps stock at >=0, records the ACTUAL applied delta as a
+      // reconcilable 'loss' movement carrying reason_code, and auto-disables
+      // dependent menu items when the ingredient hits 0 - all in one transaction.
+      const { error } = await supabase.rpc('record_loss_tx', {
+        p_tenant_id: tenantId,
+        p_ingredient_id: input.ingredient_id,
+        p_quantity: Math.abs(input.quantity),
+        p_reason_code: input.reason_code,
+        p_notes: input.notes || undefined,
+        p_created_by: user?.id || undefined,
+      });
+
+      if (error) {
+        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+        }
+        if (
+          error.message?.includes('INVALID_REASON') ||
+          error.message?.includes('INVALID_QUANTITY')
+        ) {
+          throw new ServiceError('Perte invalide', 'VALIDATION', error);
+        }
+        throw new ServiceError('Erreur enregistrement perte', 'INTERNAL', error);
+      }
+    },
+
+    async getLossesByReason(
+      tenantId: string,
+      filters?: { startDate?: string; endDate?: string },
+    ): Promise<LossByReason[]> {
+      const { data, error } = await supabase.rpc('get_losses_by_reason', {
+        p_tenant_id: tenantId,
+        p_start: filters?.startDate ?? undefined,
+        p_end: filters?.endDate ?? undefined,
+      });
+
+      if (error) throw new ServiceError('Erreur rapport pertes', 'INTERNAL', error);
+      return (data as LossByReason[]) || [];
     },
 
     async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {

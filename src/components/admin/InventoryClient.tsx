@@ -17,6 +17,7 @@ import InventoryFilters from '@/components/admin/inventory/InventoryFilters';
 import InventoryMobileCard from '@/components/admin/inventory/InventoryMobileCard';
 import InventoryFormModal from '@/components/admin/inventory/InventoryFormModal';
 import InventoryAdjustModal from '@/components/admin/inventory/InventoryAdjustModal';
+import InventoryLossModal from '@/components/admin/inventory/InventoryLossModal';
 import { useInventoryColumns } from '@/components/admin/inventory/use-inventory-columns';
 import { useInventoryActions } from '@/components/admin/inventory/use-inventory-actions';
 import { useSound } from '@/contexts/SoundContext';
@@ -82,16 +83,24 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     setAdjustNotes,
     adjustSupplierId,
     setAdjustSupplierId,
+    lossQty,
+    setLossQty,
+    lossReason,
+    setLossReason,
+    lossNotes,
+    setLossNotes,
     isSubmitting,
     confirmDeactivate,
     setConfirmDeactivate,
     openAdd,
     openEdit,
     openAdjust,
+    openLoss,
     closeModal,
     handleSave,
     handleDeactivate,
     handleAdjust,
+    handleRecordLoss,
   } = useInventoryActions(tenantId);
 
   // ─── Realtime: ingredients updates with low-stock alerts ─
@@ -131,7 +140,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     return true;
   });
 
-  const columns = useInventoryColumns(currency, openAdjust, openEdit);
+  const columns = useInventoryColumns(currency, openAdjust, openEdit, openLoss);
 
   const lowCount = ingredients.filter(
     (i) => i.current_stock > 0 && i.current_stock <= i.min_stock_alert,
@@ -206,6 +215,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                       currency={currency}
                       onAdjust={openAdjust}
                       onEdit={openEdit}
+                      onLoss={openLoss}
                     />
                   ),
                 }}
@@ -252,6 +262,21 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               activeSuppliers={activeSuppliers}
               isSubmitting={isSubmitting}
               handleAdjust={handleAdjust}
+            />
+
+            {/* Modal - Declare Loss */}
+            <InventoryLossModal
+              isOpen={modalMode === 'loss' && !!selectedIngredient}
+              onClose={closeModal}
+              selectedIngredient={selectedIngredient}
+              lossReason={lossReason}
+              setLossReason={setLossReason}
+              lossQty={lossQty}
+              setLossQty={setLossQty}
+              lossNotes={lossNotes}
+              setLossNotes={setLossNotes}
+              isSubmitting={isSubmitting}
+              handleRecordLoss={handleRecordLoss}
             />
           </>
         )}
