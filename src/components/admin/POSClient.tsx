@@ -84,7 +84,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   return (
     <RoleGuard permission="canUsePOS">
-      <div className="h-full flex flex-col overflow-hidden bg-app-bg">
+      <div className="@container h-full flex flex-col overflow-hidden bg-app-bg">
         {!mounted || pos.loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-muted">
             {t('loading')}

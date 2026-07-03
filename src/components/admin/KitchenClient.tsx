@@ -211,7 +211,7 @@ export default function KitchenClient({
 
   return (
     <div
-      className={`${containerClass} bg-app-bg text-app-text flex flex-col overflow-hidden`}
+      className={`${containerClass} @container bg-app-bg text-app-text flex flex-col overflow-hidden`}
       style={safeAreaStyle}
     >
       {!soundUnlocked && (
