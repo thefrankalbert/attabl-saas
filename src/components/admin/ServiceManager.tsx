@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { createOrderService } from '@/services/order.service';
-import { createServiceManagerService } from '@/services/service-manager.service';
+import {
+  createServiceManagerService,
+  type OpenTableSession,
+} from '@/services/service-manager.service';
 import { actionUpdateOrderStatus } from '@/app/actions/orders';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
@@ -34,6 +37,7 @@ export default function ServiceManager({ tenantId }: Props) {
   const [zones, setZones] = useState<ZoneWithTables[]>([]);
   const [servers, setServers] = useState<AdminUser[]>([]);
   const [readyOrders, setReadyOrders] = useState<Order[]>([]);
+  const [openSessions, setOpenSessions] = useState<OpenTableSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
@@ -72,16 +76,26 @@ export default function ServiceManager({ tenantId }: Props) {
     }
   }, [tenantId]);
 
+  const loadOpenSessions = useCallback(async () => {
+    try {
+      const svc = createServiceManagerService(createClient());
+      setOpenSessions(await svc.listOpenSessions(tenantId));
+    } catch (error) {
+      logger.error('Failed to load open table sessions', error);
+    }
+  }, [tenantId]);
+
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
       try {
         const svc = createServiceManagerService(createClient());
-        const { zones, servers, readyOrders } = await svc.loadDashboard(tenantId);
+        const { zones, servers, readyOrders, openSessions } = await svc.loadDashboard(tenantId);
         if (cancelled) return;
         setZones(zones as ZoneWithTables[]);
         setServers(servers as AdminUser[]);
         setReadyOrders(readyOrders as Order[]);
+        setOpenSessions(openSessions);
       } catch (error) {
         if (!cancelled) logger.error('Failed to load service dashboard', error);
       } finally {
@@ -98,14 +112,25 @@ export default function ServiceManager({ tenantId }: Props) {
     channelName: `service_orders_${tenantId}`,
     table: 'orders',
     filter: `tenant_id=eq.${tenantId}`,
-    onInsert: () => loadReadyOrders(),
-    onUpdate: () => loadReadyOrders(),
-    onDelete: () => loadReadyOrders(),
+    // An order change moves both the ready-to-serve list AND table occupancy:
+    // a new dine-in order opens a table session, settling it closes the session.
+    onInsert: () => {
+      void loadReadyOrders();
+      void loadOpenSessions();
+    },
+    onUpdate: () => {
+      void loadReadyOrders();
+      void loadOpenSessions();
+    },
+    onDelete: () => {
+      void loadReadyOrders();
+      void loadOpenSessions();
+    },
   });
 
   const tableVMs = useMemo(
-    () => buildTableVMs(zones, assignments, readyOrders),
-    [zones, assignments, readyOrders],
+    () => buildTableVMs(zones, assignments, openSessions),
+    [zones, assignments, openSessions],
   );
 
   const allTables = useMemo(
