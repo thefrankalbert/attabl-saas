@@ -160,7 +160,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               {/* Products Section - flat surface, no card border */}
               <div
                 className={cn(
-                  'flex-1 flex-col min-w-0 min-h-0 overflow-hidden',
+                  '@container flex-1 flex-col min-w-0 min-h-0 overflow-hidden',
                   isMobile ? (mobileView === 'products' ? 'flex' : 'hidden') : 'flex',
                 )}
               >
@@ -180,7 +180,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               {/* Cart Section - separated by a vertical line, not a boxed card */}
               <div
                 className={cn(
-                  'w-full @md:w-[45%] @lg:w-[42%] @xl:w-[40%] @2xl:w-[35%] border-t @md:border-t-0 @md:border-l border-app-border flex-col overflow-hidden shrink-0',
+                  '@container w-full @md:w-[45%] @lg:w-[42%] @xl:w-[40%] @2xl:w-[35%] border-t @md:border-t-0 @md:border-l border-app-border flex-col overflow-hidden shrink-0',
                   isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
                 )}
               >

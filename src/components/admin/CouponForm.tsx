@@ -197,7 +197,7 @@ export default function CouponForm({
         )}
 
         {/* Date Range */}
-        <div className="grid grid-cols-1 @sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="validFrom">{t('startDateField')}</Label>
             <DatePickerField

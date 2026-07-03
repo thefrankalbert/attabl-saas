@@ -231,7 +231,7 @@ export default function PaymentModal({
   const hasBreakdown = hasExtras || (!showItemsReceipt && subtotal !== undefined);
 
   return (
-    <div className="fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden animate-in fade-in duration-200">
+    <div className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden animate-in fade-in duration-200">
       {/* ━━━ HEADER ━━━ */}
       <header className="h-12 border-b border-app-border flex items-center justify-between px-3 sm:px-5 shrink-0">
         <div className="flex items-center gap-2">
@@ -258,9 +258,9 @@ export default function PaymentModal({
       </header>
 
       {/* ━━━ MAIN -- 2 columns on md+, payment-only on mobile ━━━ */}
-      <div className="flex-1 min-h-0 flex flex-col @md:grid @md:grid-cols-2 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col @3xl:grid @3xl:grid-cols-2 overflow-hidden">
         {/* ━━━ LEFT: Receipt (hidden on mobile) ━━━ */}
-        <div className="hidden @md:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
+        <div className="hidden @3xl:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
           {/* Hero: Pay Amount */}
           <div className="mb-4">
             <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted mb-1">
@@ -428,7 +428,7 @@ export default function PaymentModal({
         {/* ━━━ RIGHT: Payment Input (full width on mobile) ━━━ */}
         <div className="flex-1 flex flex-col overflow-y-auto min-h-0 p-3 sm:p-4 lg:p-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {/* Mobile: compact summary (hidden on desktop) */}
-          <div className="flex items-center justify-between mb-3 @md:hidden shrink-0">
+          <div className="flex items-center justify-between mb-3 @3xl:hidden shrink-0">
             <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
               {t('amountToPay')}
             </p>
@@ -438,7 +438,7 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          <div className="flex gap-1.5 mb-3 @md:hidden shrink-0">
+          <div className="flex gap-1.5 mb-3 @3xl:hidden shrink-0">
             <Button
               variant="outline"
               onClick={() => {
@@ -607,7 +607,7 @@ export default function PaymentModal({
           </div>
 
           {/* Cancel - especes : la validation se fait via le bouton ci-dessus */}
-          <div className="flex shrink-0 mt-auto pt-2 border-t border-app-border @md:border-t-0 @md:pt-0">
+          <div className="flex shrink-0 mt-auto pt-2 border-t border-app-border @3xl:border-t-0 @3xl:pt-0">
             <Button
               variant="outline"
               onClick={onClose}

@@ -25,7 +25,7 @@ interface SectionCardsProps {
 
 export function SectionCards({ cards }: SectionCardsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 px-3 @sm:px-5 @md:grid-cols-2 @md:px-6 @2xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 px-3 @sm:px-5 @xl:grid-cols-2 @md:px-6 @5xl:grid-cols-4">
       {cards.map((c, i) => {
         const TrendIcon = c.up ? TrendingUp : TrendingDown;
         return (

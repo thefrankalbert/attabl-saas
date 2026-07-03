@@ -2,8 +2,8 @@ export default function OrdersLoading() {
   return (
     <div className="h-full flex flex-col space-y-6 animate-pulse p-4 sm:p-6 lg:p-8">
       {/* Header + Search Skeleton */}
-      <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-        <div className="h-10 w-full @lg:w-64 bg-app-elevated rounded-lg" />
+      <div className="flex flex-col @3xl:flex-row @3xl:items-center gap-3">
+        <div className="h-10 w-full @5xl:w-64 bg-app-elevated rounded-lg" />
 
         {/* Tabs skeleton */}
         <div className="flex gap-1 bg-app-elevated/20 p-1 rounded-lg overflow-x-auto">

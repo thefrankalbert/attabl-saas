@@ -227,7 +227,7 @@ export default function AuditLogClient({
         {/* Filters */}
         {showFilters && (
           <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
-            <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterAction')}

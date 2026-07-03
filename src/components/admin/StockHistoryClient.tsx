@@ -302,8 +302,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             title={t('title')}
             count={loading || error ? undefined : (totalCount ?? undefined)}
             actions={
-              <div className="flex items-center gap-2 w-full @lg:w-auto">
-                <div className="relative flex-1 @lg:w-52">
+              <div className="flex items-center gap-2 w-full @5xl:w-auto">
+                <div className="relative flex-1 @5xl:w-52">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-app-text-muted" />
                   <Input
                     placeholder={t('searchPlaceholder')}

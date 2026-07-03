@@ -261,7 +261,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
         </div>
 
         {/* Plan cards */}
-        <div className="grid grid-cols-1 @md:grid-cols-3 gap-3 pb-4">
+        <div className="grid grid-cols-1 @5xl:grid-cols-3 gap-3 pb-4">
           {SELF_SERVICE_PLANS.map((plan) => {
             const isCurrent = currentPlan === plan;
             const isPro = plan === 'pro';
