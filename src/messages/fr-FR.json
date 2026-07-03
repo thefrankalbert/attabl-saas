@@ -4054,5 +4054,9 @@
       "productionTicketPrinted": "Impression ticket prestation lancée",
       "productionZone": "Atelier"
     }
+  },
+  "updateBanner": {
+    "message": "Une nouvelle version est disponible.",
+    "refresh": "Rafraichir"
   }
 }
