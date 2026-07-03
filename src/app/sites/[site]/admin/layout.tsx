@@ -10,6 +10,8 @@ import { SubscriptionBanners } from '@/components/admin/SubscriptionBanners';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
+import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
+import { APP_VERSION } from '@/lib/app-version';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
@@ -91,7 +93,7 @@ export default async function AdminLayout({
       // only a LIVE super-admin membership counts.
       const { data: superAdminCheck } = await supabase
         .from('admin_users')
-        .select('id, user_id, tenant_id, role, name, custom_permissions, is_super_admin')
+        .select('id, user_id, tenant_id, role, full_name, custom_permissions, is_super_admin')
         .eq('user_id', user.id)
         .eq('is_super_admin', true)
         .eq('is_active', true)
@@ -110,7 +112,7 @@ export default async function AdminLayout({
         user_id: superAdminCheck.user_id,
         tenant_id: tenant.id,
         role: 'owner' as AdminRole,
-        name: superAdminCheck.name,
+        name: superAdminCheck.full_name ?? undefined,
         custom_permissions: null,
       };
     }
@@ -264,6 +266,7 @@ export default async function AdminLayout({
           >
             <PermissionsProvider role={userRole}>
               <OfflineIndicator />
+              <UpdateAvailableBanner currentVersion={APP_VERSION} />
               <CommandPalette />
               <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
                 <AdminIdleWrapper

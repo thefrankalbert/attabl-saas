@@ -4054,5 +4054,9 @@
       "productionTicketPrinted": "Service ticket printing started",
       "productionZone": "Workshop"
     }
+  },
+  "updateBanner": {
+    "message": "A new version is available.",
+    "refresh": "Refresh"
   }
 }
