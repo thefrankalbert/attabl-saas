@@ -32,6 +32,7 @@ const SEGMENT_LABEL_MAP: Record<string, string> = {
   service: 'navService',
   reports: 'navReports',
   'stock-history': 'navStockHistory',
+  'stock-losses': 'navStockLosses',
   'qr-codes': 'navQrCodes',
   ads: 'navAds',
   settings: 'navSettings',

@@ -17,7 +17,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { IngredientUnit, INGREDIENT_UNITS as UNITS_TYPE } from '@/types/inventory.types';
 
-export type ModalMode = 'add' | 'edit' | 'adjust' | null;
+export type ModalMode = 'add' | 'edit' | 'adjust' | 'loss' | null;
 
 interface InventoryFormModalProps {
   isOpen: boolean;

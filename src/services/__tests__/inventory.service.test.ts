@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createInventoryService } from '../inventory.service';
 import { ServiceError } from '../errors';
-import type { AdjustStockInput, RecipeLineInput } from '@/types/inventory.types';
+import type { AdjustStockInput, RecipeLineInput, RecordLossInput } from '@/types/inventory.types';
 
 // Mock the logger to avoid Sentry imports in tests
 vi.mock('@/lib/logger', () => ({
@@ -429,6 +429,128 @@ describe('InventoryService', () => {
         'adjust_ingredient_stock_tx',
         expect.objectContaining({ p_created_by: 'audit-user-42' }),
       );
+    });
+  });
+
+  describe('recordLoss', () => {
+    it('calls record_loss_tx with abs(quantity), reason, notes and audit user', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 4, error: null });
+      supabase.rpc = rpc;
+      supabase.auth.getUser = vi.fn().mockResolvedValue({
+        data: { user: { id: 'loss-user' } },
+        error: null,
+      });
+
+      const input: RecordLossInput = {
+        ingredient_id: 'ing-1',
+        quantity: 3,
+        reason_code: 'breakage',
+        notes: 'dropped a crate',
+      };
+
+      await service.recordLoss('t1', input);
+
+      expect(supabase.auth.getUser).toHaveBeenCalled();
+      expect(rpc).toHaveBeenCalledWith('record_loss_tx', {
+        p_tenant_id: 't1',
+        p_ingredient_id: 'ing-1',
+        p_quantity: 3,
+        p_reason_code: 'breakage',
+        p_notes: 'dropped a crate',
+        p_created_by: 'loss-user',
+      });
+    });
+
+    it('passes the magnitude even if a negative quantity slips through', async () => {
+      const rpc = vi.fn().mockResolvedValue({ data: 0, error: null });
+      supabase.rpc = rpc;
+      supabase.auth.getUser = vi.fn().mockResolvedValue({
+        data: { user: { id: 'u' } },
+        error: null,
+      });
+
+      await service.recordLoss('t1', {
+        ingredient_id: 'ing-1',
+        quantity: -5,
+        reason_code: 'theft',
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'record_loss_tx',
+        expect.objectContaining({ p_quantity: 5, p_reason_code: 'theft' }),
+      );
+    });
+
+    it('maps INGREDIENT_NOT_FOUND to NOT_FOUND', async () => {
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INGREDIENT_NOT_FOUND' } });
+      supabase.auth.getUser = vi
+        .fn()
+        .mockResolvedValue({ data: { user: { id: 'u' } }, error: null });
+
+      await expect(
+        service.recordLoss('t1', { ingredient_id: 'ing-x', quantity: 1, reason_code: 'other' }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('maps INVALID_REASON and INVALID_QUANTITY to VALIDATION', async () => {
+      supabase.auth.getUser = vi
+        .fn()
+        .mockResolvedValue({ data: { user: { id: 'u' } }, error: null });
+
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INVALID_REASON' } });
+      await expect(
+        service.recordLoss('t1', { ingredient_id: 'ing-1', quantity: 1, reason_code: 'other' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INVALID_QUANTITY' } });
+      await expect(
+        service.recordLoss('t1', { ingredient_id: 'ing-1', quantity: 1, reason_code: 'other' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+
+    it('maps a generic RPC error to INTERNAL', async () => {
+      supabase.auth.getUser = vi
+        .fn()
+        .mockResolvedValue({ data: { user: { id: 'u' } }, error: null });
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
+
+      await expect(
+        service.recordLoss('t1', { ingredient_id: 'ing-1', quantity: 1, reason_code: 'other' }),
+      ).rejects.toMatchObject({ code: 'INTERNAL' });
+    });
+  });
+
+  describe('getLossesByReason', () => {
+    it('calls get_losses_by_reason with the tenant and date window and returns rows', async () => {
+      const mockRows = [
+        { reason_code: 'breakage', nb_movements: 2, total_qty: 5, total_cost_value: 1000 },
+      ];
+      const rpc = vi.fn().mockResolvedValue({ data: mockRows, error: null });
+      supabase.rpc = rpc;
+
+      const result = await service.getLossesByReason('t1', {
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+      });
+
+      expect(rpc).toHaveBeenCalledWith('get_losses_by_reason', {
+        p_tenant_id: 't1',
+        p_start: '2026-01-01',
+        p_end: '2026-01-31',
+      });
+      expect(result).toEqual(mockRows);
+    });
+
+    it('throws INTERNAL on rpc error', async () => {
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
+
+      await expect(service.getLossesByReason('t1')).rejects.toMatchObject({ code: 'INTERNAL' });
     });
   });
 

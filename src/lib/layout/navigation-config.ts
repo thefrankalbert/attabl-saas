@@ -16,6 +16,7 @@ import {
   UserCheck,
   BarChart3,
   History,
+  TrendingDown,
   Receipt,
   ScrollText,
 } from 'lucide-react';
@@ -214,6 +215,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/stock-history',
         icon: History,
         labelKey: 'navStockHistory',
+        requiredPermission: 'canViewStocks',
+        permissionCode: 'inventory.view',
+      },
+      {
+        path: '/stock-losses',
+        icon: TrendingDown,
+        labelKey: 'navStockLosses',
         requiredPermission: 'canViewStocks',
         permissionCode: 'inventory.view',
       },

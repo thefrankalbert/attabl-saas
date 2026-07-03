@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BarChart3, History, Receipt, ScrollText } from 'lucide-react';
+import { BarChart3, History, Receipt, ScrollText, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ANALYSE_TABS = [
   { path: '/reports', labelKey: 'tabReports', icon: BarChart3 },
   { path: '/stock-history', labelKey: 'tabStockHistory', icon: History },
+  { path: '/stock-losses', labelKey: 'tabStockLosses', icon: TrendingDown },
   { path: '/invoices', labelKey: 'tabInvoices', icon: Receipt },
   { path: '/audit-logs', labelKey: 'tabAuditLogs', icon: ScrollText },
 ] as const;
@@ -16,7 +17,10 @@ const ANALYSE_TABS = [
 export default function AnalyseTabs() {
   const pathname = usePathname();
   const t = useTranslations('reports');
-  const basePath = pathname.replace(/\/(reports|stock-history|invoices|audit-logs).*$/, '');
+  const basePath = pathname.replace(
+    /\/(reports|stock-history|stock-losses|invoices|audit-logs).*$/,
+    '',
+  );
 
   return (
     <div className="flex items-center gap-1 border-b border-app-border pb-2 mb-1 overflow-x-auto">

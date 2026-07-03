@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/admin/shared/StatusBadge';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -14,6 +15,7 @@ interface InventoryMobileCardProps {
   currency: string;
   onAdjust: (ing: Ingredient) => void;
   onEdit: (ing: Ingredient) => void;
+  onLoss: (ing: Ingredient) => void;
 }
 
 export default function InventoryMobileCard({
@@ -21,6 +23,7 @@ export default function InventoryMobileCard({
   currency,
   onAdjust,
   onEdit,
+  onLoss,
 }: InventoryMobileCardProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
@@ -62,6 +65,16 @@ export default function InventoryMobileCard({
           className="text-xs min-h-[44px]"
         >
           +/-
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onLoss(ing)}
+          className="text-xs min-h-[44px] gap-1"
+          aria-label={t('declareLoss')}
+        >
+          <TrendingDown className="w-3.5 h-3.5" />
+          {t('declareLoss')}
         </Button>
         <Button
           variant="ghost"
