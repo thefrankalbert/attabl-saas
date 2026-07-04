@@ -348,7 +348,13 @@ function log(msg: string) {
 }
 
 function logStep(step: number, label: string) {
-  console.log(`\n[${'='.repeat(step)}${' '.repeat(12 - step)}] Step ${step}/12: ${label}`);
+  // Steps run 0 (cleanup) through 16; clamp the progress bar so a step index
+  // beyond the bar width never feeds a negative count to String.repeat.
+  const total = 16;
+  const filled = Math.max(0, Math.min(total, step));
+  console.log(
+    `\n[${'='.repeat(filled)}${' '.repeat(total - filled)}] Step ${step}/${total}: ${label}`,
+  );
 }
 
 function randomInt(min: number, max: number): number {
