@@ -14,11 +14,14 @@ https://claude.ai/code/artifact/8e94306a-40de-46c1-ac97-3855a41ccdff
 
 ## 1. Le restaurant
 
-**L'Epicurien** - restaurant gastronomique, N'Djamena (Tchad).
+**L'Epicurien** - restaurant africain, N'Djamena (Tchad).
 
 - Plan **Business**, devise **FCFA (XAF)**, TVA 19,25%, service 10%.
 - 3 espaces (Terrasse, Salle, VIP), ~15 tables.
-- Une carte complete (entrees, plats, poissons, desserts, vins et champagnes).
+- Une carte complete de cuisine africaine : **54 plats dans 10 categories** (entrees,
+  brochettes et grillades, poissons, volailles, plats en sauce, riz et feculents,
+  specialites du Tchad, desserts, jus naturels, sodas/bieres/vins). **Chaque plat a sa
+  photo, sa description, ses prix et ses details** (allergenes, vegetarien, epice).
 - Une equipe de 6 personnes (patron, chef, manager, caissiere, 2 serveurs).
 - 90 jours de commandes, des commandes en cours aujourd'hui, et un stock qui tourne
   en temps reel (recettes qui deduisent les ingredients a chaque commande).
