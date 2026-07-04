@@ -1,33 +1,44 @@
 /*
- * Onboarding brand scope - accent lime marque ATTABL (#CCFF00).
+ * Onboarding accent scope - NEUTRE, aligne sur le dashboard admin.
  *
- * L'onboarding est une surface MARQUE (comme auth/marketing/storefront), pas
- * l'admin. La regle 09-admin-color-system impose l'accent lime ici. Le token
- * global reste bleu (#006aff) pour le reste de l'app; on le surcharge UNIQUEMENT
- * sur le wrapper .onboarding-brand, donc les utilitaires bg-accent / text-accent
- * / hover:bg-accent-hover / ring-accent heritent le lime pour les seuls
- * descendants de l'onboarding. Aucune modification de globals.css.
+ * L'onboarding doit se presenter comme le dashboard sur lequel l'utilisateur
+ * atterrit: palette neutre, accent near-black (clair) / near-white (sombre),
+ * PAS de couleur vive. On reprend a l'identique les tokens d'accent de
+ * `.admin-shell` (globals.css) pour que le parcours et le dashboard partagent
+ * la meme presentation. globals.css n'est pas modifie.
  *
- * Deux couches de tokens a surcharger :
- *  - --app-* : lus directement (ex: WelcomeStep glow via color-mix(var(--app-accent))).
- *  - --color-* : les tokens @theme que Tailwind v4 compile pour bg-accent/text-accent.
- *    Tailwind fige --color-accent a sa valeur CALCULEE au :root (donc bleu) et les
- *    enfants heritent cette valeur figee - surcharger --app-accent seul ne suffit
- *    pas, il faut re-declarer --color-accent ici pour qu'il se resolve en lime.
- *
- * Lime exige un foreground FONCE: du texte blanc sur lime echoue le contraste
- * WCAG. Les *-text passent donc a near-black.
+ * Deux couches de tokens a surcharger (Tailwind v4 fige les `--color-*` @theme
+ * a leur valeur calculee au :root, donc surcharger `--app-accent` seul ne
+ * cascade pas vers bg-accent/text-accent - il faut re-declarer `--color-accent*`).
  */
-.onboarding-brand {
-  --app-accent: #ccff00;
-  --app-accent-hover: #b8e600;
-  --app-accent-muted: rgba(204, 255, 0, 0.14);
-  --app-accent-text: #0a0a0a;
-  --ring: #ccff00;
 
-  --color-accent: #ccff00;
-  --color-accent-hover: #b8e600;
-  --color-accent-muted: rgba(204, 255, 0, 0.14);
-  --color-accent-text: #0a0a0a;
-  --color-ring: #ccff00;
+/* Clair - identique a .admin-shell (light) */
+.onboarding-brand {
+  --app-accent: oklch(0.205 0 0);
+  --app-accent-hover: oklch(0.3 0 0);
+  --app-accent-muted: oklch(0.97 0 0);
+  --app-accent-text: oklch(0.985 0 0);
+  --ring: oklch(0.708 0 0);
+
+  --color-accent: oklch(0.205 0 0);
+  --color-accent-hover: oklch(0.3 0 0);
+  --color-accent-muted: oklch(0.97 0 0);
+  --color-accent-text: oklch(0.985 0 0);
+  --color-ring: oklch(0.708 0 0);
+}
+
+/* Sombre - identique a .admin-shell.dark */
+.dark .onboarding-brand,
+.onboarding-brand.dark {
+  --app-accent: oklch(0.922 0 0);
+  --app-accent-hover: oklch(0.85 0 0);
+  --app-accent-muted: oklch(0.269 0 0);
+  --app-accent-text: oklch(0.205 0 0);
+  --ring: oklch(0.556 0 0);
+
+  --color-accent: oklch(0.922 0 0);
+  --color-accent-hover: oklch(0.85 0 0);
+  --color-accent-muted: oklch(0.269 0 0);
+  --color-accent-text: oklch(0.205 0 0);
+  --color-ring: oklch(0.556 0 0);
 }
