@@ -1,5 +1,5 @@
 /**
- * ATTABL SaaS — Demo Seed Script
+ * ATTABL SaaS - Demo Seed Script
  * ================================
  * Populates the database with comprehensive demo data for "L'Epicurien",
  * a luxury restaurant in N'Djamena, Chad.
@@ -59,6 +59,10 @@ const supabase: SupabaseClient = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+// Minimum paid revenue (last 30 days) the seed must produce. The self-check at
+// the end of main() throws if the demo tenant falls below this floor.
+const MONTHLY_REVENUE_FLOOR = 500_000;
+
 // ─── MIGRATION DETECTION ─────────────────────────────────────────────────
 // Detect which migrations have been applied to adapt seed data accordingly.
 
@@ -70,6 +74,9 @@ interface MigrationStatus {
   hasZones: boolean; // base: zones table (may not exist)
   hasTables: boolean; // base: tables table (may not exist)
   hasAnnouncements: boolean; // base: announcements table (may not exist)
+  hasPayments: boolean; // 20260629000700: payments ledger table
+  hasTableSessions: boolean; // 20260629000600: table_sessions table
+  hasStockCounts: boolean; // 20260703000000: physical stock count tables
   // Column-level detection for orders (partially applied migrations)
   orderColumns: Set<string>; // which production_upgrade columns exist on orders
   orderItemColumns: Set<string>; // which production_upgrade columns exist on order_items
@@ -83,6 +90,9 @@ let migrations: MigrationStatus = {
   hasZones: false,
   hasTables: false,
   hasAnnouncements: false,
+  hasPayments: false,
+  hasTableSessions: false,
+  hasStockCounts: false,
   orderColumns: new Set(),
   orderItemColumns: new Set(),
 };
@@ -99,6 +109,9 @@ async function detectMigrations(): Promise<MigrationStatus> {
     supabase.from('zones').select('id').limit(0),
     supabase.from('tables').select('id').limit(0),
     supabase.from('announcements').select('id').limit(0),
+    supabase.from('payments').select('id').limit(0),
+    supabase.from('table_sessions').select('id').limit(0),
+    supabase.from('stock_counts').select('id').limit(0),
   ]);
 
   // Column-level checks for orders (production_upgrade columns)
@@ -114,6 +127,8 @@ async function detectMigrations(): Promise<MigrationStatus> {
     'delivery_address',
     'room_number',
     'coupon_id',
+    'tip_amount',
+    'session_id',
   ];
   const orderColChecks = await Promise.all(
     orderColNames.map((col) => supabase.from('orders').select(col).limit(0)),
@@ -148,6 +163,9 @@ async function detectMigrations(): Promise<MigrationStatus> {
     hasZones: !tableChecks[4].error,
     hasTables: !tableChecks[5].error,
     hasAnnouncements: !tableChecks[6].error,
+    hasPayments: !tableChecks[7].error,
+    hasTableSessions: !tableChecks[8].error,
+    hasStockCounts: !tableChecks[9].error,
     orderColumns,
     orderItemColumns,
   };
@@ -236,10 +254,14 @@ const ID = {
   ingCreme: randomUUID(),
   ingBeurre: randomUUID(),
   ingMorilles: randomUUID(),
+  // Beverage ingredients (purchased by the case -> unit-conversion demo)
+  ingEau: randomUUID(),
+  ingBiere: randomUUID(),
   // Suppliers
   supplierBoucherie: randomUUID(),
   supplierMaree: randomUUID(),
   supplierCave: randomUUID(),
+  supplierBoissons: randomUUID(),
   // Coupons
   couponBienvenue: randomUUID(),
   couponEpicurien: randomUUID(),
@@ -263,51 +285,56 @@ interface StaffMember {
   adminUserId?: string;
 }
 
+// Demo staff identity. Kept in sync with the client-facing documentation.
+// NONE is a platform super_admin: a demo account must never gain platform access.
+// Shared password for every account (demo only): DemoAttabl2026.
+const DEMO_PASSWORD = 'DemoAttabl2026';
+
 const STAFF: StaffMember[] = [
   {
-    email: 'hellofrankalbert@gmail.com',
-    password: 'Demo2024!',
-    fullName: 'Frank Albert',
+    email: 'owner@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Amadou Diallo',
     role: 'owner',
     phone: '+235 66 00 00 00',
-    isSuperAdmin: true,
+    isSuperAdmin: false,
   },
   {
-    email: 'chef@lepicurien.com',
-    password: 'Demo2024!',
-    fullName: 'Chef Marco Rossi',
+    email: 'chef@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Fatime Hassan',
     role: 'chef',
     phone: '+235 66 10 10 10',
     isSuperAdmin: false,
   },
   {
-    email: 'manager@lepicurien.com',
-    password: 'Demo2024!',
-    fullName: 'Sophie Dubois',
+    email: 'manager@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Ousmane Kabore',
     role: 'manager',
     phone: '+235 66 20 20 20',
     isSuperAdmin: false,
   },
   {
-    email: 'caisse@lepicurien.com',
-    password: 'Demo2024!',
-    fullName: 'Amadou Toure',
+    email: 'caisse@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Mariam Toure',
     role: 'cashier',
     phone: '+235 66 30 30 30',
     isSuperAdmin: false,
   },
   {
-    email: 'serveur1@lepicurien.com',
-    password: 'Demo2024!',
-    fullName: 'Ibrahim Mahamat',
+    email: 'serveur1@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Ali Mahamat',
     role: 'waiter',
     phone: '+235 66 40 40 40',
     isSuperAdmin: false,
   },
   {
-    email: 'serveur2@lepicurien.com',
-    password: 'Demo2024!',
-    fullName: 'Fatima Abdoulaye',
+    email: 'serveur2@demo.attabl.com',
+    password: DEMO_PASSWORD,
+    fullName: 'Aicha Ndiaye',
     role: 'waiter',
     phone: '+235 66 50 50 50',
     isSuperAdmin: false,
@@ -380,14 +407,18 @@ async function cleanup() {
   log(`Found existing tenant ${tenantId}. Removing all associated data...`);
 
   // Delete in dependency order (child tables first)
-  // Some tables may not exist if migrations haven't been applied — skip silently.
+  // Some tables may not exist if migrations haven't been applied - skip silently.
   const tablesToClean = [
+    'stock_count_lines',
+    'stock_counts',
     'stock_movements',
     'recipes',
     'item_suggestions',
     'ingredients',
     'suppliers',
+    'payments',
     'order_items',
+    'table_sessions',
     'orders',
     'coupons',
     'announcements',
@@ -433,7 +464,9 @@ async function createTenant() {
     name: "L'Epicurien",
     slug: 'lepicurien',
     secondary_color: '#CCFF00',
-    subscription_plan: 'premium',
+    // business unlocks canAccessInventory (pro+), so order destock actually fires.
+    // Valid CHECK values: starter | pro | business | enterprise.
+    subscription_plan: 'business',
     subscription_status: 'active',
     onboarding_completed: true,
     establishment_type: 'restaurant',
@@ -1148,247 +1181,497 @@ async function createMenuItems() {
 
 // ─── STEP 7: CREATE INGREDIENTS ───────────────────────────────────────────
 
+// Ingredient shape used by the seed. `opening` is the day-0 stock; it is applied
+// via the canonical set_opening_stock RPC (NOT a direct current_stock write), so
+// the ledger invariant SUM(stock_movements.quantity) == current_stock holds.
+interface IngredientDef {
+  id: string;
+  name: string;
+  unit: 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
+  opening: number;
+  min_stock_alert: number;
+  cost_per_unit: number;
+  category: string;
+  purchase_unit?: string;
+  units_per_purchase?: number;
+}
+
+const INGREDIENTS: IngredientDef[] = [
+  // ─── Viandes ──────────────────────────────────────────────────────────────
+  {
+    id: ID.ingBoeuf,
+    name: 'Viande boeuf',
+    unit: 'kg',
+    opening: 90,
+    min_stock_alert: 8,
+    cost_per_unit: 15000,
+    category: 'Viandes',
+  },
+  {
+    id: ID.ingFoieGras,
+    name: 'Foie gras',
+    unit: 'kg',
+    opening: 15,
+    min_stock_alert: 2,
+    cost_per_unit: 45000,
+    category: 'Viandes',
+  },
+  {
+    id: ID.ingAgneau,
+    name: 'Agneau',
+    unit: 'kg',
+    opening: 50,
+    min_stock_alert: 5,
+    cost_per_unit: 18000,
+    category: 'Viandes',
+  },
+  {
+    id: ID.ingCanard,
+    name: 'Canard magret',
+    unit: 'kg',
+    opening: 45,
+    min_stock_alert: 4,
+    cost_per_unit: 12000,
+    category: 'Viandes',
+  },
+  {
+    id: ID.ingVolaille,
+    name: 'Volaille',
+    unit: 'kg',
+    opening: 55,
+    min_stock_alert: 6,
+    cost_per_unit: 5000,
+    category: 'Viandes',
+  },
+  // ─── Poissons ─────────────────────────────────────────────────────────────
+  {
+    id: ID.ingBar,
+    name: 'Bar',
+    unit: 'kg',
+    opening: 40,
+    min_stock_alert: 4,
+    cost_per_unit: 20000,
+    category: 'Poissons',
+  },
+  {
+    id: ID.ingGambas,
+    name: 'Gambas',
+    unit: 'kg',
+    opening: 35,
+    min_stock_alert: 4,
+    cost_per_unit: 25000,
+    category: 'Poissons',
+  },
+  {
+    id: ID.ingThon,
+    name: 'Thon',
+    unit: 'kg',
+    opening: 40,
+    min_stock_alert: 4,
+    cost_per_unit: 18000,
+    category: 'Poissons',
+  },
+  {
+    id: ID.ingSole,
+    name: 'Sole',
+    unit: 'kg',
+    opening: 35,
+    min_stock_alert: 4,
+    cost_per_unit: 22000,
+    category: 'Poissons',
+  },
+  {
+    id: ID.ingSaumon,
+    name: 'Saumon',
+    unit: 'kg',
+    opening: 30,
+    min_stock_alert: 3,
+    cost_per_unit: 16000,
+    category: 'Poissons',
+  },
+  {
+    id: ID.ingHomard,
+    name: 'Homard',
+    unit: 'kg',
+    opening: 20,
+    min_stock_alert: 3,
+    cost_per_unit: 35000,
+    category: 'Poissons',
+  },
+  // ─── Epicerie / laitiers / champignons ───────────────────────────────────
+  {
+    id: ID.ingChocolat,
+    name: 'Chocolat Valrhona',
+    unit: 'kg',
+    opening: 25,
+    min_stock_alert: 3,
+    cost_per_unit: 8000,
+    category: 'Epicerie',
+  },
+  {
+    id: ID.ingCreme,
+    name: 'Creme fraiche',
+    unit: 'L',
+    opening: 70,
+    min_stock_alert: 8,
+    cost_per_unit: 3000,
+    category: 'Produits laitiers',
+  },
+  {
+    id: ID.ingBeurre,
+    name: 'Beurre',
+    unit: 'kg',
+    opening: 45,
+    min_stock_alert: 6,
+    cost_per_unit: 4000,
+    category: 'Produits laitiers',
+  },
+  {
+    id: ID.ingMorilles,
+    name: 'Morilles',
+    unit: 'kg',
+    opening: 6,
+    min_stock_alert: 1,
+    cost_per_unit: 60000,
+    category: 'Champignons',
+  },
+  // ─── Boissons (achetees au casier -> demo conversion d'unite) ────────────
+  {
+    id: ID.ingEau,
+    name: 'Eau minerale',
+    unit: 'bouteille',
+    opening: 96,
+    min_stock_alert: 24,
+    cost_per_unit: 500,
+    category: 'Boissons',
+    purchase_unit: 'casier',
+    units_per_purchase: 24,
+  },
+  {
+    id: ID.ingBiere,
+    name: 'Biere locale',
+    unit: 'bouteille',
+    opening: 60,
+    min_stock_alert: 24,
+    cost_per_unit: 1000,
+    category: 'Boissons',
+    purchase_unit: 'casier',
+    units_per_purchase: 12,
+  },
+];
+
+// Recipe lines (fiches techniques). Realistic per-cover quantities in base units.
+// Most food menu items map to at least one ingredient so destock_order consumes
+// stock for nearly every food order. Wines and the cheese platter have no lines.
+const RECIPES: Array<{
+  menu_item_id: string;
+  ingredient_id: string;
+  quantity_needed: number;
+  notes: string;
+}> = [
+  // Foie Gras de Canard (entree)
+  {
+    menu_item_id: ID.itemFoieGras,
+    ingredient_id: ID.ingFoieGras,
+    quantity_needed: 0.08,
+    notes: 'Escalope mi-cuite',
+  },
+  // Tartare de Saumon
+  {
+    menu_item_id: ID.itemTartareSaumon,
+    ingredient_id: ID.ingSaumon,
+    quantity_needed: 0.12,
+    notes: 'Saumon frais',
+  },
+  {
+    menu_item_id: ID.itemTartareSaumon,
+    ingredient_id: ID.ingCreme,
+    quantity_needed: 0.02,
+    notes: 'Creme citronnee',
+  },
+  // Veloute de Homard
+  {
+    menu_item_id: ID.itemVelouteHomard,
+    ingredient_id: ID.ingHomard,
+    quantity_needed: 0.1,
+    notes: 'Base homard',
+  },
+  {
+    menu_item_id: ID.itemVelouteHomard,
+    ingredient_id: ID.ingCreme,
+    quantity_needed: 0.05,
+    notes: 'Creme fouettee',
+  },
+  // Carpaccio de Boeuf
+  {
+    menu_item_id: ID.itemCarpaccioBoeuf,
+    ingredient_id: ID.ingBoeuf,
+    quantity_needed: 0.12,
+    notes: 'Boeuf wagyu',
+  },
+  // Filet de Boeuf Rossini
+  {
+    menu_item_id: ID.itemFiletRossini,
+    ingredient_id: ID.ingBoeuf,
+    quantity_needed: 0.25,
+    notes: 'Filet centre',
+  },
+  {
+    menu_item_id: ID.itemFiletRossini,
+    ingredient_id: ID.ingFoieGras,
+    quantity_needed: 0.05,
+    notes: 'Escalope poelee',
+  },
+  {
+    menu_item_id: ID.itemFiletRossini,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.03,
+    notes: 'Sauce Perigueux',
+  },
+  // Carre d'Agneau
+  {
+    menu_item_id: ID.itemCarreAgneau,
+    ingredient_id: ID.ingAgneau,
+    quantity_needed: 0.3,
+    notes: 'Carre 4 cotes',
+  },
+  {
+    menu_item_id: ID.itemCarreAgneau,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.02,
+    notes: 'Cuisson et jus',
+  },
+  // Magret de Canard
+  {
+    menu_item_id: ID.itemMagretCanard,
+    ingredient_id: ID.ingCanard,
+    quantity_needed: 0.35,
+    notes: 'Magret entier',
+  },
+  {
+    menu_item_id: ID.itemMagretCanard,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.02,
+    notes: 'Glace au miel',
+  },
+  // Supreme de Volaille
+  {
+    menu_item_id: ID.itemSupremeVolaille,
+    ingredient_id: ID.ingVolaille,
+    quantity_needed: 0.25,
+    notes: 'Supreme desosse',
+  },
+  {
+    menu_item_id: ID.itemSupremeVolaille,
+    ingredient_id: ID.ingMorilles,
+    quantity_needed: 0.03,
+    notes: 'Farce morilles',
+  },
+  {
+    menu_item_id: ID.itemSupremeVolaille,
+    ingredient_id: ID.ingCreme,
+    quantity_needed: 0.05,
+    notes: 'Sauce creme',
+  },
+  // Bar roti
+  {
+    menu_item_id: ID.itemBarRoti,
+    ingredient_id: ID.ingBar,
+    quantity_needed: 0.28,
+    notes: 'Bar de ligne',
+  },
+  {
+    menu_item_id: ID.itemBarRoti,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.03,
+    notes: 'Beurre blanc',
+  },
+  // Gambas flambees
+  {
+    menu_item_id: ID.itemGambas,
+    ingredient_id: ID.ingGambas,
+    quantity_needed: 0.25,
+    notes: 'Gambas geantes x4',
+  },
+  {
+    menu_item_id: ID.itemGambas,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.03,
+    notes: 'Flambage et cuisson',
+  },
+  // Pave de Thon
+  {
+    menu_item_id: ID.itemPaveThon,
+    ingredient_id: ID.ingThon,
+    quantity_needed: 0.22,
+    notes: 'Thon rouge',
+  },
+  // Sole meuniere
+  {
+    menu_item_id: ID.itemSoleMeuniere,
+    ingredient_id: ID.ingSole,
+    quantity_needed: 0.3,
+    notes: 'Sole entiere',
+  },
+  {
+    menu_item_id: ID.itemSoleMeuniere,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.04,
+    notes: 'Beurre noisette',
+  },
+  // Fondant au chocolat
+  {
+    menu_item_id: ID.itemFondantChocolat,
+    ingredient_id: ID.ingChocolat,
+    quantity_needed: 0.08,
+    notes: 'Chocolat 70%',
+  },
+  {
+    menu_item_id: ID.itemFondantChocolat,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.03,
+    notes: 'Appareil fondant',
+  },
+  {
+    menu_item_id: ID.itemFondantChocolat,
+    ingredient_id: ID.ingCreme,
+    quantity_needed: 0.02,
+    notes: 'Glace vanille',
+  },
+  // Creme brulee
+  {
+    menu_item_id: ID.itemCremeBrulee,
+    ingredient_id: ID.ingCreme,
+    quantity_needed: 0.12,
+    notes: 'Appareil creme',
+  },
+  // Tarte Tatin
+  {
+    menu_item_id: ID.itemTarteTatin,
+    ingredient_id: ID.ingBeurre,
+    quantity_needed: 0.04,
+    notes: 'Caramel et pate',
+  },
+];
+
 async function createIngredients() {
-  logStep(7, 'Create Ingredients & Recipes');
+  logStep(7, 'Create Ingredients, Recipes, Opening Stock & Receptions');
 
-  const ingredients = [
-    {
-      id: ID.ingBoeuf,
-      name: 'Viande boeuf',
-      unit: 'kg',
-      current_stock: 25,
-      min_stock_alert: 5,
-      cost_per_unit: 15000,
-      category: 'Viandes',
-    },
-    {
-      id: ID.ingFoieGras,
-      name: 'Foie gras',
-      unit: 'kg',
-      current_stock: 3,
-      min_stock_alert: 1,
-      cost_per_unit: 45000,
-      category: 'Viandes',
-    },
-    {
-      id: ID.ingAgneau,
-      name: 'Agneau',
-      unit: 'kg',
-      current_stock: 12,
-      min_stock_alert: 3,
-      cost_per_unit: 18000,
-      category: 'Viandes',
-    },
-    {
-      id: ID.ingCanard,
-      name: 'Canard magret',
-      unit: 'kg',
-      current_stock: 8,
-      min_stock_alert: 2,
-      cost_per_unit: 12000,
-      category: 'Viandes',
-    },
-    {
-      id: ID.ingVolaille,
-      name: 'Volaille',
-      unit: 'kg',
-      current_stock: 15,
-      min_stock_alert: 4,
-      cost_per_unit: 5000,
-      category: 'Viandes',
-    },
-    {
-      id: ID.ingBar,
-      name: 'Bar',
-      unit: 'kg',
-      current_stock: 10,
-      min_stock_alert: 3,
-      cost_per_unit: 20000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingGambas,
-      name: 'Gambas',
-      unit: 'kg',
-      current_stock: 5,
-      min_stock_alert: 2,
-      cost_per_unit: 25000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingThon,
-      name: 'Thon',
-      unit: 'kg',
-      current_stock: 8,
-      min_stock_alert: 2,
-      cost_per_unit: 18000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingSole,
-      name: 'Sole',
-      unit: 'kg',
-      current_stock: 6,
-      min_stock_alert: 2,
-      cost_per_unit: 22000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingSaumon,
-      name: 'Saumon',
-      unit: 'kg',
-      current_stock: 7,
-      min_stock_alert: 2,
-      cost_per_unit: 16000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingHomard,
-      name: 'Homard',
-      unit: 'kg',
-      current_stock: 4,
-      min_stock_alert: 1,
-      cost_per_unit: 35000,
-      category: 'Poissons',
-    },
-    {
-      id: ID.ingChocolat,
-      name: 'Chocolat Valrhona',
-      unit: 'kg',
-      current_stock: 5,
-      min_stock_alert: 1,
-      cost_per_unit: 8000,
-      category: 'Epicerie',
-    },
-    {
-      id: ID.ingCreme,
-      name: 'Creme fraiche',
-      unit: 'L',
-      current_stock: 20,
-      min_stock_alert: 5,
-      cost_per_unit: 3000,
-      category: 'Produits laitiers',
-    },
-    {
-      id: ID.ingBeurre,
-      name: 'Beurre',
-      unit: 'kg',
-      current_stock: 10,
-      min_stock_alert: 3,
-      cost_per_unit: 4000,
-      category: 'Produits laitiers',
-    },
-    {
-      id: ID.ingMorilles,
-      name: 'Morilles',
-      unit: 'kg',
-      current_stock: 2,
-      min_stock_alert: 0.5,
-      cost_per_unit: 60000,
-      category: 'Champignons',
-    },
-  ];
+  const owner = STAFF.find((s) => s.role === 'owner');
+  const manager = STAFF.find((s) => s.role === 'manager');
 
-  const rows = ingredients.map((ing) => ({
-    ...ing,
+  // 1. Insert ingredients WITHOUT stock. current_stock starts at 0; the opening
+  //    quantity is booked through the ledger RPC below so the invariant holds.
+  const rows = INGREDIENTS.map((ing) => ({
+    id: ing.id,
     tenant_id: ID.tenant,
+    name: ing.name,
+    unit: ing.unit,
+    current_stock: 0,
+    min_stock_alert: ing.min_stock_alert,
+    cost_per_unit: ing.cost_per_unit,
+    category: ing.category,
+    purchase_unit: ing.purchase_unit ?? null,
+    units_per_purchase: ing.units_per_purchase ?? 1,
     is_active: true,
   }));
 
   const { error: ingError } = await supabase.from('ingredients').insert(rows);
   if (ingError) throw new Error(`Ingredients creation failed: ${ingError.message}`);
-  log(`Ingredients created: ${ingredients.length}`);
+  log(`Ingredients created: ${INGREDIENTS.length}`);
 
-  // ─── Recipes (Fiches techniques) ─────────────────────────────────────────
-  const recipes = [
-    // Filet de Boeuf Rossini
-    {
-      menu_item_id: ID.itemFiletRossini,
-      ingredient_id: ID.ingBoeuf,
-      quantity_needed: 0.25,
-      notes: 'Filet centre',
-    },
-    {
-      menu_item_id: ID.itemFiletRossini,
-      ingredient_id: ID.ingFoieGras,
-      quantity_needed: 0.05,
-      notes: 'Escalope poilee',
-    },
-    {
-      menu_item_id: ID.itemFiletRossini,
-      ingredient_id: ID.ingBeurre,
-      quantity_needed: 0.03,
-      notes: 'Sauce Perigueux',
-    },
-    // Carre d'Agneau
-    {
-      menu_item_id: ID.itemCarreAgneau,
-      ingredient_id: ID.ingAgneau,
-      quantity_needed: 0.3,
-      notes: 'Carre 4 cotes',
-    },
-    {
-      menu_item_id: ID.itemCarreAgneau,
-      ingredient_id: ID.ingBeurre,
-      quantity_needed: 0.02,
-      notes: 'Cuisson et jus',
-    },
-    // Magret de Canard
-    {
-      menu_item_id: ID.itemMagretCanard,
-      ingredient_id: ID.ingCanard,
-      quantity_needed: 0.35,
-      notes: 'Magret entier',
-    },
-    {
-      menu_item_id: ID.itemMagretCanard,
-      ingredient_id: ID.ingBeurre,
-      quantity_needed: 0.02,
-      notes: 'Glace au miel',
-    },
-    // Supreme de Volaille
-    {
-      menu_item_id: ID.itemSupremeVolaille,
-      ingredient_id: ID.ingVolaille,
-      quantity_needed: 0.25,
-      notes: 'Supreme desosse',
-    },
-    {
-      menu_item_id: ID.itemSupremeVolaille,
-      ingredient_id: ID.ingMorilles,
-      quantity_needed: 0.03,
-      notes: 'Farce morilles',
-    },
-    {
-      menu_item_id: ID.itemSupremeVolaille,
-      ingredient_id: ID.ingCreme,
-      quantity_needed: 0.05,
-      notes: 'Sauce creme',
-    },
-    // Gambas flambees
-    {
-      menu_item_id: ID.itemGambas,
-      ingredient_id: ID.ingGambas,
-      quantity_needed: 0.25,
-      notes: 'Gambas geantes x4',
-    },
-    {
-      menu_item_id: ID.itemGambas,
-      ingredient_id: ID.ingBeurre,
-      quantity_needed: 0.03,
-      notes: 'Flambage et cuisson',
-    },
-  ];
-
-  const recipeRows = recipes.map((r) => ({
+  // 2. Recipes (fiches techniques).
+  const recipeRows = RECIPES.map((r) => ({
     id: randomUUID(),
     tenant_id: ID.tenant,
     ...r,
   }));
-
   const { error: recipeError } = await supabase.from('recipes').insert(recipeRows);
   if (recipeError) throw new Error(`Recipes creation failed: ${recipeError.message}`);
   log(`Recipes created: ${recipeRows.length}`);
+
+  // 3. Opening stock via the canonical set_opening_stock RPC (records the DELTA
+  //    from 0, keeping SUM(movements) == current_stock). created_by = owner for
+  //    anti-vol traceability.
+  for (const ing of INGREDIENTS) {
+    const { error } = await supabase.rpc('set_opening_stock', {
+      p_tenant_id: ID.tenant,
+      p_ingredient_id: ing.id,
+      p_quantity: ing.opening,
+      p_created_by: owner?.userId ?? undefined,
+    });
+    if (error) throw new Error(`Opening stock for ${ing.name} failed: ${error.message}`);
+  }
+  log(`Opening stock booked: ${INGREDIENTS.length} ingredients (ledger 'opening')`);
+
+  // 4. Supplier receptions via adjust_ingredient_stock_tx (movement_type
+  //    'manual_add'), mirroring inventory.service.ts receiveStock. One reception
+  //    is entered in the PURCHASE unit (casier) to exercise unit conversion; the
+  //    auto note reproduces the service's "Recu: N casier (M bouteille)" format.
+  //    Suppliers must exist first (createSuppliers runs before this step).
+  if (!migrations.hasSuppliers) {
+    log('Skipping receptions (suppliers migration not applied)');
+    return;
+  }
+
+  interface Reception {
+    ingredient_id: string;
+    supplierId: string;
+    quantity: number;
+    inPurchaseUnit: boolean;
+    baseUnit: string;
+    purchaseUnit?: string;
+    unitsPerPurchase: number;
+  }
+  const receptions: Reception[] = [
+    {
+      ingredient_id: ID.ingBoeuf,
+      supplierId: ID.supplierBoucherie,
+      quantity: 20,
+      inPurchaseUnit: false,
+      baseUnit: 'kg',
+      unitsPerPurchase: 1,
+    },
+    {
+      ingredient_id: ID.ingBar,
+      supplierId: ID.supplierMaree,
+      quantity: 15,
+      inPurchaseUnit: false,
+      baseUnit: 'kg',
+      unitsPerPurchase: 1,
+    },
+    // Purchase-unit reception: 5 casier of 24 -> 120 bouteille booked in base unit.
+    {
+      ingredient_id: ID.ingEau,
+      supplierId: ID.supplierBoissons,
+      quantity: 5,
+      inPurchaseUnit: true,
+      baseUnit: 'bouteille',
+      purchaseUnit: 'casier',
+      unitsPerPurchase: 24,
+    },
+  ];
+
+  for (const r of receptions) {
+    // Base-unit quantity: casier -> bouteille is a pure count conversion
+    // (quantity * unitsPerPurchase); base-unit receipts pass through unchanged.
+    const baseQty = r.inPurchaseUnit ? r.quantity * r.unitsPerPurchase : r.quantity;
+    const autoNote = r.inPurchaseUnit
+      ? `Recu: ${r.quantity} ${r.purchaseUnit} (${baseQty} ${r.baseUnit})`
+      : `Recu: ${baseQty} ${r.baseUnit}`;
+
+    const { error } = await supabase.rpc('adjust_ingredient_stock_tx', {
+      p_tenant_id: ID.tenant,
+      p_ingredient_id: r.ingredient_id,
+      p_delta: baseQty,
+      p_movement_type: 'manual_add',
+      p_notes: autoNote,
+      p_created_by: manager?.userId ?? undefined,
+      p_supplier_id: r.supplierId,
+    });
+    if (error) throw new Error(`Reception failed: ${error.message}`);
+  }
+  log(`Receptions booked: ${receptions.length} (1 via purchase unit / casier)`);
 }
 
 // ─── STEP 8: CREATE SUPPLIERS ─────────────────────────────────────────────
@@ -1428,6 +1711,17 @@ async function createSuppliers() {
       email: 'cave@sommelier.td',
       address: "Avenue Mobutu, N'Djamena",
       notes: 'Importation directe Bordeaux et Champagne. Stockage temperature controlee.',
+      is_active: true,
+    },
+    {
+      id: ID.supplierBoissons,
+      tenant_id: ID.tenant,
+      name: 'Depot Boissons du Sahel',
+      contact_name: 'Hassan Adoum',
+      phone: '+235 66 44 44 44',
+      email: 'ventes@boissons-sahel.td',
+      address: "Zone industrielle, N'Djamena",
+      notes: 'Eaux, sodas et bieres au casier. Livraison quotidienne.',
       is_active: true,
     },
   ];
@@ -1524,11 +1818,21 @@ async function createCouponsAndAnnouncements() {
 
 // ─── STEP 10: CREATE HISTORICAL ORDERS (90 days) ─────────────────────────
 
-async function createHistoricalOrders() {
-  logStep(10, 'Create Historical Orders (~300 over 90 days)');
+// Reference to a persisted order, used by the destock step (which replays
+// destock_order for every order in the last 30 days) and revenue accounting.
+interface OrderRef {
+  id: string;
+  createdAt: Date;
+}
+
+async function createHistoricalOrders(): Promise<OrderRef[]> {
+  logStep(10, 'Create Historical Orders (90 days) + payments');
 
   const TAX_RATE = 19.25 / 100;
   const SERVICE_RATE = 10 / 100;
+
+  // Cashier stamps the payment ledger (payments.created_by FK -> admin_users.id).
+  const cashier = STAFF.find((s) => s.role === 'cashier');
 
   // Food items only (no wines) for typical orders
   const foodItems = MENU_ITEMS.filter((i) => !i.is_drink);
@@ -1553,14 +1857,17 @@ async function createHistoricalOrders() {
   const today = new Date();
   const allOrders: Array<Record<string, unknown>> = [];
   const allOrderItems: Array<Record<string, unknown>> = [];
+  const allPayments: Array<Record<string, unknown>> = [];
+  const orderRefs: OrderRef[] = [];
 
   for (let daysAgo = 90; daysAgo >= 1; daysAgo--) {
     const day = new Date(today);
     day.setDate(day.getDate() - daysAgo);
 
-    // 3-4 orders per day, more on weekends
+    // Busy service: more covers on weekends. Sized so a typical day lands in the
+    // ~150k-300k FCFA/day band (several million per month, well above the floor).
     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-    const ordersThisDay = isWeekend ? randomInt(4, 6) : randomInt(2, 4);
+    const ordersThisDay = isWeekend ? randomInt(5, 8) : randomInt(3, 5);
 
     for (let o = 0; o < ordersThisDay; o++) {
       const orderId = randomUUID();
@@ -1609,7 +1916,7 @@ async function createHistoricalOrders() {
       const taxAmount = Math.round(subtotal * TAX_RATE);
       const serviceChargeAmount = Math.round(subtotal * SERVICE_RATE);
 
-      // Apply coupon occasionally (~10%) — only if coupons table exists
+      // Apply coupon occasionally (~10%) - only if coupons table exists
       let discountAmount = 0;
       let couponId: string | null = null;
       if (migrations.hasProductionUpgrade && Math.random() < 0.1 && subtotal >= 50000) {
@@ -1623,6 +1930,13 @@ async function createHistoricalOrders() {
       }
 
       const total = subtotal + taxAmount + serviceChargeAmount - discountAmount;
+
+      // Occasional tip on dine-in, rounded to 500 FCFA. Integer minor units (XAF
+      // has 0 decimals) - revenue = total + tip (see lib/orders/revenue.ts).
+      const tipAmount =
+        serviceType === 'dine_in' && Math.random() < 0.4
+          ? Math.round((subtotal * 0.05) / 500) * 500
+          : 0;
 
       const paidAt = new Date(orderTime);
       paidAt.setMinutes(paidAt.getMinutes() + randomInt(30, 90));
@@ -1656,6 +1970,7 @@ async function createHistoricalOrders() {
       if (oc.has('payment_method')) orderRow.payment_method = paymentMethod;
       if (oc.has('payment_status')) orderRow.payment_status = 'paid';
       if (oc.has('paid_at')) orderRow.paid_at = paidAt.toISOString();
+      if (oc.has('tip_amount')) orderRow.tip_amount = tipAmount;
       if (oc.has('delivery_address')) {
         orderRow.delivery_address =
           serviceType === 'delivery' ? `Rue ${randomInt(1, 50)}, N'Djamena` : null;
@@ -1666,8 +1981,22 @@ async function createHistoricalOrders() {
       }
 
       allOrders.push(orderRow);
-
       allOrderItems.push(...orderItemRows);
+      orderRefs.push({ id: orderId, createdAt: orderTime });
+
+      // One completed tender per paid order (amount = order total, cashier-stamped).
+      if (migrations.hasPayments) {
+        allPayments.push({
+          id: randomUUID(),
+          tenant_id: ID.tenant,
+          order_id: orderId,
+          amount: total,
+          method: paymentMethod,
+          status: 'completed',
+          created_by: cashier?.adminUserId ?? null,
+          created_at: paidAt.toISOString(),
+        });
+      }
     }
   }
 
@@ -1687,12 +2016,23 @@ async function createHistoricalOrders() {
     if (error) throw new Error(`Historical order items batch ${i} failed: ${error.message}`);
   }
   log(`Historical order items created: ${allOrderItems.length}`);
+
+  if (migrations.hasPayments && allPayments.length > 0) {
+    for (let i = 0; i < allPayments.length; i += BATCH_SIZE) {
+      const batch = allPayments.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase.from('payments').insert(batch);
+      if (error) throw new Error(`Historical payments batch ${i} failed: ${error.message}`);
+    }
+    log(`Payments created: ${allPayments.length}`);
+  }
+
+  return orderRefs;
 }
 
 // ─── STEP 11: CREATE LIVE ORDERS (Today) ─────────────────────────────────
 
-async function createLiveOrders() {
-  logStep(11, 'Create Live Orders (Today)');
+async function createLiveOrders(): Promise<OrderRef[]> {
+  logStep(11, 'Create Live Orders (Today) + open table sessions');
 
   const TAX_RATE = 19.25 / 100;
   const SERVICE_RATE = 10 / 100;
@@ -1717,6 +2057,12 @@ async function createLiveOrders() {
 
   let seqNum = 1;
   const allOrderableItems = MENU_ITEMS.filter((i) => !i.is_drink);
+  const liveRefs: OrderRef[] = [];
+  // Open one check per table for the first few dine-in tables so the Service
+  // floor shows occupied tables. Keyed by table_number (partial unique index
+  // uniq_open_session_per_table = at most one open session per table).
+  const sessionByTable = new Map<string, string>();
+  const MAX_OPEN_SESSIONS = 3;
 
   for (const spec of liveSpecs) {
     for (let i = 0; i < spec.count; i++) {
@@ -1781,6 +2127,24 @@ async function createLiveOrders() {
         created_at: orderTime.toISOString(),
       };
 
+      // Open (or reuse) a table session for the first few dine-in tables.
+      if (
+        migrations.hasTableSessions &&
+        !sessionByTable.has(tableNum) &&
+        sessionByTable.size < MAX_OPEN_SESSIONS
+      ) {
+        const sessionId = randomUUID();
+        const { error: sessErr } = await supabase.from('table_sessions').insert({
+          id: sessionId,
+          tenant_id: ID.tenant,
+          table_number: tableNum,
+          status: 'open',
+          opened_at: orderTime.toISOString(),
+        });
+        if (sessErr) throw new Error(`Table session failed: ${sessErr.message}`);
+        sessionByTable.set(tableNum, sessionId);
+      }
+
       // Add columns that exist in the DB
       const oc = migrations.orderColumns;
       if (oc.has('subtotal')) liveOrderRow.subtotal = subtotal;
@@ -1789,6 +2153,9 @@ async function createLiveOrders() {
       if (oc.has('discount_amount')) liveOrderRow.discount_amount = 0;
       if (oc.has('service_type')) liveOrderRow.service_type = 'dine_in';
       if (oc.has('payment_status')) liveOrderRow.payment_status = spec.paymentStatus;
+      if (oc.has('session_id') && sessionByTable.has(tableNum)) {
+        liveOrderRow.session_id = sessionByTable.get(tableNum);
+      }
 
       const { error: orderErr } = await supabase.from('orders').insert(liveOrderRow);
 
@@ -1797,59 +2164,201 @@ async function createLiveOrders() {
       const { error: itemErr } = await supabase.from('order_items').insert(orderItemRows);
       if (itemErr) throw new Error(`Live order items failed: ${itemErr.message}`);
 
+      liveRefs.push({ id: orderId, createdAt: orderTime });
       seqNum++;
     }
   }
 
   log(`Live orders created: 10 (5 preparing, 3 ready, 2 pending)`);
+  log(`Open table sessions: ${sessionByTable.size}`);
+  return liveRefs;
 }
 
-// ─── STEP 12: CREATE STOCK MOVEMENTS (Opening stock) ─────────────────────
+// ─── STEP 12: REPLAY DESTOCK FOR RECENT + LIVE ORDERS ────────────────────
+// destock_order books 'order_destock' ledger movements per recipe line (and
+// flips menu items unavailable when an ingredient hits 0). Only the last 30
+// days of history are replayed (older orders stay un-destocked to cap volume);
+// live orders are always destocked. Each call stamps the chef (anti-vol).
+async function destockRecentOrders(historical: OrderRef[], live: OrderRef[]) {
+  logStep(12, 'Replay stock destock (recent + live orders)');
 
-async function createStockMovements() {
-  logStep(12, 'Create Stock Movements (Opening Stock)');
+  const chef = STAFF.find((s) => s.role === 'chef');
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
 
-  const owner = STAFF.find((s) => s.role === 'owner');
+  const toDestock = [...historical.filter((o) => o.createdAt >= cutoff), ...live];
+  let done = 0;
+  for (const ref of toDestock) {
+    const { error } = await supabase.rpc('destock_order', {
+      p_order_id: ref.id,
+      p_tenant_id: ID.tenant,
+      p_created_by: chef?.userId ?? undefined,
+    });
+    if (error) throw new Error(`Destock ${ref.id} failed: ${error.message}`);
+    done++;
+  }
+  log(`Orders destocked: ${done} (last 30 days + live) -> order_destock ledger`);
+}
 
-  const ingredients = [
-    { id: ID.ingBoeuf, stock: 25 },
-    { id: ID.ingFoieGras, stock: 3 },
-    { id: ID.ingAgneau, stock: 12 },
-    { id: ID.ingCanard, stock: 8 },
-    { id: ID.ingVolaille, stock: 15 },
-    { id: ID.ingBar, stock: 10 },
-    { id: ID.ingGambas, stock: 5 },
-    { id: ID.ingThon, stock: 8 },
-    { id: ID.ingSole, stock: 6 },
-    { id: ID.ingSaumon, stock: 7 },
-    { id: ID.ingHomard, stock: 4 },
-    { id: ID.ingChocolat, stock: 5 },
-    { id: ID.ingCreme, stock: 20 },
-    { id: ID.ingBeurre, stock: 10 },
-    { id: ID.ingMorilles, stock: 2 },
+// ─── STEP 13: RECORD STOCK LOSSES ────────────────────────────────────────
+// record_loss_tx: reconcilable 'loss' movement carrying a reason_code. Covers
+// the full reason vocabulary so the losses-by-reason report has data. Manager
+// stamped (anti-vol). Only ingredients with cost_per_unit > 0 (all are).
+async function recordLosses() {
+  logStep(13, 'Record stock losses (record_loss_tx)');
+
+  const manager = STAFF.find((s) => s.role === 'manager');
+  const losses: Array<{ ingredient_id: string; quantity: number; reason: string; note: string }> = [
+    {
+      ingredient_id: ID.ingCreme,
+      quantity: 2,
+      reason: 'expired',
+      note: 'Creme perimee (DLC depassee)',
+    },
+    { ingredient_id: ID.ingBar, quantity: 1.5, reason: 'spillage', note: 'Chute a la reception' },
+    { ingredient_id: ID.ingBeurre, quantity: 1, reason: 'prep_waste', note: 'Chutes de parage' },
+    { ingredient_id: ID.ingChocolat, quantity: 0.5, reason: 'breakage', note: 'Tablette cassee' },
+    { ingredient_id: ID.ingEau, quantity: 6, reason: 'theft', note: 'Ecart de comptage bar' },
   ];
 
-  const movements = ingredients.map((ing) => {
-    const row: Record<string, unknown> = {
-      id: randomUUID(),
-      tenant_id: ID.tenant,
-      ingredient_id: ing.id,
-      movement_type: 'opening',
-      quantity: ing.stock,
-      reference_id: null,
-      notes: "Stock d'ouverture",
-      created_by: owner?.adminUserId || null,
-      created_at: new Date().toISOString(),
-    };
-    if (migrations.hasSuppliers) {
-      row.supplier_id = null;
-    }
-    return row;
+  for (const l of losses) {
+    const { error } = await supabase.rpc('record_loss_tx', {
+      p_tenant_id: ID.tenant,
+      p_ingredient_id: l.ingredient_id,
+      p_quantity: l.quantity,
+      p_reason_code: l.reason,
+      p_notes: l.note,
+      p_created_by: manager?.userId ?? undefined,
+    });
+    if (error) throw new Error(`Loss (${l.reason}) failed: ${error.message}`);
+  }
+  log(`Losses recorded: ${losses.length} (expired/spillage/prep_waste/breakage/theft)`);
+}
+
+// ─── STEP 14: PHYSICAL STOCK COUNT (committed, with variance) ────────────
+// open -> save counted quantities (one line deliberately off) -> commit. Commit
+// books a 'physical_count' delta and closes the session, so exactly one count is
+// left in 'committed' state (never 'open', which would block a re-run).
+async function runPhysicalCount() {
+  logStep(14, 'Physical stock count (open -> count -> commit)');
+
+  const manager = STAFF.find((s) => s.role === 'manager');
+  const ingredientIds = [ID.ingBoeuf, ID.ingVolaille, ID.ingSole];
+
+  const { data: countId, error: openErr } = await supabase.rpc('open_stock_count', {
+    p_tenant_id: ID.tenant,
+    p_reference: 'Inventaire hebdomadaire',
+    p_created_by: manager?.userId ?? null,
+    p_ingredient_ids: ingredientIds,
+  });
+  if (openErr) throw new Error(`Open stock count failed: ${openErr.message}`);
+
+  // Read the theoretical snapshot to enter counted quantities. Boeuf gets a
+  // negative variance (physical < theoretical = shrinkage); the rest match.
+  const { data: lines, error: linesErr } = await supabase
+    .from('stock_count_lines')
+    .select('ingredient_id, theoretical_qty')
+    .eq('count_id', countId as string)
+    .eq('tenant_id', ID.tenant);
+  if (linesErr) throw new Error(`Load count lines failed: ${linesErr.message}`);
+
+  const countedLines = (lines ?? []).map((ln) => {
+    const theoretical = Number(ln.theoretical_qty);
+    const counted = ln.ingredient_id === ID.ingBoeuf ? Math.max(0, theoretical - 2) : theoretical;
+    return { ingredient_id: ln.ingredient_id as string, counted_qty: counted };
   });
 
-  const { error } = await supabase.from('stock_movements').insert(movements);
-  if (error) throw new Error(`Stock movements creation failed: ${error.message}`);
-  log(`Stock movements created: ${movements.length} (opening stock entries)`);
+  const { error: saveErr } = await supabase.rpc('save_stock_count_lines', {
+    p_tenant_id: ID.tenant,
+    p_count_id: countId as string,
+    p_lines: countedLines,
+  });
+  if (saveErr) throw new Error(`Save count lines failed: ${saveErr.message}`);
+
+  const { data: applied, error: commitErr } = await supabase.rpc('commit_stock_count', {
+    p_tenant_id: ID.tenant,
+    p_count_id: countId as string,
+    p_committed_by: manager?.userId ?? null,
+  });
+  if (commitErr) throw new Error(`Commit stock count failed: ${commitErr.message}`);
+  log(`Physical count committed: ${(applied as number) ?? 0} variance line(s) booked`);
+}
+
+// ─── STEP 15: ENGINEER LOW-STOCK ALERTS ──────────────────────────────────
+// Guarantee the dashboard "stock alerts" widget has data: raise a couple of
+// ingredients' min_stock_alert just above their post-destock current_stock so
+// they read as below threshold. Plain threshold write (no ledger movement).
+async function engineerLowStockAlerts() {
+  logStep(15, 'Engineer low-stock alerts');
+
+  const targets = [ID.ingMorilles, ID.ingHomard];
+  const { data: rows, error } = await supabase
+    .from('ingredients')
+    .select('id, name, current_stock')
+    .eq('tenant_id', ID.tenant)
+    .in('id', targets);
+  if (error) throw new Error(`Load ingredients for alert failed: ${error.message}`);
+
+  for (const row of rows ?? []) {
+    const current = Number(row.current_stock);
+    const threshold = Math.ceil(current) + 2; // strictly above current -> shows as low
+    const { error: updErr } = await supabase
+      .from('ingredients')
+      .update({ min_stock_alert: threshold })
+      .eq('id', row.id as string)
+      .eq('tenant_id', ID.tenant);
+    if (updErr) throw new Error(`Alert threshold update failed: ${updErr.message}`);
+    log(`Low-stock alert set: ${row.name as string} (stock ${current} < min ${threshold})`);
+  }
+}
+
+// ─── STEP 16: REVENUE SELF-CHECK ─────────────────────────────────────────
+// Revenue = SUM(total + tip_amount) WHERE payment_status = 'paid'
+// (src/lib/orders/revenue.ts). Assert the last 30 days clear the demo floor and
+// log the calendar-month-to-date figure.
+async function assertRevenueFloor() {
+  logStep(16, 'Revenue self-check (paid, last 30 days)');
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  const sumPaidGross = (rows: Array<{ total: number | null; tip_amount: number | null }>): number =>
+    rows.reduce((sum, o) => sum + Number(o.total ?? 0) + Number(o.tip_amount ?? 0), 0);
+
+  const { data: last30, error } = await supabase
+    .from('orders')
+    .select('total, tip_amount')
+    .eq('tenant_id', ID.tenant)
+    .eq('payment_status', 'paid')
+    .gte('created_at', cutoff.toISOString());
+  if (error) throw new Error(`Revenue query failed: ${error.message}`);
+  const revenue30d = sumPaidGross(
+    (last30 ?? []) as Array<{ total: number | null; tip_amount: number | null }>,
+  );
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const { data: month, error: monthErr } = await supabase
+    .from('orders')
+    .select('total, tip_amount')
+    .eq('tenant_id', ID.tenant)
+    .eq('payment_status', 'paid')
+    .gte('created_at', monthStart.toISOString());
+  if (monthErr) throw new Error(`Month revenue query failed: ${monthErr.message}`);
+  const revenueMonth = sumPaidGross(
+    (month ?? []) as Array<{ total: number | null; tip_amount: number | null }>,
+  );
+
+  log(`Paid revenue (last 30 days): ${revenue30d} FCFA`);
+  log(`Paid revenue (month to date): ${revenueMonth} FCFA`);
+
+  if (revenue30d < MONTHLY_REVENUE_FLOOR) {
+    throw new Error(
+      `Revenue self-check FAILED: 30-day paid revenue ${revenue30d} < floor ${MONTHLY_REVENUE_FLOOR}`,
+    );
+  }
+  log(`Revenue floor OK (>= ${MONTHLY_REVENUE_FLOOR} FCFA)`);
 }
 
 // ─── SUMMARY ──────────────────────────────────────────────────────────────
@@ -1869,20 +2378,22 @@ function printSummary() {
   Menus:          ${migrations.hasMenuHierarchy ? '3 (Dejeuner, Diner, Vins)' : 'SKIPPED (migration not applied)'}
   Categories:     11
   Menu Items:     ${MENU_ITEMS.length}
-  Ingredients:    ${migrations.hasInventoryEngine ? '15' : 'SKIPPED (migration not applied)'}
-  Recipes:        ${migrations.hasInventoryEngine ? '12' : 'SKIPPED (migration not applied)'}
-  Suppliers:      ${migrations.hasSuppliers ? '3' : 'SKIPPED (migration not applied)'}
+  Ingredients:    ${migrations.hasInventoryEngine ? `${INGREDIENTS.length} (2 achetes au casier)` : 'SKIPPED (migration not applied)'}
+  Recipes:        ${migrations.hasInventoryEngine ? `${RECIPES.length}` : 'SKIPPED (migration not applied)'}
+  Suppliers:      ${migrations.hasSuppliers ? '4' : 'SKIPPED (migration not applied)'}
+  Stock:          ${migrations.hasInventoryEngine ? 'opening + receptions + destock + losses + physical count (ledger)' : 'SKIPPED'}
   Coupons:        ${migrations.hasProductionUpgrade ? '2' : 'SKIPPED (migration not applied)'}
   Announcements:  ${migrations.hasAnnouncements ? '2' : 'SKIPPED (table not available)'}
-  Orders:         ~310 (300 historical + 10 live)
+  Orders:         historical (90 days, all paid) + 10 live
+  Payments:       ${migrations.hasPayments ? '1 tender per paid order' : 'SKIPPED'}
 
-  Login Credentials:
-    Owner:    hellofrankalbert@gmail.com / Demo2024!
-    Chef:     chef@lepicurien.com / Demo2024!
-    Manager:  manager@lepicurien.com / Demo2024!
-    Cashier:  caisse@lepicurien.com / Demo2024!
-    Waiter1:  serveur1@lepicurien.com / Demo2024!
-    Waiter2:  serveur2@lepicurien.com / Demo2024!
+  Login Credentials (shared password: ${DEMO_PASSWORD}):
+    Owner:    owner@demo.attabl.com     (Amadou Diallo)
+    Chef:     chef@demo.attabl.com      (Fatime Hassan)
+    Manager:  manager@demo.attabl.com   (Ousmane Kabore)
+    Cashier:  caisse@demo.attabl.com    (Mariam Toure)
+    Waiter1:  serveur1@demo.attabl.com  (Ali Mahamat)
+    Waiter2:  serveur2@demo.attabl.com  (Aicha Ndiaye)
 
   URL (dev):  http://lepicurien.localhost:3000
   URL (prod): https://lepicurien.attabl.com
@@ -1894,7 +2405,7 @@ function printSummary() {
 
 async function main() {
   console.log('='.repeat(60));
-  console.log("  ATTABL SaaS — Demo Seed: L'Epicurien");
+  console.log("  ATTABL SaaS - Demo Seed: L'Epicurien");
   console.log('='.repeat(60));
   console.log(`  Supabase URL: ${SUPABASE_URL}`);
   console.log(`  Timestamp:    ${new Date().toISOString()}\n`);
@@ -1913,24 +2424,38 @@ async function main() {
     }
     await createMenus();
     await createMenuItems();
-    if (migrations.hasInventoryEngine) {
-      await createIngredients();
-    } else {
-      log('Skipping ingredients/recipes (inventory_engine migration not applied)');
-    }
+    // Suppliers BEFORE ingredients: ingredient receptions attribute to a supplier.
     if (migrations.hasSuppliers) {
       await createSuppliers();
     } else {
       log('Skipping suppliers (suppliers migration not applied)');
     }
-    await createCouponsAndAnnouncements();
-    await createHistoricalOrders();
-    await createLiveOrders();
     if (migrations.hasInventoryEngine) {
-      await createStockMovements();
+      await createIngredients();
+    } else {
+      log('Skipping ingredients/recipes/opening stock (inventory_engine migration not applied)');
+    }
+    await createCouponsAndAnnouncements();
+
+    const historicalRefs = await createHistoricalOrders();
+    const liveRefs = await createLiveOrders();
+
+    // Stock that "turns": replay destock over recent orders, then losses,
+    // physical count, and the engineered low-stock alert. All ledger-correct.
+    if (migrations.hasInventoryEngine) {
+      await destockRecentOrders(historicalRefs, liveRefs);
+      await recordLosses();
+      if (migrations.hasStockCounts) {
+        await runPhysicalCount();
+      } else {
+        log('Skipping physical count (stock_counts migration not applied)');
+      }
+      await engineerLowStockAlerts();
     } else {
       log('Skipping stock movements (inventory_engine migration not applied)');
     }
+
+    await assertRevenueFloor();
     printSummary();
   } catch (err) {
     console.error('\n  SEED FAILED:', err);

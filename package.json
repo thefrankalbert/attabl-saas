@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "knip": "knip",
     "test": "vitest run",
+    "seed:demo": "npx tsx scripts/seed-demo.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:db": "bash scripts/run-stock-integration.sh",
