@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import {
-  AlertTriangle,
-  BookOpenCheck,
-  Circle,
-  CircleCheck,
-  Search,
-  Plus,
-  Trash2,
-  Check,
-  Upload,
-} from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -19,62 +9,34 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useIngredients } from '@/hooks/queries';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminModal from '@/components/admin/AdminModal';
 import RecipeImportExcel from '@/components/features/inventory/RecipeImportExcel';
-import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
 import { actionSetRecipe } from '@/app/actions/inventory';
 import { ServiceError } from '@/services/errors';
 import type { Recipe, RecipeLineInput } from '@/types/inventory.types';
-import { INGREDIENT_UNITS } from '@/types/inventory.types';
+import RecipesToolbar from '@/components/admin/recipes/RecipesToolbar';
+import RecipeDishList from '@/components/admin/recipes/RecipeDishList';
+import RecipeEditorPanel from '@/components/admin/recipes/RecipeEditorPanel';
+import {
+  EMPTY_RECIPE_IDS,
+  newLineId,
+  parseQuantity,
+  type MenuItem,
+  type RecipeFilter,
+  type RecipeLine,
+} from '@/components/admin/recipes/types';
 
 interface RecipesClientProps {
   tenantId: string;
 }
 
-interface MenuItem {
-  id: string;
-  name: string;
-  category_id: string | null;
-  is_available: boolean;
-}
-
-interface RecipeLine {
-  lineId: string;
-  ingredient_id: string;
-  ingredient_name: string;
-  unit: string;
-  quantity_needed: number | string;
-  notes: string;
-}
-
-const EMPTY_RECIPE_IDS = new Set<string>();
-
-function newLineId(): string {
-  return `line-${crypto.randomUUID()}`;
-}
-
-function parseQuantity(value: number | string): number {
-  if (value === '' || value === null || value === undefined) return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
 export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRecipe, setFilterRecipe] = useState<'all' | 'with' | 'without'>('all');
+  const [filterRecipe, setFilterRecipe] = useState<RecipeFilter>('all');
   const [showImportModal, setShowImportModal] = useState(false);
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -304,45 +266,14 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       <div className="shrink-0 space-y-4">
         <AdminPageHeader title={t('recipesTech')} />
 
-        {/* Toolbar on its own row (never crushes the title, like StockHistory) */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-            <Input
-              data-search-input
-              placeholder={t('searchDish')}
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="flex shrink-0 gap-2 overflow-x-auto scrollbar-hide">
-            {(['all', 'with', 'without'] as const).map((f) => (
-              <Button
-                key={f}
-                variant={filterRecipe === f ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterRecipe(f)}
-                className="rounded-full whitespace-nowrap"
-              >
-                {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
-              </Button>
-            ))}
-          </div>
-
-          {canEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowImportModal(true)}
-              className="gap-2 shrink-0 whitespace-nowrap lg:ml-auto"
-            >
-              <Upload className="w-4 h-4" />
-              {t('importTechnicalSheets')}
-            </Button>
-          )}
-        </div>
+        <RecipesToolbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterRecipe={filterRecipe}
+          onFilterChange={setFilterRecipe}
+          canEdit={canEdit}
+          onImportClick={() => setShowImportModal(true)}
+        />
       </div>
 
       {loading ? (
@@ -388,221 +319,29 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               height and scrolls its own list internally - no nested scroll. */}
           <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden scrollbar-hide mt-4 sm:mt-6 pb-4 lg:pb-0">
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-full lg:min-h-0">
-              <div className="flex-1 min-w-0 bg-app-card rounded-xl border border-app-border overflow-hidden lg:flex lg:flex-col lg:min-h-0">
-                <div className="max-h-[420px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto divide-y divide-app-border">
-                  {filteredItems.map((item) => {
-                    const hasRecipe = itemsWithRecipes.has(item.id);
-                    const isSelected = selectedItemId === item.id;
+              <RecipeDishList
+                filteredItems={filteredItems}
+                itemsWithRecipes={itemsWithRecipes}
+                selectedItemId={selectedItemId}
+                onSelectItem={handleSelectItem}
+              />
 
-                    return (
-                      <Button
-                        key={item.id}
-                        variant="ghost"
-                        onClick={() => handleSelectItem(item.id)}
-                        className={cn(
-                          'w-full text-left px-4 py-3 h-auto flex items-center gap-3 transition-colors rounded-none',
-                          isSelected ? 'bg-accent-muted' : 'hover:bg-app-bg',
-                        )}
-                      >
-                        {hasRecipe ? (
-                          <CircleCheck
-                            aria-hidden
-                            className="h-4 w-4 shrink-0 text-status-success"
-                          />
-                        ) : (
-                          <Circle aria-hidden className="h-4 w-4 shrink-0 text-app-text-muted/60" />
-                        )}
-                        <span className="sr-only">
-                          {hasRecipe ? t('hasRecipe') : t('noRecipe')}
-                        </span>
-                        <p
-                          className={cn(
-                            'min-w-0 flex-1 truncate text-sm',
-                            isSelected ? 'font-semibold text-accent' : 'font-medium text-app-text',
-                          )}
-                        >
-                          {item.name}
-                        </p>
-                      </Button>
-                    );
-                  })}
-                  {filteredItems.length === 0 && (
-                    <div className="px-4 py-12 text-center text-app-text-secondary">
-                      {t('noDishFound')}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div
-                ref={editorPanelRef}
-                className="w-full lg:w-[26rem] shrink-0 bg-app-card rounded-xl border border-app-border overflow-hidden lg:flex lg:flex-col lg:min-h-0"
-              >
-                {selectedItemId && selectedItem ? (
-                  <div className="flex flex-col h-full lg:min-h-0">
-                    <div className="px-4 py-3 border-b border-app-border bg-app-bg">
-                      <h3 className="truncate font-bold text-sm text-app-text">
-                        <span className="sr-only">{t('recipeFor')} </span>
-                        {selectedItem.name}
-                      </h3>
-                    </div>
-
-                    {loadingRecipe ? (
-                      <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
-                    ) : (
-                      <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto max-h-[320px] lg:max-h-none">
-                        {recipeLines.map((line) => {
-                          const availableIngredients = ingredients.filter(
-                            (ing) =>
-                              ing.id === line.ingredient_id || !usedIngredientIds.has(ing.id),
-                          );
-                          // A recipe can reference an ingredient that was deactivated
-                          // since (the active-only list no longer contains it). Without
-                          // a matching item the Select trigger renders blank.
-                          const lineIngredientKnown = ingredients.some(
-                            (ing) => ing.id === line.ingredient_id,
-                          );
-                          const lineUnitShort =
-                            INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
-                              ?.labelShort || line.unit;
-
-                          return (
-                            <div
-                              key={line.lineId}
-                              className="flex items-start gap-2 p-3 bg-app-bg rounded-lg border border-app-border"
-                            >
-                              <div className="flex-1 space-y-2">
-                                <Select
-                                  value={line.ingredient_id}
-                                  onValueChange={(val) => {
-                                    const alreadyUsed = recipeLines.some(
-                                      (l) => l.lineId !== line.lineId && l.ingredient_id === val,
-                                    );
-                                    if (alreadyUsed) {
-                                      toast({
-                                        title: t('recipeDuplicateIngredient'),
-                                        variant: 'destructive',
-                                      });
-                                      return;
-                                    }
-                                    updateLine(line.lineId, 'ingredient_id', val);
-                                  }}
-                                  disabled={!canEdit}
-                                >
-                                  <SelectTrigger className="w-full h-9">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {!lineIngredientKnown && line.ingredient_id && (
-                                      <SelectItem value={line.ingredient_id}>
-                                        {line.ingredient_name}
-                                        {lineUnitShort ? ` (${lineUnitShort})` : ''}
-                                      </SelectItem>
-                                    )}
-                                    {availableIngredients.map((ing) => (
-                                      <SelectItem key={ing.id} value={ing.id}>
-                                        {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="number"
-                                    step="0.001"
-                                    min="0"
-                                    placeholder={t('qtyPlaceholder')}
-                                    value={line.quantity_needed === 0 ? '' : line.quantity_needed}
-                                    onChange={(e) =>
-                                      updateLine(
-                                        line.lineId,
-                                        'quantity_needed',
-                                        e.target.value === '' ? '' : parseFloat(e.target.value),
-                                      )
-                                    }
-                                    disabled={!canEdit}
-                                    className="h-8 text-sm flex-1"
-                                  />
-                                  <span className="text-xs text-app-text-secondary self-center w-10">
-                                    {lineUnitShort}
-                                  </span>
-                                </div>
-                                <Textarea
-                                  placeholder={t('notesOptional')}
-                                  value={line.notes}
-                                  onChange={(e) => updateLine(line.lineId, 'notes', e.target.value)}
-                                  disabled={!canEdit}
-                                  rows={2}
-                                  className="text-sm min-h-0 resize-none"
-                                />
-                              </div>
-                              {canEdit && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={tc('delete')}
-                                  onClick={() => removeLine(line.lineId)}
-                                  className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {recipeLines.length === 0 && (
-                          <p className="text-sm text-app-text-secondary text-center py-4">
-                            {t('noIngredientDefined')}
-                          </p>
-                        )}
-
-                        {canEdit &&
-                          (ingredients.length === 0 ? (
-                            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-app-border p-4 text-center">
-                              <p className="text-sm text-app-text-secondary">
-                                {t('addProductsFirst')}
-                              </p>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={inventoryHref}>{t('goToInventory')}</Link>
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={addLine}
-                              className="w-full gap-2"
-                            >
-                              <Plus className="w-4 h-4" />
-                              {t('addIngredient2')}
-                            </Button>
-                          ))}
-                      </div>
-                    )}
-
-                    {canEdit && (
-                      <div className="px-4 py-3 border-t border-app-border bg-app-bg">
-                        <Button
-                          onClick={handleSave}
-                          disabled={saving}
-                          variant="default"
-                          className="w-full gap-2"
-                        >
-                          <Check className="w-4 h-4" />
-                          {saving ? t('saving') : tc('save')}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center p-12 text-app-text-secondary">
-                    <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">{t('selectDish')}</p>
-                    <p className="text-xs mt-1">{t('defineRecipe')}</p>
-                  </div>
-                )}
-              </div>
+              <RecipeEditorPanel
+                panelRef={editorPanelRef}
+                selectedItemId={selectedItemId}
+                selectedItem={selectedItem}
+                loadingRecipe={loadingRecipe}
+                recipeLines={recipeLines}
+                ingredients={ingredients}
+                usedIngredientIds={usedIngredientIds}
+                canEdit={canEdit}
+                inventoryHref={inventoryHref}
+                saving={saving}
+                onUpdateLine={updateLine}
+                onRemoveLine={removeLine}
+                onAddLine={addLine}
+                onSave={handleSave}
+              />
             </div>
           </div>
         </>
