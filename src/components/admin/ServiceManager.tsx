@@ -22,6 +22,8 @@ import { ServiceRightPanel } from './service/ServiceRightPanel';
 import { ServiceTableDetail } from './service/ServiceTableDetail';
 import { ServiceMobileOrders } from './service/ServiceMobileOrders';
 import { usePlanPositions } from './service/use-plan-positions';
+import { useServiceLabels } from './service/use-service-labels';
+import { ServiceManagerSkeleton } from './service/ServiceManagerSkeleton';
 import { buildServerVMs, buildTableVMs, getElapsedMinutes } from './service/service-status';
 import type { ServiceServerVM, ServiceTableStatus, ZoneWithTables } from './service/service.types';
 import type { AdminUser, Order } from '@/types/admin.types';
@@ -294,127 +296,10 @@ export default function ServiceManager({ tenantId }: Props) {
   );
   useContextualShortcuts(shortcuts);
 
-  const floorLabels = useMemo(
-    () => ({
-      allTab: tc('all'),
-      gridMode: t('gridMode'),
-      planMode: t('planMode'),
-      searchPlaceholder: t('searchPlaceholder'),
-      free: t('statusFree'),
-      occupied: t('statusOccupied'),
-      reserved: t('statusOccupied'),
-      cleaning: t('statusOccupied'),
-      noTablesMatch: t('noTablesMatch'),
-      seatsShort: t('seatsShort'),
-      emptyServerDropHint: t('dropServerHint'),
-      emptyServerCleaningHint: t('dropServerHint'),
-      emptyServerReserved: t('dropServerHint'),
-      sinceSince: t('sinceSince'),
-      occupiedSummary: t('occupiedSummary'),
-      freeSummary: t('freeSummary'),
-      reservedSummary: t('reservedSummary'),
-      releaseAria: t('releaseAssignment'),
-      filteredByServerLabel: (name: string) => t('filteredByServer', { name }),
-      clearFilterAria: t('clearFilter'),
-      planSelectZone: t('planSelectZone'),
-      roomPlanLabel: t('roomPlanLabel'),
-      editLayout: t('editLayout'),
-      exitEditLayout: t('exitEditLayout'),
-      resetLayout: t('resetLayout'),
-      editModeHint: t('editModeHint'),
-    }),
-    [t, tc],
-  );
-
-  const metricsLabels = useMemo(
-    () => ({
-      occupationRate: t('occupationRate'),
-      waitTime: t('avgWaitTime'),
-      minShort: t('minShort'),
-      occupiedSummary: t('occupiedSummary'),
-      freeSummary: t('freeSummary'),
-      reservedSummary: t('reservedSummary'),
-      cleaningSummary: t('cleaningSummary'),
-      activeAssignments: t('activeAssignmentsShort'),
-      tablesTotal: t('tablesTotal'),
-      coversLabel: t('coversLabel'),
-      coversSub: t('coversSub'),
-    }),
-    [t],
-  );
-
-  const panelLabels = useMemo(
-    () => ({
-      tabServers: t('tabServers'),
-      tabOrders: t('tabOrders'),
-      inService: t('inService'),
-      available: t('available'),
-      onBreak: t('onBreak'),
-      availableStateEmpty: t('availableEmpty'),
-      inServiceEmpty: t('inServiceEmpty'),
-      ordersTitle: t('ordersActiveTitle'),
-      ordersEmpty: t('ordersEmpty'),
-      dragHint: t('dragHint'),
-      markDelivered: t('markDelivered'),
-      tableShort: t('tableShort'),
-      itemsCount: (count: number) => t('itemsCount', { count }),
-      minutesAgoShort: (min: number) => t('minutesAgoShort', { min }),
-      roleLabel: t('roleLabel'),
-      availableStatus: t('availableStatus'),
-      tablesPlural: (n: number) => t('tablesPlural', { count: n }),
-    }),
-    [t],
-  );
-
-  const detailLabels = useMemo(
-    () => ({
-      closeAria: tc('close'),
-      tableLabel: t('tableLabel'),
-      seatsLabel: t('seatsLabel'),
-      statusFree: t('statusFree'),
-      statusOccupied: t('statusOccupied'),
-      infoSection: t('infoSection'),
-      roomLabel: t('roomLabel'),
-      seatsRow: t('seatsRow'),
-      arrivalRow: t('arrivalRow'),
-      assignedServerSection: t('assignedServerSection'),
-      noServerAssigned: t('noServerAssigned'),
-      selectServer: t('selectServer'),
-      releaseBtn: t('release'),
-      currentOrderSection: t('currentOrderSection'),
-      orderEmpty: t('orderEmpty'),
-      orderOpened: t('orderOpened'),
-      orderTotal: tc('total'),
-    }),
-    [t, tc],
-  );
+  const { floorLabels, metricsLabels, panelLabels, detailLabels } = useServiceLabels();
 
   if (loading) {
-    return (
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="flex items-stretch border-b border-app-border/50 bg-app-bg">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex-1 border-r border-app-border/50 px-5 py-3.5 last:border-r-0"
-            >
-              <div className="mb-2 h-3 w-24 animate-pulse rounded bg-app-elevated" />
-              <div className="h-6 w-16 animate-pulse rounded bg-app-elevated" />
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-1 min-h-0">
-          <div className="flex-1 p-4">
-            <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fill,minmax(168px,1fr))]">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-[88px] animate-pulse rounded bg-app-elevated" />
-              ))}
-            </div>
-          </div>
-          <div className="hidden w-[280px] shrink-0 border-l border-app-border/50 bg-app-card lg:block xl:w-[320px]" />
-        </div>
-      </div>
-    );
+    return <ServiceManagerSkeleton />;
   }
 
   return (

@@ -1,61 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
-import { Loader2, ChevronLeft, ChevronRight, Filter, Search, ScrollText } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Loader2, Filter, ScrollText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { createAuditReadService } from '@/services/audit.service';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
-
-interface AuditLogEntry {
-  id: string;
-  created_at: string;
-  user_email: string | null;
-  user_role: string | null;
-  action: string;
-  entity_type: string;
-  entity_id: string | null;
-  old_data: Record<string, unknown> | null;
-  new_data: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
-}
-
-const PAGE_SIZE = 25;
-
-const ENTITY_TYPES = [
-  'order',
-  'menu',
-  'item',
-  'category',
-  'user',
-  'permission',
-  'setting',
-  'ingredient',
-  'coupon',
-  'supplier',
-] as const;
-const ACTIONS = ['create', 'update', 'delete'] as const;
+import { PAGE_SIZE, type AuditLogEntry } from './audit-log/types';
+import AuditLogFilters from './audit-log/AuditLogFilters';
+import AuditLogTable from './audit-log/AuditLogTable';
+import AuditLogPagination from './audit-log/AuditLogPagination';
 
 interface AuditLogClientProps {
   tenantId: string;
@@ -69,8 +26,6 @@ export default function AuditLogClient({
   initialCount,
 }: AuditLogClientProps) {
   const t = useTranslations('auditLog');
-  const tc = useTranslations('common');
-  const locale = useLocale();
 
   const [logs, setLogs] = useState<AuditLogEntry[]>(
     // Supabase join type gap
@@ -115,88 +70,6 @@ export default function AuditLogClient({
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return (
-      d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }) +
-      ' ' +
-      d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-    );
-  };
-
-  const actionBadge = (action: string) => {
-    switch (action) {
-      case 'create':
-        return (
-          <Badge className="border border-[var(--border)] text-[var(--success)] text-[10px]">
-            {t('actionCreate')}
-          </Badge>
-        );
-      case 'update':
-        return (
-          <Badge className="border border-[var(--border)] text-[var(--muted-foreground)] text-[10px]">
-            {t('actionUpdate')}
-          </Badge>
-        );
-      case 'delete':
-        return (
-          <Badge className="border border-[var(--border)] text-[var(--destructive)] text-[10px]">
-            {t('actionDelete')}
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="text-[10px]">
-            {action}
-          </Badge>
-        );
-    }
-  };
-
-  const entityLabel = (type: string) => {
-    const key = `entity_${type}` as Parameters<typeof t>[0];
-    try {
-      return t(key);
-    } catch {
-      return type;
-    }
-  };
-
-  const renderChanges = (entry: AuditLogEntry) => {
-    if (entry.action === 'create' && entry.new_data) {
-      const keys = Object.keys(entry.new_data).slice(0, 3);
-      return (
-        <span className="text-[10px] text-app-text-muted">
-          {keys.map((k) => `${k}: ${String(entry.new_data![k])}`).join(', ')}
-          {Object.keys(entry.new_data).length > 3 && '...'}
-        </span>
-      );
-    }
-    if (entry.action === 'update' && entry.old_data && entry.new_data) {
-      const changedKeys = Object.keys(entry.new_data).filter(
-        (k) => JSON.stringify(entry.old_data![k]) !== JSON.stringify(entry.new_data![k]),
-      );
-      if (changedKeys.length === 0) return null;
-      return (
-        <span className="text-[10px] text-app-text-muted">
-          {changedKeys.slice(0, 2).map((k) => (
-            <span key={k}>
-              {k}:{' '}
-              <span className="line-through text-[var(--destructive)]">
-                {String(entry.old_data![k] ?? ' - ')}
-              </span>
-              {' → '}
-              <span className="text-[var(--success)]">{String(entry.new_data![k] ?? ' - ')}</span>
-              {', '}
-            </span>
-          ))}
-          {changedKeys.length > 2 && `+${changedKeys.length - 2} ${t('more')}`}
-        </span>
-      );
-    }
-    return null;
-  };
-
   const handleFilterReset = () => {
     setFilterAction('');
     setFilterEntity('');
@@ -225,85 +98,16 @@ export default function AuditLogClient({
 
         {/* Filters */}
         {showFilters && (
-          <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
-                  {t('filterAction')}
-                </Label>
-                <Select
-                  value={filterAction || '__all__'}
-                  onValueChange={(val) => {
-                    setFilterAction(val === '__all__' ? '' : val);
-                    setPage(0);
-                  }}
-                >
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">{tc('all')}</SelectItem>
-                    {ACTIONS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {t(
-                          `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
-                            | 'actionCreate'
-                            | 'actionUpdate'
-                            | 'actionDelete',
-                        ) || a}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
-                  {t('filterEntity')}
-                </Label>
-                <Select
-                  value={filterEntity || '__all__'}
-                  onValueChange={(val) => {
-                    setFilterEntity(val === '__all__' ? '' : val);
-                    setPage(0);
-                  }}
-                >
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">{tc('all')}</SelectItem>
-                    {ENTITY_TYPES.map((e) => (
-                      <SelectItem key={e} value={e}>
-                        {entityLabel(e)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-app-text mb-1 block">
-                  {t('filterUser')}
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-app-text-muted" />
-                  <Input
-                    value={searchEmail}
-                    onChange={(e) => {
-                      setSearchEmail(e.target.value);
-                      setPage(0);
-                    }}
-                    placeholder={t('searchPlaceholder')}
-                    className="pl-8 h-9 text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-            {(filterAction || filterEntity || searchEmail) && (
-              <Button variant="ghost" size="sm" onClick={handleFilterReset} className="text-xs">
-                {t('clearFilters')}
-              </Button>
-            )}
-          </div>
+          <AuditLogFilters
+            filterAction={filterAction}
+            filterEntity={filterEntity}
+            searchEmail={searchEmail}
+            setFilterAction={setFilterAction}
+            setFilterEntity={setFilterEntity}
+            setSearchEmail={setSearchEmail}
+            setPage={setPage}
+            onReset={handleFilterReset}
+          />
         )}
       </div>
 
@@ -330,127 +134,16 @@ export default function AuditLogClient({
           </div>
         ) : (
           <>
-            <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
-              {/* Desktop table */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-app-border/60 bg-app-bg/50">
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
-                        {t('colDate')}
-                      </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
-                        {t('colUser')}
-                      </TableHead>
-                      <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
-                        {t('colAction')}
-                      </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
-                        {t('colEntity')}
-                      </TableHead>
-                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
-                        {t('colDetails')}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {logs.map((entry) => (
-                      <TableRow
-                        key={entry.id}
-                        className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
-                      >
-                        <TableCell className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
-                          {formatDate(entry.created_at)}
-                        </TableCell>
-                        <TableCell className="px-4 py-3">
-                          <div>
-                            <span className="text-sm text-app-text">
-                              {entry.user_email || ' - '}
-                            </span>
-                            {entry.user_role && (
-                              <span className="ml-1.5 text-[10px] text-app-text-muted font-medium">
-                                ({entry.user_role})
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-center">
-                          {actionBadge(entry.action)}
-                        </TableCell>
-                        <TableCell className="px-4 py-3">
-                          <span className="text-sm font-medium text-app-text">
-                            {entityLabel(entry.entity_type)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-4 py-3 max-w-xs">{renderChanges(entry)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-app-border/60">
-                {logs.map((entry) => (
-                  <div key={entry.id} className="p-4 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-app-text-muted">
-                        {formatDate(entry.created_at)}
-                      </span>
-                      {actionBadge(entry.action)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-app-text">
-                        {entityLabel(entry.entity_type)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-app-text-secondary">
-                      {entry.user_email || ' - '}
-                      {entry.user_role && ` (${entry.user_role})`}
-                    </div>
-                    {(() => {
-                      const changes = renderChanges(entry);
-                      return changes ? <div className="pt-1">{changes}</div> : null;
-                    })()}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <AuditLogTable logs={logs} />
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-app-text-secondary">
-                  {t('showing', {
-                    from: page * PAGE_SIZE + 1,
-                    to: Math.min((page + 1) * PAGE_SIZE, totalCount),
-                    total: totalCount,
-                  })}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 0}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm font-medium text-app-text px-3">
-                    {page + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= totalPages - 1}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              <AuditLogPagination
+                page={page}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                setPage={setPage}
+              />
             )}
           </>
         )}

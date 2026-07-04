@@ -4,28 +4,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useLocale } from 'next-intl';
-import {
-  Search,
-  ArrowUpRight,
-  ArrowDownRight,
-  Package,
-  Truck,
-  RefreshCw,
-  ClipboardList,
-  Loader2,
-  Box,
-  BarChart3,
-  Users,
-  TrendingDown,
-} from 'lucide-react';
+import { Search, Loader2, BarChart3, Users } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { MOVEMENT_STYLES as MOVEMENT_TOKENS } from '@/lib/design-tokens';
-import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
-import type { ColumnDef } from '@tanstack/react-table';
-import type { StockMovement, MovementType } from '@/types/inventory.types';
+import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
+import type { MovementType } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
@@ -33,69 +17,10 @@ import {
   StockHistoryNoResults,
 } from '@/components/admin/StockHistoryEmptyState';
 import StaffStockReportDialog from '@/components/admin/StaffStockReportDialog';
-
-// --- Movement type visual config -------------------------
-const MOVEMENT_STYLES: Record<
-  MovementType,
-  { labelKey: string; icon: typeof Package; bg: string; text: string; dot: string }
-> = {
-  order_destock: {
-    labelKey: 'filterOrders',
-    icon: ClipboardList,
-    bg: MOVEMENT_TOKENS.order_destock.bg,
-    text: MOVEMENT_TOKENS.order_destock.text,
-    dot: 'bg-status-info',
-  },
-  order_restock: {
-    labelKey: 'filterRestock',
-    icon: RefreshCw,
-    bg: MOVEMENT_TOKENS.order_restock.bg,
-    text: MOVEMENT_TOKENS.order_restock.text,
-    dot: 'bg-status-success',
-  },
-  manual_add: {
-    labelKey: 'filterAdditions',
-    icon: Package,
-    bg: MOVEMENT_TOKENS.manual_add.bg,
-    text: MOVEMENT_TOKENS.manual_add.text,
-    dot: 'bg-status-success',
-  },
-  manual_remove: {
-    labelKey: 'filterWithdrawals',
-    icon: Package,
-    bg: MOVEMENT_TOKENS.manual_remove.bg,
-    text: MOVEMENT_TOKENS.manual_remove.text,
-    dot: 'bg-status-error',
-  },
-  adjustment: {
-    labelKey: 'filterAdjustments',
-    icon: RefreshCw,
-    bg: MOVEMENT_TOKENS.adjustment.bg,
-    text: MOVEMENT_TOKENS.adjustment.text,
-    dot: 'bg-status-warning',
-  },
-  opening: {
-    labelKey: 'filterOpening',
-    icon: Truck,
-    bg: MOVEMENT_TOKENS.opening.bg,
-    text: MOVEMENT_TOKENS.opening.text,
-    dot: 'bg-status-info',
-  },
-  physical_count: {
-    labelKey: 'filterPhysicalCount',
-    icon: ClipboardList,
-    bg: MOVEMENT_TOKENS.physical_count.bg,
-    text: MOVEMENT_TOKENS.physical_count.text,
-    dot: 'bg-status-info',
-  },
-  loss: {
-    labelKey: 'filterLoss',
-    icon: TrendingDown,
-    bg: MOVEMENT_TOKENS.loss.bg,
-    text: MOVEMENT_TOKENS.loss.text,
-    dot: 'bg-status-error',
-  },
-};
+import { useStockHistoryColumns } from '@/components/admin/stock-history/useStockHistoryColumns';
+import StockHistoryMobileCard from '@/components/admin/stock-history/StockHistoryMobileCard';
+import StockHistoryFilters from '@/components/admin/stock-history/StockHistoryFilters';
+import StockHistoryStats from '@/components/admin/stock-history/StockHistoryStats';
 
 // --- Component ------------------------------------------
 
@@ -189,125 +114,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     [locale],
   );
 
-  const columns = useMemo<ColumnDef<StockMovement, unknown>[]>(
-    () => [
-      {
-        accessorKey: 'created_at',
-        header: ({ column }) => <SortableHeader column={column}>{t('columnDate')}</SortableHeader>,
-        cell: ({ row }) => (
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-app-text tabular-nums">
-              {formatDateShort(row.original.created_at)}
-            </span>
-            <span className="text-[10px] text-app-text-muted tabular-nums">
-              {formatTime(row.original.created_at)}
-            </span>
-          </div>
-        ),
-      },
-      {
-        id: 'ingredient_name',
-        accessorFn: (row) => row.ingredient?.name ?? '',
-        header: ({ column }) => (
-          <SortableHeader column={column}>{t('columnIngredient')}</SortableHeader>
-        ),
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <span className="font-medium text-sm text-app-text block truncate">
-              {row.original.ingredient?.name || '-'}
-            </span>
-            {row.original.ingredient?.unit && (
-              <span className="text-[10px] text-app-text-muted uppercase tracking-wider">
-                {row.original.ingredient.unit}
-              </span>
-            )}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'movement_type',
-        header: () => t('columnType'),
-        cell: ({ row }) => {
-          const style = MOVEMENT_STYLES[row.original.movement_type];
-          return (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold',
-                style?.bg,
-                style?.text,
-              )}
-            >
-              <span className={cn('w-1.5 h-1.5 rounded-full', style?.dot)} />
-              {style?.labelKey ? t(style.labelKey) : row.original.movement_type}
-            </span>
-          );
-        },
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'quantity',
-        header: ({ column }) => (
-          <SortableHeader column={column} className="ml-auto">
-            {t('columnQuantity')}
-          </SortableHeader>
-        ),
-        cell: ({ row }) => {
-          const isPositive = row.original.quantity > 0;
-          return (
-            <div className="flex items-center justify-end gap-1">
-              {isPositive ? (
-                <ArrowUpRight className="w-3.5 h-3.5 text-status-success" />
-              ) : (
-                <ArrowDownRight className="w-3.5 h-3.5 text-status-error" />
-              )}
-              <span
-                className={cn(
-                  'font-mono text-sm font-bold tabular-nums',
-                  isPositive ? 'text-status-success' : 'text-status-error',
-                )}
-              >
-                {isPositive ? '+' : ''}
-                {row.original.quantity}
-              </span>
-            </div>
-          );
-        },
-        meta: { className: 'text-right' },
-      },
-      {
-        id: 'supplier_name',
-        accessorFn: (row) => row.supplier?.name ?? '',
-        header: () => t('columnSupplier'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary whitespace-nowrap">
-            {row.original.supplier?.name || '-'}
-          </span>
-        ),
-        enableSorting: false,
-      },
-      {
-        id: 'author_name',
-        accessorFn: (row) => row.author_name ?? '',
-        header: () => t('columnAuthor'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary text-sm">{row.original.author_name || '-'}</span>
-        ),
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'notes',
-        header: () => t('columnNotes'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-48 truncate block">
-            {row.original.notes || '-'}
-          </span>
-        ),
-        enableSorting: false,
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: formatDateShort/formatTime derive only from locale (already a dep), so listing their identities is redundant and would rebuild columns needlessly (2026-06-18)
-    [locale, t],
-  );
+  const columns = useStockHistoryColumns({ locale, formatDateShort, formatTime });
 
   return (
     <RoleGuard permission="canViewStocks">
@@ -342,87 +149,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           />
 
           {/* -- Filter pills -- */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-            {movementFilters.map((f) => {
-              const isActive = filterType === f.value;
-              return (
-                <Button
-                  key={f.value}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFilterType(f.value)}
-                  className={cn(
-                    'inline-flex items-center px-3 py-1.5 h-auto text-xs rounded-lg whitespace-nowrap transition-colors border',
-                    isActive
-                      ? 'bg-app-text text-app-bg border-app-text font-semibold'
-                      : 'bg-app-card text-app-text-secondary border-app-border/50 font-medium hover:border-app-border hover:bg-app-elevated hover:text-app-text',
-                  )}
-                >
-                  {f.label}
-                </Button>
-              );
-            })}
-          </div>
+          <StockHistoryFilters
+            filters={movementFilters}
+            filterType={filterType}
+            onSelect={setFilterType}
+          />
 
           {/* -- Quick stats strip -- */}
-          <div className="flex items-stretch rounded-xl border border-app-border/60 bg-app-card divide-x divide-app-border/60 overflow-hidden">
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
-              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
-                <ArrowUpRight
-                  className={cn(
-                    'w-4 h-4',
-                    stats.additions > 0 ? 'text-status-success' : 'text-app-text-muted',
-                  )}
-                />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    'text-xl font-bold tabular-nums leading-none',
-                    stats.additions > 0 ? 'text-status-success' : 'text-app-text-muted',
-                  )}
-                >
-                  +{stats.additions}
-                </p>
-                <p className="mt-1 text-xs font-medium text-app-text-muted">
-                  {t('statsAdditions')}
-                </p>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
-              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
-                <ArrowDownRight
-                  className={cn(
-                    'w-4 h-4',
-                    stats.removals > 0 ? 'text-status-error' : 'text-app-text-muted',
-                  )}
-                />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    'text-xl font-bold tabular-nums leading-none',
-                    stats.removals > 0 ? 'text-status-error' : 'text-app-text-muted',
-                  )}
-                >
-                  -{stats.removals}
-                </p>
-                <p className="mt-1 text-xs font-medium text-app-text-muted">{t('statsRemovals')}</p>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
-              <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
-                <Box className="w-4 h-4 text-app-text-muted" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xl font-bold text-app-text tabular-nums leading-none">
-                  {stats.uniqueIngredients}
-                </p>
-                <p className="mt-1 text-xs font-medium text-app-text-muted">{t('statsProducts')}</p>
-              </div>
-            </div>
-          </div>
+          <StockHistoryStats stats={stats} />
         </div>
 
         {/* -- Data area -- */}
@@ -459,90 +193,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 emptyMessage={t('noMovements')}
                 storageKey="stockHistory"
                 mobileConfig={{
-                  renderCard: (movement) => {
-                    const style = MOVEMENT_STYLES[movement.movement_type];
-                    const isPositive = movement.quantity > 0;
-                    const Icon = style?.icon || Package;
-                    return (
-                      <div className="bg-app-card border border-app-border/60 rounded-xl p-3.5 space-y-2.5">
-                        {/* Top: ingredient + quantity */}
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={cn(
-                                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                                style?.bg,
-                              )}
-                            >
-                              <Icon className={cn('w-4 h-4', style?.text)} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-sm text-app-text truncate">
-                                {movement.ingredient?.name || '-'}
-                              </p>
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={cn(
-                                    'inline-flex items-center gap-1 text-[10px] font-semibold',
-                                    style?.text,
-                                  )}
-                                >
-                                  <span className={cn('w-1 h-1 rounded-full', style?.dot)} />
-                                  {style?.labelKey ? t(style.labelKey) : ''}
-                                </span>
-                                {movement.ingredient?.unit && (
-                                  <span className="text-[10px] text-app-text-muted">
-                                    {movement.ingredient.unit}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {isPositive ? (
-                              <ArrowUpRight className="w-3.5 h-3.5 text-status-success" />
-                            ) : (
-                              <ArrowDownRight className="w-3.5 h-3.5 text-status-error" />
-                            )}
-                            <span
-                              className={cn(
-                                'font-mono text-sm font-bold tabular-nums',
-                                isPositive ? 'text-status-success' : 'text-status-error',
-                              )}
-                            >
-                              {isPositive ? '+' : ''}
-                              {movement.quantity}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Bottom: meta */}
-                        <div className="flex items-center justify-between text-[11px] text-app-text-muted pt-1 border-t border-app-border/40">
-                          <span>{formatDate(movement.created_at)}</span>
-                          <div className="flex items-center gap-2">
-                            {movement.author_name && (
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {movement.author_name}
-                              </span>
-                            )}
-                            {movement.supplier?.name && (
-                              <span className="flex items-center gap-1">
-                                <Truck className="w-3 h-3" />
-                                {movement.supplier.name}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {movement.notes && (
-                          <p className="text-[11px] text-app-text-muted italic truncate">
-                            {movement.notes}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  },
+                  renderCard: (movement) => (
+                    <StockHistoryMobileCard movement={movement} formatDate={formatDate} />
+                  ),
                 }}
               />
               {hasNextPage && (

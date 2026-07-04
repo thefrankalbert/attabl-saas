@@ -1,34 +1,29 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, Upload } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Upload } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
+import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import SupplierImportExcel from '@/components/features/inventory/SupplierImportExcel';
-import {
-  actionCreateSupplier,
-  actionUpdateSupplier,
-  actionDeleteSupplier,
-} from '@/app/actions/suppliers';
-import type { ColumnDef } from '@tanstack/react-table';
+import { actionUpdateSupplier, actionDeleteSupplier } from '@/app/actions/suppliers';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
+import type { Supplier } from '@/types/supplier.types';
+import { useSupplierForm } from './suppliers/useSupplierForm';
+import { useSupplierColumns } from './suppliers/useSupplierColumns';
+import SupplierCard from './suppliers/SupplierCard';
+import SupplierFormModal from './suppliers/SupplierFormModal';
 
 interface SuppliersClientProps {
   tenantId: string;
 }
-
-type ModalMode = 'add' | 'edit' | null;
 
 export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const [searchQuery, setSearchQuery] = useSessionState('suppliers:searchQuery', '');
@@ -37,20 +32,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     'all',
   );
 
-  // Modal state
-  const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  // Form fields
-  const [formName, setFormName] = useState('');
-  const [formContact, setFormContact] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formEmail, setFormEmail] = useState('');
-  const [formAddress, setFormAddress] = useState('');
-  const [formNotes, setFormNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
   const t = useTranslations('suppliers');
@@ -75,6 +58,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
   };
 
+  const form = useSupplierForm(tenantId, loadSuppliers);
+  const { openAdd, openEdit } = form;
+
   const filtered = suppliers.filter((s) => {
     if (filterActive === 'active' && !s.is_active) return false;
     if (filterActive === 'inactive' && s.is_active) return false;
@@ -89,199 +75,6 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     }
     return true;
   });
-
-  // TanStack Table column definitions
-  const columns = useMemo<ColumnDef<Supplier, unknown>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
-        cell: ({ row }) => (
-          <div>
-            <p className="font-medium text-app-text">{row.original.name}</p>
-            {row.original.contact_name && (
-              <p className="text-xs text-app-text-secondary">{row.original.contact_name}</p>
-            )}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'email',
-        header: () => t('email'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.email || '-'}</span>
-        ),
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'phone',
-        header: () => t('phone'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.phone || '-'}</span>
-        ),
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'address',
-        header: () => t('address'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-48 truncate block">
-            {row.original.address || '-'}
-          </span>
-        ),
-        enableSorting: false,
-      },
-      {
-        id: 'status',
-        header: () => <span className="w-full text-center block">{t('filterActive')}</span>,
-        cell: ({ row }) => (
-          <div className="text-center">
-            <span
-              className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-medium',
-                row.original.is_active
-                  ? 'bg-status-success-bg text-status-success'
-                  : 'bg-app-bg text-app-text-secondary',
-              )}
-            >
-              {row.original.is_active ? t('active') : t('inactive')}
-            </span>
-          </div>
-        ),
-        enableSorting: false,
-      },
-      {
-        id: 'actions',
-        header: () => <span className="w-full text-right block">{t('edit')}</span>,
-        cell: ({ row }) => {
-          const supplier = row.original;
-          return (
-            <div className="flex justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openEdit(supplier)}
-                className="gap-1 text-xs"
-              >
-                <Pencil className="w-3 h-3" />
-                {t('edit')}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleToggleActive(supplier)}
-                className="text-xs"
-              >
-                {supplier.is_active ? t('disable') : t('enable')}
-              </Button>
-              {deleteConfirm === supplier.id ? (
-                <div className="flex gap-1">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(supplier.id)}
-                    className="text-xs"
-                  >
-                    {t('confirmAction')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteConfirm(null)}
-                    className="text-xs"
-                  >
-                    {t('cancelAction')}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeleteConfirm(supplier.id)}
-                  title="Supprimer"
-                  className="text-xs text-status-error hover:text-status-error"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openEdit/handleToggleActive/handleDelete are stable action handlers; the reactive values (t, deleteConfirm) are listed, and adding the handler identities would rebuild columns each render with no behavior change (2026-06-18)
-    [t, deleteConfirm],
-  );
-
-  const resetForm = () => {
-    setFormName('');
-    setFormContact('');
-    setFormPhone('');
-    setFormEmail('');
-    setFormAddress('');
-    setFormNotes('');
-    setSelectedSupplier(null);
-  };
-
-  const openAdd = () => {
-    resetForm();
-    setModalMode('add');
-  };
-
-  const openEdit = (supplier: Supplier) => {
-    setSelectedSupplier(supplier);
-    setFormName(supplier.name);
-    setFormContact(supplier.contact_name || '');
-    setFormPhone(supplier.phone || '');
-    setFormEmail(supplier.email || '');
-    setFormAddress(supplier.address || '');
-    setFormNotes(supplier.notes || '');
-    setModalMode('edit');
-  };
-
-  const handleSave = async () => {
-    if (isSubmitting) return;
-    if (!formName.trim()) {
-      toast({ title: t('nameRequired'), variant: 'destructive' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      if (modalMode === 'add') {
-        const input: CreateSupplierInput = {
-          name: formName.trim(),
-          contact_name: formContact.trim() || undefined,
-          phone: formPhone.trim() || undefined,
-          email: formEmail.trim() || undefined,
-          address: formAddress.trim() || undefined,
-          notes: formNotes.trim() || undefined,
-        };
-        const r = await actionCreateSupplier(tenantId, input);
-        if (r.error) throw new Error(r.error);
-        toast({ title: t('supplierAdded') });
-      } else if (modalMode === 'edit' && selectedSupplier) {
-        const r = await actionUpdateSupplier(tenantId, selectedSupplier.id, {
-          name: formName.trim(),
-          contact_name: formContact.trim() || null,
-          phone: formPhone.trim() || null,
-          email: formEmail.trim() || null,
-          address: formAddress.trim() || null,
-          notes: formNotes.trim() || null,
-        });
-        if (r.error) throw new Error(r.error);
-        toast({ title: t('supplierModified') });
-      }
-      setModalMode(null);
-      resetForm();
-      loadSuppliers();
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleToggleActive = async (supplier: Supplier) => {
     try {
@@ -307,6 +100,14 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
+
+  const columns = useSupplierColumns({
+    openEdit,
+    handleToggleActive,
+    handleDelete,
+    deleteConfirm,
+    setDeleteConfirm,
+  });
 
   return (
     <RoleGuard permission="canManageStocks">
@@ -386,157 +187,18 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 storageKey="suppliers"
                 mobileConfig={{
                   renderCard: (supplier) => (
-                    <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
-                      {/* Row 1: Name + Status */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-medium text-app-text break-words">{supplier.name}</p>
-                          {supplier.contact_name && (
-                            <p className="text-xs text-app-text-secondary">
-                              {supplier.contact_name}
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
-                            supplier.is_active
-                              ? 'bg-status-success-bg text-status-success'
-                              : 'bg-app-bg text-app-text-secondary',
-                          )}
-                        >
-                          {supplier.is_active ? t('active') : t('inactive')}
-                        </span>
-                      </div>
-
-                      {/* Row 2: Contact info */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-text-secondary">
-                        {supplier.phone && <span>{supplier.phone}</span>}
-                        {supplier.email && <span className="break-all">{supplier.email}</span>}
-                      </div>
-
-                      {/* Row 3: Actions */}
-                      <div className="flex justify-end gap-1 pt-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(supplier)}
-                          className="gap-1 text-xs min-h-[44px]"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          {t('edit')}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleActive(supplier)}
-                          className="text-xs min-h-[44px]"
-                        >
-                          {supplier.is_active ? t('disable') : t('enable')}
-                        </Button>
-                      </div>
-                    </div>
+                    <SupplierCard
+                      supplier={supplier}
+                      openEdit={openEdit}
+                      onToggleActive={handleToggleActive}
+                    />
                   ),
                 }}
               />
             </div>
 
             {/* Modal - Add / Edit */}
-            <AdminModal
-              isOpen={modalMode !== null}
-              onClose={() => {
-                setModalMode(null);
-                resetForm();
-              }}
-              title={modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
-              size="lg"
-            >
-              <div className="space-y-4 pt-4">
-                <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('nameLabel')}
-                  </Label>
-                  <Input
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder={t('namePlaceholder')}
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('contactPerson')}
-                  </Label>
-                  <Input
-                    value={formContact}
-                    onChange={(e) => setFormContact(e.target.value)}
-                    placeholder={t('contactPlaceholder')}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                      {t('phoneLabel')}
-                    </Label>
-                    <Input
-                      value={formPhone}
-                      onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder="+237..."
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                      {t('emailLabel')}
-                    </Label>
-                    <Input
-                      type="email"
-                      value={formEmail}
-                      onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="contact@..."
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('addressLabel')}
-                  </Label>
-                  <Input
-                    value={formAddress}
-                    onChange={(e) => setFormAddress(e.target.value)}
-                    placeholder={t('addressPlaceholder')}
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('notesLabel')}
-                  </Label>
-                  <Input
-                    value={formNotes}
-                    onChange={(e) => setFormNotes(e.target.value)}
-                    placeholder={t('notesPlaceholder')}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setModalMode(null);
-                    resetForm();
-                  }}
-                >
-                  {t('cancelAction')}
-                </Button>
-                <Button onClick={handleSave} disabled={isSubmitting} variant="default">
-                  {t('save')}
-                </Button>
-              </div>
-            </AdminModal>
+            <SupplierFormModal form={form} />
           </>
         )}
 

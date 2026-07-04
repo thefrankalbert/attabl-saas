@@ -1,23 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Lightbulb, Plus, Trash2, Search, Wand2, CheckSquare, Square, XCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import AdminModal from '@/components/admin/AdminModal';
-import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import type { SuggestionType } from '@/types/inventory.types';
 import { createSuggestionService } from '@/services/suggestion.service';
 import {
@@ -28,30 +14,16 @@ import {
 } from '@/app/actions/suggestions';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import type { MenuItem, Suggestion, SuggestionTypeConfig } from './suggestions/types';
+import SuggestionsToolbar from './suggestions/SuggestionsToolbar';
+import SuggestionsList from './suggestions/SuggestionsList';
+import SuggestionAddModal from './suggestions/SuggestionAddModal';
 
 interface SuggestionsClientProps {
   tenantId: string;
   subscriptionPlan?: SubscriptionPlan | null;
   subscriptionStatus?: SubscriptionStatus | null;
   trialEndsAt?: string | null;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-}
-
-interface Suggestion {
-  id: string;
-  menu_item_id: string;
-  suggested_item_id: string;
-  suggestion_type: SuggestionType;
-  description: string | null;
-  display_order: number;
-  is_active: boolean;
-  // Joined
-  menu_item?: { name: string };
-  suggested_item?: { name: string };
 }
 
 export default function SuggestionsClient({
@@ -86,27 +58,26 @@ export default function SuggestionsClient({
     trialEndsAt,
   );
 
-  const SUGGESTION_TYPES: { value: SuggestionType; label: string; emoji: string; color: string }[] =
-    [
-      {
-        value: 'pairing',
-        label: t('pairing'),
-        emoji: '\uD83C\uDF77',
-        color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
-      },
-      {
-        value: 'upsell',
-        label: t('upsell'),
-        emoji: '\uD83D\uDCA1',
-        color: 'border border-[var(--border)] text-[var(--warning)]',
-      },
-      {
-        value: 'alternative',
-        label: t('alternativeItem'),
-        emoji: '\uD83D\uDD04',
-        color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
-      },
-    ];
+  const SUGGESTION_TYPES: SuggestionTypeConfig[] = [
+    {
+      value: 'pairing',
+      label: t('pairing'),
+      emoji: '\uD83C\uDF77',
+      color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
+    },
+    {
+      value: 'upsell',
+      label: t('upsell'),
+      emoji: '\uD83D\uDCA1',
+      color: 'border border-[var(--border)] text-[var(--warning)]',
+    },
+    {
+      value: 'alternative',
+      label: t('alternativeItem'),
+      emoji: '\uD83D\uDD04',
+      color: 'border border-[var(--border)] text-[var(--muted-foreground)]',
+    },
+  ];
 
   const loadData = useCallback(async () => {
     try {
@@ -228,246 +199,46 @@ export default function SuggestionsClient({
       ) : (
         <>
           {/* Header + Search + Bulk actions */}
-          <div className="shrink-0 space-y-4">
-            <AdminPageHeader
-              title={t('suggestions')}
-              actions={
-                <>
-                  <div className="relative w-full xl:w-56 2xl:w-64 shrink-0">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                    <Input
-                      placeholder={t('searchDish')}
-                      className="pl-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  {canAutoGenerate && (
-                    <Button
-                      onClick={handleAutoGenerate}
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 h-9"
-                      disabled={generating || menuItems.length === 0}
-                    >
-                      <Wand2 className="w-4 h-4" />
-                      {generating ? tc('loading') : t('autoGenerate')}
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => setShowAdd(true)}
-                    variant="default"
-                    size="sm"
-                    className="gap-2 h-9"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {t('addSuggestion')}
-                  </Button>
-                </>
-              }
-            />
-
-            {/* Bulk actions */}
-            {suggestions.length > 0 && (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
-                  {selectedIds.size === filtered.length && filtered.length > 0 ? (
-                    <CheckSquare className="w-4 h-4" />
-                  ) : (
-                    <Square className="w-4 h-4" />
-                  )}
-                  {selectedIds.size === filtered.length && filtered.length > 0
-                    ? t('deselectAll')
-                    : t('selectAll')}
-                </Button>
-                {selectedIds.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="gap-1.5"
-                    title="Supprimer"
-                    onClick={handleBulkDelete}
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+          <SuggestionsToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            canAutoGenerate={canAutoGenerate}
+            onAutoGenerate={handleAutoGenerate}
+            generating={generating}
+            menuItemsCount={menuItems.length}
+            onAdd={() => setShowAdd(true)}
+            hasSuggestions={suggestions.length > 0}
+            selectedCount={selectedIds.size}
+            filteredCount={filtered.length}
+            onToggleSelectAll={toggleSelectAll}
+            onBulkDelete={handleBulkDelete}
+          />
 
           {/* Suggestions List */}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
-            {filtered.length > 0 ? (
-              <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-                {filtered.map((suggestion) => {
-                  const typeConfig = SUGGESTION_TYPES.find(
-                    (st) => st.value === suggestion.suggestion_type,
-                  );
-                  return (
-                    <div
-                      key={suggestion.id}
-                      className={cn(
-                        'flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
-                        selectedIds.has(suggestion.id) && 'bg-accent/5',
-                      )}
-                    >
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Select"
-                        onClick={() => toggleSelect(suggestion.id)}
-                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0 h-auto w-auto p-1"
-                      >
-                        {selectedIds.has(suggestion.id) ? (
-                          <CheckSquare className="w-4 h-4 text-accent" />
-                        ) : (
-                          <Square className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-[0.625rem] text-[10px] font-medium shrink-0',
-                          typeConfig?.color ||
-                            'border border-[var(--border)] text-app-text-secondary',
-                        )}
-                      >
-                        {typeConfig?.emoji} {typeConfig?.label}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-app-text break-words">
-                          <span className="font-medium">
-                            {suggestion.menu_item?.name || tc('unknown')}
-                          </span>
-                          <span className="text-app-text-muted mx-2">→</span>
-                          <span className="font-medium text-accent">
-                            {suggestion.suggested_item?.name || tc('unknown')}
-                          </span>
-                        </p>
-                        {suggestion.description && (
-                          <p className="text-xs text-app-text-muted break-words mt-0.5 italic">
-                            {suggestion.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-[var(--destructive)] hover:bg-[var(--accent)]"
-                          title="Supprimer"
-                          onClick={() => handleDelete(suggestion.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Lightbulb className="w-8 h-8 text-app-text-muted" />
-                </div>
-                <p className="text-lg font-bold text-app-text">{t('noSuggestions')}</p>
-                <p className="text-sm text-app-text-secondary mt-2">{t('addServerAdvice')}</p>
-              </div>
-            )}
-          </div>
+          <SuggestionsList
+            items={filtered}
+            suggestionTypes={SUGGESTION_TYPES}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onDelete={handleDelete}
+          />
 
           {/* Add Modal */}
-          <AdminModal
+          <SuggestionAddModal
             isOpen={showAdd}
             onClose={() => setShowAdd(false)}
-            title={t('newSuggestion')}
-            size="lg"
-          >
-            <div className="space-y-4 pt-4">
-              <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
-                  {t('sourceDish')}
-                </Label>
-                <Select value={sourceItemId || undefined} onValueChange={setSourceItemId}>
-                  <SelectTrigger className="w-full h-10">
-                    <SelectValue placeholder={tc('selectPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {menuItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
-                  {t('suggestionType')}
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {SUGGESTION_TYPES.map((st) => (
-                    <Button
-                      key={st.value}
-                      type="button"
-                      variant="outline"
-                      onClick={() => setSuggestionType(st.value)}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-2 h-auto rounded-lg border text-xs font-medium transition-all',
-                        suggestionType === st.value
-                          ? 'border-accent bg-accent-muted text-app-text'
-                          : 'border-app-border text-app-text-secondary hover:bg-app-bg',
-                      )}
-                    >
-                      <span>{st.emoji}</span>
-                      <span>{st.label}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
-                  {t('suggestedDish')}
-                </Label>
-                <Select value={targetItemId || undefined} onValueChange={setTargetItemId}>
-                  <SelectTrigger className="w-full h-10">
-                    <SelectValue placeholder={tc('selectPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {menuItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-app-text mb-1.5 block">
-                  {t('serverAdvice')}
-                </Label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('serverAdvicePlaceholder')}
-                  className="rounded-lg focus-visible:ring-1 focus-visible:ring-accent/30"
-                />
-                <p className="mt-1 text-xs text-app-text-secondary">{t('addServerAdvice')}</p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="ghost" onClick={() => setShowAdd(false)}>
-                {tc('cancel')}
-              </Button>
-              <Button onClick={handleAdd} variant="default">
-                {tc('add')}
-              </Button>
-            </div>
-          </AdminModal>
+            menuItems={menuItems}
+            suggestionTypes={SUGGESTION_TYPES}
+            sourceItemId={sourceItemId}
+            onSourceChange={setSourceItemId}
+            targetItemId={targetItemId}
+            onTargetChange={setTargetItemId}
+            suggestionType={suggestionType}
+            onTypeChange={setSuggestionType}
+            description={description}
+            onDescriptionChange={setDescription}
+            onSubmit={handleAdd}
+          />
         </>
       )}
     </div>
