@@ -33,7 +33,7 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
         {zones.map((zone, index) => (
           <div
             key={index}
-            className="rounded-xl border border-app-border bg-app-elevated/30 overflow-hidden"
+            className="rounded-xl border border-app-border bg-app-elevated overflow-hidden"
           >
             {/* Zone header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">

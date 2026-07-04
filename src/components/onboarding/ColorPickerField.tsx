@@ -63,11 +63,11 @@ export function ColorPickerField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+          className="h-10 bg-app-elevated border-app-border rounded-xl font-mono uppercase text-xs"
         />
       </div>
       {isOpen && (
-        <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
+        <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated border border-app-border">
           {colors.map((color) => (
             <Button
               key={color}

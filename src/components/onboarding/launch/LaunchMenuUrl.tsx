@@ -25,7 +25,7 @@ export function LaunchMenuUrl({ menuUrl, accentColor }: LaunchMenuUrlProps) {
   };
 
   return (
-    <div className="mb-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
+    <div className="mb-6 p-4 rounded-xl bg-app-elevated border border-app-border">
       <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
         {t('menuLinkLabel')}
       </p>

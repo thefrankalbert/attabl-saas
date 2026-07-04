@@ -100,7 +100,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
               </p>
 
               {/* Tab Pills */}
-              <div className="flex flex-wrap gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border">
+              <div className="flex flex-wrap gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated border border-app-border">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;

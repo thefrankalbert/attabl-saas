@@ -46,7 +46,7 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
                 isActive
                   ? 'border-accent bg-accent/10'
-                  : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
+                  : 'border-app-border hover:border-app-border-hover bg-app-elevated hover:bg-app-elevated'
               }`}
             >
               <div

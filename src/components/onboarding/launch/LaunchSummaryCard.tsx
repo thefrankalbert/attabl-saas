@@ -15,10 +15,10 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
   const t = useTranslations('onboarding');
 
   return (
-    <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
+    <div className="mb-6 p-5 rounded-xl bg-app-elevated border border-app-border">
       <div className="flex items-center gap-4 mb-5">
         <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border/50"
+          className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border"
           style={{ backgroundColor: accentColor }}
         >
           {data.logoUrl ? (

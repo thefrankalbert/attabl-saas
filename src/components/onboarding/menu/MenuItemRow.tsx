@@ -35,7 +35,7 @@ export function MenuItemRow({
   const t = useTranslations('onboarding');
 
   return (
-    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors">
+    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated hover:bg-app-elevated transition-colors">
       {/* Photo upload */}
       <div className="relative shrink-0">
         {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}

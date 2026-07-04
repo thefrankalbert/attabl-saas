@@ -25,7 +25,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
         {zones.map((zone, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 p-3 rounded-xl bg-app-elevated/40 border border-app-border"
+            className="flex items-center gap-3 p-3 rounded-xl bg-app-elevated border border-app-border"
           >
             <div className="flex-1">
               <Input
@@ -79,7 +79,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
 
         {/* Preview */}
         {zones.some((z) => z.name && z.tableCount > 0) && (
-          <div className="mt-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
+          <div className="mt-6 p-4 rounded-xl bg-app-elevated border border-app-border">
             <p className="text-xs font-semibold text-app-text-muted mb-3">{t('tipPrefix')}</p>
             <div className="flex flex-wrap gap-2">
               {zones

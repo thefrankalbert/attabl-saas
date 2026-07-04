@@ -29,7 +29,7 @@ export function OnboardingTopNav({
 }: OnboardingTopNavProps) {
   return (
     /* --- Floating top navigation strip --- */
-    <header className="shrink-0 h-14 bg-app-card/80 backdrop-blur-xl border-b border-app-border/50 flex items-center px-4 sm:px-6 z-10">
+    <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center px-4 sm:px-6 z-10">
       {/* Left: logo link + tenant name */}
       <div className="flex items-center gap-2 min-w-0 shrink-0">
         <Link

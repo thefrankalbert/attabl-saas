@@ -50,7 +50,7 @@ export function DetailsSection({
               placeholder={t('addressPlaceholder')}
               value={data.address}
               onChange={(e) => updateData({ address: e.target.value })}
-              className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+              className="h-11 rounded-xl border-app-border bg-app-elevated text-sm"
             />
           </div>
 
@@ -68,7 +68,7 @@ export function DetailsSection({
                 placeholder={t('cityPlaceholder')}
                 value={data.city}
                 onChange={(e) => updateData({ city: e.target.value })}
-                className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                className="h-11 rounded-xl border-app-border bg-app-elevated text-sm"
               />
             </div>
             <div>
@@ -84,7 +84,7 @@ export function DetailsSection({
                 placeholder={t('countryLabel')}
                 value={data.country}
                 onChange={(e) => updateData({ country: e.target.value })}
-                className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                className="h-11 rounded-xl border-app-border bg-app-elevated text-sm"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export function DetailsSection({
               placeholder={t('phonePlaceholder')}
               value={data.phone}
               onChange={(e) => updateData({ phone: e.target.value })}
-              className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+              className="h-11 rounded-xl border-app-border bg-app-elevated text-sm"
             />
           </div>
         </div>
@@ -129,7 +129,7 @@ export function DetailsSection({
                 router.refresh();
               }}
             >
-              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +151,7 @@ export function DetailsSection({
               {t('currencyLabel')}
             </Label>
             <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
-              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

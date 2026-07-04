@@ -236,7 +236,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   }}
                   rows={3}
                   maxLength={500}
-                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="w-full px-4 py-3 bg-app-elevated border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                 />
                 <p className="text-xs text-app-text-muted mt-1.5 text-right">
                   {t('charCount', { count: data.description.length, max: 500 })}
@@ -276,7 +276,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         }`}
                       >
                         <div
-                          className="w-7 h-7 rounded-lg border border-app-border/50 flex items-center justify-center"
+                          className="w-7 h-7 rounded-lg border border-app-border flex items-center justify-center"
                           style={{ backgroundColor: preset.secondary }}
                         >
                           <div

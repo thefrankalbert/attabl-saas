@@ -180,7 +180,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                     className="rounded-xl border border-app-border overflow-hidden"
                   >
                     {/* Category Header */}
-                    <div className="flex items-center gap-3 p-4 bg-app-elevated/50">
+                    <div className="flex items-center gap-3 p-4 bg-app-elevated">
                       <Button
                         type="button"
                         variant="ghost"
