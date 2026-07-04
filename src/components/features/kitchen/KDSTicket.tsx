@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { Order, OrderItem, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 
-// ─── Urgency ─────────────────────────────────────────────────
+// --- Urgency -------------------------------------------------
 
 type UrgencyLevel = 'fresh' | 'normal' | 'aging' | 'late' | 'critical';
 
@@ -28,7 +28,7 @@ const URGENCY_BORDER: Record<UrgencyLevel, string> = {
   critical: '',
 };
 
-// ─── Status badge config ─────────────────────────────────────
+// --- Status badge config -------------------------------------
 
 const STATUS_BADGE: Record<string, { labelKey: string; className: string }> = {
   pending: {
@@ -45,7 +45,7 @@ const STATUS_BADGE: Record<string, { labelKey: string; className: string }> = {
   },
 };
 
-// ─── CTA config ──────────────────────────────────────────────
+// --- CTA config ----------------------------------------------
 
 const CTA_CONFIG: Record<string, { labelKey: string; next: OrderStatus | undefined; bg: string }> =
   {
@@ -66,7 +66,7 @@ const CTA_CONFIG: Record<string, { labelKey: string; next: OrderStatus | undefin
     },
   };
 
-// ─── Coursing ────────────────────────────────────────────────
+// --- Coursing ------------------------------------------------
 // Group items by course on the expanded ticket (audit: coursing). Order matters
 // for kitchen pacing: starters -> mains -> dessert -> drinks. Only kicks in when
 // items actually carry a course; otherwise the ticket stays a flat list.
@@ -78,7 +78,7 @@ const COURSE_LABEL_KEY: Record<string, string> = {
   drink: 'courseDrink',
 };
 
-// ─── Props ───────────────────────────────────────────────────
+// --- Props ---------------------------------------------------
 
 interface KDSTicketProps {
   order: Order;
@@ -100,7 +100,7 @@ interface KDSTicketProps {
   barDisplayEnabled?: boolean;
 }
 
-// ─── Component ───────────────────────────────────────────────
+// --- Component -----------------------------------------------
 
 export default function KDSTicket({
   order,
@@ -127,7 +127,7 @@ export default function KDSTicket({
     return match ? match[1] : num;
   }, [order.order_number, order.table_number]);
 
-  // ─── Service type labels ─────────────────────────────────
+  // --- Service type labels ---------------------------------
   const SERVICE_LABELS: Record<string, string> = {
     dine_in: t('serviceDineIn'),
     takeaway: t('serviceTakeaway'),
@@ -150,7 +150,7 @@ export default function KDSTicket({
     return true; // 'all' shows everything
   });
 
-  // ─── Timer (stops when order is ready/delivered) ───────────
+  // --- Timer (stops when order is ready/delivered) -----------
   const isTimerActive = order.status === 'pending' || order.status === 'preparing';
   useEffect(() => {
     const calculate = () => {
@@ -176,7 +176,7 @@ export default function KDSTicket({
   const minutes = Math.floor(elapsed / 60);
   const urgency = getUrgency(minutes);
 
-  // ─── Due time (created_at + 20min as default target) ─────
+  // --- Due time (created_at + 20min as default target) -----
   const dueTimeStr = useMemo(() => {
     const d = new Date(order.created_at);
     d.setMinutes(d.getMinutes() + 20);
@@ -187,20 +187,20 @@ export default function KDSTicket({
     return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
   }, [order.created_at]);
 
-  // ─── Status badge ────────────────────────────────────────
+  // --- Status badge ----------------------------------------
   const badge = STATUS_BADGE[order.status] || STATUS_BADGE.pending;
   const isDelayed = urgency === 'critical';
 
-  // ─── CTA ─────────────────────────────────────────────────
+  // --- CTA -------------------------------------------------
   const cta = CTA_CONFIG[order.status];
 
-  // ─── Service type ────────────────────────────────────────
+  // --- Service type ----------------------------------------
   const serviceLabel = order.service_type ? SERVICE_LABELS[order.service_type] : null;
 
-  // ─── Server name (from joined admin_users relation) ─────
+  // --- Server name (from joined admin_users relation) -----
   const serverName = (order as unknown as { server?: { full_name?: string } }).server?.full_name;
 
-  // ─── Actions ─────────────────────────────────────────────
+  // --- Actions ---------------------------------------------
   const handleAction = () => {
     if (isMock) return;
     if (cta?.next) onStatusChange(order.id, cta.next);
@@ -208,7 +208,7 @@ export default function KDSTicket({
 
   const elapsedStr = formatTime(elapsed);
 
-  // ─── Per-item renderer (shared by flat + course-grouped layouts) ─────
+  // --- Per-item renderer (shared by flat + course-grouped layouts) -----
   const hasCourses = items.some((i) => !!i.course);
   const renderItem = (item: OrderItem) => {
     const hasNotes = item.notes || item.customer_notes;
@@ -286,7 +286,7 @@ export default function KDSTicket({
         isMock && 'opacity-80',
       )}
     >
-      {/* ━━━ HEADER ━━━ */}
+      {/* --- HEADER --- */}
       <div className="px-3 pt-2.5 pb-2 border-b border-app-border">
         {/* Line 1: #order_number . table_number   Due HH:MM */}
         <div className="flex items-center justify-between gap-2">
@@ -345,14 +345,14 @@ export default function KDSTicket({
         </div>
       </div>
 
-      {/* ━━━ ORDER NOTES ━━━ */}
+      {/* --- ORDER NOTES --- */}
       {order.notes && (
         <div className="px-3 py-1.5 border-b border-app-border">
           <p className="text-xs italic text-[var(--warning)]">{order.notes}</p>
         </div>
       )}
 
-      {/* ━━━ ITEMS LIST ━━━ */}
+      {/* --- ITEMS LIST --- */}
       <div
         className={cn(
           'flex-1 min-h-0 px-3 py-2 space-y-1',
@@ -417,7 +417,7 @@ export default function KDSTicket({
         )}
       </div>
 
-      {/* ━━━ ACTION BAR ━━━ */}
+      {/* --- ACTION BAR --- */}
       {cta && (
         <div className="flex items-stretch border-t border-app-border">
           {/* CTA button */}

@@ -13,13 +13,13 @@ import {
   type RolePermissions as NewRolePermissions,
 } from '@/types/permission.types';
 
-// ─── View Types ──────────────────────────────────────────────
+// --- View Types ----------------------------------------------
 type ViewType = 'standard' | 'pos' | 'kitchen' | 'server';
 
-// ─── Stats Scope ─────────────────────────────────────────────
+// --- Stats Scope ---------------------------------------------
 type StatsScope = 'all' | 'restaurant' | 'quantities' | 'own';
 
-// ─── Legacy Permission Interface (role matrix) ──────────────
+// --- Legacy Permission Interface (role matrix) --------------
 export interface RolePermissions {
   // Menu
   canManageMenus: boolean;
@@ -60,7 +60,7 @@ export interface RolePermissions {
   defaultView: ViewType;
 }
 
-// ─── Role Permission Definitions ─────────────────────────────
+// --- Role Permission Definitions -----------------------------
 
 const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
   // Owner (superadmin): full access to everything
@@ -220,7 +220,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
   },
 };
 
-// ─── Legacy Helper Functions ─────────────────────────────────
+// --- Legacy Helper Functions ---------------------------------
 
 /**
  * Check if a role has a specific boolean permission (legacy role-matrix API).
@@ -241,11 +241,11 @@ export function getRolePermissions(role: AdminRole): RolePermissions {
   return ROLE_PERMISSIONS[role];
 }
 
-// ─── Navigation Filtering ────────────────────────────────────
+// --- Navigation Filtering ------------------------------------
 
 export type NavItemPermission = keyof RolePermissions | null;
 
-// ─── New 3-Level Permission Override API ─────────────────────
+// --- New 3-Level Permission Override API ---------------------
 
 /**
  * Check if an admin user has a specific permission.

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export interface ShortcutDefinition {
   /** Unique key for deduplication */
@@ -19,7 +19,7 @@ export interface ShortcutDefinition {
   modifier?: boolean;
 }
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 function getOS(): 'mac' | 'other' {
   if (typeof navigator === 'undefined') return 'other';
@@ -30,7 +30,7 @@ export function getModifierSymbol(): string {
   return getOS() === 'mac' ? '⌘' : 'Ctrl';
 }
 
-// ─── Input guard ────────────────────────────────────────
+// --- Input guard ----------------------------------------
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) return false;
@@ -45,7 +45,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return false;
 }
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook -----------------------------------------------
 
 interface UseKeyboardShortcutsOptions {
   shortcuts: ShortcutDefinition[];
@@ -75,7 +75,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
       // Ignore if any modifier is held (except for modifier shortcuts)
       const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
 
-      // ── Go-sequence: second key ──
+      // -- Go-sequence: second key --
       if (goPrefix.current) {
         const key = e.key.toLowerCase();
         clearGoState();
@@ -93,7 +93,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
         return;
       }
 
-      // ── Go-sequence: first key (g) ──
+      // -- Go-sequence: first key (g) --
       if (e.key === 'g' && !hasModifier) {
         goPrefix.current = true;
         goTimeout.current = setTimeout(() => {
@@ -102,7 +102,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
         return;
       }
 
-      // ── Single keys ──
+      // -- Single keys --
 
       // ? → open help
       if (e.key === '?' && !hasModifier) {
@@ -121,7 +121,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
         }
       }
 
-      // ── Contextual single-key shortcuts ──
+      // -- Contextual single-key shortcuts --
       if (!hasModifier) {
         const match = shortcuts.find(
           (s) =>
@@ -134,7 +134,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
         }
       }
 
-      // ── Modifier shortcuts ──
+      // -- Modifier shortcuts --
       if (hasModifier) {
         const match = shortcuts.find(
           (s) =>

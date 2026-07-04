@@ -15,7 +15,7 @@ import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import type { CurrencyCode } from '@/types/admin.types';
 import { PaymentMethodsSettings } from '@/components/admin/settings/PaymentMethodsSettings';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsBillingProps {
   form: UseFormReturn<SettingsFormValues>;
@@ -30,7 +30,7 @@ const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
   { code: 'USD', labelKey: 'currencyUSD' },
 ];
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsBilling({ form, t, initialPaymentMethods }: SettingsBillingProps) {
   const {

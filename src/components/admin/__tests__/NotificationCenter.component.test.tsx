@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { NotificationCenter } from '../NotificationCenter';
 import type { Notification } from '@/hooks/useNotifications';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 const mockMarkAsRead = vi.fn();
 const mockMarkAllAsRead = vi.fn();
@@ -53,7 +53,7 @@ vi.mock('@/contexts/SoundContext', () => ({
   }),
 }));
 
-// ─── requestAnimationFrame mock (happy-dom doesn't fire callbacks) ───
+// --- requestAnimationFrame mock (happy-dom doesn't fire callbacks) ---
 
 beforeEach(() => {
   vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
@@ -62,7 +62,7 @@ beforeEach(() => {
   });
 });
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 function makeNotification(overrides: Partial<Notification> = {}): Notification {
   return {
@@ -79,7 +79,7 @@ function makeNotification(overrides: Partial<Notification> = {}): Notification {
   };
 }
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('NotificationCenter', () => {
   beforeEach(() => {

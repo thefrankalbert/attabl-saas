@@ -4,7 +4,7 @@ import { createContext, useMemo } from 'react';
 import { getRolePermissions, type RolePermissions } from '@/lib/permissions';
 import type { AdminRole } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export interface PermissionsContextValue {
   role: AdminRole;
@@ -12,11 +12,11 @@ export interface PermissionsContextValue {
   can: (key: keyof RolePermissions) => boolean;
 }
 
-// ─── Context ────────────────────────────────────────────
+// --- Context --------------------------------------------
 
 export const PermissionsContext = createContext<PermissionsContextValue | null>(null);
 
-// ─── Provider ───────────────────────────────────────────
+// --- Provider -------------------------------------------
 
 interface PermissionsProviderProps {
   role: AdminRole;

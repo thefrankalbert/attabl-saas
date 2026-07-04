@@ -84,6 +84,7 @@ export default function ItemDetailSheet({
   const [customerNotes, setCustomerNotes] = useState('');
   const [imageError, setImageError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [requiredError, setRequiredError] = useState(false);
 
   // --- Reset state when item changes ------------------------------------
 
@@ -95,6 +96,7 @@ export default function ItemDetailSheet({
     setCustomerNotes('');
     setImageError(false);
     setShowSuccess(false);
+    setRequiredError(false);
 
     if (item.price_variants?.length) {
       const defaultVariant =
@@ -133,6 +135,7 @@ export default function ItemDetailSheet({
 
   // --- Modifier toggle ---------------------------------------------------
   const toggleModifier = useCallback((modifier: ItemModifier) => {
+    setRequiredError(false);
     setSelectedModifiers((prev) => {
       const exists = prev.find((m) => m.id === modifier.id);
       if (exists) {
@@ -155,9 +158,12 @@ export default function ItemDetailSheet({
           ),
       );
       if (missingRequired.length > 0) {
+        // Surface why nothing happened instead of a silent no-op.
+        setRequiredError(true);
         return;
       }
     }
+    setRequiredError(false);
 
     const cartItem = {
       id: item.id,
@@ -534,56 +540,66 @@ export default function ItemDetailSheet({
 
             {/* CTA bar: qty stepper + add button */}
             <div
-              className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-[var(--color-divider)] bg-white/95 px-3.5 pt-3 backdrop-blur"
+              className="absolute inset-x-0 bottom-0 border-t border-[var(--color-divider)] bg-white/95 px-3.5 pt-3 backdrop-blur"
               style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
             >
-              <div className="flex items-center rounded-full border border-[var(--color-divider)] bg-[var(--color-surface-alt)] p-[3px]">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  aria-label={t('ariaDecrease')}
-                  className="h-8 w-8 rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white disabled:opacity-40"
+              {requiredError && (
+                <p
+                  role="alert"
+                  className="mb-2 text-center text-[13px] font-medium text-[var(--destructive)]"
                 >
-                  <Minus className="h-3.5 w-3.5 text-[var(--color-ink)]" strokeWidth={2.4} />
-                </Button>
-                <span className="min-w-[30px] text-center text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
-                  {quantity}
-                </span>
+                  {t('selectRequiredOption')}
+                </p>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center rounded-full border border-[var(--color-divider)] bg-[var(--color-surface-alt)] p-[3px]">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    aria-label={t('ariaDecrease')}
+                    className="h-8 w-8 rounded-full bg-white p-0 shadow-[0_1px_2px_0_rgba(26,26,26,0.04)] hover:bg-white disabled:opacity-40"
+                  >
+                    <Minus className="h-3.5 w-3.5 text-[var(--color-ink)]" strokeWidth={2.4} />
+                  </Button>
+                  <span className="min-w-[30px] text-center text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
+                    {quantity}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity((q) => Math.min(MAX_ITEM_QTY, q + 1))}
+                    aria-label={t('ariaIncrease')}
+                    className="h-8 w-8 rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-white" strokeWidth={2.4} />
+                  </Button>
+                </div>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuantity((q) => Math.min(MAX_ITEM_QTY, q + 1))}
-                  aria-label={t('ariaIncrease')}
-                  className="h-8 w-8 rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)]"
+                  onClick={handleAddToCart}
+                  disabled={showSuccess}
+                  className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
                 >
-                  <Plus className="h-3.5 w-3.5 text-white" strokeWidth={2.4} />
+                  {showSuccess ? (
+                    <motion.div
+                      className="mx-auto"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+                    >
+                      <Check className="h-5 w-5" />
+                    </motion.div>
+                  ) : (
+                    <>
+                      <span className="min-w-0 truncate">{t('addToCart')}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {formatDisplayPrice(currentPrice, currency)}
+                      </span>
+                    </>
+                  )}
                 </Button>
               </div>
-              <Button
-                onClick={handleAddToCart}
-                disabled={showSuccess}
-                className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
-              >
-                {showSuccess ? (
-                  <motion.div
-                    className="mx-auto"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                  >
-                    <Check className="h-5 w-5" />
-                  </motion.div>
-                ) : (
-                  <>
-                    <span className="min-w-0 truncate">{t('addToCart')}</span>
-                    <span className="shrink-0 tabular-nums">
-                      {formatDisplayPrice(currentPrice, currency)}
-                    </span>
-                  </>
-                )}
-              </Button>
             </div>
           </motion.div>
         </>

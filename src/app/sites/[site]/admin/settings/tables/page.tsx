@@ -11,7 +11,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   await requireAdminPermission(site, 'settings.view');
   const supabase = await createClient();
 
-  // ─── Auth check ──────────────────────────────────────
+  // --- Auth check --------------------------------------
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -41,7 +41,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
 
   const tenantId = tenant.id;
 
-  // ─── Fetch or create venue ───────────────────────────
+  // --- Fetch or create venue ---------------------------
   let { data: venues } = await supabase.from('venues').select('*').eq('tenant_id', tenantId);
 
   if (!venues || venues.length === 0) {
@@ -76,7 +76,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   const venue = venues[0];
   const venueId = venue.id as string;
 
-  // ─── Fetch zones ─────────────────────────────────────
+  // --- Fetch zones -------------------------------------
   const { data: zonesData } = await supabase
     .from('zones')
     .select('*')
@@ -85,7 +85,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
 
   const zones = zonesData || [];
 
-  // ─── Fetch tables for first zone ─────────────────────
+  // --- Fetch tables for first zone ---------------------
   let initialTables: {
     id: string;
     zone_id: string;

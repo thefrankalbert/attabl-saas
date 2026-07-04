@@ -10,14 +10,14 @@ import { Button } from '@/components/ui/button';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsBrandingProps {
   form: UseFormReturn<SettingsFormValues>;
   t: (key: string) => string;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
   const {

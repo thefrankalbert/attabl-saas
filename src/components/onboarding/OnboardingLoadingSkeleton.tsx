@@ -1,4 +1,4 @@
-// ─── Loading skeleton ─────────────────────────────────────────────────────
+// --- Loading skeleton -----------------------------------------------------
 
 export function OnboardingLoadingSkeleton() {
   return (

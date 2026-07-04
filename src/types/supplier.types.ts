@@ -1,4 +1,4 @@
-// ─── Supplier Types ─────────────────────────────────────
+// --- Supplier Types -------------------------------------
 
 export interface Supplier {
   id: string;
@@ -33,7 +33,7 @@ export interface UpdateSupplierInput {
   is_active?: boolean;
 }
 
-// ─── Supplier Excel import ──────────────────────────────
+// --- Supplier Excel import ------------------------------
 
 import type { ImportRowError } from '@/lib/excel-parse';
 

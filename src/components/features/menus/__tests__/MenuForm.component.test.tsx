@@ -5,13 +5,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MenuForm from '../MenuForm';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-// ─── Test Data ──────────────────────────────────────────
+// --- Test Data ------------------------------------------
 
 const mockOnSubmit = vi.fn().mockResolvedValue(undefined);
 const mockOnCancel = vi.fn();
@@ -24,7 +24,7 @@ const defaultProps = {
   onCancel: mockOnCancel,
 };
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('MenuForm', () => {
   beforeEach(() => {

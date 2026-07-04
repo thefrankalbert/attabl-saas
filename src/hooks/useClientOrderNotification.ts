@@ -123,7 +123,7 @@ export function useClientOrderNotification(): UseClientOrderNotificationReturn {
         try {
           const notification = new Notification(t('orderReadyNotifTitle'), {
             body: t('orderReadyNotifBody', { number: orderNumber }),
-            icon: '/icons/icon-192x192.png',
+            icon: '/favicon.ico',
             tag: `order-ready-${orderNumber}`,
             requireInteraction: false,
           });

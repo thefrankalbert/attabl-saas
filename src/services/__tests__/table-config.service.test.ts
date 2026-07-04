@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createTableConfigService } from '../table-config.service';
 import { ServiceError } from '../errors';
 
-// ─── Mock Supabase Builder ─────────────────────────────────
+// --- Mock Supabase Builder ---------------------------------
 
 /**
  * Creates a configurable mock Supabase client for table-config tests.
@@ -112,20 +112,20 @@ function asSupabase(mock: ReturnType<typeof createMockSupabase>): SupabaseClient
   return mock as unknown as SupabaseClient;
 }
 
-// ─── Fixtures ──────────────────────────────────────────────
+// --- Fixtures ----------------------------------------------
 
 const TENANT_ID = 'tenant-123';
 const VENUE_ID = 'venue-456';
 const ZONE_ID = 'zone-789';
 
-// ─── Tests ─────────────────────────────────────────────────
+// --- Tests -------------------------------------------------
 
 describe('TableConfigService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // ── generateTableNumber ─────────────────────────────────
+  // -- generateTableNumber ---------------------------------
 
   describe('generateTableNumber()', () => {
     it('should return prefix-index format', () => {
@@ -145,7 +145,7 @@ describe('TableConfigService', () => {
     });
   });
 
-  // ── createZonesAndTables ────────────────────────────────
+  // -- createZonesAndTables --------------------------------
 
   describe('createZonesAndTables()', () => {
     it('should bulk-create zones and auto-numbered tables', async () => {
@@ -264,7 +264,7 @@ describe('TableConfigService', () => {
     });
   });
 
-  // ── createDefaultConfig ─────────────────────────────────
+  // -- createDefaultConfig ---------------------------------
 
   describe('createDefaultConfig()', () => {
     it('should create a default zone "Salle principale" with prefix "TAB"', async () => {
@@ -343,7 +343,7 @@ describe('TableConfigService', () => {
     });
   });
 
-  // ── addTablesToZone ─────────────────────────────────────
+  // -- addTablesToZone -------------------------------------
 
   describe('addTablesToZone()', () => {
     it('should continue numbering from the max existing table number', async () => {
@@ -452,7 +452,7 @@ describe('TableConfigService', () => {
     });
   });
 
-  // ── Cross-tenant ownership guards ───────────────────────
+  // -- Cross-tenant ownership guards -----------------------
 
   describe('cross-tenant write guards', () => {
     const FOREIGN_TENANT = 'tenant-other';

@@ -19,7 +19,7 @@ import {
 import type { Menu, Venue } from '@/types/admin.types';
 import type { MenuFormData } from '@/hooks/useMenusData';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface MenuFormProps {
   editingMenu: Menu | null;
@@ -30,7 +30,7 @@ interface MenuFormProps {
   onCancel: () => void;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function MenuForm({
   editingMenu,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface ColorPickerProps {
   value: string;
@@ -15,7 +15,7 @@ interface ColorPickerProps {
   disabled?: boolean;
 }
 
-// ─── Constants ─────────────────────────────────────────
+// --- Constants -----------------------------------------
 
 const DEFAULT_PRESETS: string[] = [
   '#000000',
@@ -30,7 +30,7 @@ const DEFAULT_PRESETS: string[] = [
   '#e67e22',
 ];
 
-// ─── Helpers ───────────────────────────────────────────
+// --- Helpers -------------------------------------------
 
 const HEX_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
@@ -43,7 +43,7 @@ function normalizeHex(value: string): string {
   return cleaned.toLowerCase();
 }
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export function ColorPicker({
   value,

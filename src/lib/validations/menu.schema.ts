@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// ─── Create Menu Schema ──────────────────────────────────
+// --- Create Menu Schema ----------------------------------
 
 export const createMenuSchema = z.object({
   name: z.string().min(2, { message: 'Le nom doit contenir au moins 2 caractères' }).max(100),
@@ -15,13 +15,13 @@ export const createMenuSchema = z.object({
   display_order: z.number().int().min(0).default(0),
 });
 
-// ─── Update Menu Schema ──────────────────────────────────
+// --- Update Menu Schema ----------------------------------
 
 export const updateMenuSchema = createMenuSchema.partial().extend({
   id: z.string().uuid(),
 });
 
-// ─── Inferred Types ──────────────────────────────────────
+// --- Inferred Types --------------------------------------
 
 export type CreateMenuInput = z.infer<typeof createMenuSchema>;
 export type UpdateMenuInput = z.infer<typeof updateMenuSchema>;

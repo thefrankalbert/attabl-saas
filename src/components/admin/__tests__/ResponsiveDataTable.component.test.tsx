@@ -5,7 +5,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ResponsiveDataTable } from '../ResponsiveDataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 const mockDevice = { isMobile: false, isTablet: false, isDesktop: true };
 
@@ -17,7 +17,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-// ─── Test Data ──────────────────────────────────────────
+// --- Test Data ------------------------------------------
 
 interface TestRow {
   id: string;
@@ -43,7 +43,7 @@ const renderCard = (row: TestRow) => (
   </div>
 );
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('ResponsiveDataTable', () => {
   beforeEach(() => {

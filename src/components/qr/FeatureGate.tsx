@@ -5,7 +5,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { FeatureKey } from '@/lib/plans/features';
 import { Lock, Crown } from 'lucide-react';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface FeatureGateProps {
   feature: FeatureKey;
@@ -13,7 +13,7 @@ interface FeatureGateProps {
   planRequired?: 'pro' | 'business' | 'enterprise';
 }
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export function FeatureGate({ feature, children, planRequired }: FeatureGateProps) {
   const { canAccess } = useSubscription();

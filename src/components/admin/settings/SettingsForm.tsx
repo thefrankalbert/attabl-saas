@@ -22,7 +22,7 @@ import SettingsContact from '@/components/features/settings/SettingsContact';
 import SettingsOpeningHours from '@/components/features/settings/SettingsOpeningHours';
 import { PushOptIn } from '@/components/admin/PushOptIn';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsFormProps {
   tenant: SettingsTenant;
@@ -40,7 +40,7 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'contact', labelKey: 'tabContact' },
 ];
 
-// ─── Main Component ────────────────────────────────────────
+// --- Main Component ----------------------------------------
 
 export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: SettingsFormProps) {
   const t = useTranslations('settings');

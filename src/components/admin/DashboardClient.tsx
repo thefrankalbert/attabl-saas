@@ -60,7 +60,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     return () => clearInterval(timer);
   }, []);
 
-  // ── KPI section cards
+  // -- KPI section cards
   // Depend on primitive stat values, not the whole `stats` object -
   // TanStack Query returns a fresh reference on every refetch even when
   // values are unchanged, which would defeat the memo otherwise.
@@ -170,7 +170,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     activeTablesTotal,
   ]);
 
-  // ── Loading
+  // -- Loading
   if (loading) {
     return (
       <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 xl:h-full xl:overflow-hidden xl:pb-4 animate-pulse">

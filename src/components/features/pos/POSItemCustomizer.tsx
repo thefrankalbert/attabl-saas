@@ -36,13 +36,13 @@ export default function POSItemCustomizer({
     [item.modifiers],
   );
 
-  // ─── Variant selection ──────────────────────────────────
+  // --- Variant selection ----------------------------------
   const defaultVariant = variants.find((v) => v.is_default) || variants[0];
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     variants.length > 0 ? (defaultVariant?.id ?? null) : null,
   );
 
-  // ─── Modifier selection (toggle on/off) ─────────────────
+  // --- Modifier selection (toggle on/off) -----------------
   const [selectedModifierIds, setSelectedModifierIds] = useState<Set<string>>(new Set());
 
   const toggleModifier = (modifierId: string) => {
@@ -57,7 +57,7 @@ export default function POSItemCustomizer({
     });
   };
 
-  // ─── Price calculation ──────────────────────────────────
+  // --- Price calculation ----------------------------------
   const selectedVariant: ItemPriceVariant | undefined = variants.find(
     (v) => v.id === selectedVariantId,
   );
@@ -68,7 +68,7 @@ export default function POSItemCustomizer({
   const modifiersTotal = selectedMods.reduce((sum, m) => sum + m.price, 0);
   const totalPrice = basePrice + modifiersTotal;
 
-  // ─── Sorted variants and modifiers ──────────────────────
+  // --- Sorted variants and modifiers ----------------------
   const sortedVariants = useMemo(
     () => [...variants].sort((a, b) => a.display_order - b.display_order),
     [variants],
@@ -79,7 +79,7 @@ export default function POSItemCustomizer({
     [modifiers],
   );
 
-  // ─── Handle add to cart ─────────────────────────────────
+  // --- Handle add to cart ---------------------------------
   const handleAdd = () => {
     const modifierPayload = selectedMods.map((m) => ({
       id: m.id,
@@ -101,7 +101,7 @@ export default function POSItemCustomizer({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-app-card w-full sm:max-w-sm sm:rounded-xl border border-app-border animate-in slide-in-from-bottom-4 sm:zoom-in-95 max-h-[85dvh] flex flex-col rounded-t-xl">
-        {/* ━━━ Header ━━━ */}
+        {/* --- Header --- */}
         <div className="flex items-start gap-3 p-4 border-b border-app-border">
           <div className="h-14 w-14 shrink-0 bg-app-elevated rounded-lg flex items-center justify-center relative overflow-hidden">
             {item.image_url ? (
@@ -128,9 +128,9 @@ export default function POSItemCustomizer({
           </Button>
         </div>
 
-        {/* ━━━ Scrollable content ━━━ */}
+        {/* --- Scrollable content --- */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* ─── Price Variants ──────────────────────────── */}
+          {/* --- Price Variants ---------------------------- */}
           {sortedVariants.length > 0 && (
             <div>
               <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
@@ -160,7 +160,7 @@ export default function POSItemCustomizer({
             </div>
           )}
 
-          {/* ─── Modifiers ──────────────────────────────── */}
+          {/* --- Modifiers -------------------------------- */}
           {sortedModifiers.length > 0 && (
             <div>
               <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
@@ -206,7 +206,7 @@ export default function POSItemCustomizer({
           )}
         </div>
 
-        {/* ━━━ Footer ━━━ */}
+        {/* --- Footer --- */}
         <div className="border-t border-app-border p-4 space-y-3">
           {/* Price summary */}
           <div className="flex justify-between items-baseline">

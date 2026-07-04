@@ -126,10 +126,10 @@ export default function POSCart({
   const tc = useTranslations('common');
   const seg = useSegmentTerms();
 
-  // ─── Order notes toggle ─────────────────────────────────
+  // --- Order notes toggle ---------------------------------
   const [showOrderNotes, setShowOrderNotes] = useState(false);
 
-  // ─── Table Picker Dialog ────────────────────────────────
+  // --- Table Picker Dialog --------------------------------
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [pickerZoneId, setPickerZoneId] = useState<string | null>(null);
   const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
@@ -172,7 +172,7 @@ export default function POSCart({
 
   return (
     <>
-      {/* ━━━ HEADER ━━━ */}
+      {/* --- HEADER --- */}
       <div className="px-4 py-3 border-b border-app-border flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Receipt className="w-4 h-4 text-app-text-muted" />
@@ -202,7 +202,7 @@ export default function POSCart({
         </Button>
       </div>
 
-      {/* ━━━ SERVICE TYPE (pinned - stays put while the item list scrolls) ━━━ */}
+      {/* --- SERVICE TYPE (pinned - stays put while the item list scrolls) --- */}
       <div className="p-3 border-b border-app-border space-y-2 shrink-0">
         <div className="grid grid-cols-2 @lg:grid-cols-4 gap-1.5">
           {SERVICE_TYPES.map((st) => (
@@ -255,7 +255,7 @@ export default function POSCart({
         )}
       </div>
 
-      {/* ━━━ SCROLLABLE AREA - only the item list scrolls ━━━ */}
+      {/* --- SCROLLABLE AREA - only the item list scrolls --- */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {cart.length > 0 ? (
           <div className="divide-y divide-app-border">
@@ -366,7 +366,7 @@ export default function POSCart({
         )}
       </div>
 
-      {/* ━━━ FOOTER ━━━ */}
+      {/* --- FOOTER --- */}
       <div className="border-t border-app-border px-4 py-3 space-y-2">
         {/* Order note + Coupon on same line */}
         <div className="flex items-center gap-2">
@@ -551,7 +551,7 @@ export default function POSCart({
         </div>
       </div>
 
-      {/* ━━━ TABLE PICKER DIALOG ━━━ */}
+      {/* --- TABLE PICKER DIALOG --- */}
       <Dialog
         open={showTablePicker}
         onOpenChange={(open) => {

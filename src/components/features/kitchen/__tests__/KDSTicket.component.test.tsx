@@ -5,7 +5,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import KDSTicket from '../KDSTicket';
 import type { Order, OrderItem } from '@/types/admin.types';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
@@ -20,7 +20,7 @@ vi.mock('next-intl', () => ({
   },
 }));
 
-// ─── Test Data ──────────────────────────────────────────
+// --- Test Data ------------------------------------------
 
 const baseItem: OrderItem = {
   id: 'item-1',
@@ -69,7 +69,7 @@ const mockCallbacks = {
   onUpdate: vi.fn(),
 };
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('KDSTicket', () => {
   beforeEach(() => {

@@ -19,7 +19,7 @@ import {
   actionSetCourseHeld,
 } from '@/app/actions/orders';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface UseKitchenDataParams {
   tenantId: string;
@@ -85,7 +85,7 @@ export interface UseKitchenDataReturn {
   goBack: () => void;
 }
 
-// ─── Column style config (no translatable text) ────────────
+// --- Column style config (no translatable text) ------------
 const COLUMN_STYLES = {
   pending: {
     dot: 'bg-amber-400/60',
@@ -107,7 +107,7 @@ const COLUMN_STYLES = {
   },
 } as const;
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook -----------------------------------------------
 
 export function useKitchenData({
   tenantId,
@@ -131,7 +131,7 @@ export function useKitchenData({
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
-  // ─── Columns with translated labels ─────────────────────
+  // --- Columns with translated labels ---------------------
   const columns: Record<ColumnKey, ColumnConfig> = {
     pending: {
       ...COLUMN_STYLES.pending,
@@ -150,7 +150,7 @@ export function useKitchenData({
     },
   };
 
-  // ─── Data fetching ──────────────────────────────────────
+  // --- Data fetching --------------------------------------
   const loadOrders = useCallback(async () => {
     try {
       const todayStart = new Date();
@@ -213,14 +213,14 @@ export function useKitchenData({
     }
   }, [supabase, tenantId, barDisplayEnabled, zoneFilter]);
 
-  // ─── Initial load + polling fallback ────────────────────
+  // --- Initial load + polling fallback --------------------
   useEffect(() => {
     loadOrders();
     const interval = setInterval(loadOrders, 15000); // Polling fallback every 15s (realtime handles most updates)
     return () => clearInterval(interval);
   }, [loadOrders]);
 
-  // ─── Play sound when polling detects new orders ────────
+  // --- Play sound when polling detects new orders --------
   const prevOrderCountRef = useRef(orders.length);
 
   useEffect(() => {
@@ -230,7 +230,7 @@ export function useKitchenData({
     prevOrderCountRef.current = orders.length;
   }, [orders.length, playNotification]);
 
-  // ─── Realtime subscription via shared hook ─────────────
+  // --- Realtime subscription via shared hook -------------
   // Optimised: only full-refetch on INSERT (needs joined data like order_items).
   // UPDATE: apply status change in-place (avoids re-fetching all orders).
   // DELETE: remove order from state directly.
@@ -268,7 +268,7 @@ export function useKitchenData({
     },
   });
 
-  // ─── Status mutation ────────────────────────────────────
+  // --- Status mutation ------------------------------------
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
@@ -287,7 +287,7 @@ export function useKitchenData({
     }
   };
 
-  // ─── Item-level mutations ──────────────────────────────
+  // --- Item-level mutations ------------------------------
   const updateItemStatus = async (
     orderId: string,
     itemId: string,
@@ -347,7 +347,7 @@ export function useKitchenData({
     }
   };
 
-  // ─── Fire/hold a course (KDS coursing) ──────────────────
+  // --- Fire/hold a course (KDS coursing) ------------------
   const setCourseHeld = async (orderId: string, course: string, held: boolean) => {
     try {
       const result = await actionSetCourseHeld(tenantId, orderId, course, held);
@@ -361,9 +361,9 @@ export function useKitchenData({
     }
   };
 
-  // ─── Fullscreen (shared hook) ───────────────────────────
+  // --- Fullscreen (shared hook) ---------------------------
 
-  // ─── Derived data ───────────────────────────────────────
+  // --- Derived data ---------------------------------------
   // Only show mock data when user explicitly toggles Demo mode
   const displayOrders = useMemo(() => {
     return showMockData ? MOCK_ORDERS : orders;

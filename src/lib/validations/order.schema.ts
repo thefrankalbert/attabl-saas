@@ -39,7 +39,7 @@ export const orderItemSchema = z.object({
   category_name: z.string().max(200).nullish(),
   selectedOption: orderItemOptionSchema.nullish(),
   selectedVariant: orderItemVariantSchema.nullish(),
-  // ─── Production upgrade ──────────────────────────────
+  // --- Production upgrade ------------------------------
   modifiers: z.array(orderItemModifierSchema).max(20).nullish(),
   customerNotes: z.string().max(500).nullish(),
   course: z.enum(['appetizer', 'main', 'dessert', 'drink']).nullish(),
@@ -55,7 +55,7 @@ export const createOrderSchema = z
     tableNumber: z.string().max(50).optional(),
     customerName: z.string().max(100).optional(),
     customerPhone: z.string().max(20).optional(),
-    // ─── Production upgrade ──────────────────────────────
+    // --- Production upgrade ------------------------------
     service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
     room_number: z.string().max(20).optional(),
     delivery_address: z.string().max(500).optional(),
@@ -116,7 +116,7 @@ function requireDestinationForServiceType(
   }
 }
 
-// ─── POS-specific order schema ──────────────────────────
+// --- POS-specific order schema --------------------------
 // POS orders include payment info and use menu_item_id instead of the full
 // cart item shape used by QR orders. The server resolves names/prices from DB.
 

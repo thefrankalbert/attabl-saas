@@ -3,7 +3,7 @@
  * Centralized design tokens for consistent styling across tenants
  */
 
-// ─── Multi-Currency Configuration ────────────────────────────
+// --- Multi-Currency Configuration ----------------------------
 export const CURRENCIES = {
   XAF: {
     code: 'XAF' as const,
@@ -42,7 +42,7 @@ export const CURRENCIES = {
 export type CurrencyCode = keyof typeof CURRENCIES;
 export const DEFAULT_CURRENCY_CODE: CurrencyCode = 'XAF';
 
-// ─── Tenant URL Helper ──────────────────────────────────────
+// --- Tenant URL Helper --------------------------------------
 /**
  * Builds the public-facing URL for a tenant's client space.
  *

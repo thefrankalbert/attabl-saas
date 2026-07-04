@@ -29,14 +29,15 @@ export async function FeatureUpgradeWall({
 
   if (tenantId) {
     const eventKey = FEATURE_EVENT_KEY[feature];
-    const now = new Date().toISOString();
     try {
       const supabase = createAdminClient();
-      await supabase
-        .from('tenants')
-        .update({ activation_events: { [eventKey]: now } })
-        .eq('id', tenantId)
-        .filter(`activation_events->>${eventKey}`, 'is', null);
+      // Atomic claim: merges into the live activation_events JSONB (|| server-side)
+      // so other keys are preserved, and only sets the slot once. A raw .update()
+      // here would overwrite the whole column and drop every other event key.
+      await supabase.rpc('claim_activation_event', {
+        p_tenant_id: tenantId,
+        p_event_key: eventKey,
+      });
     } catch (err) {
       logger.warn('FeatureUpgradeWall: failed to record access event', { feature, tenantId, err });
     }

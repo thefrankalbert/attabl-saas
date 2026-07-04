@@ -62,7 +62,7 @@ export const updateTenantSettingsSchema = z.object({
   notificationSoundId: z.string().max(500).optional(),
   establishmentType: z.string().max(50).optional(),
   tableCount: z.number().int().min(0).max(500).optional(),
-  // ─── Production upgrade: business config ─────────────────
+  // --- Production upgrade: business config -----------------
   currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   supportedCurrencies: z
     .array(z.enum(['XAF', 'XOF', 'EUR', 'USD']))
@@ -81,9 +81,9 @@ export const updateTenantSettingsSchema = z.object({
   enableTax: z.boolean().optional(),
   enableServiceCharge: z.boolean().optional(),
   enableCoupons: z.boolean().optional(),
-  // ─── KDS / Kitchen display ────────────────────────────
+  // --- KDS / Kitchen display ----------------------------
   barDisplayEnabled: z.boolean().optional(),
-  // ─── Idle timeout / screen lock ────────────────────────
+  // --- Idle timeout / screen lock ------------------------
   idleTimeoutMinutes: z
     .number()
     .int()
@@ -92,9 +92,9 @@ export const updateTenantSettingsSchema = z.object({
     .nullable()
     .optional(),
   screenLockMode: z.enum(['overlay', 'password']).optional(),
-  // ─── Opening hours ───────────────────────────────────────
+  // --- Opening hours ---------------------------------------
   openingHours: openingHoursSchema.optional(),
-  // ─── Custom domain ───────────────────────────────────────
+  // --- Custom domain ---------------------------------------
   customDomain: z
     .string()
     .max(255, 'Le domaine ne doit pas dépasser 255 caractères')

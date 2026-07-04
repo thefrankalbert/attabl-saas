@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { Invitation } from '@/types/invitation.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 export type ModalTab = 'invite' | 'direct';
 
@@ -76,7 +76,7 @@ export interface UseUsersDataReturn {
   handleToggleStatus: (user: AdminUser) => Promise<void>;
 }
 
-// ─── Helpers ───────────────────────────────────────────────
+// --- Helpers -----------------------------------------------
 
 export function timeAgo(
   dateStr: string,
@@ -107,7 +107,7 @@ export function timeUntil(
   return t('daysAgo', { count: diffDays });
 }
 
-// ─── Hook ──────────────────────────────────────────────────
+// --- Hook --------------------------------------------------
 
 export function useUsersData({
   tenantId,

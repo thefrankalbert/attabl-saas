@@ -64,7 +64,7 @@ export function useOnboarding() {
     tenantName: '',
   });
 
-  // ─── Derived values ────────────────────────────────────────────────────────
+  // --- Derived values --------------------------------------------------------
 
   // Compute adaptive phases based on establishment type
   const segmentFeatures = getSegmentFeatures(data.establishmentType);
@@ -90,7 +90,7 @@ export function useOnboarding() {
 
   const isLastScreen = phase === 3 && subScreen === phases[2].subScreens.length - 1;
 
-  // ─── Step completeness check (adapted for phases) ──────────────────────────
+  // --- Step completeness check (adapted for phases) --------------------------
 
   const phaseIsComplete = (p: number): boolean => {
     switch (p) {
@@ -105,7 +105,7 @@ export function useOnboarding() {
     }
   };
 
-  // ─── Fetch saved state ─────────────────────────────────────────────────────
+  // --- Fetch saved state -----------------------------------------------------
 
   useEffect(() => {
     const fetchOnboardingState = async () => {
@@ -157,7 +157,7 @@ export function useOnboarding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load saved onboarding state once on mount; re-running on toast/t changes would refetch and clobber in-progress edits (2026-06-18)
   }, []);
 
-  // ─── Auto-save debounced ───────────────────────────────────────────────────
+  // --- Auto-save debounced ---------------------------------------------------
 
   useEffect(() => {
     if (loading || phase === 0 || isLastScreen) return;
@@ -208,7 +208,7 @@ export function useOnboarding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: toast/t are referenced only on the error path and are stable across renders; including them would reset the 2s auto-save debounce on every locale/toast identity change (2026-06-18)
   }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
 
-  // ─── Save on tab close / navigate away (beacon API for reliability) ──────
+  // --- Save on tab close / navigate away (beacon API for reliability) ------
 
   useEffect(() => {
     if (loading || phase === 0) return;
@@ -235,7 +235,7 @@ export function useOnboarding() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [data, phase, subScreen, loading, apiStep]);
 
-  // ─── Data update callback ─────────────────────────────────────────────────
+  // --- Data update callback -------------------------------------------------
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...newData }));
@@ -245,7 +245,7 @@ export function useOnboarding() {
     document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  // ─── Navigation ───────────────────────────────────────────────────────────
+  // --- Navigation -----------------------------------------------------------
 
   const goNext = () => {
     // Establishment name is required; block advancing (button click OR swipe) with an
@@ -284,7 +284,7 @@ export function useOnboarding() {
     scrollToTop();
   };
 
-  // ─── Keyboard navigation ──────────────────────────────────────────────────
+  // --- Keyboard navigation --------------------------------------------------
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -310,7 +310,7 @@ export function useOnboarding() {
     scrollToTop();
   };
 
-  // ─── Complete onboarding ──────────────────────────────────────────────────
+  // --- Complete onboarding --------------------------------------------------
 
   const completeOnboarding = async () => {
     setSaving(true);
@@ -361,7 +361,7 @@ export function useOnboarding() {
     setSubScreen(0);
   };
 
-  // ─── Studio layout (phases 1-3) ───────────────────────────────────────────
+  // --- Studio layout (phases 1-3) -------------------------------------------
 
   const canGoBack = phase > 1 || subScreen > 0;
 

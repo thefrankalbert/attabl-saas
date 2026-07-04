@@ -4,7 +4,7 @@ import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import * as Sentry from '@sentry/nextjs';
 
-// ─── Mock external dependencies ────────────────────────────────
+// --- Mock external dependencies --------------------------------
 // after() runs its callback inline (quota check); NextResponse kept real.
 vi.mock('next/server', async (importActual) => {
   const actual = await importActual<typeof import('next/server')>();
@@ -38,7 +38,7 @@ vi.mock('@/lib/auth/get-session', () => ({
   AuthError: MockAuthError,
 }));
 
-// ─── Order service mock ────────────────────────────────────────
+// --- Order service mock ----------------------------------------
 const mockFindByClientRequestId = vi.fn();
 const mockValidateOrderItems = vi.fn();
 const mockDeterminePreparationZone = vi.fn();
@@ -75,7 +75,7 @@ vi.mock('@/lib/pricing/tax', () => ({
   calculateOrderTotal: (...args: unknown[]) => mockCalculateOrderTotal(...args),
 }));
 
-// ─── Inventory service mock ────────────────────────────────────
+// --- Inventory service mock ------------------------------------
 const mockDestockOrder = vi.fn<() => Promise<number>>();
 vi.mock('@/services/inventory.service', () => ({
   createInventoryService: vi.fn(() => ({ destockOrder: mockDestockOrder })),
@@ -93,13 +93,13 @@ vi.mock('@/lib/plans/features', () => ({
   canAccessFeature: vi.fn(() => false),
 }));
 
-// ─── Menu items query mock ─────────────────────────────────────
+// --- Menu items query mock -------------------------------------
 const mockFetchMenuItems = vi.fn();
 vi.mock('@/lib/menu-items-query', () => ({
   fetchMenuItemsByIds: (...args: unknown[]) => mockFetchMenuItems(...args),
 }));
 
-// ─── Admin Supabase client mock (chainable) ────────────────────
+// --- Admin Supabase client mock (chainable) --------------------
 // admin_users -> single(); tenants -> single(); notifications -> insert() thenable.
 const mockAdminUserRow = { data: { id: 'server-1', tenant_id: 'tenant-abc', role: 'cashier' } };
 const mockTenantRow = {
@@ -139,7 +139,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   })),
 }));
 
-// ─── Helpers ───────────────────────────────────────────────────
+// --- Helpers ---------------------------------------------------
 const MENU_ITEM_ID = '11111111-1111-4111-a111-111111111111';
 
 function validPosBody() {
@@ -166,7 +166,7 @@ async function parseResponse(
   return { status: response.status, body };
 }
 
-// ─── Test Suite - POS auto-destock wiring ──────────────────────
+// --- Test Suite - POS auto-destock wiring ----------------------
 describe('POST /api/orders/pos - auto-destock wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks();

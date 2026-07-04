@@ -8,7 +8,7 @@ import {
   QRTemplateId,
 } from '@/types/qr-design.types';
 
-// ─── Action Types ──────────────────────────────────────
+// --- Action Types --------------------------------------
 
 type SetFieldAction = {
   type: 'SET_FIELD';
@@ -29,7 +29,7 @@ type ResetAction = {
 
 type QRDesignAction = SetFieldAction | SetTemplateAction | ResetAction;
 
-// ─── Reducer ───────────────────────────────────────────
+// --- Reducer -------------------------------------------
 
 function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesignConfig {
   switch (action.type) {
@@ -58,7 +58,7 @@ function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesig
   }
 }
 
-// ─── Hook ──────────────────────────────────────────────
+// --- Hook ----------------------------------------------
 
 export function useQRDesignConfig(primaryColor: string, secondaryColor: string) {
   const [state, dispatch] = useReducer(qrDesignReducer, { primaryColor, secondaryColor }, (init) =>

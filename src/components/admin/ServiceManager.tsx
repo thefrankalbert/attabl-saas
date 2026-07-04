@@ -251,7 +251,7 @@ export default function ServiceManager({ tenantId }: Props) {
     [releaseAssignment],
   );
 
-  // ── Keyboard shortcuts ────────────────────────────────────
+  // -- Keyboard shortcuts ------------------------------------
   const ts = useTranslations('shortcuts');
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [

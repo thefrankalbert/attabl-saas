@@ -36,7 +36,7 @@ function asClient(mock: ArgAwareSupabaseMock): SupabaseClient {
   return mock as unknown as SupabaseClient;
 }
 
-// ───────────────────────────── order.service ─────────────────────────────
+// ----------------------------- order.service -----------------------------
 
 describe('order.service multi-tenant isolation', () => {
   let db: ArgAwareSupabaseMock;
@@ -150,7 +150,7 @@ describe('order.service multi-tenant isolation', () => {
   });
 });
 
-// ─────────────────────────── menu-item.service ───────────────────────────
+// --------------------------- menu-item.service ---------------------------
 
 describe('menu-item.service multi-tenant isolation', () => {
   let db: ArgAwareSupabaseMock;
@@ -199,7 +199,7 @@ describe('menu-item.service multi-tenant isolation', () => {
   });
 });
 
-// ──────────────────────────── category.service ───────────────────────────
+// ---------------------------- category.service ---------------------------
 
 describe('category.service multi-tenant isolation', () => {
   let db: ArgAwareSupabaseMock;
@@ -241,7 +241,7 @@ describe('category.service multi-tenant isolation', () => {
   });
 });
 
-// ───────────────────────────── coupon.service ────────────────────────────
+// ----------------------------- coupon.service ----------------------------
 
 describe('coupon.service multi-tenant isolation', () => {
   let db: ArgAwareSupabaseMock;
@@ -332,7 +332,7 @@ describe('coupon.service multi-tenant isolation', () => {
   });
 });
 
-// ──────────────────────────── modifier.service ───────────────────────────
+// ---------------------------- modifier.service ---------------------------
 
 describe('modifier.service multi-tenant isolation', () => {
   let db: ArgAwareSupabaseMock;
@@ -374,7 +374,7 @@ describe('modifier.service multi-tenant isolation', () => {
   });
 });
 
-// ────────────────────────── table-config.service ─────────────────────────
+// -------------------------- table-config.service -------------------------
 // table-config isolates via the venue's tenant_id on an embedded relation.
 // The service filters `.eq('venues.tenant_id', tenantId)` (zones) and
 // `.eq('zones.venues.tenant_id', tenantId)` (tables). We seed rows with those

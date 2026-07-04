@@ -33,7 +33,7 @@ import { ListPagination } from '@/components/admin/ListPagination';
 
 const LIST_PAGE_SIZE = 25;
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface MenusTableProps {
   tenantSlug: string;
@@ -61,7 +61,7 @@ interface MenuRowProps {
   onAddChild: () => void;
 }
 
-// ─── MenuRow Component ──────────────────────────────────
+// --- MenuRow Component ----------------------------------
 
 function MenuRow({
   menu,
@@ -217,7 +217,7 @@ function MenuRow({
   );
 }
 
-// ─── MenusTable Component ───────────────────────────────
+// --- MenusTable Component -------------------------------
 
 export default function MenusTable({
   tenantSlug,

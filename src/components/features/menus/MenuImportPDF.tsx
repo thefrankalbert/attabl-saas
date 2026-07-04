@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface PdfExtractedItem {
   category: string;
@@ -41,7 +41,7 @@ interface MenuImportPDFProps {
   onCancel: () => void;
 }
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -56,7 +56,7 @@ function formatPrice(price: number): string {
   return price.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function MenuImportPDF({ menus, onImportComplete, onCancel }: MenuImportPDFProps) {
   const t = useTranslations('menus');
@@ -71,7 +71,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── File handling ──────────────────────────────────────
+  // --- File handling --------------------------------------
 
   const handleFileSelect = (selectedFile: File | undefined) => {
     if (!selectedFile) return;
@@ -108,7 +108,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
     setIsDragOver(false);
   };
 
-  // ─── Extract ────────────────────────────────────────────
+  // --- Extract --------------------------------------------
 
   const handleExtract = async () => {
     if (!file || !menuId) return;
@@ -150,13 +150,13 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
     }
   };
 
-  // ─── Remove item from preview ───────────────────────────
+  // --- Remove item from preview ---------------------------
 
   const removeItem = (index: number) => {
     setExtractedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ─── Import confirmed items ─────────────────────────────
+  // --- Import confirmed items -----------------------------
 
   const handleImport = async () => {
     if (extractedItems.length === 0) return;
@@ -199,7 +199,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
     }
   };
 
-  // ─── Render ─────────────────────────────────────────────
+  // --- Render ---------------------------------------------
 
   return (
     <div className="space-y-5 pt-2">

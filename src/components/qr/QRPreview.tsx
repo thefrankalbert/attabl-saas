@@ -4,7 +4,7 @@ import { forwardRef, useMemo } from 'react';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface QRPreviewProps {
   config: QRDesignConfig;
@@ -14,7 +14,7 @@ interface QRPreviewProps {
   logoUrl?: string;
 }
 
-// ─── Scale Map ─────────────────────────────────────────
+// --- Scale Map -----------------------------------------
 
 const SCALE_MAP: Record<string, number> = {
   standard: 0.7,
@@ -25,7 +25,7 @@ const SCALE_MAP: Record<string, number> = {
   neon: 0.68,
 };
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRPreview(
   { config, url, tenantName, tableName, logoUrl },

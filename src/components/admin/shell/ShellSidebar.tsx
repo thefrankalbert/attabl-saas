@@ -42,7 +42,7 @@ import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner'
 import type { SettingsTab } from './SettingsDialog';
 import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ShellSidebarProps {
   basePath: string;
@@ -79,7 +79,7 @@ type ShellNavItem = {
   labelKey: string;
 };
 
-// ─── Nav structure (mirrors the maquette sections) ──────
+// --- Nav structure (mirrors the maquette sections) ------
 
 const MAIN: ShellNavItem[] = [
   { path: '', groupId: 'dashboard', icon: LayoutDashboard, labelKey: 'navDashboard' },
@@ -114,7 +114,7 @@ function isPathActive(pathname: string, basePath: string, itemPath: string): boo
   return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function ShellSidebar({
   basePath,
@@ -238,7 +238,7 @@ export function ShellSidebar({
       )}
     >
       <div className="flex h-full flex-col gap-1">
-        {/* ── Brand / team switcher ── */}
+        {/* -- Brand / team switcher -- */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -302,7 +302,7 @@ export function ShellSidebar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* ── Scrollable nav ── */}
+        {/* -- Scrollable nav -- */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {/* Main group: quick action + primary nav */}
           <div className="flex flex-col py-2">
@@ -326,7 +326,7 @@ export function ShellSidebar({
           {renderGroup('groupAnalyse', analyse)}
         </div>
 
-        {/* ── Footer: user dropdown ── */}
+        {/* -- Footer: user dropdown -- */}
         <div className="mt-auto border-t border-[var(--sidebar-border)] pt-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

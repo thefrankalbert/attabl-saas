@@ -6,7 +6,7 @@ import { QRPreview } from '@/components/qr/QRPreview';
 import { QRExportBar } from '@/components/qr/QRExportBar';
 import type { QRDesignConfig, QRTemplateId } from '@/types/qr-design.types';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface QRCustomizerLayoutProps {
   config: QRDesignConfig;
@@ -19,7 +19,7 @@ interface QRCustomizerLayoutProps {
   logoUrl?: string;
 }
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export function QRCustomizerLayout({
   config,

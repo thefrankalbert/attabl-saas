@@ -8,7 +8,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import SettingsDataReset from './SettingsDataReset';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsSecurityProps {
   form: UseFormReturn<SettingsFormValues>;
@@ -16,7 +16,7 @@ interface SettingsSecurityProps {
   tenantSlug: string;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecurityProps) {
   const {

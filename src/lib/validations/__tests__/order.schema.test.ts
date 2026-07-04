@@ -217,7 +217,7 @@ describe('order schema - destination required per service type (H5)', () => {
     quantity: 1,
   };
 
-  // ── createOrderSchema (QR) ──
+  // -- createOrderSchema (QR) --
   // Note: dine_in table requiredness is intentionally not enforced here yet
   // (storefront defaults to dine_in and table can be a legitimately-absent QR
   // scan) - it moves to Phase 1 with the table_id model. Here we cover the
@@ -260,7 +260,7 @@ describe('order schema - destination required per service type (H5)', () => {
     expect(result.success).toBe(true);
   });
 
-  // ── createPOSOrderSchema ──
+  // -- createPOSOrderSchema --
   it('rejects a POS delivery order without an address', () => {
     const result = createPOSOrderSchema.safeParse({
       table_number: 'CMD-1',
