@@ -7,9 +7,11 @@ export function SkipState() {
   const t = useTranslations('onboarding');
 
   return (
-    <div className="rounded-xl border border-dashed border-app-border p-8 text-center">
-      <Clock className="h-10 w-10 text-app-text-muted mx-auto mb-3" />
-      <p className="text-base text-app-text-secondary font-medium">{t('skipInfo')}</p>
+    <div className="rounded-xl border border-app-border bg-app-elevated p-8 text-center shadow-sm">
+      <span className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-app-card">
+        <Clock className="h-5 w-5 text-app-text-muted" />
+      </span>
+      <p className="text-sm font-medium text-app-text-secondary">{t('skipInfo')}</p>
     </div>
   );
 }

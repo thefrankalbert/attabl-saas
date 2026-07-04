@@ -26,18 +26,16 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
 
   return (
     <div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-        {t('zonesLabel')}
-      </p>
+      <p className="mb-2 block text-xs font-medium text-app-text-secondary">{t('zonesLabel')}</p>
       <div className="space-y-4">
         {zones.map((zone, index) => (
           <div
             key={index}
-            className="rounded-xl border border-app-border bg-app-elevated/30 overflow-hidden"
+            className="overflow-hidden rounded-xl border border-app-border bg-app-elevated shadow-sm"
           >
             {/* Zone header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
-              <span className="text-xs font-bold text-app-text-muted uppercase tracking-wider">
+            <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-app-text-muted">
                 {t('zoneNumber', { number: index + 1 })}
               </span>
               <Button
@@ -46,10 +44,10 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                 size="icon"
                 onClick={() => removeZone(index)}
                 disabled={zones.length === 1}
-                className={`p-1.5 rounded-lg transition-colors h-7 w-7 ${
+                className={`h-7 w-7 rounded-lg p-1.5 transition-colors ${
                   zones.length === 1
-                    ? 'text-app-text-muted cursor-not-allowed'
-                    : 'text-app-text-muted hover:text-status-error hover:bg-status-error-bg'
+                    ? 'cursor-not-allowed text-app-text-muted'
+                    : 'text-app-text-muted hover:bg-status-error-bg hover:text-status-error'
                 }`}
                 aria-label={t('deleteZone')}
               >
@@ -59,9 +57,9 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
 
             {/* Zone fields */}
             <div className="p-4">
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="mb-3 grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-app-text-secondary text-xs mb-1.5 block">
+                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                     {t('zoneName')}
                   </Label>
                   <Input
@@ -69,11 +67,11 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                     placeholder={t('zoneNamePlaceholder')}
                     value={zone.name}
                     onChange={(e) => updateZone(index, 'name', e.target.value)}
-                    className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
+                    className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                   />
                 </div>
                 <div>
-                  <Label className="text-app-text-secondary text-xs mb-1.5 block">
+                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                     {t('zonePrefix')}
                   </Label>
                   <Input
@@ -82,14 +80,14 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                     maxLength={5}
                     value={zone.prefix}
                     onChange={(e) => updateZone(index, 'prefix', e.target.value)}
-                    className="h-10 bg-app-bg rounded-xl border-app-border font-mono uppercase text-sm"
+                    className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 font-mono text-sm uppercase shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-app-text-secondary text-xs mb-1.5 block">
+                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                     {t('zoneTableCount')}
                   </Label>
                   <Input
@@ -98,18 +96,18 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                     max="100"
                     value={zone.tableCount}
                     onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                    className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
+                    className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                   />
                 </div>
                 <div>
-                  <Label className="text-app-text-secondary text-xs mb-1.5 block">
+                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                     {t('zoneCapacity')}
                   </Label>
                   <Select
                     value={String(zone.defaultCapacity ?? 2)}
                     onValueChange={(val) => updateZone(index, 'defaultCapacity', val)}
                   >
-                    <SelectTrigger className="h-10 bg-app-bg rounded-xl border-app-border text-sm">
+                    <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -125,12 +123,12 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
 
               {/* Inline preview for this zone */}
               {zone.name && zone.prefix && zone.tableCount > 0 && (
-                <div className="mt-4 pt-3 border-t border-app-border">
+                <div className="mt-4 border-t border-app-border pt-3">
                   <div className="flex flex-wrap gap-1.5">
                     {Array.from({ length: Math.min(zone.tableCount, 8) }, (_, i) => (
                       <span
                         key={i}
-                        className="font-mono bg-app-bg rounded-lg px-2 py-0.5 text-xs text-app-text-secondary border border-app-border"
+                        className="rounded-lg border border-app-border bg-app-card px-2 py-0.5 font-mono text-xs text-app-text-secondary"
                       >
                         {zone.prefix}-{i + 1}
                       </span>
@@ -152,7 +150,7 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
             type="button"
             variant="outline"
             onClick={addZone}
-            className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+            className="flex h-auto w-full items-center gap-2 rounded-lg border border-dashed border-app-border px-4 py-3 text-sm font-medium text-app-text-secondary transition-colors hover:border-app-border-hover hover:text-app-text"
           >
             <Plus className="h-4 w-4" />
             {t('addZone')}

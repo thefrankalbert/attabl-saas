@@ -25,20 +25,20 @@ export function LaunchTextTab({ data, updateData }: LaunchTextTabProps) {
     <div className="space-y-6">
       {/* CTA Presets */}
       <div>
-        <p className="text-xs font-semibold text-app-text-secondary mb-3">{t('qrCtaLabel')}</p>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">{t('qrCtaLabel')}</p>
+        <div className="mb-3 flex flex-wrap gap-2">
           {CTA_PRESETS.map((preset) => {
             const isActive = data.qrCta === preset.value;
             return (
               <Button
                 key={preset.key}
                 type="button"
-                variant={isActive ? 'default' : 'outline'}
+                variant="ghost"
                 onClick={() => updateData({ qrCta: preset.value })}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
+                className={`h-auto rounded-lg px-3.5 py-2 text-xs font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-accent text-accent-text'
-                    : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
+                    ? 'bg-app-hover text-app-text shadow-sm ring-1 ring-accent hover:bg-app-hover'
+                    : 'border border-app-border bg-app-elevated text-app-text-secondary hover:bg-app-hover'
                 }`}
               >
                 {t(preset.key)}
@@ -51,14 +51,14 @@ export function LaunchTextTab({ data, updateData }: LaunchTextTabProps) {
           value={data.qrCta}
           onChange={(e) => updateData({ qrCta: e.target.value })}
           placeholder={t('qrCtaLabel')}
-          className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+          className="h-10 w-full rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
           maxLength={60}
         />
       </div>
 
       {/* Description */}
       <div>
-        <p className="text-xs font-semibold text-app-text-secondary mb-3">
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">
           {t('qrDescriptionLabel')}
         </p>
         <Textarea
@@ -67,7 +67,7 @@ export function LaunchTextTab({ data, updateData }: LaunchTextTabProps) {
           placeholder={t('qrDescriptionLabel')}
           rows={2}
           maxLength={120}
-          className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+          className="w-full resize-none rounded-lg border-app-border bg-app-elevated px-3.5 py-2.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
     </div>

@@ -39,7 +39,7 @@ export function DetailsSection({
           <div>
             <Label
               htmlFor="address"
-              className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+              className="mb-2 flex items-center gap-2 text-xs font-medium text-app-text-secondary"
             >
               <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
               {t('addressLabel')}
@@ -50,7 +50,7 @@ export function DetailsSection({
               placeholder={t('addressPlaceholder')}
               value={data.address}
               onChange={(e) => updateData({ address: e.target.value })}
-              className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+              className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
             />
           </div>
 
@@ -58,7 +58,7 @@ export function DetailsSection({
             <div>
               <Label
                 htmlFor="city"
-                className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                className="mb-2 block text-xs font-medium text-app-text-secondary"
               >
                 {t('cityLabel')}
               </Label>
@@ -68,13 +68,13 @@ export function DetailsSection({
                 placeholder={t('cityPlaceholder')}
                 value={data.city}
                 onChange={(e) => updateData({ city: e.target.value })}
-                className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </div>
             <div>
               <Label
                 htmlFor="country"
-                className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                className="mb-2 block text-xs font-medium text-app-text-secondary"
               >
                 {t('countryLabel')}
               </Label>
@@ -84,7 +84,7 @@ export function DetailsSection({
                 placeholder={t('countryLabel')}
                 value={data.country}
                 onChange={(e) => updateData({ country: e.target.value })}
-                className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </div>
           </div>
@@ -92,7 +92,7 @@ export function DetailsSection({
           <div>
             <Label
               htmlFor="phone"
-              className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+              className="mb-2 flex items-center gap-2 text-xs font-medium text-app-text-secondary"
             >
               <Phone className="h-3.5 w-3.5 text-app-text-muted" />
               {t('phoneLabel')}
@@ -103,7 +103,7 @@ export function DetailsSection({
               placeholder={t('phonePlaceholder')}
               value={data.phone}
               onChange={(e) => updateData({ phone: e.target.value })}
-              className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+              className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
             />
           </div>
         </div>
@@ -129,7 +129,7 @@ export function DetailsSection({
                 router.refresh();
               }}
             >
-              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+              <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +151,7 @@ export function DetailsSection({
               {t('currencyLabel')}
             </Label>
             <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
-              <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+              <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -208,7 +208,7 @@ export function DetailsSection({
                     onChange={(val) => updateData({ tableCount: val })}
                   />
                   <div>
-                    <Label className="text-sm font-medium text-app-text-secondary mb-2 block">
+                    <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
                       {t('starRating')}
                     </Label>
                     <div className="flex gap-1.5">
@@ -218,10 +218,10 @@ export function DetailsSection({
                           type="button"
                           variant="outline"
                           onClick={() => updateData({ starRating: star })}
-                          className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all p-0 ${
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg border p-0 text-lg transition-all ${
                             (data.starRating || 0) >= star
-                              ? 'border-amber-400 bg-amber-400/10 text-amber-400'
-                              : 'border-app-border text-app-text-muted hover:border-app-border-hover'
+                              ? 'border-transparent bg-app-hover text-app-text shadow-sm ring-1 ring-accent'
+                              : 'border-app-border bg-app-elevated text-app-text-muted hover:border-app-border-hover hover:bg-app-hover'
                           }`}
                         >
                           ★

@@ -25,12 +25,10 @@ export function LaunchMenuUrl({ menuUrl, accentColor }: LaunchMenuUrlProps) {
   };
 
   return (
-    <div className="mb-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
-        {t('menuLinkLabel')}
-      </p>
+    <div className="mb-6 rounded-xl border border-app-border bg-app-elevated p-4 shadow-sm">
+      <p className="mb-2 block text-xs font-medium text-app-text-secondary">{t('menuLinkLabel')}</p>
       <div className="flex items-center gap-2">
-        <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text break-all">
+        <div className="flex-1 break-all rounded-lg border border-app-border bg-app-elevated px-3.5 py-2.5 font-mono text-xs text-app-text shadow-sm">
           {menuUrl}
         </div>
         <Button
@@ -38,7 +36,7 @@ export function LaunchMenuUrl({ menuUrl, accentColor }: LaunchMenuUrlProps) {
           size="icon"
           aria-label={t('copyUrl')}
           onClick={handleCopyUrl}
-          className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
+          className="h-10 w-10 rounded-lg border-app-border bg-app-elevated shadow-sm transition-colors hover:bg-app-hover"
           title={t('copyUrl')}
         >
           {copied ? (
@@ -51,13 +49,13 @@ export function LaunchMenuUrl({ menuUrl, accentColor }: LaunchMenuUrlProps) {
           href={menuUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-app-border bg-app-elevated shadow-sm transition-colors hover:bg-app-hover"
         >
           <ExternalLink className="h-4 w-4 text-app-text-secondary" />
         </a>
       </div>
       {copied && (
-        <p className="text-xs mt-2 font-medium" style={{ color: accentColor }}>
+        <p className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
           {t('urlCopied')}
         </p>
       )}

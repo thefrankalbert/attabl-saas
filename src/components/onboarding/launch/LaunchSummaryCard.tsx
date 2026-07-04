@@ -15,40 +15,34 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
   const t = useTranslations('onboarding');
 
   return (
-    <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
-      <div className="flex items-center gap-4 mb-5">
+    <div className="mb-6 rounded-xl border border-app-border bg-app-elevated p-5 shadow-sm">
+      <div className="mb-5 flex items-center gap-4">
         <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border/50"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-app-border shadow-sm"
           style={{ backgroundColor: accentColor }}
         >
           {data.logoUrl ? (
-            <img src={data.logoUrl} alt="Logo" className="w-full h-full rounded-xl object-cover" />
+            <img src={data.logoUrl} alt="Logo" className="h-full w-full rounded-xl object-cover" />
           ) : (
             <Layout className="h-7 w-7 text-white" />
           )}
         </div>
         <div>
-          <h2 className="text-xl font-bold text-app-text">{data.tenantName}</h2>
-          <p className="text-app-text-secondary capitalize text-sm">
+          <h2 className="text-lg font-semibold tracking-tight text-app-text">{data.tenantName}</h2>
+          <p className="text-sm capitalize text-app-text-secondary">
             {data.establishmentType} &bull; {data.city || t('cityNotSet')}
           </p>
         </div>
       </div>
 
       {/* Checklist */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {completedItems.map((item, i) => (
           <div key={i} className="flex items-center gap-3 py-1">
             <div
-              className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-              style={
-                item.done
-                  ? { backgroundColor: accentColor, color: '#fff' }
-                  : {
-                      backgroundColor: 'var(--app-elevated)',
-                      color: 'var(--app-text-muted)',
-                    }
-              }
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                item.done ? 'bg-accent text-accent-text' : 'bg-app-elevated text-app-text-muted'
+              }`}
             >
               <Check className="h-3 w-3" />
             </div>

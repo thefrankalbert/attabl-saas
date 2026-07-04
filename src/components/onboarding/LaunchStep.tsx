@@ -56,92 +56,92 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-lg font-bold text-app-text mb-1">
-              {showSummary ? t('launchTitle') : t('qrCodeTitle')}
-            </h1>
-            <p className="text-app-text-secondary text-sm">{t('launchSubtitle')}</p>
-          </div>
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-2xl">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="mb-1.5 text-xl font-semibold tracking-tight text-app-text">
+                {showSummary ? t('launchTitle') : t('qrCodeTitle')}
+              </h1>
+              <p className="text-sm text-app-text-secondary">{t('launchSubtitle')}</p>
+            </div>
 
-          {/* Summary Card -- Full width */}
-          {showSummary && (
-            <LaunchSummaryCard
-              data={data}
-              accentColor={accentColor}
-              completedItems={completedItems}
-            />
-          )}
-
-          {/* Menu URL */}
-          {showSummary && <LaunchMenuUrl menuUrl={menuUrl} accentColor={accentColor} />}
-
-          {/* LaunchQR export for summary variant */}
-          {showSummary && (
-            <div className="mb-6">
-              <LaunchQR
-                config={qrConfig}
-                url={menuUrl}
-                tenantName={data.tenantName}
-                logoUrl={data.logoUrl || undefined}
+            {/* Summary Card -- Full width */}
+            {showSummary && (
+              <LaunchSummaryCard
+                data={data}
+                accentColor={accentColor}
+                completedItems={completedItems}
               />
-            </div>
-          )}
+            )}
 
-          {/* Dashboard handoff - names where the launch lands the user */}
-          {showSummary && <LaunchDashboardNote />}
+            {/* Menu URL */}
+            {showSummary && <LaunchMenuUrl menuUrl={menuUrl} accentColor={accentColor} />}
 
-          {/* QR Customization */}
-          {showQr && (
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                QR Code
-              </p>
-
-              {/* Tab Pills */}
-              <div className="flex flex-wrap gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <Button
-                      key={tab.id}
-                      type="button"
-                      variant={isActive ? 'default' : 'ghost'}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 h-auto ${
-                        isActive
-                          ? 'bg-accent text-accent-text'
-                          : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {tab.label}
-                    </Button>
-                  );
-                })}
+            {/* LaunchQR export for summary variant */}
+            {showSummary && (
+              <div className="mb-6">
+                <LaunchQR
+                  config={qrConfig}
+                  url={menuUrl}
+                  tenantName={data.tenantName}
+                  logoUrl={data.logoUrl || undefined}
+                />
               </div>
+            )}
 
-              {/* Style Tab */}
-              {activeTab === 'style' && <LaunchStyleTab data={data} updateData={updateData} />}
+            {/* Dashboard handoff - names where the launch lands the user */}
+            {showSummary && <LaunchDashboardNote />}
 
-              {/* Text Tab */}
-              {activeTab === 'text' && <LaunchTextTab data={data} updateData={updateData} />}
+            {/* QR Customization */}
+            {showQr && (
+              <div>
+                <p className="mb-2 block text-xs font-medium text-app-text-secondary">QR Code</p>
 
-              {/* Export Tab */}
-              {activeTab === 'export' && (
-                <div>
-                  <LaunchQR
-                    config={qrConfig}
-                    url={menuUrl}
-                    tenantName={data.tenantName}
-                    logoUrl={data.logoUrl || undefined}
-                  />
+                {/* Tab Pills */}
+                <div className="mb-6 inline-flex gap-1 rounded-lg border border-app-border bg-app-elevated p-1 shadow-sm">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <Button
+                        key={tab.id}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex h-auto items-center gap-2 rounded-md px-3.5 py-2 text-xs font-medium transition-all duration-150 ${
+                          isActive
+                            ? 'bg-app-hover text-app-text shadow-sm ring-1 ring-accent hover:bg-app-hover'
+                            : 'text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary'
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {tab.label}
+                      </Button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* Style Tab */}
+                {activeTab === 'style' && <LaunchStyleTab data={data} updateData={updateData} />}
+
+                {/* Text Tab */}
+                {activeTab === 'text' && <LaunchTextTab data={data} updateData={updateData} />}
+
+                {/* Export Tab */}
+                {activeTab === 'export' && (
+                  <div>
+                    <LaunchQR
+                      config={qrConfig}
+                      url={menuUrl}
+                      tenantName={data.tenantName}
+                      logoUrl={data.logoUrl || undefined}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

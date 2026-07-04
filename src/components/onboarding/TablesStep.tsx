@@ -77,48 +77,52 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-lg font-bold text-app-text mb-1">{t('tablesTitle')}</h1>
-            <p className="text-app-text-secondary text-sm">{t('tablesSubtitle')}</p>
-          </div>
-
-          {/* Mode Selector */}
-          <ModeSelector mode={mode} onModeChange={handleModeChange} />
-
-          {/* Mode: Skip */}
-          {mode === 'skip' && <SkipState />}
-
-          {/* Mode: Minimum */}
-          {mode === 'minimum' && (
-            <MinimumZones
-              zones={zones}
-              updateZone={updateZone}
-              addZone={addZone}
-              removeZone={removeZone}
-            />
-          )}
-
-          {/* Mode: Complete */}
-          {mode === 'complete' && (
-            <CompleteZones
-              zones={zones}
-              updateZone={updateZone}
-              addZone={addZone}
-              removeZone={removeZone}
-            />
-          )}
-
-          {/* Naming hint */}
-          {mode !== 'skip' && (
-            <div className="mt-8 p-4 rounded-xl bg-accent/5 border border-accent/20">
-              <p className="text-xs text-app-text-secondary">
-                <span className="font-semibold text-accent">{t('tipPrefix')}</span>{' '}
-                {zones[0]?.prefix || 'XXX'}-1, {zones[0]?.prefix || 'XXX'}-2, ...
-              </p>
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-xl">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="mb-1.5 text-xl font-semibold tracking-tight text-app-text">
+                {t('tablesTitle')}
+              </h1>
+              <p className="text-sm text-app-text-secondary">{t('tablesSubtitle')}</p>
             </div>
-          )}
+
+            {/* Mode Selector */}
+            <ModeSelector mode={mode} onModeChange={handleModeChange} />
+
+            {/* Mode: Skip */}
+            {mode === 'skip' && <SkipState />}
+
+            {/* Mode: Minimum */}
+            {mode === 'minimum' && (
+              <MinimumZones
+                zones={zones}
+                updateZone={updateZone}
+                addZone={addZone}
+                removeZone={removeZone}
+              />
+            )}
+
+            {/* Mode: Complete */}
+            {mode === 'complete' && (
+              <CompleteZones
+                zones={zones}
+                updateZone={updateZone}
+                addZone={addZone}
+                removeZone={removeZone}
+              />
+            )}
+
+            {/* Naming hint */}
+            {mode !== 'skip' && (
+              <div className="mt-8 rounded-xl border border-app-border bg-app-elevated p-4 shadow-sm">
+                <p className="text-xs text-app-text-secondary">
+                  <span className="font-semibold text-app-text">{t('tipPrefix')}</span>{' '}
+                  {zones[0]?.prefix || 'XXX'}-1, {zones[0]?.prefix || 'XXX'}-2, ...
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

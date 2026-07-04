@@ -182,7 +182,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Phone preview - desktop only */}
-        <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
+        <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border bg-app-elevated shrink-0">
           <PhonePreview data={data} phase={phase} />
         </div>
       </div>
