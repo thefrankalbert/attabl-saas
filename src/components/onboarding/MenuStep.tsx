@@ -1,73 +1,20 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage, uploadToStorage } from '@/lib/image-compress';
 import { createClient } from '@/lib/supabase/client';
 import { getSegmentFamily } from '@/lib/segment-terms';
+import { MenuItemRow } from './menu/MenuItemRow';
+import { type Category, buildCategoriesFromData } from './menu/menu-data';
 
 interface MenuStepProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
-}
-
-interface CategoryItem {
-  id: string;
-  name: string;
-  price: string;
-  imageUrl?: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  expanded: boolean;
-  items: CategoryItem[];
-}
-
-function buildCategoriesFromData(menuItems: OnboardingData['menuItems']): Category[] {
-  if (!menuItems || menuItems.length === 0) {
-    return [
-      {
-        id: crypto.randomUUID(),
-        name: '',
-        expanded: true,
-        items: [{ id: crypto.randomUUID(), name: '', price: '' }],
-      },
-    ];
-  }
-
-  const grouped = new Map<string, Array<{ name: string; price: number; imageUrl?: string }>>();
-  for (const item of menuItems) {
-    const cat = item.category || '';
-    if (!grouped.has(cat)) {
-      grouped.set(cat, []);
-    }
-    grouped.get(cat)!.push({ name: item.name, price: item.price, imageUrl: item.imageUrl });
-  }
-
-  const result: Category[] = [];
-  for (const [catName, items] of grouped) {
-    result.push({
-      id: crypto.randomUUID(),
-      name: catName,
-      expanded: true,
-      items: items.map((item) => ({
-        id: crypto.randomUUID(),
-        name: item.name,
-        price: item.price > 0 ? String(item.price) : '',
-        imageUrl: item.imageUrl,
-      })),
-    });
-  }
-
-  return result;
 }
 
 export function MenuStep({ data, updateData }: MenuStepProps) {
@@ -265,7 +212,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteCategory(category.id)}
-                        className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors h-8 w-8"
+                        className="p-2 rounded-lg text-app-text-muted hover:text-status-error hover:bg-status-error-bg transition-colors h-8 w-8"
                         aria-label={t('deleteCategory')}
                       >
                         <X className="h-4 w-4" />
@@ -276,93 +223,16 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                     {category.expanded && (
                       <div className="p-4 space-y-2.5">
                         {category.items.map((item) => (
-                          <div
+                          <MenuItemRow
                             key={item.id}
-                            className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
-                          >
-                            {/* Photo upload */}
-                            <div className="relative shrink-0">
-                              {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                id={`photo-${item.id}`}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  handleItemPhotoUpload(category.id, item.id, file);
-                                  if (e.target) e.target.value = '';
-                                }}
-                              />
-                              {uploadingItemId === item.id ? (
-                                <div className="w-9 h-9 rounded-xl border border-app-border flex items-center justify-center">
-                                  <Loader2 className="h-3.5 w-3.5 text-app-text-muted animate-spin" />
-                                </div>
-                              ) : item.imageUrl ? (
-                                <div className="relative w-9 h-9">
-                                  <img
-                                    src={item.imageUrl}
-                                    alt=""
-                                    className="w-9 h-9 rounded-xl object-cover"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    aria-label="Remove image"
-                                    onClick={() =>
-                                      updateArticle(category.id, item.id, 'imageUrl', '')
-                                    }
-                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full p-0 min-w-0 min-h-0"
-                                  >
-                                    <X className="h-2.5 w-2.5 text-white" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Label
-                                  htmlFor={`photo-${item.id}`}
-                                  className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
-                                >
-                                  <Camera className="h-3.5 w-3.5 text-app-text-muted" />
-                                </Label>
-                              )}
-                            </div>
-                            <Input
-                              placeholder={t('articleNamePlaceholder')}
-                              value={item.name}
-                              onChange={(e) =>
-                                updateArticle(category.id, item.id, 'name', e.target.value)
-                              }
-                              className="flex-1 h-9 bg-app-bg border-app-border rounded-xl text-sm"
-                            />
-                            <div className="flex items-center gap-1.5">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder={t('articlePrice')}
-                                value={item.price}
-                                onChange={(e) =>
-                                  updateArticle(category.id, item.id, 'price', e.target.value)
-                                }
-                                className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
-                              />
-                              <span className="text-xs text-app-text-muted font-medium">
-                                {data.currency || 'EUR'}
-                              </span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteArticle(category.id, item.id)}
-                              className="p-1.5 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0 h-7 w-7"
-                              aria-label={t('deleteArticle')}
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                            categoryId={category.id}
+                            item={item}
+                            currency={data.currency}
+                            uploadingItemId={uploadingItemId}
+                            updateArticle={updateArticle}
+                            deleteArticle={deleteArticle}
+                            handleItemPhotoUpload={handleItemPhotoUpload}
+                          />
                         ))}
 
                         {category.items.length < 10 ? (

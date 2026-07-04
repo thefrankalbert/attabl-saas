@@ -1,29 +1,19 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Check,
-  ExternalLink,
-  Layout,
-  Copy,
-  CheckCheck,
-  Paintbrush,
-  Type,
-  Download,
-} from 'lucide-react';
+import { Paintbrush, Type, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { LaunchQR } from '@/components/qr/LaunchQR';
-import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
-import type { QRTemplateId } from '@/types/qr-design.types';
-import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
 import type { OnboardingData } from '@/app/onboarding/page';
+import { LaunchSummaryCard } from './launch/LaunchSummaryCard';
+import { LaunchMenuUrl } from './launch/LaunchMenuUrl';
+import { LaunchDashboardNote } from './launch/LaunchDashboardNote';
+import { LaunchStyleTab } from './launch/LaunchStyleTab';
+import { LaunchTextTab } from './launch/LaunchTextTab';
 
 interface LaunchStepProps {
   data: OnboardingData;
@@ -33,78 +23,8 @@ interface LaunchStepProps {
 
 type LaunchTab = 'style' | 'text' | 'export';
 
-const TEMPLATES: Array<{ id: QRTemplateId; labelKey: string }> = [
-  { id: 'standard', labelKey: 'qrTemplateStandard' },
-  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
-  { id: 'carte', labelKey: 'qrTemplateCarte' },
-  { id: 'minimal', labelKey: 'qrTemplateMinimal' },
-  { id: 'elegant', labelKey: 'qrTemplateElegant' },
-  { id: 'neon', labelKey: 'qrTemplateNeon' },
-];
-
-const QR_STYLES: Array<{
-  id: OnboardingData['qrStyle'];
-  fg: string;
-  bg: string;
-}> = [
-  { id: 'classic', fg: '#000000', bg: '#FFFFFF' },
-  { id: 'branded', fg: 'primary', bg: '#FFFFFF' },
-  { id: 'inverted', fg: '#FFFFFF', bg: '#000000' },
-  { id: 'dark', fg: '#FFFFFF', bg: '#1a1a1a' },
-];
-
-const CTA_PRESETS = [
-  { key: 'qrCtaScan', value: 'Scannez pour commander' },
-  { key: 'qrCtaMenu', value: 'Scannez pour voir le menu' },
-  { key: 'qrCtaDiscover', value: 'Scannez pour découvrir' },
-  { key: 'qrCtaCard', value: 'Scannez notre carte' },
-];
-
-/** Renders a real template at mini scale for the template picker */
-function TemplateMiniPreview({
-  templateId,
-  data,
-}: {
-  templateId: QRTemplateId;
-  data: OnboardingData;
-}) {
-  const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
-
-  const TemplateComponent = TEMPLATE_REGISTRY[templateId];
-  const defaults = TEMPLATE_DEFAULTS[templateId];
-
-  const templateHeightPx = defaults.height * 3.78;
-  const templateWidthPx = defaults.width * 3.78;
-  const scale = Math.min(70 / templateHeightPx, 100 / templateWidthPx, 0.18);
-
-  return (
-    <div
-      className="relative overflow-hidden flex items-start justify-center"
-      style={{
-        height: 72,
-        width: '100%',
-      }}
-    >
-      <div
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: 'top center',
-        }}
-      >
-        <TemplateComponent
-          config={config}
-          url="https://attabl.com"
-          tenantName={data.tenantName || 'Mon resto'}
-          logoUrl={data.logoUrl || undefined}
-        />
-      </div>
-    </div>
-  );
-}
-
 export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps) {
   const t = useTranslations('onboarding');
-  const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<LaunchTab>('style');
 
   const showQr = variant === 'qr';
@@ -122,16 +42,6 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
     { label: t('checkBrandingCustomized'), done: !!data.primaryColor },
     { label: t('checkMenuInitialized'), done: data.menuOption !== 'skip' },
   ];
-
-  const handleCopyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(menuUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard API not available
-    }
-  };
 
   const accentColor = data.primaryColor || '#000';
 
@@ -157,98 +67,15 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
           {/* Summary Card -- Full width */}
           {showSummary && (
-            <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
-              <div className="flex items-center gap-4 mb-5">
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border/50"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {data.logoUrl ? (
-                    <img
-                      src={data.logoUrl}
-                      alt="Logo"
-                      className="w-full h-full rounded-xl object-cover"
-                    />
-                  ) : (
-                    <Layout className="h-7 w-7 text-white" />
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-app-text">{data.tenantName}</h2>
-                  <p className="text-app-text-secondary capitalize text-sm">
-                    {data.establishmentType} &bull; {data.city || 'Non défini'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Checklist */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {completedItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 py-1">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                      style={
-                        item.done
-                          ? { backgroundColor: accentColor, color: '#fff' }
-                          : {
-                              backgroundColor: 'var(--app-elevated)',
-                              color: 'var(--app-text-muted)',
-                            }
-                      }
-                    >
-                      <Check className="h-3 w-3" />
-                    </div>
-                    <span
-                      className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LaunchSummaryCard
+              data={data}
+              accentColor={accentColor}
+              completedItems={completedItems}
+            />
           )}
 
           {/* Menu URL */}
-          {showSummary && (
-            <div className="mb-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
-                Lien du menu
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text break-all">
-                  {menuUrl}
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label={t('copyUrl')}
-                  onClick={handleCopyUrl}
-                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
-                  title={t('copyUrl')}
-                >
-                  {copied ? (
-                    <CheckCheck className="h-4 w-4 text-accent" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-app-text-secondary" />
-                  )}
-                </Button>
-                <a
-                  href={menuUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4 text-app-text-secondary" />
-                </a>
-              </div>
-              {copied && (
-                <p className="text-xs mt-2 font-medium" style={{ color: accentColor }}>
-                  {t('urlCopied')}
-                </p>
-              )}
-            </div>
-          )}
+          {showSummary && <LaunchMenuUrl menuUrl={menuUrl} accentColor={accentColor} />}
 
           {/* LaunchQR export for summary variant */}
           {showSummary && (
@@ -262,6 +89,9 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
             </div>
           )}
 
+          {/* Dashboard handoff - names where the launch lands the user */}
+          {showSummary && <LaunchDashboardNote />}
+
           {/* QR Customization */}
           {showQr && (
             <div>
@@ -270,7 +100,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
               </p>
 
               {/* Tab Pills */}
-              <div className="flex gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border inline-flex">
+              <div className="flex flex-wrap gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -294,131 +124,10 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
               </div>
 
               {/* Style Tab */}
-              {activeTab === 'style' && (
-                <div className="space-y-6">
-                  {/* Templates */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {TEMPLATES.map((tmpl) => {
-                        const isSelected = data.qrTemplate === tmpl.id;
-                        return (
-                          <Button
-                            key={tmpl.id}
-                            type="button"
-                            variant="outline"
-                            onClick={() => updateData({ qrTemplate: tmpl.id })}
-                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
-                              isSelected
-                                ? 'border-accent bg-accent/5 '
-                                : 'border-app-border hover:border-app-border-hover'
-                            }`}
-                          >
-                            <div className="pt-3 px-2">
-                              <TemplateMiniPreview templateId={tmpl.id} data={data} />
-                            </div>
-                            <div className="py-2 border-t border-app-border">
-                              <span
-                                className={`text-xs font-semibold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
-                              >
-                                {t(tmpl.labelKey)}
-                              </span>
-                            </div>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* QR Color Styles */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrCodeTitle')}
-                    </p>
-                    <div className="flex gap-2.5">
-                      {QR_STYLES.map((style) => {
-                        const isActive = data.qrStyle === style.id;
-                        const previewFg =
-                          style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
-                        return (
-                          <Button
-                            key={style.id}
-                            type="button"
-                            variant="outline"
-                            onClick={() => updateData({ qrStyle: style.id })}
-                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all p-0 ${
-                              isActive
-                                ? 'border-accent '
-                                : 'border-app-border hover:border-app-border-hover'
-                            }`}
-                            style={{ backgroundColor: style.bg }}
-                          >
-                            <div
-                              className="w-5 h-5 rounded-md"
-                              style={{ backgroundColor: previewFg }}
-                            />
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {activeTab === 'style' && <LaunchStyleTab data={data} updateData={updateData} />}
 
               {/* Text Tab */}
-              {activeTab === 'text' && (
-                <div className="space-y-6">
-                  {/* CTA Presets */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrCtaLabel')}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {CTA_PRESETS.map((preset) => {
-                        const isActive = data.qrCta === preset.value;
-                        return (
-                          <Button
-                            key={preset.key}
-                            type="button"
-                            variant={isActive ? 'default' : 'outline'}
-                            onClick={() => updateData({ qrCta: preset.value })}
-                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
-                              isActive
-                                ? 'bg-accent text-accent-text'
-                                : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
-                            }`}
-                          >
-                            {t(preset.key)}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    <Input
-                      type="text"
-                      value={data.qrCta}
-                      onChange={(e) => updateData({ qrCta: e.target.value })}
-                      placeholder={t('qrCtaLabel')}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-                      maxLength={60}
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
-                      {t('qrDescriptionLabel')}
-                    </p>
-                    <Textarea
-                      value={data.qrDescription}
-                      onChange={(e) => updateData({ qrDescription: e.target.value })}
-                      placeholder={t('qrDescriptionLabel')}
-                      rows={2}
-                      maxLength={120}
-                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-                    />
-                  </div>
-                </div>
-              )}
+              {activeTab === 'text' && <LaunchTextTab data={data} updateData={updateData} />}
 
               {/* Export Tab */}
               {activeTab === 'export' && (
