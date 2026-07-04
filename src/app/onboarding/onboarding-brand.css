@@ -1,0 +1,33 @@
+/*
+ * Onboarding brand scope - accent lime marque ATTABL (#CCFF00).
+ *
+ * L'onboarding est une surface MARQUE (comme auth/marketing/storefront), pas
+ * l'admin. La regle 09-admin-color-system impose l'accent lime ici. Le token
+ * global reste bleu (#006aff) pour le reste de l'app; on le surcharge UNIQUEMENT
+ * sur le wrapper .onboarding-brand, donc les utilitaires bg-accent / text-accent
+ * / hover:bg-accent-hover / ring-accent heritent le lime pour les seuls
+ * descendants de l'onboarding. Aucune modification de globals.css.
+ *
+ * Deux couches de tokens a surcharger :
+ *  - --app-* : lus directement (ex: WelcomeStep glow via color-mix(var(--app-accent))).
+ *  - --color-* : les tokens @theme que Tailwind v4 compile pour bg-accent/text-accent.
+ *    Tailwind fige --color-accent a sa valeur CALCULEE au :root (donc bleu) et les
+ *    enfants heritent cette valeur figee - surcharger --app-accent seul ne suffit
+ *    pas, il faut re-declarer --color-accent ici pour qu'il se resolve en lime.
+ *
+ * Lime exige un foreground FONCE: du texte blanc sur lime echoue le contraste
+ * WCAG. Les *-text passent donc a near-black.
+ */
+.onboarding-brand {
+  --app-accent: #ccff00;
+  --app-accent-hover: #b8e600;
+  --app-accent-muted: rgba(204, 255, 0, 0.14);
+  --app-accent-text: #0a0a0a;
+  --ring: #ccff00;
+
+  --color-accent: #ccff00;
+  --color-accent-hover: #b8e600;
+  --color-accent-muted: rgba(204, 255, 0, 0.14);
+  --color-accent-text: #0a0a0a;
+  --color-ring: #ccff00;
+}

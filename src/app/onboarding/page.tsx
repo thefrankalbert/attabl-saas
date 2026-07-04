@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 
+import './onboarding-brand.css';
+
 import { BrandingStep } from '@/components/onboarding/BrandingStep';
 import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
@@ -82,7 +84,7 @@ export default function OnboardingPage() {
   if (phase === 0) {
     return (
       /* Standalone page - h-dvh is intentional */
-      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg relative">
+      <div className="onboarding-brand h-dvh overflow-hidden flex flex-col bg-app-bg relative">
         <WelcomeStep tenantName={data.tenantName} onStart={startStudio} />
       </div>
     );
@@ -92,7 +94,7 @@ export default function OnboardingPage() {
 
   return (
     /* Standalone page - h-dvh is intentional */
-    <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
+    <div className="onboarding-brand h-dvh overflow-hidden flex flex-col bg-app-bg">
       <OnboardingTopNav
         phases={phases}
         phase={phase}
@@ -130,7 +132,14 @@ export default function OnboardingPage() {
                   : 'animate-in slide-in-from-left-4 fade-in duration-200'
               }
             >
-              <StepErrorBoundary key={`eb-${phase}-${subScreen}`}>
+              <StepErrorBoundary
+                key={`eb-${phase}-${subScreen}`}
+                fallback={
+                  <div className="p-8 text-center">
+                    <p className="text-status-error">{t('stepError')}</p>
+                  </div>
+                }
+              >
                 {renderScreen()}
               </StepErrorBoundary>
 

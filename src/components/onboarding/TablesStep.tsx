@@ -2,47 +2,17 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Plus, X, Zap, Settings, Clock } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
+import { derivePrefix, type ConfigMode, type ZoneData } from './tables/types';
+import { ModeSelector } from './tables/ModeSelector';
+import { SkipState } from './tables/SkipState';
+import { MinimumZones } from './tables/MinimumZones';
+import { CompleteZones } from './tables/CompleteZones';
 
 interface TablesStepProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
 }
-
-interface ZoneData {
-  name: string;
-  prefix: string;
-  tableCount: number;
-  defaultCapacity?: number;
-}
-
-type ConfigMode = 'complete' | 'minimum' | 'skip';
-
-const capacityOptions = [2, 4, 6, 8, 10, 12];
-
-/** Derive a prefix from a zone name: first 3 uppercase letters. */
-function derivePrefix(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .slice(0, 3)
-    .toUpperCase();
-}
-
-const modeIds: ConfigMode[] = ['complete', 'minimum', 'skip'];
-const modeIcons = [Settings, Zap, Clock] as const;
 
 export function TablesStep({ data, updateData }: TablesStepProps) {
   const t = useTranslations('onboarding');
@@ -104,18 +74,6 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
     }
   };
 
-  const modeLabelKeys: Record<ConfigMode, string> = {
-    complete: 'modeComplete',
-    minimum: 'modeMinimum',
-    skip: 'modeSkip',
-  };
-
-  const modeDescKeys: Record<ConfigMode, string> = {
-    complete: 'modeCompleteDesc',
-    minimum: 'modeMinimumDesc',
-    skip: 'modeSkipDesc',
-  };
-
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
@@ -127,291 +85,29 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
           </div>
 
           {/* Mode Selector */}
-          <div className="mb-6">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-              {t('tablesModeLabel')}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {modeIds.map((id, idx) => {
-                const isActive = mode === id;
-                const Icon = modeIcons[idx];
-                return (
-                  <Button
-                    key={id}
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleModeChange(id)}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
-                      isActive
-                        ? 'border-accent bg-accent/10'
-                        : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
-                          ? 'bg-accent text-accent-text'
-                          : 'bg-app-elevated text-app-text-muted'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p
-                        className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
-                      >
-                        {t(modeLabelKeys[id])}
-                      </p>
-                      <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
-                        {t(modeDescKeys[id])}
-                      </p>
-                    </div>
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
+          <ModeSelector mode={mode} onModeChange={handleModeChange} />
 
           {/* Mode: Skip */}
-          {mode === 'skip' && (
-            <div className="rounded-xl border border-dashed border-app-border p-8 text-center">
-              <Clock className="h-10 w-10 text-app-text-muted mx-auto mb-3" />
-              <p className="text-base text-app-text-secondary font-medium">{t('skipInfo')}</p>
-            </div>
-          )}
+          {mode === 'skip' && <SkipState />}
 
           {/* Mode: Minimum */}
           {mode === 'minimum' && (
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                {t('zonesLabel')}
-              </p>
-              <div className="space-y-3">
-                {zones.map((zone, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-app-elevated/40 border border-app-border"
-                  >
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        placeholder={t('zoneNamePlaceholder')}
-                        value={zone.name}
-                        onChange={(e) => updateZone(index, 'name', e.target.value)}
-                        className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
-                      />
-                    </div>
-                    <div className="w-28">
-                      <Input
-                        type="number"
-                        min="1"
-                        max="100"
-                        placeholder={t('zoneTableCount')}
-                        value={zone.tableCount}
-                        onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                        className="h-11 bg-app-bg rounded-xl border-app-border text-sm text-center"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeZone(index)}
-                      disabled={zones.length === 1}
-                      className={`p-2.5 rounded-xl transition-colors h-10 w-10 ${
-                        zones.length === 1
-                          ? 'text-app-text-muted cursor-not-allowed'
-                          : 'text-app-text-muted hover:text-red-500 hover:bg-red-500/10'
-                      }`}
-                      aria-label={t('deleteZone')}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-
-                {zones.length < 20 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('addZone')}
-                  </Button>
-                )}
-
-                {/* Preview */}
-                {zones.some((z) => z.name && z.tableCount > 0) && (
-                  <div className="mt-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
-                    <p className="text-xs font-semibold text-app-text-muted mb-3">
-                      {t('tipPrefix')}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {zones
-                        .filter((z) => z.name)
-                        .map((zone) => {
-                          const prefix = zone.prefix || derivePrefix(zone.name);
-                          const count = Math.min(zone.tableCount, 6);
-                          return Array.from({ length: count }, (_, i) => (
-                            <span
-                              key={`${prefix}-${i}`}
-                              className="font-mono bg-app-bg rounded-lg px-2.5 py-1 text-xs text-app-text-secondary border border-app-border"
-                            >
-                              {prefix}-{i + 1}
-                            </span>
-                          ));
-                        })}
-                      {zones.some((z) => z.tableCount > 6) && (
-                        <span className="inline-flex items-center px-2.5 py-1 text-xs text-app-text-muted">
-                          ...
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <MinimumZones
+              zones={zones}
+              updateZone={updateZone}
+              addZone={addZone}
+              removeZone={removeZone}
+            />
           )}
 
           {/* Mode: Complete */}
           {mode === 'complete' && (
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                {t('zonesLabel')}
-              </p>
-              <div className="space-y-4">
-                {zones.map((zone, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-app-border bg-app-elevated/30 overflow-hidden"
-                  >
-                    {/* Zone header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
-                      <span className="text-xs font-bold text-app-text-muted uppercase tracking-wider">
-                        {t('zoneNumber', { number: index + 1 })}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeZone(index)}
-                        disabled={zones.length === 1}
-                        className={`p-1.5 rounded-lg transition-colors h-7 w-7 ${
-                          zones.length === 1
-                            ? 'text-app-text-muted cursor-not-allowed'
-                            : 'text-app-text-muted hover:text-red-500 hover:bg-red-500/10'
-                        }`}
-                        aria-label={t('deleteZone')}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-
-                    {/* Zone fields */}
-                    <div className="p-4">
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <Label className="text-app-text-secondary text-xs mb-1.5 block">
-                            {t('zoneName')}
-                          </Label>
-                          <Input
-                            type="text"
-                            placeholder={t('zoneNamePlaceholder')}
-                            value={zone.name}
-                            onChange={(e) => updateZone(index, 'name', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-app-text-secondary text-xs mb-1.5 block">
-                            {t('zonePrefix')}
-                          </Label>
-                          <Input
-                            type="text"
-                            placeholder="TER"
-                            maxLength={5}
-                            value={zone.prefix}
-                            onChange={(e) => updateZone(index, 'prefix', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border font-mono uppercase text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-app-text-secondary text-xs mb-1.5 block">
-                            {t('zoneTableCount')}
-                          </Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={zone.tableCount}
-                            onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                            className="h-10 bg-app-bg rounded-xl border-app-border text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-app-text-secondary text-xs mb-1.5 block">
-                            {t('zoneCapacity')}
-                          </Label>
-                          <Select
-                            value={String(zone.defaultCapacity ?? 2)}
-                            onValueChange={(val) => updateZone(index, 'defaultCapacity', val)}
-                          >
-                            <SelectTrigger className="h-10 bg-app-bg rounded-xl border-app-border text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {capacityOptions.map((cap) => (
-                                <SelectItem key={cap} value={String(cap)}>
-                                  {cap} {t('capacityPlaces')}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Inline preview for this zone */}
-                      {zone.name && zone.prefix && zone.tableCount > 0 && (
-                        <div className="mt-4 pt-3 border-t border-app-border">
-                          <div className="flex flex-wrap gap-1.5">
-                            {Array.from({ length: Math.min(zone.tableCount, 8) }, (_, i) => (
-                              <span
-                                key={i}
-                                className="font-mono bg-app-bg rounded-lg px-2 py-0.5 text-xs text-app-text-secondary border border-app-border"
-                              >
-                                {zone.prefix}-{i + 1}
-                              </span>
-                            ))}
-                            {zone.tableCount > 8 && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-xs text-app-text-muted">
-                                ...+{zone.tableCount - 8}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {zones.length < 20 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('addZone')}
-                  </Button>
-                )}
-              </div>
-            </div>
+            <CompleteZones
+              zones={zones}
+              updateZone={updateZone}
+              addZone={addZone}
+              removeZone={removeZone}
+            />
           )}
 
           {/* Naming hint */}

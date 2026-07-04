@@ -2,13 +2,13 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
+import { ColorPickerField } from '@/components/onboarding/ColorPickerField';
 import { LogoCropper } from '@/components/onboarding/LogoCropper';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -126,9 +126,9 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           {/* Header */}
-          <div className="mb-4">
+          <div className="mb-6">
             <h1 className="text-lg font-bold text-app-text mb-1">{t('brandingTitle')}</h1>
             <p className="text-app-text-secondary text-sm">{t('brandingSubtitle')}</p>
           </div>
@@ -138,7 +138,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
             {/* Left: Logo & Description */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Identite visuelle
+                {t('identityVisualLabel')}
               </p>
 
               {/* Logo Upload */}
@@ -247,7 +247,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
             {/* Right: Colors */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-                Couleurs
+                {t('colorsLabel')}
               </p>
 
               {/* Presets */}
@@ -298,117 +298,45 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                 <Label className="text-xs font-semibold text-app-text mb-2.5 block">
                   {t('customColorsLabel')}
                   {!hasPresetMatch && (
-                    <span className="ml-1.5 text-[10px] text-accent">(actif)</span>
+                    <span className="ml-1.5 text-[10px] text-accent">
+                      {t('customColorsActive')}
+                    </span>
                   )}
                 </Label>
                 <div className="space-y-4">
                   {/* Primary */}
-                  <div>
-                    <Label
-                      htmlFor="primaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('primaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.primaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.primaryColor}
-                        onChange={(e) => updateData({ primaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
-                      />
-                    </div>
-                    {showPickerFor === 'primary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
-                        {colorGrid.map((color) => (
-                          <Button
-                            key={color}
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              updateData({ primaryColor: color });
-                              setShowPickerFor(null);
-                            }}
-                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
-                              data.primaryColor === color
-                                ? 'border-accent scale-110'
-                                : 'border-transparent hover:border-app-border-hover'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <ColorPickerField
+                    id="primaryColor"
+                    label={t('primaryColor')}
+                    value={data.primaryColor}
+                    colors={colorGrid}
+                    isOpen={showPickerFor === 'primary'}
+                    onToggle={() =>
+                      setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
+                    }
+                    onChange={(v) => updateData({ primaryColor: v })}
+                    onPick={(v) => {
+                      updateData({ primaryColor: v });
+                      setShowPickerFor(null);
+                    }}
+                  />
 
                   {/* Secondary */}
-                  <div>
-                    <Label
-                      htmlFor="secondaryColor"
-                      className="text-xs font-medium text-app-text-secondary mb-1 block"
-                    >
-                      {t('secondaryColor')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() =>
-                          setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
-                          }
-                        }}
-                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
-                        style={{ backgroundColor: data.secondaryColor }}
-                      />
-                      <Input
-                        type="text"
-                        value={data.secondaryColor}
-                        onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
-                      />
-                    </div>
-                    {showPickerFor === 'secondary' && (
-                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
-                        {colorGrid.map((color) => (
-                          <Button
-                            key={color}
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              updateData({ secondaryColor: color });
-                              setShowPickerFor(null);
-                            }}
-                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
-                              data.secondaryColor === color
-                                ? 'border-accent scale-110'
-                                : 'border-transparent hover:border-app-border-hover'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <ColorPickerField
+                    id="secondaryColor"
+                    label={t('secondaryColor')}
+                    value={data.secondaryColor}
+                    colors={colorGrid}
+                    isOpen={showPickerFor === 'secondary'}
+                    onToggle={() =>
+                      setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
+                    }
+                    onChange={(v) => updateData({ secondaryColor: v })}
+                    onPick={(v) => {
+                      updateData({ secondaryColor: v });
+                      setShowPickerFor(null);
+                    }}
+                  />
                 </div>
               </div>
             </div>
