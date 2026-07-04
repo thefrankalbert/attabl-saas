@@ -32,7 +32,7 @@ export type CartItem = {
   };
   category_id?: string;
   category_name?: string;
-  // ─── Phase 3: modifiers, notes, course ────────────────
+  // --- Phase 3: modifiers, notes, course ----------------
   modifiers?: { id?: string; name: string; price: number; prices?: MultiCurrencyPrices }[];
   customerNotes?: string;
   course?: string;
@@ -62,7 +62,7 @@ type CartContextType = {
   notes: string;
   setNotes: (notes: string) => void;
   canAddToCart: (restaurantId: string) => boolean;
-  // ─── Phase 3: new state & methods ────────────────────
+  // --- Phase 3: new state & methods --------------------
   appliedCoupon: AppliedCoupon;
   serviceType: ServiceType;
   roomNumber: string;
@@ -173,7 +173,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const [notes, setNotes] = useState<string>('');
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // ─── Phase 3: new state ─────────────────────────────────
+  // --- Phase 3: new state ---------------------------------
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon>(null);
   const [serviceType, setServiceTypeState] = useState<ServiceType>('dine_in');
   const [roomNumber, setRoomNumberState] = useState<string>('');
@@ -382,7 +382,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setLastVisitedMenuUrlState(url);
   }, []);
 
-  // ─── Phase 3: new methods ────────────────────────────────
+  // --- Phase 3: new methods --------------------------------
 
   const setServiceType = useCallback((type: ServiceType) => {
     setServiceTypeState(type);
@@ -443,7 +443,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setAppliedCoupon(null);
   }, []);
 
-  // ─── Derived pricing calculations ────────────────────────
+  // --- Derived pricing calculations ------------------------
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   // Subtotal: sum of (item price + modifiers) * quantity

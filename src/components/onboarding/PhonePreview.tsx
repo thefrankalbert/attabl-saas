@@ -17,7 +17,7 @@ import {
 
 import type { OnboardingData } from '@/app/onboarding/page';
 
-// ─── Emoji mapping (mirrors CategoryGrid/ClientMenuPage) ────────────────────
+// --- Emoji mapping (mirrors CategoryGrid/ClientMenuPage) --------------------
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   entree: '🥗',
@@ -80,14 +80,14 @@ function getCategoryEmoji(name: string): string {
   return '🍽️';
 }
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// --- Types ------------------------------------------------------------------
 
 interface PhonePreviewProps {
   data: OnboardingData;
   phase: number;
 }
 
-// ─── Tokens (mirrors menu-tokens.ts) ────────────────────────────────────────
+// --- Tokens (mirrors menu-tokens.ts) ----------------------------------------
 
 const C = {
   bg: '#FFFFFF',
@@ -103,7 +103,7 @@ const C = {
   skeletonAlt: '#F3F4F6',
 };
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// --- Component --------------------------------------------------------------
 
 export function PhonePreview({ data, phase }: PhonePreviewProps) {
   const t = useTranslations('onboarding');
@@ -130,7 +130,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
 
   return (
     <div className="relative flex items-center justify-center">
-      {/* ── Phone shell ─────────────────────────────── */}
+      {/* -- Phone shell ------------------------------- */}
       <div
         style={{
           position: 'relative',
@@ -158,7 +158,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
           }}
         />
 
-        {/* ── Screen ────────────────────────────────── */}
+        {/* -- Screen ---------------------------------- */}
         <div
           style={{
             position: 'absolute',
@@ -170,7 +170,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             flexDirection: 'column',
           }}
         >
-          {/* ── Scrollable content ──────────────────── */}
+          {/* -- Scrollable content -------------------- */}
           <div
             style={{
               flex: 1,
@@ -181,7 +181,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             {/* Safe area top (dynamic island) */}
             <div style={{ height: '30px' }} />
 
-            {/* ─── HEADER ─── location left / logo right */}
+            {/* --- HEADER --- location left / logo right */}
             <div
               style={{
                 display: 'flex',
@@ -240,7 +240,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               </div>
             </div>
 
-            {/* ─── SEARCH BAR ─── */}
+            {/* --- SEARCH BAR --- */}
             <div
               style={{
                 paddingLeft: '12px',
@@ -276,7 +276,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               </div>
             </div>
 
-            {/* ─── CATEGORY GRID ─── 4 colonnes, tuiles carrées */}
+            {/* --- CATEGORY GRID --- 4 colonnes, tuiles carrées */}
             <div
               style={{
                 paddingLeft: '12px',
@@ -388,7 +388,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               )}
             </div>
 
-            {/* ─── CATEGORY NAV PILLS (sticky dans l'app réelle) ─── */}
+            {/* --- CATEGORY NAV PILLS (sticky dans l'app réelle) --- */}
             <div
               style={{
                 display: 'flex',
@@ -445,7 +445,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                   ))}
             </div>
 
-            {/* ─── ITEMS LIST ─── image droite / texte gauche (MenuItemCard) */}
+            {/* --- ITEMS LIST --- image droite / texte gauche (MenuItemCard) */}
             <div style={{ paddingLeft: '12px', paddingRight: '12px' }}>
               {hasMenu
                 ? displayItems.map((item, idx) => (
@@ -630,7 +630,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             <div style={{ height: '90px' }} />
           </div>
 
-          {/* ─── FLOATING CART BAR ─── noir, rounded-full (FloatingCartBar.tsx) */}
+          {/* --- FLOATING CART BAR --- noir, rounded-full (FloatingCartBar.tsx) */}
           {hasMenu && (
             <div
               style={{
@@ -688,7 +688,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             </div>
           )}
 
-          {/* ─── BOTTOM NAV ─── 4 tabs (BottomNav.tsx) */}
+          {/* --- BOTTOM NAV --- 4 tabs (BottomNav.tsx) */}
           <div
             style={{
               position: 'absolute',

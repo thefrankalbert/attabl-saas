@@ -32,7 +32,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const { isMobile } = useDevice();
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  // ── "A encaisser" (C2): bill an existing QR/served order from the caisse ──
+  // -- "A encaisser" (C2): bill an existing QR/served order from the caisse --
   const [showUnpaid, setShowUnpaid] = useState(false);
   const [settlingOrder, setSettlingOrder] = useState<Order | null>(null);
   const {
@@ -49,7 +49,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const ts = useTranslations('shortcuts');
   const pos = usePOSData(tenantId);
 
-  // ── Contextual keyboard shortcuts ──
+  // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [

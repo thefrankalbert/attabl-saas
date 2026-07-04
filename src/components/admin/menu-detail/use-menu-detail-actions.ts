@@ -82,7 +82,7 @@ export function useMenuDetailActions(state: MenuDetailState) {
     }
   };
 
-  // ─── Category CRUD ──────────────────────────────────────
+  // --- Category CRUD --------------------------------------
 
   const openNewCategoryModal = () => {
     setEditingCategory(null);
@@ -183,7 +183,7 @@ export function useMenuDetailActions(state: MenuDetailState) {
     }
   };
 
-  // ─── Assign existing category ─────────────────────────
+  // --- Assign existing category -------------------------
 
   const handleAssignCategory = async (cat: Category) => {
     setAssigningCategory(true);
@@ -204,7 +204,7 @@ export function useMenuDetailActions(state: MenuDetailState) {
     }
   };
 
-  // ─── Item operations (optimistic) ───────────────────────
+  // --- Item operations (optimistic) -----------------------
 
   const toggleItemAvailable = async (item: MenuItem) => {
     const newValue = !item.is_available;
@@ -228,7 +228,7 @@ export function useMenuDetailActions(state: MenuDetailState) {
     }
   };
 
-  // ─── Inline price editing ──────────────────────────────
+  // --- Inline price editing ------------------------------
 
   const startEditingPrice = (item: MenuItem) => {
     setEditingPriceId(item.id);
@@ -259,7 +259,7 @@ export function useMenuDetailActions(state: MenuDetailState) {
     }
   };
 
-  // ─── Item edit modal ───────────────────────────────────
+  // --- Item edit modal -----------------------------------
 
   const openEditItemModal = (item: MenuItem) => {
     setEditingItem(item);

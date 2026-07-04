@@ -47,6 +47,7 @@
     "loading": "Loading...",
     "loadMore": "Load more",
     "error": "Error",
+    "clear": "Clear",
     "actions": "Actions",
     "saveChanges": "Save changes",
     "deleteConfirm": "Are you sure you want to delete?",
@@ -801,6 +802,8 @@
       "login": "Sign in",
       "getStarted": "Get started",
       "getStartedFree": "Start for free",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
       "appearance": "Appearance",
       "allFeatures": "All features",
       "segments": {
@@ -2692,6 +2695,8 @@
     "icon": "Icon"
   },
   "items": {
+    "selectedCount": "{count} selected",
+    "bulkToggleAvailability": "Toggle availability",
     "title": "Dishes & Items",
     "newItem": "New dish",
     "allCategories": "All categories",
@@ -3311,6 +3316,7 @@
     "upsellTitle": "Goes well with",
     "upsellSubtitle": "Often ordered together",
     "required": "Required",
+    "selectRequiredOption": "Please select the required options",
     "optionalLabel": "Optional",
     "optionsTitle": "Options",
     "allergensLabel": "Allergens",

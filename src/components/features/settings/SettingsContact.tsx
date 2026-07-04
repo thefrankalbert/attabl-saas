@@ -6,14 +6,14 @@ import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsContactProps {
   form: UseFormReturn<SettingsFormValues>;
   t: (key: string) => string;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsContact({ form, t }: SettingsContactProps) {
   const {

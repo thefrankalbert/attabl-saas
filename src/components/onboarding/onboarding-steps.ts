@@ -1,6 +1,6 @@
 import { Palette } from 'lucide-react';
 
-// ─── Phase / sub-screen definitions ────────────────────────────────────────────
+// --- Phase / sub-screen definitions --------------------------------------------
 
 export type ScreenKey =
   | 'establishment'

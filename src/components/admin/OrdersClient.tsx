@@ -133,7 +133,7 @@ export default function OrdersClient({
     },
   });
 
-  // ── Contextual keyboard shortcuts ──
+  // -- Contextual keyboard shortcuts --
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [
       {

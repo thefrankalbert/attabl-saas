@@ -30,10 +30,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sit
       display: 'fullscreen',
       background_color: '#ffffff',
       theme_color: themeColor,
-      icons: [
-        { src: tenant?.logo_url || '/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: tenant?.logo_url || '/icon-512.png', sizes: '512x512', type: 'image/png' },
-      ],
+      // Use the tenant logo when set; otherwise fall back to the app favicon
+      // (which exists) rather than /icon-192.png|/icon-512.png, which are not
+      // shipped and 404 on every storefront load.
+      icons: tenant?.logo_url
+        ? [
+            { src: tenant.logo_url, sizes: '192x192', type: 'image/png' },
+            { src: tenant.logo_url, sizes: '512x512', type: 'image/png' },
+          ]
+        : [{ src: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }],
     },
     { headers: { 'Content-Type': 'application/manifest+json' } },
   );

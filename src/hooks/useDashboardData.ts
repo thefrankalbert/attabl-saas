@@ -18,7 +18,7 @@ import type {
   SparklinePoint,
 } from '@/types/admin.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface StockItem {
   id: string;
@@ -54,7 +54,7 @@ export interface UseDashboardDataReturn {
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
 }
 
-// ─── Hook ──────────────────────────────────────────────────
+// --- Hook --------------------------------------------------
 
 export function useDashboardData({
   tenantId,

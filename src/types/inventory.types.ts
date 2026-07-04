@@ -1,4 +1,4 @@
-// ─── Inventory Engine Types ─────────────────────────────
+// --- Inventory Engine Types -----------------------------
 
 export type IngredientUnit = 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
 
@@ -129,7 +129,7 @@ export interface StaffStockReportRow {
   order_destock_qty: number;
 }
 
-// ─── Physical stock count (#12) ─────────────────────────
+// --- Physical stock count (#12) -------------------------
 
 export type StockCountStatus = 'open' | 'committed' | 'cancelled';
 
@@ -168,7 +168,7 @@ export interface StockCountLineInput {
   counted_qty: number | null;
 }
 
-// ─── Input types for service methods ────────────────────
+// --- Input types for service methods --------------------
 
 export interface CreateIngredientInput {
   name: string;
@@ -234,7 +234,7 @@ export interface LossByReason {
   total_cost_value: number;
 }
 
-// ─── Recipe (fiche technique) Excel import (#11) ────────
+// --- Recipe (fiche technique) Excel import (#11) --------
 
 import type { ImportRowError } from '@/lib/excel-parse';
 
@@ -270,7 +270,7 @@ export interface RecipeImportResult {
   errors: ImportRowError[];
 }
 
-// ─── Unit labels for UI ─────────────────────────────────
+// --- Unit labels for UI ---------------------------------
 
 export const INGREDIENT_UNITS: Record<IngredientUnit, { label: string; labelShort: string }> = {
   kg: { label: 'Kilogramme', labelShort: 'kg' },

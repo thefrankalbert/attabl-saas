@@ -7,7 +7,7 @@ import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import * as Sentry from '@sentry/nextjs';
 
-// ─── Mock external dependencies ────────────────────────────────
+// --- Mock external dependencies --------------------------------
 
 // Keep the real NextResponse but make after() run its callback inline.
 // after() requires a request scope at runtime; in unit tests we execute the
@@ -39,7 +39,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
-// ─── Rate-limit mock ───────────────────────────────────────────
+// --- Rate-limit mock -------------------------------------------
 const mockRateLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -47,7 +47,7 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
-// ─── Order service mock ────────────────────────────────────────
+// --- Order service mock ----------------------------------------
 const mockValidateTenant = vi.fn<
   () => Promise<{
     id: string;
@@ -87,7 +87,7 @@ vi.mock('@/services/order.service', () => ({
   })),
 }));
 
-// ─── Coupon service mock ───────────────────────────────────────
+// --- Coupon service mock ---------------------------------------
 const mockValidateCoupon =
   vi.fn<(code: string, tenantId: string, subtotal: number) => Promise<CouponValidationResult>>();
 const mockClaimUsage = vi.fn<(couponId: string) => Promise<boolean>>();
@@ -103,7 +103,7 @@ vi.mock('@/services/coupon.service', () => ({
   })),
 }));
 
-// ─── Inventory service mock ────────────────────────────────────
+// --- Inventory service mock ------------------------------------
 const mockDestockOrder = vi.fn<() => Promise<number>>();
 
 vi.mock('@/services/inventory.service', () => ({
@@ -112,17 +112,17 @@ vi.mock('@/services/inventory.service', () => ({
   })),
 }));
 
-// ─── Notification service mock ─────────────────────────────────
+// --- Notification service mock ---------------------------------
 vi.mock('@/services/notification.service', () => ({
   checkAndNotifyLowStock: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ─── Sentry mock (route.ts captures destock failures) ──────────
+// --- Sentry mock (route.ts captures destock failures) ----------
 vi.mock('@sentry/nextjs', () => ({
   captureException: vi.fn(),
 }));
 
-// ─── Pricing mock ──────────────────────────────────────────────
+// --- Pricing mock ----------------------------------------------
 const mockCalculateOrderTotal =
   vi.fn<(subtotal: number, config: unknown, discount: number) => PricingBreakdown>();
 
@@ -131,12 +131,12 @@ vi.mock('@/lib/pricing/tax', () => ({
     mockCalculateOrderTotal(args[0] as number, args[1], args[2] as number),
 }));
 
-// ─── Plan features mock ───────────────────────────────────────
+// --- Plan features mock ---------------------------------------
 vi.mock('@/lib/plans/features', () => ({
   canAccessFeature: vi.fn(() => false),
 }));
 
-// ─── Supabase query builder mock (for tenant config fetch via admin client) ────
+// --- Supabase query builder mock (for tenant config fetch via admin client) ----
 const mockSupabaseSingle = vi.fn();
 const mockSupabaseEq = vi.fn(() => ({ single: mockSupabaseSingle }));
 const mockSupabaseSelect = vi.fn(() => ({ eq: mockSupabaseEq }));
@@ -169,7 +169,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   })),
 }));
 
-// ─── Helpers ───────────────────────────────────────────────────
+// --- Helpers ---------------------------------------------------
 
 /** Build a valid order request body */
 function validOrderBody() {
@@ -217,7 +217,7 @@ async function parseResponse(
   return { status: response.status, body };
 }
 
-// ─── Test Suite ────────────────────────────────────────────────
+// --- Test Suite ------------------------------------------------
 
 describe('POST /api/orders', () => {
   beforeEach(() => {
@@ -281,7 +281,7 @@ describe('POST /api/orders', () => {
     mockClaimUsage.mockResolvedValue(true);
   });
 
-  // ── 1. Rate limited → 429 ──────────────────────────────────
+  // -- 1. Rate limited → 429 ----------------------------------
 
   it('should return 429 when rate limited', async () => {
     mockRateLimitCheck.mockResolvedValue({ success: false });
@@ -295,7 +295,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('rateLimited');
   });
 
-  // ── 2. Missing tenant slug → 400 ──────────────────────────
+  // -- 2. Missing tenant slug → 400 --------------------------
 
   it('should return 400 when x-tenant-slug header is missing', async () => {
     mockHeaders.mockResolvedValue(new Headers({}));
@@ -309,7 +309,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('tenantNotIdentified');
   });
 
-  // ── 3. Malformed JSON → 400 ────────────────────────────────
+  // -- 3. Malformed JSON → 400 --------------------------------
 
   it('should return 400 when request body is malformed JSON', async () => {
     const { POST } = await import('@/app/api/orders/route');
@@ -321,7 +321,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('invalidRequestBody');
   });
 
-  // ── 4. Zod validation failure → 400 ────────────────────────
+  // -- 4. Zod validation failure → 400 ------------------------
 
   it('should return 400 with validation details when Zod schema rejects input', async () => {
     const { POST } = await import('@/app/api/orders/route');
@@ -344,7 +344,7 @@ describe('POST /api/orders', () => {
     expect((body.details as string[]).length).toBeGreaterThan(0);
   });
 
-  // ── 5. Tenant not found (ServiceError NOT_FOUND) → 404 ────
+  // -- 5. Tenant not found (ServiceError NOT_FOUND) → 404 ----
 
   it('should return 404 when tenant is not found via ServiceError', async () => {
     mockValidateTenant.mockRejectedValue(new ServiceError('Restaurant non trouvé', 'NOT_FOUND'));
@@ -359,7 +359,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('Restaurant non trouvé');
   });
 
-  // ── 6. Invalid coupon → 400 ────────────────────────────────
+  // -- 6. Invalid coupon → 400 --------------------------------
 
   it('should return 400 when coupon code is invalid', async () => {
     mockValidateCoupon.mockResolvedValue({
@@ -378,7 +378,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('Ce code a expiré');
   });
 
-  // ── 7. Successful order with pricing breakdown ─────────────
+  // -- 7. Successful order with pricing breakdown -------------
 
   it('should return success with pricing breakdown on valid order', async () => {
     mockCalculateOrderTotal.mockReturnValue({
@@ -417,7 +417,7 @@ describe('POST /api/orders', () => {
     );
   });
 
-  // ── 8. Coupon usage incremented after success ──────────────
+  // -- 8. Coupon usage incremented after success --------------
 
   it('should increment coupon usage after successful order with coupon', async () => {
     mockValidateCoupon.mockResolvedValue({
@@ -450,7 +450,7 @@ describe('POST /api/orders', () => {
     expect(mockClaimUsage).toHaveBeenCalledWith('coupon-xyz');
   });
 
-  // ── 9. ServiceError mapped to correct HTTP status ──────────
+  // -- 9. ServiceError mapped to correct HTTP status ----------
 
   it('should map ServiceError CONFLICT to 409', async () => {
     mockValidateTenant.mockRejectedValue(new ServiceError('Conflit détecté', 'CONFLICT'));
@@ -464,7 +464,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('Conflit détecté');
   });
 
-  // ── 10. Unknown error → 500 ────────────────────────────────
+  // -- 10. Unknown error → 500 --------------------------------
 
   it('should return 500 when an unexpected error is thrown', async () => {
     mockValidateTenant.mockRejectedValue(new Error('Database connection lost'));
@@ -478,7 +478,7 @@ describe('POST /api/orders', () => {
     expect(body.error).toBe('serverError');
   });
 
-  // ── 11. Empty items array → 400 ────────────────────────────
+  // -- 11. Empty items array → 400 ----------------------------
 
   it('should return 400 when items array is empty', async () => {
     const { POST } = await import('@/app/api/orders/route');
@@ -492,7 +492,7 @@ describe('POST /api/orders', () => {
     expect((body.details as string[]).length).toBeGreaterThan(0);
   });
 
-  // ── 12. Order items validation failure → 400 ──────────────
+  // -- 12. Order items validation failure → 400 --------------
 
   it('should return 400 when order items validation throws VALIDATION error', async () => {
     mockValidateOrderItems.mockRejectedValue(
@@ -511,7 +511,7 @@ describe('POST /api/orders', () => {
   });
 });
 
-// ─── Auto-destock wiring ───────────────────────────────────────
+// --- Auto-destock wiring ---------------------------------------
 // The stock deduction (destock_order RPC) is scheduled via after() when the
 // tenant plan grants inventory. These tests lock the WIRING: a sale must call
 // destock, a plan without inventory must not, and a destock failure must never

@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     const importService = createPdfImportService(supabase);
     const enforcement = createPlanEnforcementService(supabase);
 
-    // ─── Action: extract (preview only) ────────────────────
+    // --- Action: extract (preview only) --------------------
     if (action === 'extract') {
       const file = formData.get('file');
 
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // ─── Action: import (with items JSON) ──────────────────
+    // --- Action: import (with items JSON) ------------------
     const itemsJson = formData.get('items');
 
     if (!itemsJson || typeof itemsJson !== 'string') {

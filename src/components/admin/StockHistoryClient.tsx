@@ -34,7 +34,7 @@ import {
 } from '@/components/admin/StockHistoryEmptyState';
 import StaffStockReportDialog from '@/components/admin/StaffStockReportDialog';
 
-// ─── Movement type visual config ─────────────────────────
+// --- Movement type visual config -------------------------
 const MOVEMENT_STYLES: Record<
   MovementType,
   { labelKey: string; icon: typeof Package; bg: string; text: string; dot: string }
@@ -97,7 +97,7 @@ const MOVEMENT_STYLES: Record<
   },
 };
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 interface StockHistoryClientProps {
   tenantId: string;
@@ -312,7 +312,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   return (
     <RoleGuard permission="canViewStocks">
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-        {/* ── Header row ── */}
+        {/* -- Header row -- */}
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
@@ -341,7 +341,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             }
           />
 
-          {/* ── Filter pills ── */}
+          {/* -- Filter pills -- */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
             {movementFilters.map((f) => {
               const isActive = filterType === f.value;
@@ -365,7 +365,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             })}
           </div>
 
-          {/* ── Quick stats strip ── */}
+          {/* -- Quick stats strip -- */}
           <div className="flex items-stretch rounded-xl border border-app-border/60 bg-app-card divide-x divide-app-border/60 overflow-hidden">
             <div className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3">
               <div className="hidden sm:flex w-9 h-9 rounded-lg bg-app-elevated items-center justify-center shrink-0">
@@ -425,7 +425,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           </div>
         </div>
 
-        {/* ── Data area ── */}
+        {/* -- Data area -- */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import {
   Check,
@@ -82,6 +82,7 @@ function OrderConfirmedContent() {
   const queued = searchParams.get('queued') === '1';
   const { slug: tenantSlug, tenantId, tenant } = useTenant();
   const t = useTranslations('tenant');
+  const locale = useLocale();
   const { formatDisplayPrice } = useDisplayCurrency();
   // Order money columns are integer MINOR units; the order base currency is the
   // tenant currency. Convert to major at the mapping boundary so formatDisplayPrice
@@ -380,7 +381,7 @@ function OrderConfirmedContent() {
     { label: t('stepDelivered'), Icon: CheckCircle2 },
   ];
   const statusLabel = isCancelled ? t('statusCancelled') : (steps[stepIdx]?.label ?? '');
-  const orderedTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {
+  const orderedTime = new Date(order.created_at).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

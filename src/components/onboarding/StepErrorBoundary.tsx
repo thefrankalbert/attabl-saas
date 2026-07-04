@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-// ─── Step Error Boundary ──────────────────────────────────────────────────────
+// --- Step Error Boundary ------------------------------------------------------
 
 export class StepErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },

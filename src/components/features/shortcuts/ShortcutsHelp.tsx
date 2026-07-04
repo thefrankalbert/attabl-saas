@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { getModifierSymbol, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ShortcutsHelpProps {
   open: boolean;
@@ -18,7 +18,7 @@ interface ShortcutsHelpProps {
   shortcuts: ShortcutDefinition[];
 }
 
-// ─── Kbd badge ──────────────────────────────────────────
+// --- Kbd badge ------------------------------------------
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
@@ -28,7 +28,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Key display ────────────────────────────────────────
+// --- Key display ----------------------------------------
 
 function ShortcutKeys({ shortcut }: { shortcut: ShortcutDefinition }) {
   const t = useTranslations('shortcuts');
@@ -65,7 +65,7 @@ function ShortcutKeys({ shortcut }: { shortcut: ShortcutDefinition }) {
   );
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export function ShortcutsHelp({ open, onOpenChange, shortcuts }: ShortcutsHelpProps) {
   const t = useTranslations('shortcuts');
@@ -131,7 +131,7 @@ export function ShortcutsHelp({ open, onOpenChange, shortcuts }: ShortcutsHelpPr
   );
 }
 
-// ─── Sub-components ─────────────────────────────────────
+// --- Sub-components -------------------------------------
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

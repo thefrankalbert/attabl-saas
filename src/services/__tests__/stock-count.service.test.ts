@@ -20,7 +20,7 @@ const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const COUNT_ID = '00000000-0000-0000-0000-000000000002';
 const USER_ID = 'user-abc';
 
-// ─── openStockCount ────────────────────────────────────────
+// --- openStockCount ----------------------------------------
 
 describe('InventoryService.openStockCount', () => {
   it('passes p_created_by from getUser and returns count id', async () => {
@@ -98,7 +98,7 @@ describe('InventoryService.openStockCount', () => {
   });
 });
 
-// ─── commitStockCount ─────────────────────────────────────
+// --- commitStockCount -------------------------------------
 
 describe('InventoryService.commitStockCount', () => {
   it('returns number of movements created', async () => {
@@ -155,7 +155,7 @@ describe('InventoryService.commitStockCount', () => {
   });
 });
 
-// ─── saveStockCountLines ─────────────────────────────────
+// --- saveStockCountLines ---------------------------------
 
 describe('InventoryService.saveStockCountLines', () => {
   const LINES = [
@@ -216,7 +216,7 @@ describe('InventoryService.saveStockCountLines', () => {
   });
 });
 
-// ─── getStockCount ────────────────────────────────────────
+// --- getStockCount ----------------------------------------
 
 describe('InventoryService.getStockCount', () => {
   it('throws NOT_FOUND when count does not exist', async () => {

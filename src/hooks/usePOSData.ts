@@ -72,13 +72,13 @@ export function usePOSData(tenantId: string) {
   const queryClient = useQueryClient();
   const createOrder = useCreateOrder(tenantId);
 
-  // ─── Cart state ─────────────────────────────────────────
+  // --- Cart state -----------------------------------------
   const [cart, setCart] = useSessionState<CartItem[]>('pos:cart', []);
 
-  // ─── Currency ───────────────────────────────────────────
+  // --- Currency -------------------------------------------
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
-  // ─── Tax config ─────────────────────────────────────────
+  // --- Tax config -----------------------------------------
   const [taxConfig, setTaxConfig] = useState<{
     enableTax: boolean;
     taxRate: number;
@@ -86,41 +86,41 @@ export function usePOSData(tenantId: string) {
     serviceChargeRate: number;
   }>({ enableTax: false, taxRate: 0, enableServiceCharge: false, serviceChargeRate: 0 });
 
-  // ─── Filters ────────────────────────────────────────────
+  // --- Filters --------------------------------------------
   const [searchQuery, setSearchQuery] = useSessionState('pos:searchQuery', '');
   const [selectedCategory, setSelectedCategory] = useSessionState<string>(
     'pos:selectedCategory',
     'all',
   );
 
-  // ─── Service type state ─────────────────────────────────
+  // --- Service type state ---------------------------------
   const [serviceType, setServiceType] = useSessionState<ServiceType>('pos:serviceType', 'dine_in');
   const [selectedTable, setSelectedTable] = useSessionState<string>('pos:selectedTable', '');
   const [roomNumber, setRoomNumber] = useSessionState<string>('pos:roomNumber', '');
   const [deliveryAddress, setDeliveryAddress] = useSessionState<string>('pos:deliveryAddress', '');
 
-  // ─── Suggestions ────────────────────────────────────────
+  // --- Suggestions ----------------------------------------
   const [suggestions, setSuggestions] = useState<POSSuggestion[]>([]);
 
-  // ─── Zones & Tables (for dine-in table picker) ────────
+  // --- Zones & Tables (for dine-in table picker) --------
   const [zones, setZones] = useState<Zone[]>([]);
   const [allTables, setAllTables] = useState<Table[]>([]);
 
-  // ─── Order-level notes ──────────────────────────────────
+  // --- Order-level notes ----------------------------------
   const [orderNotes, setOrderNotes] = useSessionState<string>('pos:orderNotes', '');
 
-  // ─── Coupon state ───────────────────────────────────────
+  // --- Coupon state ---------------------------------------
   const [enableCoupons, setEnableCoupons] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
 
-  // ─── Note editing state ─────────────────────────────────
+  // --- Note editing state ---------------------------------
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
 
-  // ─── Order number - initialize from localStorage ────────
+  // --- Order number - initialize from localStorage --------
   const [orderNumber, setOrderNumber] = useState(() => {
     if (typeof window === 'undefined') return 1;
     try {
@@ -136,14 +136,14 @@ export function usePOSData(tenantId: string) {
     return 1;
   });
 
-  // ─── TanStack Query for menu items and categories ───────
+  // --- TanStack Query for menu items and categories -------
   const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems(tenantId, {
     availableOnly: true,
   });
   const { data: categories = [], isLoading: catsLoading } = useCategories(tenantId);
   const loading = itemsLoading || catsLoading;
 
-  // ─── Order number persistence ───────────────────────────
+  // --- Order number persistence ---------------------------
   const updateOrderNumber = useCallback(
     (newNum: number) => {
       setOrderNumber(newNum);
@@ -159,7 +159,7 @@ export function usePOSData(tenantId: string) {
     [tenantId],
   );
 
-  // ─── Load tenant currency and suggestions ───────────────
+  // --- Load tenant currency and suggestions ---------------
   const loadExtras = useCallback(async () => {
     try {
       const [tenantRes, suggestionsRes, zonesRes] = await Promise.all([
@@ -228,12 +228,12 @@ export function usePOSData(tenantId: string) {
     }
   }, [supabase, tenantId]);
 
-  // ─── Initial load of extras ────────────────────────────
+  // --- Initial load of extras ----------------------------
   useEffect(() => {
     loadExtras();
   }, [loadExtras]);
 
-  // ─── Realtime: menu_items updates ─────────────────────
+  // --- Realtime: menu_items updates ---------------------
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `pos_menu_${tenantId}`,
     table: 'menu_items',
@@ -244,7 +244,7 @@ export function usePOSData(tenantId: string) {
     },
   });
 
-  // ─── Realtime: orders status changes (ready notifications) ─
+  // --- Realtime: orders status changes (ready notifications) -
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `pos_orders_${tenantId}`,
     table: 'orders',
@@ -259,7 +259,7 @@ export function usePOSData(tenantId: string) {
     },
   });
 
-  // ─── Filtered items ─────────────────────────────────────
+  // --- Filtered items -------------------------------------
   const searchFilteredItems = useMemo(() => {
     if (!searchQuery) return menuItems;
     const q = searchQuery.toLowerCase();
@@ -271,7 +271,7 @@ export function usePOSData(tenantId: string) {
     return searchFilteredItems.filter((i) => i.category_id === selectedCategory);
   }, [searchFilteredItems, selectedCategory]);
 
-  // ─── Cart actions ───────────────────────────────────────
+  // --- Cart actions ---------------------------------------
   const addToCart = useCallback(
     (
       item: MenuItem,
@@ -318,7 +318,7 @@ export function usePOSData(tenantId: string) {
 
   const clearCart = () => setCart([]);
 
-  // ─── Note editing ───────────────────────────────────────
+  // --- Note editing ---------------------------------------
   const saveNotes = () => {
     if (editingNotes) {
       setCart((prev) =>
@@ -329,7 +329,7 @@ export function usePOSData(tenantId: string) {
     }
   };
 
-  // ─── Total calculation ──────────────────────────────────
+  // --- Total calculation ----------------------------------
   const total = useMemo(
     () =>
       cart.reduce((acc, item) => {
@@ -339,7 +339,7 @@ export function usePOSData(tenantId: string) {
     [cart],
   );
 
-  // ─── Coupon validation (client-side preview) ────────────
+  // --- Coupon validation (client-side preview) ------------
   const validateCoupon = useCallback(
     async (code: string) => {
       if (!code.trim()) return;
@@ -395,7 +395,7 @@ export function usePOSData(tenantId: string) {
     setCouponError('');
   }, []);
 
-  // ─── Pricing breakdown (subtotal + tax + service charge - discount) ─
+  // --- Pricing breakdown (subtotal + tax + service charge - discount) -
   const discountAmount = appliedCoupon?.discountAmount ?? 0;
   const pricing: PricingBreakdown = useMemo(
     () =>
@@ -414,7 +414,7 @@ export function usePOSData(tenantId: string) {
     [total, taxConfig, discountAmount, currency],
   );
 
-  // ─── Order creation ─────────────────────────────────────
+  // --- Order creation -------------------------------------
   const handleOrder = (
     status: 'pending' | 'delivered',
     options?: {

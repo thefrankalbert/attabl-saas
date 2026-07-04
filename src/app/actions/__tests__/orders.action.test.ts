@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { canAccessFeature } from '@/lib/plans/features';
 import * as Sentry from '@sentry/nextjs';
 
-// ─── Mocks ─────────────────────────────────────────────────────
+// --- Mocks -----------------------------------------------------
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));

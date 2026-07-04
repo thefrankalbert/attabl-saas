@@ -1,7 +1,7 @@
 {
   "name": "ATTABL - Menu Digital & Commandes",
   "short_name": "ATTABL",
-  "description": "Solution digitale pour restaurants et hotels de luxe",
+  "description": "Menu digital et commandes pour restaurants et hotels",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

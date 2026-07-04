@@ -37,7 +37,7 @@ import type {
 } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS, CTA_PRESETS, FONT_OPTIONS } from '@/types/qr-design.types';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface QRCustomizerPanelProps {
   config: QRDesignConfig;
@@ -46,7 +46,7 @@ interface QRCustomizerPanelProps {
   tenantLogoUrl?: string;
 }
 
-// ─── Constants ─────────────────────────────────────────
+// --- Constants -----------------------------------------
 
 const TEMPLATE_IDS: QRTemplateId[] = [
   'standard',
@@ -80,7 +80,7 @@ const CTA_PRESET_ENTRIES = (Object.entries(CTA_PRESETS) as [QRCTAPreset, string]
   ([key]) => key !== 'custom',
 );
 
-// ─── Slider Helper ────────────────────────────────────
+// --- Slider Helper ------------------------------------
 
 interface SliderFieldProps {
   label: string;
@@ -113,7 +113,7 @@ function SliderField({ label, value, unit, min, max, step, onChange }: SliderFie
   );
 }
 
-// ─── Section Helper ───────────────────────────────────
+// --- Section Helper -----------------------------------
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -124,7 +124,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export function QRCustomizerPanel({
   config,
@@ -132,7 +132,7 @@ export function QRCustomizerPanel({
   setTemplate,
   tenantLogoUrl,
 }: QRCustomizerPanelProps) {
-  // ─── Logo nested field helpers ──────────────────────
+  // --- Logo nested field helpers ----------------------
 
   const updateLogo = useCallback(
     <K extends keyof QRDesignConfig['logo']>(key: K, value: QRDesignConfig['logo'][K]) => {
@@ -158,7 +158,7 @@ export function QRCustomizerPanel({
     [config.backgroundImage, updateField],
   );
 
-  // ─── Logo file upload ────────────────────────────────
+  // --- Logo file upload --------------------------------
   const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogoFileChange = useCallback(
@@ -181,7 +181,7 @@ export function QRCustomizerPanel({
     [updateLogo],
   );
 
-  // ─── Render ─────────────────────────────────────────
+  // --- Render -----------------------------------------
 
   return (
     <div className="bg-app-card rounded-xl border border-app-border p-4">
@@ -210,7 +210,7 @@ export function QRCustomizerPanel({
           </TabsTrigger>
         </TabsList>
 
-        {/* ────────────────────────── Tab 1: Template ────────────────────────── */}
+        {/* -------------------------- Tab 1: Template -------------------------- */}
         <TabsContent value="template" className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {TEMPLATE_IDS.map((id) => {
@@ -263,7 +263,7 @@ export function QRCustomizerPanel({
           </div>
         </TabsContent>
 
-        {/* ────────────────────────── Tab 2: QR Code ─────────────────────────── */}
+        {/* -------------------------- Tab 2: QR Code --------------------------- */}
         <TabsContent value="qrcode" className="space-y-6">
           {/* QR colors */}
           <FeatureGate feature="canAccessQrCustomization">
@@ -464,7 +464,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
         </TabsContent>
 
-        {/* ────────────────────────── Tab 3: Design ──────────────────────────── */}
+        {/* -------------------------- Tab 3: Design ---------------------------- */}
         <TabsContent value="design" className="space-y-6">
           {/* Template colors */}
           <Section title="Couleurs du support">
@@ -573,7 +573,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
         </TabsContent>
 
-        {/* ────────────────────────── Tab 4: Text ────────────────────────────── */}
+        {/* -------------------------- Tab 4: Text ------------------------------ */}
         <TabsContent value="text" className="space-y-6">
           {/* CTA presets */}
           <Section title="Appel à l'action">
@@ -665,7 +665,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
         </TabsContent>
 
-        {/* ────────────────────────── Tab 5: Advanced ────────────────────────── */}
+        {/* -------------------------- Tab 5: Advanced -------------------------- */}
         <TabsContent value="advanced" className="space-y-6">
           <FeatureGate feature="canAccessQrCustomization" planRequired="enterprise">
             <div className="space-y-6">

@@ -109,7 +109,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     handleRecordLoss,
   } = useInventoryActions(tenantId);
 
-  // ─── Realtime: ingredients updates with low-stock alerts ─
+  // --- Realtime: ingredients updates with low-stock alerts -
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `inventory_${tenantId}`,
     table: 'ingredients',

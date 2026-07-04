@@ -29,7 +29,7 @@ import type {
   OpenStockCountInput,
 } from '@/types/inventory.types';
 
-// ─── Pure row mapper ─────────────────────────────────────
+// --- Pure row mapper -------------------------------------
 // Shared between the service and the client hook so the flat RPC row
 // is transformed in exactly one place.
 export function mapStockMovementRow(row: Record<string, unknown>): StockMovement {
@@ -96,7 +96,7 @@ export interface InventoryService {
     }[];
     recipeItemIds: Set<string>;
   }>;
-  // ─── Physical Stock Count (#12) ──────────────────────
+  // --- Physical Stock Count (#12) ----------------------
   openStockCount(tenantId: string, input: OpenStockCountInput): Promise<string>;
   listStockCounts(tenantId: string): Promise<StockCount[]>;
   getStockCount(
@@ -114,7 +114,7 @@ export interface InventoryService {
 
 export function createInventoryService(supabase: SupabaseClient): InventoryService {
   return {
-    // ─── Ingredients ──────────────────────────────────────
+    // --- Ingredients --------------------------------------
 
     async getIngredients(tenantId: string): Promise<Ingredient[]> {
       const { data, error } = await supabase
@@ -172,7 +172,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return data as Ingredient;
     },
 
-    // ─── Recipes (Fiches techniques) ──────────────────────
+    // --- Recipes (Fiches techniques) ----------------------
 
     async getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]> {
       // BUG-34: Validate menu_item_id belongs to this tenant before querying recipes
@@ -248,7 +248,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       if (rpcError) throw new ServiceError('Erreur sauvegarde recette', 'INTERNAL', rpcError);
     },
 
-    // ─── Stock Operations ─────────────────────────────────
+    // --- Stock Operations ---------------------------------
 
     async destockOrder(orderId: string, tenantId: string, createdBy?: string): Promise<number> {
       const { data, error } = await supabase.rpc('destock_order', {
@@ -492,7 +492,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return (data as number) ?? 0;
     },
 
-    // ─── Stock Status & Movements ─────────────────────────
+    // --- Stock Status & Movements -------------------------
 
     async getStockStatus(tenantId: string): Promise<StockStatus[]> {
       const { data, error } = await supabase.rpc('get_stock_status', {
@@ -573,7 +573,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       return { menuItems, recipeItemIds };
     },
 
-    // ─── Physical Stock Count (#12) ──────────────────────
+    // --- Physical Stock Count (#12) ----------------------
 
     async openStockCount(tenantId: string, input: OpenStockCountInput): Promise<string> {
       const {

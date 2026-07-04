@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
-// ─── SortableHeader helper ──────────────────────────────
+// --- SortableHeader helper ------------------------------
 
 interface SortableHeaderProps<TData, TValue> {
   column: Column<TData, TValue>;
@@ -62,7 +62,7 @@ export function SortableHeader<TData, TValue>({
   );
 }
 
-// ─── DataTable component ────────────────────────────────
+// --- DataTable component --------------------------------
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];

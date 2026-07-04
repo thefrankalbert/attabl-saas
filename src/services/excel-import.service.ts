@@ -4,7 +4,7 @@ import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-import';
 
-// ─── Types ────────────────────────────────────────────────────
+// --- Types ----------------------------------------------------
 
 interface ImportResult {
   categoriesCreated: number;
@@ -32,7 +32,7 @@ interface ParsedRow {
   isFeatured: boolean;
 }
 
-// ─── Column Name Mapping ──────────────────────────────────────
+// --- Column Name Mapping --------------------------------------
 
 /**
  * Normalizes a column header for tolerant matching:
@@ -111,7 +111,7 @@ function mapHeaders(headers: string[]): Map<number, string> {
   return mapping;
 }
 
-// ─── Row Validation Schema ────────────────────────────────────
+// --- Row Validation Schema ------------------------------------
 
 const excelRowSchema = z.object({
   category: z
@@ -133,7 +133,7 @@ const excelRowSchema = z.object({
   isFeatured: z.boolean().default(false),
 });
 
-// ─── Boolean Parsing ──────────────────────────────────────────
+// --- Boolean Parsing ------------------------------------------
 
 /**
  * Parses a cell value into a boolean.
@@ -183,7 +183,7 @@ function parseNumericCell(value: unknown): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
-// ─── Service ──────────────────────────────────────────────────
+// --- Service --------------------------------------------------
 
 export interface ExcelImportService {
   parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }>;

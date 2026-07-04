@@ -17,7 +17,7 @@ interface PendingInvitationsProps {
   onCancel: (invitationId: string) => Promise<void>;
 }
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function PendingInvitations({
   pendingOnly,

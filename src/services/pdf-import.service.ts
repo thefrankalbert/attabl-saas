@@ -3,7 +3,7 @@ import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-import';
 
-// ─── Types ────────────────────────────────────────────────────
+// --- Types ----------------------------------------------------
 
 export interface PdfExtractedItem {
   category: string;
@@ -26,7 +26,7 @@ interface PdfImportResult {
   errors: Array<{ index: number; message: string }>;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// --- Helpers --------------------------------------------------
 
 /**
  * Cleans the AI response to extract valid JSON.
@@ -43,7 +43,7 @@ function cleanJsonResponse(raw: string): string {
   return cleaned.trim();
 }
 
-// ─── Service ──────────────────────────────────────────────────
+// --- Service --------------------------------------------------
 
 export interface PdfImportService {
   extractFromPdf(pdfBuffer: Buffer): Promise<PdfExtractionResult>;

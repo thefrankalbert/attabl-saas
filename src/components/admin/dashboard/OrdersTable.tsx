@@ -19,7 +19,6 @@ import {
   Printer,
   Download,
   Eye,
-  GripVertical,
   RefreshCw,
   CreditCard,
   ChevronUp,
@@ -520,15 +519,12 @@ export function OrdersTable({
                       />
                     </TableCell>
                     <TableCell className={CELL_CLS}>
-                      <span className="flex items-center gap-2">
-                        <GripVertical className="size-[14px] shrink-0 cursor-grab text-[var(--muted-foreground)]" />
-                        <Link
-                          href={`${adminBase}/orders`}
-                          className="font-mono text-[13px] font-medium text-[var(--foreground)] hover:underline"
-                        >
-                          {o.order_number || o.id.slice(0, 8)}
-                        </Link>
-                      </span>
+                      <Link
+                        href={`${adminBase}/orders/${o.id}`}
+                        className="font-mono text-[13px] font-medium text-[var(--foreground)] hover:underline"
+                      >
+                        {o.order_number || o.id.slice(0, 8)}
+                      </Link>
                     </TableCell>
                     <TableCell className={CELL_CLS}>
                       <span className="flex flex-col items-start gap-[3px]">
@@ -606,7 +602,7 @@ export function OrdersTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`${adminBase}/orders`}>
+                            <Link href={`${adminBase}/orders/${o.id}`}>
                               <Eye className="size-4" />
                               {t('rowView')}
                             </Link>

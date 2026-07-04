@@ -1,4 +1,4 @@
-// ─── Exported data interface (used by child components) ────────────────────────
+// --- Exported data interface (used by child components) ------------------------
 
 export interface OnboardingData {
   // Step 1: Establishment

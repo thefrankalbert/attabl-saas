@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CommandPalette } from '../CommandPalette';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 const mockPush = vi.fn();
 
@@ -39,7 +39,7 @@ vi.mock('@/hooks/usePermissions', () => ({
   }),
 }));
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('CommandPalette', () => {
   beforeEach(() => {

@@ -41,12 +41,12 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   const serviceLabel = serviceTypeLabels[order.service_type || 'dine_in'] || 'Sur place';
 
-  // ─── Header section (logo or name) ────────────────────
+  // --- Header section (logo or name) --------------------
   const logoHTML = tenant.logo_url
     ? `<img src="${escapeHtml(tenant.logo_url)}" alt="${escapeHtml(tenant.name || '')}" style="max-height:48px;max-width:160px;margin:0 auto 8px;display:block;object-fit:contain;" />`
     : '';
 
-  // ─── Items rows ────────────────────────────────────────
+  // --- Items rows ----------------------------------------
   const itemsHTML = items
     .map((item) => {
       // item.price is price_at_order (integer MINOR units); line total stays minor.
@@ -74,7 +74,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
     })
     .join('');
 
-  // ─── Breakdown ─────────────────────────────────────────
+  // --- Breakdown -----------------------------------------
   const subtotal = order.subtotal || order.total_price || order.total || 0;
   const taxAmount = order.tax_amount || 0;
   const serviceCharge = order.service_charge_amount || 0;
@@ -117,7 +117,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
     </div>`;
   }
 
-  // ─── Payment method ────────────────────────────────────
+  // --- Payment method ------------------------------------
   const paymentLabels: Record<string, string> = {
     cash: 'Espèces',
     card: 'Carte bancaire',
@@ -127,7 +127,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
     ? paymentLabels[order.payment_method] || order.payment_method
     : '';
 
-  // ─── Tenant URL ────────────────────────────────────────
+  // --- Tenant URL ----------------------------------------
   const tenantUrl = tenant.slug ? `${tenant.slug}.attabl.com` : '';
 
   return `<!DOCTYPE html>
@@ -153,7 +153,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       padding: 16px 14px;
     }
 
-    /* ─── Header ─────────────────────────────────── */
+    /* --- Header ----------------------------------- */
     .header {
       text-align: center;
       padding-bottom: 14px;
@@ -171,7 +171,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       line-height: 1.5;
     }
 
-    /* ─── Dividers ────────────────────────────────── */
+    /* --- Dividers ---------------------------------- */
     .divider {
       border: none;
       border-top: 1px solid #e4e4e7;
@@ -182,7 +182,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       margin: 14px 0;
     }
 
-    /* ─── Order info card ─────────────────────────── */
+    /* --- Order info card --------------------------- */
     .info-card {
       background: #fafafa;
       border: 1px solid #f4f4f5;
@@ -213,7 +213,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     }
 
-    /* ─── Items section ───────────────────────────── */
+    /* --- Items section ----------------------------- */
     .items-header {
       font-size: 10px;
       text-transform: uppercase;
@@ -261,7 +261,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       color: #2563eb;
     }
 
-    /* ─── Breakdown ───────────────────────────────── */
+    /* --- Breakdown --------------------------------- */
     .breakdown-row {
       display: flex;
       justify-content: space-between;
@@ -276,7 +276,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       color: #059669;
     }
 
-    /* ─── Total ───────────────────────────────────── */
+    /* --- Total ------------------------------------- */
     .total-section {
       display: flex;
       justify-content: space-between;
@@ -303,7 +303,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       margin-left: 4px;
     }
 
-    /* ─── Payment badge ───────────────────────────── */
+    /* --- Payment badge ----------------------------- */
     .payment-badge {
       display: inline-block;
       font-size: 10px;
@@ -317,7 +317,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       padding: 3px 10px;
     }
 
-    /* ─── Footer ──────────────────────────────────── */
+    /* --- Footer ------------------------------------ */
     .footer {
       text-align: center;
       padding-top: 6px;
@@ -341,7 +341,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
       text-transform: uppercase;
     }
 
-    /* ─── Print styles ────────────────────────────── */
+    /* --- Print styles ------------------------------ */
     @media print {
       body { width: 100%; }
       @page { margin: 0; size: 80mm auto; }
@@ -352,7 +352,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
 <body>
 <div class="receipt">
 
-  <!-- ═══ Header ═══ -->
+  <!-- --- Header --- -->
   <div class="header">
     ${logoHTML}
     <div class="tenant-name">${escapeHtml(tenant.name || 'Restaurant')}</div>
@@ -362,7 +362,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   <hr class="divider" />
 
-  <!-- ═══ Order info ═══ -->
+  <!-- --- Order info --- -->
   <div class="info-card">
     <div class="info-row">
       <span class="info-label">N° commande</span>
@@ -412,18 +412,18 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   <hr class="divider" />
 
-  <!-- ═══ Items ═══ -->
+  <!-- --- Items --- -->
   <div class="items-header">Articles commandés</div>
   ${itemsHTML}
 
   <hr class="divider" />
 
-  <!-- ═══ Breakdown ═══ -->
+  <!-- --- Breakdown --- -->
   ${breakdownHTML}
 
   <hr class="divider--strong" />
 
-  <!-- ═══ Total ═══ -->
+  <!-- --- Total --- -->
   <div class="total-section">
     <span class="total-label">Total</span>
     <span>
@@ -444,7 +444,7 @@ function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   <hr class="divider" />
 
-  <!-- ═══ Footer ═══ -->
+  <!-- --- Footer --- -->
   <div class="footer">
     <div class="thank-you">Merci pour votre visite !</div>
     ${tenantUrl ? `<div class="tenant-url">${escapeHtml(tenantUrl)}</div>` : ''}

@@ -206,7 +206,7 @@ export default function ImageUpload({
     }
   };
 
-  // ─── Crop editor ───────────────────────────────────────────
+  // --- Crop editor -------------------------------------------
   if (cropSrc) {
     return (
       <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
@@ -343,7 +343,7 @@ export default function ImageUpload({
     );
   }
 
-  // ─── Preview with action toolbar ───────────────────────────
+  // --- Preview with action toolbar ---------------------------
   if (value) {
     return (
       <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
@@ -394,7 +394,7 @@ export default function ImageUpload({
     );
   }
 
-  // ─── Dropzone (no image yet) ───────────────────────────────
+  // --- Dropzone (no image yet) -------------------------------
   return (
     <div>
       <div
@@ -442,7 +442,7 @@ export default function ImageUpload({
   );
 }
 
-// ─── Toolbar action button ─────────────────────────────────
+// --- Toolbar action button ---------------------------------
 
 function ActionButton({
   icon,

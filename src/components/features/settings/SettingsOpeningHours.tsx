@@ -8,7 +8,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import type { OpeningHoursDay, OpeningHoursMap } from '@/types/admin.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface SettingsOpeningHoursProps {
   form: UseFormReturn<SettingsFormValues>;
@@ -28,7 +28,7 @@ const DAYS: { key: OpeningHoursDay; labelKey: string }[] = [
 const DEFAULT_OPEN = '09:00';
 const DEFAULT_CLOSE = '22:00';
 
-// ─── Component ─────────────────────────────────────────────
+// --- Component ---------------------------------------------
 
 export default function SettingsOpeningHours({ form, t }: SettingsOpeningHoursProps) {
   const hours: OpeningHoursMap = form.watch('openingHours') ?? {};

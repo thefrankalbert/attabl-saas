@@ -24,7 +24,7 @@ import {
 } from '@/types/permission.types';
 import type { AdminRole } from '@/types/admin.types';
 
-// ─── Constants ────────────────────────────────────────
+// --- Constants ----------------------------------------
 
 const EDITABLE_ROLES: AdminRole[] = ['admin', 'manager', 'cashier', 'chef', 'waiter'];
 
@@ -46,20 +46,20 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   { key: 'settings', permissions: ['settings.view', 'settings.edit'] },
 ];
 
-// ─── Props ─────────────────────────────────────────────
+// --- Props ---------------------------------------------
 
 interface PermissionsClientProps {
   tenantId: string;
   initialOverrides: Record<string, PermissionMap>;
 }
 
-// ─── Component ────────────────────────────────────────
+// --- Component ----------------------------------------
 
 export function PermissionsClient({ tenantId, initialOverrides }: PermissionsClientProps) {
   const { toast } = useToast();
   const t = useTranslations('permissions');
 
-  // ─── State ────────────────────────────────────────
+  // --- State ----------------------------------------
   const [saving, setSaving] = useState(false);
 
   // Role overrides from DB: only stores diffs from defaults
@@ -69,7 +69,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
   // Debounce timer per role
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // ─── i18n Helpers ───────────────────────────────────
+  // --- i18n Helpers -----------------------------------
 
   const permissionLabel = useCallback(
     (perm: PermissionCode): string => {
@@ -93,7 +93,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [t],
   );
 
-  // ─── Effective Permission Value ───────────────────
+  // --- Effective Permission Value -------------------
 
   const getEffectiveValue = useCallback(
     (role: AdminRole, perm: PermissionCode): boolean => {
@@ -108,7 +108,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [roleOverrides],
   );
 
-  // ─── Has Overrides for Role ───────────────────────
+  // --- Has Overrides for Role -----------------------
 
   const hasOverrides = useCallback(
     (role: AdminRole): boolean => {
@@ -118,7 +118,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [roleOverrides],
   );
 
-  // ─── Save Overrides to DB ─────────────────────────
+  // --- Save Overrides to DB -------------------------
 
   const saveOverrides = useCallback(
     async (role: AdminRole, overrides: PermissionMap) => {
@@ -163,7 +163,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [tenantId, toast, t, roleLabel],
   );
 
-  // ─── Toggle Permission ────────────────────────────
+  // --- Toggle Permission ----------------------------
 
   const handleToggle = useCallback(
     (role: AdminRole, perm: PermissionCode) => {
@@ -198,7 +198,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [getEffectiveValue, saveOverrides],
   );
 
-  // ─── Restore Defaults ─────────────────────────────
+  // --- Restore Defaults -----------------------------
 
   const handleRestoreDefaults = useCallback(
     async (role: AdminRole) => {
@@ -235,7 +235,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     [tenantId, toast, t, roleLabel],
   );
 
-  // ─── Cleanup Timers ───────────────────────────────
+  // --- Cleanup Timers -------------------------------
 
   useEffect(() => {
     const timers = debounceTimers.current;
@@ -246,7 +246,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     };
   }, []);
 
-  // ─── Render ───────────────────────────────────────
+  // --- Render ---------------------------------------
 
   // Track global row index for alternating colors across categories
   let globalRowIndex = 0;

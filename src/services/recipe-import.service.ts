@@ -17,7 +17,7 @@ import type {
   RecipeImportRpcRow,
 } from '@/types/inventory.types';
 
-// ─── Column aliases (tolerant FR / EN) ────────────────────
+// --- Column aliases (tolerant FR / EN) --------------------
 
 const RECIPE_ALIASES: Record<string, string[]> = {
   dishName: [
@@ -101,7 +101,7 @@ const recipeNameSchema = z.object({
   notes: z.string().max(1000).nullable(),
 });
 
-// ─── Service ──────────────────────────────────────────────
+// --- Service ----------------------------------------------
 
 export interface RecipeImportService {
   parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRecipeRow[]; errors: ImportRowError[] }>;

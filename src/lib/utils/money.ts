@@ -36,7 +36,7 @@ export function roundForCurrency(amount: number, code?: CurrencyCode | string | 
   return Math.round((amount + Number.EPSILON) * factor) / factor;
 }
 
-// ─── Integer minor-unit money (audit H1 - Phase 2) ───────────────────────────
+// --- Integer minor-unit money (audit H1 - Phase 2) ---------------------------
 //
 // Money is stored and transported as integer MINOR UNITS (the currency's
 // smallest tenderable unit): XAF/XOF are zero-decimal so the minor unit IS the

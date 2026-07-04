@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'ATTABL - Menu Digital & Gestion pour la Restauration',
   },
   description:
-    "La plateforme tout-en-un pour la restauration et l'hôtellerie. Menu, commandes, stock, analytics en temps réel.",
+    'Menu digital, commandes, stock et analytics en temps réel. Pour restaurants et hôtels.',
   openGraph: {
     siteName: 'ATTABL',
     type: 'website',

@@ -7,7 +7,7 @@ import POSCart from '../POSCart';
 import type { CartItem } from '@/hooks/usePOSData';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -54,7 +54,7 @@ vi.mock('@/lib/utils/currency', () => ({
   formatCurrency: (amount: number) => `${amount} FCFA`,
 }));
 
-// ─── Test Data ──────────────────────────────────────────
+// --- Test Data ------------------------------------------
 
 const menuItem1: MenuItem = {
   id: 'item-1',
@@ -131,7 +131,7 @@ function renderCart(overrides: Record<string, unknown> = {}) {
   return render(<POSCart {...defaultProps} />);
 }
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('POSCart', () => {
   beforeEach(() => {

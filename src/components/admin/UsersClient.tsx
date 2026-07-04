@@ -34,7 +34,7 @@ import {
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { PermissionMap } from '@/types/permission.types';
 
-// ─── Types ─────────────────────────────────────────────────
+// --- Types -------------------------------------------------
 
 interface UsersClientProps {
   tenantId: string;
@@ -44,7 +44,7 @@ interface UsersClientProps {
   serverListPagination?: ServerListPagination;
 }
 
-// ─── Main Component ────────────────────────────────────────
+// --- Main Component ----------------------------------------
 
 export default function UsersClient({
   tenantId,

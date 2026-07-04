@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { RolePermissions } from '@/lib/permissions';
 import type { AdminRole } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface RoleGuardProps {
   /** Legacy permission check via the can() helper */
@@ -18,7 +18,7 @@ interface RoleGuardProps {
   children: React.ReactNode;
 }
 
-// ─── Access Denied UI ───────────────────────────────────
+// --- Access Denied UI -----------------------------------
 
 function AccessDenied() {
   const t = useTranslations('permissions');
@@ -34,7 +34,7 @@ function AccessDenied() {
   );
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function RoleGuard({ permission, roles, fallback, children }: RoleGuardProps) {
   const { role, can } = usePermissions();

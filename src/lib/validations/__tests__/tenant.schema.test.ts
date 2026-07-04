@@ -106,7 +106,7 @@ describe('updateTenantSettingsSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  // ─── Idle timeout tests ───────────────────────────────
+  // --- Idle timeout tests -------------------------------
 
   it('should accept valid idle timeout minutes', () => {
     const result = updateTenantSettingsSchema.safeParse({
@@ -156,7 +156,7 @@ describe('updateTenantSettingsSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  // ─── Opening hours ───────────────────────────────────────
+  // --- Opening hours ---------------------------------------
   it('should accept a valid opening-hours map', () => {
     const result = updateTenantSettingsSchema.safeParse({
       ...validInput,

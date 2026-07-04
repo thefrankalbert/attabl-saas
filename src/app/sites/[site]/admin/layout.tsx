@@ -191,14 +191,14 @@ export default async function AdminLayout({
         });
 
         if (eventKey) {
-          // Atomically claim the event slot - only update if key doesn't exist yet
-          const { data: claimed } = await adminClient
-            .from('tenants')
-            .update({ activation_events: { ...activationEvents, [eventKey]: now } })
-            .eq('id', tenant.id)
-            .filter(`activation_events->>${eventKey}`, 'is', null)
-            .select('id');
-          if (claimed?.length) {
+          // Atomic claim server-side: merges into the LIVE activation_events row
+          // (jsonb || ) and sets the slot once, so a concurrent writer's key is
+          // never clobbered by a stale read-merge-write snapshot.
+          const { data: claimed } = await adminClient.rpc('claim_activation_event', {
+            p_tenant_id: tenant.id,
+            p_event_key: eventKey,
+          });
+          if (claimed) {
             await sendTrialEmailForKey(eventKey, {
               adminEmail: ownerEmail,
               restaurantName: tenant.name,

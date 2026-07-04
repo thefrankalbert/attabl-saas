@@ -17,7 +17,7 @@ import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
 const THEME_STORAGE_KEY = 'attabl-admin-theme';
 
-// ─── Inner Layout ───────────────────────────────────────
+// --- Inner Layout ---------------------------------------
 
 interface AdminLayoutInnerProps {
   children: React.ReactNode;
@@ -286,7 +286,7 @@ function AdminLayoutInner({
   );
 }
 
-// ─── Wrapper (provides device context) ──────────────────
+// --- Wrapper (provides device context) ------------------
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;

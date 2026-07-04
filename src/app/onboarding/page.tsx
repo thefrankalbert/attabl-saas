@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 
 export type { OnboardingData } from '@/components/onboarding/types';
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// --- Component -----------------------------------------------------------------
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
     startStudio,
   } = useOnboarding();
 
-  // ─── Content rendering ────────────────────────────────────────────────────
+  // --- Content rendering ----------------------------------------------------
 
   const renderScreen = () => {
     if (!screenKey) return null;
@@ -71,13 +71,13 @@ export default function OnboardingPage() {
     }
   };
 
-  // ─── Loading skeleton ─────────────────────────────────────────────────────
+  // --- Loading skeleton -----------------------------------------------------
 
   if (loading) {
     return <OnboardingLoadingSkeleton />;
   }
 
-  // ─── Welcome screen (phase 0) ─────────────────────────────────────────────
+  // --- Welcome screen (phase 0) ---------------------------------------------
 
   if (phase === 0) {
     return (
@@ -88,7 +88,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // ─── Studio layout (phases 1-3) ───────────────────────────────────────────
+  // --- Studio layout (phases 1-3) -------------------------------------------
 
   return (
     /* Standalone page - h-dvh is intentional */
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
         goToPhase={goToPhase}
       />
 
-      {/* ═══ Content area: config panel + phone preview ═══ */}
+      {/* --- Content area: config panel + phone preview --- */}
       <div className="flex-1 min-h-0 flex">
         {/* Config panel */}
         <div className="flex-1 flex flex-col min-w-0">

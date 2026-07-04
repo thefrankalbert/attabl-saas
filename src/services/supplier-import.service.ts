@@ -11,7 +11,7 @@ import {
 } from '@/lib/excel-parse';
 import type { ParsedSupplierRow, SupplierImportResult } from '@/types/supplier.types';
 
-// ─── Column aliases (tolerant FR / EN, accents/spacing stripped) ──
+// --- Column aliases (tolerant FR / EN, accents/spacing stripped) --
 
 const SUPPLIER_ALIASES: Record<string, string[]> = {
   name: [
@@ -38,7 +38,7 @@ const SUPPLIER_ALIASES: Record<string, string[]> = {
   is_active: ['active', 'actif', 'isactive', 'estactif', 'statut', 'status', 'enabled'],
 };
 
-// ─── Row validation schema ────────────────────────────────
+// --- Row validation schema --------------------------------
 
 const supplierRowSchema = z.object({
   name: z
@@ -61,7 +61,7 @@ function cellToTrimmedStringOrNull(value: unknown): string | null {
   return s === '' ? null : s;
 }
 
-// ─── Service ──────────────────────────────────────────────
+// --- Service ----------------------------------------------
 
 export interface SupplierImportService {
   parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedSupplierRow[]; errors: ImportRowError[] }>;

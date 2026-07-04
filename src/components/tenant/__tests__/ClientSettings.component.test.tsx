@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ClientSettings from '../ClientSettings';
 
-// ─── Mocks ──────────────────────────────────────────────
+// --- Mocks ----------------------------------------------
 
 const mockPush = vi.fn();
 
@@ -53,7 +53,7 @@ vi.mock('@/contexts/CurrencyContext', () => ({
   }),
 }));
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 const defaultProps = {
   tenantSlug: 'test-restaurant',
@@ -67,7 +67,7 @@ function renderSettings(props = {}) {
   return render(<ClientSettings {...defaultProps} {...props} />);
 }
 
-// ─── LocalStorage mock ──────────────────────────────────
+// --- LocalStorage mock ----------------------------------
 
 let localStorageStore: Record<string, string> = {};
 
@@ -93,10 +93,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// ─── Tests ──────────────────────────────────────────────
+// --- Tests ----------------------------------------------
 
 describe('ClientSettings', () => {
-  // ─── Rendering ──────────────────────────────────────
+  // --- Rendering --------------------------------------
 
   it('renders the restaurant header (tenant name, no back button - it is a tab)', () => {
     renderSettings();
@@ -120,7 +120,7 @@ describe('ClientSettings', () => {
     expect(screen.getByText('appVersion')).toBeInTheDocument();
   });
 
-  // ─── Language Toggle ────────────────────────────────
+  // --- Language Toggle --------------------------------
 
   it('renders FR and EN buttons', () => {
     renderSettings();
@@ -157,7 +157,7 @@ describe('ClientSettings', () => {
     expect(reloadMock).toHaveBeenCalled();
   });
 
-  // ─── Currency Selector ──────────────────────────────
+  // --- Currency Selector ------------------------------
 
   it('renders all 3 currency buttons', () => {
     renderSettings();
@@ -186,7 +186,7 @@ describe('ClientSettings', () => {
     expect(dollarButton!.className).toContain('text-white');
   });
 
-  // ─── Notifications ──────────────────────────────────
+  // --- Notifications ----------------------------------
 
   it('renders notifications row', () => {
     renderSettings();
@@ -200,7 +200,7 @@ describe('ClientSettings', () => {
     expect(statusEl).toBeInTheDocument();
   });
 
-  // ─── Privacy Modal ──────────────────────────────────
+  // --- Privacy Modal ----------------------------------
 
   it('renders privacy policy button', () => {
     renderSettings();
@@ -236,7 +236,7 @@ describe('ClientSettings', () => {
     }
   });
 
-  // ─── About Modal ────────────────────────────────────
+  // --- About Modal ------------------------------------
 
   it('renders about button with tenant name', () => {
     renderSettings();
@@ -278,7 +278,7 @@ describe('ClientSettings', () => {
     expect(screen.getAllByText('appVersion').length).toBeGreaterThanOrEqual(2);
   });
 
-  // ─── Navigation ─────────────────────────────────────
+  // --- Navigation -------------------------------------
 
   it('navigates to order history from the History tile', () => {
     renderSettings();
@@ -286,7 +286,7 @@ describe('ClientSettings', () => {
     expect(mockPush).toHaveBeenCalledWith('/sites/test-restaurant/orders?history=true');
   });
 
-  // ─── Layout ─────────────────────────────────────────
+  // --- Layout -----------------------------------------
 
   it('root container uses the surface-alt background', () => {
     const { container } = renderSettings();
@@ -296,7 +296,7 @@ describe('ClientSettings', () => {
     expect(root!.className).toContain('--color-surface-alt');
   });
 
-  // ─── Translation keys used consistently ─────────────
+  // --- Translation keys used consistently -------------
 
   it('renders all key labels via translation keys', () => {
     renderSettings();

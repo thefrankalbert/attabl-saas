@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 interface ImportResult {
   categoriesCreated: number;
@@ -31,7 +31,7 @@ interface MenuImportExcelProps {
   onCancel: () => void;
 }
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers --------------------------------------------
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -41,7 +41,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// ─── Component ──────────────────────────────────────────
+// --- Component ------------------------------------------
 
 export default function MenuImportExcel({
   menus,

@@ -8,7 +8,7 @@ import { captureElementToCanvas } from '@/lib/qr/capture-template';
 import { FeatureGate } from '@/components/qr/FeatureGate';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
-// ─── Types ─────────────────────────────────────────────
+// --- Types ---------------------------------------------
 
 interface QRExportBarProps {
   config: QRDesignConfig;
@@ -18,7 +18,7 @@ interface QRExportBarProps {
 
 type ExportAction = 'pdf' | 'png' | 'svg' | 'print' | null;
 
-// ─── Helpers ──────────────────────────────────────────
+// --- Helpers ------------------------------------------
 
 function buildFilename(slug: string, ext: string): string {
   const date = new Date().toISOString().slice(0, 10);
@@ -35,12 +35,12 @@ async function getJsPDF(): Promise<(typeof import('jspdf'))['jsPDF']> {
   return mod.jsPDF;
 }
 
-// ─── Component ─────────────────────────────────────────
+// --- Component -----------------------------------------
 
 export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps) {
   const [loading, setLoading] = useState<ExportAction>(null);
 
-  // ─── PDF Export ─────────────────────────────────────
+  // --- PDF Export -------------------------------------
 
   const downloadPDF = useCallback(async () => {
     const el = previewRef.current;
@@ -72,7 +72,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     }
   }, [previewRef, config.templateWidth, config.templateHeight, tenantSlug]);
 
-  // ─── PNG Export ─────────────────────────────────────
+  // --- PNG Export -------------------------------------
 
   const downloadPNG = useCallback(async () => {
     const el = previewRef.current;
@@ -96,7 +96,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     }
   }, [previewRef, tenantSlug]);
 
-  // ─── SVG Export ─────────────────────────────────────
+  // --- SVG Export -------------------------------------
 
   const downloadSVG = useCallback(() => {
     const el = previewRef.current;
@@ -128,13 +128,13 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     }
   }, [previewRef, tenantSlug]);
 
-  // ─── Print ──────────────────────────────────────────
+  // --- Print ------------------------------------------
 
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
 
-  // ─── Render ─────────────────────────────────────────
+  // --- Render -----------------------------------------
 
   return (
     <div className="sticky bottom-0 bg-app-card border-t border-app-border p-4">

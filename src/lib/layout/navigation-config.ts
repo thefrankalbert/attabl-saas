@@ -23,7 +23,7 @@ import {
 import type { NavItemPermission } from '@/lib/permissions';
 import type { PermissionCode } from '@/types/permission.types';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ----------------------------------------------
 
 export type NavItemConfig = {
   /** Relative path appended to basePath (e.g. '/menus') */
@@ -54,7 +54,7 @@ export type NavGroupConfig = {
   sectionKey?: 'operations' | 'catalog' | 'marketing';
 };
 
-// ─── Navigation Configuration ───────────────────────────
+// --- Navigation Configuration ---------------------------
 
 export const NAV_GROUPS: NavGroupConfig[] = [
   {

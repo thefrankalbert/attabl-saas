@@ -9,15 +9,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const t = useTranslations('auth.layout');
   return (
     <div className="h-full w-full flex bg-white dark:bg-neutral-950 relative">
-      {/* ── Left - Form panel ─────────────────────────────── */}
+      {/* -- Left - Form panel ------------------------------- */}
       <div className="w-full md:w-[55%] lg:w-[50%] flex flex-col px-6 sm:px-10 lg:px-16 py-8 md:overflow-y-auto">
         <div className="w-full max-w-md m-auto">{children}</div>
       </div>
 
-      {/* ── Right - Showcase panel ────────────────────────── */}
+      {/* -- Right - Showcase panel -------------------------- */}
       <div className="hidden md:flex md:w-[45%] lg:w-[50%] items-center p-4 md:p-5">
         <div className="w-full h-full rounded-2xl bg-neutral-950 flex flex-col justify-between p-8 lg:p-10 overflow-hidden">
-          {/* ── Top: Impact headline ────────────────────── */}
+          {/* -- Top: Impact headline ---------------------- */}
           <div className="shrink-0 mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold leading-tight font-[family-name:var(--font-sora)]">
               <span className="text-white">{t('headlineLine1')}</span>
@@ -28,7 +28,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </h2>
           </div>
 
-          {/* ── Impact numbers ──────────────────────────── */}
+          {/* -- Impact numbers ---------------------------- */}
           <div className="shrink-0 mb-8">
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -49,7 +49,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </div>
           </div>
 
-          {/* ── Dashboard mini preview ─────────────────── */}
+          {/* -- Dashboard mini preview ------------------- */}
           <div className="shrink-0 mb-8">
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               {/* Revenue header */}
@@ -146,7 +146,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </div>
           </div>
 
-          {/* ── Bottom: Testimonials ───────────────────── */}
+          {/* -- Bottom: Testimonials --------------------- */}
           <div className="shrink-0">
             <TestimonialCarousel />
           </div>
