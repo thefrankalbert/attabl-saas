@@ -2,7 +2,9 @@
  * ATTABL SaaS - Demo Seed Script
  * ================================
  * Populates the database with comprehensive demo data for "L'Epicurien",
- * a luxury restaurant in N'Djamena, Chad.
+ * a complete African restaurant in N'Djamena, Chad (grillades, poissons
+ * braises, sauces, jus naturels), with real menu photos pulled from
+ * Wikimedia Commons and uploaded to the "menu-items" storage bucket.
  *
  * Usage:  npx tsx scripts/seed-demo.ts
  *
@@ -80,6 +82,8 @@ interface MigrationStatus {
   // Column-level detection for orders (partially applied migrations)
   orderColumns: Set<string>; // which production_upgrade columns exist on orders
   orderItemColumns: Set<string>; // which production_upgrade columns exist on order_items
+  categoryColumns: Set<string>; // optional columns on categories (is_active, preparation_zone)
+  menuItemColumns: Set<string>; // optional columns on menu_items (allergens, image_url, ...)
 }
 
 let migrations: MigrationStatus = {
@@ -95,6 +99,8 @@ let migrations: MigrationStatus = {
   hasStockCounts: false,
   orderColumns: new Set(),
   orderItemColumns: new Set(),
+  categoryColumns: new Set(),
+  menuItemColumns: new Set(),
 };
 
 async function detectMigrations(): Promise<MigrationStatus> {
@@ -155,6 +161,33 @@ async function detectMigrations(): Promise<MigrationStatus> {
     if (!itemColChecks[i].error) orderItemColumns.add(col);
   });
 
+  // Optional columns on categories (KDS zone routing, active flag).
+  const catColNames = ['is_active', 'preparation_zone'];
+  const catColChecks = await Promise.all(
+    catColNames.map((col) => supabase.from('categories').select(col).limit(0)),
+  );
+  const categoryColumns = new Set<string>();
+  catColNames.forEach((col, i) => {
+    if (!catColChecks[i].error) categoryColumns.add(col);
+  });
+
+  // Optional columns on menu_items (dietary flags, allergens, photo columns).
+  const menuItemColNames = [
+    'allergens',
+    'is_vegetarian',
+    'is_spicy',
+    'image_url',
+    'image_source',
+    'image_uploaded_at',
+  ];
+  const menuItemColChecks = await Promise.all(
+    menuItemColNames.map((col) => supabase.from('menu_items').select(col).limit(0)),
+  );
+  const menuItemColumns = new Set<string>();
+  menuItemColNames.forEach((col, i) => {
+    if (!menuItemColChecks[i].error) menuItemColumns.add(col);
+  });
+
   const status: MigrationStatus = {
     hasProductionUpgrade: !tableChecks[0].error,
     hasMenuHierarchy: !tableChecks[1].error,
@@ -168,15 +201,22 @@ async function detectMigrations(): Promise<MigrationStatus> {
     hasStockCounts: !tableChecks[9].error,
     orderColumns,
     orderItemColumns,
+    categoryColumns,
+    menuItemColumns,
   };
 
   log(`Order columns available: ${[...orderColumns].join(', ') || 'base only'}`);
   log(`Order item columns available: ${[...orderItemColumns].join(', ') || 'base only'}`);
+  log(`Menu item columns available: ${[...menuItemColumns].join(', ') || 'base only'}`);
 
   // Log table/migration status (exclude Set fields)
-  const boolEntries = Object.entries(status).filter(
-    ([k]) => k !== 'orderColumns' && k !== 'orderItemColumns',
-  );
+  const setFields = new Set([
+    'orderColumns',
+    'orderItemColumns',
+    'categoryColumns',
+    'menuItemColumns',
+  ]);
+  const boolEntries = Object.entries(status).filter(([k]) => !setFields.has(k));
   const applied = boolEntries.filter(([, v]) => v === true).map(([k]) => k);
   const missing = boolEntries.filter(([, v]) => v === false).map(([k]) => k);
 
@@ -192,6 +232,9 @@ async function detectMigrations(): Promise<MigrationStatus> {
 }
 
 // ─── CONSISTENT UUIDs ──────────────────────────────────────────────────────
+// Stable IDs for singleton-ish entities. Categories, menu items and ingredients
+// get their IDs from slug/key maps (catId/itemId/ingId), built next to the
+// African menu data below.
 const ID = {
   tenant: randomUUID(),
   venue: randomUUID(),
@@ -199,75 +242,19 @@ const ID = {
   zoneTerrasse: randomUUID(),
   zoneSalle: randomUUID(),
   zoneVIP: randomUUID(),
-  // Menus
-  menuDejeuner: randomUUID(),
-  menuDiner: randomUUID(),
-  menuVins: randomUUID(),
-  // Categories
-  catEntrees: randomUUID(),
-  catPlats: randomUUID(),
-  catPoissons: randomUUID(),
-  catDesserts: randomUUID(),
-  catEntreesDiner: randomUUID(),
-  catPlatsDiner: randomUUID(),
-  catPoissonsDiner: randomUUID(),
-  catDessertsDiner: randomUUID(),
-  catVinsRouges: randomUUID(),
-  catVinsBlancs: randomUUID(),
-  catChampagnes: randomUUID(),
-  // Menu Items
-  itemFoieGras: randomUUID(),
-  itemTartareSaumon: randomUUID(),
-  itemVelouteHomard: randomUUID(),
-  itemCarpaccioBoeuf: randomUUID(),
-  itemFiletRossini: randomUUID(),
-  itemCarreAgneau: randomUUID(),
-  itemMagretCanard: randomUUID(),
-  itemSupremeVolaille: randomUUID(),
-  itemBarRoti: randomUUID(),
-  itemGambas: randomUUID(),
-  itemPaveThon: randomUUID(),
-  itemSoleMeuniere: randomUUID(),
-  itemFondantChocolat: randomUUID(),
-  itemCremeBrulee: randomUUID(),
-  itemTarteTatin: randomUUID(),
-  itemFromages: randomUUID(),
-  itemChateauMargaux: randomUUID(),
-  itemPomerolPetrus: randomUUID(),
-  itemChablis: randomUUID(),
-  itemSancerre: randomUUID(),
-  itemDomPerignon: randomUUID(),
-  itemVeuveClicquot: randomUUID(),
-  // Ingredients
-  ingBoeuf: randomUUID(),
-  ingFoieGras: randomUUID(),
-  ingAgneau: randomUUID(),
-  ingCanard: randomUUID(),
-  ingVolaille: randomUUID(),
-  ingBar: randomUUID(),
-  ingGambas: randomUUID(),
-  ingThon: randomUUID(),
-  ingSole: randomUUID(),
-  ingSaumon: randomUUID(),
-  ingHomard: randomUUID(),
-  ingChocolat: randomUUID(),
-  ingCreme: randomUUID(),
-  ingBeurre: randomUUID(),
-  ingMorilles: randomUUID(),
-  // Beverage ingredients (purchased by the case -> unit-conversion demo)
-  ingEau: randomUUID(),
-  ingBiere: randomUUID(),
+  // Menu (single African "La Carte")
+  menuCarte: randomUUID(),
   // Suppliers
   supplierBoucherie: randomUUID(),
   supplierMaree: randomUUID(),
-  supplierCave: randomUUID(),
+  supplierMarche: randomUUID(),
   supplierBoissons: randomUUID(),
   // Coupons
   couponBienvenue: randomUUID(),
   couponEpicurien: randomUUID(),
   // Announcements
-  annJazz: randomUUID(),
-  annDegustation: randomUUID(),
+  annVendredi: randomUUID(),
+  annDecouverte: randomUUID(),
 };
 
 // Tables will be generated dynamically
@@ -348,9 +335,9 @@ function log(msg: string) {
 }
 
 function logStep(step: number, label: string) {
-  // Steps run 0 (cleanup) through 16; clamp the progress bar so a step index
+  // Steps run 0 (cleanup) through 17; clamp the progress bar so a step index
   // beyond the bar width never feeds a negative count to String.repeat.
-  const total = 16;
+  const total = 17;
   const filled = Math.max(0, Math.min(total, step));
   console.log(
     `\n[${'='.repeat(filled)}${' '.repeat(total - filled)}] Step ${step}/${total}: ${label}`,
@@ -368,10 +355,6 @@ function randomPick<T>(arr: T[]): T {
 function randomPicks<T>(arr: T[], count: number): T[] {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, Math.min(count, shuffled.length));
-}
-
-function formatDate(d: Date): string {
-  return d.toISOString();
 }
 
 function dateAtHour(base: Date, hour: number, minuteMin = 0, minuteMax = 59): Date {
@@ -476,7 +459,7 @@ async function createTenant() {
     subscription_status: 'active',
     onboarding_completed: true,
     establishment_type: 'restaurant',
-    description: "Restaurant gastronomique d'exception",
+    description: 'Cuisine africaine: grillades, poissons braises, sauces et jus naturels',
     address: "Avenue Charles de Gaulle, N'Djamena",
     city: "N'Djamena",
     country: 'Tchad',
@@ -673,895 +656,1255 @@ async function createZonesAndTables() {
 // ─── STEP 5: CREATE MENUS ─────────────────────────────────────────────────
 
 async function createMenus() {
-  logStep(5, 'Create Menus & Categories');
+  logStep(5, 'Create Menu & Categories');
 
-  // Menus table only exists if menu_hierarchy migration was applied
+  // Menus table only exists if menu_hierarchy migration was applied. A single
+  // African "La Carte" holds every category.
   if (migrations.hasMenuHierarchy) {
-    const menus = [
-      {
-        id: ID.menuDejeuner,
-        tenant_id: ID.tenant,
-        venue_id: ID.venue,
-        name: 'Carte Dejeuner',
-        name_en: 'Lunch Menu',
-        slug: 'carte-dejeuner',
-        description: 'Notre selection pour le dejeuner',
-        description_en: 'Our lunch selection',
-        is_active: true,
-        display_order: 0,
-      },
-      {
-        id: ID.menuDiner,
-        tenant_id: ID.tenant,
-        venue_id: ID.venue,
-        name: 'Carte Diner',
-        name_en: 'Dinner Menu',
-        slug: 'carte-diner',
-        description: 'Notre carte du soir',
-        description_en: 'Our evening menu',
-        is_active: true,
-        display_order: 1,
-      },
-      {
-        id: ID.menuVins,
-        tenant_id: ID.tenant,
-        venue_id: ID.venue,
-        name: 'Carte des Vins',
-        name_en: 'Wine List',
-        slug: 'carte-des-vins',
-        description: 'Vins et champagnes selectionnes',
-        description_en: 'Selected wines and champagnes',
-        is_active: true,
-        display_order: 2,
-      },
-    ];
-
-    const { error: menuError } = await supabase.from('menus').insert(menus);
+    const { error: menuError } = await supabase.from('menus').insert({
+      id: ID.menuCarte,
+      tenant_id: ID.tenant,
+      venue_id: ID.venue,
+      name: 'La Carte',
+      name_en: 'The Menu',
+      slug: 'carte-principale',
+      description: 'Grillades, poissons braises, sauces et jus naturels',
+      description_en: 'Grills, braised fish, stews and fresh juices',
+      is_active: true,
+      display_order: 0,
+    });
     if (menuError) throw new Error(`Menus creation failed: ${menuError.message}`);
-    log('Menus created: Dejeuner, Diner, Vins');
+    log('Menu created: La Carte');
   } else {
-    log('Skipping menus (menus table not available)');
+    log('Skipping menu (menus table not available)');
   }
 
   // ─── Categories ──────────────────────────────────────────────────────────
-  // menu_id column only exists if menu_hierarchy migration was applied
-  const categories: Array<Record<string, unknown>> = [
-    // Dejeuner categories
-    {
-      id: ID.catEntrees,
+  // menu_id column only exists if the menu_hierarchy migration was applied.
+  // preparation_zone (KDS routing: kitchen vs bar) and is_active are optional.
+  const cc = migrations.categoryColumns;
+  const categoryRows = CATEGORIES.map((c) => {
+    const row: Record<string, unknown> = {
+      id: catId[c.key],
       tenant_id: ID.tenant,
-      menu_id: ID.menuDejeuner,
-      name: 'Entrees',
-      name_en: 'Starters',
-      display_order: 0,
-    },
-    {
-      id: ID.catPlats,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDejeuner,
-      name: 'Plats Signature',
-      name_en: 'Signature Dishes',
-      display_order: 1,
-    },
-    {
-      id: ID.catPoissons,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDejeuner,
-      name: 'Poissons & Fruits de Mer',
-      name_en: 'Fish & Seafood',
-      display_order: 2,
-    },
-    {
-      id: ID.catDesserts,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDejeuner,
-      name: 'Desserts',
-      name_en: 'Desserts',
-      display_order: 3,
-    },
-    // Diner categories (same structure, separate entities)
-    {
-      id: ID.catEntreesDiner,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDiner,
-      name: 'Entrees',
-      name_en: 'Starters',
-      display_order: 0,
-    },
-    {
-      id: ID.catPlatsDiner,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDiner,
-      name: 'Plats Signature',
-      name_en: 'Signature Dishes',
-      display_order: 1,
-    },
-    {
-      id: ID.catPoissonsDiner,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDiner,
-      name: 'Poissons & Fruits de Mer',
-      name_en: 'Fish & Seafood',
-      display_order: 2,
-    },
-    {
-      id: ID.catDessertsDiner,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuDiner,
-      name: 'Desserts',
-      name_en: 'Desserts',
-      display_order: 3,
-    },
-    // Wine categories
-    {
-      id: ID.catVinsRouges,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuVins,
-      name: 'Vins Rouges',
-      name_en: 'Red Wines',
-      display_order: 0,
-    },
-    {
-      id: ID.catVinsBlancs,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuVins,
-      name: 'Vins Blancs',
-      name_en: 'White Wines',
-      display_order: 1,
-    },
-    {
-      id: ID.catChampagnes,
-      tenant_id: ID.tenant,
-      menu_id: ID.menuVins,
-      name: 'Champagnes',
-      name_en: 'Champagnes',
-      display_order: 2,
-    },
-  ];
-
-  // Strip menu_id if menus table doesn't exist (menu_id column won't exist on categories)
-  const categoryRows = migrations.hasMenuHierarchy
-    ? categories
-    : categories.map(({ menu_id: _, ...rest }) => rest);
+      name: c.name,
+      name_en: c.name,
+      display_order: c.order,
+    };
+    if (migrations.hasMenuHierarchy) row.menu_id = ID.menuCarte;
+    if (cc.has('is_active')) row.is_active = true;
+    if (cc.has('preparation_zone')) row.preparation_zone = c.zone;
+    return row;
+  });
 
   const { error: catError } = await supabase.from('categories').insert(categoryRows);
   if (catError) throw new Error(`Categories creation failed: ${catError.message}`);
   log(`Categories created: ${categoryRows.length}`);
 }
 
-// ─── STEP 6: CREATE MENU ITEMS ────────────────────────────────────────────
+// ─── AFRICAN MENU DATA (source of truth for categories, items, recipes) ────
+// Prices are FCFA (XAF, 0 decimals). Descriptions keep French accents (data);
+// code and comments stay ASCII. Each item slug is stable and drives the storage
+// path lepicurien/<slug>.jpg for its photo.
 
-interface MenuItemDef {
+interface CategoryDef {
+  key: string;
+  name: string;
+  zone: 'kitchen' | 'bar';
+  order: number;
+}
+
+const CATEGORIES: CategoryDef[] = [
+  { key: 'entrees', name: 'Entrees & mises en bouche', zone: 'kitchen', order: 1 },
+  { key: 'brochettes', name: 'Brochettes & grillades', zone: 'kitchen', order: 2 },
+  { key: 'poissons', name: 'Poissons', zone: 'kitchen', order: 3 },
+  { key: 'volailles', name: 'Volailles', zone: 'kitchen', order: 4 },
+  { key: 'sauces', name: 'Viandes & plats en sauce', zone: 'kitchen', order: 5 },
+  { key: 'riz', name: 'Riz & feculents', zone: 'kitchen', order: 6 },
+  { key: 'tchad', name: 'Specialites du Tchad', zone: 'kitchen', order: 7 },
+  { key: 'desserts', name: 'Desserts', zone: 'kitchen', order: 8 },
+  { key: 'jus', name: 'Jus naturels & boissons fraiches', zone: 'bar', order: 9 },
+  { key: 'bar', name: 'Sodas, bieres & vins', zone: 'bar', order: 10 },
+];
+
+interface ItemDef {
+  slug: string;
+  cat: string;
+  name: string;
+  price: number;
+  desc: string;
+  allergens: string[];
+  spicy?: boolean;
+  vegetarian?: boolean;
+  featured?: boolean;
+  photo?: string;
+}
+
+const ITEMS: ItemDef[] = [
+  // Entrees
+  {
+    slug: 'accras-crevettes',
+    cat: 'entrees',
+    name: 'Accras de crevettes',
+    price: 3500,
+    desc: 'Beignets croustillants aux crevettes, piment doux et persil. A tremper dans la sauce.',
+    allergens: ['crustaces', 'gluten'],
+    spicy: true,
+    photo: 'Accra fritters',
+  },
+  {
+    slug: 'samoussas-viande',
+    cat: 'entrees',
+    name: 'Samoussas de boeuf',
+    price: 3000,
+    desc: 'Triangles croustillants farcis au boeuf epice. Trois pieces.',
+    allergens: ['gluten'],
+    spicy: true,
+    featured: true,
+    photo: 'Samosa',
+  },
+  {
+    slug: 'pastels-poisson',
+    cat: 'entrees',
+    name: 'Pastels au poisson',
+    price: 3000,
+    desc: "Chaussons frits garnis de poisson emiette et d'oignon. Servis avec sauce tomate pimentee.",
+    allergens: ['gluten', 'poisson'],
+    photo: 'Pastel senegalese food',
+  },
+  {
+    slug: 'salade-avocat',
+    cat: 'entrees',
+    name: "Salade d'avocat et mangue",
+    price: 3500,
+    desc: 'Avocat cremeux, mangue mure et oignon rouge, filet de citron vert.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Avocado salad',
+  },
+  {
+    slug: 'salade-cesar',
+    cat: 'entrees',
+    name: 'Salade de crudites',
+    price: 2500,
+    desc: 'Tomate, concombre, carotte et laitue du jardin, vinaigrette maison.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Mixed vegetable salad',
+  },
+  // Brochettes & grillades
+  {
+    slug: 'brochette-boeuf',
+    cat: 'brochettes',
+    name: 'Brochettes de boeuf',
+    price: 4500,
+    desc: 'Des de boeuf marines, grilles au feu de bois. Servies avec oignons et moutarde.',
+    allergens: ['moutarde'],
+    featured: true,
+    photo: 'Beef brochette grilled',
+  },
+  {
+    slug: 'brochette-poulet',
+    cat: 'brochettes',
+    name: 'Brochettes de poulet',
+    price: 4000,
+    desc: 'Blanc de poulet marine au gingembre et grille. Tendre et parfume.',
+    allergens: [],
+    photo: 'Chicken skewer grilled',
+  },
+  {
+    slug: 'brochette-mouton',
+    cat: 'brochettes',
+    name: 'Brochettes de mouton',
+    price: 5000,
+    desc: 'Morceaux de mouton epices, grilles a la braise. Un classique du bord de rue, revisite.',
+    allergens: [],
+    spicy: true,
+    photo: 'Lamb kebab grilled',
+  },
+  {
+    slug: 'cotelettes-agneau',
+    cat: 'brochettes',
+    name: "Cotelettes d'agneau grillees",
+    price: 7000,
+    desc: "Cotelettes d'agneau marinees aux herbes, grillees a point.",
+    allergens: [],
+    photo: 'Grilled lamb chops',
+  },
+  {
+    slug: 'ailes-poulet',
+    cat: 'brochettes',
+    name: 'Ailes de poulet braisees',
+    price: 4000,
+    desc: 'Ailes de poulet marinees et braisees, sauce piquante a part.',
+    allergens: [],
+    spicy: true,
+    photo: 'Grilled chicken wings',
+  },
+  // Poissons
+  {
+    slug: 'capitaine-braise',
+    cat: 'poissons',
+    name: 'Capitaine braise',
+    price: 9000,
+    desc: "Capitaine entier braise au feu de bois, farci d'oignon et d'ail. Le plat signature.",
+    allergens: ['poisson'],
+    featured: true,
+    photo: 'Poisson braise',
+  },
+  {
+    slug: 'tilapia-braise',
+    cat: 'poissons',
+    name: 'Tilapia braise',
+    price: 6500,
+    desc: 'Tilapia frais braise, peau croustillante, chair fondante. Servi avec alloco.',
+    allergens: ['poisson'],
+    photo: 'Grilled tilapia',
+  },
+  {
+    slug: 'poisson-yassa',
+    cat: 'poissons',
+    name: 'Poisson yassa',
+    price: 7000,
+    desc: "Poisson mijote dans une sauce d'oignons confits au citron. Aigre-doux et genereux.",
+    allergens: ['poisson'],
+    photo: 'Yassa fish',
+  },
+  {
+    slug: 'machoiron-sauce',
+    cat: 'poissons',
+    name: 'Machoiron sauce claire',
+    price: 7500,
+    desc: "Machoiron dans un bouillon leger d'aubergine, gombo et piment. Reconfortant.",
+    allergens: ['poisson'],
+    spicy: true,
+    photo: 'African fish stew',
+  },
+  {
+    slug: 'gambas-grillees',
+    cat: 'poissons',
+    name: 'Gambas grillees',
+    price: 11000,
+    desc: "Grosses gambas grillees a l'ail et au beurre. Un delice de la maree.",
+    allergens: ['crustaces'],
+    featured: true,
+    photo: 'Grilled prawns',
+  },
+  // Volailles
+  {
+    slug: 'poulet-dg',
+    cat: 'volailles',
+    name: 'Poulet DG',
+    price: 7500,
+    desc: 'Poulet saute aux plantains murs, poivrons et legumes. Le plat des grands jours.',
+    allergens: [],
+    featured: true,
+    photo: 'Poulet DG',
+  },
+  {
+    slug: 'poulet-yassa',
+    cat: 'volailles',
+    name: 'Poulet yassa',
+    price: 6500,
+    desc: "Poulet marine puis mijote dans une sauce d'oignons au citron. Genereux.",
+    allergens: [],
+    photo: 'Poulet yassa',
+  },
+  {
+    slug: 'poulet-kedjenou',
+    cat: 'volailles',
+    name: 'Poulet kedjenou',
+    price: 6800,
+    desc: 'Poulet etouffe a la tomate et au gingembre, cuit lentement dans son jus.',
+    allergens: [],
+    spicy: true,
+    photo: 'Kedjenou',
+  },
+  {
+    slug: 'poulet-braise',
+    cat: 'volailles',
+    name: 'Demi-poulet braise',
+    price: 6000,
+    desc: 'Demi-poulet marine et braise au feu de bois, servi avec attieke.',
+    allergens: [],
+    photo: 'Grilled chicken half',
+  },
+  {
+    slug: 'pintade-roti',
+    cat: 'volailles',
+    name: 'Pintade rotie',
+    price: 8000,
+    desc: 'Pintade fermiere rotie aux epices, chair goutue et doree.',
+    allergens: [],
+    photo: 'Roasted guinea fowl',
+  },
+  // Viandes & plats en sauce
+  {
+    slug: 'mafe-boeuf',
+    cat: 'sauces',
+    name: 'Mafe de boeuf',
+    price: 6500,
+    desc: "Boeuf mijote dans une onctueuse sauce d'arachide. Riche et enveloppant.",
+    allergens: ['arachide'],
+    featured: true,
+    photo: 'Mafe',
+  },
+  {
+    slug: 'ndole-boeuf',
+    cat: 'sauces',
+    name: 'Ndole viande et crevettes',
+    price: 7500,
+    desc: 'Feuilles de ndole pilees, arachide, boeuf et crevettes. La fierte du Cameroun.',
+    allergens: ['arachide', 'crustaces'],
+    photo: 'Ndole',
+  },
+  {
+    slug: 'sauce-gombo',
+    cat: 'sauces',
+    name: 'Sauce gombo a la viande',
+    price: 6000,
+    desc: 'Gombo fondant, viande de boeuf et poisson fume. A manger avec la boule.',
+    allergens: ['poisson'],
+    spicy: true,
+    photo: 'Okra soup',
+  },
+  {
+    slug: 'sauce-arachide',
+    cat: 'sauces',
+    name: 'Sauce arachide au poulet',
+    price: 6000,
+    desc: "Poulet mijote dans une sauce d'arachide epaisse et parfumee.",
+    allergens: ['arachide'],
+    photo: 'Groundnut stew',
+  },
+  {
+    slug: 'sauce-feuille',
+    cat: 'sauces',
+    name: 'Sauce feuille de patate',
+    price: 5500,
+    desc: 'Feuilles de patate douce pilees, huile de palme et viande. Un gout de terroir.',
+    allergens: [],
+    photo: 'Cassava leaf stew',
+  },
+  {
+    slug: 'boeuf-oignons',
+    cat: 'sauces',
+    name: 'Emince de boeuf aux oignons',
+    price: 6500,
+    desc: 'Fines lamelles de boeuf sautees aux oignons et poivrons.',
+    allergens: [],
+    photo: 'Beef and onions',
+  },
+  // Riz & feculents
+  {
+    slug: 'riz-jollof',
+    cat: 'riz',
+    name: 'Riz jollof',
+    price: 4000,
+    desc: 'Riz mijote dans une sauce tomate epicee. Le roi des rassemblements.',
+    allergens: [],
+    vegetarian: true,
+    spicy: true,
+    featured: true,
+    photo: 'Jollof rice',
+  },
+  {
+    slug: 'thieboudienne',
+    cat: 'riz',
+    name: 'Thieboudienne',
+    price: 6500,
+    desc: 'Riz au poisson et legumes a la senegalaise, mijote dans la tomate. Un plat complet.',
+    allergens: ['poisson'],
+    photo: 'Thieboudienne',
+  },
+  {
+    slug: 'riz-gras',
+    cat: 'riz',
+    name: 'Riz gras',
+    price: 4500,
+    desc: 'Riz cuit dans un bouillon de viande et de legumes. Genereux et parfume.',
+    allergens: [],
+    photo: 'Riz gras',
+  },
+  {
+    slug: 'riz-sauce-tomate',
+    cat: 'riz',
+    name: 'Riz sauce tomate',
+    price: 3000,
+    desc: "Riz blanc nappe d'une sauce tomate maison mijotee.",
+    allergens: [],
+    vegetarian: true,
+    photo: 'Rice tomato sauce',
+  },
+  {
+    slug: 'attieke-poisson',
+    cat: 'riz',
+    name: 'Attieke poisson',
+    price: 5000,
+    desc: 'Semoule de manioc fermente et poisson braise, oignons au citron. Le duo ivoirien.',
+    allergens: ['poisson'],
+    photo: 'Attieke',
+  },
+  {
+    slug: 'alloco',
+    cat: 'riz',
+    name: 'Alloco',
+    price: 2500,
+    desc: 'Bananes plantains mures frites, dorees et fondantes. Sauce pimentee a part.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Alloco',
+  },
+  {
+    slug: 'foufou',
+    cat: 'riz',
+    name: 'Foufou de manioc',
+    price: 2500,
+    desc: 'Pate de manioc lisse et elastique. Le compagnon des sauces.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Fufu',
+  },
+  {
+    slug: 'plantain-frit',
+    cat: 'riz',
+    name: 'Plantains frits',
+    price: 2000,
+    desc: 'Tranches de plantain frites, croustillantes dehors, moelleuses dedans.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Fried plantain',
+  },
+  // Specialites du Tchad
+  {
+    slug: 'boule-daraba',
+    cat: 'tchad',
+    name: 'Boule et daraba',
+    price: 5000,
+    desc: 'Boule de mil accompagnee de daraba, une sauce gombo au sesame. Le coeur du Tchad.',
+    allergens: ['sesame'],
+    featured: true,
+    photo: 'Millet porridge',
+  },
+  {
+    slug: 'la-viande-grille',
+    cat: 'tchad',
+    name: 'La viande grillee',
+    price: 5500,
+    desc: 'Viande de mouton grillee a la braise, coupee en morceaux, sel et piment.',
+    allergens: [],
+    spicy: true,
+    photo: 'Grilled mutton',
+  },
+  {
+    slug: 'kanni-riz',
+    cat: 'tchad',
+    name: 'Riz au gras tchadien',
+    price: 5000,
+    desc: 'Riz mijote a la viande et aux epices locales, colore et parfume.',
+    allergens: [],
+    photo: 'Jollof rice',
+  },
+  {
+    slug: 'salade-tchadienne',
+    cat: 'tchad',
+    name: 'Salade tchadienne',
+    price: 3000,
+    desc: 'Tomate, oignon, concombre et huile parfumee. Fraiche et simple.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Tomato onion salad',
+  },
+  // Desserts
+  {
+    slug: 'beignets-haricot',
+    cat: 'desserts',
+    name: 'Beignets sucres',
+    price: 2000,
+    desc: 'Beignets moelleux saupoudres de sucre. Tout chauds.',
+    allergens: ['gluten'],
+    vegetarian: true,
+    photo: 'Sugar doughnut',
+  },
+  {
+    slug: 'salade-fruits',
+    cat: 'desserts',
+    name: 'Salade de fruits frais',
+    price: 3000,
+    desc: 'Mangue, ananas, papaye et pasteque de saison, coupes minute.',
+    allergens: [],
+    vegetarian: true,
+    featured: true,
+    photo: 'Fruit salad',
+  },
+  {
+    slug: 'degue',
+    cat: 'desserts',
+    name: 'Degue',
+    price: 2500,
+    desc: 'Perles de mil dans un lait caille sucre et vanille. Frais et gourmand.',
+    allergens: ['lait'],
+    vegetarian: true,
+    photo: 'Millet pudding',
+  },
+  {
+    slug: 'thiakry',
+    cat: 'desserts',
+    name: 'Thiakry',
+    price: 2500,
+    desc: "Couscous de mil au lait, raisins secs et fleur d'oranger.",
+    allergens: ['lait'],
+    vegetarian: true,
+    photo: 'Thiakry',
+  },
+  {
+    slug: 'banane-flambee',
+    cat: 'desserts',
+    name: 'Banane au miel',
+    price: 3000,
+    desc: 'Banane poelee, miel et cannelle, une pointe de citron.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Caramelized banana',
+  },
+  // Jus naturels & boissons fraiches
+  {
+    slug: 'jus-bissap',
+    cat: 'jus',
+    name: 'Bissap',
+    price: 1500,
+    desc: "Infusion d'hibiscus glacee, menthe et sucre. Rouge, acidule, rafraichissant.",
+    allergens: [],
+    vegetarian: true,
+    featured: true,
+    photo: 'Bissap drink',
+  },
+  {
+    slug: 'jus-gingembre',
+    cat: 'jus',
+    name: 'Jus de gingembre',
+    price: 1500,
+    desc: 'Gingembre frais presse, citron et sucre. Vif et tonique.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Ginger juice',
+  },
+  {
+    slug: 'jus-tamarin',
+    cat: 'jus',
+    name: 'Jus de tamarin',
+    price: 1500,
+    desc: 'Pulpe de tamarin sucree et glacee. Aigre-doux et desalterant.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Tamarind juice',
+  },
+  {
+    slug: 'jus-bouye',
+    cat: 'jus',
+    name: 'Jus de bouye (pain de singe)',
+    price: 1800,
+    desc: 'Jus cremeux de fruit du baobab, doux et vitamine.',
+    allergens: ['lait'],
+    vegetarian: true,
+    photo: 'Baobab fruit juice',
+  },
+  {
+    slug: 'jus-mangue',
+    cat: 'jus',
+    name: 'Jus de mangue',
+    price: 1800,
+    desc: 'Mangue mure mixee minute, epaisse et sucree.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Mango juice',
+  },
+  // Sodas, bieres & vins
+  {
+    slug: 'eau-minerale',
+    cat: 'bar',
+    name: 'Eau minerale',
+    price: 1000,
+    desc: "Bouteille d'eau minerale fraiche, 50 cl.",
+    allergens: [],
+    vegetarian: true,
+    photo: 'Bottled water',
+  },
+  {
+    slug: 'soda',
+    cat: 'bar',
+    name: 'Soda',
+    price: 1200,
+    desc: 'Coca, Fanta ou Sprite bien frais, 33 cl.',
+    allergens: [],
+    vegetarian: true,
+    photo: 'Soft drink bottle',
+  },
+  {
+    slug: 'biere-locale',
+    cat: 'bar',
+    name: 'Biere locale',
+    price: 1800,
+    desc: 'Biere blonde locale servie fraiche, 65 cl.',
+    allergens: ['gluten'],
+    vegetarian: true,
+    featured: true,
+    photo: 'Beer bottle',
+  },
+  {
+    slug: 'biere-import',
+    cat: 'bar',
+    name: 'Biere import',
+    price: 2500,
+    desc: 'Biere blonde importee, 33 cl.',
+    allergens: ['gluten'],
+    vegetarian: true,
+    photo: 'Lager beer glass',
+  },
+  {
+    slug: 'vin-rouge-verre',
+    cat: 'bar',
+    name: 'Verre de vin rouge',
+    price: 4000,
+    desc: 'Vin rouge charpente au verre, servi a bonne temperature.',
+    allergens: ['sulfites'],
+    vegetarian: true,
+    photo: 'Glass of red wine',
+  },
+  {
+    slug: 'vin-blanc-verre',
+    cat: 'bar',
+    name: 'Verre de vin blanc',
+    price: 4000,
+    desc: 'Vin blanc sec et frais au verre.',
+    allergens: ['sulfites'],
+    vegetarian: true,
+    photo: 'Glass of white wine',
+  },
+];
+
+// Slug/key -> UUID maps. Built once so recipes, orders and photos all reference
+// the same rows. Categories and items keyed by their stable slugs.
+const catId: Record<string, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.key, randomUUID()]),
+);
+const itemId: Record<string, string> = Object.fromEntries(ITEMS.map((i) => [i.slug, randomUUID()]));
+
+// Zone lookup: category zone drives is_drink (bar + jus categories are 'bar')
+// and KDS routing.
+const catZone: Record<string, 'kitchen' | 'bar'> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.key, c.zone]),
+);
+
+// Runtime menu-item shape consumed by the order builders. is_drink flags bar/jus
+// categories; course routes KDS/receipt grouping (appetizer|main|dessert|drink).
+interface MenuItemRuntime {
   id: string;
   name: string;
-  name_en: string;
-  description: string;
-  description_en: string;
   price: number;
-  category_id: string;
-  is_featured: boolean;
   is_drink: boolean;
-  is_vegetarian: boolean;
-  display_order: number;
   course: string | null;
 }
 
-const MENU_ITEMS: MenuItemDef[] = [
-  // ─── Entrees ─────────────────────────────────────────────────────────────
-  {
-    id: ID.itemFoieGras,
-    name: 'Foie Gras de Canard mi-cuit',
-    name_en: 'Semi-cooked Duck Foie Gras',
-    description: 'Foie gras de canard mi-cuit, chutney de figues et toasts brioches',
-    description_en: 'Semi-cooked duck foie gras with fig chutney and brioche toast',
-    price: 18000,
-    category_id: ID.catEntrees,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'appetizer',
-  },
-  {
-    id: ID.itemTartareSaumon,
-    name: 'Tartare de Saumon aux agrumes',
-    name_en: 'Citrus Salmon Tartare',
-    description: 'Saumon frais marine aux agrumes, avocat et creme citronnee',
-    description_en: 'Fresh salmon marinated in citrus, avocado and lemon cream',
-    price: 15000,
-    category_id: ID.catEntrees,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'appetizer',
-  },
-  {
-    id: ID.itemVelouteHomard,
-    name: 'Veloute de Homard au cognac',
-    name_en: 'Lobster Bisque with Cognac',
-    description: 'Veloute onctueux de homard flambe au cognac, quenelle de creme fouettee',
-    description_en: 'Smooth lobster bisque flambeed with cognac, whipped cream quenelle',
-    price: 16500,
-    category_id: ID.catEntrees,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 2,
-    course: 'appetizer',
-  },
-  {
-    id: ID.itemCarpaccioBoeuf,
-    name: 'Carpaccio de Boeuf wagyu',
-    name_en: 'Wagyu Beef Carpaccio',
-    description: 'Fines tranches de boeuf wagyu, huile de truffe, parmesan et roquette',
-    description_en: 'Thin slices of wagyu beef, truffle oil, parmesan and rocket',
-    price: 22000,
-    category_id: ID.catEntrees,
-    is_featured: true,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 3,
-    course: 'appetizer',
-  },
-  // ─── Plats Signature ────────────────────────────────────────────────────
-  {
-    id: ID.itemFiletRossini,
-    name: 'Filet de Boeuf Rossini',
-    name_en: 'Beef Fillet Rossini',
-    description: 'Filet de boeuf grille, escalope de foie gras poele, sauce Perigueux aux truffes',
-    description_en: 'Grilled beef fillet, pan-seared foie gras, Perigueux truffle sauce',
-    price: 38000,
-    category_id: ID.catPlats,
-    is_featured: true,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'main',
-  },
-  {
-    id: ID.itemCarreAgneau,
-    name: "Carre d'Agneau en croute d'herbes",
-    name_en: 'Herb-Crusted Rack of Lamb',
-    description: "Carre d'agneau en croute d'herbes de Provence, jus d'agneau reduit",
-    description_en: 'Rack of lamb in Provencal herb crust, reduced lamb jus',
-    price: 32000,
-    category_id: ID.catPlats,
-    is_featured: true,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'main',
-  },
-  {
-    id: ID.itemMagretCanard,
-    name: 'Magret de Canard au miel et epices',
-    name_en: 'Duck Breast with Honey and Spices',
-    description: 'Magret de canard roti, glace au miel et epices douces, legumes de saison',
-    description_en: 'Roasted duck breast, honey and sweet spice glaze, seasonal vegetables',
-    price: 28000,
-    category_id: ID.catPlats,
-    is_featured: true,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 2,
-    course: 'main',
-  },
-  {
-    id: ID.itemSupremeVolaille,
-    name: 'Supreme de Volaille farci aux morilles',
-    name_en: 'Morel-Stuffed Chicken Supreme',
-    description: 'Supreme de volaille farci aux morilles, sauce creme a la truffe',
-    description_en: 'Chicken supreme stuffed with morels, truffle cream sauce',
-    price: 26000,
-    category_id: ID.catPlats,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 3,
-    course: 'main',
-  },
-  // ─── Poissons & Fruits de Mer ───────────────────────────────────────────
-  {
-    id: ID.itemBarRoti,
-    name: 'Bar roti, beurre blanc au citron',
-    name_en: 'Roasted Sea Bass, Lemon Beurre Blanc',
-    description: 'Bar de ligne roti, beurre blanc citron, ecrasee de pommes de terre',
-    description_en: 'Line-caught roasted sea bass, lemon butter sauce, crushed potatoes',
-    price: 30000,
-    category_id: ID.catPoissons,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'main',
-  },
-  {
-    id: ID.itemGambas,
-    name: 'Gambas flambees au Pastis',
-    name_en: 'Pastis-Flambeed King Prawns',
-    description: 'Gambas geantes flambees au Pastis, risotto cremeaux aux herbes',
-    description_en: 'Giant king prawns flambeed with Pastis, creamy herb risotto',
-    price: 35000,
-    category_id: ID.catPoissons,
-    is_featured: true,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'main',
-  },
-  {
-    id: ID.itemPaveThon,
-    name: 'Pave de Thon mi-cuit, sesame',
-    name_en: 'Sesame-Crusted Tuna Steak',
-    description: 'Pave de thon rouge mi-cuit en croute de sesame, sauce soja yuzu',
-    description_en: 'Semi-cooked bluefin tuna steak, sesame crust, yuzu soy sauce',
-    price: 27000,
-    category_id: ID.catPoissons,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 2,
-    course: 'main',
-  },
-  {
-    id: ID.itemSoleMeuniere,
-    name: 'Sole meuniere, pommes grenaille',
-    name_en: 'Sole Meuniere with Baby Potatoes',
-    description: 'Sole entiere meuniere au beurre noisette, pommes grenaille et capres',
-    description_en: 'Whole sole meuniere in brown butter, baby potatoes and capers',
-    price: 34000,
-    category_id: ID.catPoissons,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: false,
-    display_order: 3,
-    course: 'main',
-  },
-  // ─── Desserts ───────────────────────────────────────────────────────────
-  {
-    id: ID.itemFondantChocolat,
-    name: 'Fondant au chocolat Valrhona',
-    name_en: 'Valrhona Chocolate Fondant',
-    description: 'Fondant au chocolat Valrhona 70%, coeur coulant, glace vanille',
-    description_en: 'Valrhona 70% chocolate fondant, molten center, vanilla ice cream',
-    price: 12000,
-    category_id: ID.catDesserts,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: true,
-    display_order: 0,
-    course: 'dessert',
-  },
-  {
-    id: ID.itemCremeBrulee,
-    name: 'Creme brulee a la vanille Bourbon',
-    name_en: 'Bourbon Vanilla Creme Brulee',
-    description: 'Creme brulee onctueuse parfumee a la vanille Bourbon de Madagascar',
-    description_en: 'Smooth creme brulee infused with Madagascar Bourbon vanilla',
-    price: 10000,
-    category_id: ID.catDesserts,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: true,
-    display_order: 1,
-    course: 'dessert',
-  },
-  {
-    id: ID.itemTarteTatin,
-    name: 'Tarte Tatin aux pommes',
-    name_en: 'Apple Tarte Tatin',
-    description: 'Tarte Tatin caramelisee, pommes fondantes, creme fraiche epaisse',
-    description_en: 'Caramelized apple tarte Tatin, tender apples, thick fresh cream',
-    price: 11000,
-    category_id: ID.catDesserts,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: true,
-    display_order: 2,
-    course: 'dessert',
-  },
-  {
-    id: ID.itemFromages,
-    name: 'Assiette de fromages affines',
-    name_en: 'Artisan Cheese Platter',
-    description: 'Selection de fromages affines, confiture de cerises noires et noix',
-    description_en: 'Selection of artisan cheeses, black cherry jam and walnuts',
-    price: 14000,
-    category_id: ID.catDesserts,
-    is_featured: false,
-    is_drink: false,
-    is_vegetarian: true,
-    display_order: 3,
-    course: 'dessert',
-  },
-  // ─── Vins Rouges ────────────────────────────────────────────────────────
-  {
-    id: ID.itemChateauMargaux,
-    name: 'Chateau Margaux 2015',
-    name_en: 'Chateau Margaux 2015',
-    description: 'Premier Grand Cru Classe, Margaux. Notes de cassis, violette et cedre',
-    description_en: 'Premier Grand Cru Classe, Margaux. Blackcurrant, violet and cedar notes',
-    price: 180000,
-    category_id: ID.catVinsRouges,
-    is_featured: false,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'drink',
-  },
-  {
-    id: ID.itemPomerolPetrus,
-    name: 'Pomerol Petrus 2012',
-    name_en: 'Pomerol Petrus 2012',
-    description: "Merlot d'exception de Pomerol. Truffe, prune confite et velours en bouche",
-    description_en: 'Exceptional Pomerol Merlot. Truffle, candied plum and velvety palate',
-    price: 450000,
-    category_id: ID.catVinsRouges,
-    is_featured: true,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'drink',
-  },
-  // ─── Vins Blancs ────────────────────────────────────────────────────────
-  {
-    id: ID.itemChablis,
-    name: 'Chablis Premier Cru 2019',
-    name_en: 'Chablis Premier Cru 2019',
-    description: 'Bourgogne mineralite et fraicheur. Agrumes, silex et fleurs blanches',
-    description_en: 'Burgundy minerality and freshness. Citrus, flint and white flowers',
-    price: 65000,
-    category_id: ID.catVinsBlancs,
-    is_featured: false,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'drink',
-  },
-  {
-    id: ID.itemSancerre,
-    name: 'Sancerre Domaine Vacheron',
-    name_en: 'Sancerre Domaine Vacheron',
-    description: 'Sauvignon Blanc de Loire. Vif et elegant, notes de pamplemousse et buis',
-    description_en: 'Loire Valley Sauvignon Blanc. Crisp and elegant, grapefruit and boxwood',
-    price: 48000,
-    category_id: ID.catVinsBlancs,
-    is_featured: false,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'drink',
-  },
-  // ─── Champagnes ─────────────────────────────────────────────────────────
-  {
-    id: ID.itemDomPerignon,
-    name: 'Dom Perignon 2013',
-    name_en: 'Dom Perignon 2013',
-    description: 'Cuvee prestige Moet & Chandon. Complexe et minerale, finale interminable',
-    description_en: 'Prestige cuvee by Moet & Chandon. Complex, mineral, endless finish',
-    price: 280000,
-    category_id: ID.catChampagnes,
-    is_featured: true,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 0,
-    course: 'drink',
-  },
-  {
-    id: ID.itemVeuveClicquot,
-    name: 'Veuve Clicquot Brut',
-    name_en: 'Veuve Clicquot Brut',
-    description: 'Champagne Brut classique. Bulles fines, fruit et biscuit',
-    description_en: 'Classic Brut Champagne. Fine bubbles, fruit and biscuit notes',
-    price: 95000,
-    category_id: ID.catChampagnes,
-    is_featured: false,
-    is_drink: true,
-    is_vegetarian: false,
-    display_order: 1,
-    course: 'drink',
-  },
-];
+function itemCourse(catKey: string): string {
+  if (catZone[catKey] === 'bar') return 'drink';
+  if (catKey === 'entrees') return 'appetizer';
+  if (catKey === 'desserts') return 'dessert';
+  return 'main';
+}
+
+const MENU_ITEMS: MenuItemRuntime[] = ITEMS.map((i) => ({
+  id: itemId[i.slug],
+  name: i.name,
+  price: i.price,
+  is_drink: catZone[i.cat] === 'bar',
+  course: itemCourse(i.cat),
+}));
 
 async function createMenuItems() {
   logStep(6, 'Create Menu Items');
 
-  const rows = MENU_ITEMS.map((item) => ({
-    id: item.id,
-    tenant_id: ID.tenant,
-    name: item.name,
-    name_en: item.name_en,
-    description: item.description,
-    description_en: item.description_en,
-    price: item.price,
-    category_id: item.category_id,
-    is_available: true,
-    is_featured: item.is_featured,
-  }));
+  const mic = migrations.menuItemColumns;
+  const rows = ITEMS.map((item) => {
+    const row: Record<string, unknown> = {
+      id: itemId[item.slug],
+      tenant_id: ID.tenant,
+      name: item.name,
+      name_en: item.name,
+      description: item.desc,
+      description_en: item.desc,
+      price: item.price,
+      category_id: catId[item.cat],
+      is_available: true,
+      is_featured: item.featured ?? false,
+    };
+    if (mic.has('allergens')) row.allergens = item.allergens;
+    if (mic.has('is_vegetarian')) row.is_vegetarian = item.vegetarian ?? false;
+    if (mic.has('is_spicy')) row.is_spicy = item.spicy ?? false;
+    return row;
+  });
 
   const { error } = await supabase.from('menu_items').insert(rows);
   if (error) throw new Error(`Menu items creation failed: ${error.message}`);
   log(`Menu items created: ${rows.length}`);
 }
 
-// ─── STEP 7: CREATE INGREDIENTS ───────────────────────────────────────────
+// ─── STEP 7: FETCH & UPLOAD MENU PHOTOS ──────────────────────────────────
+// Resolve each item's Wikimedia Commons search term to a file thumbnail,
+// download it, upload to the public "menu-items" bucket at lepicurien/<slug>.jpg
+// and stamp menu_items.image_url. Failures (no match / non-200) log a warning
+// and leave image_url null - they never abort the seed.
 
-// Ingredient shape used by the seed. `opening` is the day-0 stock; it is applied
+const PHOTO_UA = 'attabl-demo-seed/1.0 (https://attabl.com; demo data)';
+
+interface WikimediaImageInfo {
+  thumburl?: string;
+  url?: string;
+}
+interface WikimediaPage {
+  imageinfo?: WikimediaImageInfo[];
+}
+interface WikimediaResponse {
+  query?: { pages?: Record<string, WikimediaPage> };
+}
+
+// Generic photo fallback per category, tried when an item's own search term
+// returns nothing - so every dish still gets a relevant-looking image.
+const CATEGORY_PHOTO_FALLBACK: Record<string, string> = {
+  entrees: 'African appetizer food',
+  brochettes: 'Grilled meat skewer',
+  poissons: 'Grilled fish plate',
+  volailles: 'Roast chicken plate',
+  sauces: 'African stew',
+  riz: 'Rice dish plate',
+  tchad: 'African food plate',
+  desserts: 'Dessert plate',
+  jus: 'Fruit juice glass',
+  bar: 'Drink bottle',
+};
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Wikimedia rate-limits aggressively (HTTP 429). Fetch politely: retry 429/5xx
+// with backoff. All photo traffic runs sequentially with a delay between calls.
+async function fetchPolite(url: string, tries = 4): Promise<Response | null> {
+  let wait = 1500;
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    const res = await fetch(url, { headers: { 'User-Agent': PHOTO_UA } });
+    if (res.ok) return res;
+    if (res.status === 429 || res.status >= 500) {
+      if (attempt === tries) return res;
+      await sleep(wait);
+      wait *= 2;
+      continue;
+    }
+    return res;
+  }
+  return null;
+}
+
+async function resolveWikimediaImage(term: string): Promise<string | null> {
+  const api =
+    'https://commons.wikimedia.org/w/api.php?action=query&generator=search' +
+    `&gsrsearch=${encodeURIComponent(term)}` +
+    '&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json';
+  const res = await fetchPolite(api);
+  if (!res || !res.ok) return null;
+  const data = (await res.json()) as WikimediaResponse;
+  const pages = data.query?.pages;
+  if (!pages) return null;
+  const first = Object.values(pages)[0];
+  const info = first?.imageinfo?.[0];
+  return info?.thumburl ?? info?.url ?? null;
+}
+
+async function createMenuItemPhotos() {
+  logStep(7, 'Fetch & upload menu photos (Wikimedia -> storage)');
+
+  const mic = migrations.menuItemColumns;
+  if (!mic.has('image_url')) {
+    log('Skipping photos (menu_items.image_url column not available)');
+    return;
+  }
+
+  const withPhoto = ITEMS.filter((i) => i.photo);
+
+  // Reuse images already in the bucket (a prior run) instead of re-downloading -
+  // keeps re-runs fast and gentle on Wikimedia.
+  const existing = new Set<string>();
+  const listed = await supabase.storage.from('menu-items').list('lepicurien', { limit: 1000 });
+  for (const f of listed.data ?? []) existing.add(f.name);
+
+  let ok = 0;
+  let reused = 0;
+  let failed = 0;
+
+  for (const item of withPhoto) {
+    const storagePath = `lepicurien/${item.slug}.jpg`;
+    try {
+      let haveFile = existing.has(`${item.slug}.jpg`);
+
+      if (!haveFile) {
+        // Resolve the item term, then a category fallback if it yields nothing.
+        let src = await resolveWikimediaImage(item.photo as string);
+        await sleep(300);
+        if (!src) {
+          const fb = CATEGORY_PHOTO_FALLBACK[item.cat];
+          if (fb) {
+            src = await resolveWikimediaImage(fb);
+            await sleep(300);
+          }
+        }
+        if (!src) {
+          failed++;
+          log(`  No photo found for ${item.slug} (term "${item.photo}")`);
+          continue;
+        }
+        const res = await fetchPolite(src);
+        await sleep(300);
+        if (!res || !res.ok) {
+          failed++;
+          log(`  Photo download failed for ${item.slug} (HTTP ${res?.status ?? 'network'})`);
+          continue;
+        }
+        const buf = Buffer.from(await res.arrayBuffer());
+        const { error: upErr } = await supabase.storage
+          .from('menu-items')
+          .upload(storagePath, buf, { contentType: 'image/jpeg', upsert: true });
+        if (upErr) {
+          failed++;
+          log(`  Photo upload failed for ${item.slug}: ${upErr.message}`);
+          continue;
+        }
+        haveFile = true;
+      } else {
+        reused++;
+      }
+
+      const publicUrl = supabase.storage.from('menu-items').getPublicUrl(storagePath)
+        .data.publicUrl;
+      const update: Record<string, unknown> = { image_url: publicUrl };
+      if (mic.has('image_source')) update.image_source = 'import';
+      if (mic.has('image_uploaded_at')) update.image_uploaded_at = new Date().toISOString();
+
+      const { error: updErr } = await supabase
+        .from('menu_items')
+        .update(update)
+        .eq('id', itemId[item.slug])
+        .eq('tenant_id', ID.tenant);
+      if (updErr) {
+        failed++;
+        log(`  Photo DB update failed for ${item.slug}: ${updErr.message}`);
+        continue;
+      }
+      if (haveFile && !existing.has(`${item.slug}.jpg`)) ok++;
+    } catch (e) {
+      failed++;
+      log(`  Photo error for ${item.slug}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  log(
+    `Photos: ${ok} downloaded, ${reused} reused, ${failed} failed (of ${withPhoto.length} with a photo term)`,
+  );
+}
+
+// ─── STEP 8: CREATE INGREDIENTS ───────────────────────────────────────────
+
+// Ingredient shape used by the seed. `open` is the day-0 stock; it is applied
 // via the canonical set_opening_stock RPC (NOT a direct current_stock write), so
 // the ledger invariant SUM(stock_movements.quantity) == current_stock holds.
+// IDs come from the ingId map (keyed by `key`), built below.
 interface IngredientDef {
-  id: string;
+  key: string;
   name: string;
-  unit: 'kg' | 'L' | 'pièce' | 'cl' | 'g' | 'bouteille';
-  opening: number;
-  min_stock_alert: number;
-  cost_per_unit: number;
+  unit: 'kg' | 'L' | 'piece' | 'cl' | 'g' | 'bouteille';
+  open: number;
+  min: number;
+  cost: number;
   category: string;
   purchase_unit?: string;
   units_per_purchase?: number;
+  lowAlert?: boolean;
 }
 
 const INGREDIENTS: IngredientDef[] = [
-  // ─── Viandes ──────────────────────────────────────────────────────────────
+  { key: 'riz', name: 'Riz', unit: 'kg', cost: 900, min: 8, open: 120, category: 'Feculents' },
   {
-    id: ID.ingBoeuf,
-    name: 'Viande boeuf',
+    key: 'poisson_capitaine',
+    name: 'Capitaine',
     unit: 'kg',
-    opening: 90,
-    min_stock_alert: 8,
-    cost_per_unit: 15000,
-    category: 'Viandes',
-  },
-  {
-    id: ID.ingFoieGras,
-    name: 'Foie gras',
-    unit: 'kg',
-    opening: 15,
-    min_stock_alert: 2,
-    cost_per_unit: 45000,
-    category: 'Viandes',
-  },
-  {
-    id: ID.ingAgneau,
-    name: 'Agneau',
-    unit: 'kg',
-    opening: 50,
-    min_stock_alert: 5,
-    cost_per_unit: 18000,
-    category: 'Viandes',
-  },
-  {
-    id: ID.ingCanard,
-    name: 'Canard magret',
-    unit: 'kg',
-    opening: 45,
-    min_stock_alert: 4,
-    cost_per_unit: 12000,
-    category: 'Viandes',
-  },
-  {
-    id: ID.ingVolaille,
-    name: 'Volaille',
-    unit: 'kg',
-    opening: 55,
-    min_stock_alert: 6,
-    cost_per_unit: 5000,
-    category: 'Viandes',
-  },
-  // ─── Poissons ─────────────────────────────────────────────────────────────
-  {
-    id: ID.ingBar,
-    name: 'Bar',
-    unit: 'kg',
-    opening: 40,
-    min_stock_alert: 4,
-    cost_per_unit: 20000,
+    cost: 4500,
+    min: 5,
+    open: 60,
     category: 'Poissons',
   },
   {
-    id: ID.ingGambas,
-    name: 'Gambas',
+    key: 'tilapia',
+    name: 'Tilapia',
     unit: 'kg',
-    opening: 35,
-    min_stock_alert: 4,
-    cost_per_unit: 25000,
+    cost: 2800,
+    min: 5,
+    open: 50,
+    category: 'Poissons',
+  },
+  { key: 'poulet', name: 'Poulet', unit: 'kg', cost: 2200, min: 6, open: 90, category: 'Viandes' },
+  { key: 'boeuf', name: 'Boeuf', unit: 'kg', cost: 3500, min: 5, open: 80, category: 'Viandes' },
+  { key: 'mouton', name: 'Mouton', unit: 'kg', cost: 3800, min: 4, open: 45, category: 'Viandes' },
+  { key: 'gambas', name: 'Gambas', unit: 'kg', cost: 8000, min: 3, open: 25, category: 'Poissons' },
+  {
+    key: 'crevettes',
+    name: 'Crevettes',
+    unit: 'kg',
+    cost: 6000,
+    min: 3,
+    open: 20,
     category: 'Poissons',
   },
   {
-    id: ID.ingThon,
-    name: 'Thon',
+    key: 'pate_arachide',
+    name: "Pate d'arachide",
     unit: 'kg',
-    opening: 40,
-    min_stock_alert: 4,
-    cost_per_unit: 18000,
-    category: 'Poissons',
+    cost: 2500,
+    min: 4,
+    open: 40,
+    category: 'Epicerie',
+  },
+  { key: 'gombo', name: 'Gombo', unit: 'kg', cost: 1200, min: 4, open: 35, category: 'Legumes' },
+  { key: 'tomate', name: 'Tomate', unit: 'kg', cost: 900, min: 6, open: 70, category: 'Legumes' },
+  { key: 'oignon', name: 'Oignon', unit: 'kg', cost: 700, min: 8, open: 90, category: 'Legumes' },
+  { key: 'huile', name: 'Huile', unit: 'L', cost: 1400, min: 8, open: 100, category: 'Epicerie' },
+  {
+    key: 'manioc_attieke',
+    name: 'Attieke (manioc)',
+    unit: 'kg',
+    cost: 1000,
+    min: 5,
+    open: 55,
+    category: 'Feculents',
   },
   {
-    id: ID.ingSole,
-    name: 'Sole',
+    key: 'plantain',
+    name: 'Plantain',
     unit: 'kg',
-    opening: 35,
-    min_stock_alert: 4,
-    cost_per_unit: 22000,
-    category: 'Poissons',
+    cost: 800,
+    min: 6,
+    open: 65,
+    category: 'Feculents',
+  },
+  { key: 'mil', name: 'Mil', unit: 'kg', cost: 800, min: 5, open: 45, category: 'Feculents' },
+  {
+    key: 'piment',
+    name: 'Piment',
+    unit: 'kg',
+    cost: 1500,
+    min: 2,
+    open: 12,
+    category: 'Epices',
+    lowAlert: true,
   },
   {
-    id: ID.ingSaumon,
-    name: 'Saumon',
+    key: 'gingembre',
+    name: 'Gingembre',
     unit: 'kg',
-    opening: 30,
-    min_stock_alert: 3,
-    cost_per_unit: 16000,
-    category: 'Poissons',
+    cost: 1800,
+    min: 2,
+    open: 10,
+    category: 'Epices',
+    lowAlert: true,
   },
+  { key: 'citron', name: 'Citron', unit: 'kg', cost: 1000, min: 3, open: 20, category: 'Legumes' },
+  { key: 'farine', name: 'Farine', unit: 'kg', cost: 700, min: 5, open: 50, category: 'Epicerie' },
   {
-    id: ID.ingHomard,
-    name: 'Homard',
+    key: 'hibiscus',
+    name: "Fleur d'hibiscus",
     unit: 'kg',
-    opening: 20,
-    min_stock_alert: 3,
-    cost_per_unit: 35000,
-    category: 'Poissons',
-  },
-  // ─── Epicerie / laitiers / champignons ───────────────────────────────────
-  {
-    id: ID.ingChocolat,
-    name: 'Chocolat Valrhona',
-    unit: 'kg',
-    opening: 25,
-    min_stock_alert: 3,
-    cost_per_unit: 8000,
+    cost: 3000,
+    min: 2,
+    open: 15,
     category: 'Epicerie',
   },
   {
-    id: ID.ingCreme,
-    name: 'Creme fraiche',
-    unit: 'L',
-    opening: 70,
-    min_stock_alert: 8,
-    cost_per_unit: 3000,
-    category: 'Produits laitiers',
-  },
-  {
-    id: ID.ingBeurre,
-    name: 'Beurre',
-    unit: 'kg',
-    opening: 45,
-    min_stock_alert: 6,
-    cost_per_unit: 4000,
-    category: 'Produits laitiers',
-  },
-  {
-    id: ID.ingMorilles,
-    name: 'Morilles',
-    unit: 'kg',
-    opening: 6,
-    min_stock_alert: 1,
-    cost_per_unit: 60000,
-    category: 'Champignons',
-  },
-  // ─── Boissons (achetees au casier -> demo conversion d'unite) ────────────
-  {
-    id: ID.ingEau,
+    key: 'eau_bouteille',
     name: 'Eau minerale',
     unit: 'bouteille',
-    opening: 96,
-    min_stock_alert: 24,
-    cost_per_unit: 500,
+    cost: 400,
+    min: 48,
+    open: 480,
     category: 'Boissons',
     purchase_unit: 'casier',
     units_per_purchase: 24,
   },
   {
-    id: ID.ingBiere,
-    name: 'Biere locale',
+    key: 'biere',
+    name: 'Biere',
     unit: 'bouteille',
-    opening: 60,
-    min_stock_alert: 24,
-    cost_per_unit: 1000,
+    cost: 900,
+    min: 36,
+    open: 360,
     category: 'Boissons',
     purchase_unit: 'casier',
     units_per_purchase: 12,
   },
+  {
+    key: 'soda',
+    name: 'Soda',
+    unit: 'bouteille',
+    cost: 500,
+    min: 48,
+    open: 480,
+    category: 'Boissons',
+    purchase_unit: 'casier',
+    units_per_purchase: 24,
+  },
 ];
 
-// Recipe lines (fiches techniques). Realistic per-cover quantities in base units.
-// Most food menu items map to at least one ingredient so destock_order consumes
-// stock for nearly every food order. Wines and the cheese platter have no lines.
-const RECIPES: Array<{
-  menu_item_id: string;
-  ingredient_id: string;
-  quantity_needed: number;
-  notes: string;
-}> = [
-  // Foie Gras de Canard (entree)
+const ingId: Record<string, string> = Object.fromEntries(
+  INGREDIENTS.map((g) => [g.key, randomUUID()]),
+);
+const ingName: Record<string, string> = Object.fromEntries(INGREDIENTS.map((g) => [g.key, g.name]));
+
+// Recipe lines (fiches techniques). Each item maps to base-unit quantities per
+// cover. Items without a recipe (some drinks, salads) simply do not destock.
+interface RecipeDef {
+  item: string;
+  ings: Array<[string, number]>;
+}
+
+const RECIPES: RecipeDef[] = [
   {
-    menu_item_id: ID.itemFoieGras,
-    ingredient_id: ID.ingFoieGras,
-    quantity_needed: 0.08,
-    notes: 'Escalope mi-cuite',
-  },
-  // Tartare de Saumon
-  {
-    menu_item_id: ID.itemTartareSaumon,
-    ingredient_id: ID.ingSaumon,
-    quantity_needed: 0.12,
-    notes: 'Saumon frais',
+    item: 'accras-crevettes',
+    ings: [
+      ['crevettes', 0.12],
+      ['farine', 0.08],
+      ['huile', 0.05],
+    ],
   },
   {
-    menu_item_id: ID.itemTartareSaumon,
-    ingredient_id: ID.ingCreme,
-    quantity_needed: 0.02,
-    notes: 'Creme citronnee',
-  },
-  // Veloute de Homard
-  {
-    menu_item_id: ID.itemVelouteHomard,
-    ingredient_id: ID.ingHomard,
-    quantity_needed: 0.1,
-    notes: 'Base homard',
+    item: 'samoussas-viande',
+    ings: [
+      ['boeuf', 0.1],
+      ['farine', 0.06],
+      ['oignon', 0.04],
+    ],
   },
   {
-    menu_item_id: ID.itemVelouteHomard,
-    ingredient_id: ID.ingCreme,
-    quantity_needed: 0.05,
-    notes: 'Creme fouettee',
-  },
-  // Carpaccio de Boeuf
-  {
-    menu_item_id: ID.itemCarpaccioBoeuf,
-    ingredient_id: ID.ingBoeuf,
-    quantity_needed: 0.12,
-    notes: 'Boeuf wagyu',
-  },
-  // Filet de Boeuf Rossini
-  {
-    menu_item_id: ID.itemFiletRossini,
-    ingredient_id: ID.ingBoeuf,
-    quantity_needed: 0.25,
-    notes: 'Filet centre',
+    item: 'pastels-poisson',
+    ings: [
+      ['tilapia', 0.12],
+      ['farine', 0.06],
+      ['oignon', 0.04],
+    ],
   },
   {
-    menu_item_id: ID.itemFiletRossini,
-    ingredient_id: ID.ingFoieGras,
-    quantity_needed: 0.05,
-    notes: 'Escalope poelee',
+    item: 'brochette-boeuf',
+    ings: [
+      ['boeuf', 0.2],
+      ['oignon', 0.05],
+    ],
   },
   {
-    menu_item_id: ID.itemFiletRossini,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.03,
-    notes: 'Sauce Perigueux',
-  },
-  // Carre d'Agneau
-  {
-    menu_item_id: ID.itemCarreAgneau,
-    ingredient_id: ID.ingAgneau,
-    quantity_needed: 0.3,
-    notes: 'Carre 4 cotes',
+    item: 'brochette-poulet',
+    ings: [
+      ['poulet', 0.2],
+      ['gingembre', 0.02],
+    ],
   },
   {
-    menu_item_id: ID.itemCarreAgneau,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.02,
-    notes: 'Cuisson et jus',
-  },
-  // Magret de Canard
-  {
-    menu_item_id: ID.itemMagretCanard,
-    ingredient_id: ID.ingCanard,
-    quantity_needed: 0.35,
-    notes: 'Magret entier',
+    item: 'brochette-mouton',
+    ings: [
+      ['mouton', 0.22],
+      ['oignon', 0.05],
+    ],
   },
   {
-    menu_item_id: ID.itemMagretCanard,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.02,
-    notes: 'Glace au miel',
-  },
-  // Supreme de Volaille
-  {
-    menu_item_id: ID.itemSupremeVolaille,
-    ingredient_id: ID.ingVolaille,
-    quantity_needed: 0.25,
-    notes: 'Supreme desosse',
+    item: 'ailes-poulet',
+    ings: [
+      ['poulet', 0.25],
+      ['piment', 0.01],
+    ],
   },
   {
-    menu_item_id: ID.itemSupremeVolaille,
-    ingredient_id: ID.ingMorilles,
-    quantity_needed: 0.03,
-    notes: 'Farce morilles',
+    item: 'capitaine-braise',
+    ings: [
+      ['poisson_capitaine', 0.5],
+      ['oignon', 0.08],
+      ['citron', 0.05],
+    ],
   },
   {
-    menu_item_id: ID.itemSupremeVolaille,
-    ingredient_id: ID.ingCreme,
-    quantity_needed: 0.05,
-    notes: 'Sauce creme',
-  },
-  // Bar roti
-  {
-    menu_item_id: ID.itemBarRoti,
-    ingredient_id: ID.ingBar,
-    quantity_needed: 0.28,
-    notes: 'Bar de ligne',
+    item: 'tilapia-braise',
+    ings: [
+      ['tilapia', 0.4],
+      ['oignon', 0.06],
+      ['plantain', 0.15],
+    ],
   },
   {
-    menu_item_id: ID.itemBarRoti,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.03,
-    notes: 'Beurre blanc',
-  },
-  // Gambas flambees
-  {
-    menu_item_id: ID.itemGambas,
-    ingredient_id: ID.ingGambas,
-    quantity_needed: 0.25,
-    notes: 'Gambas geantes x4',
+    item: 'poisson-yassa',
+    ings: [
+      ['tilapia', 0.35],
+      ['oignon', 0.15],
+      ['citron', 0.08],
+    ],
   },
   {
-    menu_item_id: ID.itemGambas,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.03,
-    notes: 'Flambage et cuisson',
-  },
-  // Pave de Thon
-  {
-    menu_item_id: ID.itemPaveThon,
-    ingredient_id: ID.ingThon,
-    quantity_needed: 0.22,
-    notes: 'Thon rouge',
-  },
-  // Sole meuniere
-  {
-    menu_item_id: ID.itemSoleMeuniere,
-    ingredient_id: ID.ingSole,
-    quantity_needed: 0.3,
-    notes: 'Sole entiere',
+    item: 'gambas-grillees',
+    ings: [
+      ['gambas', 0.25],
+      ['huile', 0.03],
+    ],
   },
   {
-    menu_item_id: ID.itemSoleMeuniere,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.04,
-    notes: 'Beurre noisette',
-  },
-  // Fondant au chocolat
-  {
-    menu_item_id: ID.itemFondantChocolat,
-    ingredient_id: ID.ingChocolat,
-    quantity_needed: 0.08,
-    notes: 'Chocolat 70%',
+    item: 'poulet-dg',
+    ings: [
+      ['poulet', 0.3],
+      ['plantain', 0.2],
+      ['tomate', 0.1],
+    ],
   },
   {
-    menu_item_id: ID.itemFondantChocolat,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.03,
-    notes: 'Appareil fondant',
+    item: 'poulet-yassa',
+    ings: [
+      ['poulet', 0.3],
+      ['oignon', 0.15],
+      ['citron', 0.08],
+    ],
   },
   {
-    menu_item_id: ID.itemFondantChocolat,
-    ingredient_id: ID.ingCreme,
-    quantity_needed: 0.02,
-    notes: 'Glace vanille',
+    item: 'poulet-kedjenou',
+    ings: [
+      ['poulet', 0.3],
+      ['tomate', 0.12],
+      ['gingembre', 0.02],
+    ],
   },
-  // Creme brulee
   {
-    menu_item_id: ID.itemCremeBrulee,
-    ingredient_id: ID.ingCreme,
-    quantity_needed: 0.12,
-    notes: 'Appareil creme',
+    item: 'poulet-braise',
+    ings: [
+      ['poulet', 0.35],
+      ['manioc_attieke', 0.2],
+    ],
   },
-  // Tarte Tatin
   {
-    menu_item_id: ID.itemTarteTatin,
-    ingredient_id: ID.ingBeurre,
-    quantity_needed: 0.04,
-    notes: 'Caramel et pate',
+    item: 'mafe-boeuf',
+    ings: [
+      ['boeuf', 0.25],
+      ['pate_arachide', 0.1],
+      ['tomate', 0.08],
+    ],
   },
+  {
+    item: 'ndole-boeuf',
+    ings: [
+      ['boeuf', 0.2],
+      ['pate_arachide', 0.08],
+      ['crevettes', 0.06],
+    ],
+  },
+  {
+    item: 'sauce-gombo',
+    ings: [
+      ['boeuf', 0.2],
+      ['gombo', 0.15],
+      ['huile', 0.04],
+    ],
+  },
+  {
+    item: 'sauce-arachide',
+    ings: [
+      ['poulet', 0.25],
+      ['pate_arachide', 0.1],
+    ],
+  },
+  {
+    item: 'riz-jollof',
+    ings: [
+      ['riz', 0.2],
+      ['tomate', 0.1],
+      ['oignon', 0.05],
+    ],
+  },
+  {
+    item: 'thieboudienne',
+    ings: [
+      ['riz', 0.2],
+      ['poisson_capitaine', 0.2],
+      ['tomate', 0.1],
+    ],
+  },
+  {
+    item: 'riz-gras',
+    ings: [
+      ['riz', 0.2],
+      ['boeuf', 0.1],
+      ['huile', 0.03],
+    ],
+  },
+  {
+    item: 'attieke-poisson',
+    ings: [
+      ['manioc_attieke', 0.25],
+      ['tilapia', 0.3],
+      ['oignon', 0.08],
+    ],
+  },
+  {
+    item: 'alloco',
+    ings: [
+      ['plantain', 0.25],
+      ['huile', 0.05],
+    ],
+  },
+  {
+    item: 'plantain-frit',
+    ings: [
+      ['plantain', 0.25],
+      ['huile', 0.05],
+    ],
+  },
+  {
+    item: 'boule-daraba',
+    ings: [
+      ['mil', 0.2],
+      ['gombo', 0.1],
+    ],
+  },
+  {
+    item: 'la-viande-grille',
+    ings: [
+      ['mouton', 0.3],
+      ['piment', 0.01],
+    ],
+  },
+  {
+    item: 'beignets-haricot',
+    ings: [
+      ['farine', 0.15],
+      ['huile', 0.05],
+    ],
+  },
+  { item: 'jus-bissap', ings: [['hibiscus', 0.03]] },
+  {
+    item: 'jus-gingembre',
+    ings: [
+      ['gingembre', 0.05],
+      ['citron', 0.03],
+    ],
+  },
+  { item: 'biere-locale', ings: [['biere', 1]] },
+  { item: 'biere-import', ings: [['biere', 1]] },
+  { item: 'soda', ings: [['soda', 1]] },
+  { item: 'eau-minerale', ings: [['eau_bouteille', 1]] },
 ];
+
+// Total recipe lines (rows written to the recipes table), used in the summary.
+const RECIPE_LINE_COUNT = RECIPES.reduce((sum, r) => sum + r.ings.length, 0);
 
 async function createIngredients() {
-  logStep(7, 'Create Ingredients, Recipes, Opening Stock & Receptions');
+  logStep(8, 'Create Ingredients, Recipes, Opening Stock & Receptions');
 
   const owner = STAFF.find((s) => s.role === 'owner');
   const manager = STAFF.find((s) => s.role === 'manager');
@@ -1569,13 +1912,13 @@ async function createIngredients() {
   // 1. Insert ingredients WITHOUT stock. current_stock starts at 0; the opening
   //    quantity is booked through the ledger RPC below so the invariant holds.
   const rows = INGREDIENTS.map((ing) => ({
-    id: ing.id,
+    id: ingId[ing.key],
     tenant_id: ID.tenant,
     name: ing.name,
     unit: ing.unit,
     current_stock: 0,
-    min_stock_alert: ing.min_stock_alert,
-    cost_per_unit: ing.cost_per_unit,
+    min_stock_alert: ing.min,
+    cost_per_unit: ing.cost,
     category: ing.category,
     purchase_unit: ing.purchase_unit ?? null,
     units_per_purchase: ing.units_per_purchase ?? 1,
@@ -1586,15 +1929,21 @@ async function createIngredients() {
   if (ingError) throw new Error(`Ingredients creation failed: ${ingError.message}`);
   log(`Ingredients created: ${INGREDIENTS.length}`);
 
-  // 2. Recipes (fiches techniques).
-  const recipeRows = RECIPES.map((r) => ({
-    id: randomUUID(),
-    tenant_id: ID.tenant,
-    ...r,
-  }));
+  // 2. Recipes (fiches techniques). Flatten each item's lines into one row per
+  //    (menu_item, ingredient). notes carries the ingredient name for context.
+  const recipeRows = RECIPES.flatMap((r) =>
+    r.ings.map(([ingKey, qty]) => ({
+      id: randomUUID(),
+      tenant_id: ID.tenant,
+      menu_item_id: itemId[r.item],
+      ingredient_id: ingId[ingKey],
+      quantity_needed: qty,
+      notes: ingName[ingKey],
+    })),
+  );
   const { error: recipeError } = await supabase.from('recipes').insert(recipeRows);
   if (recipeError) throw new Error(`Recipes creation failed: ${recipeError.message}`);
-  log(`Recipes created: ${recipeRows.length}`);
+  log(`Recipe lines created: ${recipeRows.length} (${RECIPES.length} recipes)`);
 
   // 3. Opening stock via the canonical set_opening_stock RPC (records the DELTA
   //    from 0, keeping SUM(movements) == current_stock). created_by = owner for
@@ -1602,8 +1951,8 @@ async function createIngredients() {
   for (const ing of INGREDIENTS) {
     const { error } = await supabase.rpc('set_opening_stock', {
       p_tenant_id: ID.tenant,
-      p_ingredient_id: ing.id,
-      p_quantity: ing.opening,
+      p_ingredient_id: ingId[ing.key],
+      p_quantity: ing.open,
       p_created_by: owner?.userId ?? undefined,
     });
     if (error) throw new Error(`Opening stock for ${ing.name} failed: ${error.message}`);
@@ -1631,7 +1980,7 @@ async function createIngredients() {
   }
   const receptions: Reception[] = [
     {
-      ingredient_id: ID.ingBoeuf,
+      ingredient_id: ingId['boeuf'],
       supplierId: ID.supplierBoucherie,
       quantity: 20,
       inPurchaseUnit: false,
@@ -1639,7 +1988,7 @@ async function createIngredients() {
       unitsPerPurchase: 1,
     },
     {
-      ingredient_id: ID.ingBar,
+      ingredient_id: ingId['poisson_capitaine'],
       supplierId: ID.supplierMaree,
       quantity: 15,
       inPurchaseUnit: false,
@@ -1648,7 +1997,7 @@ async function createIngredients() {
     },
     // Purchase-unit reception: 5 casier of 24 -> 120 bouteille booked in base unit.
     {
-      ingredient_id: ID.ingEau,
+      ingredient_id: ingId['eau_bouteille'],
       supplierId: ID.supplierBoissons,
       quantity: 5,
       inPurchaseUnit: true,
@@ -1680,10 +2029,10 @@ async function createIngredients() {
   log(`Receptions booked: ${receptions.length} (1 via purchase unit / casier)`);
 }
 
-// ─── STEP 8: CREATE SUPPLIERS ─────────────────────────────────────────────
+// ─── STEP 9: CREATE SUPPLIERS ─────────────────────────────────────────────
 
 async function createSuppliers() {
-  logStep(8, 'Create Suppliers');
+  logStep(9, 'Create Suppliers');
 
   const suppliers = [
     {
@@ -1709,14 +2058,14 @@ async function createSuppliers() {
       is_active: true,
     },
     {
-      id: ID.supplierCave,
+      id: ID.supplierMarche,
       tenant_id: ID.tenant,
-      name: 'Cave du Sommelier',
-      contact_name: 'Antoine Lefebvre',
+      name: 'Marche de Dembe',
+      contact_name: 'Fatime Abakar',
       phone: '+235 66 33 33 33',
-      email: 'cave@sommelier.td',
-      address: "Avenue Mobutu, N'Djamena",
-      notes: 'Importation directe Bordeaux et Champagne. Stockage temperature controlee.',
+      email: 'commandes@marche-dembe.td',
+      address: "Marche de Dembe, N'Djamena",
+      notes: 'Legumes, tubercules et fruits frais. Livraison tous les matins.',
       is_active: true,
     },
     {
@@ -1737,10 +2086,10 @@ async function createSuppliers() {
   log(`Suppliers created: ${suppliers.length}`);
 }
 
-// ─── STEP 9: CREATE COUPONS & ANNOUNCEMENTS ──────────────────────────────
+// ─── STEP 10: CREATE COUPONS & ANNOUNCEMENTS ──────────────────────────────
 
 async function createCouponsAndAnnouncements() {
-  logStep(9, 'Create Coupons & Announcements');
+  logStep(10, 'Create Coupons & Announcements');
 
   const now = new Date();
   const threeMonthsLater = new Date(now);
@@ -1753,8 +2102,8 @@ async function createCouponsAndAnnouncements() {
       code: 'BIENVENUE10',
       discount_type: 'percentage',
       discount_value: 10,
-      min_order_amount: 50000,
-      max_discount_amount: 15000,
+      min_order_amount: 15000,
+      max_discount_amount: 3000,
       valid_from: now.toISOString(),
       valid_until: threeMonthsLater.toISOString(),
       max_uses: 100,
@@ -1766,8 +2115,8 @@ async function createCouponsAndAnnouncements() {
       tenant_id: ID.tenant,
       code: 'EPICURIEN20',
       discount_type: 'fixed',
-      discount_value: 20000,
-      min_order_amount: 100000,
+      discount_value: 5000,
+      min_order_amount: 30000,
       max_discount_amount: null,
       valid_from: now.toISOString(),
       valid_until: threeMonthsLater.toISOString(),
@@ -1792,21 +2141,21 @@ async function createCouponsAndAnnouncements() {
 
   const announcements = [
     {
-      id: ID.annJazz,
+      id: ID.annVendredi,
       tenant_id: ID.tenant,
-      title: 'Soiree Jazz & Gastronomie',
+      title: 'Vendredi grillades au feu de bois',
       description:
-        'Chaque vendredi soir, profitez de notre menu gastronomique accompagne de jazz live. Reservation recommandee.',
+        'Chaque vendredi soir, brochettes, poissons braises et musique. Ambiance garantie, venez en famille.',
       start_date: nextFriday.toISOString(),
       end_date: endOfYear.toISOString(),
       is_active: true,
     },
     {
-      id: ID.annDegustation,
+      id: ID.annDecouverte,
       tenant_id: ID.tenant,
-      title: 'Menu Degustation Decouverte',
+      title: 'Menu decouverte du chef',
       description:
-        'Menu degustation en 5 services avec accords mets & vins. 85 000 XAF par personne. Sur reservation uniquement.',
+        'Trois plats a decouvrir chaque semaine: une entree, un plat en sauce et un dessert. 12 000 FCFA par personne.',
       start_date: now.toISOString(),
       end_date: null,
       is_active: true,
@@ -1822,7 +2171,7 @@ async function createCouponsAndAnnouncements() {
   }
 }
 
-// ─── STEP 10: CREATE HISTORICAL ORDERS (90 days) ─────────────────────────
+// ─── STEP 11: CREATE HISTORICAL ORDERS (90 days) ─────────────────────────
 
 // Reference to a persisted order, used by the destock step (which replays
 // destock_order for every order in the last 30 days) and revenue accounting.
@@ -1832,7 +2181,7 @@ interface OrderRef {
 }
 
 async function createHistoricalOrders(): Promise<OrderRef[]> {
-  logStep(10, 'Create Historical Orders (90 days) + payments');
+  logStep(11, 'Create Historical Orders (90 days) + payments');
 
   const TAX_RATE = 19.25 / 100;
   const SERVICE_RATE = 10 / 100;
@@ -1909,7 +2258,7 @@ async function createHistoricalOrders(): Promise<OrderRef[]> {
 
         // Add columns that exist in the DB
         const oic = migrations.orderItemColumns;
-        if (oic.has('item_name_en')) orderItemRow.item_name_en = item.name_en;
+        if (oic.has('item_name_en')) orderItemRow.item_name_en = item.name;
         if (oic.has('notes')) orderItemRow.notes = null;
         if (oic.has('customer_notes')) orderItemRow.customer_notes = null;
         if (oic.has('item_status')) orderItemRow.item_status = 'served';
@@ -1925,13 +2274,13 @@ async function createHistoricalOrders(): Promise<OrderRef[]> {
       // Apply coupon occasionally (~10%) - only if coupons table exists
       let discountAmount = 0;
       let couponId: string | null = null;
-      if (migrations.hasProductionUpgrade && Math.random() < 0.1 && subtotal >= 50000) {
-        if (subtotal >= 100000 && Math.random() < 0.5) {
+      if (migrations.hasProductionUpgrade && Math.random() < 0.1 && subtotal >= 15000) {
+        if (subtotal >= 30000 && Math.random() < 0.5) {
           couponId = ID.couponEpicurien;
-          discountAmount = 20000;
+          discountAmount = 5000;
         } else {
           couponId = ID.couponBienvenue;
-          discountAmount = Math.min(Math.round(subtotal * 0.1), 15000);
+          discountAmount = Math.min(Math.round(subtotal * 0.1), 3000);
         }
       }
 
@@ -2035,10 +2384,10 @@ async function createHistoricalOrders(): Promise<OrderRef[]> {
   return orderRefs;
 }
 
-// ─── STEP 11: CREATE LIVE ORDERS (Today) ─────────────────────────────────
+// ─── STEP 12: CREATE LIVE ORDERS (Today) ─────────────────────────────────
 
 async function createLiveOrders(): Promise<OrderRef[]> {
-  logStep(11, 'Create Live Orders (Today) + open table sessions');
+  logStep(12, 'Create Live Orders (Today) + open table sessions');
 
   const TAX_RATE = 19.25 / 100;
   const SERVICE_RATE = 10 / 100;
@@ -2104,7 +2453,7 @@ async function createLiveOrders(): Promise<OrderRef[]> {
 
         // Add columns that exist in the DB
         const oic = migrations.orderItemColumns;
-        if (oic.has('item_name_en')) orderItemRow.item_name_en = item.name_en;
+        if (oic.has('item_name_en')) orderItemRow.item_name_en = item.name;
         if (oic.has('notes')) orderItemRow.notes = null;
         if (oic.has('customer_notes'))
           orderItemRow.customer_notes = i === 0 ? 'Sans gluten si possible' : null;
@@ -2180,13 +2529,13 @@ async function createLiveOrders(): Promise<OrderRef[]> {
   return liveRefs;
 }
 
-// ─── STEP 12: REPLAY DESTOCK FOR RECENT + LIVE ORDERS ────────────────────
+// ─── STEP 13: REPLAY DESTOCK FOR RECENT + LIVE ORDERS ────────────────────
 // destock_order books 'order_destock' ledger movements per recipe line (and
 // flips menu items unavailable when an ingredient hits 0). Only the last 30
 // days of history are replayed (older orders stay un-destocked to cap volume);
 // live orders are always destocked. Each call stamps the chef (anti-vol).
 async function destockRecentOrders(historical: OrderRef[], live: OrderRef[]) {
-  logStep(12, 'Replay stock destock (recent + live orders)');
+  logStep(13, 'Replay stock destock (recent + live orders)');
 
   const chef = STAFF.find((s) => s.role === 'chef');
   const cutoff = new Date();
@@ -2206,25 +2555,40 @@ async function destockRecentOrders(historical: OrderRef[], live: OrderRef[]) {
   log(`Orders destocked: ${done} (last 30 days + live) -> order_destock ledger`);
 }
 
-// ─── STEP 13: RECORD STOCK LOSSES ────────────────────────────────────────
+// ─── STEP 14: RECORD STOCK LOSSES ────────────────────────────────────────
 // record_loss_tx: reconcilable 'loss' movement carrying a reason_code. Covers
 // the full reason vocabulary so the losses-by-reason report has data. Manager
 // stamped (anti-vol). Only ingredients with cost_per_unit > 0 (all are).
 async function recordLosses() {
-  logStep(13, 'Record stock losses (record_loss_tx)');
+  logStep(14, 'Record stock losses (record_loss_tx)');
 
   const manager = STAFF.find((s) => s.role === 'manager');
   const losses: Array<{ ingredient_id: string; quantity: number; reason: string; note: string }> = [
     {
-      ingredient_id: ID.ingCreme,
-      quantity: 2,
+      ingredient_id: ingId['tomate'],
+      quantity: 3,
       reason: 'expired',
-      note: 'Creme perimee (DLC depassee)',
+      note: 'Tomates trop mures (DLC depassee)',
     },
-    { ingredient_id: ID.ingBar, quantity: 1.5, reason: 'spillage', note: 'Chute a la reception' },
-    { ingredient_id: ID.ingBeurre, quantity: 1, reason: 'prep_waste', note: 'Chutes de parage' },
-    { ingredient_id: ID.ingChocolat, quantity: 0.5, reason: 'breakage', note: 'Tablette cassee' },
-    { ingredient_id: ID.ingEau, quantity: 6, reason: 'theft', note: 'Ecart de comptage bar' },
+    {
+      ingredient_id: ingId['tilapia'],
+      quantity: 1.5,
+      reason: 'spillage',
+      note: 'Chute a la reception',
+    },
+    {
+      ingredient_id: ingId['huile'],
+      quantity: 1,
+      reason: 'prep_waste',
+      note: 'Fond de bidon perdu',
+    },
+    {
+      ingredient_id: ingId['eau_bouteille'],
+      quantity: 4,
+      reason: 'breakage',
+      note: 'Bouteilles cassees',
+    },
+    { ingredient_id: ingId['biere'], quantity: 6, reason: 'theft', note: 'Ecart de comptage bar' },
   ];
 
   for (const l of losses) {
@@ -2241,15 +2605,15 @@ async function recordLosses() {
   log(`Losses recorded: ${losses.length} (expired/spillage/prep_waste/breakage/theft)`);
 }
 
-// ─── STEP 14: PHYSICAL STOCK COUNT (committed, with variance) ────────────
+// ─── STEP 15: PHYSICAL STOCK COUNT (committed, with variance) ────────────
 // open -> save counted quantities (one line deliberately off) -> commit. Commit
 // books a 'physical_count' delta and closes the session, so exactly one count is
 // left in 'committed' state (never 'open', which would block a re-run).
 async function runPhysicalCount() {
-  logStep(14, 'Physical stock count (open -> count -> commit)');
+  logStep(15, 'Physical stock count (open -> count -> commit)');
 
   const manager = STAFF.find((s) => s.role === 'manager');
-  const ingredientIds = [ID.ingBoeuf, ID.ingVolaille, ID.ingSole];
+  const ingredientIds = [ingId['boeuf'], ingId['poulet'], ingId['tilapia']];
 
   const { data: countId, error: openErr } = await supabase.rpc('open_stock_count', {
     p_tenant_id: ID.tenant,
@@ -2270,7 +2634,8 @@ async function runPhysicalCount() {
 
   const countedLines = (lines ?? []).map((ln) => {
     const theoretical = Number(ln.theoretical_qty);
-    const counted = ln.ingredient_id === ID.ingBoeuf ? Math.max(0, theoretical - 2) : theoretical;
+    const counted =
+      ln.ingredient_id === ingId['boeuf'] ? Math.max(0, theoretical - 2) : theoretical;
     return { ingredient_id: ln.ingredient_id as string, counted_qty: counted };
   });
 
@@ -2290,14 +2655,15 @@ async function runPhysicalCount() {
   log(`Physical count committed: ${(applied as number) ?? 0} variance line(s) booked`);
 }
 
-// ─── STEP 15: ENGINEER LOW-STOCK ALERTS ──────────────────────────────────
+// ─── STEP 16: ENGINEER LOW-STOCK ALERTS ──────────────────────────────────
 // Guarantee the dashboard "stock alerts" widget has data: raise a couple of
 // ingredients' min_stock_alert just above their post-destock current_stock so
 // they read as below threshold. Plain threshold write (no ledger movement).
 async function engineerLowStockAlerts() {
-  logStep(15, 'Engineer low-stock alerts');
+  logStep(16, 'Engineer low-stock alerts');
 
-  const targets = [ID.ingMorilles, ID.ingHomard];
+  // Spices (piment, gingembre) are the flagged low-stock items in the spec.
+  const targets = [ingId['piment'], ingId['gingembre']];
   const { data: rows, error } = await supabase
     .from('ingredients')
     .select('id, name, current_stock')
@@ -2318,12 +2684,12 @@ async function engineerLowStockAlerts() {
   }
 }
 
-// ─── STEP 16: REVENUE SELF-CHECK ─────────────────────────────────────────
+// ─── STEP 17: REVENUE SELF-CHECK ─────────────────────────────────────────
 // Revenue = SUM(total + tip_amount) WHERE payment_status = 'paid'
 // (src/lib/orders/revenue.ts). Assert the last 30 days clear the demo floor and
 // log the calendar-month-to-date figure.
 async function assertRevenueFloor() {
-  logStep(16, 'Revenue self-check (paid, last 30 days)');
+  logStep(17, 'Revenue self-check (paid, last 30 days)');
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
@@ -2381,11 +2747,11 @@ function printSummary() {
   Users:          ${STAFF.length} (1 owner, 1 chef, 1 manager, 1 cashier, 2 waiters)
   Zones:          ${migrations.hasZones ? '3 (Terrasse, Salle, VIP)' : 'SKIPPED (table not available)'}
   Tables:         ${migrations.hasTables ? '15 (T1-T5, S1-S6, V1-V4)' : 'SKIPPED (table not available)'}
-  Menus:          ${migrations.hasMenuHierarchy ? '3 (Dejeuner, Diner, Vins)' : 'SKIPPED (migration not applied)'}
-  Categories:     11
-  Menu Items:     ${MENU_ITEMS.length}
-  Ingredients:    ${migrations.hasInventoryEngine ? `${INGREDIENTS.length} (2 achetes au casier)` : 'SKIPPED (migration not applied)'}
-  Recipes:        ${migrations.hasInventoryEngine ? `${RECIPES.length}` : 'SKIPPED (migration not applied)'}
+  Menu:           ${migrations.hasMenuHierarchy ? '1 (La Carte)' : 'SKIPPED (migration not applied)'}
+  Categories:     ${CATEGORIES.length}
+  Menu Items:     ${ITEMS.length} (photos: Wikimedia -> menu-items bucket)
+  Ingredients:    ${migrations.hasInventoryEngine ? `${INGREDIENTS.length} (3 achetes au casier)` : 'SKIPPED (migration not applied)'}
+  Recipes:        ${migrations.hasInventoryEngine ? `${RECIPES.length} (${RECIPE_LINE_COUNT} lignes)` : 'SKIPPED (migration not applied)'}
   Suppliers:      ${migrations.hasSuppliers ? '4' : 'SKIPPED (migration not applied)'}
   Stock:          ${migrations.hasInventoryEngine ? 'opening + receptions + destock + losses + physical count (ledger)' : 'SKIPPED'}
   Coupons:        ${migrations.hasProductionUpgrade ? '2' : 'SKIPPED (migration not applied)'}
@@ -2430,6 +2796,8 @@ async function main() {
     }
     await createMenus();
     await createMenuItems();
+    // Photos: best-effort, never aborts the seed.
+    await createMenuItemPhotos();
     // Suppliers BEFORE ingredients: ingredient receptions attribute to a supplier.
     if (migrations.hasSuppliers) {
       await createSuppliers();
