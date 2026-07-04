@@ -38,28 +38,28 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
     <div className="space-y-6">
       {/* Templates */}
       <div>
-        <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">Template</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {TEMPLATES.map((tmpl) => {
             const isSelected = data.qrTemplate === tmpl.id;
             return (
               <Button
                 key={tmpl.id}
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => updateData({ qrTemplate: tmpl.id })}
-                className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
+                className={`flex h-auto flex-col overflow-hidden rounded-lg p-0 text-center transition-all duration-150 ${
                   isSelected
-                    ? 'border-accent bg-accent/5 '
-                    : 'border-app-border hover:border-app-border-hover'
+                    ? 'bg-app-hover shadow-sm ring-1 ring-accent hover:bg-app-hover'
+                    : 'border border-app-border bg-app-elevated hover:bg-app-hover'
                 }`}
               >
-                <div className="pt-3 px-2">
+                <div className="px-2 pt-3">
                   <TemplateMiniPreview templateId={tmpl.id} data={data} />
                 </div>
-                <div className="py-2 border-t border-app-border">
+                <div className="border-t border-app-border py-2">
                   <span
-                    className={`text-xs font-semibold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
+                    className={`text-xs font-medium ${isSelected ? 'text-app-text' : 'text-app-text-secondary'}`}
                   >
                     {t(tmpl.labelKey)}
                   </span>
@@ -72,7 +72,7 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
 
       {/* QR Color Styles */}
       <div>
-        <p className="text-xs font-semibold text-app-text-secondary mb-3">{t('qrCodeTitle')}</p>
+        <p className="mb-2 block text-xs font-medium text-app-text-secondary">{t('qrCodeTitle')}</p>
         <div className="flex gap-2.5">
           {QR_STYLES.map((style) => {
             const isActive = data.qrStyle === style.id;
@@ -81,14 +81,16 @@ export function LaunchStyleTab({ data, updateData }: LaunchStyleTabProps) {
               <Button
                 key={style.id}
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => updateData({ qrStyle: style.id })}
-                className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all p-0 ${
-                  isActive ? 'border-accent ' : 'border-app-border hover:border-app-border-hover'
+                className={`flex h-12 w-12 items-center justify-center rounded-lg p-0 shadow-sm transition-all ${
+                  isActive
+                    ? 'ring-1 ring-accent'
+                    : 'border border-app-border hover:border-app-border-hover'
                 }`}
                 style={{ backgroundColor: style.bg }}
               >
-                <div className="w-5 h-5 rounded-md" style={{ backgroundColor: previewFg }} />
+                <div className="h-5 w-5 rounded-md" style={{ backgroundColor: previewFg }} />
               </Button>
             );
           })}

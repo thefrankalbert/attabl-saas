@@ -24,20 +24,22 @@ export function EstablishmentStep({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-lg font-bold text-app-text mb-1">
-              {showDetails ? t('addressLabel') : t('establishmentTitle')}
-            </h1>
-            <p className="text-app-text-secondary text-sm">
-              {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
-            </p>
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-xl">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="mb-1.5 text-xl font-semibold tracking-tight text-app-text">
+                {showDetails ? t('addressLabel') : t('establishmentTitle')}
+              </h1>
+              <p className="text-sm text-app-text-secondary">
+                {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
+              </p>
+            </div>
+
+            {showIdentity && <IdentitySection data={data} updateData={updateData} />}
+
+            {showDetails && <DetailsSection data={data} updateData={updateData} />}
           </div>
-
-          {showIdentity && <IdentitySection data={data} updateData={updateData} />}
-
-          {showDetails && <DetailsSection data={data} updateData={updateData} />}
         </div>
       </div>
     </div>

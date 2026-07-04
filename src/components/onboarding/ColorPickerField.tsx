@@ -41,7 +41,7 @@ export function ColorPickerField({
 }: ColorPickerFieldProps) {
   return (
     <div>
-      <Label htmlFor={id} className="text-xs font-medium text-app-text-secondary mb-1 block">
+      <Label htmlFor={id} className="mb-2 block text-xs font-medium text-app-text-secondary">
         {label}
       </Label>
       <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export function ColorPickerField({
               onToggle();
             }
           }}
-          className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
+          className="h-11 w-11 shrink-0 cursor-pointer rounded-lg border border-app-border shadow-sm transition-all duration-150 hover:border-app-border-hover"
           style={{ backgroundColor: value }}
         />
         <Input
@@ -63,20 +63,20 @@ export function ColorPickerField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 bg-app-elevated border-app-border rounded-xl font-mono uppercase text-xs"
+          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 font-mono text-xs uppercase shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
       {isOpen && (
-        <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated border border-app-border">
+        <div className="mt-2 grid grid-cols-5 gap-2 rounded-lg border border-app-border bg-app-elevated p-3 shadow-sm">
           {colors.map((color) => (
             <Button
               key={color}
               type="button"
               variant="ghost"
               onClick={() => onPick(color)}
-              className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
+              className={`h-9 w-9 min-w-0 rounded-lg border p-0 transition-all duration-150 ${
                 value === color
-                  ? 'border-accent scale-110'
+                  ? 'ring-1 ring-accent border-app-border'
                   : 'border-transparent hover:border-app-border-hover'
               }`}
               style={{ backgroundColor: color }}

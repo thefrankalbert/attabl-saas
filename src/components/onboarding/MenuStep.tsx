@@ -149,127 +149,131 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-lg font-bold text-app-text mb-1">{t('menuTitle')}</h1>
-            <p className="text-app-text-secondary text-sm">{t('menuSubtitle')}</p>
-          </div>
-
-          {/* Tip */}
-          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
-            <div className="flex items-start gap-2.5">
-              <UtensilsCrossed className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-              <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-2xl">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="mb-1.5 text-xl font-semibold tracking-tight text-app-text">
+                {t('menuTitle')}
+              </h1>
+              <p className="text-sm text-app-text-secondary">{t('menuSubtitle')}</p>
             </div>
-          </div>
 
-          {/* Categories - Full width */}
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-              {tSeg(`${family}.catalog`)}
-            </p>
+            {/* Tip */}
+            <div className="mb-6 rounded-xl border border-accent/20 bg-accent/5 p-4">
+              <div className="flex items-start gap-2.5">
+                <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
+              </div>
+            </div>
 
-            <div className="space-y-4">
-              {categories.map((category) => {
-                const articleCount = category.items.length;
+            {/* Categories - Full width */}
+            <div>
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-app-text-muted">
+                {tSeg(`${family}.catalog`)}
+              </p>
 
-                return (
-                  <div
-                    key={category.id}
-                    className="rounded-xl border border-app-border overflow-hidden"
-                  >
-                    {/* Category Header */}
-                    <div className="flex items-center gap-3 p-4 bg-app-elevated">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleCategory(category.id)}
-                        className="p-1.5 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-8 w-8"
-                        aria-label={category.expanded ? 'Collapse' : 'Expand'}
-                      >
-                        {category.expanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
+              <div className="space-y-4">
+                {categories.map((category) => {
+                  const articleCount = category.items.length;
 
-                      <Input
-                        placeholder={t('categoryNamePlaceholder')}
-                        value={category.name}
-                        onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                        className="flex-1 h-10 bg-app-bg border-app-border rounded-xl text-sm font-semibold"
-                      />
+                  return (
+                    <div
+                      key={category.id}
+                      className="overflow-hidden rounded-xl border border-app-border bg-app-elevated shadow-sm"
+                    >
+                      {/* Category Header */}
+                      <div className="flex items-center gap-3 p-4">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleCategory(category.id)}
+                          className="h-8 w-8 rounded-lg p-1.5 text-app-text-secondary transition-colors hover:bg-app-hover hover:text-app-text"
+                          aria-label={category.expanded ? 'Collapse' : 'Expand'}
+                        >
+                          {category.expanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
 
-                      <span className="text-xs text-app-text-muted whitespace-nowrap px-2.5 py-1 bg-app-bg border border-app-border rounded-full font-medium">
-                        {t('articlesCount', { count: articleCount })}
-                      </span>
+                        <Input
+                          placeholder={t('categoryNamePlaceholder')}
+                          value={category.name}
+                          onChange={(e) => updateCategoryName(category.id, e.target.value)}
+                          className="h-10 flex-1 rounded-lg border-app-border bg-app-bg px-3.5 text-sm font-semibold shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                        />
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteCategory(category.id)}
-                        className="p-2 rounded-lg text-app-text-muted hover:text-status-error hover:bg-status-error-bg transition-colors h-8 w-8"
-                        aria-label={t('deleteCategory')}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <span className="whitespace-nowrap rounded-full border border-app-border bg-app-bg px-2.5 py-1 text-xs font-medium text-app-text-muted">
+                          {t('articlesCount', { count: articleCount })}
+                        </span>
 
-                    {/* Category Body */}
-                    {category.expanded && (
-                      <div className="p-4 space-y-2.5">
-                        {category.items.map((item) => (
-                          <MenuItemRow
-                            key={item.id}
-                            categoryId={category.id}
-                            item={item}
-                            currency={data.currency}
-                            uploadingItemId={uploadingItemId}
-                            updateArticle={updateArticle}
-                            deleteArticle={deleteArticle}
-                            handleItemPhotoUpload={handleItemPhotoUpload}
-                          />
-                        ))}
-
-                        {category.items.length < 10 ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => addArticle(category.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            {t('addArticle')}
-                          </Button>
-                        ) : (
-                          <p className="text-xs text-app-text-muted text-center py-1">
-                            {t('maxArticles')}
-                          </p>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteCategory(category.id)}
+                          className="h-8 w-8 rounded-lg p-2 text-app-text-muted transition-colors hover:bg-status-error-bg hover:text-status-error"
+                          aria-label={t('deleteCategory')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
 
-              {/* Add Category Button */}
-              {categories.length < 5 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addCategory}
-                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('addCategory')}
-                </Button>
-              ) : (
-                <p className="text-xs text-app-text-muted text-center">{t('maxCategories')}</p>
-              )}
+                      {/* Category Body */}
+                      {category.expanded && (
+                        <div className="space-y-2.5 border-t border-app-border p-4">
+                          {category.items.map((item) => (
+                            <MenuItemRow
+                              key={item.id}
+                              categoryId={category.id}
+                              item={item}
+                              currency={data.currency}
+                              uploadingItemId={uploadingItemId}
+                              updateArticle={updateArticle}
+                              deleteArticle={deleteArticle}
+                              handleItemPhotoUpload={handleItemPhotoUpload}
+                            />
+                          ))}
+
+                          {category.items.length < 10 ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => addArticle(category.id)}
+                              className="flex h-auto w-full items-center gap-2 rounded-lg border border-dashed border-app-border bg-app-elevated px-4 py-2.5 text-sm font-medium text-app-text-secondary transition-colors hover:bg-app-hover hover:text-app-text"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              {t('addArticle')}
+                            </Button>
+                          ) : (
+                            <p className="py-1 text-center text-xs text-app-text-muted">
+                              {t('maxArticles')}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Add Category Button */}
+                {categories.length < 5 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addCategory}
+                    className="flex h-auto w-full items-center gap-2 rounded-xl border border-dashed border-app-border bg-app-elevated px-4 py-3 text-sm font-medium text-app-text-secondary shadow-sm transition-colors hover:bg-app-hover hover:text-app-text"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t('addCategory')}
+                  </Button>
+                ) : (
+                  <p className="text-center text-xs text-app-text-muted">{t('maxCategories')}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

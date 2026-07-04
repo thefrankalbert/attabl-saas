@@ -35,7 +35,7 @@ export function MenuItemRow({
   const t = useTranslations('onboarding');
 
   return (
-    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated hover:bg-app-elevated transition-colors">
+    <div className="flex items-center gap-2.5 rounded-lg border border-app-border bg-app-elevated p-2 shadow-sm transition-colors hover:bg-app-hover">
       {/* Photo upload */}
       <div className="relative shrink-0">
         {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
@@ -52,19 +52,19 @@ export function MenuItemRow({
           }}
         />
         {uploadingItemId === item.id ? (
-          <div className="w-9 h-9 rounded-xl border border-app-border flex items-center justify-center">
-            <Loader2 className="h-3.5 w-3.5 text-app-text-muted animate-spin" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-app-border">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-app-text-muted" />
           </div>
         ) : item.imageUrl ? (
-          <div className="relative w-9 h-9">
-            <img src={item.imageUrl} alt="" className="w-9 h-9 rounded-xl object-cover" />
+          <div className="relative h-9 w-9">
+            <img src={item.imageUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
             <Button
               type="button"
               variant="destructive"
               size="icon"
               aria-label="Remove image"
               onClick={() => updateArticle(categoryId, item.id, 'imageUrl', '')}
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full p-0 min-w-0 min-h-0"
+              className="absolute -right-1 -top-1 h-4 w-4 min-h-0 min-w-0 rounded-full p-0"
             >
               <X className="h-2.5 w-2.5 text-white" />
             </Button>
@@ -72,7 +72,7 @@ export function MenuItemRow({
         ) : (
           <Label
             htmlFor={`photo-${item.id}`}
-            className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-dashed border-app-border transition-colors hover:border-accent/40 hover:bg-app-hover"
           >
             <Camera className="h-3.5 w-3.5 text-app-text-muted" />
           </Label>
@@ -82,7 +82,7 @@ export function MenuItemRow({
         placeholder={t('articleNamePlaceholder')}
         value={item.name}
         onChange={(e) => updateArticle(categoryId, item.id, 'name', e.target.value)}
-        className="flex-1 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+        className="h-10 flex-1 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
       />
       <div className="flex items-center gap-1.5">
         <Input
@@ -92,16 +92,16 @@ export function MenuItemRow({
           placeholder={t('articlePrice')}
           value={item.price}
           onChange={(e) => updateArticle(categoryId, item.id, 'price', e.target.value)}
-          className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
+          className="h-10 w-28 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
-        <span className="text-xs text-app-text-muted font-medium">{currency || 'EUR'}</span>
+        <span className="text-xs font-medium text-app-text-muted">{currency || 'EUR'}</span>
       </div>
       <Button
         type="button"
         variant="ghost"
         size="icon"
         onClick={() => deleteArticle(categoryId, item.id)}
-        className="p-1.5 rounded-lg text-app-text-muted hover:text-status-error hover:bg-status-error-bg transition-colors shrink-0 h-7 w-7"
+        className="h-7 w-7 shrink-0 rounded-lg p-1.5 text-app-text-muted transition-colors hover:bg-status-error-bg hover:text-status-error"
         aria-label={t('deleteArticle')}
       >
         <X className="h-3.5 w-3.5" />

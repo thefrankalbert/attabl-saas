@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Zap, Settings, Clock } from 'lucide-react';
+import { Check, Zap, Settings, Clock } from 'lucide-react';
 import type { ConfigMode } from './types';
 
 const modeIds: ConfigMode[] = ['complete', 'minimum', 'skip'];
@@ -30,10 +30,10 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
 
   return (
     <div className="mb-6">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+      <p className="mb-2 block text-xs font-medium text-app-text-secondary">
         {t('tablesModeLabel')}
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {modeIds.map((id, idx) => {
           const isActive = mode === id;
           const Icon = modeIcons[idx];
@@ -41,31 +41,30 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
             <Button
               key={id}
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => onModeChange(id)}
-              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
+              className={`group h-auto items-start gap-3 whitespace-normal rounded-lg p-4 text-left transition-all duration-150 ${
                 isActive
-                  ? 'border-accent bg-accent/10'
-                  : 'border-app-border hover:border-app-border-hover bg-app-elevated hover:bg-app-elevated'
+                  ? 'bg-app-hover shadow-sm ring-1 ring-accent hover:bg-app-hover'
+                  : 'border border-app-border bg-app-elevated hover:border-app-border-hover hover:bg-app-hover'
               }`}
             >
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  isActive ? 'bg-accent text-accent-text' : 'bg-app-elevated text-app-text-muted'
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className={`font-semibold text-sm ${isActive ? 'text-app-text' : 'text-app-text-secondary'}`}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-app-card">
+                <Icon className={`h-5 w-5 ${isActive ? 'text-app-text' : 'text-app-text-muted'}`} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`flex items-center gap-1.5 text-sm font-medium ${
+                    isActive ? 'text-app-text' : 'text-app-text-secondary'
+                  }`}
                 >
                   {t(modeLabelKeys[id])}
-                </p>
-                <p className="text-xs text-app-text-muted mt-0.5 leading-relaxed">
+                  {isActive && <Check className="h-4 w-4 shrink-0 text-app-text" />}
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-app-text-muted">
                   {t(modeDescKeys[id])}
-                </p>
-              </div>
+                </span>
+              </span>
             </Button>
           );
         })}

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Coffee, Flame, Hotel, Building2, UtensilsCrossed, Wine } from 'lucide-react';
+import { Check, Coffee, Flame, Hotel, Building2, UtensilsCrossed, Wine } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 
@@ -26,9 +26,13 @@ export function IdentitySection({
   const t = useTranslations('onboarding');
 
   return (
-    <>
-      <div className="mb-3">
-        <Label htmlFor="tenantName" className="text-xs font-semibold text-app-text mb-1.5 block">
+    <div className="space-y-6">
+      {/* Name */}
+      <div>
+        <Label
+          htmlFor="tenantName"
+          className="mb-2 block text-xs font-medium text-app-text-secondary"
+        >
           {t('nameLabel')}
         </Label>
         <Input
@@ -37,15 +41,16 @@ export function IdentitySection({
           placeholder={t('namePlaceholder')}
           value={data.tenantName}
           onChange={(e) => updateData({ tenantName: e.target.value })}
-          className="h-10 rounded-xl border-app-border bg-app-elevated text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
+          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
 
-      <div className="mb-3">
-        <Label className="text-xs font-semibold text-app-text mb-2 block">
+      {/* Establishment type */}
+      <div>
+        <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
           {t('stepEstablishment')}
         </Label>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           {establishmentTypes.map((type) => {
             const Icon = type.icon;
             const isSelected = data.establishmentType === type.id;
@@ -53,35 +58,36 @@ export function IdentitySection({
               <Button
                 key={type.id}
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => updateData({ establishmentType: type.id })}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 h-auto ${
+                className={`group h-auto justify-start gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 ${
                   isSelected
-                    ? 'border-accent bg-accent/5'
-                    : 'border-app-border hover:border-app-border-hover'
+                    ? 'bg-app-hover shadow-sm ring-1 ring-accent hover:bg-app-hover'
+                    : 'border border-app-border bg-app-elevated hover:border-app-border-hover hover:bg-app-hover'
                 }`}
               >
-                <div
-                  className={`p-2 rounded-xl transition-colors ${
-                    isSelected ? 'bg-accent/10' : 'bg-app-elevated'
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors ${
+                    isSelected ? 'bg-app-card' : 'bg-app-card'
                   }`}
                 >
                   <Icon
-                    className={`h-4 w-4 ${isSelected ? 'text-accent' : 'text-app-text-muted'}`}
+                    className={`h-4 w-4 ${isSelected ? 'text-app-text' : 'text-app-text-muted'}`}
                   />
-                </div>
+                </span>
                 <span
-                  className={`font-medium text-[10px] text-center leading-tight ${
+                  className={`text-sm font-medium ${
                     isSelected ? 'text-app-text' : 'text-app-text-secondary'
                   }`}
                 >
                   {t(type.titleKey)}
                 </span>
+                {isSelected && <Check className="ml-auto h-4 w-4 shrink-0 text-app-text" />}
               </Button>
             );
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

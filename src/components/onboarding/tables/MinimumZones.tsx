@@ -18,14 +18,12 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
 
   return (
     <div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-        {t('zonesLabel')}
-      </p>
+      <p className="mb-2 block text-xs font-medium text-app-text-secondary">{t('zonesLabel')}</p>
       <div className="space-y-3">
         {zones.map((zone, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 p-3 rounded-xl bg-app-elevated border border-app-border"
+            className="flex items-center gap-3 rounded-xl border border-app-border bg-app-elevated p-3 shadow-sm"
           >
             <div className="flex-1">
               <Input
@@ -33,7 +31,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
                 placeholder={t('zoneNamePlaceholder')}
                 value={zone.name}
                 onChange={(e) => updateZone(index, 'name', e.target.value)}
-                className="h-11 bg-app-bg rounded-xl border-app-border text-sm"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </div>
             <div className="w-28">
@@ -44,7 +42,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
                 placeholder={t('zoneTableCount')}
                 value={zone.tableCount}
                 onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                className="h-11 bg-app-bg rounded-xl border-app-border text-sm text-center"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-center text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </div>
             <Button
@@ -53,10 +51,10 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
               size="icon"
               onClick={() => removeZone(index)}
               disabled={zones.length === 1}
-              className={`p-2.5 rounded-xl transition-colors h-10 w-10 ${
+              className={`h-10 w-10 min-h-[44px] min-w-[44px] rounded-lg p-2.5 transition-colors ${
                 zones.length === 1
-                  ? 'text-app-text-muted cursor-not-allowed'
-                  : 'text-app-text-muted hover:text-status-error hover:bg-status-error-bg'
+                  ? 'cursor-not-allowed text-app-text-muted'
+                  : 'text-app-text-muted hover:bg-status-error-bg hover:text-status-error'
               }`}
               aria-label={t('deleteZone')}
             >
@@ -70,7 +68,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
             type="button"
             variant="outline"
             onClick={addZone}
-            className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
+            className="flex h-auto w-full items-center gap-2 rounded-lg border border-dashed border-app-border px-4 py-3 text-sm font-medium text-app-text-secondary transition-colors hover:border-app-border-hover hover:text-app-text"
           >
             <Plus className="h-4 w-4" />
             {t('addZone')}
@@ -79,8 +77,8 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
 
         {/* Preview */}
         {zones.some((z) => z.name && z.tableCount > 0) && (
-          <div className="mt-6 p-4 rounded-xl bg-app-elevated border border-app-border">
-            <p className="text-xs font-semibold text-app-text-muted mb-3">{t('tipPrefix')}</p>
+          <div className="mt-6 rounded-xl border border-app-border bg-app-elevated p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold text-app-text-muted">{t('tipPrefix')}</p>
             <div className="flex flex-wrap gap-2">
               {zones
                 .filter((z) => z.name)
@@ -90,7 +88,7 @@ export function MinimumZones({ zones, updateZone, addZone, removeZone }: Minimum
                   return Array.from({ length: count }, (_, i) => (
                     <span
                       key={`${prefix}-${i}`}
-                      className="font-mono bg-app-bg rounded-lg px-2.5 py-1 text-xs text-app-text-secondary border border-app-border"
+                      className="rounded-lg border border-app-border bg-app-card px-2.5 py-1 font-mono text-xs text-app-text-secondary"
                     >
                       {prefix}-{i + 1}
                     </span>
