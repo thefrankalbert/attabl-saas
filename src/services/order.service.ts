@@ -4,8 +4,6 @@ import { createCreationMethods } from './order/order-creation';
 import { createLifecycleMethods } from './order/order-lifecycle';
 import { createQueryMethods } from './order/order-queries';
 
-export type { OrderPreviewResult } from './order/order-types';
-
 /**
  * Order service - handles order validation, price verification, and creation.
  *

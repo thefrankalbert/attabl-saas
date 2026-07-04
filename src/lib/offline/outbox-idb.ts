@@ -35,7 +35,7 @@ function promisify<T>(req: IDBRequest<T>): Promise<T> {
 }
 
 /** OutboxStore backed by IndexedDB. */
-export function createIdbOutboxStore(): OutboxStore {
+function createIdbOutboxStore(): OutboxStore {
   return {
     async put(entry: OutboxEntry): Promise<void> {
       const dbi = await openDb();

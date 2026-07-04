@@ -15,7 +15,7 @@ import { ServiceError } from './errors';
  * via requireSuperAdmin() - this layer assumes the actor is already trusted.
  */
 
-export interface PlatformActor {
+interface PlatformActor {
   userId: string;
   email?: string;
 }
@@ -41,7 +41,7 @@ interface AuditInput {
   metadata?: Record<string, unknown> | null;
 }
 
-export interface TrashTenant {
+interface TrashTenant {
   id: string;
   name: string;
   slug: string;

@@ -17,14 +17,14 @@
  * validation de la Server Action et le defaut d'un nouveau tenant en derivent.
  */
 
-export interface PaymentMethodMeta {
+interface PaymentMethodMeta {
   /** Propose aux tenants et aux clients aujourd'hui. */
   active: boolean;
   /** Pays cibles (ISO-3166-1 alpha-2) pour les moyens mobile money. */
   countries?: readonly string[];
 }
 
-export const PAYMENT_METHODS = {
+const PAYMENT_METHODS = {
   cash: { active: true },
   card: { active: false },
   wave: { active: false, countries: ['SN', 'CI'] },
@@ -36,7 +36,7 @@ export const PAYMENT_METHODS = {
 export type PaymentMethodId = keyof typeof PAYMENT_METHODS;
 
 /** Tous les ids connus, y compris ceux inactifs (utile pour lire des commandes historiques). */
-export const ALL_PAYMENT_METHOD_IDS = Object.keys(PAYMENT_METHODS) as PaymentMethodId[];
+const ALL_PAYMENT_METHOD_IDS = Object.keys(PAYMENT_METHODS) as PaymentMethodId[];
 
 /** Moyens actuellement proposes - especes seulement pour l'instant. */
 export const ACTIVE_PAYMENT_METHOD_IDS = ALL_PAYMENT_METHOD_IDS.filter(

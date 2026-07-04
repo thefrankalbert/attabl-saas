@@ -120,16 +120,6 @@ export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, 
  *  bucket so browsing the search modal cannot deplete the order limit). */
 export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(60, '1 m'));
 
-/** Payment initiation (Wave, Orange Money): 5 requests / minute per IP. Fail-closed. */
-export const paymentInitiationLimiter = createLimiter(
-  'payment-init',
-  Ratelimit.slidingWindow(5, '1 m'),
-  true,
-);
-
-/** Payment webhooks (Wave, Orange Money): 120 requests / minute per IP. */
-export const webhookLimiter = createLimiter('webhooks', Ratelimit.slidingWindow(120, '1 m'));
-
 /** Checkout: 5 requests / 10 minutes per IP. Fail-closed: block if Redis is down
  * in production to prevent unbounded checkout sessions during an outage. */
 export const checkoutLimiter = createLimiter('checkout', Ratelimit.slidingWindow(5, '10 m'), true);

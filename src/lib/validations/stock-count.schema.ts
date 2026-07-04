@@ -39,8 +39,3 @@ export const cancelStockCountSchema = z.object({
   tenantId: z.string().uuid('ID tenant invalide'),
   countId: z.string().uuid('ID inventaire invalide'),
 });
-
-export type OpenStockCountData = z.infer<typeof openStockCountSchema>;
-export type SaveStockCountLinesData = z.infer<typeof saveStockCountLinesSchema>;
-export type CommitStockCountData = z.infer<typeof commitStockCountSchema>;
-export type CancelStockCountData = z.infer<typeof cancelStockCountSchema>;

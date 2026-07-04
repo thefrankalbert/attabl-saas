@@ -13,7 +13,7 @@ import { z } from 'zod';
  * never fails validation. The high-value checks are the types, the non-empty
  * name, the non-negative price and the uuid category_id.
  */
-export const menuItemWriteSchema = z.object({
+const menuItemWriteSchema = z.object({
   name: z.string().trim().min(1).max(255),
   name_en: z.string().max(255).nullish(),
   description: z.string().max(5000).nullish(),
@@ -39,6 +39,3 @@ export const menuItemCreateSchema = menuItemWriteSchema;
 
 /** Update is a partial write - callers may send only the fields they change. */
 export const menuItemUpdateSchema = menuItemWriteSchema.partial();
-
-export type MenuItemCreateInput = z.infer<typeof menuItemCreateSchema>;
-export type MenuItemUpdateInput = z.infer<typeof menuItemUpdateSchema>;

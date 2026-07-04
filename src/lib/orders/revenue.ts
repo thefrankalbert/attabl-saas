@@ -17,7 +17,7 @@
  * formatCurrencyMinor (src/lib/utils/money.ts). No re-rounding to major here.
  */
 
-export const PAID_PAYMENT_STATUS = 'paid';
+const PAID_PAYMENT_STATUS = 'paid';
 
 export interface RevenueOrder {
   payment_status?: string | null;

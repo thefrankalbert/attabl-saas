@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
 
-export interface OrderStatusConfigEntry {
+interface OrderStatusConfigEntry {
   label: string;
   bg: string;
   text: string;
