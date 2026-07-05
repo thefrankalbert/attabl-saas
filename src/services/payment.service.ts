@@ -1,8 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { createOrderService } from './order.service';
+import type { CompInput, CompResult, PaymentSummary, TenderInput } from './payment.types';
+import { dueFor, summarize } from './payment.calc';
+import { fetchOrder, fetchTenders, recompute } from './payment.queries';
 
 /**
  * Payment service - split / partial / refund tenders (audit findings H2 + H8,
@@ -22,227 +24,10 @@ import { createOrderService } from './order.service';
  * no per-currency rounding is needed (an integer minor amount is already exact).
  */
 
-/** Minimal order shape needed to compute what is owed and to recompute status. */
-interface PaymentOrderRow {
-  id: string;
-  total: number | null;
-  tip_amount: number | null;
-  display_currency: string | null;
-  payment_status: string | null;
-  paid_at: string | null;
-  session_id: string | null;
-  status: string | null;
-}
-
-/** One tender row from the ledger. */
-export interface PaymentTender {
-  id: string;
-  amount: number;
-  method: string;
-  status: 'completed' | 'refunded';
-  createdBy: string | null;
-  createdAt: string;
-}
-
-/** Aggregated payment state for an order, derived from the ledger. */
-export interface PaymentSummary {
-  orderId: string;
-  /** Amount owed = total (excl. tip) + tip, in integer minor units. */
-  due: number;
-  /** Sum of completed tenders. */
-  completed: number;
-  /** Sum of refunded tenders. */
-  refunded: number;
-  /** completed - refunded. */
-  net: number;
-  paymentStatus: PaymentStatus;
-  tenders: PaymentTender[];
-}
-
-interface TenderInput {
-  amount: number;
-  method: string;
-  createdBy?: string | null;
-}
-
-interface CompInput {
-  /** Free-text reason (Zod-validated upstream). */
-  reason: string;
-  /** admin_users.id of the manager offering the order (NOT the auth user id). */
-  compedBy?: string | null;
-}
-
-/**
- * Result of a comp attempt. `comped` is true when a state transition actually
- * happened; false on an idempotent replay (the order was already 'comp'), which
- * lets the action skip a second audit-log side-effect.
- */
-export interface CompResult {
-  summary: PaymentSummary;
-  comped: boolean;
-}
-
-const ORDER_COLUMNS =
-  'id, total, tip_amount, display_currency, payment_status, paid_at, session_id, status';
+// Re-export the public types so callers keep importing them from this module.
+export type { PaymentTender, PaymentSummary, CompResult } from './payment.types';
 
 export function createPaymentService(supabase: SupabaseClient) {
-  /**
-   * Amount owed for an order: total (excl. tip per project convention) + tip,
-   * in integer minor units. Both columns are already minor integers, so this is
-   * a plain integer add (Math.round is a defensive no-op against any stray
-   * non-integer that slipped in).
-   */
-  function dueFor(
-    order: Pick<PaymentOrderRow, 'total' | 'tip_amount' | 'display_currency'>,
-  ): number {
-    return Math.round(Number(order.total || 0) + Number(order.tip_amount || 0));
-  }
-
-  async function fetchOrder(orderId: string, tenantId: string): Promise<PaymentOrderRow> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select(ORDER_COLUMNS)
-      .eq('id', orderId)
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
-
-    if (error) {
-      throw new ServiceError('Erreur lors du chargement de la commande', 'INTERNAL', error);
-    }
-    if (!data) {
-      throw new ServiceError('Commande introuvable', 'NOT_FOUND');
-    }
-    return data as PaymentOrderRow;
-  }
-
-  async function fetchTenders(orderId: string, tenantId: string): Promise<PaymentTender[]> {
-    const { data, error } = await supabase
-      .from('payments')
-      .select('id, amount, method, status, created_by, created_at')
-      .eq('tenant_id', tenantId)
-      .eq('order_id', orderId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      throw new ServiceError('Erreur lors du chargement des paiements', 'INTERNAL', error);
-    }
-
-    return (data ?? []).map((row) => {
-      const r = row as {
-        id: string;
-        amount: number | string;
-        method: string;
-        status: string;
-        created_by: string | null;
-        created_at: string;
-      };
-      return {
-        id: r.id,
-        amount: Number(r.amount || 0),
-        method: r.method,
-        status: r.status === 'refunded' ? 'refunded' : 'completed',
-        createdBy: r.created_by,
-        createdAt: r.created_at,
-      };
-    });
-  }
-
-  function summarize(order: PaymentOrderRow, tenders: PaymentTender[]): PaymentSummary {
-    const completed = tenders
-      .filter((t) => t.status === 'completed')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const refunded = tenders
-      .filter((t) => t.status === 'refunded')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const net = completed - refunded;
-    const due = dueFor(order);
-
-    // A comped order (offert) is closed for FREE: its stored payment_status is
-    // authoritative and must NOT be re-derived from the (empty) ledger. Without
-    // this short-circuit deriveStatus would relabel it 'pending' and silently
-    // revert the comp. Comp is columns-only on orders - never a payments row.
-    const paymentStatus: PaymentStatus =
-      order.payment_status === 'comp' ? 'comp' : deriveStatus(net, refunded, due);
-
-    return {
-      orderId: order.id,
-      due,
-      completed,
-      refunded,
-      net,
-      paymentStatus,
-      tenders,
-    };
-  }
-
-  /**
-   * Derive payment_status from the ledger:
-   *   net <= 0 && refunded > 0 -> 'refunded'  (money came in then was given back)
-   *   net <= 0                 -> 'pending'    (nothing settled yet)
-   *   net < due                -> 'partial'    (some settled, balance remaining)
-   *   else                     -> 'paid'       (fully settled)
-   * All inputs are integer minor units, so the comparison is exact - no rounding
-   * needed (integer minor amounts cannot carry sub-unit float drift).
-   */
-  function deriveStatus(net: number, refunded: number, due: number): PaymentStatus {
-    if (net <= 0 && refunded > 0) return 'refunded';
-    if (net <= 0) return 'pending';
-    if (net < due) return 'partial';
-    return 'paid';
-  }
-
-  /**
-   * Recompute and persist payment_status from the ledger after a tender write.
-   * When the order becomes 'paid' (and was not already paid) it also stamps
-   * paid_at (if null) and closes a fully-settled table session (best-effort).
-   * Tenant-scoped.
-   *
-   * C3 (Phase 3): payment is DECOUPLED from fulfillment - this no longer touches
-   * orders.status. Fulfillment is driven solely by the KDS/POS actions.
-   */
-  async function recompute(order: PaymentOrderRow, tenantId: string): Promise<void> {
-    const tenders = await fetchTenders(order.id, tenantId);
-    const completed = tenders
-      .filter((t) => t.status === 'completed')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const refunded = tenders
-      .filter((t) => t.status === 'refunded')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const net = completed - refunded;
-    const due = dueFor(order);
-    const newStatus = deriveStatus(net, refunded, due);
-
-    const becomesPaid = newStatus === 'paid' && order.payment_status !== 'paid';
-
-    const update: Record<string, unknown> = { payment_status: newStatus };
-    if (becomesPaid && !order.paid_at) {
-      update.paid_at = new Date().toISOString();
-    }
-
-    const { error } = await supabase
-      .from('orders')
-      .update(update)
-      .eq('id', order.id)
-      .eq('tenant_id', tenantId);
-
-    if (error) {
-      throw new ServiceError('Erreur lors de la mise a jour du paiement', 'INTERNAL', error);
-    }
-
-    if (newStatus === 'paid' && order.session_id) {
-      // Best-effort: closing the table session must not fail the payment.
-      try {
-        await createOrderService(supabase).closeSessionIfFullySettled(order.session_id, tenantId);
-      } catch (err) {
-        logger.error('Failed to close table session after settlement', {
-          orderId: order.id,
-          tenantId,
-          err,
-        });
-      }
-    }
-  }
-
   return {
     dueFor,
 
@@ -251,8 +36,8 @@ export function createPaymentService(supabase: SupabaseClient) {
      * Tenant-scoped. Throws NOT_FOUND if the order does not exist.
      */
     async getSummary(orderId: string, tenantId: string): Promise<PaymentSummary> {
-      const order = await fetchOrder(orderId, tenantId);
-      const tenders = await fetchTenders(orderId, tenantId);
+      const order = await fetchOrder(supabase, orderId, tenantId);
+      const tenders = await fetchTenders(supabase, orderId, tenantId);
       return summarize(order, tenders);
     },
 
@@ -270,7 +55,7 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Le montant doit etre superieur a zero', 'VALIDATION');
       }
 
-      const order = await fetchOrder(orderId, tenantId);
+      const order = await fetchOrder(supabase, orderId, tenantId);
       if (order.status === 'cancelled') {
         throw new ServiceError('Impossible d encaisser une commande annulee', 'CONFLICT');
       }
@@ -288,7 +73,7 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de l enregistrement du paiement', 'INTERNAL', error);
       }
 
-      await recompute(order, tenantId);
+      await recompute(supabase, order, tenantId);
       return this.getSummary(orderId, tenantId);
     },
 
@@ -306,8 +91,8 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Le montant doit etre superieur a zero', 'VALIDATION');
       }
 
-      const order = await fetchOrder(orderId, tenantId);
-      const tenders = await fetchTenders(orderId, tenantId);
+      const order = await fetchOrder(supabase, orderId, tenantId);
+      const tenders = await fetchTenders(supabase, orderId, tenantId);
       const summary = summarize(order, tenders);
 
       if (amount > summary.net) {
@@ -330,7 +115,7 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors du remboursement', 'INTERNAL', error);
       }
 
-      await recompute(order, tenantId);
+      await recompute(supabase, order, tenantId);
       return this.getSummary(orderId, tenantId);
     },
 
@@ -355,7 +140,7 @@ export function createPaymentService(supabase: SupabaseClient) {
       tenantId: string,
       { reason, compedBy }: CompInput,
     ): Promise<CompResult> {
-      const order = await fetchOrder(orderId, tenantId);
+      const order = await fetchOrder(supabase, orderId, tenantId);
 
       if (order.status === 'cancelled') {
         throw new ServiceError('Impossible d offrir une commande annulee', 'CONFLICT');

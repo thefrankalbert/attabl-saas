@@ -1,49 +1,15 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-
-import {
-  Plus,
-  Minus,
-  Trash2,
-  ShoppingBag,
-  ArrowRight,
-  Check,
-  Printer,
-  UtensilsCrossed,
-  Package,
-  Truck,
-  BellRing,
-  Receipt,
-  LayoutGrid,
-  MapPin,
-  StickyNote,
-  Tag,
-  X,
-  Loader2,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { useSegmentTerms } from '@/hooks/useSegmentTerms';
-import { formatCurrency } from '@/lib/utils/currency';
-import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { ServiceType, CurrencyCode, Zone, Table, PricingBreakdown } from '@/types/admin.types';
 import type { CartItem, AppliedCoupon } from '@/hooks/usePOSData';
+
+import { usePOSCart } from './usePOSCart';
+import { POSCartHeader } from './POSCartHeader';
+import { POSServiceTypeSelector } from './POSServiceTypeSelector';
+import { POSCartItemList } from './POSCartItemList';
+import { POSCartFooter } from './POSCartFooter';
+import { POSTablePickerDialog } from './POSTablePickerDialog';
+import { POSClearCartDialog } from './POSClearCartDialog';
 
 interface POSCartProps {
   cart: CartItem[];
@@ -122,558 +88,105 @@ export default function POSCart({
   onPrintOrder,
   onCheckout,
 }: POSCartProps) {
-  const t = useTranslations('pos');
-  const tc = useTranslations('common');
-  const seg = useSegmentTerms();
-
-  // --- Order notes toggle ---------------------------------
-  const [showOrderNotes, setShowOrderNotes] = useState(false);
-
-  // --- Table Picker Dialog --------------------------------
-  const [showTablePicker, setShowTablePicker] = useState(false);
-  const [pickerZoneId, setPickerZoneId] = useState<string | null>(null);
-  const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
-
-  // Initialize picker zone when dialog opens
-  useEffect(() => {
-    if (showTablePicker && zones.length > 0 && !pickerZoneId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: one-time default zone selection when the picker dialog opens; guarded by !pickerZoneId so it sets once and cannot loop (2026-06-18)
-      setPickerZoneId(zones[0].id);
-    }
-  }, [showTablePicker, zones, pickerZoneId]);
-
-  // Tables for the selected zone in the picker
-  const pickerTables = useMemo(() => {
-    if (!pickerZoneId) return [];
-    return allTables
-      .filter((tbl) => tbl.zone_id === pickerZoneId)
-      .sort((a, b) => a.table_number.localeCompare(b.table_number, undefined, { numeric: true }));
-  }, [pickerZoneId, allTables]);
-
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const SERVICE_TYPES = useMemo<{ value: ServiceType; label: string; icon: React.ReactNode }[]>(
-    () => [
-      {
-        value: 'dine_in',
-        label: t('serviceOnSite'),
-        icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
-      },
-      { value: 'takeaway', label: t('serviceTakeaway'), icon: <Package className="w-3.5 h-3.5" /> },
-      { value: 'delivery', label: t('serviceDelivery'), icon: <Truck className="w-3.5 h-3.5" /> },
-      {
-        value: 'room_service',
-        label: t('serviceRoomService'),
-        icon: <BellRing className="w-3.5 h-3.5" />,
-      },
-    ],
-    [t],
-  );
+  const {
+    showOrderNotes,
+    setShowOrderNotes,
+    showTablePicker,
+    setShowTablePicker,
+    pickerZoneId,
+    setPickerZoneId,
+    showClearCartConfirm,
+    setShowClearCartConfirm,
+    pickerTables,
+    totalItems,
+  } = usePOSCart(zones, allTables, cart);
 
   return (
     <>
       {/* --- HEADER --- */}
-      <div className="px-4 py-3 border-b border-app-border flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Receipt className="w-4 h-4 text-app-text-muted" />
-          <span className="font-bold text-sm text-app-text tracking-tight">{t('cart')}</span>
-          <span
-            className="text-xs font-mono bg-app-elevated text-app-text-muted px-1.5 py-0.5 rounded"
-            title={t('ticketNumberTooltip', { number: orderNumber })}
-          >
-            {String(orderNumber).padStart(2, '0')}
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={tc('delete')}
-          onClick={() => {
-            if (cart.length === 0) {
-              onClearCart();
-            } else {
-              setShowClearCartConfirm(true);
-            }
-          }}
-          title={tc('delete')}
-          className="w-9 h-9 text-app-text-muted hover:text-status-error"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+      <POSCartHeader
+        orderNumber={orderNumber}
+        onClear={() => {
+          if (cart.length === 0) {
+            onClearCart();
+          } else {
+            setShowClearCartConfirm(true);
+          }
+        }}
+      />
 
       {/* --- SERVICE TYPE (pinned - stays put while the item list scrolls) --- */}
-      <div className="p-3 border-b border-app-border space-y-2 shrink-0">
-        <div className="grid grid-cols-2 @lg:grid-cols-4 gap-1.5">
-          {SERVICE_TYPES.map((st) => (
-            <Button
-              key={st.value}
-              type="button"
-              variant={serviceType === st.value ? 'default' : 'outline'}
-              onClick={() => setServiceType(st.value)}
-              className={cn(
-                'flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 min-h-[44px] text-xs font-medium',
-                serviceType === st.value
-                  ? 'bg-accent text-accent-text'
-                  : 'text-app-text-secondary hover:bg-app-hover',
-              )}
-            >
-              {st.icon}
-              <span className="truncate">{st.label}</span>
-            </Button>
-          ))}
-        </div>
-
-        {serviceType === 'dine_in' && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowTablePicker(true)}
-            className="flex items-center gap-2 h-9 px-3 rounded-lg bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text animate-in fade-in slide-in-from-top-1"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>{selectedTable || t('selectTable')}</span>
-          </Button>
-        )}
-
-        {serviceType === 'room_service' && (
-          <Input
-            placeholder={t('roomNumberPlaceholder')}
-            value={roomNumber}
-            onChange={(e) => setRoomNumber(e.target.value)}
-            className="h-9 animate-in fade-in slide-in-from-top-1"
-          />
-        )}
-
-        {serviceType === 'delivery' && (
-          <Textarea
-            placeholder={t('deliveryAddressPlaceholder')}
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            className="w-full h-16 p-2 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
-          />
-        )}
-      </div>
+      <POSServiceTypeSelector
+        serviceType={serviceType}
+        setServiceType={setServiceType}
+        selectedTable={selectedTable}
+        roomNumber={roomNumber}
+        setRoomNumber={setRoomNumber}
+        deliveryAddress={deliveryAddress}
+        setDeliveryAddress={setDeliveryAddress}
+        onOpenTablePicker={() => setShowTablePicker(true)}
+      />
 
       {/* --- SCROLLABLE AREA - only the item list scrolls --- */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {cart.length > 0 ? (
-          <div className="divide-y divide-app-border">
-            {cart.map((item) => {
-              const itemKey = item.cartKey || item.id;
-              const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
-              const unitTotal = item.price + modCost;
-              return (
-                <div key={itemKey} className="px-3 py-2">
-                  {/* Line 1: Name + line total */}
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-app-text leading-tight">{item.name}</p>
-                      {/* Variant + Modifiers + Notes inline */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        {item.selectedVariant && (
-                          <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20 font-medium">
-                            {item.selectedVariant.name}
-                          </span>
-                        )}
-                        {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                          <span className="text-[10px] text-app-text-muted font-medium">
-                            +{item.selectedModifiers.map((m) => m.name).join(', ')}
-                          </span>
-                        )}
-                        {item.notes && (
-                          <span className="text-[10px] text-[var(--warning)] px-1.5 py-0.5 rounded border border-[var(--border)]">
-                            {item.notes}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-app-text tabular-nums font-mono">
-                        {formatCurrency(unitTotal * item.quantity, currency)}
-                      </p>
-                      {item.quantity > 1 && (
-                        <p className="text-[10px] text-app-text-muted tabular-nums font-mono">
-                          {item.quantity} &times; {formatCurrency(unitTotal, currency)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Line 2: Note (left) + quantity controls & remove (right) */}
-                  <div className="flex items-center justify-between gap-2 mt-1.5">
-                    <Button
-                      variant="ghost"
-                      onClick={() => onEditNotes(itemKey, item.notes || '')}
-                      className={cn(
-                        'flex items-center gap-1 min-w-0 h-8 px-1.5 text-[11px] font-medium touch-manipulation',
-                        item.notes
-                          ? 'text-[var(--warning)] hover:text-[var(--warning)]'
-                          : 'text-app-text-muted hover:text-app-text',
-                      )}
-                    >
-                      <StickyNote className="w-3 h-3 shrink-0" />
-                      <span className="truncate">
-                        {item.notes ? tc('edit') : seg.productionNote}
-                      </span>
-                    </Button>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('decreaseQty')}
-                          onClick={() => onUpdateQuantity(itemKey, -1)}
-                          className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="min-w-7 px-1 text-center text-xs font-bold tabular-nums text-app-text">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('increaseQty')}
-                          disabled={item.quantity >= MAX_ITEM_QTY}
-                          onClick={() => onUpdateQuantity(itemKey, 1)}
-                          className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={tc('delete')}
-                        title={tc('delete')}
-                        onClick={() => onUpdateQuantity(itemKey, -item.quantity)}
-                        className="w-8 h-8 text-app-text-muted hover:text-status-error touch-manipulation"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-app-text-muted">
-            <ShoppingBag className="w-10 h-10 mb-2 opacity-30" />
-            <p className="text-sm">{t('emptyCart')}</p>
-          </div>
-        )}
-      </div>
+      <POSCartItemList
+        cart={cart}
+        currency={currency}
+        onUpdateQuantity={onUpdateQuantity}
+        onEditNotes={onEditNotes}
+      />
 
       {/* --- FOOTER --- */}
-      <div className="border-t border-app-border px-4 py-3 space-y-2">
-        {/* Order note + Coupon on same line */}
-        <div className="flex items-center gap-2">
-          {/* Order note toggle */}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setShowOrderNotes((prev) => !prev)}
-            className={cn(
-              'flex items-center gap-1 text-[11px] font-medium shrink-0 h-auto px-1 py-0.5',
-              orderNotes
-                ? 'text-[var(--warning)]'
-                : 'text-app-text-muted hover:text-app-text-secondary',
-            )}
-          >
-            <StickyNote className="w-3 h-3" />
-            <span>{t('orderNote')}</span>
-            {orderNotes && (
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] shrink-0" />
-            )}
-          </Button>
-
-          {/* Coupon inline (only if enabled in tenant settings) */}
-          {enableCoupons && (
-            <div className="flex-1 min-w-0">
-              {appliedCoupon ? (
-                <div className="flex items-center gap-1 animate-in fade-in">
-                  <div className="flex items-center gap-1 text-[var(--success)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
-                    <Tag className="w-2.5 h-2.5 shrink-0" />
-                    <span className="truncate">{appliedCoupon.code}</span>
-                    <span className="text-[var(--success)] shrink-0">
-                      -
-                      {appliedCoupon.discount_type === 'percentage'
-                        ? `${appliedCoupon.discount_value}%`
-                        : formatCurrency(appliedCoupon.discountAmount, currency)}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('removeCoupon')}
-                    onClick={onRemoveCoupon}
-                    className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-1">
-                  <Input
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder={t('couponPlaceholder')}
-                    className="h-7 text-xs flex-1 min-w-0"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
-                    }}
-                    disabled={couponLoading || cart.length === 0}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs shrink-0"
-                    disabled={!couponCode.trim() || couponLoading || cart.length === 0}
-                    onClick={() => onValidateCoupon(couponCode)}
-                  >
-                    {couponLoading ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Tag className="w-3 h-3" />
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Expandable notes textarea */}
-        {showOrderNotes && (
-          <Textarea
-            value={orderNotes}
-            onChange={(e) => setOrderNotes(e.target.value)}
-            maxLength={500}
-            placeholder={t('orderNotePlaceholder')}
-            rows={2}
-            className="w-full p-2 text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
-          />
-        )}
-
-        {/* Coupon error */}
-        {enableCoupons && couponError && (
-          <p className="text-[10px] text-status-error font-medium animate-in fade-in">
-            {couponError}
-          </p>
-        )}
-
-        {/* Pricing breakdown */}
-        {(pricing.taxAmount > 0 ||
-          pricing.serviceChargeAmount > 0 ||
-          pricing.discountAmount > 0) && (
-          <div className="space-y-1">
-            <div className="flex justify-between items-baseline">
-              <span className="text-[11px] text-app-text-muted">
-                {tc('subtotal')} ({t('itemsCount', { count: totalItems })})
-              </span>
-              <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
-                {formatCurrency(pricing.subtotal, currency)}
-              </span>
-            </div>
-            {pricing.discountAmount > 0 && (
-              <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-[var(--success)]">
-                  {tc('discount') || 'Remise'}
-                </span>
-                <span className="text-xs font-medium text-[var(--success)] tabular-nums font-mono">
-                  -{formatCurrency(pricing.discountAmount, currency)}
-                </span>
-              </div>
-            )}
-            {pricing.taxAmount > 0 && (
-              <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-app-text-muted">{tc('tax')}</span>
-                <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
-                  {formatCurrency(pricing.taxAmount, currency)}
-                </span>
-              </div>
-            )}
-            {pricing.serviceChargeAmount > 0 && (
-              <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-app-text-muted">{tc('service')}</span>
-                <span className="text-xs font-medium text-app-text-secondary tabular-nums font-mono">
-                  {formatCurrency(pricing.serviceChargeAmount, currency)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Total */}
-        <div className="flex justify-between items-baseline">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs text-app-text-muted font-medium uppercase tracking-wide">
-              {tc('total')}
-            </span>
-            {totalItems > 0 &&
-              pricing.taxAmount <= 0 &&
-              pricing.serviceChargeAmount <= 0 &&
-              pricing.discountAmount <= 0 && (
-                <span className="text-[10px] text-app-text-muted">
-                  ({t('itemsCount', { count: totalItems })})
-                </span>
-              )}
-          </div>
-          <span className="text-2xl font-bold text-app-text tabular-nums tracking-tight">
-            {formatCurrency(pricing.total, currency)}
-          </span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-7 gap-2">
-          <Button
-            variant="outline"
-            className="col-span-2 min-h-[48px] rounded-xl gap-1.5 touch-manipulation"
-            disabled={cart.length === 0}
-            onClick={onPrintOrder}
-            title={seg.sentToProduction}
-          >
-            <Printer className="w-4 h-4" />
-            <span className="hidden @sm:inline text-xs">{t('printShort')}</span>
-          </Button>
-          <Button
-            variant="default"
-            className="col-span-5 min-h-[48px] rounded-xl px-2 @sm:px-4 text-xs @sm:text-sm font-bold touch-manipulation"
-            disabled={cart.length === 0}
-            onClick={onCheckout}
-          >
-            <Check className="w-4 h-4 shrink-0 hidden @sm:inline" />
-            <span className="truncate">{t('validatePayment')}</span>
-            <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80 hidden @sm:inline" />
-          </Button>
-        </div>
-      </div>
+      <POSCartFooter
+        cart={cart}
+        currency={currency}
+        pricing={pricing}
+        totalItems={totalItems}
+        orderNotes={orderNotes}
+        setOrderNotes={setOrderNotes}
+        showOrderNotes={showOrderNotes}
+        setShowOrderNotes={setShowOrderNotes}
+        enableCoupons={enableCoupons}
+        couponCode={couponCode}
+        setCouponCode={setCouponCode}
+        appliedCoupon={appliedCoupon}
+        couponLoading={couponLoading}
+        couponError={couponError}
+        onValidateCoupon={onValidateCoupon}
+        onRemoveCoupon={onRemoveCoupon}
+        onPrintOrder={onPrintOrder}
+        onCheckout={onCheckout}
+      />
 
       {/* --- TABLE PICKER DIALOG --- */}
-      <Dialog
+      <POSTablePickerDialog
         open={showTablePicker}
         onOpenChange={(open) => {
           setShowTablePicker(open);
           if (!open) setPickerZoneId(null);
         }}
-      >
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
-          <DialogHeader className="px-6 py-4 border-b border-app-border">
-            <DialogTitle>{t('selectTable')}</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4">
-            {zones.length > 0 ? (
-              <div className="flex gap-4 h-72">
-                {/* Zone Column */}
-                <div className="w-36 flex flex-col shrink-0">
-                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
-                    {t('zone')}
-                  </Label>
-                  <div className="flex-1 overflow-y-auto space-y-1">
-                    {zones.map((zone) => (
-                      <Button
-                        key={zone.id}
-                        type="button"
-                        variant={pickerZoneId === zone.id ? 'default' : 'ghost'}
-                        onClick={() => setPickerZoneId(zone.id)}
-                        className={cn(
-                          'w-full justify-start px-3 py-2 rounded-lg text-sm flex items-center gap-2 h-auto',
-                          pickerZoneId === zone.id
-                            ? 'bg-accent text-accent-text font-medium'
-                            : 'text-app-text-secondary hover:bg-app-hover',
-                        )}
-                      >
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{zone.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="w-px bg-app-border my-2" />
-
-                {/* Tables Grid */}
-                <div className="flex-1 flex flex-col min-w-0">
-                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
-                    {t('tables')}
-                  </Label>
-                  <div className="flex-1 overflow-y-auto">
-                    {pickerTables.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
-                        {pickerTables.map((table) => (
-                          <Button
-                            key={table.id}
-                            type="button"
-                            variant={selectedTable === table.table_number ? 'default' : 'outline'}
-                            onClick={() => {
-                              setSelectedTable(table.table_number);
-                              setShowTablePicker(false);
-                              setPickerZoneId(null);
-                            }}
-                            className={cn(
-                              'flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
-                              selectedTable === table.table_number
-                                ? 'bg-accent text-accent-text border-accent font-bold'
-                                : 'border-app-border text-app-text hover:bg-app-hover hover:border-accent/30',
-                            )}
-                          >
-                            <span className="font-semibold text-xs">{table.table_number}</span>
-                            {table.display_name !== table.table_number && (
-                              <span className="text-[10px] opacity-70 truncate max-w-full">
-                                {table.display_name}
-                              </span>
-                            )}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-app-text-muted text-sm">
-                        {pickerZoneId ? t('noTablesInZone') : t('selectTable')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-app-text-muted">
-                <LayoutGrid className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm font-medium">{t('noZonesConfigured')}</p>
-                <p className="text-xs mt-1 text-app-text-muted">{t('noZonesHint')}</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        zones={zones}
+        pickerZoneId={pickerZoneId}
+        onPickZone={(zoneId) => setPickerZoneId(zoneId)}
+        pickerTables={pickerTables}
+        selectedTable={selectedTable}
+        onSelectTable={(tableNumber) => {
+          setSelectedTable(tableNumber);
+          setShowTablePicker(false);
+          setPickerZoneId(null);
+        }}
+      />
 
       {/* Clear cart confirmation (replaces window.confirm) */}
-      <AlertDialog
+      <POSClearCartDialog
         open={showClearCartConfirm}
         onOpenChange={(open) => {
           if (!open) setShowClearCartConfirm(false);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{tc('delete')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('confirmClearCart')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onClearCart();
-                setShowClearCartConfirm(false);
-              }}
-              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
-            >
-              {tc('delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={() => {
+          onClearCart();
+          setShowClearCartConfirm(false);
+        }}
+      />
     </>
   );
 }
