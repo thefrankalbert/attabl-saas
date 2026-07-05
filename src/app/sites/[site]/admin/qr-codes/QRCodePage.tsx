@@ -6,7 +6,10 @@ import { useQRDesignConfig } from '@/hooks/useQRDesignConfig';
 import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QRPreview } from '@/components/qr/QRPreview';
 import { QRExportBar } from '@/components/qr/QRExportBar';
-import { QrCode, Info, Table2, BookOpen, Layers, Download, Sparkles } from 'lucide-react';
+import { QrCode, Info, Table2, BookOpen, Layers, Download, MapPin } from 'lucide-react';
+import { buildQRUrl } from '@/lib/qr/build-qr-url';
+import { QRAssignmentPanel, type QRDesignSummary } from '@/components/qr/QRAssignmentPanel';
+import { QRExportPanel } from '@/components/qr/QRExportPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -43,19 +46,10 @@ interface QRCodePageProps {
   zones: Zone[];
   tables: Table[];
   menus: QRMenu[];
+  designs: QRDesignSummary[];
 }
 
-function buildQRUrl(baseUrl: string, tableName?: string, menuSlug?: string): string {
-  // When a specific menu is selected, link to /menu which handles the ?menu= param.
-  // The root page (/) is the home/landing for the tenant; /menu shows the full menu detail.
-  const path = menuSlug ? '/menu' : '';
-  const url = new URL(`${baseUrl}${path}`);
-  if (tableName) url.searchParams.set('table', tableName);
-  if (menuSlug) url.searchParams.set('menu', menuSlug);
-  return url.toString();
-}
-
-export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePageProps) {
+export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: QRCodePageProps) {
   const t = useTranslations('qrCodes');
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
@@ -108,6 +102,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsList className="w-full justify-start">
           <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
           <TabsTrigger value="customize">{t('tabCustomize')}</TabsTrigger>
+          <TabsTrigger value="assign">{t('tabAssign')}</TabsTrigger>
           <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
         </TabsList>
 
@@ -252,9 +247,39 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           </div>
         </TabsContent>
 
+        {/* --- Tab: Assign (persisted per zone/table) --- */}
+        <TabsContent value="assign" className="flex-1 overflow-auto">
+          <div className="mb-4 p-4 rounded-xl bg-app-bg border border-app-border flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-app-text-muted flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-app-text-secondary">{t('assignIntro')}</p>
+          </div>
+          <QRAssignmentPanel
+            zones={zones}
+            tables={tables}
+            designs={designs}
+            currentConfig={config}
+          />
+        </TabsContent>
+
         {/* --- Tab: Download --- */}
         <TabsContent value="download" className="flex-1 overflow-auto">
           <div>
+            {/* Format, dimensions & print layout (choose BEFORE printing) */}
+            <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
+              <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
+                <Download className="w-4 h-4 text-app-text-muted" />
+                {t('formatAndLayout')}
+              </h3>
+              <QRExportPanel
+                config={config}
+                updateField={updateField}
+                url={qrUrl}
+                tenantName={tenant.name}
+                tableName={qrSubtitle}
+                logoUrl={tenant.logoUrl}
+              />
+            </div>
+
             {/* Single QR Preview + Download */}
             <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
               <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
@@ -309,49 +334,19 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
               </div>
             )}
 
-            {/* Tips */}
+            {/* Tips - one per template */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1">{t('tipStandard')}</h3>
-                <p className="text-sm text-app-text-secondary">{t('tipStandardDesc')}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1">{t('tipEasel')}</h3>
-                <p className="text-sm text-app-text-secondary">{t('tipEaselDesc')}</p>
+                <h3 className="font-semibold text-app-text mb-1">{t('tipMinimal')}</h3>
+                <p className="text-sm text-app-text-secondary">{t('tipMinimalDesc')}</p>
               </div>
               <div className="p-4 rounded-xl bg-app-bg border border-app-border">
                 <h3 className="font-semibold text-app-text mb-1">{t('tipCard')}</h3>
                 <p className="text-sm text-app-text-secondary">{t('tipCardDesc')}</p>
               </div>
               <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
-                  {t('tipMinimal')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
-                    <Sparkles className="w-3 h-3" />
-                    Premium
-                  </span>
-                </h3>
-                <p className="text-sm text-app-text-secondary">{t('tipMinimalDesc')}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
-                  {t('tipElegant')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
-                    <Sparkles className="w-3 h-3" />
-                    Premium
-                  </span>
-                </h3>
-                <p className="text-sm text-app-text-secondary">{t('tipElegantDesc')}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
-                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
-                  {t('tipNeon')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
-                    <Sparkles className="w-3 h-3" />
-                    Premium
-                  </span>
-                </h3>
-                <p className="text-sm text-app-text-secondary">{t('tipNeonDesc')}</p>
+                <h3 className="font-semibold text-app-text mb-1">{t('tipEasel')}</h3>
+                <p className="text-sm text-app-text-secondary">{t('tipEaselDesc')}</p>
               </div>
             </div>
           </div>

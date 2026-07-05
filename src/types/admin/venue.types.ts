@@ -26,6 +26,7 @@ export interface Zone {
   prefix: string;
   description?: string;
   display_order: number;
+  qr_design_id?: string | null;
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ export interface Table {
   capacity: number;
   is_active: boolean;
   qr_code_url?: string;
+  qr_design_id?: string | null;
   created_at: string;
   zone?: Zone;
 }

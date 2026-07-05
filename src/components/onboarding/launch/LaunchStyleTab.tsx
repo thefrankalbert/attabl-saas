@@ -7,12 +7,9 @@ import type { OnboardingData } from '@/app/onboarding/page';
 import { TemplateMiniPreview } from './TemplateMiniPreview';
 
 const TEMPLATES: Array<{ id: QRTemplateId; labelKey: string }> = [
-  { id: 'standard', labelKey: 'qrTemplateStandard' },
-  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
-  { id: 'carte', labelKey: 'qrTemplateCarte' },
   { id: 'minimal', labelKey: 'qrTemplateMinimal' },
-  { id: 'elegant', labelKey: 'qrTemplateElegant' },
-  { id: 'neon', labelKey: 'qrTemplateNeon' },
+  { id: 'carte', labelKey: 'qrTemplateCarte' },
+  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
 ];
 
 const QR_STYLES: Array<{

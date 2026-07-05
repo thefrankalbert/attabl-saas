@@ -55,7 +55,7 @@ export function useOnboarding() {
     description: '',
     menuOption: 'skip',
     menuItems: [],
-    qrTemplate: 'standard',
+    qrTemplate: 'minimal',
     qrStyle: 'branded',
     qrCta: 'Scannez pour commander',
     qrDescription: '',

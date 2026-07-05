@@ -7,9 +7,15 @@
 
 // Base Types
 
-export type QRTemplateId = 'standard' | 'chevalet' | 'carte' | 'minimal' | 'elegant' | 'neon';
+// Three refined, Linear-style templates. The old gimmicky set
+// (standard/elegant/neon) was replaced by a tight professional set.
+export type QRTemplateId = 'minimal' | 'carte' | 'chevalet';
 
 export type QRErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
+
+// qr-code-styling rendering options for a premium look (rounded dots, styled corners).
+export type QRDotStyle = 'square' | 'rounded' | 'dots' | 'classy' | 'extra-rounded';
+export type QRCornerStyle = 'square' | 'rounded' | 'dot';
 
 export type QRShadowIntensity = 'none' | 'light' | 'medium' | 'strong';
 
@@ -21,6 +27,48 @@ export type QRCTAPreset =
   | 'scannez-decouvrir'
   | 'scannez-carte'
   | 'custom';
+
+// Print / card format
+
+export type QRCardFormatId =
+  | 'standard-25x13'
+  | 'square-10'
+  | 'a6-chevalet'
+  | 'business-card'
+  | 'bare'
+  | 'custom';
+
+// How many cards are placed on one A4 sheet. 'auto' fills the page.
+export type QRPerPage = 1 | 2 | 4 | 'auto';
+
+export interface QRPrintLayout {
+  // Physical card format. Drives templateWidth/Height when not 'custom'.
+  cardFormat: QRCardFormatId;
+  // Tiling on A4 at export time (design format vs print format).
+  perPage: QRPerPage;
+  // Emit just the raw QR code with no card chrome.
+  bareQr: boolean;
+  // Optional short message printed under the code.
+  message: { enabled: boolean; text: string };
+}
+
+export interface QRCardFormatPreset {
+  width: number; // mm
+  height: number; // mm
+  label: string;
+}
+
+// Card presets in millimetres. The standard ATTABL card is 25x13 cm.
+export const CARD_FORMAT_PRESETS: Record<QRCardFormatId, QRCardFormatPreset> = {
+  'standard-25x13': { width: 250, height: 130, label: 'Standard 25x13 cm' },
+  'square-10': { width: 100, height: 100, label: 'Carre 10x10 cm' },
+  'a6-chevalet': { width: 105, height: 148, label: 'Chevalet A6' },
+  'business-card': { width: 85, height: 55, label: 'Carte de visite' },
+  bare: { width: 60, height: 60, label: 'QR nu' },
+  custom: { width: 100, height: 100, label: 'Personnalise' },
+} as const;
+
+export const QR_MESSAGE_MAX_LENGTH = 280;
 
 // Config Interfaces
 
@@ -65,6 +113,9 @@ export interface QRDesignConfig {
   showPoweredBy: boolean;
   fontFamily: string;
   exportFormat: QRExportFormat;
+  printLayout: QRPrintLayout;
+  qrDotStyle: QRDotStyle;
+  qrCornerStyle: QRCornerStyle;
 }
 
 // Template Props
@@ -90,59 +141,32 @@ export interface QRTemplateDefault {
 }
 
 export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
-  standard: {
+  minimal: {
     width: 100,
     height: 100,
+    qrSize: 220,
+    orientation: 'portrait',
+    name: 'Minimal',
+    description: 'Le QR seul, epure',
+    planRequired: 'starter',
+  },
+  carte: {
+    width: 100,
+    height: 130,
     qrSize: 200,
-    orientation: 'landscape',
-    name: 'Standard',
-    description: 'Format carré 10×10 cm',
+    orientation: 'portrait',
+    name: 'Carte bordee',
+    description: 'Nom, filet fin, QR centre',
     planRequired: 'starter',
   },
   chevalet: {
     width: 105,
     height: 148,
-    qrSize: 170,
-    orientation: 'portrait',
-    name: 'Chevalet',
-    description: 'A6 vertical, pour les tables',
-    planRequired: 'starter',
-  },
-  carte: {
-    width: 85,
-    height: 55,
-    qrSize: 100,
-    orientation: 'landscape',
-    name: 'Carte',
-    description: 'Format carte de visite',
-    planRequired: 'starter',
-  },
-  minimal: {
-    width: 100,
-    height: 100,
-    qrSize: 220,
-    orientation: 'landscape',
-    name: 'Minimal',
-    description: 'Ultra-clean, sans fioritures',
-    planRequired: 'pro',
-  },
-  elegant: {
-    width: 105,
-    height: 148,
-    qrSize: 160,
-    orientation: 'portrait',
-    name: 'Élégant',
-    description: 'Bordure ornementale, style serif',
-    planRequired: 'pro',
-  },
-  neon: {
-    width: 100,
-    height: 120,
     qrSize: 180,
     orientation: 'portrait',
-    name: 'Néon',
-    description: 'Fond sombre, accent vif',
-    planRequired: 'pro',
+    name: 'Chevalet',
+    description: 'A6 vertical pour les tables',
+    planRequired: 'starter',
   },
 } as const;
 
@@ -190,12 +214,12 @@ export function createDefaultQRDesignConfig(
   secondaryColor: string,
 ): QRDesignConfig {
   return {
-    templateId: 'standard',
+    templateId: 'minimal',
     qrFgColor: '#000000',
     qrBgColor: '#FFFFFF',
     errorCorrection: 'M',
-    qrSize: 200,
-    marginSize: 4,
+    qrSize: 220,
+    marginSize: 2,
     logo: {
       enabled: false,
       src: '',
@@ -206,12 +230,12 @@ export function createDefaultQRDesignConfig(
     },
     templateWidth: 100,
     templateHeight: 100,
-    cornerRadius: 12,
+    cornerRadius: 10,
     padding: 24,
-    shadow: 'medium',
+    shadow: 'none',
     templateBgColor: '#FFFFFF',
     templateAccentColor: primaryColor,
-    templateTextColor: '#1F2937',
+    templateTextColor: '#111111',
     gradient: {
       enabled: false,
       colorStart: primaryColor,
@@ -230,5 +254,13 @@ export function createDefaultQRDesignConfig(
     showPoweredBy: true,
     fontFamily: 'Geist',
     exportFormat: 'pdf',
+    printLayout: {
+      cardFormat: 'square-10',
+      perPage: 'auto',
+      bareQr: false,
+      message: { enabled: false, text: '' },
+    },
+    qrDotStyle: 'rounded',
+    qrCornerStyle: 'rounded',
   };
 }

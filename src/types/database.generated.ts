@@ -1607,6 +1607,44 @@ export type Database = {
           },
         ];
       };
+      qr_designs: {
+        Row: {
+          config: Json;
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          config: Json;
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'qr_designs_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tables: {
         Row: {
           capacity: number;
@@ -1615,6 +1653,7 @@ export type Database = {
           id: string;
           is_active: boolean | null;
           qr_code_url: string | null;
+          qr_design_id: string | null;
           table_number: string;
           tenant_id: string;
           zone_id: string;
@@ -1626,6 +1665,7 @@ export type Database = {
           id?: string;
           is_active?: boolean | null;
           qr_code_url?: string | null;
+          qr_design_id?: string | null;
           table_number: string;
           tenant_id: string;
           zone_id: string;
@@ -1637,11 +1677,19 @@ export type Database = {
           id?: string;
           is_active?: boolean | null;
           qr_code_url?: string | null;
+          qr_design_id?: string | null;
           table_number?: string;
           tenant_id?: string;
           zone_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'tables_qr_design_id_fkey';
+            columns: ['qr_design_id'];
+            isOneToOne: false;
+            referencedRelation: 'qr_designs';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'tables_tenant_id_fkey';
             columns: ['tenant_id'];
@@ -2006,6 +2054,7 @@ export type Database = {
           name: string;
           name_en: string | null;
           prefix: string;
+          qr_design_id: string | null;
           tenant_id: string;
           venue_id: string;
         };
@@ -2017,6 +2066,7 @@ export type Database = {
           name: string;
           name_en?: string | null;
           prefix: string;
+          qr_design_id?: string | null;
           tenant_id: string;
           venue_id: string;
         };
@@ -2028,10 +2078,18 @@ export type Database = {
           name?: string;
           name_en?: string | null;
           prefix?: string;
+          qr_design_id?: string | null;
           tenant_id?: string;
           venue_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'zones_qr_design_id_fkey';
+            columns: ['qr_design_id'];
+            isOneToOne: false;
+            referencedRelation: 'qr_designs';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'zones_tenant_id_fkey';
             columns: ['tenant_id'];
