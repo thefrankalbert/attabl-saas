@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ServiceRoomSection } from './ServiceRoomSection';
 import { ServicePlan2D } from './ServicePlan2D';
+import { RoomTab } from './ServiceRoomTab';
+import { FilterChip } from './ServiceFilterChip';
 import type { PlanPosition, PlanPositions } from './use-plan-positions';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 import type { Zone } from '@/types/admin.types';
@@ -338,75 +340,5 @@ export function ServiceFloorPlan({
         )}
       </div>
     </section>
-  );
-}
-
-function RoomTab({
-  active,
-  onClick,
-  label,
-  count,
-  dotClass,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count?: string;
-  dotClass?: string;
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={onClick}
-      className={cn(
-        'h-auto relative top-px flex items-center gap-2 rounded-none rounded-t-sm border border-b-0 border-transparent px-3.5 py-2 text-xs whitespace-nowrap transition-colors',
-        active
-          ? 'border-app-border bg-app-card text-app-text'
-          : 'text-app-text-muted hover:text-app-text',
-      )}
-    >
-      {dotClass && <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />}
-      {label}
-      {count && (
-        <span
-          className={cn(
-            'rounded-sm px-1.5 py-px font-mono text-[10px]',
-            active ? 'bg-app-elevated text-app-text-secondary' : 'bg-app-bg text-app-text-muted',
-          )}
-        >
-          {count}
-        </span>
-      )}
-    </Button>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  dotClass,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  dotClass: string;
-  label: string;
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={onClick}
-      className={cn(
-        'h-auto inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors',
-        active
-          ? 'border-app-border bg-app-elevated text-app-text'
-          : 'border-app-border/60 text-app-text-muted hover:bg-app-hover hover:text-app-text',
-      )}
-    >
-      <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
-      {label}
-    </Button>
   );
 }
