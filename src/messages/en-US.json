@@ -3402,6 +3402,7 @@
     "cartNotesLabel": "Note for the kitchen (optional)",
     "cartNotesPlaceholder": "E.g. no onions, well done, allergies...",
     "promoApplied": "Code applied successfully",
+    "promoInvalid": "Invalid promo code",
     "totalHint": "Taxes and service included",
     "ariaClearCart": "Clear cart",
     "ariaDecrease": "Decrease quantity",

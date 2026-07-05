@@ -5,6 +5,7 @@ import { ChevronRight, HandCoins, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 
 export type TipPreset = 0 | 500 | 1000 | 1500 | 2000 | 'custom';
@@ -130,7 +131,7 @@ export function TipSection({
                 className="h-auto flex-1 border-0 bg-transparent p-0 text-[14px] font-semibold text-[var(--color-ink)] shadow-none focus-visible:ring-0"
               />
               <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
-                {currencyCode === 'XAF' ? 'FCFA' : currencyCode}
+                {getCurrencySymbol(currencyCode)}
               </span>
             </div>
           </motion.div>

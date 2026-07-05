@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag } from 'lucide-react';
 import { useCartData } from '@/contexts/CartContext';
-import { formatAmount } from '@/lib/utils/currency';
+import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 import { formatCartCount } from '@/lib/utils/cart-display';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -59,7 +59,7 @@ export function ClientFloatingCart({ slug }: { slug: string }) {
       <span className="shrink-0 font-semibold text-[13.5px]">
         {formatAmount(subtotal, currencyCode)}
         <span className="ml-1 font-mono text-[11px] font-medium opacity-55">
-          {currencyCode === 'XAF' ? 'FCFA' : currencyCode}
+          {getCurrencySymbol(currencyCode)}
         </span>
       </span>
     </Link>

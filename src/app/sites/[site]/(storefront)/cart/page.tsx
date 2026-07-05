@@ -20,6 +20,7 @@ import { useState, useCallback, useRef, useMemo, useEffect, useSyncExternalStore
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { submitOrder } from '@/lib/offline/submit-order';
+import { roundForCurrency } from '@/lib/utils/money';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -107,6 +108,11 @@ export default function CartPage() {
 
   // Notes
   const [notesOpen, setNotesOpen] = useState(false);
+  // While the kitchen-note textarea is focused, the floating confirm CTA is
+  // hidden: on iOS the soft keyboard shifts `position: fixed` onto the visual
+  // viewport, so the CTA otherwise lands on top of the note field and makes it
+  // unusable. It reappears on blur, before the user confirms.
+  const [noteFocused, setNoteFocused] = useState(false);
 
   // Promo
   const [promoInput, setPromoInput] = useState<string>('');
@@ -183,10 +189,10 @@ export default function CartPage() {
     if (tipPreset === 0) return 0;
     if (tipPreset === 'custom') {
       const parsed = parseFloat(customTipInput.replace(',', '.'));
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+      return Number.isFinite(parsed) && parsed > 0 ? roundForCurrency(parsed, currencyCode) : 0;
     }
     return tipPreset;
-  }, [tipPreset, customTipInput]);
+  }, [tipPreset, customTipInput, currencyCode]);
 
   // Smart suggestions (hook-owned)
   const { upsellItems, isLoadingUpsell } = useCartSuggestions(items, currentRestaurantId);
@@ -227,7 +233,7 @@ export default function CartPage() {
         if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current);
         promoTimeoutRef.current = setTimeout(() => setPromoJustApplied(false), 2500);
       } else {
-        setPromoError(result.error || t('orderError'));
+        setPromoError(result.errorKey ? t(result.errorKey) : t('orderError'));
       }
     } catch (err) {
       logger.error('Promo apply error:', err);
@@ -509,6 +515,9 @@ export default function CartPage() {
                 onClick={() => {
                   setNotesOpen(false);
                   setNotes('');
+                  // Ensure the confirm CTA is never left hidden if the note is
+                  // closed programmatically before a blur fires.
+                  setNoteFocused(false);
                 }}
                 className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
                 aria-label={t('ariaClose')}
@@ -521,6 +530,8 @@ export default function CartPage() {
                 id="cart-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value.slice(0, NOTES_MAX_LENGTH))}
+                onFocus={() => setNoteFocused(true)}
+                onBlur={() => setNoteFocused(false)}
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
@@ -625,9 +636,11 @@ export default function CartPage() {
         />
       </div>
 
-      {/* FLOATING CTA */}
+      {/* FLOATING CTA - hidden while the note field is focused (keyboard overlap) */}
       <div
-        className="fixed left-0 right-0 z-[60] px-4 pointer-events-none"
+        className={`fixed left-0 right-0 z-[60] px-4 pointer-events-none ${
+          noteFocused ? 'hidden' : ''
+        }`}
         style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 12px)' }}
       >
         <div className="max-w-lg mx-auto pointer-events-auto">

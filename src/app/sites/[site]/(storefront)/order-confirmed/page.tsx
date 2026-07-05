@@ -92,6 +92,10 @@ function OrderConfirmedContent() {
   const supabaseRef = useRef(createClient());
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Distinguish a transient fetch error (show retry) from a genuinely missing
+  // order (show "not found"). A network blip must not read as "order not found".
+  const [fetchError, setFetchError] = useState(false);
+  const [retryTick, setRetryTick] = useState(0);
   // 'confirmation' = minimal success screen (maquette); 'tracking' = live order view.
   // Deep-link from the orders list ("Suivre en temps reel") opens straight to tracking.
   const [view, setView] = useState<'confirmation' | 'tracking'>(
@@ -133,13 +137,15 @@ function OrderConfirmedContent() {
 
     const supabase = supabaseRef.current;
     let cancelled = false;
+    setFetchError(false);
 
-    supabase
-      .rpc('get_orders_for_tracking', { p_tenant_id: tenantId, p_order_ids: [orderId] })
-      .then(({ data, error }) => {
+    supabase.rpc('get_orders_for_tracking', { p_tenant_id: tenantId, p_order_ids: [orderId] }).then(
+      ({ data, error }) => {
         if (cancelled) return;
         const row = ((data as unknown as TrackedOrderRow[] | null) || [])[0];
-        if (!error && row) {
+        if (error) {
+          setFetchError(true);
+        } else if (row) {
           const toMajor = (minor: number) => fromMinorUnits(minor, orderCurrency);
           const mapped: OrderData = {
             id: row.id,
@@ -164,12 +170,20 @@ function OrderConfirmedContent() {
           setOrder(mapped);
         }
         setLoading(false);
-      });
+      },
+      () => {
+        // Network reject (offline / DNS / abort): treat as a transient error so
+        // the user gets a retry, not a misleading "order not found".
+        if (cancelled) return;
+        setFetchError(true);
+        setLoading(false);
+      },
+    );
 
     return () => {
       cancelled = true;
     };
-  }, [orderId, tenantId, orderCurrency]);
+  }, [orderId, tenantId, orderCurrency, retryTick]);
 
   // Realtime: live order status via Broadcast (DB trigger broadcast_order_status).
   // The broadcast carries a non-PII payload ({ id, status }) on a public per-order
@@ -216,6 +230,10 @@ function OrderConfirmedContent() {
     return () => {
       channel.unsubscribe();
       supabase.removeChannel(channel);
+      // Reset the "was ready" guard so a different order id (searchParams change
+      // without remount) does not inherit the previous order's status and
+      // suppress its ready notification.
+      previousStatusRef.current = null;
     };
   }, [orderId, tenantId]);
 
@@ -271,23 +289,36 @@ function OrderConfirmedContent() {
     );
   }
 
-  // --- Order not found ----------------------------------
+  // --- Order not found / transient fetch error ----------
   if (!order) {
     return (
       <div
-        className="h-full bg-white flex flex-col items-center justify-center px-4"
+        className="h-full bg-white flex flex-col items-center justify-center px-4 text-center"
         style={{ color: '#1A1A1A' }}
       >
         <p className="mb-4" style={{ color: '#B0B0B0' }}>
-          {t('orderNotFound')}
+          {fetchError ? t('errorHint') : t('orderNotFound')}
         </p>
-        <Link
-          href={menuPath}
-          className="text-white px-6 py-3 rounded-xl font-medium"
-          style={{ backgroundColor: '#1A1A1A' }}
-        >
-          {t('backToMenu')}
-        </Link>
+        {fetchError ? (
+          <Button
+            onClick={() => {
+              setFetchError(false);
+              setLoading(true);
+              setRetryTick((n) => n + 1);
+            }}
+            className="rounded-xl bg-[#1A1A1A] px-6 py-3 font-medium text-white hover:bg-black"
+          >
+            {t('retry')}
+          </Button>
+        ) : (
+          <Link
+            href={menuPath}
+            className="text-white px-6 py-3 rounded-xl font-medium"
+            style={{ backgroundColor: '#1A1A1A' }}
+          >
+            {t('backToMenu')}
+          </Link>
+        )}
       </div>
     );
   }

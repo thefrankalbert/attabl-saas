@@ -77,7 +77,7 @@ type CartContextType = {
   enableServiceCharge: boolean;
   taxRate: number;
   serviceChargeRate: number;
-  applyCoupon: (code: string) => Promise<{ success: boolean; error?: string }>;
+  applyCoupon: (code: string) => Promise<{ success: boolean; errorKey?: string }>;
   removeCoupon: () => void;
   setServiceType: (type: ServiceType) => void;
   setRoomNumber: (num: string) => void;
@@ -338,9 +338,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setPendingAddToCart(null);
   }, []);
 
+  // `id` may be a full cart-item key (per-line ops from the UI) OR a bare menu
+  // item id (server invalidation via order preview). When it matches a line key
+  // exactly, target ONLY that line - otherwise a plain item ("x") and its
+  // modified sibling ("x-<hash>") collide, because the sibling's base id also
+  // equals "x". Fall back to the bare-id match only when no key matches.
   const removeFromCart = useCallback((id: string) => {
     setItems((prev) => {
-      const newItems = prev.filter((i) => getCartItemKey(i) !== id && i.id !== id);
+      const keyMatch = prev.some((i) => getCartItemKey(i) === id);
+      const newItems = prev.filter((i) => (keyMatch ? getCartItemKey(i) !== id : i.id !== id));
       if (newItems.length === 0) {
         setCurrentRestaurantId(null);
       }
@@ -354,9 +360,12 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         removeFromCart(id);
         return;
       }
-      setItems((prev) =>
-        prev.map((i) => (getCartItemKey(i) === id || i.id === id ? { ...i, quantity } : i)),
-      );
+      setItems((prev) => {
+        const keyMatch = prev.some((i) => getCartItemKey(i) === id);
+        return prev.map((i) =>
+          (keyMatch ? getCartItemKey(i) === id : i.id === id) ? { ...i, quantity } : i,
+        );
+      });
     },
     [removeFromCart],
   );
@@ -402,7 +411,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   // Client-side coupon is optimistic - server re-validates tenant ownership
   // and usage limits during order creation (see /api/orders/route.ts).
   const applyCoupon = useCallback(
-    async (code: string): Promise<{ success: boolean; error?: string }> => {
+    async (code: string): Promise<{ success: boolean; errorKey?: string }> => {
       try {
         const response = await fetch('/api/coupons/validate', {
           method: 'POST',
@@ -422,7 +431,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         const data = await response.json();
 
         if (!response.ok || !data.valid) {
-          return { success: false, error: data.error || 'Code promo invalide' };
+          // Return an i18n key, not a raw string, so the UI stays localized
+          // (the previous hardcoded French leaked to English users).
+          return { success: false, errorKey: 'promoInvalid' };
         }
 
         setAppliedCoupon({
@@ -433,7 +444,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
         return { success: true };
       } catch {
-        return { success: false, error: 'Erreur de connexion. Veuillez reessayer.' };
+        return { success: false, errorKey: 'connectionError' };
       }
     },
     [items, tenantSlug],

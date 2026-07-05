@@ -385,10 +385,13 @@ export default function OrderDetailPage() {
         </Button>
       </div>
 
-      {/* CTA: reorder */}
+      {/* CTA: reorder - sits above the in-flow bottom nav so its tabs stay
+          tappable. The nav is h-16 (64px) PLUS its own safe-area-inset-bottom
+          padding, so the offset must include the inset or the CTA overlaps the
+          tab row on notched phones. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--color-divider)] bg-white/95 px-3.5 pt-3 backdrop-blur"
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed inset-x-0 z-[60] border-t border-[var(--color-divider)] bg-white/95 px-3.5 pt-3 pb-4 backdrop-blur"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="mx-auto max-w-lg">
           <Button
