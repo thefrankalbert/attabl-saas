@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { AlertTriangle, Plus, Search } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, Plus, Search, FileText } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -25,9 +26,10 @@ import { useSound } from '@/contexts/SoundContext';
 interface InventoryClientProps {
   tenantId: string;
   currency: string;
+  tenantSlug: string;
 }
 
-export default function InventoryClient({ tenantId, currency }: InventoryClientProps) {
+export default function InventoryClient({ tenantId, currency, tenantSlug }: InventoryClientProps) {
   const [searchQuery, setSearchQuery] = useSessionState('inventory:searchQuery', '');
   const [filterStatus, setFilterStatus] = useSessionState<'all' | 'low' | 'out'>(
     'inventory:filterStatus',
@@ -37,6 +39,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
+  const tr = useTranslations('reports');
   const queryClient = useQueryClient();
 
   const [isMounted, setIsMounted] = useState(false);
@@ -173,6 +176,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
+
+                {/* Reports link */}
+                <Button asChild variant="outline" className="gap-2 h-9 shrink-0">
+                  <Link href={`/sites/${tenantSlug}/admin/inventory/reports`}>
+                    <FileText className="w-4 h-4" />
+                    <span className="hidden sm:inline">{tr('stockReportLink')}</span>
+                  </Link>
+                </Button>
 
                 {/* Add button */}
                 <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
