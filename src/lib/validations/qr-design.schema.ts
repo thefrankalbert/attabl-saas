@@ -1,0 +1,112 @@
+import { z } from 'zod';
+import { QR_MESSAGE_MAX_LENGTH } from '@/types/qr-design.types';
+
+/**
+ * Validation schemas for QR design persistence.
+ *
+ * The full design config is stored as jsonb in `qr_designs.config`, so it MUST
+ * be validated on every write (server action + service) to keep the column
+ * trustworthy. Shapes mirror QRDesignConfig in src/types/qr-design.types.ts.
+ */
+
+const hexColor = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Couleur hex invalide');
+
+const templateId = z.enum(['minimal', 'carte', 'chevalet']);
+const errorCorrection = z.enum(['L', 'M', 'Q', 'H']);
+const dotStyle = z.enum(['square', 'rounded', 'dots', 'classy', 'extra-rounded']);
+const cornerStyle = z.enum(['square', 'rounded', 'dot']);
+const shadow = z.enum(['none', 'light', 'medium', 'strong']);
+const exportFormat = z.enum(['pdf', 'png', 'svg']);
+const ctaPreset = z.enum([
+  'scannez-commander',
+  'scannez-menu',
+  'scannez-decouvrir',
+  'scannez-carte',
+  'custom',
+]);
+const cardFormat = z.enum([
+  'standard-25x13',
+  'square-10',
+  'a6-chevalet',
+  'business-card',
+  'bare',
+  'custom',
+]);
+const perPage = z.union([z.literal(1), z.literal(2), z.literal(4), z.literal('auto')]);
+
+const logoSchema = z.object({
+  enabled: z.boolean(),
+  src: z.string().max(2048),
+  width: z.number().min(0).max(400),
+  height: z.number().min(0).max(400),
+  excavate: z.boolean(),
+  opacity: z.number().min(0).max(1),
+});
+
+const gradientSchema = z.object({
+  enabled: z.boolean(),
+  colorStart: hexColor,
+  colorEnd: hexColor,
+  angle: z.number().min(0).max(360),
+});
+
+const printLayoutSchema = z.object({
+  cardFormat,
+  perPage,
+  bareQr: z.boolean(),
+  message: z.object({
+    enabled: z.boolean(),
+    text: z.string().max(QR_MESSAGE_MAX_LENGTH),
+  }),
+});
+
+export const qrDesignConfigSchema = z.object({
+  templateId,
+  qrFgColor: hexColor,
+  qrBgColor: hexColor,
+  errorCorrection,
+  qrSize: z.number().min(50).max(1000),
+  marginSize: z.number().min(0).max(32),
+  logo: logoSchema,
+  templateWidth: z.number().min(20).max(400),
+  templateHeight: z.number().min(20).max(400),
+  cornerRadius: z.number().min(0).max(64),
+  padding: z.number().min(0).max(128),
+  shadow,
+  templateBgColor: hexColor,
+  templateAccentColor: hexColor,
+  templateTextColor: hexColor,
+  gradient: gradientSchema,
+  backgroundImage: z.object({
+    enabled: z.boolean(),
+    src: z.string().max(2048),
+    opacity: z.number().min(0).max(1),
+  }),
+  ctaPreset,
+  ctaText: z.string().max(120),
+  descriptionText: z.string().max(280),
+  footerText: z.string().max(280),
+  showPoweredBy: z.boolean(),
+  fontFamily: z.string().max(60),
+  exportFormat,
+  printLayout: printLayoutSchema,
+  qrDotStyle: dotStyle,
+  qrCornerStyle: cornerStyle,
+});
+
+export const saveQrDesignSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Nom requis').max(80),
+  config: qrDesignConfigSchema,
+  isDefault: z.boolean(),
+});
+
+export const assignQrDesignSchema = z.object({
+  target: z.enum(['table', 'zone']),
+  targetId: z.string().uuid(),
+  // null = unassign (fall back to inherited/default resolution).
+  designId: z.string().uuid().nullable(),
+});
+
+export type SaveQrDesignInput = z.infer<typeof saveQrDesignSchema>;
+export type AssignQrDesignInput = z.infer<typeof assignQrDesignSchema>;

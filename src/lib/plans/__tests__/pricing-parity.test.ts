@@ -19,6 +19,7 @@ const PLANS: SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
 
 // Advertised boolean feature line -> enforcement flag it maps to.
 const BOOLEAN_FEATURE_MAP: Record<string, FeatureKey> = {
+  qrCustomization: 'canAccessQrCustomization',
   deliveryOrders: 'canAccessDelivery',
   roomService: 'canAccessRoomService',
   pos: 'canAccessPOS',
@@ -53,8 +54,9 @@ const ALWAYS_ON = new Set(['qrMenu', 'onsiteOrders', 'takeawayOrders', 'dashboar
 // Support lines are commercial copy, not enforced feature flags.
 const SUPPORT_ONLY = new Set(['whatsapp', 'manager', 'sla']);
 
-// Enforcement flags with no advertised pricing line (branding-only, not a sold tier).
-const FLAGS_WITHOUT_PRICING_LINE: FeatureKey[] = ['canAccessQrCustomization'];
+// Enforcement flags with no advertised pricing line. Every boolean flag now maps
+// to a pricing line; keep the list so a future internal-only flag can be documented.
+const FLAGS_WITHOUT_PRICING_LINE: FeatureKey[] = [];
 
 /** Non-trial limits for a plan (status 'active' so the trial->pro override is off). */
 function limitsFor(plan: SubscriptionPlan): PlanLimits {

@@ -14,11 +14,19 @@ const QR_STYLE_COLORS: Record<string, { fg: string; bg: string }> = {
  * Converts OnboardingData into a QRDesignConfig that can be
  * passed to real template components from the TEMPLATE_REGISTRY.
  */
+// Map any legacy onboarding template id (from an old saved draft) onto the
+// current three-template set so TEMPLATE_DEFAULTS lookups never miss.
+function coerceTemplateId(id: string): QRTemplateId {
+  if (id === 'minimal' || id === 'carte' || id === 'chevalet') return id;
+  if (id === 'elegant') return 'chevalet';
+  return 'minimal';
+}
+
 export function onboardingDataToQRConfig(
   data: OnboardingData,
   templateOverride?: QRTemplateId,
 ): QRDesignConfig {
-  const templateId: QRTemplateId = templateOverride ?? (data.qrTemplate as QRTemplateId);
+  const templateId: QRTemplateId = templateOverride ?? coerceTemplateId(String(data.qrTemplate));
   const primary = data.primaryColor || '#CCFF00';
   const secondary = data.secondaryColor || '#000000';
 

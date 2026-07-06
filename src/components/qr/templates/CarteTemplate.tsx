@@ -1,117 +1,57 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
 import type { QRTemplateProps } from '@/types/qr-design.types';
-import { SHADOW_CLASSES } from '@/types/qr-design.types';
+import { StyledQR } from '@/components/qr/StyledQR';
 
+const MM = 3.78;
+
+/**
+ * Carte bordee - a framed card: restaurant name on top, a hairline rule, the
+ * QR centered, CTA underneath. The tenant accent colors only the top name.
+ */
 export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplateProps) {
   return (
     <div
       style={{
-        width: `${config.templateWidth * 3.78}px`,
-        height: `${config.templateHeight * 3.78}px`,
+        width: `${config.templateWidth * MM}px`,
+        height: `${config.templateHeight * MM}px`,
         borderRadius: `${config.cornerRadius}px`,
         padding: `${config.padding}px`,
-        backgroundColor: config.gradient.enabled ? undefined : config.templateBgColor,
-        backgroundImage: config.gradient.enabled
-          ? `linear-gradient(${config.gradient.angle}deg, ${config.gradient.colorStart}, ${config.gradient.colorEnd})`
-          : config.backgroundImage.enabled && config.backgroundImage.src
-            ? `url(${config.backgroundImage.src})`
-            : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundColor: config.templateBgColor,
+        color: config.templateTextColor,
         fontFamily: config.fontFamily,
-        position: 'relative',
-        overflow: 'hidden',
+        border: '1px solid #E4E4E7',
       }}
-      className={`flex items-center gap-5 ${SHADOW_CLASSES[config.shadow]}`}
+      className="flex flex-col items-center"
     >
-      {/* Background image overlay */}
-      {config.backgroundImage.enabled && config.backgroundImage.src && !config.gradient.enabled && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: config.templateBgColor,
-            opacity: 1 - (config.backgroundImage.opacity ?? 0.5),
-          }}
-        />
-      )}
-
-      {/* Left side: Info */}
-      <div className="relative z-10 flex-1">
-        <h3 className="text-base font-bold mb-1" style={{ color: config.templateTextColor }}>
-          {tenantName}
-        </h3>
-
-        {tableName ? (
-          <div
-            className="inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-3"
-            style={{
-              backgroundColor: config.templateAccentColor,
-              color: config.templateBgColor,
-            }}
-          >
-            {tableName}
-          </div>
-        ) : (
-          <p className="text-xs mb-3 opacity-50" style={{ color: config.templateTextColor }}>
-            Room Service
-          </p>
-        )}
-
-        {/* CTA button with arrow */}
-        <div
-          className="inline-block px-3 py-1.5 rounded-lg text-xs font-medium"
-          style={{
-            backgroundColor: config.templateAccentColor,
-            color: config.templateBgColor,
-          }}
+      <div className="w-full flex flex-col items-center gap-2">
+        <p
+          className="text-[15px] font-semibold tracking-tight"
+          style={{ color: config.templateAccentColor }}
         >
-          {config.ctaText} &rarr;
-        </div>
-
-        {/* Footer text */}
-        {config.footerText && (
-          <p className="mt-2 text-[10px] opacity-50" style={{ color: config.templateTextColor }}>
-            {config.footerText}
-          </p>
-        )}
+          {tenantName}
+        </p>
+        <div className="w-full" style={{ height: '1px', backgroundColor: '#ECECEC' }} />
       </div>
 
-      {/* Right side: QR code */}
-      <div className="relative z-10 p-2 bg-white rounded-xl shadow-inner">
-        <QRCodeSVG
+      <div className="flex flex-1 items-center justify-center py-4">
+        <StyledQR
           value={url}
           size={config.qrSize}
-          level={config.errorCorrection}
           fgColor={config.qrFgColor}
           bgColor={config.qrBgColor}
-          marginSize={config.marginSize}
-          imageSettings={
-            config.logo.enabled
-              ? {
-                  src: config.logo.src,
-                  width: config.logo.width,
-                  height: config.logo.height,
-                  excavate: config.logo.excavate,
-                  opacity: config.logo.opacity,
-                  crossOrigin: 'anonymous' as const,
-                }
-              : undefined
-          }
+          dotStyle={config.qrDotStyle}
+          cornerStyle={config.qrCornerStyle}
+          errorCorrection={config.errorCorrection}
+          logoSrc={config.logo.enabled ? config.logo.src : undefined}
+          margin={config.marginSize}
         />
       </div>
 
-      {/* Powered by Attabl */}
-      {config.showPoweredBy && (
-        <p
-          className="absolute bottom-1 left-0 right-0 text-center text-[10px] opacity-30 z-10"
-          style={{ color: config.templateTextColor }}
-        >
-          Powered by Attabl
-        </p>
-      )}
+      <div className="flex flex-col items-center gap-0.5">
+        {config.ctaText && <p className="text-[12px] font-medium">{config.ctaText}</p>}
+        {tableName && <p className="text-[11px] opacity-50">{tableName}</p>}
+      </div>
     </div>
   );
 }

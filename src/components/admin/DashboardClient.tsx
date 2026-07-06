@@ -9,6 +9,7 @@ import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
+import { QRQuickCard } from './dashboard/QRQuickCard';
 import { RevenueChart } from './dashboard/RevenueChart';
 import { OrdersTable } from './dashboard/OrdersTable';
 import type {
@@ -214,6 +215,9 @@ export default function DashboardClient(props: DashboardClientProps) {
     // table), full width, scrolling within the admin shell's main area.
     <div className="flex flex-col gap-6 py-6">
       <SectionCards cards={sectionCards} />
+      <div className="px-3 sm:px-5">
+        <QRQuickCard href={`${adminBase}/qr-codes`} tableCount={initialActiveTables.total} />
+      </div>
       <div className="px-3 sm:px-5">
         <RevenueChart
           series={initialChannelBuckets}

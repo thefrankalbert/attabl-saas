@@ -40,12 +40,13 @@ function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesig
       };
 
     case 'SET_TEMPLATE': {
+      // The card physical size is owned by the print format (QRExportPanel) so
+      // switching template layouts must NOT reset templateWidth/Height. Only the
+      // QR size default follows the template.
       const defaults = TEMPLATE_DEFAULTS[action.templateId];
       return {
         ...state,
         templateId: action.templateId,
-        templateWidth: defaults.width,
-        templateHeight: defaults.height,
         qrSize: defaults.qrSize,
       };
     }

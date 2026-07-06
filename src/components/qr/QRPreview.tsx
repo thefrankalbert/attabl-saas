@@ -14,16 +14,16 @@ interface QRPreviewProps {
   logoUrl?: string;
 }
 
-// --- Scale Map -----------------------------------------
+// --- Fit scale -----------------------------------------
 
-const SCALE_MAP: Record<string, number> = {
-  standard: 0.7,
-  chevalet: 0.65,
-  carte: 0.9,
-  minimal: 0.7,
-  elegant: 0.65,
-  neon: 0.68,
-};
+const MM_TO_PX = 3.78;
+const PREVIEW_BOX = 340; // px - the card is scaled to fit this box either way
+
+function fitScale(widthMm: number, heightMm: number): number {
+  const wpx = widthMm * MM_TO_PX;
+  const hpx = heightMm * MM_TO_PX;
+  return Math.min(PREVIEW_BOX / wpx, PREVIEW_BOX / hpx, 1);
+}
 
 // --- Component -----------------------------------------
 
@@ -33,18 +33,14 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
 ) {
   const TemplateComponent = TEMPLATE_REGISTRY[config.templateId];
 
-  const scale = useMemo(() => SCALE_MAP[config.templateId] ?? 0.7, [config.templateId]);
+  const scale = useMemo(
+    () => fitScale(config.templateWidth, config.templateHeight),
+    [config.templateWidth, config.templateHeight],
+  );
 
   return (
-    <div className="bg-app-elevated rounded-2xl p-8 flex items-center justify-center min-h-[400px]">
-      {/* Dot pattern background */}
-      <div
-        className="relative flex items-center justify-center w-full h-full"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
-          backgroundSize: '16px 16px',
-        }}
-      >
+    <div className="bg-app-bg border border-app-border rounded-xl p-8 flex items-center justify-center min-h-[400px]">
+      <div className="relative flex items-center justify-center w-full h-full">
         {/* Scaled template container - ref for html2canvas capture */}
         <div
           ref={ref}

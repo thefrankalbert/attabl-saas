@@ -39,18 +39,25 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
     redirectToUnauthorized();
   }
 
-  // Fetch tables, zones, and menus in parallel
-  const [{ data: zones }, { data: tables }, { data: menus }] = await Promise.all([
-    supabase.from('zones').select('*').eq('tenant_id', tenant.id).order('name'),
-    supabase.from('tables').select('*').eq('tenant_id', tenant.id).order('table_number'),
-    supabase
-      .from('menus')
-      .select('id, name, slug, is_active')
-      .eq('tenant_id', tenant.id)
-      .is('parent_menu_id', null)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true }),
-  ]);
+  // Fetch tables, zones, menus, and saved QR designs in parallel
+  const [{ data: zones }, { data: tables }, { data: menus }, { data: designs }] = await Promise.all(
+    [
+      supabase.from('zones').select('*').eq('tenant_id', tenant.id).order('name'),
+      supabase.from('tables').select('*').eq('tenant_id', tenant.id).order('table_number'),
+      supabase
+        .from('menus')
+        .select('id, name, slug, is_active')
+        .eq('tenant_id', tenant.id)
+        .is('parent_menu_id', null)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true }),
+      supabase
+        .from('qr_designs')
+        .select('id, name, is_default')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: true }),
+    ],
+  );
 
   // Construct menu URL - use subdomain format (e.g. https://radisson.attabl.com)
   // The middleware rewrites subdomain requests to /sites/{slug}/ internally
@@ -71,6 +78,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
         zones={zones || []}
         tables={tables || []}
         menus={(menus || []) as { id: string; name: string; slug: string; is_active: boolean }[]}
+        designs={designs || []}
       />
     </div>
   );

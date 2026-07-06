@@ -25,6 +25,7 @@ export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] =
     key: 'menu',
     features: [
       { labelKey: 'qrMenu', starter: true, pro: true, business: true, enterprise: true },
+      { labelKey: 'qrCustomization', starter: false, pro: true, business: true, enterprise: true },
       { labelKey: 'onsiteOrders', starter: true, pro: true, business: true, enterprise: true },
       { labelKey: 'takeawayOrders', starter: true, pro: true, business: true, enterprise: true },
       { labelKey: 'deliveryOrders', starter: false, pro: false, business: true, enterprise: true },

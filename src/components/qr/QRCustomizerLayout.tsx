@@ -53,12 +53,7 @@ export function QRCustomizerLayout({
 
         {/* Left panel: customizer controls */}
         <div className="w-full md:w-96 md:shrink-0 md:max-h-[calc(100dvh-200px)] md:overflow-y-auto">
-          <QRCustomizerPanel
-            config={config}
-            updateField={updateField}
-            setTemplate={setTemplate}
-            tenantLogoUrl={logoUrl}
-          />
+          <QRCustomizerPanel config={config} updateField={updateField} setTemplate={setTemplate} />
         </div>
 
         {/* Right panel: preview (desktop only) */}
