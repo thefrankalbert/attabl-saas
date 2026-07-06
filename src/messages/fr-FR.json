@@ -2088,6 +2088,10 @@
     "accountMenu": "Mon compte",
     "planLabel": "Plan {plan}",
     "planFree": "Gratuit",
+    "planCardTitle": "Plan actuel",
+    "planCardCta": "Passer au {plan}",
+    "planCardUpsellPro": "Debloquez le point de vente complet, la cuisine et le stock.",
+    "planCardUpsellBusiness": "Multi-etablissements, room service et analytics.",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
