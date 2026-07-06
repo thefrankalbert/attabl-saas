@@ -15,6 +15,18 @@ interface SidebarPlanCardProps {
 }
 
 /**
+ * Next self-service tier to upsell from the current plan, or null when the
+ * tenant is already on the top self-service plan (Business) or Enterprise.
+ * Case-insensitive; anything below Pro (gratuit/starter/trial/unknown) upsells
+ * to Pro. Pure + exported for unit testing.
+ */
+export function getUpsellTarget(planRaw: string): 'pro' | 'business' | null {
+  const current = planRaw.toLowerCase();
+  if (current === 'business' || current === 'enterprise') return null;
+  return current === 'pro' ? 'business' : 'pro';
+}
+
+/**
  * Upsell card in the sidebar footer: current plan + a one-tap upgrade to the
  * next tier. Hidden once the tenant is on the top self-service plan (Business)
  * or Enterprise. Admin palette (neutral + blue accent), never the brand lime.
@@ -22,10 +34,9 @@ interface SidebarPlanCardProps {
 export function SidebarPlanCard({ basePath, planName, planRaw, collapsed }: SidebarPlanCardProps) {
   const t = useTranslations('sidebar');
 
-  const current = planRaw.toLowerCase();
-  if (current === 'business' || current === 'enterprise') return null;
+  const next = getUpsellTarget(planRaw);
+  if (!next) return null;
 
-  const next: 'pro' | 'business' = current === 'pro' ? 'business' : 'pro';
   const nextName = next === 'pro' ? 'Pro' : 'Business';
   const subtitle = next === 'pro' ? t('planCardUpsellPro') : t('planCardUpsellBusiness');
   const cta = t('planCardCta', { plan: nextName });
