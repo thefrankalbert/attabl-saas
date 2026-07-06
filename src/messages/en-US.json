@@ -385,6 +385,7 @@
             "title": "Menu & Orders",
             "features": {
               "qrMenu": "Bilingual digital QR menu",
+              "qrCustomization": "QR customization (colors, logo, templates)",
               "onsiteOrders": "Dine-in orders",
               "takeawayOrders": "Takeaway orders",
               "deliveryOrders": "Delivery orders",

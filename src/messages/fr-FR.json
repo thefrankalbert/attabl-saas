@@ -385,6 +385,7 @@
             "title": "Menu & Commandes",
             "features": {
               "qrMenu": "Menu QR digital bilingue",
+              "qrCustomization": "Personnalisation du QR (couleurs, logo, modeles)",
               "onsiteOrders": "Commandes sur place",
               "takeawayOrders": "Commandes à emporter",
               "deliveryOrders": "Commandes delivery",

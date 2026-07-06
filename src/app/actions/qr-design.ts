@@ -7,6 +7,8 @@ import { createQrDesignService } from '@/services/qr-design.service';
 import { createAuditService } from '@/services/audit.service';
 import { saveQrDesignSchema, assignQrDesignSchema } from '@/lib/validations/qr-design.schema';
 import { getTranslations } from 'next-intl/server';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 /**
  * QR design mutations.
@@ -33,6 +35,26 @@ export async function actionSaveQrDesign(input: unknown) {
     const parsed = saveQrDesignSchema.safeParse(input);
     if (!parsed.success) {
       return { success: false as const, error: parsed.error.issues[0]?.message ?? 'Invalid input' };
+    }
+
+    // Plan gate: saving a customized QR design is Pro+ (canAccessQrCustomization,
+    // see pricing-data.ts). Basic QR codes stay free for all plans; only persisting
+    // a custom style/template requires the paid tier. The client dims the controls,
+    // but the action must enforce it so a crafted call cannot bypass the paywall.
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('subscription_plan, subscription_status, trial_ends_at')
+      .eq('id', tenantId)
+      .maybeSingle();
+    if (
+      !canAccessFeature(
+        'canAccessQrCustomization',
+        tenant?.subscription_plan as SubscriptionPlan | null,
+        tenant?.subscription_status as SubscriptionStatus | null,
+        tenant?.trial_ends_at ?? null,
+      )
+    ) {
+      return { success: false as const, error: 'La personnalisation QR est reservee au plan Pro.' };
     }
 
     const service = createQrDesignService(supabase);
