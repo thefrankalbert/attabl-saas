@@ -114,17 +114,22 @@ export default function ItemDetailSheet({
     }
   }, [item]);
 
-  // --- Body scroll lock --------------------------------------------------
+  // --- Body scroll lock + Escape-to-close --------------------------------
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
+    if (!isOpen) {
       document.body.style.overflow = '';
+      return;
     }
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   // --- Live price calculation --------------------------------------------
   const currentPrice = useMemo(() => {
@@ -150,7 +155,10 @@ export default function ItemDetailSheet({
     if (!item) return;
 
     if (item.modifiers && item.modifiers.length > 0) {
-      const requiredModifiers = item.modifiers.filter((m) => m.is_required);
+      // Only require modifiers that are actually shown (available). A required
+      // but unavailable modifier is hidden from the list, so requiring it would
+      // permanently block add-to-cart with no way to satisfy it.
+      const requiredModifiers = item.modifiers.filter((m) => m.is_required && m.is_available);
       const missingRequired = requiredModifiers.filter(
         (req) =>
           !selectedModifiers.some(

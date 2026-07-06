@@ -3402,6 +3402,7 @@
     "cartNotesLabel": "Note pour la cuisine (facultatif)",
     "cartNotesPlaceholder": "Ex: sans oignon, bien cuit, allergies...",
     "promoApplied": "Code appliqué avec succès",
+    "promoInvalid": "Code promo invalide",
     "totalHint": "Taxes et service inclus",
     "ariaClearCart": "Vider le panier",
     "ariaDecrease": "Diminuer la quantité",

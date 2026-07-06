@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Plus, Star } from 'lucide-react';
-import { formatAmount } from '@/lib/utils/currency';
+import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 import { Badge } from '@/components/ui/badge';
 import { Photo } from './Photo';
 import { Rating } from './Rating';
@@ -44,11 +44,6 @@ interface Props {
 const PLUS_SHADOW =
   'shadow-[0_4px_6px_-1px_rgba(26,26,26,0.06),0_2px_4px_-2px_rgba(26,26,26,0.04)]';
 
-// XAF and XOF are both known to users as "FCFA"; other ISO codes show as-is.
-function currencyUnit(code: string): string {
-  return code === 'XAF' || code === 'XOF' ? 'FCFA' : code;
-}
-
 export function MenuItemCard({
   item,
   href,
@@ -57,7 +52,7 @@ export function MenuItemCard({
   onOpen,
   addControl,
 }: Props) {
-  const unit = currencyUnit(currencyCode);
+  const unit = getCurrencySymbol(currencyCode);
   const interactive = typeof onOpen === 'function';
 
   // The "+" affordance: the cart-aware control in interactive mode (positions
