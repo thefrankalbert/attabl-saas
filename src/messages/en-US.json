@@ -4168,7 +4168,8 @@
   },
   "updateBanner": {
     "message": "A new version is available.",
-    "sidebarLabel": "Update available"
+    "sidebarLabel": "Update available",
+    "refreshHint": "Click to refresh"
   },
   "inventoryImport": {
     "downloadTemplate": "Download Excel template",

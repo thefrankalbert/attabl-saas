@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ArrowUpCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface UpdateAvailableBannerProps {
   /** Deploy sha the current page was served with (from APP_VERSION, server-baked). */
@@ -65,6 +65,25 @@ export function UpdateAvailableBanner({
 
   if (!updateAvailable) return null;
 
+  if (collapsed) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => window.location.reload()}
+        title={t('message')}
+        aria-label={t('message')}
+        className="relative mx-auto mt-1 flex size-9 items-center justify-center rounded-lg border border-status-info/25 bg-status-info/10 text-status-info hover:bg-status-info/15 hover:text-status-info"
+      >
+        <ArrowUpCircle className="size-4" />
+        <span className="absolute -right-0.5 -top-0.5 flex size-2" aria-hidden="true">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-info opacity-60" />
+          <span className="relative inline-flex size-2 rounded-full bg-status-info" />
+        </span>
+      </Button>
+    );
+  }
+
   return (
     <Button
       type="button"
@@ -72,13 +91,20 @@ export function UpdateAvailableBanner({
       onClick={() => window.location.reload()}
       title={t('message')}
       aria-label={t('message')}
-      className={cn(
-        'mt-1 flex h-8 w-full items-center gap-2 rounded-[0.625rem] text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]',
-        collapsed ? 'justify-center px-0' : 'justify-start px-2',
-      )}
+      className="group mt-1 flex h-auto w-full items-center justify-start gap-2.5 rounded-lg border border-status-info/25 bg-status-info/10 px-2 py-2 text-left hover:bg-status-info/15"
     >
-      <span className="size-1.5 shrink-0 rounded-full bg-status-info" aria-hidden="true" />
-      {!collapsed && <span className="truncate text-xs">{t('sidebarLabel')}</span>}
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-status-info/15 text-status-info">
+        <ArrowUpCircle className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-semibold text-[var(--sidebar-foreground)]">
+          {t('sidebarLabel')}
+        </span>
+        <span className="block truncate text-[11px] text-[var(--muted-foreground)]">
+          {t('refreshHint')}
+        </span>
+      </span>
+      <RefreshCw className="size-3.5 shrink-0 text-status-info transition-transform duration-300 group-hover:rotate-180" />
     </Button>
   );
 }
