@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Printer, Receipt, CreditCard, AlertCircle } from 'lucide-react';
+import { Printer, Receipt, FileText, CreditCard, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus, CurrencyCode } from '@/types/admin.types';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
@@ -18,6 +18,7 @@ interface OrderActionsPanelProps {
   onShowPayment: () => void;
   onPrintKitchen: () => void;
   onPrintReceipt: () => void;
+  onPrintInvoice: () => void;
 }
 
 export function OrderActionsPanel({
@@ -31,6 +32,7 @@ export function OrderActionsPanel({
   onShowPayment,
   onPrintKitchen,
   onPrintReceipt,
+  onPrintInvoice,
 }: OrderActionsPanelProps) {
   const t = useTranslations('orders');
   const seg = useSegmentTerms();
@@ -112,6 +114,15 @@ export function OrderActionsPanel({
             className="h-8 text-xs"
           >
             <Receipt className="w-3.5 h-3.5 mr-1.5" /> {t('printClientReceipt')}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onPrintInvoice}
+            disabled={order.status !== 'ready' && order.status !== 'delivered'}
+            className="h-8 text-xs"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1.5" /> {t('printInvoice')}
           </Button>
         </div>
       </div>

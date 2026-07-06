@@ -9,6 +9,7 @@ import { getStatusStyle } from '@/lib/design-tokens';
 import { formatCurrency } from '@/lib/utils/currency';
 import { formatCurrencyMinor } from '@/lib/utils/money';
 import { printReceipt } from '@/lib/printing/receipt';
+import { printInvoice } from '@/lib/printing/invoice-html';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -67,8 +68,8 @@ export function useOrderDetails({
     toast({ title: seg.productionTicketPrinted });
   };
 
-  const handlePrintReceipt = () => {
-    const tenantForPrint = {
+  const buildTenantForPrint = (): Tenant =>
+    ({
       name: tenant?.name || 'Restaurant',
       slug: tenant?.slug || '',
       address: tenant?.address || '',
@@ -76,9 +77,16 @@ export function useOrderDetails({
       currency: currency,
       logo_url: tenant?.logo_url || '',
       primary_color: tenant?.primary_color || '#18181b',
-    } as Tenant;
-    printReceipt(order, tenantForPrint);
+    }) as Tenant;
+
+  const handlePrintReceipt = () => {
+    printReceipt(order, buildTenantForPrint());
     toast({ title: t('clientReceiptPrinted') });
+  };
+
+  const handlePrintInvoice = () => {
+    printInvoice(order, buildTenantForPrint());
+    toast({ title: t('invoicePrinted') });
   };
 
   const displayTotal = order.total || order.total_price || 0;
@@ -108,6 +116,7 @@ export function useOrderDetails({
     handleStatusUpdate,
     handlePrintKitchen,
     handlePrintReceipt,
+    handlePrintInvoice,
     displayTotal,
     tipAmount,
     hasBreakdown,
