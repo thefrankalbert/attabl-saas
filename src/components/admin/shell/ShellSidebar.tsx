@@ -14,6 +14,7 @@ import type { TenantSwitchOption } from '@/types/tenant-switch.types';
 import { MAIN, CATALOGUE, GESTION, ANALYSE, isPathActive, type ShellNavItem } from './shell-nav';
 import { ShellBrandSwitcher } from './ShellBrandSwitcher';
 import { ShellAccountMenu } from './ShellAccountMenu';
+import { SidebarPlanCard } from './SidebarPlanCard';
 
 // --- Types ----------------------------------------------
 
@@ -198,8 +199,14 @@ export function ShellSidebar({
           {renderGroup('groupAnalyse', analyse)}
         </div>
 
-        {/* -- Footer: user dropdown -- */}
+        {/* -- Footer: plan upsell + user dropdown -- */}
         <div className="mt-auto border-t border-[var(--sidebar-border)] pt-2">
+          <SidebarPlanCard
+            basePath={basePath}
+            planName={planName}
+            planRaw={planRaw}
+            collapsed={collapsed}
+          />
           <ShellAccountMenu
             basePath={basePath}
             tenantSlug={tenant.slug}
