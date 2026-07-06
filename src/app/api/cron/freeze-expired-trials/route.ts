@@ -20,7 +20,10 @@ import { runApiRoute } from '@/lib/api-route-context';
  * 20260420000002_restrict_tenant_billing_updates), so this must run with the
  * admin client.
  */
-export async function POST(request: Request) {
+// Vercel cron jobs trigger a GET request (with Authorization: Bearer CRON_SECRET
+// when the secret is set). A POST-only handler would 405 and the cron would never
+// run - keep this as GET so the scheduled job actually fires.
+export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {

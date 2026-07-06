@@ -12,7 +12,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-describe('POST /api/cron/reconcile-payments', () => {
+describe('GET /api/cron/reconcile-payments', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
@@ -26,27 +26,27 @@ describe('POST /api/cron/reconcile-payments', () => {
       url.searchParams.set('maxAgeMinutes', maxAgeMinutes);
     }
     return new Request(url, {
-      method: 'POST',
+      method: 'GET',
       headers: auth ? { authorization: auth } : {},
     });
   }
 
   it('returns 401 without bearer token', async () => {
-    const { POST } = await import('@/app/api/cron/reconcile-payments/route');
-    const response = await POST(createRequest());
+    const { GET } = await import('@/app/api/cron/reconcile-payments/route');
+    const response = await GET(createRequest());
     expect(response.status).toBe(401);
   });
 
   it('returns 503 when CRON_SECRET is missing', async () => {
     vi.stubEnv('CRON_SECRET', '');
-    const { POST } = await import('@/app/api/cron/reconcile-payments/route');
-    const response = await POST(createRequest('Bearer test-cron-secret'));
+    const { GET } = await import('@/app/api/cron/reconcile-payments/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
     expect(response.status).toBe(503);
   });
 
   it('expires stale sessions when authorized', async () => {
-    const { POST } = await import('@/app/api/cron/reconcile-payments/route');
-    const response = await POST(createRequest('Bearer test-cron-secret', '45'));
+    const { GET } = await import('@/app/api/cron/reconcile-payments/route');
+    const response = await GET(createRequest('Bearer test-cron-secret', '45'));
     const json = (await response.json()) as {
       success: boolean;
       cleared: number;
@@ -63,8 +63,8 @@ describe('POST /api/cron/reconcile-payments', () => {
   });
 
   it('returns 400 for invalid maxAgeMinutes', async () => {
-    const { POST } = await import('@/app/api/cron/reconcile-payments/route');
-    const response = await POST(createRequest('Bearer test-cron-secret', '2'));
+    const { GET } = await import('@/app/api/cron/reconcile-payments/route');
+    const response = await GET(createRequest('Bearer test-cron-secret', '2'));
     expect(response.status).toBe(400);
   });
 });
