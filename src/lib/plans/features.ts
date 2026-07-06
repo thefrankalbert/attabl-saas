@@ -29,10 +29,8 @@ export interface PlanLimits {
   canAccessService: boolean;
   canAccessInventory: boolean;
   canAccessRecipes: boolean;
-  canAccessSuppliers: boolean;
   canAccessMultiCurrency: boolean;
   canAccessReports: boolean;
-  canAccessTeamManagement: boolean;
   canAccessQrCustomization: boolean;
   canAccessTips: boolean;
   canAccessRoomService: boolean;
@@ -57,10 +55,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessService: false,
     canAccessInventory: false,
     canAccessRecipes: false,
-    canAccessSuppliers: false,
     canAccessMultiCurrency: false,
     canAccessReports: false,
-    canAccessTeamManagement: false,
     canAccessQrCustomization: false,
     canAccessTips: false,
     canAccessRoomService: false,
@@ -81,10 +77,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessService: true,
     canAccessInventory: true,
     canAccessRecipes: true,
-    canAccessSuppliers: true,
     canAccessMultiCurrency: true,
     canAccessReports: true,
-    canAccessTeamManagement: true,
     canAccessQrCustomization: true,
     canAccessTips: true,
     canAccessRoomService: false,
@@ -105,10 +99,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessService: true,
     canAccessInventory: true,
     canAccessRecipes: true,
-    canAccessSuppliers: true,
     canAccessMultiCurrency: true,
     canAccessReports: true,
-    canAccessTeamManagement: true,
     canAccessQrCustomization: true,
     canAccessTips: true,
     canAccessRoomService: true,
@@ -129,10 +121,8 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     canAccessService: true,
     canAccessInventory: true,
     canAccessRecipes: true,
-    canAccessSuppliers: true,
     canAccessMultiCurrency: true,
     canAccessReports: true,
-    canAccessTeamManagement: true,
     canAccessQrCustomization: true,
     canAccessTips: true,
     canAccessRoomService: true,
@@ -207,10 +197,8 @@ export function canAccessFeature(
     | 'canAccessService'
     | 'canAccessInventory'
     | 'canAccessRecipes'
-    | 'canAccessSuppliers'
     | 'canAccessMultiCurrency'
     | 'canAccessReports'
-    | 'canAccessTeamManagement'
     | 'canAccessQrCustomization'
     | 'canAccessTips'
     | 'canAccessRoomService'

@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/reconcile-payments",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/freeze-expired-trials",
+      "schedule": "0 2 * * *"
     }
   ],
   "headers": [

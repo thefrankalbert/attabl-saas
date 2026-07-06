@@ -1615,6 +1615,14 @@
       "reports": {
         "title": "Statistiques avancees",
         "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des décisions basees sur des données réelles."
+      },
+      "service": {
+        "title": "Plan de salle et service",
+        "desc": "Placez vos serveurs par zone. Suivez qui gere quelle table. Toute la salle en un coup d'oeil."
+      },
+      "tables": {
+        "title": "Gestion des tables",
+        "desc": "Creez vos zones, numerotez vos tables, un QR par table. Chaque commande arrive avec le bon numero."
       }
     }
   },

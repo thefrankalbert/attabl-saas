@@ -8,7 +8,8 @@ import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { canAccessFeature } from '@/lib/plans/features';
+import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
+import { assertOrderFeaturesAllowed } from '@/services/plan-enforcement.service';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { verifyOrigin } from '@/lib/csrf';
 import {
@@ -90,6 +91,20 @@ export async function POST(request: Request) {
       tip_amount,
       client_request_id,
     } = parseResult.data;
+
+    // Plan gate: reject paid service modes (delivery/room service), tips, and a
+    // secondary display currency the tenant's plan does not include. A crafted
+    // storefront POST could otherwise set service_type=delivery on a Starter plan.
+    // Throws ServiceError('UNAUTHORIZED') -> mapped to 403 by the catch below.
+    assertOrderFeaturesAllowed(
+      getPlanLimits(
+        tenant.subscription_plan as SubscriptionPlan | null,
+        tenant.subscription_status as SubscriptionStatus | null,
+        tenant.trial_ends_at as string | null,
+      ),
+      { service_type, tip_amount, display_currency },
+      tenant.currency || 'XAF',
+    );
 
     // Idempotency: if this order was already created (offline replay), return it
     // unchanged BEFORE any side effect (coupon claim, order creation).

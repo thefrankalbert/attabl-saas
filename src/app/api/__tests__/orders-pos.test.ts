@@ -63,11 +63,13 @@ vi.mock('@/services/coupon.service', () => ({
   })),
 }));
 
-// Quota check runs in after(); keep it inert.
+// Quota check runs in after(); keep it inert. The order-feature plan gate is
+// exercised in its own unit test, so keep it inert here (no-op assert).
 vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: vi.fn(() => ({
     getMonthlyOrderUsage: vi.fn().mockResolvedValue({ count: 0, limit: null, exceeded: false }),
   })),
+  assertOrderFeaturesAllowed: vi.fn(),
 }));
 
 const mockCalculateOrderTotal = vi.fn();
@@ -89,7 +91,8 @@ vi.mock('@sentry/nextjs', () => ({
   captureException: vi.fn(),
 }));
 
-vi.mock('@/lib/plans/features', () => ({
+vi.mock('@/lib/plans/features', async (importActual) => ({
+  ...(await importActual<typeof import('@/lib/plans/features')>()),
   canAccessFeature: vi.fn(() => false),
 }));
 
