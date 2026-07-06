@@ -4168,7 +4168,8 @@
   },
   "updateBanner": {
     "message": "Une nouvelle version est disponible.",
-    "sidebarLabel": "Mise a jour disponible"
+    "sidebarLabel": "Mise a jour disponible",
+    "refreshHint": "Cliquez pour recharger"
   },
   "inventoryImport": {
     "downloadTemplate": "Télécharger le modèle Excel",
