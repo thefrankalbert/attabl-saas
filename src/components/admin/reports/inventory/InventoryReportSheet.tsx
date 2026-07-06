@@ -51,40 +51,43 @@ export function InventoryReportSheet({
       className="mx-auto bg-white text-black"
       style={{ width: orientation === 'landscape' ? '297mm' : '210mm', maxWidth: '100%' }}
     >
-      <div className="p-8">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-black/20 pb-4">
+      <div className="p-10">
+        {/* Header: restaurant identity left, document meta right */}
+        <div className="flex items-start justify-between gap-6 border-b border-zinc-200 pb-5">
           <div className="flex items-center gap-3">
             {tenant.logoUrl && (
               <Image
                 src={tenant.logoUrl}
                 alt=""
-                width={48}
-                height={48}
-                className="h-12 w-12 rounded object-contain"
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded object-contain"
                 unoptimized
               />
             )}
             <div>
-              <p className="text-lg font-semibold text-black">{tenant.name}</p>
-              {addressLine && <p className="text-xs text-black/60">{addressLine}</p>}
-              {tenant.phone && <p className="text-xs text-black/60">{tenant.phone}</p>}
+              <p className="text-[17px] font-bold tracking-tight text-zinc-900">{tenant.name}</p>
+              {addressLine && <p className="mt-0.5 text-[11px] text-zinc-500">{addressLine}</p>}
+              {tenant.phone && <p className="text-[11px] text-zinc-500">{tenant.phone}</p>}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-base font-semibold text-black">{title}</p>
-            <p className="text-xs text-black/60">{subtitle}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+              Rapport de stock
+            </p>
+            <p className="mt-1 text-xl font-bold tracking-tight text-zinc-900">{title}</p>
+            <p className="mt-1 text-[11px] text-zinc-500">{subtitle}</p>
           </div>
         </div>
 
         {/* Table */}
-        <Table className="mt-6 text-xs">
+        <Table className="mt-7 text-xs">
           <TableHeader>
-            <TableRow className="border-black/40 hover:bg-transparent">
+            <TableRow className="border-zinc-200 hover:bg-transparent">
               {table.columns.map((c) => (
                 <TableHead
                   key={c.key}
-                  className={`h-auto py-1.5 font-semibold text-black ${alignClass(c.align)}`}
+                  className={`h-auto py-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-zinc-400 ${alignClass(c.align)}`}
                 >
                   {c.label}
                 </TableHead>
@@ -93,11 +96,11 @@ export function InventoryReportSheet({
           </TableHeader>
           <TableBody>
             {table.rows.map((row, ri) => (
-              <TableRow key={ri} className="border-black/10 hover:bg-transparent">
+              <TableRow key={ri} className="border-zinc-100 hover:bg-transparent">
                 {row.map((cell, ci) => (
                   <TableCell
                     key={ci}
-                    className={`py-1.5 text-black tabular-nums ${alignClass(
+                    className={`py-2 text-zinc-700 tabular-nums ${alignClass(
                       table.columns[ci]?.align ?? 'left',
                     )}`}
                   >
@@ -109,11 +112,11 @@ export function InventoryReportSheet({
           </TableBody>
           {table.totals && (
             <TableFooter className="bg-transparent">
-              <TableRow className="border-t-2 border-black/40 hover:bg-transparent">
+              <TableRow className="border-t-2 border-zinc-900 hover:bg-transparent">
                 {table.totals.map((cell, ci) => (
                   <TableCell
                     key={ci}
-                    className={`py-1.5 font-semibold text-black tabular-nums ${alignClass(
+                    className={`py-2 font-bold text-zinc-900 tabular-nums ${alignClass(
                       table.columns[ci]?.align ?? 'left',
                     )}`}
                   >
@@ -126,7 +129,7 @@ export function InventoryReportSheet({
         </Table>
 
         {table.rows.length === 0 && (
-          <p className="mt-6 text-center text-sm text-black/50">{subtitle}</p>
+          <p className="mt-8 text-center text-sm text-zinc-400">{subtitle}</p>
         )}
       </div>
     </div>
