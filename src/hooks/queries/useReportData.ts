@@ -1,9 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { format, subDays, startOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
 import { logger } from '@/lib/logger';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 type Period = 'today' | '7d' | '30d' | '90d' | 'thisMonth' | 'lastMonth' | 'thisYear';
 
@@ -96,7 +98,9 @@ function getDateRange(p: Period) {
  * Matches the queries in ReportsClient loadData().
  */
 export function useReportData(tenantId: string, period: Period) {
-  return useQuery<ReportData>({
+  const queryClient = useQueryClient();
+
+  const query = useQuery<ReportData>({
     queryKey: ['report-data', tenantId, period],
     queryFn: async () => {
       const supabase = createClient();
@@ -276,4 +280,35 @@ export function useReportData(tenantId: string, period: Period) {
     enabled: !!tenantId,
     staleTime: 2 * 60 * 1000,
   });
+
+  // Keep reports fresh during service, like the dashboard. A sale (orders
+  // INSERT) or a payment/status flip (orders UPDATE - payment_status is an
+  // orders column) invalidates the report bundle. Debounced because the RPC
+  // bundle is heavy, so a burst of orders collapses into a single refetch.
+  const invalidateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleInvalidate = useCallback(() => {
+    if (invalidateTimer.current) clearTimeout(invalidateTimer.current);
+    invalidateTimer.current = setTimeout(() => {
+      invalidateTimer.current = null;
+      queryClient.invalidateQueries({ queryKey: ['report-data', tenantId] });
+    }, 800);
+  }, [queryClient, tenantId]);
+
+  useEffect(
+    () => () => {
+      if (invalidateTimer.current) clearTimeout(invalidateTimer.current);
+    },
+    [],
+  );
+
+  useRealtimeSubscription({
+    channelName: `reports_${tenantId}`,
+    table: 'orders',
+    filter: `tenant_id=eq.${tenantId}`,
+    event: '*',
+    onChange: scheduleInvalidate,
+    enabled: !!tenantId,
+  });
+
+  return query;
 }
