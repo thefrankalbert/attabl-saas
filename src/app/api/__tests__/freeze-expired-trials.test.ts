@@ -18,7 +18,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-describe('POST /api/cron/freeze-expired-trials', () => {
+describe('GET /api/cron/freeze-expired-trials', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
@@ -28,27 +28,27 @@ describe('POST /api/cron/freeze-expired-trials', () => {
 
   function createRequest(auth?: string): Request {
     return new Request('http://localhost/api/cron/freeze-expired-trials', {
-      method: 'POST',
+      method: 'GET',
       headers: auth ? { authorization: auth } : {},
     });
   }
 
   it('returns 401 without bearer token', async () => {
-    const { POST } = await import('@/app/api/cron/freeze-expired-trials/route');
-    const response = await POST(createRequest());
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest());
     expect(response.status).toBe(401);
   });
 
   it('returns 503 when CRON_SECRET is missing', async () => {
     vi.stubEnv('CRON_SECRET', '');
-    const { POST } = await import('@/app/api/cron/freeze-expired-trials/route');
-    const response = await POST(createRequest('Bearer test-cron-secret'));
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
     expect(response.status).toBe(503);
   });
 
   it('freezes only expired, never-subscribed trials when authorized', async () => {
-    const { POST } = await import('@/app/api/cron/freeze-expired-trials/route');
-    const response = await POST(createRequest('Bearer test-cron-secret'));
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
     const json = (await response.json()) as { success: boolean; frozen: number };
 
     expect(response.status).toBe(200);
@@ -62,8 +62,8 @@ describe('POST /api/cron/freeze-expired-trials', () => {
 
   it('returns 500 when the update fails', async () => {
     mockSelect.mockResolvedValue({ data: null, error: { message: 'db down' } });
-    const { POST } = await import('@/app/api/cron/freeze-expired-trials/route');
-    const response = await POST(createRequest('Bearer test-cron-secret'));
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
     expect(response.status).toBe(500);
   });
 });

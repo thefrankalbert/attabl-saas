@@ -5,7 +5,10 @@ import { runApiRoute } from '@/lib/api-route-context';
 
 const DEFAULT_MAX_AGE_MINUTES = 30;
 
-export async function POST(request: Request) {
+// Vercel cron jobs trigger a GET request (with Authorization: Bearer CRON_SECRET
+// when the secret is set). A POST-only handler would 405 and the cron would never
+// run - keep this as GET so the scheduled job actually fires.
+export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {
