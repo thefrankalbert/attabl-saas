@@ -111,8 +111,13 @@ export function DataTable<TData>({
 
   return (
     <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
-      {/* Scrollable table area - thead sticks at top */}
-      <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
+      {/* Scrollable table area - thead sticks at top. [&>div]:overflow-visible
+          neutralizes the horizontal scroll on shadcn <Table>'s built-in wrapper
+          so THIS div is the single scroll container - nested scrollers let the
+          inner wrapper get stuck scrolled-right on touch, clipping the first
+          column (Nom) on tablets. Child-selector wins specificity over the
+          wrapper's own overflow-auto. */}
+      <div className="flex-1 min-h-0 overflow-auto scrollbar-hide [&>div]:overflow-visible">
         <Table className="text-sm min-w-0">
           {/* Sticky Header */}
           <TableHeader className="bg-app-elevated sticky top-0 z-10">

@@ -67,8 +67,10 @@ export default function OrdersToolbar({
 
   return (
     <div className="shrink-0">
-      {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+      {/* Search + Tabs + actions. Only the tabs scroll (internally); the row
+          itself never scrolls, so the Ardoises + sound buttons stay visible
+          instead of being clipped off the right edge on tablet. */}
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3">
         <div className="relative w-full md:w-auto md:min-w-48 shrink-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
           <Input
@@ -80,8 +82,12 @@ export default function OrdersToolbar({
           />
         </div>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="shrink-0 max-w-full">
-          <TabsList className="overflow-x-auto scrollbar-hide">
+        <Tabs
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          className="w-full min-w-0 md:w-auto md:flex-1"
+        >
+          <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide">
             <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
             <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
             <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
@@ -91,7 +97,7 @@ export default function OrdersToolbar({
           </TabsList>
         </Tabs>
 
-        <Button asChild variant="outline" size="sm" className="shrink-0 ml-auto">
+        <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href={houseAccountsHref}>
             <NotebookTabs className="h-4 w-4 mr-1.5" />
             {th('title')}

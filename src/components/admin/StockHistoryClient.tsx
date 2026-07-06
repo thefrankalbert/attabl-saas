@@ -82,10 +82,15 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   );
 
   const stats = useMemo(() => {
-    const additions = filtered.filter((m) => m.quantity > 0).reduce((s, m) => s + m.quantity, 0);
-    const removals = filtered
-      .filter((m) => m.quantity < 0)
-      .reduce((s, m) => s + Math.abs(m.quantity), 0);
+    // Round accumulated sums to kg precision - summing floats (0.1 + 0.05 + ...)
+    // otherwise surfaces artifacts like -62.10999999999998 in the UI.
+    const round3 = (n: number) => Math.round(n * 1000) / 1000;
+    const additions = round3(
+      filtered.filter((m) => m.quantity > 0).reduce((s, m) => s + m.quantity, 0),
+    );
+    const removals = round3(
+      filtered.filter((m) => m.quantity < 0).reduce((s, m) => s + Math.abs(m.quantity), 0),
+    );
     const uniqueIngredients = new Set(filtered.map((m) => m.ingredient?.name).filter(Boolean)).size;
     return { additions, removals, uniqueIngredients };
   }, [filtered]);
