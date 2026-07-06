@@ -5,6 +5,9 @@ import TenantNotFound from '@/components/admin/TenantNotFound';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import ReportsClient from '@/components/admin/ReportsClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +39,26 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
     .single();
   if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
     redirectToUnauthorized();
+  }
+
+  // Plan gate: sales reports + best sellers are Pro+ (see pricing-data.ts).
+  const hasReports = canAccessFeature(
+    'canAccessReports',
+    tenant.subscription_plan as SubscriptionPlan | null,
+    tenant.subscription_status as SubscriptionStatus | null,
+    tenant.trial_ends_at,
+  );
+
+  if (!hasReports) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        <FeatureUpgradeWall
+          feature="reports"
+          checkoutUrl={`/sites/${tenantSlug}/admin/subscription`}
+          tenantId={tenant.id}
+        />
+      </div>
+    );
   }
 
   return (

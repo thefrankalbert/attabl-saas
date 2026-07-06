@@ -5,6 +5,8 @@ import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session
 import { createSuggestionService, generateAndSaveSuggestions } from '@/services/suggestion.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 type ActionResponse<T = undefined> = {
   success?: boolean;
@@ -137,6 +139,27 @@ export async function actionGenerateAndSaveSuggestions(
 
   try {
     const supabase = await createClient();
+
+    // Plan gate: AI auto-generation of suggestions is Business+ (canAccessAIAnalytics,
+    // pricing "advancedReports"). The client hides the button, but the action must
+    // enforce it too so a crafted call cannot bypass the paywall.
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('subscription_plan, subscription_status, trial_ends_at')
+      .eq('id', tenantId)
+      .maybeSingle();
+
+    if (
+      !canAccessFeature(
+        'canAccessAIAnalytics',
+        tenant?.subscription_plan as SubscriptionPlan | null,
+        tenant?.subscription_status as SubscriptionStatus | null,
+        tenant?.trial_ends_at ?? null,
+      )
+    ) {
+      return { error: 'Fonctionnalite reservee au plan Business' };
+    }
+
     const count = await generateAndSaveSuggestions(supabase, tenantId);
     return { success: true, data: count };
   } catch (err) {

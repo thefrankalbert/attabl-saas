@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
 import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 // --- Types --------------------------------------
@@ -112,6 +113,11 @@ export default function PaymentModal({
   const [tipFixed, setTipFixed] = useState<number>(0);
   const [customTip, setCustomTip] = useState<string>('');
   const [showCustomTip, setShowCustomTip] = useState(false);
+
+  // Tips are Pro+ (canAccessTips, see pricing-data.ts). Hide the tip selectors when
+  // the plan lacks them; tipAmount then stays 0 and the server rejects any crafted tip.
+  const { canAccess } = useSubscription();
+  const canTip = canAccess('canAccessTips');
 
   const { toast } = useToast();
 
@@ -365,72 +371,74 @@ export default function PaymentModal({
           )}
 
           {/* Tip Selection -- pushed to bottom */}
-          <div className="space-y-2 mt-auto">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
-              {t('tip')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setTipFixed(0);
-                  setShowCustomTip(false);
-                  setCustomTip('');
-                }}
-                className={cn(
-                  'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
-                  !showCustomTip && tipFixed === 0
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
-                )}
-              >
-                0
-              </Button>
-              {TIP_AMOUNTS.map((amount) => (
+          {canTip && (
+            <div className="space-y-2 mt-auto">
+              <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
+                {t('tip')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
                 <Button
-                  key={amount}
                   variant="outline"
                   onClick={() => {
-                    setTipFixed(amount);
+                    setTipFixed(0);
                     setShowCustomTip(false);
                     setCustomTip('');
                   }}
                   className={cn(
-                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold tabular-nums',
-                    !showCustomTip && tipFixed === amount
+                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
+                    !showCustomTip && tipFixed === 0
                       ? 'border-accent/40 bg-accent/10 text-accent'
                       : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
                   )}
                 >
-                  {amount.toLocaleString()}
+                  0
                 </Button>
-              ))}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCustomTip(true);
-                  setTipFixed(0);
-                }}
-                className={cn(
-                  'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
-                  showCustomTip
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
-                )}
-              >
-                {t('customTip')}
-              </Button>
+                {TIP_AMOUNTS.map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    onClick={() => {
+                      setTipFixed(amount);
+                      setShowCustomTip(false);
+                      setCustomTip('');
+                    }}
+                    className={cn(
+                      'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold tabular-nums',
+                      !showCustomTip && tipFixed === amount
+                        ? 'border-accent/40 bg-accent/10 text-accent'
+                        : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
+                    )}
+                  >
+                    {amount.toLocaleString()}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCustomTip(true);
+                    setTipFixed(0);
+                  }}
+                  className={cn(
+                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
+                    showCustomTip
+                      ? 'border-accent/40 bg-accent/10 text-accent'
+                      : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
+                  )}
+                >
+                  {t('customTip')}
+                </Button>
+              </div>
+              {showCustomTip && (
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={customTip}
+                  onChange={(e) => setCustomTip(e.target.value)}
+                  className="w-full rounded-lg border border-app-border bg-app-elevated/30 px-3 py-2 text-base font-bold text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/30"
+                />
+              )}
             </div>
-            {showCustomTip && (
-              <Input
-                type="number"
-                placeholder="0"
-                value={customTip}
-                onChange={(e) => setCustomTip(e.target.value)}
-                className="w-full rounded-lg border border-app-border bg-app-elevated/30 px-3 py-2 text-base font-bold text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/30"
-              />
-            )}
-          </div>
+          )}
         </div>
 
         {/* --- RIGHT: Payment Input (full width on mobile) --- */}
@@ -446,58 +454,60 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          <div className="flex flex-wrap gap-1.5 mb-3 @3xl:hidden shrink-0">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setTipFixed(0);
-                setShowCustomTip(false);
-                setCustomTip('');
-              }}
-              className={cn(
-                'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
-                !showCustomTip && tipFixed === 0
-                  ? 'border-accent/40 bg-accent/10 text-accent'
-                  : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
-              )}
-            >
-              0
-            </Button>
-            {TIP_AMOUNTS.map((amount) => (
+          {canTip && (
+            <div className="flex flex-wrap gap-1.5 mb-3 @3xl:hidden shrink-0">
               <Button
-                key={amount}
                 variant="outline"
                 onClick={() => {
-                  setTipFixed(amount);
+                  setTipFixed(0);
                   setShowCustomTip(false);
                   setCustomTip('');
                 }}
                 className={cn(
-                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold tabular-nums',
-                  !showCustomTip && tipFixed === amount
+                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
+                  !showCustomTip && tipFixed === 0
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
                 )}
               >
-                {amount.toLocaleString()}
+                0
               </Button>
-            ))}
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCustomTip(true);
-                setTipFixed(0);
-              }}
-              className={cn(
-                'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
-                showCustomTip
-                  ? 'border-accent/40 bg-accent/10 text-accent'
-                  : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
-              )}
-            >
-              {t('customTip')}
-            </Button>
-          </div>
+              {TIP_AMOUNTS.map((amount) => (
+                <Button
+                  key={amount}
+                  variant="outline"
+                  onClick={() => {
+                    setTipFixed(amount);
+                    setShowCustomTip(false);
+                    setCustomTip('');
+                  }}
+                  className={cn(
+                    'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold tabular-nums',
+                    !showCustomTip && tipFixed === amount
+                      ? 'border-accent/40 bg-accent/10 text-accent'
+                      : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
+                  )}
+                >
+                  {amount.toLocaleString()}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCustomTip(true);
+                  setTipFixed(0);
+                }}
+                className={cn(
+                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
+                  showCustomTip
+                    ? 'border-accent/40 bg-accent/10 text-accent'
+                    : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
+                )}
+              >
+                {t('customTip')}
+              </Button>
+            </div>
+          )}
 
           {/* Cash: received, change, shortcuts, numpad, validate */}
           <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">

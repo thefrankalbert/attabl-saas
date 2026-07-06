@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import type { ServiceType } from '@/types/admin.types';
 
 interface POSServiceTypeSelectorProps {
@@ -33,23 +34,38 @@ export function POSServiceTypeSelector({
   onOpenTablePicker,
 }: POSServiceTypeSelectorProps) {
   const t = useTranslations('pos');
+  const { canAccess } = useSubscription();
 
+  // Delivery + room service are plan-gated (Business+, see pricing-data.ts). Hide the
+  // buttons the plan does not include so staff never pick a mode the order route
+  // would reject (server enforces the same rule in /api/orders/pos).
   const SERVICE_TYPES = useMemo<{ value: ServiceType; label: string; icon: React.ReactNode }[]>(
-    () => [
-      {
-        value: 'dine_in',
-        label: t('serviceOnSite'),
-        icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
-      },
-      { value: 'takeaway', label: t('serviceTakeaway'), icon: <Package className="w-3.5 h-3.5" /> },
-      { value: 'delivery', label: t('serviceDelivery'), icon: <Truck className="w-3.5 h-3.5" /> },
-      {
-        value: 'room_service',
-        label: t('serviceRoomService'),
-        icon: <BellRing className="w-3.5 h-3.5" />,
-      },
-    ],
-    [t],
+    () =>
+      [
+        {
+          value: 'dine_in' as const,
+          label: t('serviceOnSite'),
+          icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
+        },
+        {
+          value: 'takeaway' as const,
+          label: t('serviceTakeaway'),
+          icon: <Package className="w-3.5 h-3.5" />,
+        },
+        {
+          value: 'delivery' as const,
+          label: t('serviceDelivery'),
+          icon: <Truck className="w-3.5 h-3.5" />,
+          enabled: canAccess('canAccessDelivery'),
+        },
+        {
+          value: 'room_service' as const,
+          label: t('serviceRoomService'),
+          icon: <BellRing className="w-3.5 h-3.5" />,
+          enabled: canAccess('canAccessRoomService'),
+        },
+      ].filter((st) => st.enabled !== false),
+    [t, canAccess],
   );
 
   return (

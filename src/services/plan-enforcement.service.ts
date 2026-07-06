@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getPlanLimits } from '@/lib/plans/features';
+import { getPlanLimits, type PlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
@@ -9,6 +9,45 @@ import { ServiceError } from './errors';
  * Admin/owner roles are counted against maxAdmins instead.
  */
 export const STAFF_ROLES = ['manager', 'cashier', 'chef', 'waiter'] as const;
+
+/**
+ * Order-feature plan gate. Rejects an order that uses a feature the tenant's plan
+ * does not include (see src/app/(marketing)/pricing/pricing-data.ts). Called by
+ * every order entry point (public storefront route, POS route, POS action) right
+ * after the effective plan limits are loaded, so a crafted request cannot use a
+ * paid service mode, tips, or a secondary currency the plan does not cover.
+ *
+ * Throws ServiceError('UNAUTHORIZED') on the first disallowed feature.
+ */
+export function assertOrderFeaturesAllowed(
+  limits: PlanLimits,
+  input: {
+    service_type?: string | null;
+    tip_amount?: number | null;
+    display_currency?: string | null;
+  },
+  defaultCurrency: string,
+): void {
+  if (input.service_type === 'delivery' && !limits.canAccessDelivery) {
+    throw new ServiceError("La livraison n'est pas incluse dans votre plan.", 'UNAUTHORIZED');
+  }
+  if (input.service_type === 'room_service' && !limits.canAccessRoomService) {
+    throw new ServiceError(
+      "Le service en chambre n'est pas inclus dans votre plan.",
+      'UNAUTHORIZED',
+    );
+  }
+  if ((input.tip_amount ?? 0) > 0 && !limits.canAccessTips) {
+    throw new ServiceError('Les pourboires ne sont pas inclus dans votre plan.', 'UNAUTHORIZED');
+  }
+  if (
+    input.display_currency &&
+    input.display_currency !== defaultCurrency &&
+    !limits.canAccessMultiCurrency
+  ) {
+    throw new ServiceError("Le multi-devise n'est pas inclus dans votre plan.", 'UNAUTHORIZED');
+  }
+}
 
 /**
  * Plan Enforcement Service - server-side limit checking.

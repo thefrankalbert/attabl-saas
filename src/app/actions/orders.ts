@@ -391,6 +391,26 @@ export async function actionMarkOrderPaid(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Plan gate: tips are Pro+ (canAccessTips, see pricing-data.ts). Enforce here
+    // because payment-time tips reach the DB via markPaid, not the order route.
+    if ((parsed.data.tipAmount ?? 0) > 0) {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('subscription_plan, subscription_status, trial_ends_at')
+        .eq('id', parsed.data.tenantId)
+        .maybeSingle();
+      if (
+        !canAccessFeature(
+          'canAccessTips',
+          tenant?.subscription_plan as SubscriptionPlan | null,
+          tenant?.subscription_status as SubscriptionStatus | null,
+          tenant?.trial_ends_at ?? null,
+        )
+      ) {
+        return { error: 'Les pourboires ne sont pas inclus dans votre plan.' };
+      }
+    }
     // paid=false means the order was already settled (idempotent no-op). The call
     // still succeeds; callers can use `paid` to skip duplicate side-effects.
     const { paid } = await createOrderService(supabase).markPaid(

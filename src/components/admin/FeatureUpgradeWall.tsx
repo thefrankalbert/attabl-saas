@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 
-type GatedFeature = 'kds' | 'inventory' | 'recipes' | 'reports';
+type GatedFeature = 'kds' | 'inventory' | 'recipes' | 'reports' | 'service' | 'tables';
 
 const FEATURE_EVENT_KEY: Record<GatedFeature, string> = {
   kds: 'kds_access_attempted',
   inventory: 'inventory_access_attempted',
   recipes: 'recipes_access_attempted',
   reports: 'reports_access_attempted',
+  service: 'service_access_attempted',
+  tables: 'tables_access_attempted',
 };
 
 interface FeatureUpgradeWallProps {

@@ -1615,6 +1615,14 @@
       "reports": {
         "title": "Advanced Analytics",
         "desc": "Discover which dishes sell best, your peak hours, your top servers. Data to make better decisions every day."
+      },
+      "service": {
+        "title": "Floor plan and service",
+        "desc": "Assign your servers by zone. Track who handles each table. Your whole dining room at a glance."
+      },
+      "tables": {
+        "title": "Table management",
+        "desc": "Create your zones, number your tables, one QR per table. Every order lands with the right table number."
       }
     }
   },

@@ -132,7 +132,10 @@ vi.mock('@/lib/pricing/tax', () => ({
 }));
 
 // --- Plan features mock ---------------------------------------
-vi.mock('@/lib/plans/features', () => ({
+// Keep getPlanLimits real (used by the order-feature plan gate); only stub
+// canAccessFeature so the auto-destock tests can drive inventory access.
+vi.mock('@/lib/plans/features', async (importActual) => ({
+  ...(await importActual<typeof import('@/lib/plans/features')>()),
   canAccessFeature: vi.fn(() => false),
 }));
 

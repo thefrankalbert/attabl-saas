@@ -3,6 +3,9 @@ import { getTenant } from '@/lib/cache';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
 import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +40,26 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
 
   if (!adminUser) {
     redirectToLogin();
+  }
+
+  // Plan gate: table zones + floor management are Pro+ (see pricing-data.ts).
+  const hasTables = canAccessFeature(
+    'canAccessTables',
+    tenant.subscription_plan as SubscriptionPlan | null,
+    tenant.subscription_status as SubscriptionStatus | null,
+    tenant.trial_ends_at,
+  );
+
+  if (!hasTables) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        <FeatureUpgradeWall
+          feature="tables"
+          checkoutUrl={`/sites/${site}/admin/subscription`}
+          tenantId={tenant.id}
+        />
+      </div>
+    );
   }
 
   const tenantId = tenant.id;

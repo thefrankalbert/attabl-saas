@@ -10,9 +10,12 @@ import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import {
+  createPlanEnforcementService,
+  assertOrderFeaturesAllowed,
+} from '@/services/plan-enforcement.service';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
-import { canAccessFeature } from '@/lib/plans/features';
+import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
@@ -219,6 +222,19 @@ export async function POST(request: Request) {
         { status: 404 },
       );
     }
+
+    // Plan gate: reject paid service modes (delivery/room service) and tips the
+    // tenant's plan does not include. POS orders always use the tenant currency,
+    // so display_currency is not part of this check. Throws ServiceError -> 403.
+    assertOrderFeaturesAllowed(
+      getPlanLimits(
+        tenant.subscription_plan as SubscriptionPlan | null,
+        tenant.subscription_status as SubscriptionStatus | null,
+        tenant.trial_ends_at,
+      ),
+      { service_type, tip_amount },
+      tenant.currency || 'XAF',
+    );
 
     type PosMenuRow = {
       id: string;

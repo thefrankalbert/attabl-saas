@@ -131,7 +131,13 @@ export function CurrencyProvider({
 
   useEffect(() => {
     const stored = readStored(tenantCurrency);
-    if (stored !== tenantCurrency) setDisplayCurrencyState(stored);
+    // Only adopt the stored preference if this tenant actually supports it. The
+    // localStorage key is shared across tenants, so a customer who picked EUR on a
+    // multi-currency (Pro+) restaurant must NOT keep EUR on a plan that only offers
+    // its own currency - the order route would reject the alternate currency.
+    if (stored !== tenantCurrency && supportedCurrencies.includes(stored)) {
+      setDisplayCurrencyState(stored);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
