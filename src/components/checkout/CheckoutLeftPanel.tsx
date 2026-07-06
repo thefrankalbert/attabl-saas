@@ -5,6 +5,10 @@ import { useTranslations, useLocale } from 'next-intl';
 import { PLAN_AMOUNTS } from '@/lib/stripe/pricing';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
+import {
+  intervalSavingsPct,
+  planBilledTotal,
+} from '@/components/tenant/subscription/pricing-format';
 
 type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
 
@@ -54,6 +58,18 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
     semiannual: tc('page.semiannual'),
   };
 
+  const savings = intervalSavingsPct(interval);
+  const billedSubtitle =
+    interval === 'monthly'
+      ? null
+      : interval === 'yearly'
+        ? t('subscription.billedYearly', {
+            total: planBilledTotal(plan, interval).toLocaleString(locale),
+          })
+        : t('subscription.billedSemiannual', {
+            total: planBilledTotal(plan, interval).toLocaleString(locale),
+          });
+
   return (
     <div className="flex flex-col bg-[#0a0a0a] text-[#f5f5f4] p-8 md:p-12 md:w-[42%] shrink-0 overflow-hidden">
       {/* Logo */}
@@ -71,9 +87,19 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
         <h1 className="text-3xl font-bold text-[#f5f5f4] mb-1">ATTABL {planName}</h1>
 
         {/* Price */}
-        <div className="flex items-baseline gap-1 mt-4 mb-10">
-          <span className="text-4xl font-bold tabular-nums">{price}</span>
-          <span className="text-[#a8a29e] text-sm ml-1">FCFA {intervalLabel[interval]}</span>
+        <div className="mt-4 mb-10">
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-bold tabular-nums">{price}</span>
+            <span className="text-[#a8a29e] text-sm ml-1">FCFA {intervalLabel[interval]}</span>
+          </div>
+          {billedSubtitle && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="rounded bg-[#c2f542]/15 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-[#c2f542]">
+                -{savings}%
+              </span>
+              <span className="text-xs text-[#a8a29e]">{billedSubtitle}</span>
+            </div>
+          )}
         </div>
 
         {/* Divider */}

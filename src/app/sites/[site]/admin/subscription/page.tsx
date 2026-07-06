@@ -50,7 +50,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <SubscriptionManager tenant={tenantWithEmail} />
+      <SubscriptionManager tenant={tenantWithEmail} siteSlug={tenantSlug} />
     </div>
   );
 }

@@ -28,30 +28,32 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
 
   return (
     <div
-      className={`flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm ${styleConfig.containerClass}`}
+      className={`flex items-center justify-between gap-2 border-b px-4 py-2.5 text-xs sm:gap-3 sm:text-sm ${styleConfig.containerClass}`}
       role="alert"
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
-        <Clock className={`w-4 h-4 flex-shrink-0 ${styleConfig.iconClass}`} />
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <Clock className={`h-4 w-4 flex-shrink-0 ${styleConfig.iconClass}`} />
         <span className={`font-medium ${styleConfig.textClass}`}>{message}</span>
-        <Link
-          href={upgradeUrl}
-          className={`inline-flex items-center gap-1 font-semibold whitespace-nowrap hover:underline ${styleConfig.linkClass}`}
-        >
-          {t('upgradeToPremium')}
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsDismissed(true)}
-        className={`flex-shrink-0 p-0.5 h-auto w-auto rounded-full transition-colors ${styleConfig.closeClass}`}
-        aria-label={t('closeAriaLabel')}
-      >
-        <X className="w-4 h-4" />
-      </Button>
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <Link
+          href={upgradeUrl}
+          className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-90 ${styleConfig.ctaClass}`}
+        >
+          {t('upgradeToPremium')}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsDismissed(true)}
+          className={`h-auto w-auto flex-shrink-0 rounded-full p-1 transition-colors ${styleConfig.closeClass}`}
+          aria-label={t('closeAriaLabel')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -60,36 +62,36 @@ interface StyleConfig {
   containerClass: string;
   iconClass: string;
   textClass: string;
-  linkClass: string;
+  ctaClass: string;
   closeClass: string;
 }
 
 function getStyleConfig(daysRemaining: number): StyleConfig {
   if (daysRemaining <= 1) {
     return {
-      containerClass: 'border-b border-[var(--border)]',
-      iconClass: 'text-[var(--destructive)]',
-      textClass: 'text-[var(--destructive)]',
-      linkClass: 'text-[var(--destructive)]',
-      closeClass: 'hover:bg-[var(--accent)] text-[var(--destructive)]',
+      containerClass: 'bg-status-error/10 border-status-error/20',
+      iconClass: 'text-status-error',
+      textClass: 'text-status-error',
+      ctaClass: 'bg-status-error text-white',
+      closeClass: 'text-status-error hover:bg-status-error/10',
     };
   }
 
   if (daysRemaining === 2) {
     return {
-      containerClass: 'border-b border-[var(--border)]',
-      iconClass: 'text-[var(--warning)]',
-      textClass: 'text-[var(--warning)]',
-      linkClass: 'text-[var(--warning)]',
-      closeClass: 'hover:bg-[var(--accent)] text-[var(--warning)]',
+      containerClass: 'bg-status-warning/10 border-status-warning/20',
+      iconClass: 'text-status-warning',
+      textClass: 'text-status-warning',
+      ctaClass: 'bg-status-warning text-white',
+      closeClass: 'text-status-warning hover:bg-status-warning/10',
     };
   }
 
   return {
-    containerClass: 'border-b border-[var(--border)]',
-    iconClass: 'text-[var(--muted-foreground)]',
-    textClass: 'text-[var(--muted-foreground)]',
-    linkClass: 'text-[var(--muted-foreground)]',
-    closeClass: 'hover:bg-[var(--accent)] text-[var(--muted-foreground)]',
+    containerClass: 'bg-status-info/10 border-status-info/20',
+    iconClass: 'text-status-info',
+    textClass: 'text-status-info',
+    ctaClass: 'bg-status-info text-white',
+    closeClass: 'text-status-info hover:bg-status-info/10',
   };
 }
