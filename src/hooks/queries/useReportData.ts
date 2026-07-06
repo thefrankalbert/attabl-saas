@@ -68,7 +68,8 @@ function getDateRange(p: Period) {
     case 'lastMonth': {
       const lastM = subMonths(now, 1);
       start = startOfMonth(lastM);
-      end = startOfDay(startOfMonth(now));
+      // Last day of last month (end-of-day suffix is appended below).
+      end = startOfDay(subDays(startOfMonth(now), 1));
       break;
     }
     case 'thisYear':
@@ -85,11 +86,14 @@ function getDateRange(p: Period) {
   const prevEnd = new Date(start.getTime() - 1);
   const prevStart = startOfDay(subDays(prevEnd, daysDiff - 1));
 
+  // RPCs take TIMESTAMPTZ: bare 'yyyy-MM-dd' casts to 00:00:00, which drops
+  // same-day orders (e.g. the "today" filter would always read 0). Anchor the
+  // end at end-of-day so RPCs match the direct queries (which append T23:59:59).
   return {
-    startDate: format(start, 'yyyy-MM-dd'),
-    endDate: format(end, 'yyyy-MM-dd'),
-    prevStartDate: format(prevStart, 'yyyy-MM-dd'),
-    prevEndDate: format(prevEnd, 'yyyy-MM-dd'),
+    startDate: format(start, 'yyyy-MM-dd') + 'T00:00:00',
+    endDate: format(end, 'yyyy-MM-dd') + 'T23:59:59',
+    prevStartDate: format(prevStart, 'yyyy-MM-dd') + 'T00:00:00',
+    prevEndDate: format(prevEnd, 'yyyy-MM-dd') + 'T23:59:59',
   };
 }
 
@@ -153,7 +157,7 @@ export function useReportData(tenantId: string, period: Period) {
           .eq('orders.tenant_id', tenantId)
           .eq('orders.payment_status', 'paid')
           .gte('orders.created_at', startDate)
-          .lte('orders.created_at', endDate + 'T23:59:59'),
+          .lte('orders.created_at', endDate),
         supabase
           .from('orders')
           .select(
@@ -162,7 +166,7 @@ export function useReportData(tenantId: string, period: Period) {
           .eq('tenant_id', tenantId)
           .eq('payment_status', 'paid')
           .gte('created_at', startDate)
-          .lte('created_at', endDate + 'T23:59:59')
+          .lte('created_at', endDate)
           .not('server_id', 'is', null),
       ]);
 

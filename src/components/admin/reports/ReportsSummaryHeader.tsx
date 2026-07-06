@@ -45,6 +45,33 @@ export function ReportsSummaryHeader({
 }: ReportsSummaryHeaderProps) {
   const t = useTranslations('reports');
 
+  const kpis = [
+    {
+      key: 'revenue',
+      Icon: DollarSign,
+      accent: true,
+      label: t('revenueLabel'),
+      value: fmt(summary.revenue) as string | number,
+      trend: revenueTrend,
+    },
+    {
+      key: 'orders',
+      Icon: ShoppingBag,
+      accent: false,
+      label: t('orders'),
+      value: summary.orders as string | number,
+      trend: ordersTrend,
+    },
+    {
+      key: 'basket',
+      Icon: CreditCard,
+      accent: false,
+      label: t('averageBasket'),
+      value: fmt(summary.avgBasket) as string | number,
+      trend: basketTrend,
+    },
+  ];
+
   return (
     <div className="shrink-0 space-y-4">
       <AdminPageHeader
@@ -104,52 +131,33 @@ export function ReportsSummaryHeader({
       </div>
 
       {/* -- KPI Cards -- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-        {/* Revenue */}
-        <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-accent shrink-0" />
-            <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
-              {t('revenueLabel')}
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {kpis.map(({ key, Icon, accent, label, value, trend }) => (
+          <div
+            key={key}
+            className="bg-app-card border border-app-border/60 rounded-xl p-4 flex items-center gap-3"
+          >
+            <div
+              className={cn(
+                'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
+                accent ? 'bg-accent/10 text-accent' : 'bg-app-elevated text-app-text-muted',
+              )}
+            >
+              <Icon className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-app-text-muted uppercase tracking-wide">
+                {label}
+              </p>
+              <div className="flex items-end gap-2 mt-0.5">
+                <p className="text-xl font-bold text-app-text tabular-nums leading-tight truncate">
+                  {value}
+                </p>
+                <TrendBadge value={trend} />
+              </div>
+            </div>
           </div>
-          <div className="flex items-end gap-2">
-            <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
-              {fmt(summary.revenue)}
-            </p>
-            <TrendBadge value={revenueTrend} />
-          </div>
-        </div>
-        {/* Orders */}
-        <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <ShoppingBag className="w-4 h-4 text-app-text-muted shrink-0" />
-            <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
-              {t('orders')}
-            </p>
-          </div>
-          <div className="flex items-end gap-2">
-            <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
-              {summary.orders}
-            </p>
-            <TrendBadge value={ordersTrend} />
-          </div>
-        </div>
-        {/* Average Basket */}
-        <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="w-4 h-4 text-app-text-muted shrink-0" />
-            <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
-              {t('averageBasket')}
-            </p>
-          </div>
-          <div className="flex items-end gap-2">
-            <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
-              {fmt(summary.avgBasket)}
-            </p>
-            <TrendBadge value={basketTrend} />
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
