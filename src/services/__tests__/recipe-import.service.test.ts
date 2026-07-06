@@ -172,7 +172,11 @@ describe('recipe-import.service importFromExcel', () => {
     expect(Buffer.isBuffer(buf)).toBe(true);
     const wb = XLSX.read(buf, { type: 'buffer' });
     const aoa = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[wb.SheetNames[0]], { header: 1 });
-    const headers = (aoa[0] as string[]).join(',');
+    // Styled workbook adds a branded title band + subtitle before the header row,
+    // so locate the header row by its known first column rather than assuming row 0.
+    const headerRow = aoa.find((r) => (r as string[])?.includes('Dish')) as string[] | undefined;
+    expect(headerRow).toBeDefined();
+    const headers = headerRow!.join(',');
     expect(/^[\x00-\x7F]*$/.test(headers)).toBe(true);
     expect(headers).toContain('Dish');
   });

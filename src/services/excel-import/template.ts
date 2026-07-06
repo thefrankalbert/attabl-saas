@@ -1,23 +1,24 @@
 // --- Excel Template Generation --------------------------------
 
+import { buildStyledWorkbook, type StyledColumn } from '@/lib/exports/styled-workbook';
+
+const COLUMNS: StyledColumn[] = [
+  { header: 'Category', width: 20 },
+  { header: 'Category EN', width: 20 },
+  { header: 'Dish Name', width: 25 },
+  { header: 'Dish Name EN', width: 25 },
+  { header: 'Description', width: 40 },
+  { header: 'Description EN', width: 40 },
+  { header: 'Price', width: 10, numeric: true },
+  { header: 'Available', width: 12 },
+  { header: 'Featured', width: 12 },
+];
+
 /**
- * Generates a blank Excel template with correct headers and example rows.
+ * Generates a styled Excel template with correct headers and example rows.
  * Returns the file as a Buffer ready for download.
  */
 export async function generateExcelTemplate(): Promise<Buffer> {
-  const XLSX = await import('xlsx');
-  const headers = [
-    'Category',
-    'Category EN',
-    'Dish Name',
-    'Dish Name EN',
-    'Description',
-    'Description EN',
-    'Price',
-    'Available',
-    'Featured',
-  ];
-
   const exampleRows = [
     [
       'Entrées',
@@ -76,27 +77,11 @@ export async function generateExcelTemplate(): Promise<Buffer> {
     ],
   ];
 
-  const worksheetData = [headers, ...exampleRows];
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-  // Set column widths for readability
-  worksheet['!cols'] = [
-    { wch: 20 }, // Category
-    { wch: 20 }, // Category EN
-    { wch: 25 }, // Dish Name
-    { wch: 25 }, // Dish Name EN
-    { wch: 40 }, // Description
-    { wch: 40 }, // Description EN
-    { wch: 10 }, // Price
-    { wch: 12 }, // Available
-    { wch: 12 }, // Featured
-  ];
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Menu Import');
-
-  // Write as buffer
-  const output = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-  return output as Buffer;
+  return buildStyledWorkbook({
+    sheetName: 'Menu Import',
+    title: 'Import menu - ATTABL',
+    subtitle: 'Modele a remplir. Une ligne par plat. Ne pas modifier les en-tetes.',
+    columns: COLUMNS,
+    rows: exampleRows,
+  });
 }
