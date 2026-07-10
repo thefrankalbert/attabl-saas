@@ -1,5 +1,6 @@
 import type { StockStatus } from '@/types/inventory.types';
 import { formatCurrency } from '@/lib/utils/currency';
+import { csvCell } from '@/lib/utils/csv';
 import type { CurrencyCode } from '@/types/admin.types';
 
 /**
@@ -102,11 +103,15 @@ export function buildStockReport(
   };
 }
 
-/** Serialize a report table to CSV (header + rows). */
+/**
+ * Serialize a report table to CSV (header + rows). Cells route through csvCell,
+ * which escapes quotes AND neutralizes leading formula chars (= + - @ tab CR) so
+ * a staff-entered ingredient/category name like "=HYPERLINK(...)" cannot execute
+ * as a formula when the export is opened in Excel/Sheets.
+ */
 export function reportToCsv(table: ReportTable): string {
-  const escape = (cell: string) => `"${cell.replace(/"/g, '""')}"`;
-  const lines = [table.columns.map((c) => escape(c.label)).join(',')];
-  for (const row of table.rows) lines.push(row.map(escape).join(','));
-  if (table.totals) lines.push(table.totals.map(escape).join(','));
+  const lines = [table.columns.map((c) => csvCell(c.label)).join(',')];
+  for (const row of table.rows) lines.push(row.map((cell) => csvCell(cell)).join(','));
+  if (table.totals) lines.push(table.totals.map((cell) => csvCell(cell)).join(','));
   return lines.join('\n');
 }

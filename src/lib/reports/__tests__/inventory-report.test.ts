@@ -77,4 +77,26 @@ describe('buildStockReport', () => {
     expect(lines[0]).toContain('Ingredient');
     expect(lines).toHaveLength(1 + 2 + 1); // header + 2 rows + totals
   });
+
+  it('reportToCsv neutralizes formula-prefixed cell values (CSV injection guard)', () => {
+    const evil: StockStatus[] = [
+      {
+        id: '9',
+        name: '=HYPERLINK("http://evil","x")',
+        unit: 'kg',
+        current_stock: 1,
+        min_stock_alert: 1,
+        cost_per_unit: 100,
+        category: 'Legumes',
+        is_active: true,
+        nb_items_using: 0,
+        is_low: false,
+      },
+    ];
+    const csv = reportToCsv(buildStockReport(evil, 'simple', 'XAF', LABELS));
+    // The dangerous cell is quoted AND prefixed with a single quote so Excel/Sheets
+    // treat it as text, not a formula.
+    expect(csv).toContain('"\'=HYPERLINK');
+    expect(csv).not.toContain(',=HYPERLINK');
+  });
 });

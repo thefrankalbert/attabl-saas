@@ -173,7 +173,15 @@ export async function actionAdjustStock(
 
   try {
     const service = createInventoryService(supabase);
-    await service.adjustStock(tenantId, input);
+    // Forward the VALIDATED fields (not the raw input) so unknown keys cannot
+    // reach the persistence layer (defense against mass-assignment).
+    await service.adjustStock(tenantId, {
+      ingredient_id: parsed.data.ingredient_id,
+      quantity: parsed.data.quantity,
+      movement_type: parsed.data.movement_type,
+      notes: parsed.data.notes,
+      supplier_id: parsed.data.supplier_id,
+    });
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
@@ -234,7 +242,12 @@ export async function actionRecordLoss(
 
   try {
     const service = createInventoryService(supabase);
-    await service.recordLoss(tenantId, input);
+    await service.recordLoss(tenantId, {
+      ingredient_id: parsed.data.ingredient_id,
+      quantity: parsed.data.quantity,
+      reason_code: parsed.data.reason_code,
+      notes: parsed.data.notes,
+    });
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
@@ -282,7 +295,16 @@ export async function actionCreateIngredient(
 
   try {
     const service = createInventoryService(supabase);
-    const data = await service.createIngredient(tenantId, input);
+    const data = await service.createIngredient(tenantId, {
+      name: parsed.data.name,
+      unit: parsed.data.unit,
+      current_stock: parsed.data.current_stock,
+      min_stock_alert: parsed.data.min_stock_alert,
+      cost_per_unit: parsed.data.cost_per_unit,
+      category: parsed.data.category,
+      purchase_unit: parsed.data.purchase_unit,
+      units_per_purchase: parsed.data.units_per_purchase,
+    });
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
@@ -307,7 +329,9 @@ export async function actionUpdateIngredient(
 
   try {
     const service = createInventoryService(supabase);
-    const data = await service.updateIngredient(ingredientId, tenantId, input);
+    // Forward validated data; the service applies an explicit column allowlist
+    // (current_stock can only move through the ledger RPCs, never a direct update).
+    const data = await service.updateIngredient(ingredientId, tenantId, parsed.data);
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };

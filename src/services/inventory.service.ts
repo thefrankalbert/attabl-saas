@@ -158,9 +158,26 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
       tenantId: string,
       input: UpdateIngredientInput,
     ): Promise<Ingredient> {
+      // SECURITY: explicit column allowlist - never spread the raw input.
+      // current_stock is deliberately excluded: stock only ever moves through the
+      // ledger RPCs (adjust_ingredient_stock_tx / receiveStock / record_loss_tx),
+      // which write a stock_movements row. Letting current_stock be set here would
+      // break the invariant current_stock == SUM(signed ledger deltas). Undefined
+      // keys are stripped by supabase-js JSON serialization, preserving partial
+      // update semantics; an explicit null (e.g. category) clears the column.
+      const updatePayload = {
+        name: input.name,
+        unit: input.unit,
+        min_stock_alert: input.min_stock_alert,
+        cost_per_unit: input.cost_per_unit,
+        category: input.category,
+        is_active: input.is_active,
+        purchase_unit: input.purchase_unit,
+        units_per_purchase: input.units_per_purchase,
+      };
       const { data, error } = await supabase
         .from('ingredients')
-        .update(input)
+        .update(updatePayload)
         .eq('id', ingredientId)
         .eq('tenant_id', tenantId)
         .select(

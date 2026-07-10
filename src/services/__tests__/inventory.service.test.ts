@@ -234,6 +234,26 @@ describe('InventoryService', () => {
       expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
       expect(result).toEqual(updated);
     });
+
+    it('never writes current_stock (mass-assignment guard: stock moves only via the ledger)', async () => {
+      const singleFn = vi.fn().mockResolvedValue({ data: { id: 'ing-1' }, error: null });
+      const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+      const eqTenant = vi.fn().mockReturnValue({ select: selectFn });
+      const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+      const updateFn = vi.fn().mockReturnValue({ eq: eqId });
+      supabase.from = vi.fn().mockReturnValue({ update: updateFn });
+
+      // Crafted input with an extra current_stock key (TS types are not a runtime
+      // boundary). It must be dropped by the service column allowlist.
+      const crafted = { name: 'Farine', current_stock: 999999 } as unknown as Parameters<
+        typeof service.updateIngredient
+      >[2];
+      await service.updateIngredient('ing-1', 't1', crafted);
+
+      const payload = updateFn.mock.calls[0][0];
+      expect('current_stock' in payload).toBe(false);
+      expect(payload).toMatchObject({ name: 'Farine' });
+    });
   });
 
   // --- Recipes ------------------------------------------
