@@ -108,3 +108,9 @@ command-center-redesign-captures/
 /CONVIVE-REDESIGN-CONTRACT.md
 /CONVIVE-REDESIGN-PROMPT.md
 /order-confirmed-src.txt
+
+# tokensave (local code-graph tool)
+.tokensave/
+
+# Skills CLI (npx skills add) - outil dev local, re-installable
+.agents/

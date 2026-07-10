@@ -35,10 +35,14 @@ export function QRCustomizerLayout({
 
   return (
     <div className="flex flex-col">
-      {/* Main split panel */}
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Mobile: preview first */}
-        <div className="block md:hidden">
+      {/* Main split panel. Split side-by-side only at xl - the fixed 384px
+          control column + preview needs ~880px, which a tablet's content area
+          (viewport minus sidebar) cannot hold; below xl it would overflow the
+          `overflow-auto` tab and clip the controls' left edge on iPad. Stacks
+          on tablet/mobile instead. */}
+      <div className="flex flex-col xl:flex-row gap-6">
+        {/* Tablet/mobile: preview first (stacked) */}
+        <div className="block xl:hidden">
           <div className="max-h-[300px] overflow-hidden rounded-2xl">
             <QRPreview
               ref={previewRef}
@@ -52,12 +56,12 @@ export function QRCustomizerLayout({
         </div>
 
         {/* Left panel: customizer controls */}
-        <div className="w-full md:w-96 md:shrink-0 md:max-h-[calc(100dvh-200px)] md:overflow-y-auto">
+        <div className="w-full xl:w-96 xl:shrink-0 xl:max-h-[calc(100dvh-200px)] xl:overflow-y-auto">
           <QRCustomizerPanel config={config} updateField={updateField} setTemplate={setTemplate} />
         </div>
 
         {/* Right panel: preview (desktop only) */}
-        <div className="hidden md:block flex-1 md:sticky md:top-24 self-start">
+        <div className="hidden xl:block flex-1 xl:sticky xl:top-24 self-start">
           <QRPreview
             ref={previewRef}
             config={config}
