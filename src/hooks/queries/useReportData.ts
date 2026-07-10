@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { format, subDays, startOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
+import { subDays, startOfDay, endOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
 import { logger } from '@/lib/logger';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -44,7 +44,7 @@ interface ReportData {
   previousSummary: { revenue: number; orders: number; avgBasket: number };
 }
 
-function getDateRange(p: Period) {
+export function getDateRange(p: Period) {
   const now = new Date();
   let start: Date;
   let end: Date = now;
@@ -68,8 +68,8 @@ function getDateRange(p: Period) {
     case 'lastMonth': {
       const lastM = subMonths(now, 1);
       start = startOfMonth(lastM);
-      // Last day of last month (end-of-day suffix is appended below).
-      end = startOfDay(subDays(startOfMonth(now), 1));
+      // Whole last day of last month, up to 23:59:59.999 local.
+      end = endOfDay(subDays(startOfMonth(now), 1));
       break;
     }
     case 'thisYear':
@@ -86,14 +86,18 @@ function getDateRange(p: Period) {
   const prevEnd = new Date(start.getTime() - 1);
   const prevStart = startOfDay(subDays(prevEnd, daysDiff - 1));
 
-  // RPCs take TIMESTAMPTZ: bare 'yyyy-MM-dd' casts to 00:00:00, which drops
-  // same-day orders (e.g. the "today" filter would always read 0). Anchor the
-  // end at end-of-day so RPCs match the direct queries (which append T23:59:59).
+  // Serialize as absolute UTC instants. The boundaries are computed in the
+  // browser's local timezone - which is the restaurant's timezone - so the
+  // instant is correct. Previously we emitted offset-less 'yyyy-MM-ddT00:00:00'
+  // strings, which Postgres (TIMESTAMPTZ, UTC session) read as UTC - shifting
+  // every window by the local offset (e.g. ~1h in Cameroon UTC+1), so "today"
+  // dropped 00:00-01:00 local orders and leaked the next day's early orders,
+  // and daily totals never reconciled against a drawer closed at local midnight.
   return {
-    startDate: format(start, 'yyyy-MM-dd') + 'T00:00:00',
-    endDate: format(end, 'yyyy-MM-dd') + 'T23:59:59',
-    prevStartDate: format(prevStart, 'yyyy-MM-dd') + 'T00:00:00',
-    prevEndDate: format(prevEnd, 'yyyy-MM-dd') + 'T23:59:59',
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    prevStartDate: prevStart.toISOString(),
+    prevEndDate: prevEnd.toISOString(),
   };
 }
 
