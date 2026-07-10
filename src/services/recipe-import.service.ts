@@ -306,24 +306,26 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
     },
 
     async generateTemplate(): Promise<Buffer> {
-      const XLSX = await import('xlsx');
-      const headers = ['Dish', 'Ingredient', 'Unit', 'Quantity', 'Notes'];
-
-      const exampleRows = [
-        ['Poulet DG', 'Poulet', 'kg', 0.3, ''],
-        ['Poulet DG', 'Plantain', 'kg', 0.2, 'Bien mur'],
-        ['Poulet DG', 'Huile', 'cl', 5, ''],
-        ['Jus de gingembre', 'Gingembre', 'g', 50, ''],
-        ['Coca 33cl', 'Coca 33cl', 'bouteille', 1, ''],
-      ];
-
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exampleRows]);
-      worksheet['!cols'] = [{ wch: 26 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 28 }];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Recipes');
-
-      return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+      const { buildStyledWorkbook } = await import('@/lib/exports/styled-workbook');
+      return buildStyledWorkbook({
+        sheetName: 'Recipes',
+        title: 'Import fiches techniques - ATTABL',
+        subtitle: 'Une ligne par ingredient. Repeter le plat pour chaque ingredient.',
+        columns: [
+          { header: 'Dish', width: 26 },
+          { header: 'Ingredient', width: 24 },
+          { header: 'Unit', width: 12 },
+          { header: 'Quantity', width: 12, numeric: true },
+          { header: 'Notes', width: 28 },
+        ],
+        rows: [
+          ['Poulet DG', 'Poulet', 'kg', 0.3, ''],
+          ['Poulet DG', 'Plantain', 'kg', 0.2, 'Bien mur'],
+          ['Poulet DG', 'Huile', 'cl', 5, ''],
+          ['Jus de gingembre', 'Gingembre', 'g', 50, ''],
+          ['Coca 33cl', 'Coca 33cl', 'bouteille', 1, ''],
+        ],
+      });
     },
   };
 }

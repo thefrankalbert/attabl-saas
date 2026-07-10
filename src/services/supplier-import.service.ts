@@ -245,45 +245,41 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
     },
 
     async generateTemplate(): Promise<Buffer> {
-      const XLSX = await import('xlsx');
-      const headers = ['Name', 'Contact', 'Phone', 'Email', 'Address', 'Notes', 'Active'];
-
-      const exampleRows = [
-        [
-          'Boulangerie du Marche',
-          'Amadou Diallo',
-          '+225 07 00 00 00',
-          'contact@boulangerie.ci',
-          'Rue du Commerce, Abidjan',
-          'Livraison le lundi',
-          'Oui',
+      const { buildStyledWorkbook } = await import('@/lib/exports/styled-workbook');
+      return buildStyledWorkbook({
+        sheetName: 'Suppliers',
+        title: 'Import fournisseurs - ATTABL',
+        subtitle: 'Une ligne par fournisseur. Ne pas modifier les en-tetes.',
+        columns: [
+          { header: 'Name', width: 24 },
+          { header: 'Contact', width: 20 },
+          { header: 'Phone', width: 18 },
+          { header: 'Email', width: 26 },
+          { header: 'Address', width: 28 },
+          { header: 'Notes', width: 24 },
+          { header: 'Active', width: 10 },
         ],
-        [
-          'Grossiste Boissons',
-          'Fatou Kone',
-          '+221 77 000 00 00',
-          'ventes@boissons.sn',
-          'Dakar',
-          '',
-          'Oui',
+        rows: [
+          [
+            'Boulangerie du Marche',
+            'Amadou Diallo',
+            '+225 07 00 00 00',
+            'contact@boulangerie.ci',
+            'Rue du Commerce, Abidjan',
+            'Livraison le lundi',
+            'Oui',
+          ],
+          [
+            'Grossiste Boissons',
+            'Fatou Kone',
+            '+221 77 000 00 00',
+            'ventes@boissons.sn',
+            'Dakar',
+            '',
+            'Oui',
+          ],
         ],
-      ];
-
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exampleRows]);
-      worksheet['!cols'] = [
-        { wch: 24 },
-        { wch: 20 },
-        { wch: 18 },
-        { wch: 26 },
-        { wch: 28 },
-        { wch: 24 },
-        { wch: 10 },
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Suppliers');
-
-      return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+      });
     },
   };
 }

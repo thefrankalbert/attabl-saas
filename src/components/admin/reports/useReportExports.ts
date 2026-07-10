@@ -49,32 +49,121 @@ export function useReportExports({
     setExporting(true);
     try {
       const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-      doc.setFontSize(20);
-      doc.text(t('activityReport'), 20, 20);
+      // Neutral document palette (matches the print documents).
+      const INK: [number, number, number] = [24, 24, 27];
+      const MUTED: [number, number, number] = [113, 113, 122];
+      const FAINT: [number, number, number] = [161, 161, 170];
+      const LINE: [number, number, number] = [228, 228, 231];
+      const M = 16; // margin
+      const RIGHT = 210 - M;
+      let y = 22;
+
+      // --- Header ---
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...INK);
+      doc.setFontSize(22);
+      doc.text(t('activityReport'), M, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.text(t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') }), 20, 28);
-      doc.text(t('periodLabel', { period: periodDisplayLabel }), 20, 34);
+      doc.setTextColor(...MUTED);
+      doc.text(t('periodLabel', { period: periodDisplayLabel }), M, y);
+      y += 5;
+      doc.text(t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') }), M, y);
+      y += 6;
+      doc.setDrawColor(...LINE);
+      doc.setLineWidth(0.3);
+      doc.line(M, y, RIGHT, y);
+      y += 12;
 
-      doc.setFillColor(245, 245, 245);
-      doc.rect(20, 45, 170, 30, 'F');
-      doc.setFontSize(12);
-      doc.text(`${t('revenueLabel')} : ${fmt(summary.revenue)}`, 30, 65);
-      doc.text(`${t('orders')} : ${summary.orders}`, 100, 65);
-      doc.text(`${t('averageBasket')} : ${fmt(summary.avgBasket)}`, 150, 65);
-
-      doc.setFontSize(14);
-      doc.text(t('top5Products'), 20, 90);
-
-      let y = 100;
-      topItems.forEach((item, i) => {
-        doc.setFontSize(12);
-        doc.text(`${i + 1}. ${item.name}`, 20, y);
-        doc.text(t('salesCount', { count: item.quantity }), 120, y);
-        doc.text(`${fmt(item.revenue)}`, 160, y);
-        y += 10;
+      // --- Summary stats (3 columns) ---
+      const stats: Array<[string, string]> = [
+        [t('revenueLabel'), fmt(summary.revenue)],
+        [t('orders'), String(summary.orders)],
+        [t('averageBasket'), fmt(summary.avgBasket)],
+      ];
+      const colW = (RIGHT - M) / 3;
+      stats.forEach(([label, value], i) => {
+        const x = M + i * colW;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...FAINT);
+        doc.text(label.toUpperCase(), x, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.setTextColor(...INK);
+        doc.text(value, x, y + 7);
       });
+      y += 18;
+
+      // --- Top products table ---
+      const tableHeader = (title: string, cols: Array<[string, number, 'left' | 'right']>) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...INK);
+        doc.text(title, M, y);
+        y += 6;
+        doc.setFontSize(7.5);
+        doc.setTextColor(...FAINT);
+        cols.forEach(([label, x, align]) =>
+          doc.text(label.toUpperCase(), align === 'right' ? x : x, y, { align }),
+        );
+        y += 2;
+        doc.setDrawColor(...LINE);
+        doc.line(M, y, RIGHT, y);
+        y += 5;
+      };
+
+      tableHeader(t('top5Products'), [
+        ['#', M, 'left'],
+        ['Nom', M + 10, 'left'],
+        [t('orders'), RIGHT - 40, 'right'],
+        [t('revenueLabel'), RIGHT, 'right'],
+      ]);
+      doc.setFont('helvetica', 'normal');
+      topItems.forEach((item, i) => {
+        doc.setFontSize(10);
+        doc.setTextColor(...INK);
+        doc.text(String(i + 1), M, y);
+        doc.text(item.name, M + 10, y);
+        doc.setTextColor(...MUTED);
+        doc.text(String(item.quantity), RIGHT - 40, y, { align: 'right' });
+        doc.setTextColor(...INK);
+        doc.text(fmt(item.revenue), RIGHT, y, { align: 'right' });
+        y += 5;
+        doc.setDrawColor(245, 245, 245);
+        doc.line(M, y - 1.5, RIGHT, y - 1.5);
+      });
+
+      // --- Categories table (optional) ---
+      if (categories.length > 0) {
+        y += 8;
+        tableHeader(t('categoryBreakdown'), [
+          ['Categorie', M, 'left'],
+          [t('revenueLabel'), RIGHT - 30, 'right'],
+          ['%', RIGHT, 'right'],
+        ]);
+        doc.setFont('helvetica', 'normal');
+        categories.forEach((cat) => {
+          doc.setFontSize(10);
+          doc.setTextColor(...INK);
+          doc.text(cat.category, M, y);
+          doc.text(fmt(cat.revenue), RIGHT - 30, y, { align: 'right' });
+          doc.setTextColor(...MUTED);
+          doc.text(`${cat.percentage}%`, RIGHT, y, { align: 'right' });
+          y += 5;
+          doc.setDrawColor(245, 245, 245);
+          doc.line(M, y - 1.5, RIGHT, y - 1.5);
+        });
+      }
+
+      // --- Footer ---
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...FAINT);
+      doc.text('Powered by ATTABL', M, 290);
 
       doc.save(`rapport_${format(new Date(), 'yyyyMMdd')}.pdf`);
       toast({ title: t('pdfDownloaded') });

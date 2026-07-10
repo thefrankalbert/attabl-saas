@@ -84,6 +84,7 @@
     "cobe": "^2.0.1",
     "date-fns": "^4.1.0",
     "dinero.js": "2.0.0-alpha.14",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

@@ -36,6 +36,7 @@ export default function OrderDetails({
     handleStatusUpdate,
     handlePrintKitchen,
     handlePrintReceipt,
+    handlePrintInvoice,
     displayTotal,
     tipAmount,
     hasBreakdown,
@@ -86,6 +87,7 @@ export default function OrderDetails({
           onShowPayment={() => setShowPayment(true)}
           onPrintKitchen={handlePrintKitchen}
           onPrintReceipt={handlePrintReceipt}
+          onPrintInvoice={handlePrintInvoice}
         />
 
         {/* Warnings */}
