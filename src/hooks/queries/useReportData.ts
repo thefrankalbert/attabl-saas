@@ -151,27 +151,20 @@ export function useReportData(tenantId: string, period: Period) {
         throw rpcError;
       }
 
-      // Category breakdown + server stats - run in parallel (both independent)
+      // Category breakdown + server stats - aggregated server-side (RPC) so the
+      // payload is proportional to categories/servers, not order volume. Both
+      // independent, run in parallel.
       const [categoryRes, serverRes] = await Promise.all([
-        supabase
-          .from('order_items')
-          .select(
-            'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
-          )
-          .eq('orders.tenant_id', tenantId)
-          .eq('orders.payment_status', 'paid')
-          .gte('orders.created_at', startDate)
-          .lte('orders.created_at', endDate),
-        supabase
-          .from('orders')
-          .select(
-            'server_id, total, tip_amount, server:admin_users!orders_server_id_fkey(full_name)',
-          )
-          .eq('tenant_id', tenantId)
-          .eq('payment_status', 'paid')
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .not('server_id', 'is', null),
+        supabase.rpc('get_category_breakdown', {
+          p_tenant_id: tenantId,
+          p_start_date: startDate,
+          p_end_date: endDate,
+        }),
+        supabase.rpc('get_server_performance', {
+          p_tenant_id: tenantId,
+          p_start_date: startDate,
+          p_end_date: endDate,
+        }),
       ]);
 
       // Process daily stats (RPC returns: day, revenue, order_count)
@@ -224,63 +217,42 @@ export function useReportData(tenantId: string, period: Period) {
         avgBasket: Math.round(Number(rawPrev?.avg_basket) || 0),
       };
 
-      // Category breakdown from direct query
+      // Category breakdown (RPC returns: category, revenue - ordered by revenue).
+      // Percentages are cheap client-side math over a handful of rows.
       let categories: CategoryBreakdown[] = [];
       if (!categoryRes.error && categoryRes.data) {
-        const categoryMap: Record<string, number> = {};
-        for (const item of categoryRes.data as Array<Record<string, unknown>>) {
-          const menuItem = item.menu_items as Record<string, unknown> | null;
-          const category = menuItem?.categories as Record<string, unknown> | null;
-          const name = (category?.name as string) || 'Autres';
-          const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
-          categoryMap[name] = (categoryMap[name] || 0) + revenue;
-        }
-        const totalCatRevenue = Object.values(categoryMap).reduce((sum, v) => sum + v, 0);
-        categories = Object.entries(categoryMap)
-          .sort(([, a], [, b]) => b - a)
-          .map(([name, rev]) => ({
-            category: name,
-            revenue: rev,
-            percentage: totalCatRevenue > 0 ? Math.round((rev / totalCatRevenue) * 100) : 0,
-          }));
+        const rows = categoryRes.data as { category: string; revenue: number }[];
+        const totalCatRevenue = rows.reduce((sum, r) => sum + (Number(r.revenue) || 0), 0);
+        categories = rows.map((r) => {
+          const revenue = Number(r.revenue) || 0;
+          return {
+            category: r.category,
+            revenue,
+            percentage: totalCatRevenue > 0 ? Math.round((revenue / totalCatRevenue) * 100) : 0,
+          };
+        });
       }
 
-      // Server performance stats
+      // Server performance (RPC returns: server_id, server_name, orders, revenue
+      // - ordered by orders desc). avgOrder is cheap client-side math.
       let serverStats: ServerStats[] = [];
       if (!serverRes.error && serverRes.data) {
-        const serverMap = new Map<
-          string,
-          { serverName: string; orders: number; revenue: number }
-        >();
-        for (const row of serverRes.data as {
+        const rows = serverRes.data as {
           server_id: string;
-          total: number;
-          tip_amount: number;
-          server: { full_name: string }[] | { full_name: string } | null;
-        }[]) {
-          const serverObj = Array.isArray(row.server) ? row.server[0] : row.server;
-          const name = serverObj?.full_name || row.server_id;
-          const orderRevenue = (Number(row.total) || 0) + (Number(row.tip_amount) || 0);
-          const existing = serverMap.get(row.server_id);
-          if (existing) {
-            existing.orders += 1;
-            existing.revenue += orderRevenue;
-          } else {
-            serverMap.set(row.server_id, {
-              serverName: name,
-              orders: 1,
-              revenue: orderRevenue,
-            });
-          }
-        }
-        serverStats = Array.from(serverMap.values())
-          .map((s) => ({
-            serverName: s.serverName,
-            orders: s.orders,
-            revenue: s.revenue,
-            avgOrder: s.orders > 0 ? Math.round(s.revenue / s.orders) : 0,
-          }))
-          .sort((a, b) => b.orders - a.orders);
+          server_name: string;
+          orders: number;
+          revenue: number;
+        }[];
+        serverStats = rows.map((s) => {
+          const orders = Number(s.orders) || 0;
+          const revenue = Number(s.revenue) || 0;
+          return {
+            serverName: s.server_name,
+            orders,
+            revenue,
+            avgOrder: orders > 0 ? Math.round(revenue / orders) : 0,
+          };
+        });
       }
 
       return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
