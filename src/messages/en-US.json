@@ -3028,6 +3028,9 @@
   },
   "qrCodes": {
     "title": "QR Codes",
+    "logoInvalidType": "Invalid file. Please choose an image.",
+    "logoTooLarge": "Image too large (5 MB max).",
+    "logoUploadError": "Could not process this image. Try again.",
     "stepSelection": "Selection",
     "stepCustomization": "Customization",
     "stepDownload": "Download",

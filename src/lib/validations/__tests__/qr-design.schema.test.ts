@@ -56,6 +56,24 @@ describe('qrDesignConfigSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts a downscaled logo data URL (~30 KB)', () => {
+    const dataUrl = `data:image/png;base64,${'A'.repeat(30_000)}`;
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: dataUrl },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a logo src that exceeds the size cap', () => {
+    const tooBig = `data:image/png;base64,${'A'.repeat(200_001)}`;
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: tooBig },
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('saveQrDesignSchema', () => {

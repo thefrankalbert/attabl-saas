@@ -2,7 +2,9 @@
 
 import { useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
+import { fileToResizedDataUrl } from '@/lib/qr/resize-image';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -30,20 +32,28 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onLogoFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result;
-        if (typeof dataUrl === 'string') {
-          updateField('logo', { ...config.logo, src: dataUrl, enabled: true });
-        }
-      };
-      reader.readAsDataURL(file);
       e.target.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        toast.error(t('logoInvalidType'));
+        return;
+      }
+      // 5 MB raw cap before we even decode; the file is downscaled to a small
+      // PNG so the stored data URL stays well under the schema size limit.
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t('logoTooLarge'));
+        return;
+      }
+      try {
+        const src = await fileToResizedDataUrl(file);
+        updateField('logo', { ...config.logo, src, enabled: true });
+      } catch {
+        toast.error(t('logoUploadError'));
+      }
     },
-    [config.logo, updateField],
+    [config.logo, updateField, t],
   );
 
   return (

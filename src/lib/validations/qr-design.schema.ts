@@ -36,7 +36,10 @@ const perPage = z.union([z.literal(1), z.literal(2), z.literal(4), z.literal('au
 
 const logoSchema = z.object({
   enabled: z.boolean(),
-  src: z.string().max(2048),
+  // A downscaled 256px PNG logo (see lib/qr/resize-image.ts) is well under this;
+  // 200 KB bounds abuse. A raw upload data URL used to blow past the old 2048 cap
+  // and made every save with a logo fail.
+  src: z.string().max(200_000),
   width: z.number().min(0).max(400),
   height: z.number().min(0).max(400),
   excavate: z.boolean(),
