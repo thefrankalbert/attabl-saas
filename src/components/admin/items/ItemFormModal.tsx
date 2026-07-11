@@ -31,6 +31,7 @@ interface ItemFormState {
   price: number | string;
   categoryId: string;
   imageUrl: string;
+  galleryImages: string[];
   isAvailable: boolean;
   isFeatured: boolean;
   allergens: string[];
@@ -47,6 +48,7 @@ interface ItemFormSetters {
   setPrice: (v: number | string) => void;
   setCategoryId: (v: string) => void;
   setImageUrl: (v: string) => void;
+  setGalleryImages: (updater: string[] | ((prev: string[]) => string[])) => void;
   setIsAvailable: (v: boolean) => void;
   setIsFeatured: (v: boolean) => void;
   setAllergens: (updater: (prev: string[]) => string[]) => void;
@@ -90,6 +92,7 @@ export function ItemFormModal({
     price,
     categoryId,
     imageUrl,
+    galleryImages,
     isAvailable,
     isFeatured,
     allergens,
@@ -282,6 +285,39 @@ export function ItemFormModal({
                 onRemove={() => setters.setImageUrl('')}
                 bucket="menu-items"
               />
+            </div>
+
+            {/* Extra gallery photos - shown as a swipeable carousel on the item
+                detail sheet, after the primary image above. */}
+            <div className="space-y-2">
+              <Label className="text-app-text">{t('galleryPhotos')}</Label>
+              <p className="text-xs text-app-text-muted">{t('galleryPhotosDesc')}</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {galleryImages.map((url, idx) => (
+                  <ImageUpload
+                    key={`${url}-${idx}`}
+                    value={url}
+                    onChange={(next) =>
+                      setters.setGalleryImages((prev) => prev.map((u, i) => (i === idx ? next : u)))
+                    }
+                    onRemove={() =>
+                      setters.setGalleryImages((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    bucket="menu-items"
+                    aspect={1}
+                  />
+                ))}
+                {galleryImages.length < 5 && (
+                  <ImageUpload
+                    key={`add-${galleryImages.length}`}
+                    value=""
+                    onChange={(url) => setters.setGalleryImages((prev) => [...prev, url])}
+                    onRemove={() => {}}
+                    bucket="menu-items"
+                    aspect={1}
+                  />
+                )}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-app-text flex items-center gap-1">

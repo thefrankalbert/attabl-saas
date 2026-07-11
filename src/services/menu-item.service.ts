@@ -17,6 +17,7 @@ const ALLOWED_MENU_ITEM_COLUMNS = [
   'prices',
   'image_url',
   'image_back_url',
+  'images',
   'is_available',
   'is_featured',
   'is_vegetarian',

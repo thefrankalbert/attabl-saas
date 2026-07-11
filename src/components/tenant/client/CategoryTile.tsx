@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Photo } from '@/components/tenant/client/Photo';
 import { CategoryIcon } from './CategoryIcon';
 
 export interface ClientCategory {
@@ -7,6 +8,7 @@ export interface ClientCategory {
   icon: string;
   bgColor?: string;
   fgColor?: string;
+  coverUrl?: string | null;
 }
 
 export interface CategoryTileProps {
@@ -16,6 +18,7 @@ export interface CategoryTileProps {
 
 export function CategoryTile({ category, href }: CategoryTileProps) {
   const base = category.fgColor ?? 'oklch(0.5 0.08 80)';
+  const hasCover = Boolean(category.coverUrl);
 
   return (
     <Link
@@ -30,7 +33,25 @@ export function CategoryTile({ category, href }: CategoryTileProps) {
           background: `linear-gradient(155deg, color-mix(in oklab, ${base}, white 22%) 0%, ${base} 52%, color-mix(in oklab, ${base}, black 16%) 100%)`,
         }}
       >
-        <CategoryIcon name={category.icon} size={30} className="text-white" />
+        {hasCover && (
+          <div className="absolute inset-0">
+            <Photo
+              src={category.coverUrl ?? null}
+              alt={category.label}
+              kind="food"
+              fill
+              sizes="25vw"
+            />
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+        )}
+        <CategoryIcon
+          name={category.icon}
+          size={30}
+          className={
+            hasCover ? 'relative text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]' : 'text-white'
+          }
+        />
       </div>
       <div className="w-full truncate text-center text-[11.5px] font-medium text-[var(--color-ink-2)]">
         {category.label}

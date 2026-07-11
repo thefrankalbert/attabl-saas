@@ -40,7 +40,7 @@ function createCacheClient() {
  * Revalidation: 60 seconds OR on-demand via `revalidateTag('tenant-config')`
  */
 const TENANT_SELECT =
-  'id, name, slug, primary_color, secondary_color, logo_url, currency, supported_currencies, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, custom_domain, enabled_payment_methods, activation_events, last_active_at, created_at';
+  'id, name, slug, primary_color, secondary_color, logo_url, banner_url, currency, supported_currencies, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, custom_domain, enabled_payment_methods, activation_events, last_active_at, created_at';
 
 /**
  * Per-tenant cache factory.
@@ -103,6 +103,7 @@ export function toPublicTenant(t: Tenant): Tenant {
     name: t.name,
     slug: t.slug,
     logo_url: t.logo_url,
+    banner_url: t.banner_url,
     primary_color: t.primary_color,
     secondary_color: t.secondary_color,
     font_family: t.font_family,
@@ -270,7 +271,7 @@ function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
           supabase
             .from('categories')
             .select(
-              'id, tenant_id, menu_id, name, name_en, description, display_order, is_active, created_at, preparation_zone',
+              'id, tenant_id, menu_id, name, name_en, description, display_order, is_active, created_at, preparation_zone, image_url',
             )
             .eq('tenant_id', id)
             .eq('is_active', true)
@@ -281,7 +282,7 @@ function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
             .select(
               `
               id, tenant_id, category_id, name, name_en, description, description_en,
-              price, image_url, is_available, is_featured, allergens, calories, created_at,
+              price, image_url, images, is_available, is_featured, allergens, calories, created_at,
               category:categories(id, tenant_id, name, name_en, created_at),
               modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
             `,

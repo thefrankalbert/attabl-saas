@@ -257,6 +257,7 @@ export type Database = {
           display_order: number;
           icon: string | null;
           id: string;
+          image_url: string | null;
           is_active: boolean;
           is_featured_on_home: boolean;
           menu_id: string | null;
@@ -272,6 +273,7 @@ export type Database = {
           display_order?: number;
           icon?: string | null;
           id?: string;
+          image_url?: string | null;
           is_active?: boolean;
           is_featured_on_home?: boolean;
           menu_id?: string | null;
@@ -287,6 +289,7 @@ export type Database = {
           display_order?: number;
           icon?: string | null;
           id?: string;
+          image_url?: string | null;
           is_active?: boolean;
           is_featured_on_home?: boolean;
           menu_id?: string | null;
@@ -719,6 +722,7 @@ export type Database = {
           image_uploaded_at: string | null;
           image_uploaded_by: string | null;
           image_url: string | null;
+          images: Json;
           is_available: boolean;
           is_featured: boolean;
           is_spicy: boolean;
@@ -749,6 +753,7 @@ export type Database = {
           image_uploaded_at?: string | null;
           image_uploaded_by?: string | null;
           image_url?: string | null;
+          images?: Json;
           is_available?: boolean;
           is_featured?: boolean;
           is_spicy?: boolean;
@@ -779,6 +784,7 @@ export type Database = {
           image_uploaded_at?: string | null;
           image_uploaded_by?: string | null;
           image_url?: string | null;
+          images?: Json;
           is_available?: boolean;
           is_featured?: boolean;
           is_spicy?: boolean;
@@ -1711,6 +1717,7 @@ export type Database = {
           activation_events: Json;
           address: string | null;
           at_food_enabled: boolean | null;
+          banner_url: string | null;
           bar_display_enabled: boolean;
           billing_interval: string | null;
           city: string | null;
@@ -1765,6 +1772,7 @@ export type Database = {
           activation_events?: Json;
           address?: string | null;
           at_food_enabled?: boolean | null;
+          banner_url?: string | null;
           bar_display_enabled?: boolean;
           billing_interval?: string | null;
           city?: string | null;
@@ -1819,6 +1827,7 @@ export type Database = {
           activation_events?: Json;
           address?: string | null;
           at_food_enabled?: boolean | null;
+          banner_url?: string | null;
           bar_display_enabled?: boolean;
           billing_interval?: string | null;
           city?: string | null;

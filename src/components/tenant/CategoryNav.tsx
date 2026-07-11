@@ -40,6 +40,16 @@ export default function CategoryNav({
   // sections, and a short last section that bottom-clamps below the active band
   // would never re-highlight). Released on the next genuine user scroll input.
   const programmaticScrollRef = React.useRef(false);
+  // Pending corrective-scroll timers (see scrollToCategory).
+  const scrollTimersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearScrollTimers = React.useCallback(() => {
+    scrollTimersRef.current.forEach(clearTimeout);
+    scrollTimersRef.current = [];
+  }, []);
+
+  // Clear pending corrective timers on unmount (no leaked timeouts).
+  React.useEffect(() => clearScrollTimers, [clearScrollTimers]);
 
   // Release the programmatic lock as soon as the user scrolls themselves, so the
   // scroll-spy resumes. Programmatic smooth scroll fires neither wheel nor
@@ -49,6 +59,9 @@ export default function CategoryNav({
     if (!scroller) return;
     const release = () => {
       programmaticScrollRef.current = false;
+      // User took over: cancel any pending corrective re-alignments so we don't
+      // yank the scroll back to the tapped category while they are reading.
+      clearScrollTimers();
     };
     scroller.addEventListener('wheel', release, { passive: true });
     scroller.addEventListener('touchstart', release, { passive: true });
@@ -56,7 +69,7 @@ export default function CategoryNav({
       scroller.removeEventListener('wheel', release);
       scroller.removeEventListener('touchstart', release);
     };
-  }, []);
+  }, [clearScrollTimers]);
 
   // Sync horizontal scroll when active category changes
   React.useEffect(() => {
@@ -111,13 +124,31 @@ export default function CategoryNav({
     setActiveCategory(id);
     programmaticScrollRef.current = true;
     // The scroll container is <main id="main-content"> (html/body are
-    // overflow:hidden), so window.scrollTo is a no-op here. scrollIntoView
-    // targets the right scroller and respects the section's scroll-mt-[116px],
-    // anchoring it just under the sticky header + CategoryNav.
-    const element = document.getElementById(`cat-${id}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // overflow:hidden). Native `scrollIntoView`/`scrollTo` with `behavior:
+    // 'smooth'` is unreliable here (a silent no-op in some engines), so we set
+    // scrollTop directly. STICKY_OFFSET = header 63 + CategoryNav 48 + sticky
+    // title bar (~58) so the section top lands just under the sticky stack,
+    // matching the section's scroll-mt-[170px].
+    const STICKY_OFFSET = 169;
+    clearScrollTimers();
+
+    // Align the section top with the sticky band by nudging scrollTop by the
+    // element's current distance from it. Section anchors sit far down a list of
+    // lazily-loaded next/image items, so as images above decode the target's
+    // position keeps growing and a single jump undershoots. Re-applying the
+    // correction on a few timers (setTimeout keeps firing even when rAF is
+    // paused) settles it once the layout stops shifting.
+    const alignOnce = () => {
+      const scroller = document.getElementById('main-content');
+      const element = document.getElementById(`cat-${id}`);
+      if (!scroller || !element) return;
+      const delta = element.getBoundingClientRect().top - STICKY_OFFSET;
+      const maxTop = scroller.scrollHeight - scroller.clientHeight;
+      scroller.scrollTop = Math.max(0, Math.min(scroller.scrollTop + delta, maxTop));
+    };
+
+    alignOnce();
+    scrollTimersRef.current = [60, 180, 360, 650, 1000].map((ms) => setTimeout(alignOnce, ms));
   };
 
   if (categories.length === 0) return null;

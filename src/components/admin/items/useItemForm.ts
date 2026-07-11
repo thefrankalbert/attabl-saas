@@ -27,6 +27,8 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
   const [price, setPrice] = useState<number | string>(0);
   const [categoryId, setCategoryId] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  // Extra gallery photos beyond the primary image_url (item detail carousel).
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [allergens, setAllergens] = useState<string[]>([]);
@@ -45,6 +47,7 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
     setPrice(0);
     setCategoryId('');
     setImageUrl('');
+    setGalleryImages([]);
     setIsAvailable(true);
     setIsFeatured(false);
     setAllergens([]);
@@ -68,6 +71,7 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
     setPrice(item.price);
     setCategoryId(item.category_id);
     setImageUrl(item.image_url || '');
+    setGalleryImages((item.images || []).filter((u) => u && u !== (item.image_url || '')));
     setIsAvailable(item.is_available);
     setIsFeatured(item.is_featured);
     setAllergens(item.allergens || []);
@@ -97,6 +101,12 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
         allergens,
         calories: calories === '' ? null : Number(calories),
       };
+
+      // Gallery = primary photo first, then the extra photos. Empty array when
+      // there is no primary image (the storefront then shows the placeholder).
+      const primary = imageUrl.trim();
+      const extras = [...new Set(galleryImages.filter((u) => u && u !== primary))];
+      payload.images = primary ? [primary, ...extras] : extras;
 
       // Only include the prices JSONB field when the tenant has secondary currencies.
       // The column may not exist on DBs where the multi-currency migration was not
@@ -158,6 +168,8 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
     setCategoryId,
     imageUrl,
     setImageUrl,
+    galleryImages,
+    setGalleryImages,
     isAvailable,
     setIsAvailable,
     isFeatured,

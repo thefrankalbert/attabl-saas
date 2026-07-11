@@ -55,6 +55,7 @@ function toClientCategory(cat: Category): ClientCategory {
     icon: iconKey,
     bgColor: colors.bg,
     fgColor: colors.fg,
+    coverUrl: cat.image_url ?? null,
   };
 }
 
@@ -98,7 +99,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
       supabase
         .from('categories')
         .select(
-          'id, tenant_id, menu_id, name, name_en, icon, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
+          'id, tenant_id, menu_id, name, name_en, icon, image_url, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
         )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
@@ -109,7 +110,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
         .select(
           `
         id, tenant_id, category_id, name, name_en, description, description_en,
-        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
+        price, prices, image_url, images, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
         category:categories(id, name, name_en),
         options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
         price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
@@ -128,7 +129,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
         .select(
           `
         id, tenant_id, category_id, name, name_en, description, description_en,
-        price, prices, image_url, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
+        price, prices, image_url, images, is_available, is_featured, is_vegetarian, is_spicy, allergens, calories, rating, rating_count, created_at,
         category:categories(id, name, name_en),
         options:item_options(id, tenant_id, menu_item_id, name_fr, name_en, is_default, display_order, created_at),
         price_variants:item_price_variants(id, tenant_id, menu_item_id, variant_name_fr, variant_name_en, price, prices, display_order:sort_order, created_at),
@@ -216,6 +217,21 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
           restaurantId={tenant.id}
           currency={tenant.currency}
         />
+
+        {/* - RESTAURANT BANNER - */}
+        {tenant.banner_url && (
+          <div className="px-4 pb-4">
+            <div className="relative aspect-[16/6] w-full overflow-hidden rounded-[var(--radius-card)]">
+              <Photo
+                src={tenant.banner_url}
+                alt={tenant.name}
+                kind="food"
+                fill
+                sizes="(max-width: 768px) 100vw, 768px"
+              />
+            </div>
+          </div>
+        )}
 
         {/* - HERO - */}
         <div className="px-4 pb-6">

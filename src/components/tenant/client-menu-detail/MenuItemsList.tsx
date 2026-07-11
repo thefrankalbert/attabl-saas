@@ -23,6 +23,15 @@ export default function MenuItemsList({
 }: MenuItemsListProps) {
   const t = useTranslations('tenant');
 
+  // Index of the last category that actually renders a section (has items).
+  // Its section gets a min-height so it can always scroll up under the sticky
+  // header band - otherwise the scroll bottom-clamps and clicking the last
+  // category's tab leaves the list where it is (title updates, list stays).
+  let lastRenderedIndex = -1;
+  categories.forEach((c, i) => {
+    if (c.items.length > 0) lastRenderedIndex = i;
+  });
+
   if (categories.length === 0) {
     return (
       <div className="text-center py-20">
@@ -38,7 +47,15 @@ export default function MenuItemsList({
       {categories.map(
         (category, catIndex) =>
           category.items.length > 0 && (
-            <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[170px]">
+            <section
+              key={category.id}
+              id={`cat-${category.id}`}
+              className={
+                catIndex === lastRenderedIndex
+                  ? 'scroll-mt-[170px] min-h-[calc(100dvh-169px)]'
+                  : 'scroll-mt-[170px]'
+              }
+            >
               {/* Items list */}
               <div className="bg-white pt-3 px-4">
                 <div>

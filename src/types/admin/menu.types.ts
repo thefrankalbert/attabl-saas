@@ -48,6 +48,7 @@ export interface Category {
   is_featured_on_home?: boolean;
   preparation_zone?: PreparationZone;
   icon?: string | null;
+  image_url?: string | null;
   created_at: string;
 }
 
@@ -64,6 +65,7 @@ export interface MenuItem {
   prices?: MultiCurrencyPrices;
   image_url?: string;
   image_back_url?: string;
+  images?: string[];
   is_available: boolean;
   is_featured: boolean;
   is_vegetarian?: boolean;

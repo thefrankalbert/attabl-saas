@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ImageUpload from '@/components/shared/ImageUpload';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -46,6 +47,8 @@ interface CategoryFormModalProps {
   setIsActive: (value: boolean) => void;
   iconName: string | null;
   setIconName: (value: string | null) => void;
+  imageUrl: string | null;
+  setImageUrl: (value: string | null) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -72,6 +75,8 @@ export function CategoryFormModal({
   setIsActive,
   iconName,
   setIconName,
+  imageUrl,
+  setImageUrl,
   onSubmit,
 }: CategoryFormModalProps) {
   const t = useTranslations('categories');
@@ -209,6 +214,23 @@ export function CategoryFormModal({
               .filter((i): i is string => !!i)}
             onChange={setIconName}
           />
+        </div>
+
+        {/* Cover image (shown behind the icon on the storefront home tile) */}
+        <div className="space-y-1.5 rounded-lg border border-app-border p-3">
+          <Label className="text-app-text">{t('coverImage')}</Label>
+          <p className="text-xs text-app-text-muted">{t('coverImageDesc')}</p>
+          <div className="max-w-sm pt-1">
+            <ImageUpload
+              value={imageUrl || ''}
+              onChange={(url) => setImageUrl(url)}
+              onRemove={() => setImageUrl(null)}
+              disabled={saving}
+              bucket="menu-items"
+              aspect={1}
+              maxWidth={800}
+            />
+          </div>
         </div>
 
         {/* Preparation zone selector */}

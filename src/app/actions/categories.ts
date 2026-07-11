@@ -98,6 +98,7 @@ interface CreateCategoryPayload {
   name: string;
   name_en?: string | null;
   icon?: string | null;
+  image_url?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
@@ -141,6 +142,7 @@ interface UpdateCategoryPayload {
   name: string;
   name_en?: string | null;
   icon?: string | null;
+  image_url?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
   is_featured_on_home?: boolean;
