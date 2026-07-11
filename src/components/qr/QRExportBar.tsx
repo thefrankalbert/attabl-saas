@@ -45,6 +45,12 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
   const downloadPDF = useCallback(async () => {
     const el = previewRef.current;
     if (!el) return;
+    // The QR SVG is appended asynchronously (dynamic import + effect); capturing
+    // before it paints would rasterize a QR-less card. Guard like downloadSVG.
+    if (!el.querySelector('svg')) {
+      logger.warn('[QRExportBar] QR not rendered yet, PDF export aborted');
+      return;
+    }
 
     setLoading('pdf');
     try {
@@ -77,6 +83,10 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
   const downloadPNG = useCallback(async () => {
     const el = previewRef.current;
     if (!el) return;
+    if (!el.querySelector('svg')) {
+      logger.warn('[QRExportBar] QR not rendered yet, PNG export aborted');
+      return;
+    }
 
     setLoading('png');
     try {
