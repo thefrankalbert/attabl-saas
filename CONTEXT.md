@@ -204,7 +204,7 @@ Si besoin d'API CF (ex: provisioning automatique de domaines tenants), envisager
 
 ## 4. Variables d'environnement — checklist `.env.local`
 
-Pour bootstrap un dev local, copier `.env.local.example` vers `.env.local` et remplir :
+Pour bootstrap un dev local, copier `.env.example` vers `.env.local` et remplir :
 
 ```bash
 # Supabase (obligatoire)
@@ -251,7 +251,7 @@ ANTHROPIC_API_KEY=sk-ant-...                    # ⚠️ NE JAMAIS COMMIT
 
 **Règles secrets** :
 
-- `.env.local`, `.env.production`, `.env*` sont dans `.gitignore` — vérifier `.env.local.example` reste à jour
+- `.env.local`, `.env.production`, `.env*` sont dans `.gitignore` — vérifier `.env.example` reste à jour
 - JAMAIS commiter les clés `*_SECRET`, `*_SERVICE_ROLE_KEY`, `*_API_KEY`
 - En prod (Vercel) : configurer via le dashboard Project Settings → Environment Variables
 
@@ -361,7 +361,7 @@ bloquee.**
 git clone https://github.com/thefrankalbert/attabl-saas.git
 cd attabl-saas
 pnpm install
-cp .env.local.example .env.local
+cp .env.example .env.local
 # remplir .env.local avec les clés (voir section 4)
 pnpm dev
 # ouvrir http://localhost:3000

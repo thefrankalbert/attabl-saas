@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  *   - desktop         1440x900 (standard desktop)
  *
  * These tests require an authenticated session. They run in CI after
- * ALLOW_DEV_AUTH_BYPASS=true is set (see .env.local.example).
+ * ALLOW_DEV_AUTH_BYPASS=true is set (see .env.example).
  *
  * What is checked:
  *   1. No horizontal overflow at any viewport
