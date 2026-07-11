@@ -133,10 +133,18 @@ export function useClientMenuDetail({
     const cat = categories.find((c) => c.name.toLowerCase() === decodedSection);
     if (!cat) return;
 
+    // Native smooth scroll is a silent no-op on the #main-content scroller, so
+    // jump the scroller directly (instant is fine for a mount-time deep link).
+    // STICKY_OFFSET matches the section's scroll-mt-[170px] sticky stack.
     const scrollToCategory = () => {
+      const scroller = document.getElementById('main-content');
       const el = document.getElementById(`cat-${cat.id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (scroller && el) {
+        // Nudge by the section's live distance from the sticky band (169px),
+        // same rect-based method as CategoryNav (robust to offsetParent chains).
+        const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        const delta = el.getBoundingClientRect().top - 169;
+        scroller.scrollTop = Math.max(0, Math.min(scroller.scrollTop + delta, maxTop));
         return true;
       }
       return false;
@@ -254,17 +262,6 @@ export function useClientMenuDetail({
         return activeMenuIds.includes(category.menu_id);
       });
 
-  // Filter categories for CategoryNav - must match menuFilteredByCategory logic
-  const filteredCategories = !hasMultipleMenus
-    ? categories
-    : categories.filter((c) => {
-        if (!activeMenu) return true;
-        if (!c.menu_id) return false;
-        if (activeSubMenuId) return c.menu_id === activeSubMenuId;
-        const activeMenuIds = [activeMenu.id, ...(activeMenu.children?.map((ch) => ch.id) || [])];
-        return activeMenuIds.includes(c.menu_id);
-      });
-
   const allItems = useMemo(() => itemsByCategory.flatMap((cat) => cat.items), [itemsByCategory]);
 
   // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
@@ -363,7 +360,6 @@ export function useClientMenuDetail({
     activeMenu,
     activeMenuSlug,
     menuFilteredByCategory,
-    filteredCategories,
     searchResults,
     handleTableSelect,
     handleMenuChange,

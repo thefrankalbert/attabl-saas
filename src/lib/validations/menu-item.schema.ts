@@ -23,6 +23,7 @@ export const menuItemWriteSchema = z.object({
   prices: z.record(z.string(), z.number()).nullish(),
   image_url: z.string().max(2048).nullish(),
   image_back_url: z.string().max(2048).nullish(),
+  images: z.array(z.string().url().max(2048)).max(8).nullish(),
   is_available: z.boolean().optional(),
   is_featured: z.boolean().optional(),
   is_vegetarian: z.boolean().optional(),

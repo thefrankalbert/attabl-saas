@@ -37,6 +37,7 @@ export function useCategoryForm({
   const [menuId, setMenuId] = useState<string>(menus[0]?.id || '');
   const [isActive, setIsActive] = useState<boolean>(true);
   const [iconName, setIconName] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const openNewModal = () => {
     setEditingCategory(null);
@@ -47,6 +48,7 @@ export function useCategoryForm({
     setIsFeaturedOnHome(false);
     setIsActive(true);
     setIconName(null);
+    setImageUrl(null);
     setMenuId(menus[0]?.id || '');
     setShowModal(true);
   };
@@ -60,6 +62,7 @@ export function useCategoryForm({
     setIsFeaturedOnHome(cat.is_featured_on_home === true);
     setIsActive(cat.is_active !== false);
     setIconName(cat.icon ?? null);
+    setImageUrl(cat.image_url ?? null);
     setMenuId(cat.menu_id || menus[0]?.id || '');
     setShowModal(true);
   };
@@ -77,6 +80,7 @@ export function useCategoryForm({
         is_featured_on_home: isFeaturedOnHome,
         is_active: isActive,
         icon: iconName || null,
+        image_url: imageUrl || null,
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
@@ -126,6 +130,8 @@ export function useCategoryForm({
     setIsActive,
     iconName,
     setIconName,
+    imageUrl,
+    setImageUrl,
     openNewModal,
     openEditModal,
     handleSubmit,

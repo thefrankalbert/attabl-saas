@@ -2,6 +2,30 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, PreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
+// Mass-assignment allowlist: only these columns are ever written, so a forged
+// server-action payload cannot set arbitrary category columns (mirrors the
+// menu-item service). Keep in sync with Create/UpdateCategoryInput.
+const ALLOWED_CATEGORY_COLUMNS = [
+  'name',
+  'name_en',
+  'display_order',
+  'preparation_zone',
+  'is_featured_on_home',
+  'is_active',
+  'icon',
+  'image_url',
+  'tenant_id',
+  'menu_id',
+] as const;
+
+function pickCategoryColumns(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of ALLOWED_CATEGORY_COLUMNS) {
+    if (key in data) out[key] = data[key];
+  }
+  return out;
+}
+
 interface CreateCategoryInput {
   name: string;
   name_en?: string | null;
@@ -10,6 +34,7 @@ interface CreateCategoryInput {
   is_featured_on_home?: boolean;
   is_active?: boolean;
   icon?: string | null;
+  image_url?: string | null;
   tenant_id: string;
   menu_id?: string | null;
 }
@@ -22,6 +47,7 @@ interface UpdateCategoryInput {
   is_featured_on_home?: boolean;
   is_active?: boolean;
   icon?: string | null;
+  image_url?: string | null;
   tenant_id: string;
   menu_id?: string | null;
 }
@@ -56,10 +82,11 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
       data: CreateCategoryInput,
       options?: { returning?: boolean },
     ): Promise<Category | null> {
+      const row = pickCategoryColumns(data as unknown as Record<string, unknown>);
       if (options?.returning) {
         const { data: category, error } = await supabase
           .from('categories')
-          .insert([data])
+          .insert([row])
           .select()
           .single();
 
@@ -69,7 +96,7 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
         return category as Category;
       }
 
-      const { error } = await supabase.from('categories').insert([data]);
+      const { error } = await supabase.from('categories').insert([row]);
       if (error) {
         throw new ServiceError('Erreur lors de la creation de la categorie', 'INTERNAL', error);
       }
@@ -85,7 +112,7 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
       // Belt-and-suspenders alongside RLS.
       const { error } = await supabase
         .from('categories')
-        .update(data)
+        .update(pickCategoryColumns(data as unknown as Record<string, unknown>))
         .eq('id', categoryId)
         .eq('tenant_id', data.tenant_id);
 

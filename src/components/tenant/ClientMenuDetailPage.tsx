@@ -42,7 +42,6 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
     activeMenu,
     activeMenuSlug,
     menuFilteredByCategory,
-    filteredCategories,
     searchResults,
     handleTableSelect,
     handleMenuChange,
@@ -51,6 +50,14 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
     headerSubtitle,
     canSwitchMenu,
   } = useClientMenuDetail(props);
+
+  // Chips must map 1:1 to the rendered sections: MenuItemsList only renders a
+  // <section id="cat-..."> for categories that have items, so a chip for an
+  // empty category would scroll to a non-existent anchor (title updates, list
+  // never moves). Derive the nav from the same list, keeping only non-empty.
+  const navCategories = menuFilteredByCategory
+    .filter((c) => c.items.length > 0)
+    .map((c) => ({ id: c.id, name: c.name }));
 
   // - Render -
   return (
@@ -100,9 +107,9 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
         )}
 
       {/* - CATEGORY NAVIGATION (sticky breadcrumb) - */}
-      {filteredCategories && filteredCategories.length > 0 && (
+      {navCategories.length > 0 && (
         <CategoryNav
-          categories={filteredCategories}
+          categories={navCategories}
           topOffset={63}
           onActiveChange={setActiveCategoryId}
         />

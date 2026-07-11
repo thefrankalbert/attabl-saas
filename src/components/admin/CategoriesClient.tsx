@@ -141,6 +141,8 @@ export default function CategoriesClient({
     setIsActive,
     iconName,
     setIconName,
+    imageUrl,
+    setImageUrl,
     openNewModal,
     openEditModal,
     handleSubmit,
@@ -354,6 +356,8 @@ export default function CategoriesClient({
           setIsActive={setIsActive}
           iconName={iconName}
           setIconName={setIconName}
+          imageUrl={imageUrl}
+          setImageUrl={setImageUrl}
           onSubmit={handleSubmit}
         />
 

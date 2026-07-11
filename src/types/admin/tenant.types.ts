@@ -10,6 +10,7 @@ export interface Tenant {
   name: string;
   slug: string;
   logo_url?: string;
+  banner_url?: string;
   primary_color?: string;
   secondary_color?: string;
   font_family?: string;

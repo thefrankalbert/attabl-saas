@@ -42,11 +42,14 @@ interface SettingsIdentityProps {
   form: UseFormReturn<SettingsFormValues>;
   tenant: { slug: string; custom_domain?: string | null };
   logoPreview: string | null;
+  bannerPreview: string | null;
   uploading: boolean;
   saving: boolean;
   onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onLogoChange?: (url: string) => void;
   onLogoRemove?: () => void;
+  onBannerChange?: (url: string) => void;
+  onBannerRemove?: () => void;
   onDomainSave: (domain: string | null) => Promise<void>;
   t: (key: string) => string;
 }
@@ -57,10 +60,13 @@ export default function SettingsIdentity({
   form,
   tenant,
   logoPreview,
+  bannerPreview,
   uploading,
   saving,
   onLogoChange,
   onLogoRemove,
+  onBannerChange,
+  onBannerRemove,
   onDomainSave,
   t,
 }: SettingsIdentityProps) {
@@ -184,7 +190,7 @@ export default function SettingsIdentity({
                 onChange={(url) => onLogoChange?.(url)}
                 onRemove={() => onLogoRemove?.()}
                 disabled={uploading || saving}
-                bucket="tenant-logos"
+                bucket="menu-items"
                 aspect={1}
                 maxWidth={512}
               />
@@ -192,6 +198,22 @@ export default function SettingsIdentity({
             <p className="text-xs text-app-text-muted">
               {t('recommendedFormat')} - {t('maxSize')}
             </p>
+          </div>
+
+          <div className="space-y-4">
+            <Label>{t('banner')}</Label>
+            <div className="max-w-md">
+              <ImageUpload
+                value={bannerPreview || ''}
+                onChange={(url) => onBannerChange?.(url)}
+                onRemove={() => onBannerRemove?.()}
+                disabled={uploading || saving}
+                bucket="menu-items"
+                aspect={16 / 6}
+                maxWidth={1600}
+              />
+            </div>
+            <p className="text-xs text-app-text-muted">{t('bannerHint')}</p>
           </div>
         </div>
 

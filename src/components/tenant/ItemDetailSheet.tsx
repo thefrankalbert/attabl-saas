@@ -82,7 +82,9 @@ export default function ItemDetailSheet({
   const [selectedModifiers, setSelectedModifiers] = useState<ItemModifier[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [customerNotes, setCustomerNotes] = useState('');
-  const [imageError, setImageError] = useState(false);
+  // URLs that failed to load - only the broken slide is dropped, not the whole gallery.
+  const [erroredImages, setErroredImages] = useState<Set<string>>(new Set());
+  const [activePhoto, setActivePhoto] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [requiredError, setRequiredError] = useState(false);
 
@@ -94,7 +96,8 @@ export default function ItemDetailSheet({
     setSelectedModifiers([]);
     setQuantity(1);
     setCustomerNotes('');
-    setImageError(false);
+    setErroredImages(new Set());
+    setActivePhoto(0);
     setShowSuccess(false);
     setRequiredError(false);
 
@@ -233,11 +236,26 @@ export default function ItemDetailSheet({
   // --- Derived -----------------------------------------------------------
   if (!item) return null;
 
-  const hasValidImage =
-    item.image_url &&
-    !item.image_url.includes('placeholder') &&
-    !item.image_url.includes('default') &&
-    !imageError;
+  // `images` is jsonb - guard the runtime type (a stray non-string would crash
+  // .includes). Also drop placeholder/default and any URL that failed to load.
+  const isDisplayableUrl = (u: unknown): u is string =>
+    typeof u === 'string' && !u.includes('placeholder') && !u.includes('default');
+
+  // Gallery = the stored images array (primary + variants) when present, else the
+  // single image_url. De-duped so repeated URLs do not collide as React keys.
+  // Falls back to the utensils placeholder when nothing valid remains.
+  const galleryImages = [
+    ...new Set(
+      (Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : item.image_url
+          ? [item.image_url]
+          : []
+      ).filter(isDisplayableUrl),
+    ),
+  ].filter((u) => !erroredImages.has(u));
+  const hasValidImage = galleryImages.length > 0;
+  const isMultiPhoto = galleryImages.length > 1;
 
   const hasVariants = item.price_variants && item.price_variants.length > 0;
   const hasOptions = item.options && item.options.length > 0;
@@ -282,21 +300,52 @@ export default function ItemDetailSheet({
               {/* Hero photo */}
               <div className="relative h-[250px] w-full bg-[var(--color-surface-alt)]">
                 {hasValidImage ? (
-                  <Image
-                    src={item.image_url!}
-                    alt={itemName}
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    onError={() => setImageError(true)}
-                    priority
-                  />
+                  <div
+                    className="scrollbar-hide flex h-full w-full snap-x snap-mandatory overflow-x-auto"
+                    onScroll={
+                      isMultiPhoto
+                        ? (e) => {
+                            const el = e.currentTarget;
+                            setActivePhoto(Math.round(el.scrollLeft / el.clientWidth));
+                          }
+                        : undefined
+                    }
+                  >
+                    {galleryImages.map((url, idx) => (
+                      <div
+                        key={`${url}-${idx}`}
+                        className="relative h-full w-full min-w-full snap-start"
+                      >
+                        <Image
+                          src={url}
+                          alt={isMultiPhoto ? `${itemName} (${idx + 1})` : itemName}
+                          fill
+                          sizes="100vw"
+                          className="object-cover"
+                          onError={() => setErroredImages((prev) => new Set(prev).add(url))}
+                          priority={idx === 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <Utensils className="h-12 w-12 text-[var(--color-ink-soft)]" />
                   </div>
                 )}
-                <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-[rgba(26,26,26,0.22)] to-transparent" />
+                {isMultiPhoto && (
+                  <div className="absolute bottom-3.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5">
+                    {galleryImages.map((url, idx) => (
+                      <span
+                        key={`${url}-${idx}`}
+                        className={`h-1.5 rounded-full transition-all ${
+                          idx === activePhoto ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-[rgba(26,26,26,0.22)] to-transparent" />
                 <Button
                   variant="ghost"
                   size="icon"

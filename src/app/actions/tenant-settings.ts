@@ -46,6 +46,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       country: formData.has('country') ? str('country') : undefined,
       phone: formData.has('phone') ? str('phone') : undefined,
       logoUrl: formData.has('logoUrl') ? str('logoUrl') : undefined,
+      bannerUrl: formData.has('bannerUrl') ? str('bannerUrl') : undefined,
       notificationSoundId: formData.has('notificationSoundId')
         ? str('notificationSoundId')
         : undefined,
