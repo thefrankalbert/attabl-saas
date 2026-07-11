@@ -117,6 +117,12 @@ export function QRExportPanel({
 
   async function handleExportPdf() {
     if (!cardRef.current) return;
+    // The QR SVG is appended asynchronously; capturing before it paints would
+    // rasterize a QR-less card.
+    if (!cardRef.current.querySelector('svg')) {
+      logger.warn('QR not rendered yet, PDF export aborted');
+      return;
+    }
     setExporting(true);
     try {
       const { default: jsPDF } = await import('jspdf');
