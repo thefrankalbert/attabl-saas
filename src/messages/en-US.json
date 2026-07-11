@@ -3108,6 +3108,7 @@
     "perPageCount": "{count} per page",
     "exportDone": "PDF generated",
     "exportError": "Generation failed",
+    "batchSkipped": "{count} table(s) skipped: QR did not render. Try again.",
     "templateSection": "Template",
     "styleSection": "QR style",
     "cardSection": "Card",

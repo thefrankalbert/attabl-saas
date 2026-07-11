@@ -3108,6 +3108,7 @@
     "perPageCount": "{count} par page",
     "exportDone": "PDF genere",
     "exportError": "Erreur lors de la generation",
+    "batchSkipped": "{count} table(s) ignoree(s) : QR non genere. Reessayez.",
     "templateSection": "Modele",
     "styleSection": "Style du QR",
     "cardSection": "Carte",

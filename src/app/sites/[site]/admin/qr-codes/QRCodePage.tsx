@@ -7,7 +7,10 @@ import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QRPreview } from '@/components/qr/QRPreview';
 import { QRExportBar } from '@/components/qr/QRExportBar';
 import { QrCode, Info, Table2, BookOpen, Layers, Download, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { buildQRUrl } from '@/lib/qr/build-qr-url';
+import { actionResolveDesignsForTables } from '@/app/actions/qr-design';
+import { exportResolvedCardsToPdf, type ExportCard } from '@/lib/qr/export-card';
 import { QRAssignmentPanel, type QRDesignSummary } from '@/components/qr/QRAssignmentPanel';
 import { QRExportPanel } from '@/components/qr/QRExportPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -333,7 +336,6 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
                   selectedMenuId={selectedMenuId}
                   menuUrl={menuUrl}
                   tenantName={tenant.name}
-                  primaryColor={tenant.primaryColor}
                   config={config}
                 />
               </div>
@@ -369,7 +371,6 @@ interface BatchQRPreviewProps {
   selectedMenuId: string;
   menuUrl: string;
   tenantName: string;
-  primaryColor: string;
   config: QRDesignConfig;
 }
 
@@ -380,7 +381,6 @@ function BatchQRPreview({
   selectedMenuId,
   menuUrl,
   tenantName,
-  primaryColor,
   config,
 }: BatchQRPreviewProps) {
   const t = useTranslations('qrCodes');
@@ -405,107 +405,35 @@ function BatchQRPreview({
   const handleBatchDownload = async () => {
     setGenerating(true);
     try {
-      // Dynamic import to avoid SSR issues
-      const { default: jsPDF } = await import('jspdf');
-      const { QRCodeSVG } = await import('qrcode.react');
-      const { createRoot } = await import('react-dom/client');
-      const { createElement } = await import('react');
-
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        if (i > 0) pdf.addPage();
-
-        const tableUrl = buildQRUrl(menuUrl, table.display_name, selectedMenu?.slug);
-
-        // Create a temp container to render QR code as SVG
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-
-        const root = createRoot(container);
-        root.render(
-          createElement(QRCodeSVG, {
-            value: tableUrl,
-            size: 600,
-            level: config.errorCorrection,
-            includeMargin: true,
-            fgColor: config.qrFgColor,
-            bgColor: config.qrBgColor,
-          }),
-        );
-
-        // Wait for React to render the SVG - poll until it appears (max 2s)
-        let svg: SVGElement | null = null;
-        for (let attempt = 0; attempt < 40; attempt++) {
-          svg = container.querySelector('svg');
-          if (svg) break;
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-        if (svg) {
-          const svgData = new XMLSerializer().serializeToString(svg);
-          const canvas = document.createElement('canvas');
-          canvas.width = 600;
-          canvas.height = 600;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const img = new Image();
-            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-            const blobUrl = URL.createObjectURL(blob);
-
-            await new Promise<void>((resolve) => {
-              img.onload = () => {
-                ctx.fillStyle = config.qrBgColor;
-                ctx.fillRect(0, 0, 600, 600);
-                ctx.drawImage(img, 0, 0);
-                URL.revokeObjectURL(blobUrl);
-                resolve();
-              };
-              img.src = blobUrl;
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const qrSize = 80;
-            const qrX = (pageWidth - qrSize) / 2;
-
-            // Title
-            pdf.setFontSize(24);
-            pdf.setTextColor(primaryColor);
-            pdf.text(tenantName, pageWidth / 2, 30, { align: 'center' });
-
-            // Table name
-            pdf.setFontSize(18);
-            pdf.setTextColor('#374151');
-            pdf.text(table.display_name, pageWidth / 2, 45, { align: 'center' });
-
-            // QR Code
-            pdf.addImage(imgData, 'PNG', qrX, 60, qrSize, qrSize);
-
-            // CTA
-            pdf.setFontSize(14);
-            pdf.setTextColor('#6B7280');
-            pdf.text(config.ctaText || 'Scannez pour commander', pageWidth / 2, 155, {
-              align: 'center',
-            });
-
-            // URL (small)
-            pdf.setFontSize(8);
-            pdf.setTextColor('#9CA3AF');
-            pdf.text(tableUrl, pageWidth / 2, pageHeight - 15, { align: 'center' });
-          }
-        }
-
-        root.unmount();
-        document.body.removeChild(container);
+      // Resolve each table's assigned design (table -> zone -> tenant default) so
+      // every printed card reflects what was assigned, not one global config.
+      const resolved = await actionResolveDesignsForTables(tables.map((tbl) => tbl.id));
+      if (!resolved.success) {
+        toast.error(resolved.error);
+        return;
       }
 
-      pdf.save(`qrcodes-${tenantName.toLowerCase().replace(/\s/g, '-')}-toutes-tables.pdf`);
+      const cards: ExportCard[] = tables.map((table) => ({
+        // Canonical table_number in the URL (matches the single-QR path + scanner).
+        url: buildQRUrl(menuUrl, table.table_number ?? undefined, selectedMenu?.slug),
+        tableName: table.display_name,
+        config: resolved.data[table.id] ?? config,
+        tenantName,
+      }));
+
+      const { skipped } = await exportResolvedCardsToPdf(
+        cards,
+        `qrcodes-${tenantName.toLowerCase().replace(/\s/g, '-')}-toutes-tables.pdf`,
+      );
+
+      if (skipped.length > 0) {
+        toast.warning(t('batchSkipped', { count: skipped.length }));
+      } else {
+        toast.success(t('exportDone'));
+      }
     } catch (error) {
       logger.error('Batch PDF generation error', error);
+      toast.error(t('exportError'));
     } finally {
       setGenerating(false);
     }

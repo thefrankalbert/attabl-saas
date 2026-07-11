@@ -140,3 +140,32 @@ export async function actionAssignQrDesign(input: unknown) {
     return { success: false as const, error: t('settingsUpdateError') };
   }
 }
+
+/**
+ * Resolve the effective QR design config for a set of tables (table -> zone ->
+ * tenant default). Used by the batch export so each printed card reflects the
+ * design assigned to its table. tenantId is derived from the session.
+ */
+export async function actionResolveDesignsForTables(tableIds: unknown) {
+  const t = await getTranslations('errors');
+  try {
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+
+    if (!Array.isArray(tableIds) || tableIds.some((id) => typeof id !== 'string')) {
+      return { success: false as const, error: 'Invalid input' };
+    }
+
+    const service = createQrDesignService(supabase);
+    const entries = await Promise.all(
+      (tableIds as string[]).map(
+        async (id) => [id, await service.resolveDesignForTable(tenantId, id)] as const,
+      ),
+    );
+
+    return { success: true as const, data: Object.fromEntries(entries) };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false as const, error: error.message };
+    logger.error('Error resolving QR designs', error);
+    return { success: false as const, error: t('settingsUpdateError') };
+  }
+}
