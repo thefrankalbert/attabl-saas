@@ -3232,7 +3232,16 @@
     "selectServer": "Select a server...",
     "currentOrderSection": "Current order",
     "orderEmpty": "No open order for this table.",
-    "orderOpened": "opened at"
+    "orderOpened": "opened at",
+    "moveTableBtn": "Move to a table",
+    "reassignTitle": "Move the order",
+    "reassignDescription": "Pick a free table. The order and its check follow.",
+    "reassignPlaceholder": "Free table",
+    "reassignNoFreeTables": "No free table right now.",
+    "reassignConfirm": "Move",
+    "reassignMoving": "Moving...",
+    "reassignSuccess": "Order moved",
+    "reassignError": "Move failed"
   },
   "stockHistory": {
     "title": "Movement history",
@@ -3294,6 +3303,8 @@
     "unlock": "Unlock"
   },
   "tenant": {
+    "tableOccupiedNotice": "Table {table} looks already taken. You can keep going, or check with the staff for another table.",
+    "tableOccupiedDismiss": "Dismiss",
     "closedNow": "Closed now",
     "opensAt": "Opens {time}",
     "closedBrowse": "Browse the menu",

@@ -3232,7 +3232,16 @@
     "selectServer": "Sélectionner un serveur...",
     "currentOrderSection": "Commande en cours",
     "orderEmpty": "Aucune commande ouverte pour cette table.",
-    "orderOpened": "ouverte a"
+    "orderOpened": "ouverte a",
+    "moveTableBtn": "Deplacer vers une table",
+    "reassignTitle": "Deplacer la commande",
+    "reassignDescription": "Choisissez une table libre. La commande et son addition suivent.",
+    "reassignPlaceholder": "Table libre",
+    "reassignNoFreeTables": "Aucune table libre pour le moment.",
+    "reassignConfirm": "Deplacer",
+    "reassignMoving": "Deplacement...",
+    "reassignSuccess": "Commande deplacee",
+    "reassignError": "Deplacement impossible"
   },
   "stockHistory": {
     "title": "Historique des mouvements",
@@ -3294,6 +3303,8 @@
     "unlock": "Déverrouiller"
   },
   "tenant": {
+    "tableOccupiedNotice": "La table {table} semble deja occupee. Vous pouvez continuer, ou voir avec le personnel pour une autre table.",
+    "tableOccupiedDismiss": "Fermer",
     "closedNow": "Fermé actuellement",
     "opensAt": "Ouvre {time}",
     "closedBrowse": "Parcourir le menu",

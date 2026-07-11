@@ -140,6 +140,18 @@ export default function ServiceManager({ tenantId }: Props) {
     [zones],
   );
 
+  // Free tables (no open session) are the valid destinations for a reassign.
+  const freeTables = useMemo(
+    () =>
+      tableVMs
+        .filter((vm) => vm.status === 'free')
+        .map((vm) => ({
+          tableNumber: vm.table.table_number,
+          label: vm.table.display_name || vm.table.table_number,
+        })),
+    [tableVMs],
+  );
+
   const serverVMs = useMemo(
     () => buildServerVMs(servers, assignments, allTables),
     [servers, assignments, allTables],
@@ -370,9 +382,15 @@ export default function ServiceManager({ tenantId }: Props) {
         servers={serverVMs}
         currentOrder={currentOrder}
         currencySymbol={'XAF'}
+        freeTables={freeTables}
         onClose={() => setSelectedId(null)}
         onAssignServer={handleAssignFromDetail}
         onRelease={handleRelease}
+        onReassigned={() => {
+          loadOpenSessions();
+          loadReadyOrders();
+          setSelectedId(null);
+        }}
         labels={detailLabels}
       />
     </div>
