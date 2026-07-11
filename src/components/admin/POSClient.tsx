@@ -199,6 +199,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   setDeliveryAddress={pos.setDeliveryAddress}
                   zones={pos.zones}
                   allTables={pos.allTables}
+                  occupiedTableNumbers={pos.occupiedTableNumbers}
                   onUpdateQuantity={pos.updateQuantity}
                   onClearCart={pos.clearCart}
                   onEditNotes={(itemId, currentNotes) => {

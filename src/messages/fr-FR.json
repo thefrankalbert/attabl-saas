@@ -2280,6 +2280,7 @@
     "increaseQty": "Augmenter la quantité",
     "removeCoupon": "Retirer le code promo",
     "noTablesInZone": "Aucune table dans cette zone",
+    "tableOccupied": "Occupee",
     "noZonesConfigured": "Aucune zone configurée",
     "noZonesHint": "Créez vos zones et tables dans Paramètres > Tables",
     "tableWithNumber": "Table {table}",
