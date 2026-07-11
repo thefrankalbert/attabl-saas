@@ -102,7 +102,7 @@ export default function RecipeLineRow({
               )
             }
             disabled={!canEdit}
-            className="h-8 text-sm flex-1"
+            className="h-8 text-base md:text-sm flex-1"
           />
           <span className="text-xs text-app-text-secondary self-center w-10">{lineUnitShort}</span>
         </div>
@@ -112,7 +112,7 @@ export default function RecipeLineRow({
           onChange={(e) => onUpdateLine(line.lineId, 'notes', e.target.value)}
           disabled={!canEdit}
           rows={2}
-          className="text-sm min-h-0 resize-none"
+          className="text-base md:text-sm min-h-0 resize-none"
         />
       </div>
       {canEdit && (

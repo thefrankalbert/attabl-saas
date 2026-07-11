@@ -89,7 +89,7 @@ export default function KitchenFilters({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56 border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
+              className="bg-transparent text-base md:text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56 border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               autoFocus
             />
             <Button

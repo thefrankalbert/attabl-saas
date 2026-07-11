@@ -41,7 +41,7 @@ export function IdentitySection({
           placeholder={t('namePlaceholder')}
           value={data.tenantName}
           onChange={(e) => updateData({ tenantName: e.target.value })}
-          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
 

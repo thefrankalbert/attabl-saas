@@ -187,7 +187,11 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-[var(--muted-foreground)]">{label}</Label>
-      <Input value={value} readOnly className={cn('h-[34px] text-[13px]', mono && 'font-mono')} />
+      <Input
+        value={value}
+        readOnly
+        className={cn('h-[34px] text-[16px] md:text-[13px]', mono && 'font-mono')}
+      />
     </div>
   );
 }

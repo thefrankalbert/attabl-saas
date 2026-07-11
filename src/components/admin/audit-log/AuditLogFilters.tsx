@@ -117,7 +117,7 @@ export default function AuditLogFilters({
                 setPage(0);
               }}
               placeholder={t('searchPlaceholder')}
-              className="pl-8 h-9 text-sm"
+              className="pl-8 h-9 text-base md:text-sm"
             />
           </div>
         </div>

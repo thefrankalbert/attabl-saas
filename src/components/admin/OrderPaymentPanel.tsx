@@ -196,7 +196,7 @@ export default function OrderPaymentPanel({
               value={tenderAmount}
               onChange={(e) => setTenderAmount(e.target.value)}
               aria-label={t('amount')}
-              className="h-9 text-sm"
+              className="h-9 text-base md:text-sm"
             />
             <Button
               size="sm"
@@ -225,7 +225,7 @@ export default function OrderPaymentPanel({
               value={refundAmount}
               onChange={(e) => setRefundAmount(e.target.value)}
               aria-label={t('refundAmount')}
-              className="h-9 text-sm"
+              className="h-9 text-base md:text-sm"
             />
             <Button
               variant="outline"

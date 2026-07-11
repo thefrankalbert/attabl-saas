@@ -116,7 +116,7 @@ export function POSServiceTypeSelector({
           placeholder={t('deliveryAddressPlaceholder')}
           value={deliveryAddress}
           onChange={(e) => setDeliveryAddress(e.target.value)}
-          className="w-full h-16 p-2 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
+          className="w-full h-16 p-2 text-base md:text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
         />
       )}
     </div>

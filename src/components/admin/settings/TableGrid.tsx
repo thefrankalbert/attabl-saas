@@ -125,7 +125,7 @@ export function TableGrid({
                       <Input
                         value={editingDisplayName}
                         onChange={(e) => onEditingDisplayNameChange(e.target.value)}
-                        className="h-7 text-sm rounded-lg focus:ring-accent/30"
+                        className="h-7 text-base md:text-sm rounded-lg focus:ring-accent/30"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') onSaveTableName(table.id);
                           if (e.key === 'Escape') onCancelEditTable();

@@ -59,7 +59,7 @@ export function UnitInput({
             onChange(unitToCm(raw, unit));
           }
         }}
-        className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
+        className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
       />
     </div>
   );

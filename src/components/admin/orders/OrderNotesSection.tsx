@@ -85,7 +85,7 @@ export default function OrderNotesSection({ tenantId, orderId }: OrderNotesSecti
           rows={2}
           placeholder={t('placeholder')}
           aria-label={t('placeholder')}
-          className="text-sm"
+          className="text-base md:text-sm"
         />
         <Button
           size="sm"

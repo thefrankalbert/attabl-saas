@@ -58,7 +58,7 @@ export function HomeSearchOverlay({
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-auto flex-1 border-none bg-transparent p-0 text-[14px] font-medium tracking-[-0.1px] shadow-none focus-visible:ring-0"
+            className="h-auto flex-1 border-none bg-transparent p-0 text-[16px] md:text-[14px] font-medium tracking-[-0.1px] shadow-none focus-visible:ring-0"
           />
           {searchQuery && (
             <Button

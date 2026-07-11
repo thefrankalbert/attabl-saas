@@ -203,7 +203,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           placeholder={t('categoryNamePlaceholder')}
                           value={category.name}
                           onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                          className="h-10 flex-1 rounded-lg border-app-border bg-app-bg px-3.5 text-sm font-semibold shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                          className="h-10 flex-1 rounded-lg border-app-border bg-app-bg px-3.5 text-base md:text-sm font-semibold shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                         />
 
                         <span className="whitespace-nowrap rounded-full border border-app-border bg-app-bg px-2.5 py-1 text-xs font-medium text-app-text-muted">

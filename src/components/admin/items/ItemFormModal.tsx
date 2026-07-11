@@ -251,7 +251,7 @@ export function ItemFormModal({
                         min={0}
                         step={cur === 'XAF' ? 1 : 0.01}
                         placeholder="0"
-                        className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
+                        className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-base md:text-sm"
                       />
                     </div>
                   ))}

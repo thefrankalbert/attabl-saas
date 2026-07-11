@@ -243,7 +243,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     }}
                     rows={3}
                     maxLength={500}
-                    className="w-full resize-none rounded-lg border-app-border bg-app-elevated px-3.5 py-3 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                    className="w-full resize-none rounded-lg border-app-border bg-app-elevated px-3.5 py-3 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
                   />
                   <p className="text-xs text-app-text-muted mt-1.5 text-right">
                     {t('charCount', { count: data.description.length, max: 500 })}

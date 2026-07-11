@@ -65,7 +65,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
               <Input
                 value={config.background}
                 onChange={(e) => onChange({ background: e.target.value })}
-                className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
+                className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
               />
             </div>
           </div>
@@ -79,7 +79,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
               <Input
                 value={config.accentColor}
                 onChange={(e) => onChange({ accentColor: e.target.value })}
-                className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
+                className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 value={config.name.text}
                 onChange={(e) => onChange({ name: { ...config.name, text: e.target.value } })}
                 maxLength={100}
-                className="h-8 text-xs bg-app-elevated/50 border-app-border rounded-lg"
+                className="h-8 text-base md:text-xs bg-app-elevated/50 border-app-border rounded-lg"
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -173,7 +173,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                       name: { ...config.name, fontSize: parseInt(e.target.value, 10) || 18 },
                     })
                   }
-                  className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
+                  className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
                 />
               </div>
             </div>
@@ -199,7 +199,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                 value={config.tagline.text}
                 onChange={(e) => onChange({ tagline: { ...config.tagline, text: e.target.value } })}
                 maxLength={200}
-                className="h-8 text-xs bg-app-elevated/50 border-app-border rounded-lg"
+                className="h-8 text-base md:text-xs bg-app-elevated/50 border-app-border rounded-lg"
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -230,7 +230,7 @@ export function ChevaletControls({ config, unit, onUnitChange, onChange }: Cheva
                       tagline: { ...config.tagline, fontSize: parseInt(e.target.value, 10) || 10 },
                     })
                   }
-                  className="h-8 text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
+                  className="h-8 text-base md:text-xs font-mono bg-app-elevated/50 border-app-border rounded-lg"
                 />
               </div>
             </div>

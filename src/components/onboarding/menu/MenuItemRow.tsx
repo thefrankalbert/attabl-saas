@@ -82,7 +82,7 @@ export function MenuItemRow({
         placeholder={t('articleNamePlaceholder')}
         value={item.name}
         onChange={(e) => updateArticle(categoryId, item.id, 'name', e.target.value)}
-        className="h-10 flex-1 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+        className="h-10 flex-1 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
       />
       <div className="flex items-center gap-1.5">
         <Input
@@ -92,7 +92,7 @@ export function MenuItemRow({
           placeholder={t('articlePrice')}
           value={item.price}
           onChange={(e) => updateArticle(categoryId, item.id, 'price', e.target.value)}
-          className="h-10 w-28 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+          className="h-10 w-28 rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
         <span className="text-xs font-medium text-app-text-muted">{currency || 'EUR'}</span>
       </div>
