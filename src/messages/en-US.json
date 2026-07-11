@@ -3028,6 +3028,8 @@
   },
   "qrCodes": {
     "title": "QR Codes",
+    "designLoaded": "Design \"{name}\" loaded into the editor.",
+    "designLoadError": "Could not load this design (invalid format).",
     "logoInvalidType": "Invalid file. Please choose an image.",
     "logoTooLarge": "Image too large (5 MB max).",
     "logoUploadError": "Could not process this image. Try again.",

@@ -27,11 +27,16 @@ type ResetAction = {
   secondaryColor: string;
 };
 
-type QRDesignAction = SetFieldAction | SetTemplateAction | ResetAction;
+type HydrateAction = {
+  type: 'HYDRATE';
+  config: QRDesignConfig;
+};
+
+type QRDesignAction = SetFieldAction | SetTemplateAction | ResetAction | HydrateAction;
 
 // --- Reducer -------------------------------------------
 
-function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesignConfig {
+export function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesignConfig {
   switch (action.type) {
     case 'SET_FIELD':
       return {
@@ -53,6 +58,9 @@ function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesig
 
     case 'RESET':
       return createDefaultQRDesignConfig(action.primaryColor, action.secondaryColor);
+
+    case 'HYDRATE':
+      return action.config;
 
     default:
       return state;
@@ -81,5 +89,9 @@ export function useQRDesignConfig(primaryColor: string, secondaryColor: string) 
     dispatch({ type: 'RESET', primaryColor, secondaryColor });
   }, [primaryColor, secondaryColor]);
 
-  return { config: state, updateField, setTemplate, resetConfig };
+  const hydrate = useCallback((config: QRDesignConfig) => {
+    dispatch({ type: 'HYDRATE', config });
+  }, []);
+
+  return { config: state, updateField, setTemplate, resetConfig, hydrate };
 }

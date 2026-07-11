@@ -53,7 +53,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
         .order('display_order', { ascending: true }),
       supabase
         .from('qr_designs')
-        .select('id, name, is_default')
+        .select('id, name, is_default, config')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: true }),
     ],
