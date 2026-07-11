@@ -3108,6 +3108,7 @@
     "perPageCount": "{count} par page",
     "exportDone": "PDF genere",
     "exportError": "Erreur lors de la generation",
+    "exportNotReady": "Apercu pas encore pret. Reessayez dans un instant.",
     "batchSkipped": "{count} table(s) ignoree(s) : QR non genere. Reessayez.",
     "templateSection": "Modele",
     "styleSection": "Style du QR",
@@ -3749,6 +3750,7 @@
     "successDeleteTable": "Table supprimée"
   },
   "onboarding": {
+    "qrExportError": "Echec de l'export du QR. Reessayez.",
     "step": "Étape",
     "stepOf": "sur",
     "next": "Continuer",

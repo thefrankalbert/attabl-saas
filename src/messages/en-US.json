@@ -3108,6 +3108,7 @@
     "perPageCount": "{count} per page",
     "exportDone": "PDF generated",
     "exportError": "Generation failed",
+    "exportNotReady": "Preview not ready yet. Try again in a moment.",
     "batchSkipped": "{count} table(s) skipped: QR did not render. Try again.",
     "templateSection": "Template",
     "styleSection": "QR style",
@@ -3749,6 +3750,7 @@
     "successDeleteTable": "Table deleted"
   },
   "onboarding": {
+    "qrExportError": "QR export failed. Try again.",
     "step": "Step",
     "stepOf": "of",
     "next": "Continue",

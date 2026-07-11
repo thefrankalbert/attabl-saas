@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useCallback, type RefObject } from 'react';
-import { Download, Printer, FileImage, FileCode, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Download, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { captureElementToCanvas } from '@/lib/qr/capture-template';
@@ -16,7 +18,7 @@ interface QRExportBarProps {
   tenantSlug: string;
 }
 
-type ExportAction = 'pdf' | 'png' | 'svg' | 'print' | null;
+type ExportAction = 'pdf' | 'png' | 'svg' | null;
 
 // --- Helpers ------------------------------------------
 
@@ -38,6 +40,7 @@ async function getJsPDF(): Promise<(typeof import('jspdf'))['jsPDF']> {
 // --- Component -----------------------------------------
 
 export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps) {
+  const t = useTranslations('qrCodes');
   const [loading, setLoading] = useState<ExportAction>(null);
 
   // --- PDF Export -------------------------------------
@@ -49,6 +52,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     // before it paints would rasterize a QR-less card. Guard like downloadSVG.
     if (!el.querySelector('svg')) {
       logger.warn('[QRExportBar] QR not rendered yet, PDF export aborted');
+      toast.error(t('exportNotReady'));
       return;
     }
 
@@ -73,10 +77,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       pdf.save(buildFilename(tenantSlug, 'pdf'));
     } catch (err) {
       logger.error('[QRExportBar] PDF export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, config.templateWidth, config.templateHeight, tenantSlug]);
+  }, [previewRef, config.templateWidth, config.templateHeight, tenantSlug, t]);
 
   // --- PNG Export -------------------------------------
 
@@ -85,6 +90,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     if (!el) return;
     if (!el.querySelector('svg')) {
       logger.warn('[QRExportBar] QR not rendered yet, PNG export aborted');
+      toast.error(t('exportNotReady'));
       return;
     }
 
@@ -101,10 +107,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       link.click();
     } catch (err) {
       logger.error('[QRExportBar] PNG export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, tenantSlug]);
+  }, [previewRef, tenantSlug, t]);
 
   // --- SVG Export -------------------------------------
 
@@ -117,6 +124,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       const svgElement = el.querySelector('svg');
       if (!svgElement) {
         logger.warn('[QRExportBar] No SVG found inside preview');
+        toast.error(t('exportNotReady'));
         return;
       }
 
@@ -133,16 +141,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       URL.revokeObjectURL(url);
     } catch (err) {
       logger.error('[QRExportBar] SVG export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, tenantSlug]);
-
-  // --- Print ------------------------------------------
-
-  const handlePrint = useCallback(() => {
-    window.print();
-  }, []);
+  }, [previewRef, tenantSlug, t]);
 
   // --- Render -----------------------------------------
 
@@ -192,17 +195,9 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
             SVG (QR seul)
           </Button>
         </FeatureGate>
-
-        {/* Print - always available */}
-        <Button
-          variant="outline"
-          onClick={handlePrint}
-          disabled={loading !== null}
-          className="gap-2 ml-auto"
-        >
-          <Printer className="h-4 w-4" />
-          Imprimer
-        </Button>
+        {/* Print lives in the Download tab (QRExportPanel) where QRPrintSheet
+            provides the #qr-print-root isolation. Printing from here would print
+            the whole admin shell, so no Print button in the customizer bar. */}
       </div>
     </div>
   );
