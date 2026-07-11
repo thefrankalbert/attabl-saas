@@ -39,29 +39,15 @@ export function QRCustomizerLayout({
           control column + preview needs ~880px, which a tablet's content area
           (viewport minus sidebar) cannot hold; below xl it would overflow the
           `overflow-auto` tab and clip the controls' left edge on iPad. Stacks
-          on tablet/mobile instead. */}
+          on tablet/mobile instead.
+          A SINGLE preview is rendered and repositioned with flex `order` so its
+          ref always points to a visible node: on tablet/mobile it sits on top
+          (order-1), on xl it moves to the right column (order-2). Rendering two
+          previews with the same ref made the ref resolve to the hidden desktop
+          node, so exports below xl rasterized a display:none element (blank). */}
       <div className="flex flex-col xl:flex-row gap-6">
-        {/* Tablet/mobile: preview first (stacked) */}
-        <div className="block xl:hidden">
-          <div className="max-h-[300px] overflow-hidden rounded-2xl">
-            <QRPreview
-              ref={previewRef}
-              config={config}
-              url={url}
-              tenantName={tenantName}
-              tableName={tableName}
-              logoUrl={logoUrl}
-            />
-          </div>
-        </div>
-
-        {/* Left panel: customizer controls */}
-        <div className="w-full xl:w-96 xl:shrink-0 xl:max-h-[calc(100dvh-200px)] xl:overflow-y-auto">
-          <QRCustomizerPanel config={config} updateField={updateField} setTemplate={setTemplate} />
-        </div>
-
-        {/* Right panel: preview (desktop only) */}
-        <div className="hidden xl:block flex-1 xl:sticky xl:top-24 self-start">
+        {/* Preview: stacked on top below xl, right column (sticky) on xl */}
+        <div className="order-1 xl:order-2 xl:flex-1 xl:sticky xl:top-24 self-start">
           <QRPreview
             ref={previewRef}
             config={config}
@@ -70,6 +56,11 @@ export function QRCustomizerLayout({
             tableName={tableName}
             logoUrl={logoUrl}
           />
+        </div>
+
+        {/* Customizer controls: below the preview on tablet/mobile, left on xl */}
+        <div className="order-2 xl:order-1 w-full xl:w-96 xl:shrink-0 xl:max-h-[calc(100dvh-200px)] xl:overflow-y-auto">
+          <QRCustomizerPanel config={config} updateField={updateField} setTemplate={setTemplate} />
         </div>
       </div>
 
