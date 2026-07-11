@@ -63,7 +63,7 @@ export function ColorPickerField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 font-mono text-xs uppercase shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+          className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 font-mono text-base md:text-xs uppercase shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
       {isOpen && (

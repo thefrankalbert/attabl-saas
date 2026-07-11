@@ -172,7 +172,7 @@ export function ServiceFloorPlan({
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={labels.searchPlaceholder}
-            className="h-8 w-[220px] border-app-border bg-app-bg pl-8 text-xs"
+            className="h-8 w-[220px] border-app-border bg-app-bg pl-8 text-base md:text-xs"
           />
         </div>
 

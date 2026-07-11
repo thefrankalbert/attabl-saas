@@ -126,7 +126,7 @@ export function ColorPicker({
             }
           }}
           placeholder="#000000"
-          className="flex-1 font-mono text-sm"
+          className="flex-1 font-mono text-base md:text-sm"
           maxLength={7}
           aria-label="Valeur hexadécimale"
         />

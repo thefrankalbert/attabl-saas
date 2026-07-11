@@ -197,7 +197,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                     value={confirmText}
                     onChange={(e) => setConfirmText(e.target.value)}
                     placeholder={CONFIRMATION_PHRASE}
-                    className="h-11 bg-app-elevated border-app-border text-app-text font-mono text-sm rounded-xl focus:ring-2 focus:ring-status-error/20 focus:border-status-error/40"
+                    className="h-11 bg-app-elevated border-app-border text-app-text font-mono text-base md:text-sm rounded-xl focus:ring-2 focus:ring-status-error/20 focus:border-status-error/40"
                     autoComplete="off"
                     disabled={loading}
                   />

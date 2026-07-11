@@ -115,7 +115,7 @@ export function POSCartFooter({
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder={t('couponPlaceholder')}
-                  className="h-7 text-xs flex-1 min-w-0"
+                  className="h-7 text-base md:text-xs flex-1 min-w-0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
                   }}
@@ -148,7 +148,7 @@ export function POSCartFooter({
           maxLength={500}
           placeholder={t('orderNotePlaceholder')}
           rows={2}
-          className="w-full p-2 text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
+          className="w-full p-2 text-base md:text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
         />
       )}
 

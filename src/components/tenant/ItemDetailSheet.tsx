@@ -539,7 +539,7 @@ export default function ItemDetailSheet({
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}
                     rows={2}
-                    className="w-full resize-none rounded-[var(--radius-search)] border border-[var(--color-divider)] bg-[var(--color-surface-alt)] px-3.5 py-3 text-[13px] leading-[1.4] tracking-[-0.1px] text-[var(--color-ink)] shadow-none focus-visible:ring-0"
+                    className="w-full resize-none rounded-[var(--radius-search)] border border-[var(--color-divider)] bg-[var(--color-surface-alt)] px-3.5 py-3 text-[16px] md:text-[13px] leading-[1.4] tracking-[-0.1px] text-[var(--color-ink)] shadow-none focus-visible:ring-0"
                   />
                 </div>
               </div>

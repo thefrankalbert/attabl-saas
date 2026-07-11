@@ -167,6 +167,33 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Anti-regression iOS: tout <Input>/<Textarea> (ou natif) dont la font-size
+  // effective est < 16px sur mobile declenche l'auto-zoom Safari iOS au focus
+  // (zoom persistant = layout "casse"). La base shadcn est saine (text-base
+  // md:text-sm) : seuls les overrides className non prefixes sont dangereux.
+  // Pattern autorise : text-base md:text-sm / text-[16px] md:text-[14px].
+  // Incident 2026-07-11 : recherche storefront + notes cuisine zoomes sur iPhone.
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/components/ui/**', '**/__tests__/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(Input|Textarea|input|textarea)$/] JSXAttribute[name.name="className"] Literal[value=/(^|[^:\\w-])text-(xs|sm|\\[(?:[1-9]|1[0-5])(?:\\.\\d+)?px\\])/]',
+          message:
+            'Font < 16px sur un champ de saisie sans prefixe de breakpoint = auto-zoom iOS au focus. Utiliser text-base md:text-sm (ou text-[16px] md:text-[14px]) pour garder la petite taille en desktop seulement.',
+        },
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(Input|Textarea|input|textarea)$/] JSXAttribute[name.name="className"] TemplateElement[value.raw=/(^|[^:\\w-])text-(xs|sm|\\[(?:[1-9]|1[0-5])(?:\\.\\d+)?px\\])/]',
+          message:
+            'Font < 16px sur un champ de saisie sans prefixe de breakpoint = auto-zoom iOS au focus. Utiliser text-base md:text-sm (ou text-[16px] md:text-[14px]) pour garder la petite taille en desktop seulement.',
+        },
+      ],
+    },
+  },
   // Anti-regression design system: interdire la couleur de marque lime (#CCFF00)
   // et les classes de palette brute lime/green/emerald dans les surfaces ADMIN.
   // Contexte : #168 a aligne l'admin sur shadcn neutral + accent bleu. Le lime
@@ -215,6 +242,21 @@ const eslintConfig = defineConfig([
           selector: 'TemplateElement[value.raw=/-(lime|green|emerald)-[0-9]/]',
           message:
             'Classe de palette brute (lime/green/emerald) interdite en admin. Utiliser les tokens semantiques (text-status-success, bg-status-success-bg, etc.).',
+        },
+        // Ce bloc REMPLACE la regle no-restricted-syntax du bloc iOS ci-dessus
+        // pour les fichiers admin (flat config: dernier bloc gagne par regle) ;
+        // on re-liste donc les selecteurs anti-zoom iOS ici.
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(Input|Textarea|input|textarea)$/] JSXAttribute[name.name="className"] Literal[value=/(^|[^:\\w-])text-(xs|sm|\\[(?:[1-9]|1[0-5])(?:\\.\\d+)?px\\])/]',
+          message:
+            'Font < 16px sur un champ de saisie sans prefixe de breakpoint = auto-zoom iOS au focus. Utiliser text-base md:text-sm (ou text-[16px] md:text-[14px]) pour garder la petite taille en desktop seulement.',
+        },
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(Input|Textarea|input|textarea)$/] JSXAttribute[name.name="className"] TemplateElement[value.raw=/(^|[^:\\w-])text-(xs|sm|\\[(?:[1-9]|1[0-5])(?:\\.\\d+)?px\\])/]',
+          message:
+            'Font < 16px sur un champ de saisie sans prefixe de breakpoint = auto-zoom iOS au focus. Utiliser text-base md:text-sm (ou text-[16px] md:text-[14px]) pour garder la petite taille en desktop seulement.',
         },
       ],
     },

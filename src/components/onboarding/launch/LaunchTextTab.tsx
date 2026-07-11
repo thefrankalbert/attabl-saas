@@ -51,7 +51,7 @@ export function LaunchTextTab({ data, updateData }: LaunchTextTabProps) {
           value={data.qrCta}
           onChange={(e) => updateData({ qrCta: e.target.value })}
           placeholder={t('qrCtaLabel')}
-          className="h-10 w-full rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+          className="h-10 w-full rounded-lg border-app-border bg-app-elevated px-3.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
           maxLength={60}
         />
       </div>
@@ -67,7 +67,7 @@ export function LaunchTextTab({ data, updateData }: LaunchTextTabProps) {
           placeholder={t('qrDescriptionLabel')}
           rows={2}
           maxLength={120}
-          className="w-full resize-none rounded-lg border-app-border bg-app-elevated px-3.5 py-2.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+          className="w-full resize-none rounded-lg border-app-border bg-app-elevated px-3.5 py-2.5 text-base md:text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
         />
       </div>
     </div>

@@ -116,7 +116,7 @@ export default function ContactPage() {
                       id="name"
                       required
                       placeholder={t('placeholderName')}
-                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
+                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base md:text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                     />
                     {formState.errors?.name && (
                       <p className="text-xs text-red-500">{formState.errors.name[0]}</p>
@@ -134,7 +134,7 @@ export default function ContactPage() {
                       name="company"
                       id="company"
                       placeholder={t('placeholderCompany')}
-                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
+                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base md:text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                     />
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export default function ContactPage() {
                     id="email"
                     required
                     placeholder={t('placeholderEmail')}
-                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
+                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base md:text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                   />
                   {formState.errors?.email && (
                     <p className="text-xs text-red-500">{formState.errors.email[0]}</p>
@@ -172,7 +172,7 @@ export default function ContactPage() {
                     rows={3}
                     required
                     placeholder={t('placeholderMessage')}
-                    className="w-full resize-none rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
+                    className="w-full resize-none rounded-xl border border-neutral-200 bg-white p-4 text-base md:text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                   />
                   {formState.errors?.message && (
                     <p className="text-xs text-red-500">{formState.errors.message[0]}</p>

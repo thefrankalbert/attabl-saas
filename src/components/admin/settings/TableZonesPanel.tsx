@@ -74,7 +74,7 @@ export function TableZonesPanel({
                   <Input
                     value={editingZoneName}
                     onChange={(e) => onEditingZoneNameChange(e.target.value)}
-                    className="h-7 text-sm rounded-lg focus:ring-accent"
+                    className="h-7 text-base md:text-sm rounded-lg focus:ring-accent"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') onSaveZoneName(zone.id);
                       if (e.key === 'Escape') onCancelEditZone();

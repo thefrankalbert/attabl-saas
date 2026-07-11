@@ -42,7 +42,7 @@ export function CategoryIconPicker({ value, usedIcons, onChange }: CategoryIconP
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher une icone..."
-          className="pl-9 h-8 text-sm"
+          className="pl-9 h-8 text-base md:text-sm"
         />
       </div>
       <div className="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto scrollbar-hide">

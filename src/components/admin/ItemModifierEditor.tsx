@@ -158,20 +158,20 @@ export default function ItemModifierEditor({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder={t('namePlaceholder')}
-            className="flex-1 text-sm"
+            className="flex-1 text-base md:text-sm"
           />
           <Input
             value={newNameEn}
             onChange={(e) => setNewNameEn(e.target.value)}
             placeholder={t('nameEnPlaceholder')}
-            className="flex-1 text-sm"
+            className="flex-1 text-base md:text-sm"
           />
           <Input
             type="number"
             value={newPrice}
             onChange={(e) => setNewPrice(e.target.value)}
             placeholder={t('pricePlaceholder')}
-            className="w-24 text-sm"
+            className="w-24 text-base md:text-sm"
             min={0}
           />
           <Button onClick={handleAdd} disabled={saving || !newName.trim()} size="sm">

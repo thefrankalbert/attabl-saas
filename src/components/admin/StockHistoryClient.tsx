@@ -136,7 +136,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                     placeholder={t('searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-9 text-sm bg-app-elevated border-app-border/50 rounded-lg"
+                    className="pl-8 h-9 text-base md:text-sm bg-app-elevated border-app-border/50 rounded-lg"
                   />
                 </div>
                 <Button

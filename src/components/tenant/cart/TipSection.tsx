@@ -128,7 +128,7 @@ export function TipSection({
                 value={customTipInput}
                 onChange={(e) => setCustomTipInput(e.target.value)}
                 placeholder={labels.tipCustomPlaceholder}
-                className="h-auto flex-1 border-0 bg-transparent p-0 text-[14px] font-semibold text-[var(--color-ink)] shadow-none focus-visible:ring-0"
+                className="h-auto flex-1 border-0 bg-transparent p-0 text-[16px] md:text-[14px] font-semibold text-[var(--color-ink)] shadow-none focus-visible:ring-0"
               />
               <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                 {getCurrencySymbol(currencyCode)}
