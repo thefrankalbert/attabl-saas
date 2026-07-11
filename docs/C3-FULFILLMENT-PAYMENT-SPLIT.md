@@ -1,9 +1,18 @@
 # C3 - Cadrage : split statut fulfillment / paiement
 
-> Dossier de **cadrage** (pas d'implementation). Issu de la refonte commande->paiement
-> (`docs/AUDIT-CYCLE-COMMANDE-PAIEMENT.md`), ou C3 / Phase 3 a ete differe en place.
-> Objectif : poser le probleme, les options, et les points de decision a trancher avant
-> de coder. L'approche sera choisie ensemble dans une session dediee.
+> **Statut (mise a jour) : Option B partiellement livree.** Le decouplage paiement /
+> fulfillment est en place : `markPaid` ne force plus `orders.status='delivered'`
+> (voir `src/services/order/order-lifecycle.ts:211`), et `served_at` est estampille
+> quand la commande atteint l'etat terminal (`order-lifecycle.ts:96`,
+> `api/orders/pos/route.ts:47`). La section "2. Etat actuel" ci-dessous decrit donc
+> l'ETAT HISTORIQUE (avant decouplage) et n'est plus fidele au code sur ce point precis.
+> Restent ouverts : la colonne additive `fulfillment_status` (Option C), le nettoyage
+> des valeurs mortes `confirmed`/`served` du CHECK, et les points de decision de la
+> section 5.
+>
+> Dossier de **cadrage** d'origine (pas d'implementation). Issu de la refonte
+> commande->paiement (`docs/AUDIT-CYCLE-COMMANDE-PAIEMENT.md`). Objectif : poser le
+> probleme, les options, et les points de decision a trancher avant de coder.
 
 ## 1. Le probleme
 

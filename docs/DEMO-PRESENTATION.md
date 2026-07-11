@@ -81,7 +81,7 @@ Ouvrir `lepicurien.attabl.com` connecte en patron.
 
 Aller dans Caisse. Prendre une commande, choisir une table, encaisser.
 
-- Message : "Chaque vente est enregistree. Cash, carte, mobile money."
+- Message : "Chaque vente est enregistree. Encaissement en especes."
 - Bien insister : cette commande va tout de suite bouger le stock (etape 5).
 
 ### Etape 3 - L'espace Service (la salle en temps reel)
