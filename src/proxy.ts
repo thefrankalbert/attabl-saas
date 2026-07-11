@@ -101,6 +101,18 @@ export async function proxy(request: NextRequest) {
   const subdomain = extractSubdomain(hostname);
   const pathname = request.nextUrl.pathname;
 
+  // The update banner polls /api/version every 60s and on every tab focus. Every
+  // request otherwise runs createMiddlewareClient -> getUser -> a single-use
+  // Supabase refresh-token rotation (on subdomains AND custom domains), so that
+  // frequent poll churns the auth session and races real navigations on the
+  // rotating token, logging users out. A version check needs no auth and no tenant
+  // resolution: serve it here, before any host branch, without touching the session.
+  if (pathname === '/api/version') {
+    const resp = NextResponse.next({ request: { headers: request.headers } });
+    resp.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+    return resp;
+  }
+
   // 2. Custom domain check: hostname is not *.attabl.com and not localhost
   const hostWithoutPort = hostname.split(':')[0];
   const isMainDomain = hostWithoutPort === 'attabl.com' || hostWithoutPort === 'www.attabl.com';
