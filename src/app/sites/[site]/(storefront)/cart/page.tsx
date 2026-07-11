@@ -535,7 +535,7 @@ export default function CartPage() {
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
-                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
+                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus-visible:ring-0 focus-visible:border-[#D4D4D4] resize-none transition-colors"
               />
               <div className="mt-1 flex justify-end">
                 <span className="text-[11px] text-[#B0B0B0]">
