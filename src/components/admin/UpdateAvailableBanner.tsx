@@ -30,6 +30,21 @@ export function UpdateAvailableBanner({
 }: UpdateAvailableBannerProps) {
   const t = useTranslations('updateBanner');
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [reloading, setReloading] = useState(false);
+
+  // Refresh the session ONCE before the hard reload, then reload. The pre-refresh
+  // rotates the token a single time so the reload starts with a fresh access
+  // token - otherwise the parallel requests a full reload fires would race on the
+  // single-use refresh token and log the user out (see /api/auth/refresh-session).
+  const reloadToUpdate = useCallback(async () => {
+    setReloading(true);
+    try {
+      await fetch('/api/auth/refresh-session', { method: 'POST', cache: 'no-store' });
+    } catch {
+      // If the pre-refresh fails, reload anyway - no worse than a plain reload.
+    }
+    window.location.reload();
+  }, []);
 
   const check = useCallback(async () => {
     // No deploy sha (local dev) -> nothing to compare against.
@@ -70,12 +85,17 @@ export function UpdateAvailableBanner({
       <Button
         type="button"
         variant="ghost"
-        onClick={() => window.location.reload()}
+        onClick={reloadToUpdate}
+        disabled={reloading}
         title={t('message')}
         aria-label={t('message')}
         className="relative mx-auto mt-1 flex size-9 items-center justify-center rounded-lg border border-status-info/25 bg-status-info/10 text-status-info hover:bg-status-info/15 hover:text-status-info"
       >
-        <ArrowUpCircle className="size-4" />
+        {reloading ? (
+          <RefreshCw className="size-4 animate-spin" />
+        ) : (
+          <ArrowUpCircle className="size-4" />
+        )}
         <span className="absolute -right-0.5 -top-0.5 flex size-2" aria-hidden="true">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-info opacity-60" />
           <span className="relative inline-flex size-2 rounded-full bg-status-info" />
@@ -88,7 +108,8 @@ export function UpdateAvailableBanner({
     <Button
       type="button"
       variant="ghost"
-      onClick={() => window.location.reload()}
+      onClick={reloadToUpdate}
+      disabled={reloading}
       title={t('message')}
       aria-label={t('message')}
       className="group mt-1 flex h-auto w-full items-center justify-start gap-2.5 rounded-lg border border-status-info/25 bg-status-info/10 px-2 py-2 text-left hover:bg-status-info/15"
@@ -104,7 +125,11 @@ export function UpdateAvailableBanner({
           {t('refreshHint')}
         </span>
       </span>
-      <RefreshCw className="size-3.5 shrink-0 text-status-info transition-transform duration-300 group-hover:rotate-180" />
+      <RefreshCw
+        className={`size-3.5 shrink-0 text-status-info transition-transform duration-300 ${
+          reloading ? 'animate-spin' : 'group-hover:rotate-180'
+        }`}
+      />
     </Button>
   );
 }
