@@ -1,4 +1,4 @@
--- Reassign a dine-in order to a different (free or shared) table.
+-- Reassign a dine-in order to a different, currently FREE table.
 -- ============================================================================
 -- WHY: a server sometimes seats a party, fires an order, then has to move it to
 -- another table (wrong table tapped, party relocated, table freed up). Doing this
@@ -7,9 +7,10 @@
 -- orphan an empty open session that then swallows tomorrow's orders on that table.
 --
 -- This RPC does the whole move in ONE transaction:
---   - find-or-create the OPEN session on the destination table (same advisory-lock
---     find-or-create as create_order_with_items, migration
---     20260630020000_money_bigint_transactional.sql),
+--   - advisory-lock both tables (same key format as create_order_with_items,
+--     migration 20260630020000_money_bigint_transactional.sql), then open a fresh
+--     session on the destination - rejecting if it is already occupied, because a
+--     reassign only ever targets a FREE table and must never merge two parties,
 --   - repoint orders.table_number + orders.session_id,
 --   - close the OLD session if it no longer holds any unsettled order (same rule as
 --     closeSessionIfFullySettled in src/services/order/order-lifecycle.ts: a session
