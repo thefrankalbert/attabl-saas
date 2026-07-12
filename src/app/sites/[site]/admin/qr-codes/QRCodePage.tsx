@@ -7,14 +7,12 @@ import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QRPreview } from '@/components/qr/QRPreview';
 import { QRExportBar } from '@/components/qr/QRExportBar';
 import { QrCode, Info, Table2, BookOpen, Layers, Download, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
 import { buildQRUrl } from '@/lib/qr/build-qr-url';
-import { actionResolveDesignsForTables } from '@/app/actions/qr-design';
-import { exportResolvedCardsToPdf, type ExportCard } from '@/lib/qr/export-card';
+import { groupTablesByZone } from '@/lib/qr/group-tables';
+import { BatchQRPreview, type QRMenu } from '@/components/qr/BatchQRPreview';
 import { QRAssignmentPanel, type QRDesignSummary } from '@/components/qr/QRAssignmentPanel';
 import { QRExportPanel } from '@/components/qr/QRExportPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -25,16 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { logger } from '@/lib/logger';
 import type { Table, Zone } from '@/types/admin.types';
-import type { QRDesignConfig } from '@/types/qr-design.types';
-
-interface QRMenu {
-  id: string;
-  name: string;
-  slug: string;
-  is_active: boolean;
-}
 
 interface QRCodePageProps {
   tenant: {
@@ -63,19 +52,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
   // Which saved design is loaded in the editor (null = a new/unsaved design).
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(null);
 
-  // Group tables by zone
-  const tablesByZone = useMemo(() => {
-    const grouped: Record<string, { zone: Zone; tables: Table[] }> = {};
-    for (const zone of zones) {
-      grouped[zone.id] = { zone, tables: [] };
-    }
-    for (const table of tables) {
-      if (grouped[table.zone_id]) {
-        grouped[table.zone_id].tables.push(table);
-      }
-    }
-    return Object.values(grouped).filter((g) => g.tables.length > 0);
-  }, [zones, tables]);
+  // Group tables by zone (shared util)
+  const tablesByZone = useMemo(() => groupTablesByZone(zones, tables), [zones, tables]);
 
   // Compute selected table/menu objects
   const selectedTable = tables.find((tbl) => tbl.id === selectedTableId);
@@ -356,125 +334,6 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-// --- Batch QR Preview --------------------------------------
-interface BatchQRPreviewProps {
-  tables: Table[];
-  zones: Zone[];
-  menus: QRMenu[];
-  selectedMenuId: string;
-  menuUrl: string;
-  tenantName: string;
-  config: QRDesignConfig;
-}
-
-function BatchQRPreview({
-  tables,
-  zones,
-  menus,
-  selectedMenuId,
-  menuUrl,
-  tenantName,
-  config,
-}: BatchQRPreviewProps) {
-  const t = useTranslations('qrCodes');
-  const [generating, setGenerating] = useState(false);
-
-  const selectedMenu = menus.find((m) => m.id === selectedMenuId);
-
-  // Group tables by zone for display
-  const groupedTables = useMemo(() => {
-    const grouped: Record<string, { zoneName: string; tables: Table[] }> = {};
-    for (const zone of zones) {
-      grouped[zone.id] = { zoneName: zone.name, tables: [] };
-    }
-    for (const table of tables) {
-      if (grouped[table.zone_id]) {
-        grouped[table.zone_id].tables.push(table);
-      }
-    }
-    return Object.values(grouped).filter((g) => g.tables.length > 0);
-  }, [zones, tables]);
-
-  const handleBatchDownload = async () => {
-    setGenerating(true);
-    try {
-      // Resolve each table's assigned design (table -> zone -> tenant default) so
-      // every printed card reflects what was assigned, not one global config.
-      const resolved = await actionResolveDesignsForTables(tables.map((tbl) => tbl.id));
-      if (!resolved.success) {
-        toast.error(resolved.error);
-        return;
-      }
-
-      const cards: ExportCard[] = tables.map((table) => ({
-        // Canonical table_number in the URL (matches the single-QR path + scanner).
-        url: buildQRUrl(menuUrl, table.table_number ?? undefined, selectedMenu?.slug),
-        tableName: table.display_name,
-        config: resolved.data[table.id] ?? config,
-        tenantName,
-      }));
-
-      const { skipped } = await exportResolvedCardsToPdf(
-        cards,
-        `qrcodes-${tenantName.toLowerCase().replace(/\s/g, '-')}-toutes-tables.pdf`,
-      );
-
-      if (skipped.length > 0) {
-        toast.warning(t('batchSkipped', { count: skipped.length }));
-      } else {
-        toast.success(t('exportDone'));
-      }
-    } catch (error) {
-      logger.error('Batch PDF generation error', error);
-      toast.error(t('exportError'));
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  return (
-    <div>
-      {/* Table list preview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-4">
-        {groupedTables.map(({ zoneName, tables: zoneTables }) => (
-          <div key={zoneName} className="contents">
-            {zoneTables.map((table) => (
-              <div
-                key={table.id}
-                className="flex items-center gap-2 p-2 bg-app-bg rounded-xl text-xs"
-              >
-                <Table2 className="w-3 h-3 text-app-text-muted shrink-0" />
-                <span className="text-app-text-secondary font-medium break-words">
-                  {table.display_name}
-                </span>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Download button */}
-      <Button
-        onClick={handleBatchDownload}
-        disabled={generating}
-        variant="default"
-        size="lg"
-        className="w-full gap-2"
-      >
-        <Download className="w-4 h-4" />
-        {generating
-          ? t('batchGenerating', { count: tables.length })
-          : t('batchDownload', { count: tables.length })}
-      </Button>
-      {selectedMenu && (
-        <p className="text-xs text-app-text-muted mt-2 text-center">
-          {t('batchMenuRedirect', { menu: selectedMenu.name })}
-        </p>
-      )}
     </div>
   );
 }

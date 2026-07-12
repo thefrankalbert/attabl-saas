@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { actionSaveQrDesign, actionAssignQrDesign } from '@/app/actions/qr-design';
 import type { Table, Zone } from '@/types/admin.types';
+import { groupTablesByZone } from '@/lib/qr/group-tables';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 import { qrDesignConfigSchema } from '@/lib/validations/qr-design.schema';
 
@@ -72,10 +73,7 @@ export function QRAssignmentPanel({
   const hasDefault = designs.some((d) => d.is_default);
 
   const tablesByZone = useMemo(() => {
-    const grouped: Record<string, { zone: Zone; tables: Table[] }> = {};
-    for (const zone of zones) grouped[zone.id] = { zone, tables: [] };
-    for (const table of tables) grouped[table.zone_id]?.tables.push(table);
-    return Object.values(grouped).filter((g) => g.tables.length > 0);
+    return groupTablesByZone(zones, tables);
   }, [zones, tables]);
 
   function resolveDesignName(id: string | null | undefined): string | null {
