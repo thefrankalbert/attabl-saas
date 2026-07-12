@@ -243,7 +243,10 @@ export function QRAssignmentPanel({
                         onValueChange={(v) => assign('zone', zone.id, v)}
                         disabled={isPending || designs.length === 0}
                       >
-                        <SelectTrigger className="w-44 h-9">
+                        <SelectTrigger
+                          className="w-44 h-9"
+                          aria-label={t('assignZoneLabel', { name: zone.name })}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -285,7 +288,10 @@ export function QRAssignmentPanel({
                             onValueChange={(v) => assign('table', table.id, v)}
                             disabled={isPending || designs.length === 0}
                           >
-                            <SelectTrigger className="w-44 h-9">
+                            <SelectTrigger
+                              className="w-44 h-9"
+                              aria-label={t('assignTableLabel', { name: table.display_name })}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

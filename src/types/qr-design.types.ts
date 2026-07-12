@@ -121,19 +121,17 @@ export interface QRTemplateDefault {
   height: number;
   qrSize: number;
   orientation: 'portrait' | 'landscape';
-  name: string;
-  description: string;
   planRequired: 'starter' | 'pro';
 }
 
+// Display name/description live in i18n (qrCodes.template_<id>_name/_desc),
+// resolved by QRTemplatePicker - not here, so they translate.
 export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
   minimal: {
     width: 100,
     height: 100,
     qrSize: 220,
     orientation: 'portrait',
-    name: 'Minimal',
-    description: 'Le QR seul, epure',
     planRequired: 'starter',
   },
   carte: {
@@ -141,8 +139,6 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     height: 130,
     qrSize: 200,
     orientation: 'portrait',
-    name: 'Carte bordee',
-    description: 'Nom, filet fin, QR centre',
     planRequired: 'starter',
   },
   chevalet: {
@@ -150,8 +146,6 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     height: 148,
     qrSize: 180,
     orientation: 'portrait',
-    name: 'Chevalet',
-    description: 'A6 vertical pour les tables',
     planRequired: 'starter',
   },
 } as const;

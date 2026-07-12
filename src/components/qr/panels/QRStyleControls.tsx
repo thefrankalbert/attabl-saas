@@ -34,12 +34,14 @@ export function QRStyleControls({ config, updateField }: QRStyleControlsProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('dotStyleLabel')}</Label>
+          <Label htmlFor="qr-dot-style" className="text-xs text-app-text-secondary">
+            {t('dotStyleLabel')}
+          </Label>
           <Select
             value={config.qrDotStyle}
             onValueChange={(v) => updateField('qrDotStyle', v as QRDotStyle)}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="qr-dot-style" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -53,12 +55,14 @@ export function QRStyleControls({ config, updateField }: QRStyleControlsProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('cornerStyleLabel')}</Label>
+          <Label htmlFor="qr-corner-style" className="text-xs text-app-text-secondary">
+            {t('cornerStyleLabel')}
+          </Label>
           <Select
             value={config.qrCornerStyle}
             onValueChange={(v) => updateField('qrCornerStyle', v as QRCornerStyle)}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="qr-corner-style" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -86,12 +90,14 @@ export function QRStyleControls({ config, updateField }: QRStyleControlsProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-app-text-secondary">{t('errorCorrectionLabel')}</Label>
+        <Label htmlFor="qr-error-correction" className="text-xs text-app-text-secondary">
+          {t('errorCorrectionLabel')}
+        </Label>
         <Select
           value={config.errorCorrection}
           onValueChange={(v) => updateField('errorCorrection', v as QRErrorCorrectionLevel)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="qr-error-correction" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

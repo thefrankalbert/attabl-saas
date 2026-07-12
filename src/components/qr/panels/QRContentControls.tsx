@@ -116,7 +116,9 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
 
       {/* CTA */}
       <div className="space-y-1.5">
-        <Label className="text-xs text-app-text-secondary">{t('ctaLabel')}</Label>
+        <Label htmlFor="qr-cta-preset" className="text-xs text-app-text-secondary">
+          {t('ctaLabel')}
+        </Label>
         <Select
           value={config.ctaPreset}
           onValueChange={(v) => {
@@ -125,7 +127,7 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
             if (preset !== 'custom') updateField('ctaText', CTA_PRESETS[preset]);
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="qr-cta-preset" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

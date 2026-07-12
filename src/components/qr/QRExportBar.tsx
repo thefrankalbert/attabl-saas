@@ -159,7 +159,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           ) : (
             <Download className="h-4 w-4" />
           )}
-          {loading === 'pdf' ? 'Export...' : 'Télécharger PDF'}
+          {loading === 'pdf' ? t('exporting') : t('exportPdf')}
         </Button>
 
         {/* PNG - premium */}
@@ -175,7 +175,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
             ) : (
               <FileImage className="h-4 w-4" />
             )}
-            PNG
+            {t('exportPng')}
           </Button>
         </FeatureGate>
 
@@ -192,7 +192,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
             ) : (
               <FileCode className="h-4 w-4" />
             )}
-            SVG (QR seul)
+            {t('exportSvgOnly')}
           </Button>
         </FeatureGate>
         {/* Print lives in the Download tab (QRExportPanel) where QRPrintSheet
