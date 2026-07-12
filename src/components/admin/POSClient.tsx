@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useSyncExternalStore } from 'react';
+import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -17,9 +17,14 @@ import POSUnpaidPanel from '@/components/features/pos/POSUnpaidPanel';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { ReassignTableDialog } from '@/components/admin/service/ReassignTableDialog';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
-import type { Order } from '@/types/admin.types';
+import { createClient } from '@/lib/supabase/client';
+import { createOrderService } from '@/services/order.service';
+import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
+import type { Order, Table } from '@/types/admin.types';
 
 interface POSClientProps {
   tenantId: string;
@@ -47,7 +52,48 @@ export default function POSClient({ tenantId }: POSClientProps) {
   );
 
   const ts = useTranslations('shortcuts');
+  const tsvc = useTranslations('service');
+  const { toast } = useToast();
   const pos = usePOSData(tenantId);
+
+  // -- Clicking an occupied table in the picker: move its current order to a
+  // free table instead of stacking a new order on top of the open session. --
+  const [reassignOrderId, setReassignOrderId] = useState<string | null>(null);
+
+  const freeTables = useMemo(
+    () =>
+      pos.allTables
+        .filter(
+          (tbl) =>
+            !pos.occupiedTableNumbers.has(tbl.table_number) &&
+            !pos.occupiedTableNumbers.has(tbl.display_name),
+        )
+        .map((tbl) => ({
+          tableNumber: tbl.table_number,
+          label: tbl.display_name || tbl.table_number,
+        })),
+    [pos.allTables, pos.occupiedTableNumbers],
+  );
+
+  const handleReassignOccupied = useCallback(
+    async (table: Table) => {
+      try {
+        const orderService = createOrderService(createClient());
+        const order = (await orderService.getCurrentOrderForTable(tenantId, table.id)) as {
+          id?: string;
+        } | null;
+        if (order?.id) {
+          setReassignOrderId(order.id);
+        } else {
+          toast({ title: tsvc('reassignError'), variant: 'destructive' });
+        }
+      } catch (err) {
+        logger.error('POSClient: load occupied table order failed', { err, tableId: table.id });
+        toast({ title: tsvc('reassignError'), variant: 'destructive' });
+      }
+    },
+    [tenantId, toast, tsvc],
+  );
 
   // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
@@ -200,6 +246,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   zones={pos.zones}
                   allTables={pos.allTables}
                   occupiedTableNumbers={pos.occupiedTableNumbers}
+                  onReassignOccupied={handleReassignOccupied}
                   onUpdateQuantity={pos.updateQuantity}
                   onClearCart={pos.clearCart}
                   onEditNotes={(itemId, currentNotes) => {
@@ -251,6 +298,29 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 </div>
               </div>
             )}
+
+            {/* Reassign the occupied table's order to a free one */}
+            <ReassignTableDialog
+              open={reassignOrderId !== null}
+              onOpenChange={(open) => {
+                if (!open) setReassignOrderId(null);
+              }}
+              orderId={reassignOrderId ?? ''}
+              freeTables={freeTables}
+              onReassigned={() => setReassignOrderId(null)}
+              toast={toast}
+              labels={{
+                title: tsvc('reassignTitle'),
+                description: tsvc('reassignDescription'),
+                placeholder: tsvc('reassignPlaceholder'),
+                noFreeTables: tsvc('reassignNoFreeTables'),
+                confirm: tsvc('reassignConfirm'),
+                cancel: tc('cancel'),
+                moving: tsvc('reassignMoving'),
+                success: tsvc('reassignSuccess'),
+                error: tsvc('reassignError'),
+              }}
+            />
 
             {/* Payment Modal Reuse */}
             {showPaymentModal && (
