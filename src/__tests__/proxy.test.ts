@@ -530,3 +530,32 @@ describe('proxy - edge cases', () => {
     expect(rewriteTarget(res)).toBeNull();
   });
 });
+
+// Pins the fix for the "logged out when applying an update" bug: /api/version is
+// polled every 60s + on focus by the update banner. If the middleware refreshed
+// the Supabase session (getUser -> single-use refresh-token rotation) on that
+// poll, the churn logged users out on reload. The version check must never touch
+// the session, on ANY host type.
+describe('proxy - /api/version never refreshes the session', () => {
+  it('serves /api/version without calling getUser on the main domain', async () => {
+    const res = await proxy(makeRequest('attabl.com', '/api/version'));
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get('Content-Security-Policy')).toContain("'nonce-");
+  });
+
+  it('serves /api/version without calling getUser on a tenant subdomain', async () => {
+    const res = await proxy(makeRequest('radisson.attabl.com', '/api/version'));
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(isPassThrough(res)).toBe(true);
+  });
+
+  it('serves /api/version without calling getUser on a custom domain', async () => {
+    getCachedTenantByDomainMock.mockResolvedValue('radisson');
+    const res = await proxy(makeRequest('menu.restaurant.com', '/api/version'));
+    expect(getUserMock).not.toHaveBeenCalled();
+    // Short-circuits before tenant resolution too.
+    expect(getCachedTenantByDomainMock).not.toHaveBeenCalled();
+    expect(isPassThrough(res)).toBe(true);
+  });
+});
