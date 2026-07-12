@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
+import { attemptChunkReload } from '@/lib/utils/chunk-reload';
 
 export default function GlobalError({
   error,
@@ -12,6 +13,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    if (attemptChunkReload(error)) return;
     Sentry.captureException(error);
     logger.error('Global error', error);
   }, [error]);

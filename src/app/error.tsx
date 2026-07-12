@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ErrorLayout } from '@/components/shared/ErrorLayout';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { attemptChunkReload } from '@/lib/utils/chunk-reload';
 
 export default function Error({
   error,
@@ -19,6 +20,9 @@ export default function Error({
   const t = useTranslations('common');
 
   useEffect(() => {
+    // Stale chunk after a deploy: reload once to fetch the fresh bundle instead
+    // of leaving the user stuck on this error page.
+    if (attemptChunkReload(error)) return;
     Sentry.captureException(error);
     logger.error('Application error', error);
   }, [error]);
