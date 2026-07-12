@@ -9,18 +9,18 @@ Each executor: read the whole plan first, run its drift check, honor STOP condit
 
 ## Execution order & status
 
-| Plan | Title                                                                  | Priority | Effort | Depends on | Status                                        |
-| ---- | ---------------------------------------------------------------------- | -------- | ------ | ---------- | --------------------------------------------- |
-| 001  | Logo upload no longer breaks saving                                    | P1       | M      | —          | DONE                                          |
-| 002  | Reload & edit saved designs (no dup)                                   | P1       | M      | 001        | DONE                                          |
-| 003  | Export/print renders real design, per table, correct table id          | P1       | L      | (002)      | DONE (visual PDF smoke on live admin pending) |
-| 004  | Single non-clipped preview + non-blank tablet export                   | P1       | S      | —          | TODO                                          |
-| 005  | Export/print failures give user feedback                               | P2       | S      | (003)      | TODO                                          |
-| 006  | Every control has an effect; dead config removed                       | P2       | M      | 002        | TODO                                          |
-| 007  | Security: RLS, rate-limit, assign gate, entitlement parity, src scheme | P2       | M      | —          | TODO                                          |
-| 008  | Paywall is clear/actionable + admin color tokens                       | P2       | M      | —          | TODO                                          |
-| 009  | Full i18n + a11y sweep                                                 | P3       | S-M    | 006        | TODO                                          |
-| 010  | Tests for critical paths + dedup/decompose                             | P3       | M      | 003, 006   | TODO                                          |
+| Plan | Title                                                                  | Priority | Effort | Depends on | Status                                           |
+| ---- | ---------------------------------------------------------------------- | -------- | ------ | ---------- | ------------------------------------------------ |
+| 001  | Logo upload no longer breaks saving                                    | P1       | M      | —          | DONE                                             |
+| 002  | Reload & edit saved designs (no dup)                                   | P1       | M      | 001        | DONE                                             |
+| 003  | Export/print renders real design, per table, correct table id          | P1       | L      | (002)      | DONE (visual PDF smoke on live admin pending)    |
+| 004  | Single non-clipped preview + non-blank tablet export                   | P1       | S      | —          | DONE (visual tablet smoke on live admin pending) |
+| 005  | Export/print failures give user feedback                               | P2       | S      | (003)      | DONE                                             |
+| 006  | Every control has an effect; dead config removed                       | P2       | M      | 002        | DONE                                             |
+| 007  | Security: RLS, rate-limit, assign gate, entitlement parity, src scheme | P2       | M      | —          | DONE (RLS migration NOT yet applied to prod)     |
+| 008  | Remove illusory PNG/SVG export paywall + delete dead FeatureGate       | P2       | M      | —          | DONE (product: gate removed)                     |
+| 009  | Full i18n + a11y sweep                                                 | P3       | S-M    | 006        | DONE                                             |
+| 010  | Tests for critical paths + dedup/decompose                             | P3       | M      | 003, 006   | DONE (3 sub-items deferred, see plan)            |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (rationale)
 
