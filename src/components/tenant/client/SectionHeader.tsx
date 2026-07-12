@@ -12,9 +12,9 @@ interface Props {
 
 export function SectionHeader({ title, subtitle, seeAllHref, seeAllLabel }: Props) {
   return (
-    <div className="flex items-end justify-between px-4 pb-3.5 pt-5">
-      <div>
-        <h2 className="text-[18.5px] font-semibold leading-[1.15] tracking-[-0.6px] text-[var(--color-ink)]">
+    <div className="flex items-end justify-between gap-3 px-4 pb-3.5 pt-5">
+      <div className="min-w-0">
+        <h2 className="truncate text-[18.5px] font-semibold leading-[1.15] tracking-[-0.6px] text-[var(--color-ink)]">
           {title}
         </h2>
         {subtitle && (
@@ -26,7 +26,7 @@ export function SectionHeader({ title, subtitle, seeAllHref, seeAllLabel }: Prop
       {seeAllHref && seeAllLabel && (
         <Link
           href={seeAllHref}
-          className="flex items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
+          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
         >
           {seeAllLabel} <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
         </Link>

@@ -45,20 +45,22 @@ export function OrderSummary({
     <section className="rounded-[var(--radius-card)] border border-[var(--color-divider)] bg-white px-4 py-3.5">
       <div className="space-y-2.5">
         {/* Subtotal */}
-        <div className="flex justify-between items-center">
-          <span className="text-[13px] font-normal text-[#737373]">{labels.subtotal}</span>
-          <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-[13px] font-normal text-[#737373]">
+            {labels.subtotal}
+          </span>
+          <span className="shrink-0 text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
             {formatDisplayPrice(subtotal, currencyCode)}
           </span>
         </div>
 
         {/* Tax */}
         {enableTax && taxAmount > 0 && (
-          <div className="flex justify-between items-center">
-            <span className="text-[13px] font-normal text-[#737373]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[13px] font-normal text-[#737373]">
               {labels.tax} ({taxRate}%)
             </span>
-            <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
+            <span className="shrink-0 text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
               {formatDisplayPrice(taxAmount, currencyCode)}
             </span>
           </div>
@@ -66,11 +68,11 @@ export function OrderSummary({
 
         {/* Service charge */}
         {enableServiceCharge && serviceChargeAmount > 0 && (
-          <div className="flex justify-between items-center">
-            <span className="text-[13px] font-normal text-[#737373]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[13px] font-normal text-[#737373]">
               {labels.serviceCharge} ({serviceChargeRate}%)
             </span>
-            <span className="text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
+            <span className="shrink-0 text-[13px] font-medium tabular-nums text-[var(--color-ink-2)]">
               {formatDisplayPrice(serviceChargeAmount, currencyCode)}
             </span>
           </div>
