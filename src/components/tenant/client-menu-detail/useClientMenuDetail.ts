@@ -18,6 +18,8 @@ export interface ClientMenuDetailPageProps {
   transversalMenus?: Menu[];
   initialMenuSlug?: string;
   initialTable?: string;
+  /** True when the scanned table already has an open session (soft warning). */
+  tableOccupied?: boolean;
   initialVenueSlug?: string;
   initialSection?: string;
   initialItemId?: string;

@@ -4,11 +4,11 @@ import { useState, useSyncExternalStore } from 'react';
 import { TriangleAlert, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { useTableOccupied } from '@/hooks/queries/useTableOccupied';
 import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 
 interface TableOccupiedNoticeProps {
-  tenantId: string;
+  /** True when the scanned table already has an open session (computed server-side). */
+  occupied: boolean;
   tenantSlug: string;
   tableNumber?: string;
 }
@@ -17,18 +17,20 @@ interface TableOccupiedNoticeProps {
  * Soft, dismissible warning shown when a customer ARRIVES at a table that already
  * has an open session (a likely other party). Non-blocking: it never stops the
  * order, it just nudges the customer to check with the staff. Renders nothing
- * when there is no table, the table is free, the check errors, the customer
- * dismissed it, OR this device already placed an order for this tenant - in which
- * case the open session is the customer's OWN and the warning would be wrong.
+ * when there is no table, the table is free, the customer dismissed it, OR this
+ * device already placed an order for this tenant - in which case the open session
+ * is the customer's OWN and the warning would be wrong.
+ *
+ * Occupancy is passed in from the server (no client data fetch - the storefront
+ * has no React Query provider); only the own-order suppression reads localStorage.
  */
 export function TableOccupiedNotice({
-  tenantId,
+  occupied,
   tenantSlug,
   tableNumber,
 }: TableOccupiedNoticeProps) {
   const t = useTranslations('tenant');
   const [dismissed, setDismissed] = useState(false);
-  const { data: occupied } = useTableOccupied(tenantId, tableNumber);
 
   // A session this device created (by ordering) is not "another party". Read the
   // placed-order ids the cart persists via useSyncExternalStore so it is
@@ -47,7 +49,7 @@ export function TableOccupiedNotice({
     () => false,
   );
 
-  if (!occupied || dismissed || ownSession) return null;
+  if (!occupied || !tableNumber || dismissed || ownSession) return null;
 
   return (
     <div
@@ -56,7 +58,7 @@ export function TableOccupiedNotice({
     >
       <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
       <p className="flex-1 text-xs leading-snug">
-        {t('tableOccupiedNotice', { table: tableNumber ?? '' })}
+        {t('tableOccupiedNotice', { table: tableNumber })}
       </p>
       <Button
         type="button"

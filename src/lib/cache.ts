@@ -140,6 +140,33 @@ export async function getCachedTenant(slug: string): Promise<Tenant | null> {
 }
 
 /**
+ * Does the scanned table already hold an OPEN session? Server-side, briefly
+ * cached (20s) so the menu page stays ISR instead of going dynamic per QR scan.
+ * Drives the soft "table occupied" warning; on any error returns false so it can
+ * never break the page. Uses the is_table_occupied RPC via the service client.
+ */
+export async function getTableOccupied(tenantId: string, tableNumber: string): Promise<boolean> {
+  try {
+    return await unstable_cache(
+      async () => {
+        const supabase = createCacheClient();
+        const { data, error } = await supabase.rpc('is_table_occupied', {
+          p_tenant_id: tenantId,
+          p_table_number: tableNumber,
+        });
+        if (error) return false;
+        return data === true;
+      },
+      ['table-occupied', tenantId, tableNumber],
+      { revalidate: 20 },
+    )();
+  } catch (err) {
+    logger.error('getTableOccupied failed', err, { tenantId, tableNumber });
+    return false;
+  }
+}
+
+/**
  * Fresh tenant config - bypasses all caching.
  *
  * Use this in admin pages (force-dynamic) where data must be 100% fresh

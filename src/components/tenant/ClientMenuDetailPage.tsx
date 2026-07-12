@@ -82,7 +82,7 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
 
       {/* Soft warning if the scanned table already has an open session. */}
       <TableOccupiedNotice
-        tenantId={tenant.id}
+        occupied={props.tableOccupied ?? false}
         tenantSlug={tenant.slug}
         tableNumber={props.initialTable}
       />
