@@ -59,11 +59,15 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <ColorPicker
-          label={t('accentColor')}
-          value={config.templateAccentColor}
-          onChange={(c) => updateField('templateAccentColor', c)}
-        />
+        {/* Minimal has no accented element, so its accent control would be a
+            no-op - only show it for templates that render the accent color. */}
+        {config.templateId !== 'minimal' && (
+          <ColorPicker
+            label={t('accentColor')}
+            value={config.templateAccentColor}
+            onChange={(c) => updateField('templateAccentColor', c)}
+          />
+        )}
         <ColorPicker
           label={t('textColor')}
           value={config.templateTextColor}

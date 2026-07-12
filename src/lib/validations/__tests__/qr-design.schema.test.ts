@@ -6,7 +6,7 @@ import {
 } from '../qr-design.schema';
 import { createDefaultQRDesignConfig } from '@/types/qr-design.types';
 
-const validConfig = createDefaultQRDesignConfig('#CCFF00', '#1A1A1A');
+const validConfig = createDefaultQRDesignConfig('#CCFF00');
 
 describe('qrDesignConfigSchema', () => {
   it('accepts the factory default config', () => {

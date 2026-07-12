@@ -17,8 +17,6 @@ export type QRErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
 export type QRDotStyle = 'square' | 'rounded' | 'dots' | 'classy' | 'extra-rounded';
 export type QRCornerStyle = 'square' | 'rounded' | 'dot';
 
-export type QRShadowIntensity = 'none' | 'light' | 'medium' | 'strong';
-
 type QRExportFormat = 'pdf' | 'png' | 'svg';
 
 export type QRCTAPreset =
@@ -81,13 +79,6 @@ interface QRLogoConfig {
   opacity: number;
 }
 
-interface QRGradientConfig {
-  enabled: boolean;
-  colorStart: string;
-  colorEnd: string;
-  angle: number;
-}
-
 export interface QRDesignConfig {
   templateId: QRTemplateId;
   qrFgColor: string;
@@ -100,16 +91,11 @@ export interface QRDesignConfig {
   templateHeight: number;
   cornerRadius: number;
   padding: number;
-  shadow: QRShadowIntensity;
   templateBgColor: string;
   templateAccentColor: string;
   templateTextColor: string;
-  gradient: QRGradientConfig;
-  backgroundImage: { enabled: boolean; src: string; opacity: number };
   ctaPreset: QRCTAPreset;
   ctaText: string;
-  descriptionText: string;
-  footerText: string;
   showPoweredBy: boolean;
   fontFamily: string;
   exportFormat: QRExportFormat;
@@ -180,39 +166,9 @@ export const CTA_PRESETS: Record<QRCTAPreset, string> = {
   custom: '',
 } as const;
 
-// Shadow Classes
-
-export const SHADOW_CLASSES: Record<QRShadowIntensity, string> = {
-  none: '',
-  light: 'shadow-md',
-  medium: 'shadow-xl',
-  strong: 'shadow-2xl',
-} as const;
-
-// Font Options
-
-export interface FontOption {
-  value: string;
-  label: string;
-}
-
-export const FONT_OPTIONS: FontOption[] = [
-  { value: 'Geist', label: 'Geist' },
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Playfair Display', label: 'Playfair Display' },
-  { value: 'Lora', label: 'Lora' },
-  { value: 'Montserrat', label: 'Montserrat' },
-  { value: 'Raleway', label: 'Raleway' },
-  { value: 'Poppins', label: 'Poppins' },
-  { value: 'Roboto Slab', label: 'Roboto Slab' },
-] as const;
-
 // Factory Function
 
-export function createDefaultQRDesignConfig(
-  primaryColor: string,
-  secondaryColor: string,
-): QRDesignConfig {
+export function createDefaultQRDesignConfig(primaryColor: string): QRDesignConfig {
   return {
     templateId: 'minimal',
     qrFgColor: '#000000',
@@ -232,25 +188,11 @@ export function createDefaultQRDesignConfig(
     templateHeight: 100,
     cornerRadius: 10,
     padding: 24,
-    shadow: 'none',
     templateBgColor: '#FFFFFF',
     templateAccentColor: primaryColor,
     templateTextColor: '#111111',
-    gradient: {
-      enabled: false,
-      colorStart: primaryColor,
-      colorEnd: secondaryColor,
-      angle: 135,
-    },
-    backgroundImage: {
-      enabled: false,
-      src: '',
-      opacity: 0.1,
-    },
     ctaPreset: 'scannez-commander',
     ctaText: CTA_PRESETS['scannez-commander'],
-    descriptionText: '',
-    footerText: '',
     showPoweredBy: true,
     fontFamily: 'Geist',
     exportFormat: 'pdf',

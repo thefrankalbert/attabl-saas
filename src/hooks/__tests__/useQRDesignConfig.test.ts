@@ -6,7 +6,7 @@ import {
   type QRTemplateId,
 } from '@/types/qr-design.types';
 
-const base = createDefaultQRDesignConfig('#CCFF00', '#1A1A1A');
+const base = createDefaultQRDesignConfig('#CCFF00');
 
 describe('qrDesignReducer', () => {
   it('HYDRATE replaces the whole state with the given config', () => {
@@ -33,15 +33,5 @@ describe('qrDesignReducer', () => {
     expect(next.qrSize).toBe(TEMPLATE_DEFAULTS[target].qrSize);
     // Non-template fields must survive a template switch.
     expect(next.ctaText).toBe('Table 12');
-  });
-
-  it('RESET returns a fresh default config', () => {
-    const dirty = { ...base, ctaText: 'changed', qrFgColor: '#999999' };
-    const next = qrDesignReducer(dirty, {
-      type: 'RESET',
-      primaryColor: '#CCFF00',
-      secondaryColor: '#1A1A1A',
-    });
-    expect(next).toEqual(createDefaultQRDesignConfig('#CCFF00', '#1A1A1A'));
   });
 });

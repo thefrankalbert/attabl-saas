@@ -59,10 +59,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
   const downloadPreviewRef = useRef<HTMLDivElement>(null);
 
   // QR Design Config (centralized state for customizer)
-  const { config, updateField, setTemplate, hydrate } = useQRDesignConfig(
-    tenant.primaryColor,
-    tenant.secondaryColor,
-  );
+  const { config, updateField, setTemplate, hydrate } = useQRDesignConfig(tenant.primaryColor);
   // Which saved design is loaded in the editor (null = a new/unsaved design).
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(null);
 

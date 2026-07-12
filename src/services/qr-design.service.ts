@@ -49,7 +49,7 @@ function toRow(row: {
     is_default: row.is_default,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    config: parseConfig(row.config, createDefaultQRDesignConfig('#000000', '#FFFFFF')),
+    config: parseConfig(row.config, createDefaultQRDesignConfig('#000000')),
   };
 }
 
@@ -60,10 +60,7 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       .select('primary_color, secondary_color')
       .eq('id', tenantId)
       .maybeSingle();
-    const factory = createDefaultQRDesignConfig(
-      tenant?.primary_color || '#000000',
-      tenant?.secondary_color || '#FFFFFF',
-    );
+    const factory = createDefaultQRDesignConfig(tenant?.primary_color || '#000000');
 
     const { data: def } = await supabase
       .from('qr_designs')

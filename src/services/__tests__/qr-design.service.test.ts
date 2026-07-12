@@ -51,7 +51,7 @@ function makeSupabase(queue: Result[]) {
   };
 }
 
-const config = createDefaultQRDesignConfig('#CCFF00', '#1A1A1A');
+const config = createDefaultQRDesignConfig('#CCFF00');
 
 describe('createQrDesignService.listDesigns', () => {
   it('filters by tenant_id and returns parsed rows', async () => {

@@ -30,7 +30,7 @@ export function onboardingDataToQRConfig(
   const primary = data.primaryColor || '#CCFF00';
   const secondary = data.secondaryColor || '#000000';
 
-  const base = createDefaultQRDesignConfig(primary, secondary);
+  const base = createDefaultQRDesignConfig(primary);
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
   // Resolve QR fg/bg colors
@@ -54,7 +54,6 @@ export function onboardingDataToQRConfig(
     templateBgColor: secondary,
     templateTextColor: '#FFFFFF',
     ctaText: data.qrCta || '',
-    descriptionText: data.qrDescription || '',
     logo: {
       enabled: !!data.logoUrl,
       src: data.logoUrl || '',
@@ -63,7 +62,6 @@ export function onboardingDataToQRConfig(
       excavate: true,
       opacity: 1,
     },
-    shadow: 'none',
     showPoweredBy: true,
     fontFamily: 'Geist',
   };

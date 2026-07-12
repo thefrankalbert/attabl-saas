@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +53,13 @@ export function ColorPicker({
   disabled = false,
 }: ColorPickerProps) {
   const [hexInput, setHexInput] = useState(value);
+
+  // Keep the hex text field in sync when `value` changes from outside this
+  // control (loading a saved design, template accent update). Transient typing
+  // lives in local state; an external value change re-seeds it.
+  useEffect(() => {
+    setHexInput(value);
+  }, [value]);
 
   const handleHexBlur = () => {
     const normalized = normalizeHex(hexInput);
