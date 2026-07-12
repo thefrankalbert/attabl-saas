@@ -1,9 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Moon, Sun, LogOut, RefreshCw } from 'lucide-react';
+import { Moon, Sun, LogOut, RefreshCw, ArrowUpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
 
 interface TopbarMinimalProps {
   /** Breadcrumb label shown after the brand (e.g. "Admin BluTable", "Plateforme"). */
@@ -19,6 +20,8 @@ interface TopbarMinimalProps {
   onRefresh?: () => void;
   /** When true, the refresh control spins and is disabled. */
   isRefreshing?: boolean;
+  /** Deploy sha this bundle was built from; drives the update-available control. */
+  appVersion?: string;
 }
 
 export function TopbarMinimal({
@@ -29,8 +32,11 @@ export function TopbarMinimal({
   onLogout,
   onRefresh,
   isRefreshing = false,
+  appVersion,
 }: TopbarMinimalProps) {
   const t = useTranslations('admin.tenants.commandCenter.topbar');
+  const tUpdate = useTranslations('updateBanner');
+  const updateAvailable = useUpdateAvailable(appVersion);
   const handleThemeToggle = () => {
     window.dispatchEvent(new CustomEvent('cc:theme:toggle'));
   };
@@ -65,6 +71,31 @@ export function TopbarMinimal({
       </div>
 
       <div className="flex-1" />
+
+      {updateAvailable && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => window.location.reload()}
+          className="relative shrink-0 rounded-md"
+          style={{ color: 'var(--cc-accent)' }}
+          title={tUpdate('message')}
+          aria-label={tUpdate('message')}
+        >
+          <ArrowUpCircle className="size-[15px]" strokeWidth={2} />
+          <span className="absolute right-1 top-1 flex size-2" aria-hidden="true">
+            <span
+              className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+              style={{ background: 'var(--cc-accent)' }}
+            />
+            <span
+              className="relative inline-flex size-2 rounded-full"
+              style={{ background: 'var(--cc-accent)' }}
+            />
+          </span>
+        </Button>
+      )}
 
       {onRefresh && (
         <Button

@@ -59,6 +59,8 @@ interface TenantsPageClientProps {
   serverDirectory?: TenantDirectoryRow[];
   /** Theme read server-side from the attabl-cc-theme cookie (FOUC fix). */
   initialTheme?: 'light' | 'dark';
+  /** Deploy sha this bundle was built from; drives the update-available control. */
+  appVersion?: string;
 }
 
 export default function TenantsPageClient({
@@ -71,6 +73,7 @@ export default function TenantsPageClient({
   serverActiveLocations,
   serverDirectory,
   initialTheme = 'light',
+  appVersion,
 }: TenantsPageClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -274,6 +277,7 @@ export default function TenantsPageClient({
         onLogout={handleLogout}
         onRefresh={refresh}
         isRefreshing={isRefreshing}
+        appVersion={appVersion}
       />
 
       <main

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperAdmin } from '@/lib/auth/require-super-admin';
 import { PlatformConsole } from '@/components/admin/platform/PlatformConsole';
+import { APP_VERSION } from '@/lib/app-version';
 import type { PlatformTenantRow, PlatformUserRow } from '@/types/platform-admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -46,5 +47,5 @@ export default async function PlatformConsolePage() {
   const tenants: PlatformTenantRow[] = (tenantsRes.data as PlatformTenantRow[] | null) ?? [];
   const users: PlatformUserRow[] = (usersRes.data as PlatformUserRow[] | null) ?? [];
 
-  return <PlatformConsole tenants={tenants} users={users} />;
+  return <PlatformConsole tenants={tenants} users={users} appVersion={APP_VERSION} />;
 }
