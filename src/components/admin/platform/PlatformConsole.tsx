@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConfirmActionDialog, type ConfirmActionState } from './ConfirmActionDialog';
+import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { PlatformTenantRow, PlatformUserRow } from '@/types/platform-admin.types';
 import {
   actionSuspendTenant,
@@ -26,11 +27,13 @@ import {
 interface PlatformConsoleProps {
   tenants: PlatformTenantRow[];
   users: PlatformUserRow[];
+  /** Deploy sha this bundle was built from; drives the update-available control. */
+  appVersion?: string;
 }
 
 type ActionResult = { success?: boolean; error?: string };
 
-export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
+export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleProps) {
   const t = useTranslations('admin.platform');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -104,12 +107,15 @@ export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
           <h1 className="text-lg font-semibold sm:text-xl">{t('title')}</h1>
           <p className="text-sm text-app-text-muted">{t('subtitle')}</p>
         </div>
-        <Link
-          href="/admin/tenants"
-          className="inline-flex min-h-[44px] items-center rounded-lg border border-app-border px-4 text-sm text-app-text-secondary transition-colors hover:bg-app-hover"
-        >
-          {t('back')}
-        </Link>
+        <div className="flex items-center gap-2">
+          {appVersion && <UpdateAvailableBanner currentVersion={appVersion} collapsed />}
+          <Link
+            href="/admin/tenants"
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-app-border px-4 text-sm text-app-text-secondary transition-colors hover:bg-app-hover"
+          >
+            {t('back')}
+          </Link>
+        </div>
       </header>
 
       <main id="main-content" className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">

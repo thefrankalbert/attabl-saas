@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
+import { APP_VERSION } from '@/lib/app-version';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,7 @@ export default async function TenantsPage() {
           activeCountRes.count ?? (tenantsRes.data || []).filter((t) => t.is_active).length
         }
         initialTheme={initialTheme}
+        appVersion={APP_VERSION}
       />
     );
   }
@@ -128,6 +130,7 @@ export default async function TenantsPage() {
       serverTotalLocations={serverRestaurants.length}
       serverActiveLocations={serverRestaurants.filter((r) => r.tenant_is_active).length}
       initialTheme={initialTheme}
+      appVersion={APP_VERSION}
     />
   );
 }
