@@ -74,6 +74,24 @@ describe('qrDesignConfigSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts an https logo src', () => {
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: 'https://cdn.example.com/logo.png' },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a non-image / unsafe-scheme logo src', () => {
+    for (const bad of ['http://x.com/a.png', 'javascript:alert(1)', 'data:text/html,x']) {
+      const result = qrDesignConfigSchema.safeParse({
+        ...validConfig,
+        logo: { ...validConfig.logo, enabled: true, src: bad },
+      });
+      expect(result.success).toBe(false);
+    }
+  });
 });
 
 describe('saveQrDesignSchema', () => {

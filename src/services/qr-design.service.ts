@@ -3,6 +3,9 @@ import { ServiceError } from './errors';
 import { createDefaultQRDesignConfig, type QRDesignConfig } from '@/types/qr-design.types';
 import { qrDesignConfigSchema, type SaveQrDesignInput } from '@/lib/validations/qr-design.schema';
 
+/** Upper bound on saved QR designs per tenant (anti-abuse, SEC-02). */
+const MAX_DESIGNS_PER_TENANT = 50;
+
 export interface QrDesignRow {
   id: string;
   tenant_id: string;
@@ -134,6 +137,19 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
         if (error) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
         if (!data) throw new ServiceError('Design QR introuvable', 'NOT_FOUND');
         return toRow(data);
+      }
+
+      // Per-tenant cap: bound unbounded design creation (SEC-02).
+      const { count, error: countError } = await supabase
+        .from('qr_designs')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+      if (countError) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
+      if ((count ?? 0) >= MAX_DESIGNS_PER_TENANT) {
+        throw new ServiceError(
+          `Limite de ${MAX_DESIGNS_PER_TENANT} designs QR atteinte`,
+          'VALIDATION',
+        );
       }
 
       const { data, error } = await supabase

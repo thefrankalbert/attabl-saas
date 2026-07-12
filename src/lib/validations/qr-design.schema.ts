@@ -38,7 +38,15 @@ const logoSchema = z.object({
   // A downscaled 256px PNG logo (see lib/qr/resize-image.ts) is well under this;
   // 200 KB bounds abuse. A raw upload data URL used to blow past the old 2048 cap
   // and made every save with a logo fail.
-  src: z.string().max(200_000),
+  src: z
+    .string()
+    .max(200_000)
+    // Only safe schemes: empty (no logo), an https URL (e.g. Supabase storage),
+    // or a data:image/* URL (the downscale helper emits data:image/png). Blocks
+    // http:, blob:, javascript:, and other arbitrary strings on a persisted field.
+    .refine((s) => s === '' || s.startsWith('https://') || /^data:image\//.test(s), {
+      message: 'Invalid logo source scheme',
+    }),
   width: z.number().min(0).max(400),
   height: z.number().min(0).max(400),
   excavate: z.boolean(),
