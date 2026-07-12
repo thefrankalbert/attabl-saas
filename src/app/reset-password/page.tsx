@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,27 +15,38 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+import { AuthShell } from '@/components/auth/AuthShell';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
 
+const inputClass =
+  'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
+
 export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <AuthLayout>
-          <div className="w-full text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-app-text-muted mx-auto mb-4" />
-            <p className="text-sm text-app-text-secondary">Chargement...</p>
-          </div>
-        </AuthLayout>
+        <AuthShell>
+          <ResetPasswordLoadingFallback />
+        </AuthShell>
       }
     >
       <ResetPasswordContent />
     </Suspense>
+  );
+}
+
+function ResetPasswordLoadingFallback() {
+  const t = useTranslations('auth.reset');
+  return (
+    <div className="w-full text-center">
+      <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--muted)]" />
+      <p className="text-sm text-[var(--secondary)]">{t('checkingText')}</p>
+    </div>
   );
 }
 
@@ -44,6 +56,8 @@ function ResetPasswordContent() {
   const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('auth.reset');
+  const tForm = useTranslations('auth.form');
   // If the URL already contains ?error=invalid_token the token is known-invalid - skip checking.
   const [checking, setChecking] = useState(searchParams.get('error') !== 'invalid_token');
 
@@ -101,11 +115,11 @@ function ResetPasswordContent() {
         logger.error('Password update failed', { error: updateError.message, code });
         if (code === 'same_password' || msg.includes('same') || msg.includes('different')) {
           form.setError('root', {
-            message: "Le nouveau mot de passe doit etre different de l'ancien.",
+            message: t('samePasswordError'),
           });
         } else {
           form.setError('root', {
-            message: 'Erreur lors de la mise a jour du mot de passe. Veuillez reessayer.',
+            message: t('genericError'),
           });
         }
       } else {
@@ -114,61 +128,67 @@ function ResetPasswordContent() {
         setTimeout(() => router.push('/login'), 3000);
       }
     } catch {
-      form.setError('root', { message: 'Une erreur est survenue. Veuillez reessayer.' });
+      form.setError('root', { message: t('genericError') });
     }
   };
 
   return (
-    <AuthLayout>
+    <AuthShell>
       <div className="w-full">
         {success ? (
-          /* Success state */
           <div className="text-center">
-            <div className="w-14 h-14 bg-status-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-7 h-7 text-status-success" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ok-bg)]">
+              <CheckCircle2 className="h-7 w-7 text-[var(--ok-fg)]" />
             </div>
-            <h1 className="text-2xl font-bold text-app-text mb-2">Mot de passe mis a jour</h1>
-            <p className="text-sm text-app-text-secondary mb-6">
-              Votre mot de passe a ete change avec succes. Vous allez etre redirige vers la page de
-              connexion.
-            </p>
-            <Button onClick={() => router.push('/login')} className="w-full min-h-[44px]">
-              Se connecter
+            <h1 className="mb-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--heading)]">
+              {t('successTitle')}
+            </h1>
+            <p className="mb-6 text-sm text-[var(--secondary)]">{t('successBody')}</p>
+            <Button
+              onClick={() => router.push('/login')}
+              className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+            >
+              {t('backToLoginCta')}
             </Button>
           </div>
         ) : checking ? (
-          /* Loading - waiting for session detection */
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-app-text-muted mx-auto mb-4" />
-            <p className="text-sm text-app-text-secondary">Verification en cours...</p>
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--muted)]" />
+            <p className="text-sm text-[var(--secondary)]">{t('checkingText')}</p>
           </div>
         ) : !sessionReady ? (
-          /* No session - invalid or expired link */
           <div className="text-center">
-            <div className="w-14 h-14 bg-status-warning-bg rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-7 h-7 text-status-warning" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--err-bg)]">
+              <AlertTriangle className="h-7 w-7 text-[var(--err-fg)]" />
             </div>
-            <h1 className="text-2xl font-bold text-app-text mb-2">Lien expire</h1>
-            <p className="text-sm text-app-text-secondary mb-6">
-              Ce lien de reinitialisation est invalide ou a expire. Veuillez en demander un nouveau.
-            </p>
-            <Button onClick={() => router.push('/forgot-password')} className="w-full min-h-[44px]">
-              Demander un nouveau lien
+            <h1 className="mb-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--heading)]">
+              {t('expiredTitle')}
+            </h1>
+            <p className="mb-6 text-sm text-[var(--secondary)]">{t('expiredBody')}</p>
+            <Button
+              onClick={() => router.push('/forgot-password')}
+              className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+            >
+              {t('requestNewLink')}
             </Button>
           </div>
         ) : (
-          /* Form state */
           <>
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-app-text mb-2">Nouveau mot de passe</h1>
-              <p className="text-sm text-app-text-secondary leading-relaxed">
-                Choisissez un nouveau mot de passe pour votre compte.
-              </p>
+            <div className="mb-7 text-center">
+              <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
+                {t('title')}
+              </h1>
+              <p className="text-sm text-[var(--secondary)]">{t('subtitle')}</p>
             </div>
 
             {form.formState.errors.root && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+              <Alert
+                variant="destructive"
+                className="mb-4 rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
+              >
+                <AlertDescription className="text-sm">
+                  {form.formState.errors.root.message}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -179,30 +199,31 @@ function ResetPasswordContent() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-app-text-secondary font-medium text-xs uppercase tracking-widest">
-                        Nouveau mot de passe
-                      </FormLabel>
+                      <FormLabel className={labelClass}>{t('newPasswordLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? 'text' : 'password'}
-                            placeholder="Minimum 8 caracteres"
+                            placeholder={t('newPasswordPlaceholder')}
                             autoFocus
-                            className="min-h-[44px] pr-10"
+                            className={`${inputClass} pr-10`}
                             {...field}
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            aria-label="Hide password"
+                            aria-label={
+                              showPassword ? tForm('hidePassword') : tForm('showPassword')
+                            }
+                            aria-pressed={showPassword}
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text h-auto w-auto p-0"
+                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--muted)] hover:bg-transparent hover:text-[var(--fg)]"
                           >
                             {showPassword ? (
-                              <EyeOff className="w-4 h-4" />
+                              <EyeOff className="h-4 w-4" />
                             ) : (
-                              <Eye className="w-4 h-4" />
+                              <Eye className="h-4 w-4" />
                             )}
                           </Button>
                         </div>
@@ -217,14 +238,12 @@ function ResetPasswordContent() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-app-text-secondary font-medium text-xs uppercase tracking-widest">
-                        Confirmer le mot de passe
-                      </FormLabel>
+                      <FormLabel className={labelClass}>{t('confirmPasswordLabel')}</FormLabel>
                       <FormControl>
                         <Input
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Retapez votre mot de passe"
-                          className="min-h-[44px]"
+                          placeholder={t('confirmPasswordPlaceholder')}
+                          className={inputClass}
                           {...field}
                         />
                       </FormControl>
@@ -238,40 +257,40 @@ function ResetPasswordContent() {
                   <span
                     className={
                       (form.getValues('password') ?? '').length >= 8
-                        ? 'text-status-success'
-                        : 'text-app-text-muted'
+                        ? 'text-[var(--ok-fg)]'
+                        : 'text-[var(--muted)]'
                     }
                   >
-                    8+ caracteres
+                    {t('strengthLength')}
                   </span>
-                  <span className="text-app-border">|</span>
+                  <span className="text-[var(--border)]">|</span>
                   <span
                     className={
                       form.getValues('password') === form.getValues('confirmPassword') &&
                       (form.getValues('confirmPassword') ?? '').length > 0
-                        ? 'text-status-success'
-                        : 'text-app-text-muted'
+                        ? 'text-[var(--ok-fg)]'
+                        : 'text-[var(--muted)]'
                     }
                   >
-                    Mots de passe identiques
+                    {t('strengthMatch')}
                   </span>
                 </div>
 
                 <Button
                   type="submit"
                   disabled={form.formState.isSubmitting}
-                  className="w-full min-h-[44px]"
+                  className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
                 >
                   {form.formState.isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : null}
-                  Mettre a jour le mot de passe
+                  {t('submit')}
                 </Button>
               </form>
             </Form>
           </>
         )}
       </div>
-    </AuthLayout>
+    </AuthShell>
   );
 }

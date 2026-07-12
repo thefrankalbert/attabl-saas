@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '../../styles/auth-theme.css';
 
 export const metadata: Metadata = {
   title: 'Créer un compte - ATTABL',

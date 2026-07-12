@@ -22,6 +22,7 @@ export function useAuthForm(mode: AuthMode) {
   const [error, setError] = useState('');
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
+  const [restaurant, setRestaurant] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [emailUndelivered, setEmailUndelivered] = useState(false);
@@ -67,10 +68,16 @@ export function useAuthForm(mode: AuthMode) {
 
     try {
       if (mode === 'signup') {
-        // Signup flow - restaurant name is collected during onboarding
+        const trimmedRestaurant = restaurant.trim();
+        if (trimmedRestaurant.length < 2) {
+          setError(tErr('restaurantNameRequired'));
+          setLoading(false);
+          return;
+        }
+
         const hpValue = honeypotRef.current?.value?.trim() ?? '';
         const signupBody: Record<string, string> = {
-          restaurantName: 'Mon Établissement',
+          restaurantName: trimmedRestaurant,
           email,
           password,
           plan: 'starter',
@@ -196,6 +203,8 @@ export function useAuthForm(mode: AuthMode) {
     setEmail,
     password,
     setPassword,
+    restaurant,
+    setRestaurant,
     showPassword,
     setShowPassword,
     confirmationSent,

@@ -1017,22 +1017,6 @@
     }
   },
   "auth": {
-    "layout": {
-      "headlineLine1": "Vos clients vivent une",
-      "headlineLine2": "expérience 5 étoiles.",
-      "headlineLine3": "Votre gestion aussi.",
-      "stat1Value": "+35%",
-      "stat1Label": "de commandes",
-      "stat2Value": "-50%",
-      "stat2Label": "d'erreurs",
-      "stat3Value": "10 min",
-      "stat3Label": "pour lancer",
-      "previewRevenueLabel": "Chiffre du jour",
-      "previewLiveLabel": "Live",
-      "previewOrdersLabel": "Commandes récentes",
-      "previewStatusInProgress": "En cours",
-      "previewStatusServed": "Servi"
-    },
     "form": {
       "loginTitle": "Votre établissement vous attend.",
       "loginSubtitle": "Commandes, stock, chiffre d'affaires. Tout est là.",
@@ -1050,16 +1034,20 @@
       "submitSignup": "Commencer gratuitement",
       "submittingLogin": "Connexion...",
       "submittingSignup": "Création en cours...",
-      "trustSignup": "14 jours gratuits - aucun engagement",
       "divider": "ou",
       "google": "Continuer avec Google",
-      "trustBadge": "Connexion sécurisée · Données chiffrées",
       "noAccount": "Pas encore de compte ?",
       "hasAccount": "Déjà un compte ?",
       "emailConfirmedSuccess": "Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.",
       "emailNotConfirmed": "Votre adresse email n'a pas encore été confirmée.",
       "resendLink": "Renvoyer le lien",
-      "resendSending": "Envoi..."
+      "resendSending": "Envoi...",
+      "restaurantLabel": "Nom de votre restaurant",
+      "restaurantPlaceholder": "Le Jardin",
+      "strengthWeak": "Faible",
+      "strengthMedium": "Moyen",
+      "strengthStrong": "Fort",
+      "trialNote": "14 jours gratuits - aucun engagement"
     },
     "confirm": {
       "title": "Vérifiez votre boîte mail",
@@ -1088,7 +1076,41 @@
       "accessDenied": "Accès refusé.",
       "invalidToken": "Le lien a expiré ou est invalide. Veuillez réessayer.",
       "expiredLink": "Ce lien a expiré. Veuillez en demander un nouveau.",
-      "generic": "Une erreur est survenue. Veuillez réessayer."
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "restaurantNameRequired": "Le nom du restaurant doit contenir au moins 2 caracteres.",
+      "restaurantNameTaken": "Ce nom de restaurant est deja pris. Choisissez-en un autre."
+    },
+    "forgot": {
+      "backToLogin": "Retour a la connexion",
+      "sentTitle": "Verifiez votre boite mail",
+      "sentBody": "Si un compte existe pour {email}, un lien de reinitialisation vient d'etre envoye.",
+      "spamHint": "Vous ne trouvez pas l'email ? Verifiez vos spams.",
+      "resend": "Renvoyer le lien",
+      "title": "Mot de passe oublie ?",
+      "subtitle": "Indiquez votre email, on vous envoie un lien de reinitialisation.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "submit": "Envoyer le lien"
+    },
+    "reset": {
+      "checkingText": "Verification du lien en cours...",
+      "samePasswordError": "Le nouveau mot de passe doit etre different de l'ancien.",
+      "genericError": "Une erreur est survenue. Veuillez reessayer.",
+      "successTitle": "Mot de passe modifie",
+      "successBody": "Votre mot de passe a ete mis a jour. Redirection vers la connexion...",
+      "backToLoginCta": "Retour a la connexion",
+      "expiredTitle": "Lien expire",
+      "expiredBody": "Ce lien de reinitialisation a expire ou est invalide. Demandez-en un nouveau.",
+      "requestNewLink": "Demander un nouveau lien",
+      "title": "Nouveau mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe pour votre compte.",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Minimum 8 caracteres",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Ressaisissez le mot de passe",
+      "strengthLength": "8 caracteres minimum",
+      "strengthMatch": "Les mots de passe correspondent",
+      "submit": "Mettre a jour le mot de passe"
     }
   },
   "admin": {
@@ -4328,5 +4350,11 @@
     "errorsFound": "{count} erreur(s) trouvée(s)",
     "rowError": "Ligne {row} : {message}",
     "cancel": "Annuler"
+  },
+  "authShell": {
+    "secure": "Connexion securisee",
+    "panelImageAlt": "Interface ATTABL",
+    "panelTitle": "Vos clients vivent une experience 5 etoiles. Votre gestion aussi.",
+    "panelSub": "Commandes, stock, chiffre d'affaires. Tout est la."
   }
 }

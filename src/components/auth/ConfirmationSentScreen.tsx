@@ -2,10 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, MailCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 
 interface ConfirmationSentScreenProps {
   email: string;
@@ -15,6 +13,11 @@ interface ConfirmationSentScreenProps {
   onResend: () => void;
 }
 
+/**
+ * Post-signup "check your inbox" screen. Rendered by AuthForm inside AuthShell
+ * (which already provides the brand header + fade-up entrance), so this only
+ * renders the confirmation card, styled with the shared .auth-shell zinc tokens.
+ */
 function ConfirmationSentScreen({
   email,
   emailUndelivered,
@@ -25,69 +28,61 @@ function ConfirmationSentScreen({
   const tConfirm = useTranslations('auth.confirm');
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mx-auto w-full"
-    >
-      <Link href="/" className="flex items-center gap-2 mb-10 w-fit group">
-        <span className="text-xl font-bold tracking-tight text-app-text group-hover:text-accent transition-colors">
-          ATTABL
-        </span>
-      </Link>
-
-      <div className="text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
-          <MailCheck className="h-8 w-8 text-accent" />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-app-text mb-3">
+    <div>
+      <div className="mb-7 text-center">
+        <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
           {tConfirm('title')}
         </h1>
-        <p className="text-app-text-secondary text-sm leading-relaxed mb-2">{tConfirm('sentTo')}</p>
-        <p className="text-app-text font-semibold text-sm mb-6 break-all">{email}</p>
-        <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
-          {tConfirm('instructions')}
-        </p>
+        <p className="text-sm text-[var(--secondary)]">{tConfirm('sentTo')}</p>
+      </div>
 
-        {emailUndelivered && (
-          <Alert variant="destructive" className="mb-6 text-left">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{tConfirm('deliveryWarning')}</AlertDescription>
-          </Alert>
-        )}
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--ok-border)] bg-[var(--ok-bg)]">
+            <MailCheck className="h-[18px] w-[18px] text-[var(--ok-fg)]" />
+          </div>
+          <p className="break-all text-sm font-medium text-[var(--heading)]">{email}</p>
+          <p className="text-[13.5px] leading-[1.5] text-[var(--secondary)]">
+            {tConfirm('instructions')}
+          </p>
 
-        <div className="space-y-3">
+          {emailUndelivered && (
+            <div className="flex w-full items-center gap-2 rounded-lg border border-[var(--err-border)] bg-[var(--err-bg)] px-3 py-2 text-[13px] text-[var(--err-fg)]">
+              <AlertTriangle className="h-[14px] w-[14px] shrink-0" />
+              <span className="text-left">{tConfirm('deliveryWarning')}</span>
+            </div>
+          )}
+
           <Button
             type="button"
             variant="outline"
             onClick={onResend}
             disabled={resending || resendCooldown > 0}
-            className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all"
+            className="mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-lg border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--fg)] transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-50"
           >
             {resending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {tConfirm('resendSending')}
               </>
             ) : resendCooldown > 0 ? (
-              <>{tConfirm('resendCooldown', { seconds: resendCooldown })}</>
+              tConfirm('resendCooldown', { seconds: resendCooldown })
             ) : (
               <>
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 {tConfirm('resendButton')}
               </>
             )}
           </Button>
 
-          <p className="text-xs text-app-text-muted">
+          <p className="text-xs text-[var(--muted)]">
             {tConfirm('spamHint')}{' '}
             <Button
               type="button"
               variant="ghost"
               onClick={onResend}
               disabled={resendCooldown > 0}
-              className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50 h-auto p-0 inline"
+              className="inline h-auto p-0 font-medium text-[var(--fg)] underline transition-colors hover:text-[var(--subtle)] disabled:opacity-50"
             >
               {resendCooldown > 0
                 ? tConfirm('resendHereCooldown', { seconds: resendCooldown })
@@ -96,17 +91,14 @@ function ConfirmationSentScreen({
             .
           </p>
         </div>
-
-        <div className="mt-8 pt-6 border-t border-app-border">
-          <Link
-            href="/login"
-            className="text-sm font-bold text-accent hover:text-accent-hover transition-colors"
-          >
-            {tConfirm('backToLogin')}
-          </Link>
-        </div>
       </div>
-    </motion.div>
+
+      <p className="mt-6 text-center text-sm text-[var(--secondary)]">
+        <Link href="/login" className="font-medium text-[var(--fg)] hover:underline">
+          {tConfirm('backToLogin')}
+        </Link>
+      </p>
+    </div>
   );
 }
 

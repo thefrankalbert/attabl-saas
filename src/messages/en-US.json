@@ -1017,22 +1017,6 @@
     }
   },
   "auth": {
-    "layout": {
-      "headlineLine1": "Your customers get a",
-      "headlineLine2": "5-star experience.",
-      "headlineLine3": "Your operations too.",
-      "stat1Value": "+35%",
-      "stat1Label": "more orders",
-      "stat2Value": "-50%",
-      "stat2Label": "fewer errors",
-      "stat3Value": "10 min",
-      "stat3Label": "to launch",
-      "previewRevenueLabel": "Today's revenue",
-      "previewLiveLabel": "Live",
-      "previewOrdersLabel": "Recent orders",
-      "previewStatusInProgress": "In progress",
-      "previewStatusServed": "Served"
-    },
     "form": {
       "loginTitle": "Your venue is waiting for you.",
       "loginSubtitle": "Orders, inventory, revenue. It's all here.",
@@ -1050,16 +1034,20 @@
       "submitSignup": "Get started",
       "submittingLogin": "Signing in...",
       "submittingSignup": "Creating account...",
-      "trustSignup": "14 days free - no commitment",
       "divider": "or",
       "google": "Continue with Google",
-      "trustBadge": "Secure connection · Encrypted data",
       "noAccount": "No account yet?",
       "hasAccount": "Already have an account?",
       "emailConfirmedSuccess": "Your email has been confirmed successfully. You can now sign in.",
       "emailNotConfirmed": "Your email address hasn't been confirmed yet.",
       "resendLink": "Resend link",
-      "resendSending": "Sending..."
+      "resendSending": "Sending...",
+      "restaurantLabel": "Your restaurant name",
+      "restaurantPlaceholder": "The Garden",
+      "strengthWeak": "Weak",
+      "strengthMedium": "Medium",
+      "strengthStrong": "Strong",
+      "trialNote": "14 days free - no commitment"
     },
     "confirm": {
       "title": "Check your inbox",
@@ -1088,7 +1076,41 @@
       "accessDenied": "Access denied.",
       "invalidToken": "The link has expired or is invalid. Please try again.",
       "expiredLink": "This link has expired. Please request a new one.",
-      "generic": "An error occurred. Please try again."
+      "generic": "An error occurred. Please try again.",
+      "restaurantNameRequired": "Restaurant name must be at least 2 characters.",
+      "restaurantNameTaken": "This restaurant name is already taken. Choose another one."
+    },
+    "forgot": {
+      "backToLogin": "Back to sign in",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If an account exists for {email}, a reset link was just sent.",
+      "spamHint": "Can't find the email? Check your spam folder.",
+      "resend": "Resend link",
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email, we'll send you a reset link.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link"
+    },
+    "reset": {
+      "checkingText": "Checking your link...",
+      "samePasswordError": "Your new password must be different from the old one.",
+      "genericError": "An error occurred. Please try again.",
+      "successTitle": "Password updated",
+      "successBody": "Your password has been updated. Redirecting to sign in...",
+      "backToLoginCta": "Back to sign in",
+      "expiredTitle": "Link expired",
+      "expiredBody": "This reset link has expired or is invalid. Request a new one.",
+      "requestNewLink": "Request a new link",
+      "title": "New password",
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "Minimum 8 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter the password",
+      "strengthLength": "At least 8 characters",
+      "strengthMatch": "Passwords match",
+      "submit": "Update password"
     }
   },
   "admin": {
@@ -4328,5 +4350,11 @@
     "errorsFound": "{count} error(s) found",
     "rowError": "Row {row}: {message}",
     "cancel": "Cancel"
+  },
+  "authShell": {
+    "secure": "Secure connection",
+    "panelImageAlt": "ATTABL interface",
+    "panelTitle": "Your customers get a 5-star experience. Your operations too.",
+    "panelSub": "Orders, inventory, revenue. It's all here."
   }
 }
