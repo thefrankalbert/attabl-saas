@@ -90,19 +90,22 @@ BEGIN
     PERFORM pg_advisory_xact_lock(hashtext('table_session:' || p_tenant_id::text || ':' || v_old_table_number));
   END IF;
 
-  -- Find-or-create the OPEN session on the destination table.
-  SELECT id INTO v_new_session_id
-    FROM table_sessions
+  -- A reassign always targets a FREE table (the UI only offers free tables). Under
+  -- the advisory lock, re-check the destination is still free: if it gained an open
+  -- session between the picker load and now (a concurrent order / QR scan), reject
+  -- instead of silently merging the moved order onto that other party's check.
+  IF EXISTS (
+    SELECT 1 FROM table_sessions
     WHERE tenant_id = p_tenant_id
       AND table_number = p_new_table_number
       AND status = 'open'
-    LIMIT 1;
-
-  IF v_new_session_id IS NULL THEN
-    INSERT INTO table_sessions (tenant_id, table_number)
-    VALUES (p_tenant_id, p_new_table_number)
-    RETURNING id INTO v_new_session_id;
+  ) THEN
+    RAISE EXCEPTION 'Destination table is now occupied' USING ERRCODE = 'check_violation';
   END IF;
+
+  INSERT INTO table_sessions (tenant_id, table_number)
+  VALUES (p_tenant_id, p_new_table_number)
+  RETURNING id INTO v_new_session_id;
 
   -- Move the order onto the destination table + session.
   UPDATE orders

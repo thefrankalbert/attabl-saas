@@ -1,29 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { TriangleAlert, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { useTableOccupied } from '@/hooks/queries/useTableOccupied';
+import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 
 interface TableOccupiedNoticeProps {
   tenantId: string;
+  tenantSlug: string;
   tableNumber?: string;
 }
 
 /**
- * Soft, dismissible warning shown when a customer scans a QR for a table that
- * already has an open session (a likely other party). Non-blocking: it never
- * stops the order, it just nudges the customer to check with the staff. Renders
- * nothing when there is no table, the table is free, the check errors, or the
- * customer dismissed it.
+ * Soft, dismissible warning shown when a customer ARRIVES at a table that already
+ * has an open session (a likely other party). Non-blocking: it never stops the
+ * order, it just nudges the customer to check with the staff. Renders nothing
+ * when there is no table, the table is free, the check errors, the customer
+ * dismissed it, OR this device already placed an order for this tenant - in which
+ * case the open session is the customer's OWN and the warning would be wrong.
  */
-export function TableOccupiedNotice({ tenantId, tableNumber }: TableOccupiedNoticeProps) {
+export function TableOccupiedNotice({
+  tenantId,
+  tenantSlug,
+  tableNumber,
+}: TableOccupiedNoticeProps) {
   const t = useTranslations('tenant');
   const [dismissed, setDismissed] = useState(false);
   const { data: occupied } = useTableOccupied(tenantId, tableNumber);
 
-  if (!occupied || dismissed) return null;
+  // A session this device created (by ordering) is not "another party". Read the
+  // placed-order ids the cart persists via useSyncExternalStore so it is
+  // hydration-safe (server snapshot is false) without a setState-in-effect.
+  const ownSession = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      try {
+        const raw = localStorage.getItem(`attabl_${tenantSlug}_order_ids`);
+        const ids = raw ? (JSON.parse(raw) as unknown[]) : [];
+        return Array.isArray(ids) && ids.length > 0;
+      } catch {
+        return false;
+      }
+    },
+    () => false,
+  );
+
+  if (!occupied || dismissed || ownSession) return null;
 
   return (
     <div
