@@ -27,9 +27,11 @@ export function LaunchSummaryCard({ data, accentColor, completedItems }: LaunchS
             <Layout className="h-7 w-7 text-white" />
           )}
         </div>
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-app-text">{data.tenantName}</h2>
-          <p className="text-sm capitalize text-app-text-secondary">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold tracking-tight text-app-text">
+            {data.tenantName}
+          </h2>
+          <p className="truncate text-sm capitalize text-app-text-secondary">
             {data.establishmentType} &bull; {data.city || t('cityNotSet')}
           </p>
         </div>

@@ -146,12 +146,12 @@ export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
                         className="rounded-xl border border-app-border bg-app-elevated p-4"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{tn.name}</span>
-                              {statusBadge(tn)}
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="truncate font-medium">{tn.name}</span>
+                              <span className="shrink-0">{statusBadge(tn)}</span>
                             </div>
-                            <span className="text-xs text-app-text-muted">
+                            <span className="truncate text-xs text-app-text-muted">
                               {tn.slug} - {tn.subscription_plan ?? '-'}
                             </span>
                           </div>
@@ -332,12 +332,12 @@ export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
                       key={tn.id}
                       className="flex flex-col gap-3 rounded-xl border border-app-border bg-app-elevated p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{tn.name}</span>
-                          {statusBadge(tn)}
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-medium">{tn.name}</span>
+                          <span className="shrink-0">{statusBadge(tn)}</span>
                         </div>
-                        <span className="text-xs text-app-text-muted">{tn.slug}</span>
+                        <span className="truncate text-xs text-app-text-muted">{tn.slug}</span>
                       </div>
                       <Button
                         variant="outline"

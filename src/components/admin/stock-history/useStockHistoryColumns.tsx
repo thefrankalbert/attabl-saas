@@ -110,7 +110,7 @@ export function useStockHistoryColumns({
         accessorFn: (row) => row.supplier?.name ?? '',
         header: () => t('columnSupplier'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary whitespace-nowrap">
+          <span className="block max-w-48 truncate text-app-text-secondary">
             {row.original.supplier?.name || '-'}
           </span>
         ),
