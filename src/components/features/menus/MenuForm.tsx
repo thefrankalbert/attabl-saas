@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import ImageUpload from '@/components/shared/ImageUpload';
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export default function MenuForm({
   const [formNameEn, setFormNameEn] = useState(editingMenu?.name_en ?? '');
   const [formDescription, setFormDescription] = useState(editingMenu?.description ?? '');
   const [formDescriptionEn, setFormDescriptionEn] = useState(editingMenu?.description_en ?? '');
+  const [formImageUrl, setFormImageUrl] = useState(editingMenu?.image_url ?? '');
   const [formVenueId, setFormVenueId] = useState<string | null>(editingMenu?.venue_id ?? null);
   const [formParentMenuId, setFormParentMenuId] = useState<string | null>(
     editingMenu?.parent_menu_id ?? parentMenuId ?? null,
@@ -71,6 +73,7 @@ export default function MenuForm({
         name_en: formNameEn,
         description: formDescription,
         description_en: formDescriptionEn,
+        image_url: formImageUrl,
         venue_id: formVenueId,
         parent_menu_id: formParentMenuId,
         is_active: formIsActive,
@@ -132,6 +135,21 @@ export default function MenuForm({
             value={formDescriptionEn}
             onChange={(e) => setFormDescriptionEn(e.target.value)}
             placeholder={t('descriptionEnPlaceholder')}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-app-text">{t('coverImage')}</Label>
+        <p className="text-xs text-app-text-muted">{t('coverImageDesc')}</p>
+        <div className="max-w-sm pt-1">
+          <ImageUpload
+            value={formImageUrl}
+            onChange={setFormImageUrl}
+            onRemove={() => setFormImageUrl('')}
+            bucket="menu-items"
+            aspect={16 / 9}
+            maxWidth={1200}
           />
         </div>
       </div>

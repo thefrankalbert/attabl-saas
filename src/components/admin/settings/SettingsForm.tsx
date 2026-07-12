@@ -65,7 +65,6 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
   const {
     form,
     logoPreview,
-    bannerPreview,
     uploading,
     saving,
     selectedSoundId,
@@ -74,8 +73,6 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
     handleLogoUpload,
     handleLogoChange,
     handleLogoRemove,
-    handleBannerChange,
-    handleBannerRemove,
     onSubmit,
     onValidationError,
   } = useSettingsData(tenant);
@@ -112,14 +109,11 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
               form={form}
               tenant={tenant}
               logoPreview={logoPreview}
-              bannerPreview={bannerPreview}
               uploading={uploading}
               saving={saving}
               onLogoUpload={handleLogoUpload}
               onLogoChange={handleLogoChange}
               onLogoRemove={handleLogoRemove}
-              onBannerChange={handleBannerChange}
-              onBannerRemove={handleBannerRemove}
               onDomainSave={async (domain) => {
                 // Partial save: only the domain. The action/service skip every
                 // field absent from the FormData, so this never writes the

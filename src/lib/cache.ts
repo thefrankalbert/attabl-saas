@@ -40,7 +40,7 @@ function createCacheClient() {
  * Revalidation: 60 seconds OR on-demand via `revalidateTag('tenant-config')`
  */
 const TENANT_SELECT =
-  'id, name, slug, primary_color, secondary_color, logo_url, banner_url, currency, supported_currencies, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, custom_domain, enabled_payment_methods, activation_events, last_active_at, created_at';
+  'id, name, slug, primary_color, secondary_color, logo_url, currency, supported_currencies, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, opening_hours, custom_domain, enabled_payment_methods, activation_events, last_active_at, created_at';
 
 /**
  * Per-tenant cache factory.
@@ -103,7 +103,6 @@ export function toPublicTenant(t: Tenant): Tenant {
     name: t.name,
     slug: t.slug,
     logo_url: t.logo_url,
-    banner_url: t.banner_url,
     primary_color: t.primary_color,
     secondary_color: t.secondary_color,
     font_family: t.font_family,

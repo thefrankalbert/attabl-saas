@@ -26,7 +26,6 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     country: z.string().optional(),
     phone: z.string().optional(),
     logo_url: z.string().optional(),
-    banner_url: z.string().optional(),
     // Establishment
     establishmentType: z.string().optional(),
     tableCount: z.number().int().min(0).max(500).optional(),
@@ -61,7 +60,6 @@ export interface SettingsTenant {
   name: string;
   description?: string;
   logo_url?: string;
-  banner_url?: string;
   primary_color?: string;
   secondary_color?: string;
   address?: string;
@@ -88,7 +86,6 @@ export interface SettingsTenant {
 export interface UseSettingsDataReturn {
   form: UseFormReturn<SettingsFormValues>;
   logoPreview: string | null;
-  bannerPreview: string | null;
   uploading: boolean;
   saving: boolean;
   selectedSoundId: string;
@@ -97,8 +94,6 @@ export interface UseSettingsDataReturn {
   handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleLogoChange: (url: string) => void;
   handleLogoRemove: () => void;
-  handleBannerChange: (url: string) => void;
-  handleBannerRemove: () => void;
   onSubmit: (data: SettingsFormValues) => Promise<void>;
   onValidationError: (errors: FieldErrors<SettingsFormValues>) => void;
 }
@@ -116,7 +111,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(tenant.banner_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const initialSoundId = tenant.notification_sound_id || 'classic-bell';
@@ -134,7 +128,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       country: tenant.country || '',
       phone: tenant.phone || '',
       logo_url: tenant.logo_url || '',
-      banner_url: tenant.banner_url || '',
       establishmentType: tenant.establishment_type || 'restaurant',
       tableCount: tenant.table_count ?? 10,
       currency: tenant.currency || 'XAF',
@@ -234,17 +227,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     form.setValue('logo_url', '');
   };
 
-  const handleBannerChange = (url: string) => {
-    setBannerPreview(url);
-    form.setValue('banner_url', url);
-    toast({ title: t('bannerUploaded') });
-  };
-
-  const handleBannerRemove = () => {
-    setBannerPreview(null);
-    form.setValue('banner_url', '');
-  };
-
   const onValidationError = (errors: FieldErrors<SettingsFormValues>) => {
     const firstError = Object.values(errors)[0];
     const message =
@@ -272,7 +254,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       // Always sent (even empty) so a full save can clear the logo; the service
       // only skips fields that are entirely absent from the FormData.
       formData.append('logoUrl', data.logo_url ?? '');
-      formData.append('bannerUrl', data.banner_url ?? '');
       formData.append('notificationSoundId', selectedSoundId);
       formData.append('establishmentType', data.establishmentType || 'restaurant');
       // tableCount is not editable from Settings (no control), so it is not sent
@@ -330,7 +311,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   return {
     form,
     logoPreview,
-    bannerPreview,
     uploading,
     saving,
     selectedSoundId,
@@ -339,8 +319,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     handleLogoUpload,
     handleLogoChange,
     handleLogoRemove,
-    handleBannerChange,
-    handleBannerRemove,
     onSubmit,
     onValidationError,
   };
