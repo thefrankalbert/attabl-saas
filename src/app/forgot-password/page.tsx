@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,14 +15,20 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+import { AuthShell } from '@/components/auth/AuthShell';
 import { Loader2, ArrowLeft, MailCheck } from 'lucide-react';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/validations/auth.schema';
 
+const inputClass =
+  'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
+const labelClass = 'text-[13.5px] font-medium text-[var(--fg)]';
+
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
+  const t = useTranslations('auth.forgot');
+  const tErr = useTranslations('auth.errors');
 
   const form = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -40,68 +47,67 @@ export default function ForgotPasswordPage() {
         const res = await response.json();
         logger.error('Password reset request failed', { error: res.error });
         form.setError('root', {
-          message: res.error || 'Une erreur est survenue. Veuillez reessayer.',
+          message: res.error || tErr('generic'),
         });
       } else {
         setSent(true);
       }
     } catch {
-      form.setError('root', { message: 'Une erreur est survenue. Veuillez reessayer.' });
+      form.setError('root', { message: tErr('generic') });
     }
   };
 
   return (
-    <AuthLayout>
+    <AuthShell>
       <div className="w-full">
-        {/* Back to login */}
         <Link
           href="/login"
-          className="inline-flex items-center gap-1.5 text-sm text-app-text-secondary hover:text-app-text transition-colors mb-8"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[var(--secondary)] transition-colors hover:text-[var(--fg)]"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Retour a la connexion
+          <ArrowLeft className="h-4 w-4" />
+          {t('backToLogin')}
         </Link>
 
         {sent ? (
-          /* Success state */
           <div className="text-center">
-            <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MailCheck className="w-7 h-7 text-accent" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ok-bg)]">
+              <MailCheck className="h-7 w-7 text-[var(--ok-fg)]" />
             </div>
-            <h1 className="text-2xl font-bold text-app-text mb-2">Verifiez votre boite mail</h1>
-            <p className="text-sm text-app-text-secondary mb-6 leading-relaxed">
-              Si un compte existe pour{' '}
-              <strong className="text-app-text">{form.getValues('email')}</strong>, vous recevrez un
-              lien de reinitialisation dans quelques instants.
+            <h1 className="mb-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--heading)]">
+              {t('sentTitle')}
+            </h1>
+            <p className="mb-6 text-sm leading-relaxed text-[var(--secondary)]">
+              {t('sentBody', { email: form.getValues('email') })}
             </p>
-            <p className="text-xs text-app-text-muted mb-6">
-              Pensez a verifier vos spams si vous ne voyez rien.
-            </p>
+            <p className="mb-6 text-xs text-[var(--muted)]">{t('spamHint')}</p>
             <Button
               variant="outline"
               onClick={() => {
                 setSent(false);
                 form.reset();
               }}
-              className="w-full"
+              className="w-full rounded-lg border-[var(--border)] bg-[var(--card)] text-[var(--fg)] hover:bg-[var(--surface-hover)]"
             >
-              Renvoyer un lien
+              {t('resend')}
             </Button>
           </div>
         ) : (
-          /* Form state */
           <>
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-app-text mb-2">Mot de passe oublie ?</h1>
-              <p className="text-sm text-app-text-secondary leading-relaxed">
-                Entrez votre adresse email et nous vous enverrons un lien pour reinitialiser votre
-                mot de passe.
-              </p>
+            <div className="mb-7 text-center">
+              <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
+                {t('title')}
+              </h1>
+              <p className="text-sm text-[var(--secondary)]">{t('subtitle')}</p>
             </div>
 
             {form.formState.errors.root && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+              <Alert
+                variant="destructive"
+                className="mb-4 rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
+              >
+                <AlertDescription className="text-sm">
+                  {form.formState.errors.root.message}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -112,15 +118,13 @@ export default function ForgotPasswordPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-app-text-secondary font-medium text-xs uppercase tracking-widest">
-                        Adresse email
-                      </FormLabel>
+                      <FormLabel className={labelClass}>{t('emailLabel')}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="vous@exemple.com"
+                          placeholder={t('emailPlaceholder')}
                           autoFocus
-                          className="min-h-[44px]"
+                          className={inputClass}
                           {...field}
                         />
                       </FormControl>
@@ -131,18 +135,18 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={form.formState.isSubmitting}
-                  className="w-full min-h-[44px]"
+                  className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
                 >
                   {form.formState.isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : null}
-                  Envoyer le lien de reinitialisation
+                  {t('submit')}
                 </Button>
               </form>
             </Form>
           </>
         )}
       </div>
-    </AuthLayout>
+    </AuthShell>
   );
 }
