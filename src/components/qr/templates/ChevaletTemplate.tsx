@@ -48,7 +48,7 @@ export function ChevaletTemplate({ config, url, tenantName, tableName }: QRTempl
 
       <div className="flex flex-col items-center gap-0.5 pb-2">
         {config.ctaText && <p className="text-[13px] font-medium">{config.ctaText}</p>}
-        {config.showPoweredBy && <p className="text-[10px] opacity-30">Powered by Attabl</p>}
+        {config.showPoweredBy && <p className="text-[10px] opacity-40">Powered by Attabl</p>}
       </div>
     </div>
   );

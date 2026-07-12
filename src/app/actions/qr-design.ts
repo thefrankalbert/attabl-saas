@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { createQrDesignService } from '@/services/qr-design.service';
@@ -8,7 +9,26 @@ import { createAuditService } from '@/services/audit.service';
 import { saveQrDesignSchema, assignQrDesignSchema } from '@/lib/validations/qr-design.schema';
 import { getTranslations } from 'next-intl/server';
 import { canAccessFeature } from '@/lib/plans/features';
+import { uploadLimiter, assignmentLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+
+/** Shared plan-entitlement check for QR customization (mirrors the trigger). */
+async function assertQrCustomizationEntitled(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedUserWithTenant>>['supabase'],
+  tenantId: string,
+): Promise<boolean> {
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('subscription_plan, subscription_status, trial_ends_at')
+    .eq('id', tenantId)
+    .maybeSingle();
+  return canAccessFeature(
+    'canAccessQrCustomization',
+    tenant?.subscription_plan as SubscriptionPlan | null,
+    tenant?.subscription_status as SubscriptionStatus | null,
+    tenant?.trial_ends_at ?? null,
+  );
+}
 
 /**
  * QR design mutations.
@@ -29,6 +49,9 @@ async function tenantSlug(
 export async function actionSaveQrDesign(input: unknown) {
   const t = await getTranslations('errors');
   try {
+    const { success: allowed } = await uploadLimiter.check(getClientIpFromHeaders(await headers()));
+    if (!allowed) return { success: false as const, error: t('rateLimited') };
+
     const { tenantId, supabase, user, role } =
       await getAuthenticatedUserWithTenant('settings.edit');
 
@@ -41,19 +64,7 @@ export async function actionSaveQrDesign(input: unknown) {
     // see pricing-data.ts). Basic QR codes stay free for all plans; only persisting
     // a custom style/template requires the paid tier. The client dims the controls,
     // but the action must enforce it so a crafted call cannot bypass the paywall.
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('subscription_plan, subscription_status, trial_ends_at')
-      .eq('id', tenantId)
-      .maybeSingle();
-    if (
-      !canAccessFeature(
-        'canAccessQrCustomization',
-        tenant?.subscription_plan as SubscriptionPlan | null,
-        tenant?.subscription_status as SubscriptionStatus | null,
-        tenant?.trial_ends_at ?? null,
-      )
-    ) {
+    if (!(await assertQrCustomizationEntitled(supabase, tenantId))) {
       return { success: false as const, error: 'La personnalisation QR est reservee au plan Pro.' };
     }
 
@@ -85,6 +96,9 @@ export async function actionSaveQrDesign(input: unknown) {
 export async function actionDeleteQrDesign(id: unknown) {
   const t = await getTranslations('errors');
   try {
+    const { success: allowed } = await uploadLimiter.check(getClientIpFromHeaders(await headers()));
+    if (!allowed) return { success: false as const, error: t('rateLimited') };
+
     const { tenantId, supabase, user, role } =
       await getAuthenticatedUserWithTenant('settings.edit');
 
@@ -116,11 +130,22 @@ export async function actionDeleteQrDesign(id: unknown) {
 export async function actionAssignQrDesign(input: unknown) {
   const t = await getTranslations('errors');
   try {
+    const { success: allowed } = await assignmentLimiter.check(
+      getClientIpFromHeaders(await headers()),
+    );
+    if (!allowed) return { success: false as const, error: t('rateLimited') };
+
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
 
     const parsed = assignQrDesignSchema.safeParse(input);
     if (!parsed.success) {
       return { success: false as const, error: parsed.error.issues[0]?.message ?? 'Invalid input' };
+    }
+
+    // Same paywall as saving: a downgraded tenant must not keep applying paid
+    // custom designs to tables/zones (SEC-03, hard enforcement per product).
+    if (!(await assertQrCustomizationEntitled(supabase, tenantId))) {
+      return { success: false as const, error: 'La personnalisation QR est reservee au plan Pro.' };
     }
 
     const service = createQrDesignService(supabase);
@@ -137,6 +162,35 @@ export async function actionAssignQrDesign(input: unknown) {
   } catch (error) {
     if (error instanceof AuthError) return { success: false as const, error: error.message };
     logger.error('Error assigning QR design', error);
+    return { success: false as const, error: t('settingsUpdateError') };
+  }
+}
+
+/**
+ * Resolve the effective QR design config for a set of tables (table -> zone ->
+ * tenant default). Used by the batch export so each printed card reflects the
+ * design assigned to its table. tenantId is derived from the session.
+ */
+export async function actionResolveDesignsForTables(tableIds: unknown) {
+  const t = await getTranslations('errors');
+  try {
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+
+    if (!Array.isArray(tableIds) || tableIds.some((id) => typeof id !== 'string')) {
+      return { success: false as const, error: 'Invalid input' };
+    }
+
+    const service = createQrDesignService(supabase);
+    const entries = await Promise.all(
+      (tableIds as string[]).map(
+        async (id) => [id, await service.resolveDesignForTable(tenantId, id)] as const,
+      ),
+    );
+
+    return { success: true as const, data: Object.fromEntries(entries) };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false as const, error: error.message };
+    logger.error('Error resolving QR designs', error);
     return { success: false as const, error: t('settingsUpdateError') };
   }
 }

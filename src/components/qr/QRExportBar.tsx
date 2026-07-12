@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useCallback, type RefObject } from 'react';
-import { Download, Printer, FileImage, FileCode, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Download, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { captureElementToCanvas } from '@/lib/qr/capture-template';
-import { FeatureGate } from '@/components/qr/FeatureGate';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
 // --- Types ---------------------------------------------
@@ -16,7 +17,7 @@ interface QRExportBarProps {
   tenantSlug: string;
 }
 
-type ExportAction = 'pdf' | 'png' | 'svg' | 'print' | null;
+type ExportAction = 'pdf' | 'png' | 'svg' | null;
 
 // --- Helpers ------------------------------------------
 
@@ -38,6 +39,7 @@ async function getJsPDF(): Promise<(typeof import('jspdf'))['jsPDF']> {
 // --- Component -----------------------------------------
 
 export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps) {
+  const t = useTranslations('qrCodes');
   const [loading, setLoading] = useState<ExportAction>(null);
 
   // --- PDF Export -------------------------------------
@@ -49,6 +51,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     // before it paints would rasterize a QR-less card. Guard like downloadSVG.
     if (!el.querySelector('svg')) {
       logger.warn('[QRExportBar] QR not rendered yet, PDF export aborted');
+      toast.error(t('exportNotReady'));
       return;
     }
 
@@ -73,10 +76,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       pdf.save(buildFilename(tenantSlug, 'pdf'));
     } catch (err) {
       logger.error('[QRExportBar] PDF export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, config.templateWidth, config.templateHeight, tenantSlug]);
+  }, [previewRef, config.templateWidth, config.templateHeight, tenantSlug, t]);
 
   // --- PNG Export -------------------------------------
 
@@ -85,6 +89,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     if (!el) return;
     if (!el.querySelector('svg')) {
       logger.warn('[QRExportBar] QR not rendered yet, PNG export aborted');
+      toast.error(t('exportNotReady'));
       return;
     }
 
@@ -101,10 +106,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       link.click();
     } catch (err) {
       logger.error('[QRExportBar] PNG export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, tenantSlug]);
+  }, [previewRef, tenantSlug, t]);
 
   // --- SVG Export -------------------------------------
 
@@ -117,6 +123,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       const svgElement = el.querySelector('svg');
       if (!svgElement) {
         logger.warn('[QRExportBar] No SVG found inside preview');
+        toast.error(t('exportNotReady'));
         return;
       }
 
@@ -133,16 +140,11 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       URL.revokeObjectURL(url);
     } catch (err) {
       logger.error('[QRExportBar] SVG export failed', err);
+      toast.error(t('exportError'));
     } finally {
       setLoading(null);
     }
-  }, [previewRef, tenantSlug]);
-
-  // --- Print ------------------------------------------
-
-  const handlePrint = useCallback(() => {
-    window.print();
-  }, []);
+  }, [previewRef, tenantSlug, t]);
 
   // --- Render -----------------------------------------
 
@@ -156,53 +158,43 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           ) : (
             <Download className="h-4 w-4" />
           )}
-          {loading === 'pdf' ? 'Export...' : 'Télécharger PDF'}
+          {loading === 'pdf' ? t('exporting') : t('exportPdf')}
         </Button>
 
-        {/* PNG - premium */}
-        <FeatureGate feature="canAccessQrCustomization">
-          <Button
-            variant="outline"
-            onClick={downloadPNG}
-            disabled={loading !== null}
-            className="gap-2"
-          >
-            {loading === 'png' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileImage className="h-4 w-4" />
-            )}
-            PNG
-          </Button>
-        </FeatureGate>
-
-        {/* SVG - premium */}
-        <FeatureGate feature="canAccessQrCustomization">
-          <Button
-            variant="outline"
-            onClick={downloadSVG}
-            disabled={loading !== null}
-            className="gap-2"
-          >
-            {loading === 'svg' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileCode className="h-4 w-4" />
-            )}
-            SVG (QR seul)
-          </Button>
-        </FeatureGate>
-
-        {/* Print - always available */}
+        {/* PNG - client-side export is free for all; the paywall is enforced
+            server-side on saving/assigning a design (see qr-design actions),
+            not on export (which cannot be truly enforced client-side anyway). */}
         <Button
           variant="outline"
-          onClick={handlePrint}
+          onClick={downloadPNG}
           disabled={loading !== null}
-          className="gap-2 ml-auto"
+          className="gap-2"
         >
-          <Printer className="h-4 w-4" />
-          Imprimer
+          {loading === 'png' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileImage className="h-4 w-4" />
+          )}
+          {t('exportPng')}
         </Button>
+
+        {/* SVG */}
+        <Button
+          variant="outline"
+          onClick={downloadSVG}
+          disabled={loading !== null}
+          className="gap-2"
+        >
+          {loading === 'svg' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileCode className="h-4 w-4" />
+          )}
+          {t('exportSvgOnly')}
+        </Button>
+        {/* Print lives in the Download tab (QRExportPanel) where QRPrintSheet
+            provides the #qr-print-root isolation. Printing from here would print
+            the whole admin shell, so no Print button in the customizer bar. */}
       </div>
     </div>
   );

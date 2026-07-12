@@ -21,17 +21,16 @@ type SetTemplateAction = {
   templateId: QRTemplateId;
 };
 
-type ResetAction = {
-  type: 'RESET';
-  primaryColor: string;
-  secondaryColor: string;
+type HydrateAction = {
+  type: 'HYDRATE';
+  config: QRDesignConfig;
 };
 
-type QRDesignAction = SetFieldAction | SetTemplateAction | ResetAction;
+type QRDesignAction = SetFieldAction | SetTemplateAction | HydrateAction;
 
 // --- Reducer -------------------------------------------
 
-function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesignConfig {
+export function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesignConfig {
   switch (action.type) {
     case 'SET_FIELD':
       return {
@@ -51,8 +50,8 @@ function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesig
       };
     }
 
-    case 'RESET':
-      return createDefaultQRDesignConfig(action.primaryColor, action.secondaryColor);
+    case 'HYDRATE':
+      return action.config;
 
     default:
       return state;
@@ -61,9 +60,9 @@ function qrDesignReducer(state: QRDesignConfig, action: QRDesignAction): QRDesig
 
 // --- Hook ----------------------------------------------
 
-export function useQRDesignConfig(primaryColor: string, secondaryColor: string) {
-  const [state, dispatch] = useReducer(qrDesignReducer, { primaryColor, secondaryColor }, (init) =>
-    createDefaultQRDesignConfig(init.primaryColor, init.secondaryColor),
+export function useQRDesignConfig(primaryColor: string) {
+  const [state, dispatch] = useReducer(qrDesignReducer, { primaryColor }, (init) =>
+    createDefaultQRDesignConfig(init.primaryColor),
   );
 
   const updateField = useCallback(
@@ -77,9 +76,9 @@ export function useQRDesignConfig(primaryColor: string, secondaryColor: string) 
     dispatch({ type: 'SET_TEMPLATE', templateId });
   }, []);
 
-  const resetConfig = useCallback(() => {
-    dispatch({ type: 'RESET', primaryColor, secondaryColor });
-  }, [primaryColor, secondaryColor]);
+  const hydrate = useCallback((config: QRDesignConfig) => {
+    dispatch({ type: 'HYDRATE', config });
+  }, []);
 
-  return { config: state, updateField, setTemplate, resetConfig };
+  return { config: state, updateField, setTemplate, hydrate };
 }

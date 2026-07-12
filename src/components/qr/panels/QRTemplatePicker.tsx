@@ -1,8 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TEMPLATE_DEFAULTS, type QRDesignConfig, type QRTemplateId } from '@/types/qr-design.types';
+import { type QRDesignConfig, type QRTemplateId } from '@/types/qr-design.types';
 
 const TEMPLATE_IDS: QRTemplateId[] = ['minimal', 'carte', 'chevalet'];
 
@@ -13,10 +14,10 @@ interface QRTemplatePickerProps {
 
 /** Three-template picker: name + one-line description, selected state. */
 export function QRTemplatePicker({ config, setTemplate }: QRTemplatePickerProps) {
+  const t = useTranslations('qrCodes');
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {TEMPLATE_IDS.map((id) => {
-        const def = TEMPLATE_DEFAULTS[id];
         const selected = config.templateId === id;
         return (
           <Button
@@ -35,8 +36,10 @@ export function QRTemplatePicker({ config, setTemplate }: QRTemplatePickerProps)
                 <Check className="h-2.5 w-2.5 text-accent-text" />
               </span>
             )}
-            <span className="text-sm font-medium text-app-text">{def.name}</span>
-            <span className="text-xs text-app-text-muted leading-snug">{def.description}</span>
+            <span className="text-sm font-medium text-app-text">{t(`template_${id}_name`)}</span>
+            <span className="text-xs text-app-text-muted leading-snug">
+              {t(`template_${id}_desc`)}
+            </span>
           </Button>
         );
       })}

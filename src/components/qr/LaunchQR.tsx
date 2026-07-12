@@ -2,8 +2,10 @@
 
 import { useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { Download, FileImage, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
+import { logger } from '@/lib/logger';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
@@ -65,13 +67,14 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
           pdf.save(`qr-${slug}.pdf`);
         }
-      } catch {
-        // Export failed silently
+      } catch (err) {
+        logger.error('[LaunchQR] export failed', err);
+        toast.error(t('qrExportError'));
       } finally {
         setDownloading(null);
       }
     },
-    [tenantName, defaults.width, defaults.height],
+    [tenantName, defaults.width, defaults.height, t],
   );
 
   if (!mounted) {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +53,15 @@ export function ColorPicker({
   presets = DEFAULT_PRESETS,
   disabled = false,
 }: ColorPickerProps) {
+  const t = useTranslations('qrCodes');
   const [hexInput, setHexInput] = useState(value);
+
+  // Keep the hex text field in sync when `value` changes from outside this
+  // control (loading a saved design, template accent update). Transient typing
+  // lives in local state; an external value change re-seeds it.
+  useEffect(() => {
+    setHexInput(value);
+  }, [value]);
 
   const handleHexBlur = () => {
     const normalized = normalizeHex(hexInput);
@@ -99,7 +108,8 @@ export function ColorPicker({
               }
             `}
             style={{ backgroundColor: preset }}
-            aria-label={`Couleur ${preset}`}
+            aria-label={t('colorPreset', { color: preset })}
+            aria-pressed={value.toLowerCase() === preset.toLowerCase()}
             title={preset}
           />
         ))}
@@ -113,7 +123,7 @@ export function ColorPicker({
           value={value}
           onChange={(e) => handleNativeChange(e.target.value)}
           className="h-8 w-8 rounded-lg border border-app-border cursor-pointer p-0.5"
-          aria-label="Sélecteur de couleur"
+          aria-label={t('colorPickerLabel')}
         />
         <Input
           type="text"
@@ -128,7 +138,7 @@ export function ColorPicker({
           placeholder="#000000"
           className="flex-1 font-mono text-base md:text-sm"
           maxLength={7}
-          aria-label="Valeur hexadécimale"
+          aria-label={t('hexValueLabel')}
         />
       </div>
     </div>

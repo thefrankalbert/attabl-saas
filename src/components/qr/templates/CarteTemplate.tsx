@@ -50,7 +50,8 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
 
       <div className="flex flex-col items-center gap-0.5">
         {config.ctaText && <p className="text-[12px] font-medium">{config.ctaText}</p>}
-        {tableName && <p className="text-[11px] opacity-50">{tableName}</p>}
+        {tableName && <p className="text-[11px] opacity-60">{tableName}</p>}
+        {config.showPoweredBy && <p className="text-[10px] opacity-40">Powered by Attabl</p>}
       </div>
     </div>
   );

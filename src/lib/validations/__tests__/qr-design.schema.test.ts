@@ -6,7 +6,7 @@ import {
 } from '../qr-design.schema';
 import { createDefaultQRDesignConfig } from '@/types/qr-design.types';
 
-const validConfig = createDefaultQRDesignConfig('#CCFF00', '#1A1A1A');
+const validConfig = createDefaultQRDesignConfig('#CCFF00');
 
 describe('qrDesignConfigSchema', () => {
   it('accepts the factory default config', () => {
@@ -55,6 +55,42 @@ describe('qrDesignConfigSchema', () => {
       },
     });
     expect(result.success).toBe(false);
+  });
+
+  it('accepts a downscaled logo data URL (~30 KB)', () => {
+    const dataUrl = `data:image/png;base64,${'A'.repeat(30_000)}`;
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: dataUrl },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a logo src that exceeds the size cap', () => {
+    const tooBig = `data:image/png;base64,${'A'.repeat(200_001)}`;
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: tooBig },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts an https logo src', () => {
+    const result = qrDesignConfigSchema.safeParse({
+      ...validConfig,
+      logo: { ...validConfig.logo, enabled: true, src: 'https://cdn.example.com/logo.png' },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a non-image / unsafe-scheme logo src', () => {
+    for (const bad of ['http://x.com/a.png', 'javascript:alert(1)', 'data:text/html,x']) {
+      const result = qrDesignConfigSchema.safeParse({
+        ...validConfig,
+        logo: { ...validConfig.logo, enabled: true, src: bad },
+      });
+      expect(result.success).toBe(false);
+    }
   });
 });
 

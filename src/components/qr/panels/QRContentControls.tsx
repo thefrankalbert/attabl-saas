@@ -2,7 +2,9 @@
 
 import { useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
+import { fileToResizedDataUrl } from '@/lib/qr/resize-image';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -30,30 +32,42 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onLogoFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result;
-        if (typeof dataUrl === 'string') {
-          updateField('logo', { ...config.logo, src: dataUrl, enabled: true });
-        }
-      };
-      reader.readAsDataURL(file);
       e.target.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        toast.error(t('logoInvalidType'));
+        return;
+      }
+      // 5 MB raw cap before we even decode; the file is downscaled to a small
+      // PNG so the stored data URL stays well under the schema size limit.
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t('logoTooLarge'));
+        return;
+      }
+      try {
+        const src = await fileToResizedDataUrl(file);
+        updateField('logo', { ...config.logo, src, enabled: true });
+      } catch {
+        toast.error(t('logoUploadError'));
+      }
     },
-    [config.logo, updateField],
+    [config.logo, updateField, t],
   );
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <ColorPicker
-          label={t('accentColor')}
-          value={config.templateAccentColor}
-          onChange={(c) => updateField('templateAccentColor', c)}
-        />
+        {/* Minimal has no accented element, so its accent control would be a
+            no-op - only show it for templates that render the accent color. */}
+        {config.templateId !== 'minimal' && (
+          <ColorPicker
+            label={t('accentColor')}
+            value={config.templateAccentColor}
+            onChange={(c) => updateField('templateAccentColor', c)}
+          />
+        )}
         <ColorPicker
           label={t('textColor')}
           value={config.templateTextColor}
@@ -102,7 +116,9 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
 
       {/* CTA */}
       <div className="space-y-1.5">
-        <Label className="text-xs text-app-text-secondary">{t('ctaLabel')}</Label>
+        <Label htmlFor="qr-cta-preset" className="text-xs text-app-text-secondary">
+          {t('ctaLabel')}
+        </Label>
         <Select
           value={config.ctaPreset}
           onValueChange={(v) => {
@@ -111,7 +127,7 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
             if (preset !== 'custom') updateField('ctaText', CTA_PRESETS[preset]);
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="qr-cta-preset" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

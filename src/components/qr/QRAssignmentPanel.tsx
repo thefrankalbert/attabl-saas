@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Save, Table2, Layers, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -27,12 +28,15 @@ import {
 } from '@/components/ui/select';
 import { actionSaveQrDesign, actionAssignQrDesign } from '@/app/actions/qr-design';
 import type { Table, Zone } from '@/types/admin.types';
+import { groupTablesByZone } from '@/lib/qr/group-tables';
 import type { QRDesignConfig } from '@/types/qr-design.types';
+import { qrDesignConfigSchema } from '@/lib/validations/qr-design.schema';
 
 export interface QRDesignSummary {
   id: string;
   name: string;
   is_default: boolean;
+  config: QRDesignConfig;
 }
 
 interface QRAssignmentPanelProps {
@@ -40,6 +44,11 @@ interface QRAssignmentPanelProps {
   tables: Table[];
   designs: QRDesignSummary[];
   currentConfig: QRDesignConfig;
+  /** Id of the design currently loaded in the editor (null = new/unsaved). */
+  currentDesignId: string | null;
+  onDesignIdChange: (id: string | null) => void;
+  /** Load a saved design's config into the live editor. */
+  onLoadDesign: (config: QRDesignConfig) => void;
 }
 
 const INHERIT = '__inherit__';
@@ -49,6 +58,9 @@ export function QRAssignmentPanel({
   tables,
   designs,
   currentConfig,
+  currentDesignId,
+  onDesignIdChange,
+  onLoadDesign,
 }: QRAssignmentPanelProps) {
   const t = useTranslations('qrCodes');
   const router = useRouter();
@@ -61,10 +73,7 @@ export function QRAssignmentPanel({
   const hasDefault = designs.some((d) => d.is_default);
 
   const tablesByZone = useMemo(() => {
-    const grouped: Record<string, { zone: Zone; tables: Table[] }> = {};
-    for (const zone of zones) grouped[zone.id] = { zone, tables: [] };
-    for (const table of tables) grouped[table.zone_id]?.tables.push(table);
-    return Object.values(grouped).filter((g) => g.tables.length > 0);
+    return groupTablesByZone(zones, tables);
   }, [zones, tables]);
 
   function resolveDesignName(id: string | null | undefined): string | null {
@@ -72,17 +81,31 @@ export function QRAssignmentPanel({
     return designs.find((d) => d.id === id)?.name ?? null;
   }
 
+  function loadDesign(design: QRDesignSummary) {
+    const parsed = qrDesignConfigSchema.safeParse(design.config);
+    if (!parsed.success) {
+      toast.error(t('designLoadError'));
+      return;
+    }
+    onLoadDesign(parsed.data);
+    onDesignIdChange(design.id);
+    toast.success(t('designLoaded', { name: design.name }));
+  }
+
   function saveCurrentDesign() {
     const name = designName.trim();
     if (!name) return;
     startTransition(async () => {
       const res = await actionSaveQrDesign({
+        // Pass the loaded id so re-saving updates in place instead of duplicating.
+        id: currentDesignId ?? undefined,
         name,
         config: currentConfig,
         isDefault: makeDefault,
       });
       if (res.success) {
         toast.success(t('designSaved', { name }));
+        if (res.data?.id) onDesignIdChange(res.data.id);
         setSaveOpen(false);
         setDesignName('');
         router.refresh();
@@ -166,17 +189,26 @@ export function QRAssignmentPanel({
         ) : (
           <ul className="flex flex-wrap gap-2">
             {designs.map((d) => (
-              <li
-                key={d.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-app-bg border border-app-border text-sm text-app-text-secondary"
-              >
-                {d.name}
-                {d.is_default && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Star className="w-3 h-3" />
-                    {t('default')}
-                  </Badge>
-                )}
+              <li key={d.id}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadDesign(d)}
+                  aria-pressed={currentDesignId === d.id}
+                  className={cn(
+                    'h-auto gap-1.5 px-3 py-1.5 text-sm font-normal',
+                    currentDesignId === d.id && 'ring-2 ring-primary',
+                  )}
+                >
+                  {d.name}
+                  {d.is_default && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Star className="w-3 h-3" />
+                      {t('default')}
+                    </Badge>
+                  )}
+                </Button>
               </li>
             ))}
           </ul>
@@ -209,7 +241,10 @@ export function QRAssignmentPanel({
                         onValueChange={(v) => assign('zone', zone.id, v)}
                         disabled={isPending || designs.length === 0}
                       >
-                        <SelectTrigger className="w-44 h-9">
+                        <SelectTrigger
+                          className="w-44 h-9"
+                          aria-label={t('assignZoneLabel', { name: zone.name })}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -251,7 +286,10 @@ export function QRAssignmentPanel({
                             onValueChange={(v) => assign('table', table.id, v)}
                             disabled={isPending || designs.length === 0}
                           >
-                            <SelectTrigger className="w-44 h-9">
+                            <SelectTrigger
+                              className="w-44 h-9"
+                              aria-label={t('assignTableLabel', { name: table.display_name })}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

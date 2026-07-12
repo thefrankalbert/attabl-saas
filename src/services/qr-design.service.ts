@@ -3,6 +3,9 @@ import { ServiceError } from './errors';
 import { createDefaultQRDesignConfig, type QRDesignConfig } from '@/types/qr-design.types';
 import { qrDesignConfigSchema, type SaveQrDesignInput } from '@/lib/validations/qr-design.schema';
 
+/** Upper bound on saved QR designs per tenant (anti-abuse, SEC-02). */
+const MAX_DESIGNS_PER_TENANT = 50;
+
 export interface QrDesignRow {
   id: string;
   tenant_id: string;
@@ -49,7 +52,7 @@ function toRow(row: {
     is_default: row.is_default,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    config: parseConfig(row.config, createDefaultQRDesignConfig('#000000', '#FFFFFF')),
+    config: parseConfig(row.config, createDefaultQRDesignConfig('#000000')),
   };
 }
 
@@ -60,10 +63,7 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       .select('primary_color, secondary_color')
       .eq('id', tenantId)
       .maybeSingle();
-    const factory = createDefaultQRDesignConfig(
-      tenant?.primary_color || '#000000',
-      tenant?.secondary_color || '#FFFFFF',
-    );
+    const factory = createDefaultQRDesignConfig(tenant?.primary_color || '#000000');
 
     const { data: def } = await supabase
       .from('qr_designs')
@@ -137,6 +137,23 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
         if (error) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
         if (!data) throw new ServiceError('Design QR introuvable', 'NOT_FOUND');
         return toRow(data);
+      }
+
+      // Per-tenant cap: bound unbounded design creation (SEC-02).
+      // ponytail: check-then-insert has a TOCTOU race - two concurrent saves at
+      // count=49 can both insert (51). Acceptable: this is an anti-abuse ceiling
+      // (not a security boundary), bounded by uploadLimiter (20/min). If it must
+      // be hard, add a partial unique index / row_number trigger on tenant_id.
+      const { count, error: countError } = await supabase
+        .from('qr_designs')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+      if (countError) throw new ServiceError("Erreur lors de l'enregistrement", 'INTERNAL');
+      if ((count ?? 0) >= MAX_DESIGNS_PER_TENANT) {
+        throw new ServiceError(
+          `Limite de ${MAX_DESIGNS_PER_TENANT} designs QR atteinte`,
+          'VALIDATION',
+        );
       }
 
       const { data, error } = await supabase

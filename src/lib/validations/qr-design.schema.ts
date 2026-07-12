@@ -15,7 +15,6 @@ const templateId = z.enum(['minimal', 'carte', 'chevalet']);
 const errorCorrection = z.enum(['L', 'M', 'Q', 'H']);
 const dotStyle = z.enum(['square', 'rounded', 'dots', 'classy', 'extra-rounded']);
 const cornerStyle = z.enum(['square', 'rounded', 'dot']);
-const shadow = z.enum(['none', 'light', 'medium', 'strong']);
 const exportFormat = z.enum(['pdf', 'png', 'svg']);
 const ctaPreset = z.enum([
   'scannez-commander',
@@ -36,18 +35,22 @@ const perPage = z.union([z.literal(1), z.literal(2), z.literal(4), z.literal('au
 
 const logoSchema = z.object({
   enabled: z.boolean(),
-  src: z.string().max(2048),
+  // A downscaled 256px PNG logo (see lib/qr/resize-image.ts) is well under this;
+  // 200 KB bounds abuse. A raw upload data URL used to blow past the old 2048 cap
+  // and made every save with a logo fail.
+  src: z
+    .string()
+    .max(200_000)
+    // Only safe schemes: empty (no logo), an https URL (e.g. Supabase storage),
+    // or a data:image/* URL (the downscale helper emits data:image/png). Blocks
+    // http:, blob:, javascript:, and other arbitrary strings on a persisted field.
+    .refine((s) => s === '' || s.startsWith('https://') || /^data:image\//.test(s), {
+      message: 'Invalid logo source scheme',
+    }),
   width: z.number().min(0).max(400),
   height: z.number().min(0).max(400),
   excavate: z.boolean(),
   opacity: z.number().min(0).max(1),
-});
-
-const gradientSchema = z.object({
-  enabled: z.boolean(),
-  colorStart: hexColor,
-  colorEnd: hexColor,
-  angle: z.number().min(0).max(360),
 });
 
 const printLayoutSchema = z.object({
@@ -72,20 +75,11 @@ export const qrDesignConfigSchema = z.object({
   templateHeight: z.number().min(20).max(400),
   cornerRadius: z.number().min(0).max(64),
   padding: z.number().min(0).max(128),
-  shadow,
   templateBgColor: hexColor,
   templateAccentColor: hexColor,
   templateTextColor: hexColor,
-  gradient: gradientSchema,
-  backgroundImage: z.object({
-    enabled: z.boolean(),
-    src: z.string().max(2048),
-    opacity: z.number().min(0).max(1),
-  }),
   ctaPreset,
   ctaText: z.string().max(120),
-  descriptionText: z.string().max(280),
-  footerText: z.string().max(280),
   showPoweredBy: z.boolean(),
   fontFamily: z.string().max(60),
   exportFormat,

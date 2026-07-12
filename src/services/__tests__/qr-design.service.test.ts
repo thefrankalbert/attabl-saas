@@ -51,7 +51,7 @@ function makeSupabase(queue: Result[]) {
   };
 }
 
-const config = createDefaultQRDesignConfig('#CCFF00', '#1A1A1A');
+const config = createDefaultQRDesignConfig('#CCFF00');
 
 describe('createQrDesignService.listDesigns', () => {
   it('filters by tenant_id and returns parsed rows', async () => {
@@ -98,6 +98,9 @@ describe('createQrDesignService.saveDesign', () => {
 
   it('inserts a new design scoped to the tenant', async () => {
     const { supabase, eqCalls, fromCalls } = makeSupabase([
+      // 1) per-tenant cap count query
+      { data: null, error: null, count: 3 } as unknown as Result,
+      // 2) the insert
       {
         data: {
           id: 'new',
@@ -120,8 +123,19 @@ describe('createQrDesignService.saveDesign', () => {
 
     expect(fromCalls).toContain('qr_designs');
     expect(row.id).toBe('new');
-    // update path scopes by id+tenant; insert path here only inserts, no eq needed.
-    expect(eqCalls.every(([, v]) => v !== 'evil')).toBe(true);
+    // Insert path must scope the count query + insert to tenant-A (never another tenant).
+    expect(eqCalls).toContainEqual(['tenant_id', 'tenant-A']);
+  });
+
+  it('rejects a new design once the per-tenant cap is reached', async () => {
+    const { supabase } = makeSupabase([
+      // cap count query returns >= 50
+      { data: null, error: null, count: 50 } as unknown as Result,
+    ]);
+    const service = createQrDesignService(supabase);
+    await expect(
+      service.saveDesign('tenant-A', { name: 'Overflow', config, isDefault: false }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
   });
 });
 

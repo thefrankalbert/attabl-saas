@@ -53,7 +53,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
         .order('display_order', { ascending: true }),
       supabase
         .from('qr_designs')
-        .select('id, name, is_default')
+        .select('id, name, is_default, config')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: true }),
     ],
@@ -71,8 +71,6 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
           slug: tenant.slug,
           logoUrl: tenant.logo_url,
           primaryColor: tenant.primary_color || '#000000',
-          secondaryColor: tenant.secondary_color || '#FFFFFF',
-          description: tenant.description,
         }}
         menuUrl={menuUrl}
         zones={zones || []}
