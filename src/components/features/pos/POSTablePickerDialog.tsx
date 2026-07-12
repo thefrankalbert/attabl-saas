@@ -18,6 +18,8 @@ interface POSTablePickerDialogProps {
   pickerTables: Table[];
   selectedTable: string;
   onSelectTable: (tableNumber: string) => void;
+  /** table_number of tables that currently hold an OPEN session (occupied). */
+  occupiedTableNumbers?: Set<string>;
 }
 
 export function POSTablePickerDialog({
@@ -29,6 +31,7 @@ export function POSTablePickerDialog({
   pickerTables,
   selectedTable,
   onSelectTable,
+  occupiedTableNumbers,
 }: POSTablePickerDialogProps) {
   const t = useTranslations('pos');
 
@@ -78,27 +81,47 @@ export function POSTablePickerDialog({
                 <div className="flex-1 overflow-y-auto">
                   {pickerTables.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
-                      {pickerTables.map((table) => (
-                        <Button
-                          key={table.id}
-                          type="button"
-                          variant={selectedTable === table.table_number ? 'default' : 'outline'}
-                          onClick={() => onSelectTable(table.table_number)}
-                          className={cn(
-                            'flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
-                            selectedTable === table.table_number
-                              ? 'bg-accent text-accent-text border-accent font-bold'
-                              : 'border-app-border text-app-text hover:bg-app-hover hover:border-accent/30',
-                          )}
-                        >
-                          <span className="font-semibold text-xs">{table.table_number}</span>
-                          {table.display_name !== table.table_number && (
-                            <span className="text-[10px] opacity-70 truncate max-w-full">
-                              {table.display_name}
-                            </span>
-                          )}
-                        </Button>
-                      ))}
+                      {pickerTables.map((table) => {
+                        const isSelected = selectedTable === table.table_number;
+                        const isOccupied =
+                          !isSelected &&
+                          (occupiedTableNumbers?.has(table.table_number) ||
+                            occupiedTableNumbers?.has(table.display_name)) === true;
+                        return (
+                          <Button
+                            key={table.id}
+                            type="button"
+                            variant={isSelected ? 'default' : 'outline'}
+                            onClick={() => onSelectTable(table.table_number)}
+                            className={cn(
+                              'relative flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
+                              isSelected
+                                ? 'bg-accent text-accent-text border-accent font-bold'
+                                : isOccupied
+                                  ? 'border-status-warning/40 bg-status-warning-bg text-app-text hover:bg-app-hover'
+                                  : 'border-app-border text-app-text hover:bg-app-hover hover:border-accent/30',
+                            )}
+                          >
+                            {isOccupied && (
+                              <span
+                                className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-status-warning"
+                                aria-hidden
+                              />
+                            )}
+                            <span className="font-semibold text-xs">{table.table_number}</span>
+                            {table.display_name !== table.table_number && (
+                              <span className="text-[10px] opacity-70 truncate max-w-full">
+                                {table.display_name}
+                              </span>
+                            )}
+                            {isOccupied && (
+                              <span className="text-[10px] font-medium text-status-warning">
+                                {t('tableOccupied')}
+                              </span>
+                            )}
+                          </Button>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full text-app-text-muted text-sm">

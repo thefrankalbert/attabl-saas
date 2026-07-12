@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { X as CloseIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRightLeft, X as CloseIcon } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -10,8 +10,10 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { formatInitials, formatTimeHHMM } from './service-status';
+import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDialog';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 import type { Order } from '@/types/admin.types';
 
@@ -20,9 +22,13 @@ interface Props {
   servers: ServiceServerVM[];
   currentOrder: Order | null;
   currencySymbol: string;
+  /** Tables with no open session - the valid destinations for a reassign. */
+  freeTables: ReassignFreeTable[];
   onClose: () => void;
   onAssignServer: (tableId: string, serverId: string) => void;
   onRelease: (assignmentId: string) => void;
+  /** Called after a successful table reassign so the parent can refresh. */
+  onReassigned: () => void;
   labels: {
     closeAria: string;
     tableLabel: string;
@@ -41,6 +47,16 @@ interface Props {
     orderEmpty: string;
     orderOpened: string;
     orderTotal: string;
+    moveTableBtn: string;
+    reassignTitle: string;
+    reassignDescription: string;
+    reassignPlaceholder: string;
+    reassignNoFreeTables: string;
+    reassignConfirm: string;
+    reassignCancel: string;
+    reassignMoving: string;
+    reassignSuccess: string;
+    reassignError: string;
   };
 }
 
@@ -54,11 +70,16 @@ export function ServiceTableDetail({
   servers,
   currentOrder,
   currencySymbol,
+  freeTables,
   onClose,
   onAssignServer,
   onRelease,
+  onReassigned,
   labels,
 }: Props) {
+  const { toast } = useToast();
+  const [reassignOpen, setReassignOpen] = useState(false);
+
   useEffect(() => {
     if (!vm) return;
     const onKey = (e: KeyboardEvent) => {
@@ -240,6 +261,35 @@ export function ServiceTableDetail({
                     {orderTotal.toFixed(2)} {currencySymbol}
                   </span>
                 </div>
+                {currentOrder.service_type === 'dine_in' && (
+                  <Button
+                    variant="outline"
+                    className="mt-2 w-full gap-2"
+                    onClick={() => setReassignOpen(true)}
+                  >
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    {labels.moveTableBtn}
+                  </Button>
+                )}
+                <ReassignTableDialog
+                  open={reassignOpen}
+                  onOpenChange={setReassignOpen}
+                  orderId={currentOrder.id}
+                  freeTables={freeTables}
+                  onReassigned={onReassigned}
+                  toast={toast}
+                  labels={{
+                    title: labels.reassignTitle,
+                    description: labels.reassignDescription,
+                    placeholder: labels.reassignPlaceholder,
+                    noFreeTables: labels.reassignNoFreeTables,
+                    confirm: labels.reassignConfirm,
+                    cancel: labels.reassignCancel,
+                    moving: labels.reassignMoving,
+                    success: labels.reassignSuccess,
+                    error: labels.reassignError,
+                  }}
+                />
               </>
             ) : (
               <div className="rounded border border-dashed border-app-border px-4 py-4 text-center text-[11px] text-app-text-muted">

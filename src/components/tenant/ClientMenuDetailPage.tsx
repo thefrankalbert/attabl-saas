@@ -2,6 +2,7 @@
 
 import CategoryNav from '@/components/tenant/CategoryNav';
 import TablePicker from '@/components/tenant/TablePicker';
+import { TableOccupiedNotice } from '@/components/tenant/TableOccupiedNotice';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import {
   useClientMenuDetail,
@@ -77,6 +78,13 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
         onToggleSearch={toggleSearch}
         onSearchChange={(value) => setSearchQuery(value)}
         onClearSearch={() => setSearchQuery('')}
+      />
+
+      {/* Soft warning if the scanned table already has an open session. */}
+      <TableOccupiedNotice
+        occupied={props.tableOccupied ?? false}
+        tenantSlug={tenant.slug}
+        tableNumber={props.initialTable}
       />
 
       {/* - SEARCH RESULTS OVERLAY - */}

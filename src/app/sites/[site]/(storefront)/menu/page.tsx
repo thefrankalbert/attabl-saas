@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
-import { getCachedTenant, getCachedMenuData, toPublicTenant } from '@/lib/cache';
+import { getCachedTenant, getCachedMenuData, getTableOccupied, toPublicTenant } from '@/lib/cache';
 
 export const revalidate = 30;
 
@@ -84,6 +84,10 @@ export default async function MenuDetailPage({
     items: menuItems.filter((item) => item.category_id === category.id),
   }));
 
+  // Soft warning: does the scanned table already hold an open session (a likely
+  // other party)? Server-side + briefly cached so the page stays ISR.
+  const tableOccupied = initialTable ? await getTableOccupied(tenant.id, initialTable) : false;
+
   return (
     <NextIntlClientProvider messages={messages}>
       <ClientMenuDetailPage
@@ -93,6 +97,7 @@ export default async function MenuDetailPage({
         transversalMenus={transversalMenus}
         initialMenuSlug={initialMenuSlug}
         initialTable={initialTable}
+        tableOccupied={tableOccupied}
         initialVenueSlug={initialVenueSlug}
         initialSection={initialSection}
         initialItemId={initialItemId}

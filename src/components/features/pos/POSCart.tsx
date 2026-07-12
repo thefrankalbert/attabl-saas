@@ -30,6 +30,7 @@ interface POSCartProps {
   // Zones & Tables (for dine-in table picker)
   zones: Zone[];
   allTables: Table[];
+  occupiedTableNumbers?: Set<string>;
 
   // Cart actions
   onUpdateQuantity: (itemId: string, delta: number) => void;
@@ -72,6 +73,7 @@ export default function POSCart({
   setDeliveryAddress,
   zones,
   allTables,
+  occupiedTableNumbers,
   onUpdateQuantity,
   onClearCart,
   onEditNotes,
@@ -169,6 +171,7 @@ export default function POSCart({
         onPickZone={(zoneId) => setPickerZoneId(zoneId)}
         pickerTables={pickerTables}
         selectedTable={selectedTable}
+        occupiedTableNumbers={occupiedTableNumbers}
         onSelectTable={(tableNumber) => {
           setSelectedTable(tableNumber);
           setShowTablePicker(false);
