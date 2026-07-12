@@ -7,7 +7,6 @@ import { Download, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { captureElementToCanvas } from '@/lib/qr/capture-template';
-import { FeatureGate } from '@/components/qr/FeatureGate';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
 // --- Types ---------------------------------------------
@@ -162,39 +161,37 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           {loading === 'pdf' ? t('exporting') : t('exportPdf')}
         </Button>
 
-        {/* PNG - premium */}
-        <FeatureGate feature="canAccessQrCustomization">
-          <Button
-            variant="outline"
-            onClick={downloadPNG}
-            disabled={loading !== null}
-            className="gap-2"
-          >
-            {loading === 'png' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileImage className="h-4 w-4" />
-            )}
-            {t('exportPng')}
-          </Button>
-        </FeatureGate>
+        {/* PNG - client-side export is free for all; the paywall is enforced
+            server-side on saving/assigning a design (see qr-design actions),
+            not on export (which cannot be truly enforced client-side anyway). */}
+        <Button
+          variant="outline"
+          onClick={downloadPNG}
+          disabled={loading !== null}
+          className="gap-2"
+        >
+          {loading === 'png' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileImage className="h-4 w-4" />
+          )}
+          {t('exportPng')}
+        </Button>
 
-        {/* SVG - premium */}
-        <FeatureGate feature="canAccessQrCustomization">
-          <Button
-            variant="outline"
-            onClick={downloadSVG}
-            disabled={loading !== null}
-            className="gap-2"
-          >
-            {loading === 'svg' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileCode className="h-4 w-4" />
-            )}
-            {t('exportSvgOnly')}
-          </Button>
-        </FeatureGate>
+        {/* SVG */}
+        <Button
+          variant="outline"
+          onClick={downloadSVG}
+          disabled={loading !== null}
+          className="gap-2"
+        >
+          {loading === 'svg' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileCode className="h-4 w-4" />
+          )}
+          {t('exportSvgOnly')}
+        </Button>
         {/* Print lives in the Download tab (QRExportPanel) where QRPrintSheet
             provides the #qr-print-root isolation. Printing from here would print
             the whole admin shell, so no Print button in the customizer bar. */}
