@@ -28,10 +28,14 @@ export function useInventoryColumns(
         accessorKey: 'name',
         header: ({ column }) => <SortableHeader column={column}>{tc('product')}</SortableHeader>,
         cell: ({ row }) => (
-          <div>
-            <p className="font-medium text-app-text">{row.original.name}</p>
+          <div className="min-w-0 max-w-[220px]">
+            <p className="truncate font-medium text-app-text" title={row.original.name}>
+              {row.original.name}
+            </p>
             {row.original.category && (
-              <p className="text-xs text-app-text-secondary">{row.original.category}</p>
+              <p className="truncate text-xs text-app-text-secondary" title={row.original.category}>
+                {row.original.category}
+              </p>
             )}
           </div>
         ),

@@ -59,7 +59,7 @@ export function HomeHero({
             <div className="font-mono text-[11px] font-medium uppercase tracking-[0.5px] text-white/70">
               {t('suggestionChef')}
             </div>
-            <div className="mt-[5px] text-[25px] font-semibold leading-[1.05] tracking-[-0.9px] text-white">
+            <div className="mt-[5px] line-clamp-2 text-[25px] font-semibold leading-[1.05] tracking-[-0.9px] text-white">
               {name}
             </div>
             <div className="mt-3.5 flex items-center gap-3.5">

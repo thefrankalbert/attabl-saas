@@ -68,25 +68,28 @@ export function HomeHeaderClient({
   return (
     <>
       <header className="flex items-center justify-between bg-white px-4 pb-2.5 pt-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-divider)] bg-[var(--color-surface-alt)]">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--color-divider)] bg-[var(--color-surface-alt)]">
             <MapPin className="h-3.5 w-3.5 text-[var(--color-ink-2)]" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="font-mono text-xs font-medium uppercase tracking-[0.4px] text-[var(--color-ink-muted)]">
               {t('youAreAt')}
             </div>
             <Link
               href={`/sites/${site}/settings`}
-              className="flex items-center gap-1 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]"
+              className="flex min-w-0 items-center gap-1 text-[14px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-ink)]"
             >
-              {tenantName}
+              <span className="truncate">{tenantName}</span>
               {tableNum && (
-                <span className="text-[var(--color-ink-2)]">
+                <span className="shrink-0 whitespace-nowrap text-[var(--color-ink-2)]">
                   &nbsp;-&nbsp;{t('tableLabel', { table: tableNum })}
                 </span>
               )}
-              <ChevronDown className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" strokeWidth={2} />
+              <ChevronDown
+                className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-muted)]"
+                strokeWidth={2}
+              />
             </Link>
           </div>
         </div>

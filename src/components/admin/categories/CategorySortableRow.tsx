@@ -53,10 +53,10 @@ export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </Button>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-app-text text-sm">{cat.name}</p>
+        <p className="truncate font-medium text-app-text text-sm">{cat.name}</p>
       </div>
       {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
-        <div className="flex items-center gap-1 rounded-[0.625rem] border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-medium normal-case text-[var(--muted-foreground)]">
+        <div className="flex shrink-0 items-center gap-1 rounded-[0.625rem] border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-medium normal-case text-[var(--muted-foreground)]">
           {cat.preparation_zone === 'bar' ? (
             <Wine className="w-3 h-3" />
           ) : (
@@ -66,7 +66,7 @@ export function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         </div>
       )}
       <div
-        className="flex items-center gap-1.5 text-xs text-app-text-muted"
+        className="flex shrink-0 items-center gap-1.5 text-xs text-app-text-muted"
         title={`${cat.items_count || 0} plats`}
       >
         <Utensils className="w-3 h-3" />

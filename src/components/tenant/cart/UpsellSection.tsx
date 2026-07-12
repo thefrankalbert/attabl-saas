@@ -48,18 +48,18 @@ export function UpsellSection({
 
   return (
     <section className="overflow-hidden">
-      <div className="mb-3 flex items-end justify-between">
-        <div>
-          <h2 className="text-[18.5px] font-semibold leading-[1.15] tracking-[-0.6px] text-[var(--color-ink)]">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-[18.5px] font-semibold leading-[1.15] tracking-[-0.6px] text-[var(--color-ink)]">
             {labels.title}
           </h2>
-          <p className="mt-[3px] text-[12.5px] tracking-[-0.1px] text-[var(--color-ink-muted)]">
+          <p className="mt-[3px] truncate text-[12.5px] tracking-[-0.1px] text-[var(--color-ink-muted)]">
             {labels.subtitle}
           </p>
         </div>
         <Link
           href={menuPath}
-          className="flex items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
+          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[var(--color-accent)]"
         >
           {labels.seeAll}
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />

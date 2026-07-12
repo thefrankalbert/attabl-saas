@@ -152,12 +152,17 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                         className="rounded-xl border border-app-border bg-app-elevated p-4"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{tn.name}</span>
-                              {statusBadge(tn)}
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="truncate font-medium" title={tn.name}>
+                                {tn.name}
+                              </span>
+                              <span className="shrink-0">{statusBadge(tn)}</span>
                             </div>
-                            <span className="text-xs text-app-text-muted">
+                            <span
+                              className="truncate text-xs text-app-text-muted"
+                              title={`${tn.slug} - ${tn.subscription_plan ?? '-'}`}
+                            >
                               {tn.slug} - {tn.subscription_plan ?? '-'}
                             </span>
                           </div>
@@ -242,10 +247,12 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                                   key={u.id}
                                   className="flex flex-col gap-2 rounded-lg bg-app-bg p-3 sm:flex-row sm:items-center sm:justify-between"
                                 >
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm">{u.email}</span>
-                                      {userStatusBadge(u)}
+                                  <div className="flex min-w-0 flex-col gap-1">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <span className="truncate text-sm" title={u.email}>
+                                        {u.email}
+                                      </span>
+                                      <span className="shrink-0">{userStatusBadge(u)}</span>
                                     </div>
                                     <span className="text-xs text-app-text-muted">{u.role}</span>
                                   </div>
@@ -338,12 +345,16 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                       key={tn.id}
                       className="flex flex-col gap-3 rounded-xl border border-app-border bg-app-elevated p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{tn.name}</span>
-                          {statusBadge(tn)}
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-medium" title={tn.name}>
+                            {tn.name}
+                          </span>
+                          <span className="shrink-0">{statusBadge(tn)}</span>
                         </div>
-                        <span className="text-xs text-app-text-muted">{tn.slug}</span>
+                        <span className="truncate text-xs text-app-text-muted" title={tn.slug}>
+                          {tn.slug}
+                        </span>
                       </div>
                       <Button
                         variant="outline"

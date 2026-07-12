@@ -121,7 +121,7 @@ export function CartItemsList({
 
               {/* TEXT */}
               <div className="min-w-0 flex-1">
-                <div className="text-[13.5px] font-semibold leading-[1.3] tracking-[-0.2px] text-[var(--color-ink)]">
+                <div className="line-clamp-2 text-[13.5px] font-semibold leading-[1.3] tracking-[-0.2px] text-[var(--color-ink)]">
                   {getTranslatedContent(language, item.name, item.name_en)}
                 </div>
                 {subParts.length > 0 && (

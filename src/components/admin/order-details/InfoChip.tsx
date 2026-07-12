@@ -9,10 +9,12 @@ export function InfoChip({
   value: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-2 py-0.5 text-app-text">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-app-border bg-app-bg px-2 py-0.5 text-app-text">
       {icon}
-      {label && <span className="text-app-text-muted">{label}:</span>}
-      <span className="font-medium">{value}</span>
+      {label && <span className="shrink-0 text-app-text-muted">{label}:</span>}
+      <span className="truncate font-medium" title={value}>
+        {value}
+      </span>
     </span>
   );
 }

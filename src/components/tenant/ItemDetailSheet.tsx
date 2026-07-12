@@ -451,7 +451,7 @@ export default function ItemDetailSheet({
                                   : 'border-[var(--color-divider)]'
                               }`}
                             >
-                              <div className="text-[13.5px] font-semibold tracking-[-0.2px] text-[var(--color-ink)]">
+                              <div className="break-words text-[13.5px] font-semibold tracking-[-0.2px] text-[var(--color-ink)]">
                                 {getTranslatedContent(
                                   language,
                                   variant.variant_name_fr,
@@ -562,11 +562,11 @@ export default function ItemDetailSheet({
                                   <Check className="h-3 w-3 text-white" strokeWidth={3} />
                                 )}
                               </span>
-                              <span className="flex-1 text-[14px] font-medium tracking-[-0.2px] text-[var(--color-ink-2)]">
+                              <span className="min-w-0 flex-1 break-words text-[14px] font-medium tracking-[-0.2px] text-[var(--color-ink-2)]">
                                 {getTranslatedContent(language, modifier.name, modifier.name_en)}
                               </span>
                               {modifier.price > 0 && (
-                                <span className="text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
+                                <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
                                   +
                                   {resolveAndFormatPrice(modifier.price, modifier.prices, currency)}
                                 </span>

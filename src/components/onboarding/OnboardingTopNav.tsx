@@ -31,7 +31,7 @@ export function OnboardingTopNav({
     /* --- Floating top navigation strip --- */
     <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center px-4 sm:px-6 z-10">
       {/* Left: logo link + tenant name */}
-      <div className="flex items-center gap-2 min-w-0 shrink-0">
+      <div className="flex min-w-0 items-center gap-2">
         <Link
           href="/"
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
@@ -39,7 +39,7 @@ export function OnboardingTopNav({
         >
           <LayoutGrid className="w-4 h-4 text-app-text-muted" />
         </Link>
-        <span className="text-sm font-semibold text-app-text hidden sm:inline">
+        <span className="hidden max-w-[180px] truncate text-sm font-semibold text-app-text sm:inline">
           {tenantName || 'ATTABL'}
         </span>
       </div>
