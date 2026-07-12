@@ -33,10 +33,17 @@ export function useSupplierColumns({
         accessorKey: 'name',
         header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
         cell: ({ row }) => (
-          <div>
-            <p className="font-medium text-app-text">{row.original.name}</p>
+          <div className="min-w-0 max-w-[220px]">
+            <p className="truncate font-medium text-app-text" title={row.original.name}>
+              {row.original.name}
+            </p>
             {row.original.contact_name && (
-              <p className="text-xs text-app-text-secondary">{row.original.contact_name}</p>
+              <p
+                className="truncate text-xs text-app-text-secondary"
+                title={row.original.contact_name}
+              >
+                {row.original.contact_name}
+              </p>
             )}
           </div>
         ),
@@ -45,7 +52,12 @@ export function useSupplierColumns({
         accessorKey: 'email',
         header: () => t('email'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.email || '-'}</span>
+          <span
+            className="block max-w-[200px] truncate text-app-text-secondary"
+            title={row.original.email || undefined}
+          >
+            {row.original.email || '-'}
+          </span>
         ),
         enableSorting: false,
       },
@@ -53,7 +65,12 @@ export function useSupplierColumns({
         accessorKey: 'phone',
         header: () => t('phone'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary">{row.original.phone || '-'}</span>
+          <span
+            className="block max-w-[160px] truncate text-app-text-secondary"
+            title={row.original.phone || undefined}
+          >
+            {row.original.phone || '-'}
+          </span>
         ),
         enableSorting: false,
       },
@@ -61,7 +78,10 @@ export function useSupplierColumns({
         accessorKey: 'address',
         header: () => t('address'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-48 truncate block">
+          <span
+            className="block max-w-48 truncate text-app-text-secondary"
+            title={row.original.address || undefined}
+          >
             {row.original.address || '-'}
           </span>
         ),

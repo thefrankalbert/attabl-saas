@@ -101,7 +101,7 @@ export default function WelcomeSplash({
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]" />
           {t('welcomeBadge')}
         </span>
-        <h1 className="mt-3.5 text-[40px] font-bold leading-[1.02] tracking-[-1.2px]">
+        <h1 className="mt-3.5 line-clamp-2 break-words text-[40px] font-bold leading-[1.02] tracking-[-1.2px]">
           {tenantName}
         </h1>
         <p className="mt-2.5 max-w-sm text-[14.5px] leading-[1.45] text-white/65">
