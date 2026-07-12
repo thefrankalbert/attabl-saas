@@ -35,7 +35,9 @@ export function SectionCards({ cards }: SectionCardsProps) {
           >
             <div className="grid gap-1.5 px-6 pt-6">
               <div className="flex items-start justify-between gap-2">
-                <div className="text-[13px] text-[var(--muted-foreground)]">{c.desc}</div>
+                <div className="min-w-0 truncate text-[13px] text-[var(--muted-foreground)]">
+                  {c.desc}
+                </div>
                 {c.deltaText && (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--foreground)]">
                     <TrendIcon className="size-3" />
