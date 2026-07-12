@@ -140,6 +140,10 @@ export function createQrDesignService(supabase: SupabaseClient): QrDesignService
       }
 
       // Per-tenant cap: bound unbounded design creation (SEC-02).
+      // ponytail: check-then-insert has a TOCTOU race - two concurrent saves at
+      // count=49 can both insert (51). Acceptable: this is an anti-abuse ceiling
+      // (not a security boundary), bounded by uploadLimiter (20/min). If it must
+      // be hard, add a partial unique index / row_number trigger on tenant_id.
       const { count, error: countError } = await supabase
         .from('qr_designs')
         .select('id', { count: 'exact', head: true })

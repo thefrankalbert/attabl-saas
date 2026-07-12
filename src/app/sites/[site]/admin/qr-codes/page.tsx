@@ -71,8 +71,6 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
           slug: tenant.slug,
           logoUrl: tenant.logo_url,
           primaryColor: tenant.primary_color || '#000000',
-          secondaryColor: tenant.secondary_color || '#FFFFFF',
-          description: tenant.description,
         }}
         menuUrl={menuUrl}
         zones={zones || []}

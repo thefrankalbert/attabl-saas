@@ -31,8 +31,6 @@ interface QRCodePageProps {
     slug: string;
     logoUrl?: string;
     primaryColor: string;
-    secondaryColor: string;
-    description?: string;
   };
   menuUrl: string;
   zones: Zone[];
