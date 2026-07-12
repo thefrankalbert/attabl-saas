@@ -54,27 +54,34 @@ export default function UsersTable({
                 !user.is_active && 'opacity-60 bg-app-elevated',
               )}
             >
-              <div className="flex items-center gap-4">
-                <Avatar className="h-10 w-10 border">
+              <div className="flex min-w-0 items-center gap-4">
+                <Avatar className="h-10 w-10 shrink-0 border">
                   <AvatarImage
                     src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.full_name}`}
                   />
                   <AvatarFallback>{user.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-app-text">{user.full_name}</p>
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p
+                      className="truncate font-medium text-app-text"
+                      title={user.full_name ?? undefined}
+                    >
+                      {user.full_name}
+                    </p>
                     {!user.is_active && (
-                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
+                      <Badge variant="destructive" className="h-5 shrink-0 px-1.5 text-[10px]">
                         {t('inactive')}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-app-text-secondary">{user.email}</p>
+                  <p className="truncate text-sm text-app-text-secondary" title={user.email}>
+                    {user.email}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-6">
+              <div className="flex shrink-0 items-center gap-6">
                 <div className="inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
                   <RoleIcon className="w-3.5 h-3.5" />
                   {roleConfig.label}

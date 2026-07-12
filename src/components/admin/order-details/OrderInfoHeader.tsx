@@ -100,7 +100,7 @@ export function OrderInfoHeader({
       {order.notes && (
         <div className="flex items-start gap-1.5 rounded-lg border border-status-warning/20 bg-status-warning-bg px-2.5 py-1.5">
           <MessageSquare className="w-3.5 h-3.5 text-status-warning shrink-0 mt-0.5" />
-          <p className="text-xs text-status-warning">{order.notes}</p>
+          <p className="min-w-0 break-words text-xs text-status-warning">{order.notes}</p>
         </div>
       )}
     </div>

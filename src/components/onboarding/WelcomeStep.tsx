@@ -52,7 +52,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         </div>
 
         {/* Headline */}
-        <h1 className="text-3xl sm:text-[2.5rem] font-bold text-foreground mb-4 leading-[1.15] tracking-tight opacity-0 animate-[fadeSlideIn_0.7s_0.2s_ease-out_forwards]">
+        <h1 className="text-3xl sm:text-[2.5rem] font-bold text-foreground mb-4 leading-[1.15] tracking-tight break-words opacity-0 animate-[fadeSlideIn_0.7s_0.2s_ease-out_forwards]">
           {t('welcomeTitle', { name: tenantName || '' })}
         </h1>
         <p className="text-sm sm:text-[15px] text-muted-foreground mb-16 max-w-sm leading-relaxed opacity-0 animate-[fadeSlideIn_0.7s_0.35s_ease-out_forwards]">
