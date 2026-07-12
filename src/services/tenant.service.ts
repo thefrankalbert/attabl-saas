@@ -12,7 +12,6 @@ interface TenantSettings {
   country?: string;
   phone?: string;
   logoUrl?: string;
-  bannerUrl?: string;
   notificationSoundId?: string;
   // Establishment
   establishmentType?: string;
@@ -77,7 +76,6 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
         ...(settings.country !== undefined && { country: settings.country || null }),
         ...(settings.phone !== undefined && { phone: settings.phone || null }),
         ...(settings.logoUrl !== undefined && { logo_url: settings.logoUrl || null }),
-        ...(settings.bannerUrl !== undefined && { banner_url: settings.bannerUrl || null }),
         ...(settings.establishmentType !== undefined && {
           establishment_type: settings.establishmentType || null,
         }),

@@ -218,21 +218,6 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
           currency={tenant.currency}
         />
 
-        {/* - RESTAURANT BANNER - */}
-        {tenant.banner_url && (
-          <div className="px-4 pb-4">
-            <div className="relative aspect-[16/6] w-full overflow-hidden rounded-[var(--radius-card)]">
-              <Photo
-                src={tenant.banner_url}
-                alt={tenant.name}
-                kind="food"
-                fill
-                sizes="(max-width: 768px) 100vw, 768px"
-              />
-            </div>
-          </div>
-        )}
-
         {/* - HERO - */}
         <div className="px-4 pb-6">
           {heroItem && heroSource ? (

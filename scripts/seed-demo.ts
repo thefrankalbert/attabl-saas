@@ -97,7 +97,6 @@ interface Manifest {
     description_fr: string;
     description_en: string;
     currency: string;
-    banner_image: string;
   };
   categories: ManifestCategory[];
 }
@@ -352,8 +351,7 @@ async function cleanup() {
 
   // Purge old photos: the dossier replaces every image (rule: replacement, not
   // merge), so stale files must not survive in the public buckets. Cover images
-  // of items live under lepicurien/ and category covers under
-  // lepicurien/categories/; the banner lives at lepicurien/banner.jpg.
+  // of items live under lepicurien/ and category covers under lepicurien/categories/.
   const purgeFolder = async (bucket: string, folder: string) => {
     const listed = await supabase.storage.from(bucket).list(folder, { limit: 1000 });
     const stale = (listed.data ?? [])
@@ -606,8 +604,8 @@ async function createMenu() {
 }
 
 // ─── STEP 5: UPLOAD MEDIA (local dossier -> storage) ──────────────────────
-// Item galleries (primary + variants), the restaurant banner and the category
-// covers. Every file lives in the dossier - a missing file is a hard fail.
+// Item galleries (primary + variants) and the category covers. Every file lives
+// in the dossier - a missing file is a hard fail.
 
 // Upload one local dossier file to a bucket path and return its public URL.
 async function uploadFile(bucket: string, relPath: string, storagePath: string): Promise<string> {
@@ -620,7 +618,7 @@ async function uploadFile(bucket: string, relPath: string, storagePath: string):
 }
 
 async function uploadMedia() {
-  logStep(5, 'Upload media (item galleries, banner, category covers)');
+  logStep(5, 'Upload media (item galleries, category covers)');
 
   // Item galleries: main photo (slug.jpg) + variants (slug-2.jpg ...). The main
   // photo goes to image_url, the full ordered list to images.
@@ -650,20 +648,6 @@ async function uploadMedia() {
     items++;
   }
   log(`Item photos uploaded: ${items} items (+${variants} gallery variants)`);
-
-  // Restaurant banner (menu-items bucket, same as item photos - it has the
-  // authenticated-upload policy the admin banner uploader relies on).
-  const bannerUrl = await uploadFile(
-    'menu-items',
-    manifest.restaurant.banner_image,
-    'lepicurien/banner.jpg',
-  );
-  const { error: bannerErr } = await supabase
-    .from('tenants')
-    .update({ banner_url: bannerUrl })
-    .eq('id', ID.tenant);
-  if (bannerErr) throw new Error(`Banner update failed: ${bannerErr.message}`);
-  log('Banner uploaded');
 
   // Category covers.
   let covers = 0;

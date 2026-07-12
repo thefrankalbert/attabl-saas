@@ -30,28 +30,24 @@ export function CategoryTile({ category, href }: CategoryTileProps) {
         className="relative flex w-full items-center justify-center overflow-hidden rounded-[var(--radius-card)] transition-transform group-active:scale-95"
         style={{
           aspectRatio: '1 / 1',
-          background: `linear-gradient(155deg, color-mix(in oklab, ${base}, white 22%) 0%, ${base} 52%, color-mix(in oklab, ${base}, black 16%) 100%)`,
+          // Gradient background is only the fallback canvas for the icon; when a
+          // cover photo exists it fills the tile and no gradient/icon shows.
+          background: hasCover
+            ? undefined
+            : `linear-gradient(155deg, color-mix(in oklab, ${base}, white 22%) 0%, ${base} 52%, color-mix(in oklab, ${base}, black 16%) 100%)`,
         }}
       >
-        {hasCover && (
-          <div className="absolute inset-0">
-            <Photo
-              src={category.coverUrl ?? null}
-              alt={category.label}
-              kind="food"
-              fill
-              sizes="25vw"
-            />
-            <div className="absolute inset-0 bg-black/30" />
-          </div>
+        {hasCover ? (
+          <Photo
+            src={category.coverUrl ?? null}
+            alt={category.label}
+            kind="food"
+            fill
+            sizes="25vw"
+          />
+        ) : (
+          <CategoryIcon name={category.icon} size={30} className="text-white" />
         )}
-        <CategoryIcon
-          name={category.icon}
-          size={30}
-          className={
-            hasCover ? 'relative text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]' : 'text-white'
-          }
-        />
       </div>
       <div className="w-full truncate text-center text-[11.5px] font-medium text-[var(--color-ink-2)]">
         {category.label}

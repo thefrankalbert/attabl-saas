@@ -22,6 +22,7 @@ export interface MenuFormData {
   name_en?: string;
   description?: string;
   description_en?: string;
+  image_url?: string;
   venue_id: string | null;
   parent_menu_id: string | null;
   is_active: boolean;
@@ -86,6 +87,7 @@ export function useMenusData({
       name_en: data.name_en?.trim() || undefined,
       description: data.description?.trim() || undefined,
       description_en: data.description_en?.trim() || undefined,
+      image_url: data.image_url || undefined,
       venue_id: data.venue_id,
       parent_menu_id: data.parent_menu_id,
       is_active: data.is_active,
@@ -109,6 +111,7 @@ export function useMenusData({
       name_en: data.name_en?.trim() || undefined,
       description: data.description?.trim() || undefined,
       description_en: data.description_en?.trim() || undefined,
+      image_url: data.image_url || undefined,
       venue_id: data.venue_id,
       parent_menu_id: data.parent_menu_id,
       is_active: data.is_active,
