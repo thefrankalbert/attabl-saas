@@ -236,10 +236,10 @@ export function PlatformConsole({ tenants, users }: PlatformConsoleProps) {
                                   key={u.id}
                                   className="flex flex-col gap-2 rounded-lg bg-app-bg p-3 sm:flex-row sm:items-center sm:justify-between"
                                 >
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm">{u.email}</span>
-                                      {userStatusBadge(u)}
+                                  <div className="flex min-w-0 flex-col gap-1">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <span className="truncate text-sm">{u.email}</span>
+                                      <span className="shrink-0">{userStatusBadge(u)}</span>
                                     </div>
                                     <span className="text-xs text-app-text-muted">{u.role}</span>
                                   </div>

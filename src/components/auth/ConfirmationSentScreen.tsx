@@ -45,7 +45,7 @@ function ConfirmationSentScreen({
           {tConfirm('title')}
         </h1>
         <p className="text-app-text-secondary text-sm leading-relaxed mb-2">{tConfirm('sentTo')}</p>
-        <p className="text-app-text font-semibold text-sm mb-6">{email}</p>
+        <p className="text-app-text font-semibold text-sm mb-6 break-all">{email}</p>
         <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
           {tConfirm('instructions')}
         </p>
