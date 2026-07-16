@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,11 +57,20 @@ export function ColorPicker({
   const t = useTranslations('qrCodes');
   const [hexInput, setHexInput] = useState(value);
 
-  // Keep the hex text field in sync when `value` changes from outside this
-  // control (loading a saved design, template accent update). Transient typing
-  // lives in local state; an external value change re-seeds it.
+  // Mirror the latest local input so the sync effect can read it without
+  // depending on it (which would re-run the effect on every keystroke).
+  const hexInputRef = useRef(hexInput);
+  hexInputRef.current = hexInput;
+
+  // Keep the hex text field in sync when `value` changes from OUTSIDE this
+  // control (loading a saved design, template accent update, preset click).
+  // Skip our own live-commit echo: when the incoming value already matches the
+  // normalized local input, re-seeding would yank the caret to the end and make
+  // mid-string editing impossible.
   useEffect(() => {
-    setHexInput(value);
+    if (normalizeHex(hexInputRef.current) !== value) {
+      setHexInput(value);
+    }
   }, [value]);
 
   const handleHexBlur = () => {
