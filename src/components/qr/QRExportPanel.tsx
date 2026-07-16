@@ -126,7 +126,7 @@ export function QRExportPanel({
     setExporting(true);
     try {
       const { default: jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvas = (await import('html2canvas-pro')).default;
       const canvas = await captureElementToCanvas(
         cardRef.current,
         html2canvas as unknown as Parameters<typeof captureElementToCanvas>[1],

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 // --- Types ---------------------------------------------
 
@@ -74,7 +75,17 @@ export function ColorPicker({
 
   const handleHexChange = (newValue: string) => {
     setHexInput(newValue);
+    // Commit live as soon as the typed value is a complete valid hex - no need to
+    // blur to apply it. Incomplete/invalid input just stays local (see isInvalid).
+    const normalized = normalizeHex(newValue);
+    if (isValidHex(normalized)) {
+      onChange(normalized);
+    }
   };
+
+  // Inline validity for the hex field: flag a non-empty value that is not a valid
+  // hex, instead of silently reverting only on blur.
+  const isInvalid = hexInput.trim() !== '' && !isValidHex(normalizeHex(hexInput));
 
   const handlePresetClick = (preset: string) => {
     onChange(preset);
@@ -136,8 +147,12 @@ export function ColorPicker({
             }
           }}
           placeholder="#000000"
-          className="flex-1 font-mono text-base md:text-sm"
+          className={cn(
+            'flex-1 font-mono text-base md:text-sm',
+            isInvalid && 'border-status-error focus-visible:border-status-error',
+          )}
           maxLength={7}
+          aria-invalid={isInvalid}
           aria-label={t('hexValueLabel')}
         />
       </div>

@@ -26,7 +26,7 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
     >
       <div className="w-full flex flex-col items-center gap-2">
         <p
-          className="text-[15px] font-semibold tracking-tight"
+          className="w-full break-words text-center text-[15px] font-semibold tracking-tight line-clamp-2"
           style={{ color: config.templateAccentColor }}
         >
           {tenantName}
@@ -48,9 +48,15 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
         />
       </div>
 
-      <div className="flex flex-col items-center gap-0.5">
-        {config.ctaText && <p className="text-[12px] font-medium">{config.ctaText}</p>}
-        {tableName && <p className="text-[11px] opacity-60">{tableName}</p>}
+      <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
+        {config.ctaText && (
+          <p className="w-full break-words text-center text-[12px] font-medium line-clamp-2">
+            {config.ctaText}
+          </p>
+        )}
+        {tableName && (
+          <p className="w-full truncate text-center text-[11px] opacity-60">{tableName}</p>
+        )}
         {config.showPoweredBy && <p className="text-[10px] opacity-40">Powered by Attabl</p>}
       </div>
     </div>

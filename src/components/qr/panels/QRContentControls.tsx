@@ -17,7 +17,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ColorPicker } from '@/components/qr/ColorPicker';
-import { CTA_PRESETS, type QRDesignConfig, type QRCTAPreset } from '@/types/qr-design.types';
+import {
+  CTA_PRESETS,
+  CTA_MAX_LENGTH,
+  type QRDesignConfig,
+  type QRCTAPreset,
+} from '@/types/qr-design.types';
 
 interface QRContentControlsProps {
   config: QRDesignConfig;
@@ -142,7 +147,7 @@ export function QRContentControls({ config, updateField }: QRContentControlsProp
         {config.ctaPreset === 'custom' && (
           <Input
             value={config.ctaText}
-            maxLength={120}
+            maxLength={CTA_MAX_LENGTH}
             placeholder={t('ctaCustom')}
             onChange={(e) => updateField('ctaText', e.target.value)}
           />

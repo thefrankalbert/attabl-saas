@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Table, Zone } from '@/types/admin.types';
 
 interface QRCodePageProps {
@@ -244,74 +245,81 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
 
         {/* --- Tab: Download --- */}
         <TabsContent value="download" className="flex-1 overflow-auto">
-          <div>
+          <div className="space-y-6">
             {/* Format, dimensions & print layout (choose BEFORE printing) */}
-            <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
-              <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
-                <Download className="w-4 h-4 text-app-text-muted" />
-                {t('formatAndLayout')}
-              </h3>
-              <QRExportPanel
-                config={config}
-                updateField={updateField}
-                url={qrUrl}
-                tenantName={tenant.name}
-                tableName={qrSubtitle}
-                logoUrl={tenant.logoUrl}
-              />
-            </div>
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Download className="h-4 w-4 text-app-text-muted" />
+                  {t('formatAndLayout')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QRExportPanel
+                  config={config}
+                  updateField={updateField}
+                  url={qrUrl}
+                  tenantName={tenant.name}
+                  tableName={qrSubtitle}
+                  logoUrl={tenant.logoUrl}
+                />
+              </CardContent>
+            </Card>
 
-            {/* Single QR Preview + Download */}
-            <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
-              <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-app-text-muted" />
-                {t('yourQRCode')}
-              </h3>
-              <div className="flex justify-center mb-6">
-                <div className="max-w-xs w-full">
-                  <QRPreview
-                    ref={downloadPreviewRef}
+            {/* Single QR: live preview beside its download actions (less scroll) */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <QrCode className="h-4 w-4 text-app-text-muted" />
+                  {t('yourQRCode')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,300px)_1fr]">
+                  <div className="mx-auto w-full max-w-xs lg:mx-0">
+                    <QRPreview
+                      ref={downloadPreviewRef}
+                      config={config}
+                      url={qrUrl}
+                      tenantName={tenant.name}
+                      tableName={qrSubtitle}
+                      logoUrl={tenant.logoUrl}
+                    />
+                  </div>
+                  <QRExportBar
                     config={config}
-                    url={qrUrl}
-                    tenantName={tenant.name}
-                    tableName={qrSubtitle}
-                    logoUrl={tenant.logoUrl}
+                    previewRef={downloadPreviewRef}
+                    tenantSlug={tenant.slug}
                   />
                 </div>
-              </div>
-              <QRExportBar
-                config={config}
-                previewRef={downloadPreviewRef}
-                tenantSlug={tenant.slug}
-              />
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Batch Generation Section (A4 format) */}
             {tables.length > 0 && (
-              <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-app-text flex items-center gap-2">
-                      <Download className="w-4 h-4 text-app-text-muted" />
-                      {t('batchGeneration')}
-                    </h3>
-                    <p className="text-sm text-app-text-secondary mt-1">
-                      {t('batchGenerationDesc', { count: tables.length })}
-                    </p>
-                    <p className="text-xs text-app-text-muted mt-1">{t('formatA4')}</p>
-                  </div>
-                </div>
-
-                <BatchQRPreview
-                  tables={tables}
-                  zones={zones}
-                  menus={menus}
-                  selectedMenuId={selectedMenuId}
-                  menuUrl={menuUrl}
-                  tenantName={tenant.name}
-                  config={config}
-                />
-              </div>
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Download className="h-4 w-4 text-app-text-muted" />
+                    {t('batchGeneration')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('batchGenerationDesc', { count: tables.length })}
+                  </CardDescription>
+                  <p className="text-xs text-app-text-muted">{t('formatA4')}</p>
+                </CardHeader>
+                <CardContent>
+                  <BatchQRPreview
+                    tables={tables}
+                    zones={zones}
+                    menus={menus}
+                    selectedMenuId={selectedMenuId}
+                    menuUrl={menuUrl}
+                    tenantName={tenant.name}
+                    config={config}
+                  />
+                </CardContent>
+              </Card>
             )}
 
             {/* Tips - one per template */}

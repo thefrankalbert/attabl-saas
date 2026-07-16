@@ -68,6 +68,10 @@ export const CARD_FORMAT_PRESETS: Record<QRCardFormatId, QRCardFormatPreset> = {
 
 export const QR_MESSAGE_MAX_LENGTH = 280;
 
+// The call-to-action prints inside a small card (~95mm wide). Cap it short enough
+// to fit on 1-2 lines; the templates also wrap/clamp as a second guard.
+export const CTA_MAX_LENGTH = 48;
+
 // Config Interfaces
 
 interface QRLogoConfig {
