@@ -40,7 +40,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
       setDownloading(format);
 
       try {
-        const html2canvas = (await import('html2canvas')).default;
+        const html2canvas = (await import('html2canvas-pro')).default;
         const { captureElementToCanvas } = await import('@/lib/qr/capture-template');
 
         const canvas = await captureElementToCanvas(templateRef.current, html2canvas);

@@ -26,8 +26,8 @@ function buildFilename(slug: string, ext: string): string {
   return `qr-${slug}-${date}.${ext}`;
 }
 
-async function getHtml2Canvas(): Promise<(typeof import('html2canvas'))['default']> {
-  const mod = await import('html2canvas');
+async function getHtml2Canvas(): Promise<(typeof import('html2canvas-pro'))['default']> {
+  const mod = await import('html2canvas-pro');
   return mod.default;
 }
 

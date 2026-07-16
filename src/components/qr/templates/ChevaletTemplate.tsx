@@ -24,14 +24,16 @@ export function ChevaletTemplate({ config, url, tenantName, tableName }: QRTempl
       }}
       className="flex flex-col items-center justify-between"
     >
-      <div className="flex flex-col items-center gap-1 pt-2">
+      <div className="flex w-full min-w-0 flex-col items-center gap-1 pt-2">
         <p
-          className="text-[17px] font-semibold tracking-tight"
+          className="w-full break-words text-center text-[17px] font-semibold tracking-tight line-clamp-2"
           style={{ color: config.templateAccentColor }}
         >
           {tenantName}
         </p>
-        {tableName && <p className="text-[12px] opacity-50">{tableName}</p>}
+        {tableName && (
+          <p className="w-full truncate text-center text-[12px] opacity-50">{tableName}</p>
+        )}
       </div>
 
       <StyledQR
@@ -46,8 +48,12 @@ export function ChevaletTemplate({ config, url, tenantName, tableName }: QRTempl
         margin={config.marginSize}
       />
 
-      <div className="flex flex-col items-center gap-0.5 pb-2">
-        {config.ctaText && <p className="text-[13px] font-medium">{config.ctaText}</p>}
+      <div className="flex w-full min-w-0 flex-col items-center gap-0.5 pb-2">
+        {config.ctaText && (
+          <p className="w-full break-words text-center text-[13px] font-medium line-clamp-2">
+            {config.ctaText}
+          </p>
+        )}
         {config.showPoweredBy && <p className="text-[10px] opacity-40">Powered by Attabl</p>}
       </div>
     </div>

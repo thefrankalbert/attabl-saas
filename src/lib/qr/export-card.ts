@@ -75,7 +75,7 @@ export async function exportResolvedCardsToPdf(
   filename: string,
 ): Promise<{ skipped: string[] }> {
   const { default: jsPDF } = await import('jspdf');
-  const html2canvas = (await import('html2canvas')).default as unknown as Parameters<
+  const html2canvas = (await import('html2canvas-pro')).default as unknown as Parameters<
     typeof captureElementToCanvas
   >[1];
 

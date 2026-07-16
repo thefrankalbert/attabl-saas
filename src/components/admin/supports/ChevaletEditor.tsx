@@ -131,7 +131,7 @@ export function ChevaletEditor({ tenant, savedConfig }: ChevaletEditorProps) {
     const el = previewRef.current;
     if (!el) return;
     try {
-      const { default: html2canvas } = await import('html2canvas');
+      const { default: html2canvas } = await import('html2canvas-pro');
       const canvas = await html2canvas(el, { scale: 4, useCORS: true, backgroundColor: null });
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
