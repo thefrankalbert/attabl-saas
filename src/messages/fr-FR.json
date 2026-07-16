@@ -1084,7 +1084,6 @@
       "backToLogin": "Retour a la connexion",
       "sentTitle": "Verifiez votre boite mail",
       "sentBody": "Si un compte existe pour {email}, un lien de reinitialisation vient d'etre envoye.",
-      "spamHint": "Vous ne trouvez pas l'email ? Verifiez vos spams.",
       "resend": "Renvoyer le lien",
       "title": "Mot de passe oublie ?",
       "subtitle": "Indiquez votre email, on vous envoie un lien de reinitialisation.",
@@ -4353,8 +4352,6 @@
   },
   "authShell": {
     "secure": "Connexion securisee",
-    "panelImageAlt": "Interface ATTABL",
-    "panelTitle": "Vos clients vivent une experience 5 etoiles. Votre gestion aussi.",
-    "panelSub": "Commandes, stock, chiffre d'affaires. Tout est la."
+    "panelImageAlt": "Interface ATTABL"
   }
 }

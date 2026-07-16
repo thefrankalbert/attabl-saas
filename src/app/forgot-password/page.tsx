@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { Loader2, ArrowLeft, MailCheck } from 'lucide-react';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
@@ -60,92 +61,93 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell>
       <div className="w-full">
-        <Link
-          href="/login"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[var(--secondary)] transition-colors hover:text-[var(--fg)]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('backToLogin')}
-        </Link>
+        <div className="mb-7 text-center">
+          <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
+            {t('title')}
+          </h1>
+          <p className="text-sm leading-relaxed text-[var(--secondary)]">{t('subtitle')}</p>
+        </div>
 
-        {sent ? (
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ok-bg)]">
-              <MailCheck className="h-7 w-7 text-[var(--ok-fg)]" />
-            </div>
-            <h1 className="mb-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--heading)]">
-              {t('sentTitle')}
-            </h1>
-            <p className="mb-6 text-sm leading-relaxed text-[var(--secondary)]">
-              {t('sentBody', { email: form.getValues('email') })}
-            </p>
-            <p className="mb-6 text-xs text-[var(--muted)]">{t('spamHint')}</p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSent(false);
-                form.reset();
-              }}
-              className="w-full rounded-lg border-[var(--border)] bg-[var(--card)] text-[var(--fg)] hover:bg-[var(--surface-hover)]"
-            >
-              {t('resend')}
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-7 text-center">
-              <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-                {t('title')}
-              </h1>
-              <p className="text-sm text-[var(--secondary)]">{t('subtitle')}</p>
-            </div>
-
-            {form.formState.errors.root && (
-              <Alert
-                variant="destructive"
-                className="mb-4 rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
+        <AuthCard>
+          {sent ? (
+            <div className="flex flex-col items-center gap-3 py-2 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--ok-border)] bg-[var(--ok-bg)]">
+                <MailCheck className="h-[18px] w-[18px] text-[var(--ok-fg)]" />
+              </div>
+              <p className="text-sm font-medium text-[var(--heading)]">{t('sentTitle')}</p>
+              <p className="text-[13.5px] leading-relaxed text-[var(--secondary)]">
+                {t('sentBody', { email: form.getValues('email') })}
+              </p>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSent(false);
+                  form.reset();
+                }}
+                className="mt-1 h-auto p-1 text-[13px] font-medium text-[var(--fg)] underline hover:bg-transparent hover:text-[var(--subtle)]"
               >
-                <AlertDescription className="text-sm">
-                  {form.formState.errors.root.message}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelClass}>{t('emailLabel')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={t('emailPlaceholder')}
-                          autoFocus
-                          className={inputClass}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  disabled={form.formState.isSubmitting}
-                  className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+                {t('resend')}
+              </Button>
+            </div>
+          ) : (
+            <>
+              {form.formState.errors.root && (
+                <Alert
+                  variant="destructive"
+                  className="mb-4 rounded-lg border-[var(--err-border)] bg-[var(--err-bg)] text-[var(--err-fg)] [&>svg]:text-[var(--err-fg)]"
                 >
-                  {form.formState.isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {t('submit')}
-                </Button>
-              </form>
-            </Form>
-          </>
-        )}
+                  <AlertDescription className="text-sm">
+                    {form.formState.errors.root.message}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className={labelClass}>{t('emailLabel')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder={t('emailPlaceholder')}
+                            autoFocus
+                            className={inputClass}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
+                  >
+                    {form.formState.isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : null}
+                    {t('submit')}
+                  </Button>
+                </form>
+              </Form>
+            </>
+          )}
+        </AuthCard>
+
+        <p className="mt-6 text-center text-sm text-[var(--secondary)]">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 font-medium text-[var(--fg)] hover:underline"
+          >
+            <ArrowLeft className="h-[13px] w-[13px]" />
+            {t('backToLogin')}
+          </Link>
+        </p>
       </div>
     </AuthShell>
   );

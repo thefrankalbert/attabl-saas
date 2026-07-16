@@ -42,28 +42,15 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* -- Right: product panel (hidden < 900px) ---------------------- */}
-      <aside className="relative hidden w-[46%] flex-col justify-end overflow-hidden min-[900px]:flex">
+      <aside className="relative hidden w-[46%] overflow-hidden border-l border-[var(--border)] bg-[var(--surface-hover)] min-[900px]:block">
         <Image
           src="/auth/dashboard-preview.png"
           alt={t('panelImageAlt')}
           fill
           priority
           sizes="46vw"
-          className="object-cover object-[left_center]"
+          className="auth-panel-img object-cover object-left-top"
         />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 55%, transparent) 28%, color-mix(in srgb, var(--bg) 0%, transparent) 62%), linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 0%, transparent) 26%), linear-gradient(0deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 0%, transparent) 42%)',
-          }}
-        />
-        <div className="relative max-w-[480px] px-12 pb-[52px]">
-          <h2 className="mb-2 text-[20px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
-            {t('panelTitle')}
-          </h2>
-          <p className="text-sm leading-[1.6] text-[var(--secondary)]">{t('panelSub')}</p>
-        </div>
       </aside>
     </div>
   );

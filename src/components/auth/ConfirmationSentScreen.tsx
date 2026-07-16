@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Loader2, MailCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { AuthCard } from './AuthCard';
 
 interface ConfirmationSentScreenProps {
   email: string;
@@ -36,7 +37,7 @@ function ConfirmationSentScreen({
         <p className="text-sm text-[var(--secondary)]">{tConfirm('sentTo')}</p>
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <AuthCard>
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--ok-border)] bg-[var(--ok-bg)]">
             <MailCheck className="h-[18px] w-[18px] text-[var(--ok-fg)]" />
@@ -91,7 +92,7 @@ function ConfirmationSentScreen({
             .
           </p>
         </div>
-      </div>
+      </AuthCard>
 
       <p className="mt-6 text-center text-sm text-[var(--secondary)]">
         <Link href="/login" className="font-medium text-[var(--fg)] hover:underline">
