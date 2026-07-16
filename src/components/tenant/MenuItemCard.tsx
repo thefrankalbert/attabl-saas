@@ -104,9 +104,12 @@ export default function MenuItemCard({
 
   return (
     <div
-      className="relative flex cursor-pointer items-stretch gap-3.5 border-b border-[var(--color-divider)] py-[15px] last:border-b-0"
+      className={cn(
+        'relative flex items-stretch gap-3.5 border-b border-[var(--color-divider)] py-[15px] last:border-b-0',
+        isUnavailable ? 'cursor-not-allowed' : 'cursor-pointer',
+      )}
       aria-disabled={isUnavailable || undefined}
-      onClick={onOpenDetail}
+      onClick={isUnavailable ? undefined : onOpenDetail}
     >
       {/* TEXT - left */}
       <div className="flex min-w-0 flex-1 flex-col gap-[5px]">

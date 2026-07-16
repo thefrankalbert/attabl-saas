@@ -315,7 +315,9 @@ function getOrCreateMenuDataCache(tenantId: string): CachedMenuDataFn {
             )
             .eq('tenant_id', id)
             .is('deleted_at', null)
-            .eq('is_available', true)
+            // Include currently-unavailable items so the storefront can render them
+            // greyed ("Indisponible") and flip them live via realtime, instead of
+            // hiding them and needing a full refresh. Deleted items stay excluded.
             .order('created_at', { ascending: true }),
 
           supabase

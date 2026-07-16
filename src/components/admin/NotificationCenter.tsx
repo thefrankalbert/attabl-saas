@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle, Package } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ const TYPE_ICONS: Record<Notification['type'], typeof Info> = {
   warning: AlertTriangle,
   success: CheckCircle,
   error: XCircle,
+  stock_alert: Package,
 };
 
 const TYPE_COLORS: Record<Notification['type'], string> = {
@@ -26,6 +27,7 @@ const TYPE_COLORS: Record<Notification['type'], string> = {
   warning: 'text-[var(--warning)]',
   success: 'text-[var(--success)]',
   error: 'text-[var(--destructive)]',
+  stock_alert: 'text-[var(--warning)]',
 };
 
 interface NotificationCenterProps {
@@ -138,7 +140,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
             <div className="py-8 text-center text-sm text-app-text-muted">{t('empty')}</div>
           ) : (
             notifications.map((notification) => {
-              const Icon = TYPE_ICONS[notification.type];
+              const Icon = TYPE_ICONS[notification.type] ?? Info;
               return (
                 <Button
                   key={notification.id}

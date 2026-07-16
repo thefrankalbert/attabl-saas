@@ -228,6 +228,24 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
         );
       }
 
+      // Tell the team a new member joined. Non-fatal: a notification failure must
+      // never block the invite acceptance itself. user_id null = tenant-wide.
+      const memberName = input.fullName || invitation.email;
+      const { error: notifError } = await supabase.from('notifications').insert({
+        tenant_id: invitation.tenant_id,
+        user_id: null,
+        type: 'success',
+        title: 'Nouveau membre',
+        body: `${memberName} a rejoint votre equipe.`,
+        read: false,
+      });
+      if (notifError) {
+        logger.warn('acceptInvitation: failed to insert member-joined notification', {
+          tenantId: invitation.tenant_id,
+          error: notifError,
+        });
+      }
+
       const row = data as { tenantSlug?: string } | null;
       return { tenantSlug: row?.tenantSlug ?? '' };
     },

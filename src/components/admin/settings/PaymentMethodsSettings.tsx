@@ -14,9 +14,18 @@ interface PaymentMethodsSettingsProps {
   initialMethods: string[];
 }
 
+const ACTIVE_IDS = ACTIVE_PAYMENT_METHOD_IDS as string[];
+
 export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSettingsProps) {
   const t = useTranslations('admin.settings');
-  const [enabled, setEnabled] = useState<Set<string>>(new Set(initialMethods));
+  // Drop any stored-but-now-inactive method (e.g. a legacy "card"). Otherwise it
+  // stays in the Set, is never shown as a toggle, and gets re-sent on save - which
+  // the Server Action rejects ("moyen de paiement non supporte"). Falls back to the
+  // active defaults if sanitizing leaves nothing.
+  const [enabled, setEnabled] = useState<Set<string>>(() => {
+    const sanitized = initialMethods.filter((m) => ACTIVE_IDS.includes(m));
+    return new Set(sanitized.length > 0 ? sanitized : ACTIVE_IDS);
+  });
   const [isPending, startTransition] = useTransition();
 
   const toggle = (method: PaymentMethodId) => {

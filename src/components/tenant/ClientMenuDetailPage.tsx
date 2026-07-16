@@ -34,7 +34,7 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
     setActiveSubMenuId,
     activeVenueId,
     setActiveVenueId,
-    disabledItemIds,
+    availabilityOverride,
     activeCategoryId,
     setActiveCategoryId,
     isMenuSheetOpen,
@@ -142,7 +142,7 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
       {/* - MENU ITEMS LIST - */}
       <MenuItemsList
         categories={menuFilteredByCategory}
-        disabledItemIds={disabledItemIds}
+        availabilityOverride={availabilityOverride}
         restaurantId={tenant.id}
         currency={tenant.currency}
         lang={lang as 'fr' | 'en'}

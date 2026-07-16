@@ -113,8 +113,13 @@ export function useClientMenuDetail({
     return null;
   });
 
-  // Realtime availability
-  const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
+  // Realtime availability overrides. A Map (not a "disabled" Set) so it can force
+  // an item BOTH ways over its server-rendered value: an item that was unavailable
+  // at page load must be able to flip back to available live, which a one-way
+  // disabled-set cannot express.
+  const [availabilityOverride, setAvailabilityOverride] = useState<Map<string, boolean>>(
+    () => new Map(),
+  );
   // Active category for the single sticky title bar (synced with CategoryNav).
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
 
@@ -210,10 +215,9 @@ export function useClientMenuDetail({
     table: 'menu_items',
     filter: `tenant_id=eq.${tenant.id}`,
     onUpdate: (record) => {
-      setDisabledItemIds((prev) => {
-        const next = new Set(prev);
-        if (!record.is_available) next.add(record.id);
-        else next.delete(record.id);
+      setAvailabilityOverride((prev) => {
+        const next = new Map(prev);
+        next.set(record.id, record.is_available);
         return next;
       });
     },
@@ -226,6 +230,43 @@ export function useClientMenuDetail({
     table: 'categories',
     filter: `tenant_id=eq.${tenant.id}`,
     onChange: scheduleRealtimeRefresh,
+  });
+
+  // Tenant settings (tax on/off, tax rate, currency, name, colors...) change live.
+  // Only refresh when a storefront-relevant field actually changed: the tenants
+  // row is also written by high-frequency housekeeping (last_active_at on every
+  // admin page load, activation_events) - refreshing on those would churn every
+  // open storefront while staff simply navigate the dashboard.
+  const tenantSettingsSignature = useCallback(
+    (t: Partial<Tenant>) =>
+      JSON.stringify([
+        t.name,
+        t.logo_url,
+        t.primary_color,
+        t.secondary_color,
+        t.font_family,
+        t.currency,
+        t.supported_currencies,
+        t.tax_rate,
+        t.service_charge_rate,
+        t.enable_tax,
+        t.enable_service_charge,
+        t.enable_coupons,
+        t.description,
+        t.opening_hours,
+        t.is_active,
+      ]),
+    [],
+  );
+  useRealtimeSubscription<Partial<Tenant> & Record<string, unknown>>({
+    channelName: `tenant_settings_realtime_${tenant.id}`,
+    table: 'tenants',
+    filter: `id=eq.${tenant.id}`,
+    onUpdate: (record) => {
+      if (tenantSettingsSignature(record) !== tenantSettingsSignature(tenant)) {
+        scheduleRealtimeRefresh();
+      }
+    },
   });
 
   // - Filtering logic -
@@ -353,7 +394,7 @@ export function useClientMenuDetail({
     setActiveSubMenuId,
     activeVenueId,
     setActiveVenueId,
-    disabledItemIds,
+    availabilityOverride,
     activeCategoryId,
     setActiveCategoryId,
     isMenuSheetOpen,
