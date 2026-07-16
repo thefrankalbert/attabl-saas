@@ -6,7 +6,8 @@ import { MenuItem } from '@/types/admin.types';
 
 interface MenuItemsListProps {
   categories: { id: string; name: string; name_en?: string; items: MenuItem[] }[];
-  disabledItemIds: Set<string>;
+  /** Live availability by item id (from realtime), overriding the server value. */
+  availabilityOverride: Map<string, boolean>;
   restaurantId: string;
   currency?: string;
   lang: 'fr' | 'en';
@@ -15,7 +16,7 @@ interface MenuItemsListProps {
 
 export default function MenuItemsList({
   categories,
-  disabledItemIds,
+  availabilityOverride,
   restaurantId,
   currency,
   lang,
@@ -60,10 +61,13 @@ export default function MenuItemsList({
               <div className="bg-white pt-3 px-4">
                 <div>
                   {category.items.map((item: MenuItem, index: number) => {
-                    const isRealtimeDisabled = disabledItemIds.has(item.id);
-                    const effectiveItem = isRealtimeDisabled
-                      ? { ...item, is_available: false }
-                      : item;
+                    // Live availability wins over the server-rendered value in both
+                    // directions (a load-time-unavailable item can flip back live).
+                    const liveAvailable = availabilityOverride.get(item.id);
+                    const effectiveItem =
+                      liveAvailable === undefined || liveAvailable === item.is_available
+                        ? item
+                        : { ...item, is_available: liveAvailable };
                     return (
                       <MenuItemCard
                         key={item.id}

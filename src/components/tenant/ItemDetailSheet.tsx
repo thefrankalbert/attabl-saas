@@ -156,6 +156,10 @@ export default function ItemDetailSheet({
   // --- Add to cart -------------------------------------------------------
   const handleAddToCart = useCallback(() => {
     if (!item) return;
+    // Choke point: never let an unavailable dish enter the cart, whatever the
+    // entry path (deep link ?item=, search, list). The list/search also block it,
+    // but this is the single guard that covers every opener.
+    if (item.is_available === false) return;
 
     if (item.modifiers && item.modifiers.length > 0) {
       // Only require modifiers that are actually shown (available). A required
@@ -635,7 +639,7 @@ export default function ItemDetailSheet({
                 </div>
                 <Button
                   onClick={handleAddToCart}
-                  disabled={showSuccess}
+                  disabled={showSuccess || item?.is_available === false}
                   className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
                 >
                   {showSuccess ? (
@@ -647,6 +651,8 @@ export default function ItemDetailSheet({
                     >
                       <Check className="h-5 w-5" />
                     </motion.div>
+                  ) : item?.is_available === false ? (
+                    <span className="mx-auto min-w-0 truncate">{t('unavailable')}</span>
                   ) : (
                     <>
                       <span className="min-w-0 truncate">{t('addToCart')}</span>

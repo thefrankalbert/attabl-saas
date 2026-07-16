@@ -38,24 +38,43 @@ export default function MenuSearchResults({
               <h3 className="px-3 py-2 text-[11px] font-medium text-[#B0B0B0] uppercase tracking-[1px]">
                 {t('dishesFound')}
               </h3>
-              {searchResults.map((item) => (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  onClick={() => onSelectItem(item)}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto hover:bg-[#F6F6F6]"
-                >
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="text-sm font-bold text-[#1A1A1A] truncate">
-                      {lang === 'en' && item.name_en ? item.name_en : item.name}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold flex-shrink-0 text-[#1A1A1A]">
-                    {resolveAndFormatPrice(item.price, item.prices, currency)}
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-[#B0B0B0]" />
-                </Button>
-              ))}
+              {searchResults.map((item) => {
+                const isUnavailable = item.is_available === false;
+                return (
+                  <Button
+                    key={item.id}
+                    variant="ghost"
+                    disabled={isUnavailable}
+                    onClick={isUnavailable ? undefined : () => onSelectItem(item)}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto hover:bg-[#F6F6F6] disabled:opacity-100"
+                  >
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p
+                        className={
+                          isUnavailable
+                            ? 'text-sm font-bold text-[#B0B0B0] truncate line-through'
+                            : 'text-sm font-bold text-[#1A1A1A] truncate'
+                        }
+                      >
+                        {lang === 'en' && item.name_en ? item.name_en : item.name}
+                      </p>
+                      {isUnavailable && (
+                        <p className="text-[11px] font-medium text-[#B0B0B0]">{t('unavailable')}</p>
+                      )}
+                    </div>
+                    <span
+                      className={
+                        isUnavailable
+                          ? 'text-sm font-bold flex-shrink-0 text-[#B0B0B0]'
+                          : 'text-sm font-bold flex-shrink-0 text-[#1A1A1A]'
+                      }
+                    >
+                      {resolveAndFormatPrice(item.price, item.prices, currency)}
+                    </span>
+                    {!isUnavailable && <ChevronRight className="w-3.5 h-3.5 text-[#B0B0B0]" />}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}

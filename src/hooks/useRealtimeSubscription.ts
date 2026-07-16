@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -47,8 +47,15 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
     callbacksRef.current = { onInsert, onUpdate, onDelete, onChange };
   });
 
+  // Bumping this forces the effect to tear down and rebuild the channel. Used to
+  // recover from CHANNEL_ERROR/TIMED_OUT (e.g. auth token rotated mid-session):
+  // a fresh channel re-subscribes with the current token instead of staying dead.
+  const [retryTick, setRetryTick] = useState(0);
+
   useEffect(() => {
     if (!enabled) return;
+
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
     const supabase = createClient();
 
@@ -87,14 +94,19 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
         chg?.();
       })
       .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          logger.warn(`Realtime channel ${channelName} disconnected - reconnecting automatically`);
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn(`Realtime channel ${channelName} down (${status}) - scheduling reconnect`);
+          // Rebuild the channel after a short backoff. Guard against stacking timers.
+          if (!reconnectTimer) {
+            reconnectTimer = setTimeout(() => setRetryTick((t) => t + 1), 2000);
+          }
         }
       });
 
     return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       channel.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [channelName, table, filter, event, enabled]);
+  }, [channelName, table, filter, event, enabled, retryTick]);
 }

@@ -13,7 +13,7 @@ export interface Notification {
   id: string;
   tenant_id: string;
   user_id: string | null;
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: 'info' | 'warning' | 'success' | 'error' | 'stock_alert';
   title: string;
   body: string | null;
   link: string | null;
