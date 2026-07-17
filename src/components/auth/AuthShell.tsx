@@ -43,7 +43,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
 
-        <main className="flex flex-1 items-start justify-center px-5 pb-20 pt-12">
+        <main className="flex flex-1 items-start justify-center px-5 py-6 [@media(min-height:820px)]:py-12">
           <div className="mx-auto w-full max-w-sm [animation:auth-fade-up_0.35s_ease]">
             {children}
           </div>
