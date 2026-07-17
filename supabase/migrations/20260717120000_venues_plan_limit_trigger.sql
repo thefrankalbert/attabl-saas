@@ -11,6 +11,12 @@
 --
 -- SECURITY DEFINER so the trigger can read `tenants` regardless of the writer RLS.
 -- Only counts is_active venues (matches canAddVenue).
+--
+-- Fires on INSERT and UPDATE (mirrors the QR paywall precedent) so a tenant
+-- cannot bypass the cap by inserting inactive venues then flipping is_active
+-- to true via a plain UPDATE/PATCH. A rename or any update that leaves
+-- is_active unchanged is not blocked; only INSERT of an active row or a
+-- false->true reactivation consumes a slot.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.enforce_venue_plan_limit()
@@ -27,6 +33,13 @@ DECLARE
   v_max        int;
   v_count      int;
 BEGIN
+  -- Only enforce when a venue becomes (or is created) active. A rename or any
+  -- update that leaves is_active unchanged/true-to-true must not be blocked;
+  -- only INSERT of an active row or a false->true reactivation consumes a slot.
+  IF NOT (NEW.is_active = true AND (TG_OP = 'INSERT' OR OLD.is_active = false)) THEN
+    RETURN NEW;
+  END IF;
+
   SELECT subscription_plan, subscription_status, trial_ends_at
     INTO v_plan, v_status, v_trial_ends
   FROM tenants
@@ -68,8 +81,14 @@ $$;
 DROP TRIGGER IF EXISTS trg_enforce_venue_plan_limit ON public.venues;
 
 CREATE TRIGGER trg_enforce_venue_plan_limit
-  BEFORE INSERT ON public.venues
+  BEFORE INSERT OR UPDATE ON public.venues
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_venue_plan_limit();
 
 REVOKE EXECUTE ON FUNCTION public.enforce_venue_plan_limit() FROM PUBLIC, anon, authenticated;
+
+-- Prevent duplicate venue slugs within a tenant (closes concurrent same-name
+-- creates persisting duplicate slugs; slug becomes a routing key in the
+-- venue-aware storefront sub-project).
+CREATE UNIQUE INDEX IF NOT EXISTS venues_tenant_slug_uniq
+  ON public.venues (tenant_id, slug);
