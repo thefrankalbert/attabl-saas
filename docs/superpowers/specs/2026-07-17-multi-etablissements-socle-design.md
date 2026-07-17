@@ -74,6 +74,7 @@ appellent ces briques existantes.
 ## Perimetre
 
 ### Dans le socle
+
 - Ecran `settings/espaces` : lister, creer, renommer, desactiver un espace.
 - Actions serveur `actions/venues.ts` : create / rename / deactivate.
 - Methodes de service (dans `restaurant-group.service.ts`) : createVenue,
@@ -83,6 +84,7 @@ appellent ces briques existantes.
   le pattern `enforce_qr_customization`), + test de parite TS<->SQL.
 
 ### Hors socle (sous-projets suivants)
+
 - Selecteur d'espace "actif" (global) dans le shell admin.
 - Rattachement zones/tables/menus/categories par espace (rendre
   `settings/tables` et la gestion des menus multi-espaces).
@@ -171,7 +173,7 @@ limite. Slug d'espace genere unique par tenant (reutiliser le service slug).
   bouton etait deja desactive cote UI (double securite). Le trigger SQL est le dernier
   filet.
 - **Dernier espace** (deactivate) : service throw `ServiceError('VALIDATION',
-  'Impossible de desactiver le dernier espace')` -> toast.
+'Impossible de desactiver le dernier espace')` -> toast.
 - **Venue d'un autre tenant** : `assertVenueOwnedByTenant` throw -> 403/NOT_FOUND ->
   message generique cote client (pas de fuite).
 - **Nom vide/trop long** : Zod (min 1, max ~60) -> `{ success:false, error }`.
@@ -202,6 +204,29 @@ Terme retenu dans l'UI : **"espace"** (espace de restauration). ACTE avec le use
 designe chaque lieu de service (Panorama, lobby bar, pool, promenade). Le message de
 limite `plan-enforcement.service.ts` dit encore "etablissement(s)" -> a corriger en
 "espace(s)" dans le socle (fr + en). Code/DB gardent `venue`, sans impact technique.
+
+## Limitations connues (deferrees, validees user 2026-07-17)
+
+Issues des reviews finales (code + securite). Explicitement sorties du perimetre du
+socle par decision user, a traiter dans un sous-projet suivant :
+
+- **F2 (Medium) - RLS venues sans predicat de role.** La policy `venues`
+  `FOR ALL USING (tenant_id = ANY(get_my_tenant_ids_array()))`
+  (migration pre-existante `20260227000002_rls_optimization.sql`) autorise tout
+  membre actif du tenant a ecrire les venues via PostgREST direct, contournant le
+  gate applicatif `settings.edit`. Meme-tenant uniquement, AUCUNE fuite cross-tenant
+  ni IDOR. Cause = RLS pre-existante, pas ce socle. Fix propre = RLS permission-aware
+  (helper SECURITY DEFINER lisant custom_permissions/role_permissions) touchant la
+  surface auth partagee, avec risque de regression (onboarding, provision RPC,
+  auto-create venue dans settings/tables). DEFERRE en hardening dedie.
+- **TOCTOU (Low) - garde applicative sans serialisation DB.** (a) deux
+  `deactivateVenue` concurrents des 2 derniers espaces actifs peuvent chacun lire
+  count=2 et passer -> 0 actif ; (b) deux `createVenue` concurrents pres de la limite
+  peuvent chacun passer -> +1 au-dela du cap. Fenetre minuscule, auto-inflige
+  (meme tenant), depassement borne. Durcissement (advisory lock / index partiel
+  garantissant >=1 actif) DEFERRE au sous-projet venue-aware. La contrainte
+  `unique(tenant_id, slug)` ajoutee dans le socle attenue deja les slugs dupliques
+  concurrents.
 
 ## Decomposition d'ensemble (rappel, hors ce spec)
 
