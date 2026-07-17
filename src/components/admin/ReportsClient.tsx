@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
+import { ReportsSkeleton } from '@/components/admin/reports/ReportsSkeleton';
 import { useReportData } from '@/hooks/queries';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
@@ -105,13 +106,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     );
   }
 
-  if (loading || !mounted)
-    return (
-      <div className="flex flex-1 min-h-0 flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
-        <p className="text-sm text-app-text-muted">{t('loadingReports')}</p>
-      </div>
-    );
+  if (loading || !mounted) return <ReportsSkeleton />;
 
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">

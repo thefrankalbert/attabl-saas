@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Volume2 } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -9,6 +9,7 @@ import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
 import FooterSummaryBar from '@/components/features/kitchen/FooterSummaryBar';
+import { KitchenSkeleton } from '@/components/admin/kitchen/KitchenSkeleton';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import type { OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 
@@ -196,17 +197,7 @@ export default function KitchenClient({
   const containerClass = isFs ? 'fixed inset-0 z-[200]' : 'h-full';
 
   if (kitchen.loading) {
-    return (
-      <div
-        className={`${containerClass} bg-app-bg flex items-center justify-center text-app-text`}
-        style={safeAreaStyle}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 animate-spin text-[var(--warning)]" />
-          <p className="text-sm font-medium text-app-text-secondary">{t('loadingKds')}</p>
-        </div>
-      </div>
-    );
+    return <KitchenSkeleton className={containerClass} style={safeAreaStyle} />;
   }
 
   return (

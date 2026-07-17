@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { TrendingDown, Loader2 } from 'lucide-react';
+import { TrendingDown } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -97,10 +98,7 @@ export default function LossesReportClient({
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
-              <p className="text-sm text-app-text-muted">{tc('loading')}</p>
-            </div>
+            <ListRowsSkeleton />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <TrendingDown className="w-10 h-10 text-app-text-muted" />

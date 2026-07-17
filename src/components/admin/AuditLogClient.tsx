@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Filter, ScrollText } from 'lucide-react';
+import { Filter, ScrollText } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import { createClient } from '@/lib/supabase/client';
 import { createAuditReadService } from '@/services/audit.service';
 import { useSessionState } from '@/hooks/useSessionState';
@@ -114,9 +115,7 @@ export default function AuditLogClient({
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         {/* Log entries */}
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
-          </div>
+          <ListRowsSkeleton />
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-sm text-status-error">{error}</p>
