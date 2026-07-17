@@ -102,6 +102,30 @@ export function getDateRange(p: Period) {
 }
 
 /**
+ * Normalize the get_order_summary RPC result into the summary shape.
+ * get_order_summary is a RETURNS TABLE function, so supabase-js returns `data`
+ * as an array of rows ([{ total_revenue, ... }]) - reading it as a bare object
+ * yields undefined for every field and silently zeroes the KPI cards. Read the
+ * first row; tolerate a bare object in case a caller ever uses .single().
+ */
+export function parseOrderSummary(data: unknown): {
+  revenue: number;
+  orders: number;
+  avgBasket: number;
+} {
+  const row = (Array.isArray(data) ? data[0] : data) as {
+    total_revenue?: number;
+    total_orders?: number;
+    avg_basket?: number;
+  } | null;
+  return {
+    revenue: Number(row?.total_revenue) || 0,
+    orders: Number(row?.total_orders) || 0,
+    avgBasket: Math.round(Number(row?.avg_basket) || 0),
+  };
+}
+
+/**
  * Fetch report data using Supabase RPCs.
  * Matches the queries in ReportsClient loadData().
  */
@@ -193,29 +217,11 @@ export function useReportData(tenantId: string, period: Period) {
         revenue: Number(t.revenue) || 0,
       }));
 
-      // Process summary
-      const rawSummary = summaryRes.data as {
-        total_revenue: number;
-        total_orders: number;
-        avg_basket: number;
-      } | null;
-      const summary = {
-        revenue: Number(rawSummary?.total_revenue) || 0,
-        orders: Number(rawSummary?.total_orders) || 0,
-        avgBasket: Math.round(Number(rawSummary?.avg_basket) || 0),
-      };
-
-      // Previous period summary
-      const rawPrev = prevSummaryRes.data as {
-        total_revenue: number;
-        total_orders: number;
-        avg_basket: number;
-      } | null;
-      const previousSummary = {
-        revenue: Number(rawPrev?.total_revenue) || 0,
-        orders: Number(rawPrev?.total_orders) || 0,
-        avgBasket: Math.round(Number(rawPrev?.avg_basket) || 0),
-      };
+      // Process summary + previous period. get_order_summary is a RETURNS TABLE
+      // RPC, so supabase-js returns `data` as an array of rows ([{...}]), not a
+      // single object - parseOrderSummary reads the first row.
+      const summary = parseOrderSummary(summaryRes.data);
+      const previousSummary = parseOrderSummary(prevSummaryRes.data);
 
       // Category breakdown (RPC returns: category, revenue - ordered by revenue).
       // Percentages are cheap client-side math over a handful of rows.

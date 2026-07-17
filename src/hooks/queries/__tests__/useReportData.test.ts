@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getDateRange } from '../useReportData';
+import { getDateRange, parseOrderSummary } from '../useReportData';
 
 /**
  * Characterization + regression tests for getDateRange, the report period math.
@@ -79,5 +79,33 @@ describe('getDateRange', () => {
     expect(end.getHours()).toBe(23);
     expect(end.getMinutes()).toBe(59);
     expect(end.getSeconds()).toBe(59);
+  });
+});
+
+describe('parseOrderSummary', () => {
+  it('reads the first row of a RETURNS TABLE array (the real RPC shape)', () => {
+    // get_order_summary returns an array; reading it as an object zeroed the KPIs.
+    const data = [{ total_revenue: 14_613_500, total_orders: 618, avg_basket: 23_646.4 }];
+    expect(parseOrderSummary(data)).toEqual({
+      revenue: 14_613_500,
+      orders: 618,
+      avgBasket: 23_646,
+    });
+  });
+
+  it('returns zeros for an empty result set', () => {
+    expect(parseOrderSummary([])).toEqual({ revenue: 0, orders: 0, avgBasket: 0 });
+  });
+
+  it('returns zeros for null', () => {
+    expect(parseOrderSummary(null)).toEqual({ revenue: 0, orders: 0, avgBasket: 0 });
+  });
+
+  it('tolerates a bare object (in case a caller uses .single())', () => {
+    expect(parseOrderSummary({ total_revenue: 100, total_orders: 2, avg_basket: 50 })).toEqual({
+      revenue: 100,
+      orders: 2,
+      avgBasket: 50,
+    });
   });
 });
