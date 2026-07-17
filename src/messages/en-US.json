@@ -1084,7 +1084,6 @@
       "backToLogin": "Back to sign in",
       "sentTitle": "Check your inbox",
       "sentBody": "If an account exists for {email}, a reset link was just sent.",
-      "spamHint": "Can't find the email? Check your spam folder.",
       "resend": "Resend link",
       "title": "Forgot your password?",
       "subtitle": "Enter your email, we'll send you a reset link.",
@@ -4353,8 +4352,6 @@
   },
   "authShell": {
     "secure": "Secure connection",
-    "panelImageAlt": "ATTABL interface",
-    "panelTitle": "Your customers get a 5-star experience. Your operations too.",
-    "panelSub": "Orders, inventory, revenue. It's all here."
+    "panelImageAlt": "ATTABL interface"
   }
 }
