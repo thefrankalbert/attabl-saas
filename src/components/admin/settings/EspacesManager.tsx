@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { toast } from 'sonner';
-import { Plus, Pencil, Power, RotateCcw, Lock } from 'lucide-react';
+import { Plus, Pencil, Power, RotateCcw, Lock, ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -39,6 +41,8 @@ interface EspacesManagerProps {
   activeCount: number;
   /** URL de l abonnement pour l upsell. */
   subscriptionUrl: string;
+  /** URL de retour vers la racine des parametres. */
+  backUrl: string;
 }
 
 export function EspacesManager({
@@ -46,6 +50,7 @@ export function EspacesManager({
   maxEspaces,
   activeCount,
   subscriptionUrl,
+  backUrl,
 }: EspacesManagerProps) {
   const t = useTranslations('espaces');
   const router = useRouter();
@@ -57,8 +62,11 @@ export function EspacesManager({
 
   const atLimit = maxEspaces !== -1 && activeCount >= maxEspaces;
   const activeEspaces = espaces.filter((e) => e.is_active);
-  // "Principal" = le plus ancien espace (aucune colonne is_default en base).
-  const principalId = [...espaces].sort((a, b) => a.created_at.localeCompare(b.created_at))[0]?.id;
+  // "Principal" = le plus ancien espace ACTIF (aucune colonne is_default en base).
+  const activeSorted = [...activeEspaces].sort(
+    (a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
+  );
+  const principalId = activeSorted[0]?.id;
 
   function handleAdd() {
     startTransition(async () => {
@@ -118,6 +126,13 @@ export function EspacesManager({
 
   return (
     <div className="h-full flex flex-col gap-4 sm:gap-6">
+      <Link
+        href={backUrl}
+        className="inline-flex items-center gap-1 text-sm text-app-text-secondary hover:text-app-text min-h-[44px]"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        {t('backToSettings')}
+      </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg sm:text-xl font-semibold text-app-text">{t('title')}</h2>
@@ -126,95 +141,109 @@ export function EspacesManager({
         {atLimit ? (
           <div className="flex flex-col items-end gap-1">
             <Button disabled className="min-h-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2" />
               {t('add')}
             </Button>
-            <a href={subscriptionUrl} className="text-xs text-status-info hover:underline">
+            <Link href={subscriptionUrl} className="text-xs text-status-info hover:underline">
               {t('limitReached')}
-            </a>
+            </Link>
           </div>
         ) : (
           <Button className="min-h-[44px]" onClick={() => setAddOpen(true)} disabled={isPending}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2" />
             {t('add')}
           </Button>
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 content-start">
-        {espaces.map((e) => (
-          <Card key={e.id} className="p-4 flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-medium text-app-text truncate">{e.name}</p>
-                <p className="text-xs text-app-text-secondary">
-                  {t('tablesCount', { count: e.tableCount })}
-                  {!e.is_active ? ` - ${t('inactive')}` : ''}
-                </p>
+      {espaces.length === 0 ? (
+        <Card className="p-6 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-app-text-secondary">{t('empty')}</p>
+        </Card>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 content-start">
+          {espaces.map((e) => (
+            <Card key={e.id} className="p-4 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-app-text truncate">{e.name}</p>
+                  <p className="text-xs text-app-text-secondary">
+                    {t('tablesCount', { count: e.tableCount })}
+                    {!e.is_active ? ` - ${t('inactive')}` : ''}
+                  </p>
+                </div>
+                {e.is_active && e.id === principalId && (
+                  <span className="shrink-0 rounded-full bg-status-info-bg px-2 py-0.5 text-xs text-status-info">
+                    {t('principal')}
+                  </span>
+                )}
               </div>
-              {e.id === principalId && (
-                <span className="shrink-0 rounded-full bg-status-info-bg px-2 py-0.5 text-xs text-status-info">
-                  {t('principal')}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-h-[44px]"
-                onClick={() => {
-                  setRenameId(e.id);
-                  setRenameName(e.name);
-                }}
-                disabled={isPending}
-              >
-                <Pencil className="mr-2 h-3.5 w-3.5" />
-                {t('rename')}
-              </Button>
-              {e.is_active ? (
-                e.id === principalId && activeEspaces.length < 2 ? (
-                  <Button type="button" variant="ghost" size="sm" className="min-h-[44px]" disabled>
-                    <Lock className="mr-2 h-3.5 w-3.5" />
-                    {t('required')}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-[44px]"
-                    onClick={() => handleDeactivate(e.id)}
-                    disabled={isPending}
-                  >
-                    <Power className="mr-2 h-3.5 w-3.5" />
-                    {t('deactivate')}
-                  </Button>
-                )
-              ) : (
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="min-h-[44px]"
-                  onClick={() => handleReactivate(e.id)}
+                  onClick={() => {
+                    setRenameId(e.id);
+                    setRenameName(e.name);
+                  }}
                   disabled={isPending}
                 >
-                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
-                  {t('reactivate')}
+                  <Pencil className="mr-2" />
+                  {t('rename')}
                 </Button>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
+                {e.is_active ? (
+                  activeEspaces.length < 2 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-[44px]"
+                      disabled
+                    >
+                      <Lock className="mr-2" />
+                      {t('required')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-[44px]"
+                      onClick={() => handleDeactivate(e.id)}
+                      disabled={isPending}
+                    >
+                      <Power className="mr-2" />
+                      {t('deactivate')}
+                    </Button>
+                  )
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px]"
+                    onClick={() => handleReactivate(e.id)}
+                    disabled={isPending || atLimit}
+                    title={atLimit ? t('reactivateLimit') : undefined}
+                  >
+                    <RotateCcw className="mr-2" />
+                    {t('reactivate')}
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Dialog Ajouter */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('newSpace')}</DialogTitle>
+            <DialogDescription>{t('newSpaceHint')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="espace-name">{t('nameLabel')}</Label>
@@ -253,6 +282,7 @@ export function EspacesManager({
         <DialogContent className="max-w-sm sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('renameSpace')}</DialogTitle>
+            <DialogDescription>{t('renameHint')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="espace-rename">{t('nameLabel')}</Label>

@@ -2047,7 +2047,12 @@
     "toastRenamed": "Espace renomme.",
     "toastDeactivated": "Espace desactive.",
     "toastReactivated": "Espace reactive.",
-    "toastLastSpace": "Impossible de desactiver le dernier espace."
+    "toastLastSpace": "Impossible de desactiver le dernier espace.",
+    "backToSettings": "Retour aux parametres",
+    "newSpaceHint": "Donnez un nom clair a ce lieu de service.",
+    "renameHint": "Choisissez un nouveau nom pour cet espace.",
+    "reactivateLimit": "Limite du plan atteinte",
+    "empty": "Aucun espace pour le moment."
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",

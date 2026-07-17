@@ -2047,7 +2047,12 @@
     "toastRenamed": "Space renamed.",
     "toastDeactivated": "Space deactivated.",
     "toastReactivated": "Space reactivated.",
-    "toastLastSpace": "Cannot deactivate the last space."
+    "toastLastSpace": "Cannot deactivate the last space.",
+    "backToSettings": "Back to settings",
+    "newSpaceHint": "Give this service area a clear name.",
+    "renameHint": "Pick a new name for this space.",
+    "reactivateLimit": "Plan limit reached",
+    "empty": "No spaces yet."
   },
   "commandPalette": {
     "placeholder": "Search for a page or action...",

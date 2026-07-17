@@ -112,10 +112,16 @@ REVOKE EXECUTE ON FUNCTION public.enforce_venue_plan_limit() FROM PUBLIC, anon, 
 -- deactivateVenue guards "cannot deactivate the last active venue" only in app
 -- code (count-then-update, racy). Two concurrent deactivations of the two
 -- remaining active venues can each pass the app check -> 0 active venues, which
--- breaks the storefront. This AFTER trigger enforces the invariant at the data
--- layer under the same per-tenant advisory lock, so a concurrent
--- double-deactivation (or a delete of the last active venue) is rejected.
--- The app-layer guard stays as fast-fail UX (belt and suspenders).
+-- breaks the storefront. This AFTER UPDATE trigger enforces the invariant at the
+-- data layer under the same per-tenant advisory lock, so a concurrent
+-- double-deactivation is rejected. The app-layer guard stays as fast-fail UX.
+--
+-- Scope is UPDATE (deactivation) ONLY, deliberately NOT DELETE. Tenants are
+-- hard-deleted by cascade_delete_last_member_tenant() (DELETE FROM tenants),
+-- which cascade-deletes the tenant's venues; guarding DELETE here would make the
+-- last active venue's cascade-delete raise and break tenant teardown. A member
+-- deleting the last venue directly via PostgREST (F2 same-tenant class) stays
+-- in the documented deferred bucket - it is not a cross-tenant breach.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.enforce_min_one_active_venue()
@@ -127,35 +133,32 @@ AS $$
 DECLARE
   v_count int;
 BEGIN
-  -- Same per-tenant lock as the cap trigger (use OLD - the affected tenant).
-  PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || OLD.tenant_id::text));
+  -- Same per-tenant lock as the cap trigger (NEW.tenant_id == OLD.tenant_id).
+  PERFORM pg_advisory_xact_lock(hashtext('venue_cap:' || NEW.tenant_id::text));
 
-  -- Only act when a venue LEAVES the active set. Renames, reactivations, and
-  -- deletes of already-inactive rows are untouched.
-  IF NOT (
-    (TG_OP = 'DELETE' AND OLD.is_active = true)
-    OR (TG_OP = 'UPDATE' AND OLD.is_active = true AND NEW.is_active = false)
-  ) THEN
-    RETURN COALESCE(NEW, OLD);
+  -- Only act when an active venue is being deactivated. Renames, reactivations,
+  -- and updates that leave is_active unchanged are untouched.
+  IF NOT (OLD.is_active = true AND NEW.is_active = false) THEN
+    RETURN NEW;
   END IF;
 
   SELECT count(*) INTO v_count
   FROM venues
-  WHERE tenant_id = OLD.tenant_id AND is_active = true;
+  WHERE tenant_id = NEW.tenant_id AND is_active = true;
 
   IF v_count = 0 THEN
-    RAISE EXCEPTION 'Cannot deactivate or delete the last active venue'
+    RAISE EXCEPTION 'Cannot deactivate the last active venue'
       USING ERRCODE = 'check_violation';
   END IF;
 
-  RETURN COALESCE(NEW, OLD);
+  RETURN NEW;
 END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_enforce_min_one_active_venue ON public.venues;
 
 CREATE TRIGGER trg_enforce_min_one_active_venue
-  AFTER UPDATE OR DELETE ON public.venues
+  AFTER UPDATE ON public.venues
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_min_one_active_venue();
 

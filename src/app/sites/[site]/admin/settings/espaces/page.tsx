@@ -83,6 +83,7 @@ export default async function EspacesPage({ params }: { params: Promise<{ site: 
         maxEspaces={limits.maxVenues}
         activeCount={activeCount}
         subscriptionUrl={`/sites/${site}/admin/subscription`}
+        backUrl={`/sites/${site}/admin/settings`}
       />
     </div>
   );
