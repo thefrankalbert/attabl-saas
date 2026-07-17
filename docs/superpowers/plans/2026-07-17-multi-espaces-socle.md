@@ -31,10 +31,12 @@
 ### Task 1: Schema Zod de validation d'un espace
 
 **Files:**
+
 - Create: `src/lib/validations/venue.schema.ts`
 - Test: `src/lib/validations/__tests__/venue.schema.test.ts`
 
 **Interfaces:**
+
 - Produces: `venueNameSchema` (Zod string), `createVenueSchema` (`{ name: string }`), `renameVenueSchema` (`{ id: string (uuid); name: string }`), `deactivateVenueSchema` (`{ id: string (uuid) }`). Types exportes : `CreateVenueInput`, `RenameVenueInput`, `DeactivateVenueInput`.
 
 - [ ] **Step 1: Ecrire le test qui echoue**
@@ -136,10 +138,12 @@ git commit -m "feat(espaces): schema Zod de validation d un espace"
 ### Task 2: Methodes de service create/rename/deactivate + slug venue
 
 **Files:**
+
 - Modify: `src/services/restaurant-group.service.ts` (ajouter 3 methodes + 1 helper slug prive a l interface)
 - Test: `src/services/__tests__/restaurant-group.service.test.ts` (creer)
 
 **Interfaces:**
+
 - Consumes: `createPlanEnforcementService(supabase).canAddVenue(tenant)` de `@/services/plan-enforcement.service`; `createTableConfigGuards(supabase).assertVenueOwnedByTenant(tenantId, venueId)` de `@/services/table-config.guards`; `createSlugService(supabase).normalizeToSlug(name)` de `@/services/slug.service`; type `Tenant` de `@/types/admin.types`.
 - Produces (ajoutes a `RestaurantGroupService`) :
   - `createVenue(tenant: Tenant, name: string): Promise<{ id: string; name: string; slug: string }>`
@@ -441,9 +445,11 @@ git commit -m "feat(espaces): createVenue/renameVenue/deactivateVenue dans resta
 ### Task 3: Flip du copy de limite (etablissement -> espace)
 
 **Files:**
+
 - Modify: `src/services/plan-enforcement.service.ts:198-202` (message de `canAddVenue`)
 
 **Interfaces:**
+
 - Aucune signature ne change. Seul le texte du message `ServiceError` de `canAddVenue` passe de "etablissement(s)" a "espace(s)".
 
 - [ ] **Step 1: Verifier s il existe un test qui asserte le message actuel**
@@ -456,12 +462,12 @@ Expected: si un test asserte "etablissement(s)", le noter pour le mettre a jour 
 Dans `src/services/plan-enforcement.service.ts`, methode `canAddVenue`, remplacer le bloc `throw` (lignes ~199-202) :
 
 ```typescript
-      if ((count || 0) >= limits.maxVenues) {
-        throw new ServiceError(
-          `Limite atteinte : ${limits.maxVenues} espace(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
-          'VALIDATION',
-        );
-      }
+if ((count || 0) >= limits.maxVenues) {
+  throw new ServiceError(
+    `Limite atteinte : ${limits.maxVenues} espace(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
+    'VALIDATION',
+  );
+}
 ```
 
 (Note : ASCII strict - "superieur" sans accent circonflexe reste OK ; le fichier utilise deja des accents e/a, conserver la coherence avec les autres messages du fichier qui ecrivent "superieur".)
@@ -487,10 +493,12 @@ git commit -m "fix(espaces): message de limite dit espace(s) au lieu d etablisse
 ### Task 4: Server Actions venues (create/rename/deactivate)
 
 **Files:**
+
 - Create: `src/app/actions/venues.ts`
 - Test: `src/app/actions/__tests__/venues.action.test.ts`
 
 **Interfaces:**
+
 - Consumes: `getAuthenticatedUserWithTenant('settings.edit')`, `AuthError` de `@/lib/auth/get-session`; `restaurantCreateLimiter`, `getClientIpFromHeaders` de `@/lib/rate-limit`; `createRestaurantGroupService` (Task 2); schemas de Task 1; `Tenant` de `@/types/admin.types`; `ServiceError` de `@/services/errors`.
 - Produces:
   - `actionCreateVenue(input: unknown): Promise<{ success: true; data: { id: string; name: string; slug: string } } | { success: false; error: string }>`
@@ -526,11 +534,7 @@ vi.mock('@/services/restaurant-group.service', () => ({
   }),
 }));
 
-import {
-  actionCreateVenue,
-  actionRenameVenue,
-  actionDeactivateVenue,
-} from '@/app/actions/venues';
+import { actionCreateVenue, actionRenameVenue, actionDeactivateVenue } from '@/app/actions/venues';
 
 const UUID = '11111111-1111-1111-1111-111111111111';
 
@@ -680,7 +684,10 @@ export async function actionRenameVenue(input: unknown) {
 
     const parsed = renameVenueSchema.safeParse(input);
     if (!parsed.success) {
-      return { success: false as const, error: parsed.error.issues[0]?.message ?? 'Entree invalide.' };
+      return {
+        success: false as const,
+        error: parsed.error.issues[0]?.message ?? 'Entree invalide.',
+      };
     }
 
     const service = createRestaurantGroupService(supabase);
@@ -702,7 +709,10 @@ export async function actionDeactivateVenue(input: unknown) {
 
     const parsed = deactivateVenueSchema.safeParse(input);
     if (!parsed.success) {
-      return { success: false as const, error: parsed.error.issues[0]?.message ?? 'Entree invalide.' };
+      return {
+        success: false as const,
+        error: parsed.error.issues[0]?.message ?? 'Entree invalide.',
+      };
     }
 
     const service = createRestaurantGroupService(supabase);
@@ -741,10 +751,12 @@ git commit -m "feat(espaces): server actions create/rename/deactivate venue (gat
 ### Task 5: Belt SQL - trigger de limite sur venues + test de parite
 
 **Files:**
+
 - Create: `supabase/migrations/20260717120000_venues_plan_limit_trigger.sql`
 - Test: `src/lib/plans/__tests__/venues-entitlement-parity.test.ts`
 
 **Interfaces:**
+
 - Consumes: matrice `PLAN_LIMITS[*].maxVenues` de `@/lib/plans/features`.
 - Produces: fonction SQL `enforce_venue_plan_limit()` + trigger `trg_enforce_venue_plan_limit` sur `venues`.
 
@@ -885,6 +897,7 @@ git commit -m "feat(espaces): trigger SQL de limite venues + test de parite TS<-
 ### Task 6: UI - route settings/espaces + EspacesManager + i18n + entree onglet
 
 **Files:**
+
 - Create: `src/app/sites/[site]/admin/settings/espaces/page.tsx` (Server)
 - Create: `src/app/sites/[site]/admin/settings/espaces/loading.tsx`
 - Create: `src/components/admin/settings/EspacesManager.tsx` (Client)
@@ -893,6 +906,7 @@ git commit -m "feat(espaces): trigger SQL de limite venues + test de parite TS<-
 - Modify: `src/messages/fr-FR.json` et `src/messages/en-US.json` (namespace `espaces` + cle onglet `settings.tabEspaces`)
 
 **Interfaces:**
+
 - Consumes: actions de Task 4 (`actionCreateVenue`, `actionRenameVenue`, `actionDeactivateVenue`); `getPlanLimits` de `@/lib/plans/features`; `getTenant` de `@/lib/cache`; `requireAdminPermission` de `@/lib/auth/require-admin-permission`.
 - Produces: type `EspaceRow = { id: string; name: string; is_active: boolean; created_at: string; tableCount: number }` (defini dans `EspacesManager.tsx` et importe par la page).
 
@@ -916,11 +930,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  actionCreateVenue,
-  actionRenameVenue,
-  actionDeactivateVenue,
-} from '@/app/actions/venues';
+import { actionCreateVenue, actionRenameVenue, actionDeactivateVenue } from '@/app/actions/venues';
 
 export type EspaceRow = {
   id: string;
@@ -1005,7 +1015,9 @@ export function EspacesManager({
     <div className="h-full flex flex-col gap-4 sm:gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-app-text">Espaces de restauration</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-app-text">
+            Espaces de restauration
+          </h2>
           <p className="mt-1 text-sm text-app-text-secondary">
             Un espace = un lieu de service avec sa carte. Panorama, lobby bar, pool...
           </p>
@@ -1293,22 +1305,22 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
 5b. Dans `handleTabChange`, faire en sorte que "espaces" navigue vers la route dediee (il n a pas de contenu inline) :
 
 ```typescript
-  const handleTabChange = useCallback(
-    (value: string) => {
-      if (value === 'espaces') {
-        router.push(`${pathname}/espaces`);
-        return;
-      }
-      const params = new URLSearchParams();
-      if (value !== 'identity') {
-        params.set('tab', value);
-      }
-      const qs = params.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    },
-    [router, pathname],
-  );
+const handleTabChange = useCallback(
+  (value: string) => {
+    if (value === 'espaces') {
+      router.push(`${pathname}/espaces`);
+      return;
+    }
+    const params = new URLSearchParams();
+    if (value !== 'identity') {
+      params.set('tab', value);
+    }
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  },
+  [router, pathname],
+);
 ```
 
 (Aucun `TabsContent value="espaces"` n est ajoute : cliquer l onglet quitte le formulaire vers `/settings/espaces`.)
@@ -1346,6 +1358,7 @@ Expected: `build: OK` (compile sans erreur).
 - [ ] **Step 10: Verification visuelle OBLIGATOIRE (regle 11-deploy-visual-safety)**
 
 Dev local avec `ALLOW_DEV_AUTH_BYPASS=true`. Ouvrir `/sites/<slug>/admin/settings`, cliquer l onglet "Espaces" -> doit naviguer vers `/sites/<slug>/admin/settings/espaces`. Verifier aux breakpoints **375, 768, 1024, 1280, 1440** en **dark ET light** :
+
 - Liste des espaces (cartes), badge "Principal" sur le plus ancien.
 - Bouton "Ajouter un espace" : actif si sous la limite, desactive + lien upsell si a la limite (tester sur un compte Starter avec 1 espace).
 - Dialog Ajouter (nom vide -> bouton desactive), Dialog Renommer.
@@ -1366,6 +1379,7 @@ git commit -m "feat(espaces): ecran de gestion des espaces (route settings/espac
 ## Self-Review
 
 **Spec coverage :**
+
 - Ecran lister/creer/renommer/desactiver -> Task 6. OK.
 - Actions serveur create/rename/deactivate -> Task 4. OK.
 - Methodes service + garde propriete -> Task 2. OK.
