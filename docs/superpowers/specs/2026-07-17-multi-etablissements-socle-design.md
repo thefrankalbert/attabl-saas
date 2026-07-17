@@ -205,10 +205,33 @@ designe chaque lieu de service (Panorama, lobby bar, pool, promenade). Le messag
 limite `plan-enforcement.service.ts` dit encore "etablissement(s)" -> a corriger en
 "espace(s)" dans le socle (fr + en). Code/DB gardent `venue`, sans impact technique.
 
-## Limitations connues (deferrees, validees user 2026-07-17)
+## Durcissement issu de l'ultrareview (3 audits adverses opus, 2026-07-17)
 
-Issues des reviews finales (code + securite). Explicitement sorties du perimetre du
-socle par decision user, a traiter dans un sous-projet suivant :
+Une passe de review adversariale (securite pentest + correctness + shadcn/UI) a
+suivi les reviews finales. Tout ce qu'elle a trouve a ete CORRIGE dans le socle,
+sauf F2 (pre-existant, sorti du perimetre par decision user). Etat :
+
+### Corrige (dans la migration `20260717120000` + UI)
+
+- **Bypass bulk du cap (Medium, deterministe).** Un trigger `BEFORE ROW` ne voyait
+  pas les lignes soeurs de la meme instruction -> 1 requete PostgREST multi-lignes
+  (insert tableau / PATCH multi) passait le cap. FIX : trigger `AFTER INSERT OR
+UPDATE` + seuil strict `>` (le trigger AFTER compte les lignes deja ecrites par
+  l'instruction) -> une instruction bulk est rejetee et rollback.
+- **Race concurrente cap + dernier-actif (TOCTOU).** FIX : `pg_advisory_xact_lock`
+  par tenant serialise les checks entre transactions concurrentes ; + trigger
+  compagnon `enforce_min_one_active_venue` (AFTER UPDATE) garantit >=1 espace actif.
+  Le garde dernier-actif est UPDATE-only (PAS DELETE) pour ne pas casser la
+  suppression de tenant (`cascade_delete_last_member_tenant` DELETE FROM tenants
+  cascade les venues). La garde applicative reste en fast-fail UX.
+- **UI orpheline + a11y.** Page `settings/espaces` avait un cul-de-sac (pas de
+  retour) -> header + lien "Retour aux parametres". + DialogDescription, upsell en
+  `next/link`, bouton Reactiver grise a la limite, badge Principal + verrou
+  dernier-actif calcules sur les espaces ACTIFS uniquement, empty-state.
+- **unique(tenant_id, slug)** ajoute (deploy : check pre-apply documente dans la
+  migration si doublons prod).
+
+### Deferre (validee user 2026-07-17, pre-existant, hors socle)
 
 - **F2 (Medium) - RLS venues sans predicat de role.** La policy `venues`
   `FOR ALL USING (tenant_id = ANY(get_my_tenant_ids_array()))`
@@ -219,14 +242,6 @@ socle par decision user, a traiter dans un sous-projet suivant :
   (helper SECURITY DEFINER lisant custom_permissions/role_permissions) touchant la
   surface auth partagee, avec risque de regression (onboarding, provision RPC,
   auto-create venue dans settings/tables). DEFERRE en hardening dedie.
-- **TOCTOU (Low) - garde applicative sans serialisation DB.** (a) deux
-  `deactivateVenue` concurrents des 2 derniers espaces actifs peuvent chacun lire
-  count=2 et passer -> 0 actif ; (b) deux `createVenue` concurrents pres de la limite
-  peuvent chacun passer -> +1 au-dela du cap. Fenetre minuscule, auto-inflige
-  (meme tenant), depassement borne. Durcissement (advisory lock / index partiel
-  garantissant >=1 actif) DEFERRE au sous-projet venue-aware. La contrainte
-  `unique(tenant_id, slug)` ajoutee dans le socle attenue deja les slugs dupliques
-  concurrents.
 
 ## Decomposition d'ensemble (rappel, hors ce spec)
 
