@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
+import { Download, ExternalLink, FileX2 } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -143,9 +144,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
-          </div>
+          <ListRowsSkeleton />
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-sm text-status-error">{error}</p>

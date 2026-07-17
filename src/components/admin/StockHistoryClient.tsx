@@ -4,7 +4,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, Loader2, BarChart3, Users } from 'lucide-react';
+import { Search, BarChart3, Users } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import { useStockMovements } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,10 +168,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         {/* -- Data area -- */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
-              <p className="text-sm text-app-text-muted">{tc('loading')}</p>
-            </div>
+            <ListRowsSkeleton />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <BarChart3 className="w-10 h-10 text-app-text-muted" />
