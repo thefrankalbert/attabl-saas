@@ -4,6 +4,7 @@ const mockAuth = vi.fn();
 const mockCreateVenue = vi.fn();
 const mockRenameVenue = vi.fn();
 const mockDeactivateVenue = vi.fn();
+const mockReactivateVenue = vi.fn();
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/headers', () => ({ headers: vi.fn(() => Promise.resolve(new Headers())) }));
@@ -20,10 +21,16 @@ vi.mock('@/services/restaurant-group.service', () => ({
     createVenue: mockCreateVenue,
     renameVenue: mockRenameVenue,
     deactivateVenue: mockDeactivateVenue,
+    reactivateVenue: mockReactivateVenue,
   }),
 }));
 
-import { actionCreateVenue, actionRenameVenue, actionDeactivateVenue } from '@/app/actions/venues';
+import {
+  actionCreateVenue,
+  actionRenameVenue,
+  actionDeactivateVenue,
+  actionReactivateVenue,
+} from '@/app/actions/venues';
 
 // ponytail: Zod v4's .uuid() enforces valid v4 variant/version nibbles ('11111111-1111-1111-...'
 // fails); use a genuine v4 UUID fixture instead.
@@ -81,5 +88,20 @@ describe('venues server actions', () => {
     mockDeactivateVenue.mockResolvedValue(undefined);
     const res = await actionDeactivateVenue({ id: UUID });
     expect(res).toEqual({ success: true });
+  });
+
+  it('actionReactivateVenue : uuid valide -> success:true', async () => {
+    authOk();
+    mockReactivateVenue.mockResolvedValue(undefined);
+    const res = await actionReactivateVenue({ id: UUID });
+    expect(res).toEqual({ success: true });
+    expect(mockReactivateVenue).toHaveBeenCalled();
+  });
+
+  it('actionReactivateVenue : uuid invalide -> success:false', async () => {
+    authOk();
+    const res = await actionReactivateVenue({ id: 'x' });
+    expect(res.success).toBe(false);
+    expect(mockReactivateVenue).not.toHaveBeenCalled();
   });
 });

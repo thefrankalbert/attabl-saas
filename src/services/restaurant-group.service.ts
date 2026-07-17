@@ -32,6 +32,7 @@ export interface RestaurantGroupService {
   createVenue(tenant: Tenant, name: string): Promise<{ id: string; name: string; slug: string }>;
   renameVenue(tenantId: string, venueId: string, name: string): Promise<void>;
   deactivateVenue(tenantId: string, venueId: string): Promise<void>;
+  reactivateVenue(tenant: Tenant, venueId: string): Promise<void>;
 }
 
 export function createRestaurantGroupService(supabase: SupabaseClient): RestaurantGroupService {
@@ -198,6 +199,27 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
 
       if (error) {
         throw new ServiceError('Erreur desactivation espace', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Reactive un espace desactive. La limite de plan est re-verifiee (un
+     * tenant retrograde ne peut pas ressusciter un espace au-dela de son
+     * plafond) ; le trigger DB reste le filet de secours applicatif.
+     */
+    async reactivateVenue(tenant: Tenant, venueId: string): Promise<void> {
+      await createTableConfigGuards(supabase).assertVenueOwnedByTenant(tenant.id, venueId);
+
+      await createPlanEnforcementService(supabase).canAddVenue(tenant);
+
+      const { error } = await supabase
+        .from('venues')
+        .update({ is_active: true })
+        .eq('id', venueId)
+        .eq('tenant_id', tenant.id);
+
+      if (error) {
+        throw new ServiceError('Erreur reactivation espace', 'INTERNAL', error);
       }
     },
   };

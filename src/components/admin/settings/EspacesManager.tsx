@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Plus, Pencil, Power, Lock } from 'lucide-react';
+import { Plus, Pencil, Power, RotateCcw, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { actionCreateVenue, actionRenameVenue, actionDeactivateVenue } from '@/app/actions/venues';
+import {
+  actionCreateVenue,
+  actionRenameVenue,
+  actionDeactivateVenue,
+  actionReactivateVenue,
+} from '@/app/actions/venues';
 
 export type EspaceRow = {
   id: string;
@@ -42,6 +48,7 @@ export function EspacesManager({
   subscriptionUrl,
 }: EspacesManagerProps) {
   const t = useTranslations('espaces');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState('');
@@ -60,7 +67,7 @@ export function EspacesManager({
         toast.success(t('toastCreated'));
         setAddOpen(false);
         setAddName('');
-        window.location.reload();
+        router.refresh();
       } else {
         toast.error(res.error);
       }
@@ -74,7 +81,7 @@ export function EspacesManager({
       if (res.success) {
         toast.success(t('toastRenamed'));
         setRenameId(null);
-        window.location.reload();
+        router.refresh();
       } else {
         toast.error(res.error);
       }
@@ -90,7 +97,19 @@ export function EspacesManager({
       const res = await actionDeactivateVenue({ id });
       if (res.success) {
         toast.success(t('toastDeactivated'));
-        window.location.reload();
+        router.refresh();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  function handleReactivate(id: string) {
+    startTransition(async () => {
+      const res = await actionReactivateVenue({ id });
+      if (res.success) {
+        toast.success(t('toastReactivated'));
+        router.refresh();
       } else {
         toast.error(res.error);
       }
@@ -154,8 +173,8 @@ export function EspacesManager({
                 <Pencil className="mr-2 h-3.5 w-3.5" />
                 {t('rename')}
               </Button>
-              {e.is_active &&
-                (e.id === principalId && activeEspaces.length < 2 ? (
+              {e.is_active ? (
+                e.id === principalId && activeEspaces.length < 2 ? (
                   <Button type="button" variant="ghost" size="sm" className="min-h-[44px]" disabled>
                     <Lock className="mr-2 h-3.5 w-3.5" />
                     {t('required')}
@@ -172,7 +191,20 @@ export function EspacesManager({
                     <Power className="mr-2 h-3.5 w-3.5" />
                     {t('deactivate')}
                   </Button>
-                ))}
+                )
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px]"
+                  onClick={() => handleReactivate(e.id)}
+                  disabled={isPending}
+                >
+                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                  {t('reactivate')}
+                </Button>
+              )}
             </div>
           </Card>
         ))}

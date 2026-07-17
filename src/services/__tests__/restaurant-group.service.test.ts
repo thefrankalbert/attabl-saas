@@ -252,4 +252,105 @@ describe('restaurant-group.service - espaces (venues)', () => {
       ServiceError,
     );
   });
+
+  describe('reactivateVenue', () => {
+    const VENUE_ID = '11111111-1111-4111-8111-111111111111';
+
+    it('venue d un autre tenant -> NOT_FOUND (garde propriete, avant meme canAddVenue)', async () => {
+      const supabase = {
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+              })),
+            })),
+          })),
+        })),
+      } as never;
+      const svc = createRestaurantGroupService(supabase);
+      await expect(
+        svc.reactivateVenue(makeVenueTenant('starter'), VENUE_ID),
+      ).rejects.toBeInstanceOf(ServiceError);
+    });
+
+    it('tenant au plafond du plan (canAddVenue) -> VALIDATION', async () => {
+      // 1: assertVenueOwnedByTenant (maybeSingle -> found) ; 2: canAddVenue count (au plafond)
+      let call = 0;
+      const supabase = {
+        from: vi.fn(() => {
+          call += 1;
+          if (call === 1) {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  eq: vi.fn(() => ({
+                    maybeSingle: vi.fn(() =>
+                      Promise.resolve({ data: { id: VENUE_ID }, error: null }),
+                    ),
+                  })),
+                })),
+              })),
+            };
+          }
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ count: 1, error: null })),
+              })),
+            })),
+          };
+        }),
+      } as never;
+      const svc = createRestaurantGroupService(supabase);
+      await expect(svc.reactivateVenue(makeVenueTenant('starter'), VENUE_ID)).rejects.toMatchObject(
+        { code: 'VALIDATION' },
+      );
+    });
+
+    it('chemin heureux : met is_active a true', async () => {
+      let call = 0;
+      const updated: Record<string, unknown>[] = [];
+      const supabase = {
+        from: vi.fn(() => {
+          call += 1;
+          if (call === 1) {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  eq: vi.fn(() => ({
+                    maybeSingle: vi.fn(() =>
+                      Promise.resolve({ data: { id: VENUE_ID }, error: null }),
+                    ),
+                  })),
+                })),
+              })),
+            };
+          }
+          if (call === 2) {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  eq: vi.fn(() => Promise.resolve({ count: 0, error: null })),
+                })),
+              })),
+            };
+          }
+          return {
+            update: vi.fn((patch: Record<string, unknown>) => {
+              updated.push(patch);
+              return {
+                eq: vi.fn(() => ({
+                  eq: vi.fn(() => Promise.resolve({ error: null })),
+                })),
+              };
+            }),
+          };
+        }),
+      } as never;
+      const svc = createRestaurantGroupService(supabase);
+      await svc.reactivateVenue(makeVenueTenant('business'), VENUE_ID);
+      expect(updated[0]).toMatchObject({ is_active: true });
+    });
+  });
 });

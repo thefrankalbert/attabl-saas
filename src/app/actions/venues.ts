@@ -98,6 +98,45 @@ export async function actionRenameVenue(input: unknown) {
   }
 }
 
+export async function actionReactivateVenue(input: unknown) {
+  try {
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+
+    const parsed = deactivateVenueSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false as const,
+        error: parsed.error.issues[0]?.message ?? 'Entree invalide.',
+      };
+    }
+
+    // canAddVenue a besoin du plan effectif du tenant : charger les champs plan.
+    const { data: t } = await supabase
+      .from('tenants')
+      .select('subscription_plan, subscription_status, trial_ends_at')
+      .eq('id', tenantId)
+      .maybeSingle();
+
+    const tenant = {
+      id: tenantId,
+      subscription_plan: t?.subscription_plan ?? null,
+      subscription_status: t?.subscription_status ?? null,
+      trial_ends_at: t?.trial_ends_at ?? null,
+    } as Tenant;
+
+    const service = createRestaurantGroupService(supabase);
+    await service.reactivateVenue(tenant, parsed.data.id);
+
+    await revalidateEspaces(supabase, tenantId);
+    return { success: true as const };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false as const, error: error.message };
+    if (error instanceof ServiceError) return { success: false as const, error: error.message };
+    logger.error('Error reactivating venue', error);
+    return { success: false as const, error: 'Impossible de reactiver l espace.' };
+  }
+}
+
 export async function actionDeactivateVenue(input: unknown) {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');

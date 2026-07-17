@@ -2031,6 +2031,7 @@
     "create": "Create space",
     "rename": "Rename",
     "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
     "required": "Required",
     "principal": "Main",
     "limitReached": "Plan limit reached. Upgrade your plan",
@@ -2045,6 +2046,7 @@
     "toastCreated": "Space created.",
     "toastRenamed": "Space renamed.",
     "toastDeactivated": "Space deactivated.",
+    "toastReactivated": "Space reactivated.",
     "toastLastSpace": "Cannot deactivate the last space."
   },
   "commandPalette": {
