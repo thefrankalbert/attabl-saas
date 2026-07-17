@@ -41,8 +41,8 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         </footer>
       </div>
 
-      {/* -- Right: product panel (hidden < 900px) ---------------------- */}
-      <aside className="relative hidden w-[46%] overflow-hidden border-l border-[var(--border)] bg-[var(--surface-hover)] min-[900px]:block">
+      {/* -- Right: product panel (desktop only; tablets get the centered card) */}
+      <aside className="relative hidden w-[46%] overflow-hidden border-l border-[var(--border)] bg-[var(--surface-hover)] xl:block">
         <Image
           src="/auth/dashboard-preview.png"
           alt={t('panelImageAlt')}
