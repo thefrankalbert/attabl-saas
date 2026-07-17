@@ -157,7 +157,10 @@ function AuthForm({ mode }: AuthFormProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="absolute -top-[9999px] -left-[9999px] overflow-hidden" aria-hidden="true">
+          <div
+            className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
+            aria-hidden="true"
+          >
             <Input
               ref={honeypotRef}
               type="text"
