@@ -198,6 +198,7 @@ export function EspacesManager({
             <Button
               type="button"
               variant="outline"
+              className="min-h-[44px]"
               onClick={() => setAddOpen(false)}
               disabled={isPending}
             >
@@ -205,6 +206,7 @@ export function EspacesManager({
             </Button>
             <Button
               type="button"
+              className="min-h-[44px]"
               onClick={handleAdd}
               disabled={isPending || addName.trim().length === 0}
             >
@@ -233,6 +235,7 @@ export function EspacesManager({
             <Button
               type="button"
               variant="outline"
+              className="min-h-[44px]"
               onClick={() => setRenameId(null)}
               disabled={isPending}
             >
@@ -240,6 +243,7 @@ export function EspacesManager({
             </Button>
             <Button
               type="button"
+              className="min-h-[44px]"
               onClick={handleRename}
               disabled={isPending || renameName.trim().length === 0}
             >
