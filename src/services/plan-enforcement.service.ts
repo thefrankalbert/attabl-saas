@@ -197,7 +197,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxVenues) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxVenues} établissement(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxVenues} espace(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
