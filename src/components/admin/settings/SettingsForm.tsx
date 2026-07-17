@@ -38,6 +38,7 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'sounds', labelKey: 'tabSounds' },
   { key: 'security', labelKey: 'tabSecurity' },
   { key: 'contact', labelKey: 'tabContact' },
+  { key: 'espaces', labelKey: 'tabEspaces' },
 ];
 
 // --- Main Component ----------------------------------------
@@ -51,6 +52,10 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
 
   const handleTabChange = useCallback(
     (value: string) => {
+      if (value === 'espaces') {
+        router.push(`${pathname}/espaces`);
+        return;
+      }
       const params = new URLSearchParams();
       if (value !== 'identity') {
         params.set('tab', value);
