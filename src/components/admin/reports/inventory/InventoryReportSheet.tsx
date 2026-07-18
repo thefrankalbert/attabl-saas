@@ -85,7 +85,7 @@ export function InventoryReportSheet({
         </div>
 
         {/* Table */}
-        <Table className="mt-7 text-xs">
+        <Table className="mt-7 w-full table-fixed text-xs">
           {/* Proportional column widths: the ingredient name gets the most room,
               other text columns a medium share, numeric columns the least. Takes
               effect at print (table-layout: fixed); a readable hint on screen. */}
