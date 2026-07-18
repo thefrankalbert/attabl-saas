@@ -11,26 +11,40 @@
  */
 
 import { getOrderOutbox } from './outbox-idb';
-import type { ReplayOutcome, Outbox } from './outbox';
+import type { Outbox } from './outbox';
+import { classifyStatus, readJson, replayOrderEntry, OUTBOX_SYNC_TAG } from './outbox-replay';
+
+// replayOrderEntry / OUTBOX_SYNC_TAG live in the DOM-free outbox-replay module so
+// they can also run inside the service worker. Re-exported here to keep the
+// existing import path (`@/lib/offline/submit-order`) stable for page consumers.
+export { replayOrderEntry, OUTBOX_SYNC_TAG };
 
 /** Dispatched on window after an order is queued, so the outbox UI updates now. */
 export const OUTBOX_CHANGED_EVENT = 'attabl:outbox-changed';
 
-/** HTTP status -> what the outbox should do with the entry. */
-function classifyStatus(status: number): 'success' | 'permanent' | 'retry' {
-  if (status >= 200 && status < 300) return 'success';
-  // Auth failures are transient for a queued order: an offline tablet's session
-  // can expire mid-outage, then recover (refresh / re-login). Dropping a real
-  // paid order on a 401/403 would lose it - keep and retry instead.
-  if (status === 401 || status === 403) return 'retry';
-  // Timeout, payload-too-large (often an edge/proxy limit), and rate limit are
-  // transient: keep and retry later.
-  if (status === 408 || status === 413 || status === 429) return 'retry';
-  // Server-side failure: transient, retry.
-  if (status >= 500) return 'retry';
-  // Other 4xx = business rejection (validation, price, coupon, conflict): the
-  // same body will be rejected again, so do not keep replaying it.
-  return 'permanent';
+/**
+ * Best-effort registration of a Background Sync so the service worker replays
+ * the outbox when connectivity returns, even if no tab is open. Silently no-ops
+ * where SyncManager is unavailable (Safari/iOS) - the page-side interval/online
+ * drain in useOrderOutbox remains the fallback.
+ */
+async function registerOutboxSync(): Promise<void> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  // Only when a SW already controls this page. `navigator.serviceWorker.ready`
+  // NEVER resolves when no worker ever activates (dev mode, incognito, blocked
+  // registration, pre-activation) - awaiting it there would hang forever. The
+  // controller check short-circuits that case; the interval/online drain in
+  // useOrderOutbox is the fallback.
+  if (!navigator.serviceWorker.controller) return;
+  try {
+    const reg = (await navigator.serviceWorker.ready) as ServiceWorkerRegistration & {
+      sync?: { register: (tag: string) => Promise<void> };
+    };
+    await reg.sync?.register(OUTBOX_SYNC_TAG);
+  } catch {
+    // Ignore: no Background Sync support, or registration blocked. The fallback
+    // drain paths still flush the outbox.
+  }
 }
 
 export type SubmitResult =
@@ -38,19 +52,6 @@ export type SubmitResult =
   | { status: 'queued' } // accepted into the durable outbox; will sync later
   | { status: 'rejected'; error: string; details?: string[] } // server refused
   | { status: 'failed'; error: string }; // could not send AND could not queue
-
-interface OrderResponseBody {
-  error?: string;
-  details?: string[];
-}
-
-async function readJson(response: Response): Promise<OrderResponseBody & Record<string, unknown>> {
-  try {
-    return (await response.json()) as OrderResponseBody & Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
 
 export interface SubmitOrderArgs {
   endpoint: string;
@@ -84,6 +85,12 @@ export async function submitOrder({
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event(OUTBOX_CHANGED_EVENT));
     }
+    // Ask the service worker to replay the outbox via Background Sync when the
+    // network returns - covers the case where the tab is closed during the
+    // outage. Fire-and-forget: the order is already durably queued, so the
+    // return must not wait on (or hang behind) SW readiness. Browsers without
+    // SyncManager (e.g. Safari/iOS) fall back to the interval/online drain.
+    void registerOutboxSync();
     return { status: 'queued' };
   };
 
@@ -113,39 +120,4 @@ export async function submitOrder({
   }
   // transient (5xx / 429 / 408): queue for replay
   return queue(`http_${response.status}`);
-}
-
-/** Drain-side replay of one queued order entry. */
-export async function replayOrderEntry(
-  entry: { endpoint: string; body: unknown },
-  fetchImpl: typeof fetch = fetch,
-): Promise<ReplayOutcome> {
-  let response: Response;
-  try {
-    response = await fetchImpl(entry.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry.body),
-    });
-  } catch (err) {
-    // Could not reach the server at all (offline / captive portal / DNS). This
-    // is NOT the order's fault, so it must not count toward the attempt budget -
-    // otherwise a long outage would drop the very orders the outbox exists to
-    // protect.
-    return {
-      kind: 'retry',
-      reason: err instanceof Error ? err.message : 'network',
-      countsAsAttempt: false,
-    };
-  }
-
-  const verdict = classifyStatus(response.status);
-  if (verdict === 'success') return { kind: 'success' };
-  if (verdict === 'retry') {
-    // The server answered but with a transient status: this DOES count toward
-    // the attempt budget (so a server that keeps rejecting eventually gives up).
-    return { kind: 'retry', reason: `http_${response.status}`, countsAsAttempt: true };
-  }
-  const errBody = await readJson(response);
-  return { kind: 'permanent', reason: errBody.error ?? `http_${response.status}` };
 }

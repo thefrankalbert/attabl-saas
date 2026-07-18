@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useSound } from '@/contexts/SoundContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useUpdateOrderStatus } from '@/hooks/mutations/useUpdateOrderStatus';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
@@ -130,6 +131,8 @@ export function useKitchenData({
   const { toast } = useToast();
   const router = useRouter();
   const [supabase] = useState(() => createClient());
+  // Outbox-backed order-status mutation (durable offline replay).
+  const updateOrderStatusMutation = useUpdateOrderStatus(tenantId);
 
   // --- Columns with translated labels ---------------------
   const columns: Record<ColumnKey, ColumnConfig> = {
@@ -273,16 +276,20 @@ export function useKitchenData({
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
     try {
-      const result = await actionUpdateOrderStatus(tenantId, orderId, newStatus);
-      if (result.error) {
-        toast({ title: tc('error'), variant: 'destructive' });
-        loadOrders();
-        return;
-      }
-      toast({ title: newStatus === 'ready' ? t('actionAllReady') : ta('statusUpdated') });
+      // Outbox-backed: during an outage the flip is durably queued and replayed
+      // idempotently on reconnect instead of failing hard in the kitchen.
+      const result = await updateOrderStatusMutation.mutateAsync({ orderId, status: newStatus });
+      toast({
+        title: result.queued
+          ? ta('statusQueued')
+          : newStatus === 'ready'
+            ? t('actionAllReady')
+            : ta('statusUpdated'),
+      });
       loadOrders();
     } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
+      // useUpdateOrderStatus already toasts the rejection; just resync the list
+      // (drops the optimistic flip).
       loadOrders();
     }
   };

@@ -36,6 +36,20 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
         throw new ServiceError('Serveur introuvable', 'NOT_FOUND');
       }
 
+      // Verify the table belongs to this tenant too: without this an
+      // owner/admin/manager could pass another tenant's table_id and create an
+      // assignment row referencing a foreign table (cross-tenant write).
+      const { data: table, error: tableErr } = await supabase
+        .from('tables')
+        .select('id')
+        .eq('id', tableId)
+        .eq('tenant_id', tenantId)
+        .single();
+
+      if (tableErr || !table) {
+        throw new ServiceError('Table introuvable', 'NOT_FOUND');
+      }
+
       const { data, error } = await supabase
         .from('table_assignments')
         .insert({

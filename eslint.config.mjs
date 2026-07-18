@@ -71,6 +71,8 @@ const eslintConfig = defineConfig([
     '.agents/**',
     // Root-level prototype / scratch files
     'prototype-*.{js,jsx,ts,tsx}',
+    // Generated service worker bundle (built by `serwist build`, see serwist.config.mjs)
+    'public/sw.js',
   ]),
   // Accessibility: promote critical jsx-a11y rules from warning to error so
   // CI rejects regressions (alt text, role/aria mismatches, labels, kbd

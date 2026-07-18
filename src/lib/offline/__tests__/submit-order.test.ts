@@ -152,10 +152,14 @@ describe('replayOrderEntry', () => {
     expect(outcome).toMatchObject({ kind: 'retry', countsAsAttempt: true });
   });
 
-  it('retries a 401 (session expired mid-outage) instead of dropping the order', async () => {
-    const fetchImpl = vi.fn(async () => jsonResponse(401, { error: 'Non authentifie' }));
-    const outcome = await replayOrderEntry(entry, fetchImpl as unknown as typeof fetch);
-    expect(outcome).toMatchObject({ kind: 'retry', countsAsAttempt: true });
+  it('retries a 401/403 but counts it (bounded, never an immortal entry)', async () => {
+    for (const status of [401, 403]) {
+      const fetchImpl = vi.fn(async () => jsonResponse(status, { error: 'Non authentifie' }));
+      const outcome = await replayOrderEntry(entry, fetchImpl as unknown as typeof fetch);
+      // Retryable (a session refreshes on reconnect) but bounded: a genuinely
+      // forbidden request must eventually surface, not loop forever.
+      expect(outcome).toMatchObject({ kind: 'retry', countsAsAttempt: true });
+    }
   });
 
   it('returns retry that does NOT count as an attempt on a network throw', async () => {
@@ -167,8 +171,14 @@ describe('replayOrderEntry', () => {
   });
 
   it('returns permanent on a genuine 4xx business reject', async () => {
-    const fetchImpl = vi.fn(async () => jsonResponse(409, { error: 'conflit' }));
+    const fetchImpl = vi.fn(async () => jsonResponse(422, { error: 'stock epuise' }));
     const outcome = await replayOrderEntry(entry, fetchImpl as unknown as typeof fetch);
-    expect(outcome).toEqual({ kind: 'permanent', reason: 'conflit' });
+    expect(outcome).toEqual({ kind: 'permanent', reason: 'stock epuise' });
+  });
+
+  it('retries a 409 (concurrent replay of the same idempotency key in flight)', async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(409, { error: 'Requete en cours' }));
+    const outcome = await replayOrderEntry(entry, fetchImpl as unknown as typeof fetch);
+    expect(outcome).toMatchObject({ kind: 'retry', countsAsAttempt: true });
   });
 });

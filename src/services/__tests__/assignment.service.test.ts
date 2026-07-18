@@ -138,6 +138,12 @@ describe('AssignmentService', () => {
         error: null,
       });
 
+      // tables lookup succeeds (table belongs to the tenant)
+      supabase._getChain('tables').single.mockResolvedValue({
+        data: { id: TABLE_ID },
+        error: null,
+      });
+
       // table_assignments insert succeeds
       supabase._getChain('table_assignments').single.mockResolvedValue({
         data: mockAssignment,
@@ -148,6 +154,27 @@ describe('AssignmentService', () => {
       const result = await service.assignServerToTable(TENANT_ID, TABLE_ID, SERVER_ID);
 
       expect(result).toEqual(mockAssignment);
+    });
+
+    it('should throw NOT_FOUND when the table belongs to another tenant', async () => {
+      const supabase = createMockSupabase();
+
+      // server exists in this tenant...
+      supabase._getChain('admin_users').single.mockResolvedValue({
+        data: { id: SERVER_ID, role: 'waiter' },
+        error: null,
+      });
+      // ...but the table does not (cross-tenant table_id).
+      supabase._getChain('tables').single.mockResolvedValue({
+        data: null,
+        error: { code: 'PGRST116', message: 'not found' },
+      });
+
+      const service = createAssignmentService(asSupabase(supabase));
+
+      await expect(
+        service.assignServerToTable(TENANT_ID, TABLE_ID, SERVER_ID),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 
     it('should throw NOT_FOUND when server does not exist', async () => {
