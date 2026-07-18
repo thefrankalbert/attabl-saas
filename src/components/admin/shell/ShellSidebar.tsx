@@ -176,7 +176,9 @@ export function ShellSidebar({
         />
 
         {/* -- Scrollable nav -- */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {/* pr-1.5: gutter so the overlay scrollbar floats clear of the full-width
+            CTA + nav rows instead of overlapping their right edge on short viewports */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1.5">
           {/* Main group: quick action + primary nav */}
           <div className="flex flex-col py-2">
             <Link
