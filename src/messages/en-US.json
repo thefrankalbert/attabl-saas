@@ -2535,7 +2535,8 @@
     "userTitle": "Member permissions",
     "userSubtitle": "Adjust {name}'s access beyond their role.",
     "useRoleDefault": "Role default",
-    "userSaveSuccess": "Permissions updated",
+    "autoSaveHint": "Your changes are saved automatically.",
+    "saved": "Saved",
     "ownerAllAccess": "The owner has full access. Nothing to adjust.",
     "perm": {
       "menu_view": "View menus",

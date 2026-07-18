@@ -2535,7 +2535,8 @@
     "userTitle": "Permissions du membre",
     "userSubtitle": "Ajustez les acces de {name} au-dela de son role.",
     "useRoleDefault": "Defaut du role",
-    "userSaveSuccess": "Permissions mises a jour",
+    "autoSaveHint": "Vos changements sont enregistres automatiquement.",
+    "saved": "Enregistre",
     "ownerAllAccess": "Le proprietaire a tous les acces. Rien a ajuster.",
     "perm": {
       "menu_view": "Voir les menus",

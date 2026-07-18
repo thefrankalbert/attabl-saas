@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
-import { Loader2, RotateCcw } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, Loader2, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,59 @@ export default function UserPermissionsDialog({
     return initial;
   });
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const savedOnceRef = useRef(false);
+  const overridesRef = useRef<PermissionMap>(overrides);
+  const pendingRef = useRef<PermissionMap | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist the whole custom_permissions map (replaced wholesale; null = follow
+  // the role). Silent on success (inline status shows it), toast on error.
+  const persist = useCallback(
+    async (next: PermissionMap): Promise<boolean> => {
+      setSaving(true);
+      try {
+        const res = await actionUpdateAdminUser(tenantId, user.id, {
+          custom_permissions: Object.keys(next).length > 0 ? next : null,
+        } as Partial<AdminUser>);
+        if (res.error) {
+          toast({ title: res.error, variant: 'destructive' });
+          return false;
+        }
+        savedOnceRef.current = true;
+        setSaved(true);
+        return true;
+      } catch {
+        toast({ title: tc('error'), variant: 'destructive' });
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [tenantId, user.id, toast, tc],
+  );
+
+  // Auto-save: debounce rapid toggles into a single write (matches the per-role
+  // matrix in PermissionsClient - no easy-to-miss Save button).
+  const scheduleSave = useCallback(
+    (next: PermissionMap) => {
+      pendingRef.current = next;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        const toSave = pendingRef.current;
+        pendingRef.current = null;
+        timerRef.current = null;
+        if (toSave) void persist(toSave);
+      }, 500);
+    },
+    [persist],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   // Effective value the ROLE grants by default in this tenant (the baseline).
   const baseline = useCallback(
@@ -85,48 +138,50 @@ export default function UserPermissionsDialog({
 
   const handleToggle = useCallback(
     (perm: PermissionCode) => {
-      setOverrides((prev) => {
-        const next = { ...prev };
-        const newValue = !(next[perm] !== undefined ? next[perm] : baseline(perm));
-        if (newValue === baseline(perm)) {
-          // Back to the role baseline: drop the override.
-          delete next[perm];
-        } else {
-          next[perm] = newValue;
-        }
-        return next;
-      });
+      const next = { ...overridesRef.current };
+      const newValue = !(next[perm] !== undefined ? next[perm] : baseline(perm));
+      if (newValue === baseline(perm)) {
+        // Back to the role baseline: drop the override.
+        delete next[perm];
+      } else {
+        next[perm] = newValue;
+      }
+      overridesRef.current = next;
+      setOverrides(next);
+      scheduleSave(next);
     },
-    [baseline],
+    [baseline, scheduleSave],
   );
 
-  const resetPerm = useCallback((perm: PermissionCode) => {
-    setOverrides((prev) => {
-      const next = { ...prev };
+  const resetPerm = useCallback(
+    (perm: PermissionCode) => {
+      const next = { ...overridesRef.current };
       delete next[perm];
-      return next;
-    });
-  }, []);
+      overridesRef.current = next;
+      setOverrides(next);
+      scheduleSave(next);
+    },
+    [scheduleSave],
+  );
 
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      const hasOverrides = Object.keys(overrides).length > 0;
-      const res = await actionUpdateAdminUser(tenantId, user.id, {
-        custom_permissions: hasOverrides ? overrides : null,
-      } as Partial<AdminUser>);
-      if (res.error) {
-        toast({ title: res.error, variant: 'destructive' });
-        return;
-      }
-      toast({ title: t('userSaveSuccess') });
-      onSaved();
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' });
-    } finally {
-      setSaving(false);
+  // Flush a pending debounced save, then close. onSaved reloads the parent list,
+  // so only fire it when something was actually persisted this session.
+  const handleClose = useCallback(async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-  }, [overrides, tenantId, user.id, toast, t, tc, onSaved]);
+    if (pendingRef.current) {
+      const toSave = pendingRef.current;
+      pendingRef.current = null;
+      const ok = await persist(toSave);
+      // Flush failed: keep the dialog open so the error toast stays visible and
+      // the user can retry (do not reload the parent and wipe the toast).
+      if (!ok) return;
+    }
+    if (savedOnceRef.current) onSaved();
+    else onClose();
+  }, [persist, onSaved, onClose]);
 
   const permissionLabel = (perm: PermissionCode): string => t(`perm.${perm.replace('.', '_')}`);
   const categoryLabel = (key: string): string => t(`category.${key}`);
@@ -134,7 +189,7 @@ export default function UserPermissionsDialog({
   const isOwner = user.role === 'owner';
 
   return (
-    <AdminModal isOpen onClose={onClose} title={t('userTitle')}>
+    <AdminModal isOpen onClose={isOwner ? onClose : handleClose} title={t('userTitle')}>
       <div className="space-y-4 pt-2">
         <p className="text-sm text-app-text-secondary">
           {t('userSubtitle', { name: user.full_name || user.email })}
@@ -196,16 +251,29 @@ export default function UserPermissionsDialog({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-app-border">
-          <Button variant="ghost" onClick={onClose}>
-            {tc('cancel')}
-          </Button>
-          {!isOwner && (
-            <Button variant="default" disabled={saving} onClick={handleSave}>
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {tc('saveChanges')}
-            </Button>
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-app-border">
+          {isOwner ? (
+            <span />
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-app-text-secondary">
+              {saving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {tc('saving')}
+                </>
+              ) : saved ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-status-success" />
+                  {t('saved')}
+                </>
+              ) : (
+                t('autoSaveHint')
+              )}
+            </span>
           )}
+          <Button variant="default" onClick={isOwner ? onClose : handleClose}>
+            {tc('close')}
+          </Button>
         </div>
       </div>
     </AdminModal>
