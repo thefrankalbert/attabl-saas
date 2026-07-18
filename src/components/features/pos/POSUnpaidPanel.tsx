@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { X, Receipt, Loader2 } from 'lucide-react';
+import { X, Receipt } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrencyMinor } from '@/lib/utils/money';
@@ -62,9 +63,7 @@ export default function POSUnpaidPanel({
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-3">
           {loading ? (
-            <div className="flex flex-1 items-center justify-center py-12 text-app-text-muted">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
+            <ListRowsSkeleton rows={4} />
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-app-text-muted">
               <Receipt className="h-8 w-8 opacity-40" />

@@ -8,7 +8,7 @@ import { Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { LoadingIndicator } from '@/components/application/loading-indicator/LoadingIndicator';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
 import { CommandCenterShell } from '@/components/admin/tenants/v2/CommandCenterShell';
 import { TopbarMinimal } from '@/components/admin/tenants/v2/TopbarMinimal';
@@ -258,10 +258,10 @@ export default function TenantsPageClient({
     return (
       <CommandCenterShell defaultTheme={initialTheme}>
         <div
-          className="flex h-full items-center justify-center"
+          className="flex h-full items-center justify-center px-6 text-app-text-muted"
           style={{ background: 'var(--cc-bg)' }}
         >
-          <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
+          <CenteredSkeleton />
         </div>
       </CommandCenterShell>
     );

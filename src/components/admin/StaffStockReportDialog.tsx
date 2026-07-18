@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import {
   Dialog,
   DialogContent,
@@ -94,9 +95,7 @@ export default function StaffStockReportDialog({
 
           {/* Content area */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 gap-2 text-app-text-muted">
-              <Loader2 className="w-5 h-5 animate-spin" />
-            </div>
+            <ListRowsSkeleton rows={4} />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
               <p className="text-sm text-status-error">{t('staffReportError')}</p>

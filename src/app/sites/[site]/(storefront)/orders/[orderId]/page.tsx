@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -227,8 +228,8 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center bg-white">
-        <Loader2 className="h-6 w-6 animate-spin text-[var(--color-ink-soft)]" />
+      <div className="flex h-full items-center justify-center bg-white px-6">
+        <CenteredSkeleton className="text-black/50" />
       </div>
     );
   }

@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -56,7 +57,7 @@ function CheckoutSuccessContent() {
   if (loading) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-app-text-muted" />
+        <CenteredSkeleton />
       </div>
     );
   }
@@ -95,7 +96,7 @@ export default function CheckoutSuccessPage() {
     <Suspense
       fallback={
         <div className="min-h-dvh flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-app-text-muted" />
+          <CenteredSkeleton />
         </div>
       }
     >

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -325,8 +326,8 @@ export default function AcceptInvitePage() {
       <div className="w-full max-w-md">
         <Suspense
           fallback={
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-app-text-muted" />
+            <div className="p-8">
+              <CenteredSkeleton />
             </div>
           }
         >

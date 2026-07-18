@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthFormSkeleton } from '@/components/auth/AuthFormSkeleton';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -42,12 +43,10 @@ export default function ResetPasswordPage() {
 }
 
 function ResetPasswordLoadingFallback() {
-  const t = useTranslations('auth.reset');
   return (
-    <div className="w-full text-center">
-      <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--muted)]" />
-      <p className="text-sm text-[var(--secondary)]">{t('checkingText')}</p>
-    </div>
+    <AuthCard>
+      <AuthFormSkeleton />
+    </AuthCard>
   );
 }
 
@@ -156,10 +155,7 @@ function ResetPasswordContent() {
           </AuthCard>
         ) : checking ? (
           <AuthCard>
-            <div className="flex flex-col items-center gap-3 py-2 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[var(--muted)]" />
-              <p className="text-sm text-[var(--secondary)]">{t('checkingText')}</p>
-            </div>
+            <AuthFormSkeleton />
           </AuthCard>
         ) : !sessionReady ? (
           <AuthCard>
