@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getRoleConfig } from '@/lib/role-config';
+import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
 import type { Invitation } from '@/types/invitation.types';
 import { timeAgo, timeUntil } from '@/hooks/useUsersData';
 
@@ -35,10 +36,7 @@ export default function PendingInvitations({
       <h2 className="text-lg font-semibold tracking-tight">{t('pendingInvitationsTitle')}</h2>
 
       {loadingInvitations ? (
-        <div className="flex items-center justify-center py-8 text-app-text-muted">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          {tc('loading')}
-        </div>
+        <ListRowsSkeleton rows={3} />
       ) : pendingOnly.length === 0 ? (
         <div className="rounded-xl border border-dashed border-app-border p-8 text-center text-app-text-secondary">
           {t('noPendingInvitations')}
