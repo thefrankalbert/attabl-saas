@@ -12,6 +12,7 @@ import { groupTablesByZone } from '@/lib/qr/group-tables';
 import { BatchQRPreview, type QRMenu } from '@/components/qr/BatchQRPreview';
 import { QRAssignmentPanel, type QRDesignSummary } from '@/components/qr/QRAssignmentPanel';
 import { QRExportPanel } from '@/components/qr/QRExportPanel';
+import { QRGuideDialog } from '@/components/qr/QRGuideDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import {
@@ -78,12 +79,15 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
 
       {/* --- Tabs Navigation --- */}
       <Tabs defaultValue="choose" className="flex flex-col flex-1 min-h-0">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
-          <TabsTrigger value="customize">{t('tabCustomize')}</TabsTrigger>
-          <TabsTrigger value="assign">{t('tabAssign')}</TabsTrigger>
-          <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center gap-2">
+          <TabsList className="flex-1 min-w-0 justify-start overflow-x-auto scrollbar-hide">
+            <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
+            <TabsTrigger value="customize">{t('tabCustomize')}</TabsTrigger>
+            <TabsTrigger value="assign">{t('tabAssign')}</TabsTrigger>
+            <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
+          </TabsList>
+          <QRGuideDialog />
+        </div>
 
         {/* --- Tab: Choose --- */}
         <TabsContent value="choose" className="flex-1 overflow-auto">
