@@ -25,27 +25,26 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Never runtime-cache authenticated, tenant-scoped responses: on a shared
-// restaurant tablet a cached admin page/API response would be servable to the
-// next person (and survive logout). These NetworkOnly rules come FIRST (first
-// match wins), so /api/* and any /admin document/RSC always hit the network and
-// are never written to a device cache. Offline READ data for the admin already
-// comes from the app's own TanStack IndexedDB persist (scoped + invalidatable),
-// so this is safe and non-lossy. Static assets and the public storefront still
-// fall through to defaultCache below.
+// Never runtime-cache the STRUCTURED tenant data: /api/* responses (orders,
+// payments, customers) stay NetworkOnly so they are never written to a device
+// cache. Offline READS for the admin come from the app's own TanStack IndexedDB
+// persist (scoped + invalidatable), so this is non-lossy.
+//
+// Admin DOCUMENTS (the app shell / RSC) are deliberately NOT NetworkOnly: they
+// must be runtime-cached (defaultCache) so a reload while offline serves the
+// dashboard/POS instead of the /offline page - that is the whole point of the
+// feature for staff tablets. The shared-tablet retention concern is handled by
+// clearing these caches on logout (message handler below), not by refusing to
+// cache (which broke offline admin entirely).
 const noCacheAuthenticated: RuntimeCaching[] = [
   {
     matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/api/'),
     handler: new NetworkOnly(),
   },
-  {
-    // Segment match (not substring) so it catches the platform /admin and every
-    // tenant /sites/<slug>/admin, without falsely matching paths that merely
-    // contain the letters "admin" (e.g. /administrator).
-    matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.split('/').includes('admin'),
-    handler: new NetworkOnly(),
-  },
 ];
+
+// Runtime caches that can hold authenticated documents/RSC - cleared on logout.
+const RUNTIME_DOC_CACHES = ['others', 'pages', 'next-data', 'rsc-prefetch', 'rsc'];
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -120,6 +119,18 @@ self.addEventListener('activate', (event) => {
         ),
       ),
   );
+});
+
+// --- Clear cached authenticated documents on logout -------------------------
+// The client posts { type: 'attabl-clear-cache' } when the user logs out, so a
+// shared restaurant tablet does not retain the previous user's admin pages/RSC
+// in the runtime caches. /api data is never cached (NetworkOnly above), and the
+// app's TanStack persist is cleared by the logout flow itself.
+self.addEventListener('message', (event) => {
+  const data = event.data as { type?: string } | undefined;
+  if (data?.type === 'attabl-clear-cache') {
+    event.waitUntil(Promise.all(RUNTIME_DOC_CACHES.map((c) => caches.delete(c))));
+  }
 });
 
 // --- Background Sync: drain the durable order outbox on reconnect ------------
