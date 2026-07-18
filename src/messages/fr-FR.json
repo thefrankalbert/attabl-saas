@@ -1969,8 +1969,13 @@
     "tabSounds": "Sons",
     "tabSecurity": "Sécurité",
     "tabContact": "Contact",
-    "tabEspaces": "Espaces",
     "tabHours": "Horaires",
+    "management": {
+      "title": "Gestion",
+      "espaces": "Espaces",
+      "tables": "Tables et zones",
+      "permissions": "Permissions"
+    },
     "openingHoursHint": "Définissez vos horaires d'ouverture. Un jour désactivé = fermé ce jour-là. Sans aucun horaire, l'établissement est considéré comme toujours ouvert. Le badge Ouvert/Fermé du menu client suit ces horaires.",
     "openingHoursOpen": "Ouverture",
     "openingHoursClose": "Fermeture",

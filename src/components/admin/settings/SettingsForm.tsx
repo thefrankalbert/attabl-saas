@@ -2,8 +2,10 @@
 
 import { useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Loader2, Save } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, Save, Store, LayoutGrid, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
@@ -38,7 +40,6 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'sounds', labelKey: 'tabSounds' },
   { key: 'security', labelKey: 'tabSecurity' },
   { key: 'contact', labelKey: 'tabContact' },
-  { key: 'espaces', labelKey: 'tabEspaces' },
 ];
 
 // --- Main Component ----------------------------------------
@@ -52,10 +53,6 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
 
   const handleTabChange = useCallback(
     (value: string) => {
-      if (value === 'espaces') {
-        router.push(`${pathname}/espaces`);
-        return;
-      }
       const params = new URLSearchParams();
       if (value !== 'identity') {
         params.set('tab', value);
@@ -88,6 +85,42 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
       >
+        <Card className="shrink-0 p-4 sm:p-5 mb-4 sm:mb-6">
+          <p className="text-sm font-semibold text-app-text mb-3">{t('management.title')}</p>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-[44px] justify-start sm:justify-center"
+            >
+              <Link href={`${pathname}/espaces`}>
+                <Store className="mr-2 h-4 w-4" />
+                {t('management.espaces')}
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-[44px] justify-start sm:justify-center"
+            >
+              <Link href={`${pathname}/tables`}>
+                <LayoutGrid className="mr-2 h-4 w-4" />
+                {t('management.tables')}
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-[44px] justify-start sm:justify-center"
+            >
+              <Link href={`${pathname}/permissions`}>
+                <Users className="mr-2 h-4 w-4" />
+                {t('management.permissions')}
+              </Link>
+            </Button>
+          </div>
+        </Card>
+
         <Tabs
           value={initialTab}
           onValueChange={handleTabChange}
