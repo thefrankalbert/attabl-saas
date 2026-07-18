@@ -73,7 +73,7 @@ export default function UserPermissionsDialog({
   // Persist the whole custom_permissions map (replaced wholesale; null = follow
   // the role). Silent on success (inline status shows it), toast on error.
   const persist = useCallback(
-    async (next: PermissionMap) => {
+    async (next: PermissionMap): Promise<boolean> => {
       setSaving(true);
       try {
         const res = await actionUpdateAdminUser(tenantId, user.id, {
@@ -81,12 +81,14 @@ export default function UserPermissionsDialog({
         } as Partial<AdminUser>);
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
-          return;
+          return false;
         }
         savedOnceRef.current = true;
         setSaved(true);
+        return true;
       } catch {
         toast({ title: tc('error'), variant: 'destructive' });
+        return false;
       } finally {
         setSaving(false);
       }
@@ -172,7 +174,10 @@ export default function UserPermissionsDialog({
     if (pendingRef.current) {
       const toSave = pendingRef.current;
       pendingRef.current = null;
-      await persist(toSave);
+      const ok = await persist(toSave);
+      // Flush failed: keep the dialog open so the error toast stays visible and
+      // the user can retry (do not reload the parent and wipe the toast).
+      if (!ok) return;
     }
     if (savedOnceRef.current) onSaved();
     else onClose();
