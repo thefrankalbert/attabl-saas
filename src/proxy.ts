@@ -51,6 +51,11 @@ const APP_ROOT_ONLY_PREFIXES = [
   '/unauthorized',
   '/admin/tenants',
   '/admin/platform',
+  // SW offline fallback document (app/offline). Without this, a tenant
+  // subdomain rewrites /offline to /sites/<slug>/offline -> 404, the service
+  // worker's precache install fails, and no SW ever installs on tenant
+  // subdomains - exactly where the offline tablets live.
+  '/offline',
 ];
 
 function isAppRootOnlyPath(pathname: string): boolean {
@@ -438,8 +443,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico (favicon file)
-     * - sw.js (self-destructing service worker route - must be served verbatim,
-     *   never rewritten to a tenant path)
+     * - sw.js (Serwist service worker at the root scope - must be served
+     *   verbatim, never rewritten to a tenant path)
      * - public folder
      */
     '/((?!_next/static|_next/image|favicon.ico|sw.js|sounds/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|wav|mp3|ogg|pdf|xlsx|xls|csv|woff|woff2|ttf|eot)$).*)',

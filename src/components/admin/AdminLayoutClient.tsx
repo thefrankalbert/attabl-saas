@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { ShellHeader } from './shell/ShellHeader';
 import { AdminBottomNav } from './AdminBottomNav';
+import { InstallPrompt } from '@/components/shared/InstallPrompt';
 import { ShellSidebar } from './shell/ShellSidebar';
 import { SettingsDialog, type SettingsTab } from './shell/SettingsDialog';
 import { cn } from '@/lib/utils';
@@ -267,6 +268,20 @@ function AdminLayoutInner({
             basePath={basePath}
             role={role}
             establishmentType={tenant.establishment_type}
+          />
+        )}
+
+        {/* Not on immersive POS/KDS (a floating card must not overlay the full-
+            screen till/kitchen UI). Offset above the fixed bottom-nav (h-14) when
+            it shows so the two fixed elements never overlap (rule 5). */}
+        {!immersive && (
+          <InstallPrompt
+            className={
+              showBottomNav
+                ? 'bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))]'
+                : undefined
+            }
+            label="Installer ATTABL sur cette tablette - marche meme sans reseau."
           />
         )}
       </div>

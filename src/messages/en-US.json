@@ -1297,6 +1297,7 @@
     "viewKds": "View kitchen",
     "manageOrders": "Manage orders",
     "openPos": "Open POS",
+    "statusQueued": "Saved - will sync when the network is back",
     "statusUpdated": "Status updated",
     "statusUpdateError": "Error updating status",
     "items": "items",

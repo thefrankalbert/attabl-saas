@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -74,6 +74,9 @@ export function useDashboardData({
   // each one would re-run the full 8-query bundle. A short debounce keeps the
   // dashboard fresh within ~1s of the last change while collapsing storms into one.
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Bumped on the `online` event to rebuild the realtime channels (which die
+  // silently during an outage) and refetch missed data on reconnect.
+  const [reconnectTick, setReconnectTick] = useState(0);
 
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
@@ -104,8 +107,11 @@ export function useDashboardData({
     updateOrderStatus.mutate(
       { orderId, status: newStatus },
       {
-        onSuccess: () => {
-          toast({ title: ta('statusUpdated') });
+        onSuccess: (data) => {
+          // Offline: the change is durably queued, not yet server-confirmed.
+          // Say so - a "updated" toast while the list still shows the old
+          // status reads as a bug and invites duplicate taps.
+          toast({ title: data.queued ? ta('statusQueued') : ta('statusUpdated') });
         },
         onError: () => {
           toast({ title: ta('statusUpdateError'), variant: 'destructive' });
@@ -187,7 +193,17 @@ export function useDashboardData({
       )
       .subscribe();
 
+    // On network recovery the two channels above are dead; rebuild them (bump
+    // the tick to re-run this effect) and refetch the data missed during the
+    // outage. Without this the dashboard silently stops updating after a blip.
+    const onOnline = () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+      setReconnectTick((t) => t + 1);
+    };
+    window.addEventListener('online', onOnline);
+
     return () => {
+      window.removeEventListener('online', onOnline);
       if (refetchTimerRef.current !== null) {
         clearTimeout(refetchTimerRef.current);
         refetchTimerRef.current = null;
@@ -197,7 +213,7 @@ export function useDashboardData({
       supabase.removeChannel(channel);
       supabase.removeChannel(stockChannel);
     };
-  }, [supabase, tenantId, queryClient, playNotification]);
+  }, [supabase, tenantId, queryClient, playNotification, reconnectTick]);
 
   return {
     stats,

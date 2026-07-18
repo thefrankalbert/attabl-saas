@@ -22,6 +22,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollRestoration from '@/components/shared/ScrollRestoration';
 import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
+import { RegisterSW } from '@/components/shared/RegisterSW';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -145,10 +146,21 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://attabl.com'),
+  applicationName: 'ATTABL',
   title: 'Attabl - Menu digital & gestion pour la restauration',
   description:
     "La plateforme tout-en-un pour la restauration et l'hôtellerie en Afrique. Menu, commandes, stock, analytics en temps réel.",
   manifest: '/manifest.json',
+  // Lets iOS Safari (which ignores most of the web manifest) install ATTABL as a
+  // full-screen home-screen app - key for the offline tablet use case.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ATTABL',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   alternates: {
     canonical: '/',
   },
@@ -208,6 +220,7 @@ export default async function RootLayout({
             </Suspense>
             {children}
             <Toaster />
+            <RegisterSW />
             <AgentationOverlay />
           </ThemeProvider>
         </NextIntlClientProvider>

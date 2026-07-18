@@ -1297,6 +1297,7 @@
     "viewKds": "Voir la cuisine",
     "manageOrders": "Gérer les commandes",
     "openPos": "Ouvrir la caisse",
+    "statusQueued": "Enregistré - sera synchronisé au retour du réseau",
     "statusUpdated": "Statut mis à jour",
     "statusUpdateError": "Erreur lors de la mise à jour du statut",
     "items": "articles",

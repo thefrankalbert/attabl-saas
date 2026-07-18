@@ -4,14 +4,13 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
 
-// PWA/service worker removed: @ducanh2912/next-pwa is a Webpack plugin and the
-// production build runs on Turbopack, so it silently generated NO service worker
-// (attabl.com/sw.js returned 404). Devices that had registered an old SW from a
-// past Webpack build kept serving stale cached JS and could never update, so
-// shipped fixes "never reached production". A self-destructing /sw.js
-// (src/app/sw.js/route.ts) now unregisters those orphaned workers. The app stays
-// installable via manifest.json; real offline caching can be re-added later with
-// a Turbopack-compatible tool (e.g. @serwist/next).
+// Service worker: real offline caching is now built by Serwist (Configurator
+// mode, see serwist.config.mjs -> public/sw.js). This replaced @ducanh2912/next-pwa,
+// a Webpack plugin that under Turbopack silently generated NO worker
+// (attabl.com/sw.js returned 404), which stranded devices on an old SW serving
+// stale JS so shipped fixes "never reached production". To keep that from
+// recurring, /sw.js is served with `no-store` below so neither the browser nor
+// the CDN can pin a stale worker: the update check always fetches the live one.
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -73,6 +72,13 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: baseHeaders,
+      },
+      {
+        // The Serwist worker must never be pinned by the browser HTTP cache or
+        // the CDN: a stale /sw.js is exactly what stranded devices on old JS
+        // before. `no-store` guarantees the SW update check fetches the live one.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
       },
     ];
   },

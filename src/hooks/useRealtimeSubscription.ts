@@ -103,7 +103,15 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
         }
       });
 
+    // When the network drops, the websocket dies silently and supabase-js does
+    // not always re-establish it. Rebuild the channel on the `online` event so
+    // caisse/cuisine resume live updates the moment connectivity returns -
+    // without needing a page reload.
+    const onOnline = () => setRetryTick((t) => t + 1);
+    window.addEventListener('online', onOnline);
+
     return () => {
+      window.removeEventListener('online', onOnline);
       if (reconnectTimer) clearTimeout(reconnectTimer);
       channel.unsubscribe();
       supabase.removeChannel(channel);
