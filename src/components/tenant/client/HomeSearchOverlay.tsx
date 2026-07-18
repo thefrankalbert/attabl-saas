@@ -1,7 +1,8 @@
 'use client';
 
 import type { Dispatch, SetStateAction } from 'react';
-import { Search, X, Clock, Loader2 } from 'lucide-react';
+import { Search, X, Clock } from 'lucide-react';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,8 +142,8 @@ export function HomeSearchOverlay({
             )}
           </>
         ) : searchLoading && searchFull.length === 0 ? (
-          <div className="flex justify-center pt-[72px]">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--color-ink-soft)]" />
+          <div className="px-2 pt-6 text-[var(--color-ink-soft)]">
+            <CenteredSkeleton />
           </div>
         ) : searchResults.length > 0 ? (
           <>

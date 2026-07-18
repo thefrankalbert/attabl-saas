@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { CenteredSkeleton } from '@/components/shared/CenteredSkeleton';
 import { Button } from '@/components/ui/button';
 import { CheckoutLeftPanel } from '@/components/checkout/CheckoutLeftPanel';
 import { CheckoutRightPanel } from '@/components/checkout/CheckoutRightPanel';
@@ -86,7 +87,7 @@ function CheckoutWithPlan({
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
+        <CenteredSkeleton className="text-white/40" />
       </div>
     );
   }
@@ -159,7 +160,7 @@ export default function CheckoutPage() {
     <Suspense
       fallback={
         <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#c2f542]" />
+          <CenteredSkeleton className="text-white/40" />
         </div>
       }
     >
