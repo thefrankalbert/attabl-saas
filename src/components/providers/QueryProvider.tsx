@@ -15,6 +15,13 @@ function makeQueryClient() {
         retry: 3,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
+        // Offline-first: with the default 'online' mode, queries PAUSE when the
+        // device is offline (navigator.onLine === false) and their isLoading
+        // never resolves - which left the POS/KDS stuck forever on "Chargement..."
+        // on a tablet with the wifi cut. 'offlineFirst' resolves the query from
+        // the persisted IndexedDB cache immediately (last-known menu, orders,
+        // tables) and settles instead of hanging when there is no network.
+        networkMode: 'offlineFirst',
       },
     },
   });
