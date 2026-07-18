@@ -49,6 +49,7 @@ export function useReportExports({
     setExporting(true);
     try {
       const { jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
       // Neutral document palette (matches the print documents).
@@ -98,72 +99,89 @@ export function useReportExports({
       });
       y += 18;
 
-      // --- Top products table ---
-      const tableHeader = (title: string, cols: Array<[string, number, 'left' | 'right']>) => {
+      // --- Tables (autoTable: clean columns, auto-wrap long names, auto page breaks) ---
+      const sectionTitle = (title: string, atY: number): number => {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.setTextColor(...INK);
-        doc.text(title, M, y);
-        y += 6;
-        doc.setFontSize(7.5);
-        doc.setTextColor(...FAINT);
-        cols.forEach(([label, x, align]) =>
-          doc.text(label.toUpperCase(), align === 'right' ? x : x, y, { align }),
-        );
-        y += 2;
-        doc.setDrawColor(...LINE);
-        doc.line(M, y, RIGHT, y);
-        y += 5;
+        doc.text(title, M, atY);
+        return atY + 4;
       };
 
-      tableHeader(t('top5Products'), [
-        ['#', M, 'left'],
-        ['Nom', M + 10, 'left'],
-        [t('orders'), RIGHT - 40, 'right'],
-        [t('revenueLabel'), RIGHT, 'right'],
-      ]);
-      doc.setFont('helvetica', 'normal');
-      topItems.forEach((item, i) => {
-        doc.setFontSize(10);
-        doc.setTextColor(...INK);
-        doc.text(String(i + 1), M, y);
-        doc.text(item.name, M + 10, y);
-        doc.setTextColor(...MUTED);
-        doc.text(String(item.quantity), RIGHT - 40, y, { align: 'right' });
-        doc.setTextColor(...INK);
-        doc.text(fmt(item.revenue), RIGHT, y, { align: 'right' });
-        y += 5;
-        doc.setDrawColor(245, 245, 245);
-        doc.line(M, y - 1.5, RIGHT, y - 1.5);
-      });
+      const bodyStyles = {
+        font: 'helvetica' as const,
+        fontSize: 9.5,
+        textColor: INK,
+        cellPadding: { top: 2, right: 1, bottom: 2, left: 1 },
+        overflow: 'linebreak' as const,
+        lineColor: [245, 245, 245] as [number, number, number],
+        lineWidth: { bottom: 0.1 },
+      };
+      const headStyles = {
+        fontStyle: 'bold' as const,
+        fontSize: 7.5,
+        textColor: FAINT,
+        fillColor: [255, 255, 255] as [number, number, number],
+        cellPadding: { top: 0, right: 1, bottom: 2, left: 1 },
+        lineColor: LINE,
+        lineWidth: { bottom: 0.3 },
+      };
 
-      // --- Categories table (optional) ---
+      // Top products - the name column wraps (overflow: linebreak) so long names
+      // never bleed into the number columns, and autoTable adds pages as needed.
+      autoTable(doc, {
+        startY: sectionTitle(t('top5Products'), y),
+        theme: 'plain',
+        margin: { left: M, right: M },
+        head: [['#', 'Nom', t('orders'), t('revenueLabel')]],
+        body: topItems.map((item, i) => [
+          String(i + 1),
+          item.name,
+          String(item.quantity),
+          fmt(item.revenue),
+        ]),
+        styles: bodyStyles,
+        headStyles,
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'left' },
+          1: { cellWidth: 'auto', halign: 'left' },
+          2: { cellWidth: 26, halign: 'right', textColor: MUTED },
+          3: { cellWidth: 32, halign: 'right' },
+        },
+      });
+      // jspdf-autotable exposes finalY on the doc; the type augmentation is not
+      // pulled in by the dynamic import, so read it via a local typed cast.
+      y = (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+
+      // Categories (optional)
       if (categories.length > 0) {
-        y += 8;
-        tableHeader(t('categoryBreakdown'), [
-          ['Categorie', M, 'left'],
-          [t('revenueLabel'), RIGHT - 30, 'right'],
-          ['%', RIGHT, 'right'],
-        ]);
-        doc.setFont('helvetica', 'normal');
-        categories.forEach((cat) => {
-          doc.setFontSize(10);
-          doc.setTextColor(...INK);
-          doc.text(cat.category, M, y);
-          doc.text(fmt(cat.revenue), RIGHT - 30, y, { align: 'right' });
-          doc.setTextColor(...MUTED);
-          doc.text(`${cat.percentage}%`, RIGHT, y, { align: 'right' });
-          y += 5;
-          doc.setDrawColor(245, 245, 245);
-          doc.line(M, y - 1.5, RIGHT, y - 1.5);
+        autoTable(doc, {
+          startY: sectionTitle(t('categoryBreakdown'), y),
+          theme: 'plain',
+          margin: { left: M, right: M },
+          head: [['Categorie', t('revenueLabel'), '%']],
+          body: categories.map((cat) => [cat.category, fmt(cat.revenue), `${cat.percentage}%`]),
+          styles: bodyStyles,
+          headStyles,
+          columnStyles: {
+            0: { cellWidth: 'auto', halign: 'left' },
+            1: { cellWidth: 34, halign: 'right' },
+            2: { cellWidth: 20, halign: 'right', textColor: MUTED },
+          },
         });
       }
 
-      // --- Footer ---
+      // --- Footer on every page (page count is known only after the tables) ---
+      const pageCount = doc.getNumberOfPages();
+      const pageH = doc.internal.pageSize.getHeight();
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(...FAINT);
-      doc.text('Powered by ATTABL', M, 290);
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        doc.text('Powered by ATTABL', M, pageH - 8);
+        doc.text(`${p}/${pageCount}`, RIGHT, pageH - 8, { align: 'right' });
+      }
 
       doc.save(`rapport_${format(new Date(), 'yyyyMMdd')}.pdf`);
       toast({ title: t('pdfDownloaded') });
