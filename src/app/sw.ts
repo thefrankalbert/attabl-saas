@@ -44,7 +44,11 @@ const noCacheAuthenticated: RuntimeCaching[] = [
 ];
 
 // Runtime caches that can hold authenticated documents/RSC - cleared on logout.
-const RUNTIME_DOC_CACHES = ['others', 'pages', 'next-data', 'rsc-prefetch', 'rsc'];
+// Names verified against the BUILT worker (grep cacheName in public/sw.js):
+// serwist's defaultCache stores RSC payloads under 'pages-rsc' and
+// 'pages-rsc-prefetch' (not 'rsc'/'rsc-prefetch'). 'pages' is the legacy
+// next-pwa name, kept for stranded devices.
+const RUNTIME_DOC_CACHES = ['others', 'pages', 'pages-rsc', 'pages-rsc-prefetch', 'next-data'];
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
