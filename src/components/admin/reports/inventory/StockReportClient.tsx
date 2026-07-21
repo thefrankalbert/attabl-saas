@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Printer, Download, FileText } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -38,7 +38,7 @@ export function StockReportClient({
   generatedAt,
 }: StockReportClientProps) {
   const t = useTranslations('reports');
-  const [model, setModel] = useState<StockReportModel>('simple');
+  const [model, setModel] = useState<StockReportModel>('detailed');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
 
   const labels = useMemo(
@@ -83,10 +83,7 @@ export function StockReportClient({
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-4 px-1 print:hidden">
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5" />
-            {t('reportModel')}
-          </Label>
+          <Label className="text-xs text-app-text-secondary">{t('reportModel')}</Label>
           <Select value={model} onValueChange={(v) => setModel(v as StockReportModel)}>
             <SelectTrigger className="w-56">
               <SelectValue />
@@ -137,13 +134,26 @@ export function StockReportClient({
         />
       </div>
 
-      {/* Print isolation: only #report-sheet prints */}
+      {/* Print isolation: only #report-sheet prints, fitted to the A4 page */}
       <style>{`
         @media print {
           body * { visibility: hidden !important; }
           #report-sheet, #report-sheet * { visibility: visible !important; }
-          #report-sheet { position: absolute; left: 0; top: 0; width: 100% !important; }
-          @page { size: A4 ${orientation}; margin: 12mm; }
+          #report-sheet {
+            position: absolute; left: 0; top: 0;
+            width: 100% !important; max-width: none !important;
+          }
+          /* @page margin is the only page margin — drop the on-screen padding */
+          #report-sheet .report-body { padding: 0 !important; }
+          /* Force the table to fit the printable width (wide "detailed" model
+             overflows A4 otherwise and the right columns get clipped) */
+          #report-sheet table { table-layout: fixed; width: 100%; }
+          /* Repeat the table header on every printed page, keep rows whole */
+          #report-sheet thead { display: table-header-group; }
+          #report-sheet tfoot { display: table-footer-group; }
+          #report-sheet tr,
+          #report-sheet img { break-inside: avoid; }
+          @page { size: A4 ${orientation}; margin: 14mm; }
         }
       `}</style>
     </div>

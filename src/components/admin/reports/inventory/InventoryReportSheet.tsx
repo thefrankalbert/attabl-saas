@@ -48,30 +48,34 @@ export function InventoryReportSheet({
   return (
     <div
       id="report-sheet"
-      className="mx-auto bg-white text-black"
-      style={{ width: orientation === 'landscape' ? '297mm' : '210mm', maxWidth: '100%' }}
+      className="mx-auto w-full bg-white text-black"
+      style={{ maxWidth: orientation === 'landscape' ? '297mm' : '210mm' }}
     >
-      <div className="p-10">
+      <div className="report-body p-6 sm:p-10">
         {/* Header: restaurant identity left, document meta right */}
         <div className="flex items-start justify-between gap-6 border-b border-zinc-200 pb-5">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             {tenant.logoUrl && (
               <Image
                 src={tenant.logoUrl}
                 alt=""
                 width={44}
                 height={44}
-                className="h-11 w-11 rounded object-contain"
+                className="h-11 w-11 shrink-0 rounded object-contain"
                 unoptimized
               />
             )}
-            <div>
-              <p className="text-[17px] font-bold tracking-tight text-zinc-900">{tenant.name}</p>
-              {addressLine && <p className="mt-0.5 text-[11px] text-zinc-500">{addressLine}</p>}
+            <div className="min-w-0">
+              <p className="break-words text-[17px] font-bold leading-tight tracking-tight text-zinc-900">
+                {tenant.name}
+              </p>
+              {addressLine && (
+                <p className="mt-0.5 break-words text-[11px] text-zinc-500">{addressLine}</p>
+              )}
               {tenant.phone && <p className="text-[11px] text-zinc-500">{tenant.phone}</p>}
             </div>
           </div>
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
               Rapport de stock
             </p>
@@ -81,7 +85,21 @@ export function InventoryReportSheet({
         </div>
 
         {/* Table */}
-        <Table className="mt-7 text-xs">
+        <Table className="mt-7 w-full table-fixed text-xs">
+          {/* Proportional column widths: the ingredient name gets the most room,
+              other text columns a medium share, numeric columns the least. Takes
+              effect at print (table-layout: fixed); a readable hint on screen. */}
+          <colgroup>
+            {(() => {
+              const weights = table.columns.map((c, i) =>
+                i === 0 ? 2.4 : c.align === 'right' ? 1 : 1.4,
+              );
+              const sum = weights.reduce((a, b) => a + b, 0);
+              return table.columns.map((c, i) => (
+                <col key={c.key} style={{ width: `${((weights[i] / sum) * 100).toFixed(2)}%` }} />
+              ));
+            })()}
+          </colgroup>
           <TableHeader>
             <TableRow className="border-zinc-200 hover:bg-transparent">
               {table.columns.map((c) => (
@@ -100,7 +118,7 @@ export function InventoryReportSheet({
                 {row.map((cell, ci) => (
                   <TableCell
                     key={ci}
-                    className={`py-2 text-zinc-700 tabular-nums ${alignClass(
+                    className={`break-words py-2 align-top text-zinc-700 tabular-nums ${alignClass(
                       table.columns[ci]?.align ?? 'left',
                     )}`}
                   >
