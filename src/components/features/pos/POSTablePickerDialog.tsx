@@ -20,6 +20,8 @@ interface POSTablePickerDialogProps {
   onSelectTable: (tableNumber: string) => void;
   /** table_number of tables that currently hold an OPEN session (occupied). */
   occupiedTableNumbers?: Set<string>;
+  /** Clicking an occupied table routes here (reassign its order) instead of selecting it. */
+  onReassignOccupied?: (table: Table) => void;
 }
 
 export function POSTablePickerDialog({
@@ -32,6 +34,7 @@ export function POSTablePickerDialog({
   selectedTable,
   onSelectTable,
   occupiedTableNumbers,
+  onReassignOccupied,
 }: POSTablePickerDialogProps) {
   const t = useTranslations('pos');
 
@@ -83,16 +86,20 @@ export function POSTablePickerDialog({
                     <div className="grid grid-cols-3 gap-2">
                       {pickerTables.map((table) => {
                         const isSelected = selectedTable === table.table_number;
-                        const isOccupied =
-                          !isSelected &&
+                        const isOccupiedRaw =
                           (occupiedTableNumbers?.has(table.table_number) ||
                             occupiedTableNumbers?.has(table.display_name)) === true;
+                        const isOccupied = !isSelected && isOccupiedRaw;
                         return (
                           <Button
                             key={table.id}
                             type="button"
                             variant={isSelected ? 'default' : 'outline'}
-                            onClick={() => onSelectTable(table.table_number)}
+                            onClick={() =>
+                              isOccupiedRaw && onReassignOccupied
+                                ? onReassignOccupied(table)
+                                : onSelectTable(table.table_number)
+                            }
                             className={cn(
                               'relative flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
                               isSelected

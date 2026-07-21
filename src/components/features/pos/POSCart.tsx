@@ -31,6 +31,7 @@ interface POSCartProps {
   zones: Zone[];
   allTables: Table[];
   occupiedTableNumbers?: Set<string>;
+  onReassignOccupied?: (table: Table) => void;
 
   // Cart actions
   onUpdateQuantity: (itemId: string, delta: number) => void;
@@ -74,6 +75,7 @@ export default function POSCart({
   zones,
   allTables,
   occupiedTableNumbers,
+  onReassignOccupied,
   onUpdateQuantity,
   onClearCart,
   onEditNotes,
@@ -177,6 +179,15 @@ export default function POSCart({
           setShowTablePicker(false);
           setPickerZoneId(null);
         }}
+        onReassignOccupied={
+          onReassignOccupied
+            ? (table) => {
+                setShowTablePicker(false);
+                setPickerZoneId(null);
+                onReassignOccupied(table);
+              }
+            : undefined
+        }
       />
 
       {/* Clear cart confirmation (replaces window.confirm) */}
