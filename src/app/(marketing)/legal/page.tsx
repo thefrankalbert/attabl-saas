@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -12,55 +13,62 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LegalPage() {
   const t = await getTranslations('marketing.legal');
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">{t('heading')}</h1>
+    <section className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-[760px] px-5 pb-24 pt-20 sm:px-7 sm:pt-[88px]">
+        <h1 className="text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] text-zinc-950 dark:text-zinc-50">
+          {t('heading')}
+        </h1>
+        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{t('lastUpdate')}</p>
 
-      <div className="prose prose-neutral max-w-none space-y-6 text-neutral-600 dark:text-neutral-400">
-        <p className="text-sm text-neutral-400 dark:text-neutral-500">{t('lastUpdate')}</p>
-
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section1Title')}
         </h2>
-        <p>{t('section1Body')}</p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section1Body')}
+        </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section2Title')}
         </h2>
-        <p>{t('section2Body')}</p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section2Body')}
+        </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section3Title')}
         </h2>
-        <p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
           {t('section3Body')}{' '}
-          <a
+          <Link
             href="/pricing"
-            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+            className="font-medium text-orange-600 hover:underline dark:text-orange-400"
           >
             {t('section3Link')}
-          </a>
+          </Link>
           {t('section3BodyCont')}
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section4Title')}
         </h2>
-        <p>{t('section4Body')}</p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section4Body')}
+        </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('section5Title')}
         </h2>
-        <p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
           {t('section5Body')}{' '}
           <a
             href="mailto:contact@attabl.com"
-            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+            className="font-medium text-orange-600 hover:underline dark:text-orange-400"
           >
             contact@attabl.com
           </a>
           .
         </p>
       </div>
-    </div>
+    </section>
   );
 }

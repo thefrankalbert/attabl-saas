@@ -1,224 +1,189 @@
 'use client';
 
-import { useTranslations, useLocale } from 'next-intl';
-import {
-  Check,
-  CreditCard,
-  Crown,
-  Zap,
-  Building2,
-  Phone,
-  Users,
-  BarChart3,
-  UtensilsCrossed,
-  Star,
-  Shield,
-} from 'lucide-react';
-import { SinglePricingCard, type Testimonial } from '@/components/ui/single-pricing-card';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
+import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
+import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
+
+type PaidKey = 'starter' | 'pro' | 'business';
+
+const PLANS: {
+  key: PaidKey | 'enterprise';
+  featCount: number;
+  cta: string;
+  href: string;
+  dark: boolean;
+}[] = [
+  { key: 'starter', featCount: 5, cta: 'button', href: '/signup', dark: false },
+  { key: 'pro', featCount: 10, cta: 'button', href: '/signup', dark: true },
+  { key: 'business', featCount: 7, cta: 'primaryButton', href: '/signup', dark: false },
+  { key: 'enterprise', featCount: 6, cta: 'button', href: '/contact', dark: false },
+];
 
 export function PlanCards({ effectivePeriod }: { effectivePeriod: BillingPeriod }) {
   const t = useTranslations('marketing.pricing');
   const locale = useLocale();
-
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat(locale).format(price);
-  };
-
-  const starterPrice =
-    effectivePeriod === 'yearly' ? 31200 : effectivePeriod === 'semiannual' ? 33150 : 39000;
-  const proPrice =
-    effectivePeriod === 'yearly' ? 63200 : effectivePeriod === 'semiannual' ? 67150 : 79000;
-  const businessPrice =
-    effectivePeriod === 'yearly' ? 119200 : effectivePeriod === 'semiannual' ? 126650 : 149000;
-
-  const priceSuffix = t('priceSuffix');
-
-  const testimonials: Testimonial[] = [
-    {
-      id: 1,
-      name: t('testimonials.t1.name'),
-      role: t('testimonials.t1.role'),
-      company: t('testimonials.t1.company'),
-      content: t('testimonials.t1.content'),
-      rating: 5,
-      avatar: '/avatars/ak.png',
-    },
-    {
-      id: 2,
-      name: t('testimonials.t2.name'),
-      role: t('testimonials.t2.role'),
-      company: t('testimonials.t2.company'),
-      content: t('testimonials.t2.content'),
-      rating: 5,
-      avatar: '/avatars/gm.png',
-    },
-    {
-      id: 3,
-      name: t('testimonials.t3.name'),
-      role: t('testimonials.t3.role'),
-      company: t('testimonials.t3.company'),
-      content: t('testimonials.t3.content'),
-      rating: 5,
-      avatar: '/avatars/id.png',
-    },
-    {
-      id: 4,
-      name: t('testimonials.t4.name'),
-      role: t('testimonials.t4.role'),
-      company: t('testimonials.t4.company'),
-      content: t('testimonials.t4.content'),
-      rating: 5,
-      avatar: '/avatars/fs.png',
-    },
-  ];
+  const fmt = (n: number) => new Intl.NumberFormat(locale).format(n);
+  const suffix = t('priceSuffix');
 
   return (
-    <section className="bg-white dark:bg-neutral-950 pb-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* STARTER */}
-        <SinglePricingCard
-          badge={{ icon: Zap, text: t('plans.starter.badge') }}
-          title={t('plans.starter.title')}
-          subtitle={t('plans.starter.subtitle')}
-          price={{
-            current: `${formatPrice(starterPrice)} ${priceSuffix}`,
-            original:
-              effectivePeriod !== 'monthly' ? `${formatPrice(39000)} ${priceSuffix}` : undefined,
-            discount:
-              effectivePeriod === 'yearly'
-                ? t('billing.yearlyDiscount')
-                : effectivePeriod === 'semiannual'
-                  ? t('billing.semiannualDiscount')
-                  : undefined,
-          }}
-          benefits={[
-            { text: t('plans.starter.benefits.b1'), icon: UtensilsCrossed },
-            { text: t('plans.starter.benefits.b2'), icon: CreditCard },
-            { text: t('plans.starter.benefits.b3'), icon: Users },
-            { text: t('plans.starter.benefits.b4'), icon: Phone },
-          ]}
-          features={[
-            { text: t('plans.starter.features.f1') },
-            { text: t('plans.starter.features.f2') },
-            { text: t('plans.starter.features.f3') },
-            { text: t('plans.starter.features.f4') },
-            { text: t('plans.starter.features.f5') },
-          ]}
-          featuresIcon={Check}
-          featuresTitle={t('plans.starter.featuresTitle')}
-          primaryButton={{ text: t('plans.starter.button'), href: '/signup' }}
-          testimonials={[testimonials[0], testimonials[1]]}
-          testimonialRotationSpeed={6000}
-        />
+    <section className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-[1160px] px-5 pt-9 text-center sm:px-7">
+        <div className="grid grid-cols-1 items-stretch gap-4 text-left sm:grid-cols-2 lg:grid-cols-4">
+          {PLANS.map((plan) => {
+            const paid = plan.key !== 'enterprise';
+            const perMonth = paid ? PLAN_AMOUNTS[plan.key as PaidKey][effectivePeriod] : null;
+            const total = paid ? PLAN_TOTALS[plan.key as PaidKey][effectivePeriod] : null;
+            const perDay = perMonth != null ? Math.round(perMonth / 30 / 50) * 50 : null;
+            const feats = Array.from({ length: plan.featCount }, (_, i) => `f${i + 1}`);
 
-        {/* PRO */}
-        <SinglePricingCard
-          badge={{ icon: Crown, text: t('plans.pro.badge') }}
-          title={t('plans.pro.title')}
-          subtitle={t('plans.pro.subtitle')}
-          popular
-          price={{
-            current: `${formatPrice(proPrice)} ${priceSuffix}`,
-            original:
-              effectivePeriod !== 'monthly' ? `${formatPrice(79000)} ${priceSuffix}` : undefined,
-            discount:
-              effectivePeriod === 'yearly'
-                ? t('billing.yearlyDiscount')
-                : effectivePeriod === 'semiannual'
-                  ? t('billing.semiannualDiscount')
-                  : undefined,
-          }}
-          benefits={[
-            { text: t('plans.pro.benefits.b1'), icon: Star },
-            { text: t('plans.pro.benefits.b2'), icon: BarChart3 },
-            { text: t('plans.pro.benefits.b3'), icon: Shield },
-            { text: t('plans.pro.benefits.b4'), icon: Phone },
-          ]}
-          features={[
-            { text: t('plans.pro.features.f1') },
-            { text: t('plans.pro.features.f2') },
-            { text: t('plans.pro.features.f3') },
-            { text: t('plans.pro.features.f4') },
-            { text: t('plans.pro.features.f5') },
-            { text: t('plans.pro.features.f6') },
-            { text: t('plans.pro.features.f7') },
-            { text: t('plans.pro.features.f8') },
-            { text: t('plans.pro.features.f9') },
-            { text: t('plans.pro.features.f10') },
-          ]}
-          featuresIcon={Check}
-          featuresTitle={t('plans.pro.featuresTitle')}
-          primaryButton={{ text: t('plans.pro.button'), href: '/signup' }}
-          testimonials={testimonials}
-          testimonialRotationSpeed={5000}
-        />
+            return (
+              <div
+                key={plan.key}
+                className={cn(
+                  'flex flex-col rounded-2xl border p-6',
+                  plan.dark
+                    ? 'border-zinc-900 bg-zinc-900 shadow-[0_20px_50px_-24px_rgba(9,9,11,0.5)] dark:border-zinc-100 dark:bg-zinc-100'
+                    : 'border-zinc-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(9,9,11,0.04)] dark:border-zinc-800 dark:bg-zinc-950',
+                )}
+              >
+                <span
+                  className={cn(
+                    'self-start rounded-full px-2.5 py-[5px] text-[10px] font-semibold uppercase tracking-[0.04em]',
+                    plan.dark
+                      ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50'
+                      : 'border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300',
+                  )}
+                >
+                  {t(`plans.${plan.key}.badge`)}
+                </span>
+                <div
+                  className={cn(
+                    'mt-4 text-[19px] font-semibold tracking-[-0.015em]',
+                    plan.dark ? 'text-white dark:text-zinc-900' : 'text-zinc-950 dark:text-zinc-50',
+                  )}
+                >
+                  {t(`plans.${plan.key}.title`)}
+                </div>
+                <div
+                  className={cn(
+                    'mt-1.5 min-h-[38px] text-[13px] leading-[1.45]',
+                    plan.dark
+                      ? 'text-zinc-400 dark:text-zinc-500'
+                      : 'text-zinc-500 dark:text-zinc-400',
+                  )}
+                >
+                  {t(`plans.${plan.key}.subtitle`)}
+                </div>
 
-        {/* BUSINESS */}
-        <SinglePricingCard
-          badge={{ icon: Building2, text: t('plans.business.badge') }}
-          title={t('plans.business.title')}
-          subtitle={t('plans.business.subtitle')}
-          price={{
-            current: `${formatPrice(businessPrice)} ${priceSuffix}`,
-            original:
-              effectivePeriod !== 'monthly' ? `${formatPrice(149000)} ${priceSuffix}` : undefined,
-            discount:
-              effectivePeriod === 'yearly'
-                ? t('billing.yearlyDiscount')
-                : effectivePeriod === 'semiannual'
-                  ? t('billing.semiannualDiscount')
-                  : undefined,
-          }}
-          benefits={[
-            { text: t('plans.business.benefits.b1'), icon: Building2 },
-            { text: t('plans.business.benefits.b2'), icon: UtensilsCrossed },
-            { text: t('plans.business.benefits.b3'), icon: BarChart3 },
-            { text: t('plans.business.benefits.b4'), icon: Phone },
-          ]}
-          features={[
-            { text: t('plans.business.features.f1') },
-            { text: t('plans.business.features.f2') },
-            { text: t('plans.business.features.f3') },
-            { text: t('plans.business.features.f4') },
-            { text: t('plans.business.features.f5') },
-            { text: t('plans.business.features.f6') },
-            { text: t('plans.business.features.f7') },
-          ]}
-          featuresIcon={Check}
-          featuresTitle={t('plans.business.featuresTitle')}
-          primaryButton={{ text: t('plans.business.primaryButton'), href: '/signup' }}
-          secondaryButton={{ text: t('plans.business.secondaryButton'), href: '/contact' }}
-          testimonials={[testimonials[2], testimonials[3]]}
-          testimonialRotationSpeed={6000}
-        />
+                {/* Price */}
+                {perMonth != null ? (
+                  <>
+                    <div className="mt-5 flex items-baseline gap-1.5">
+                      <span
+                        className={cn(
+                          'text-[32px] font-semibold tracking-[-0.025em]',
+                          plan.dark
+                            ? 'text-white dark:text-zinc-900'
+                            : 'text-zinc-950 dark:text-zinc-50',
+                        )}
+                      >
+                        {fmt(perMonth)}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-sm font-medium',
+                          plan.dark
+                            ? 'text-zinc-400 dark:text-zinc-500'
+                            : 'text-zinc-500 dark:text-zinc-400',
+                        )}
+                      >
+                        {suffix}
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-1 text-xs',
+                        plan.dark
+                          ? 'text-zinc-400 dark:text-zinc-500'
+                          : 'text-zinc-500 dark:text-zinc-400',
+                      )}
+                    >
+                      {effectivePeriod === 'monthly'
+                        ? t('billedMonthly')
+                        : t('billedTotal', { total: fmt(total as number) })}
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-0.5 text-xs',
+                        plan.dark
+                          ? 'text-zinc-400 dark:text-zinc-500'
+                          : 'text-zinc-500 dark:text-zinc-400',
+                      )}
+                    >
+                      {t('perDay', { amount: fmt(perDay as number) })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-5">
+                    <span
+                      className={cn(
+                        'text-[30px] font-semibold tracking-[-0.025em]',
+                        plan.dark
+                          ? 'text-white dark:text-zinc-900'
+                          : 'text-zinc-950 dark:text-zinc-50',
+                      )}
+                    >
+                      {t('customPrice')}
+                    </span>
+                  </div>
+                )}
 
-        {/* ENTERPRISE */}
-        <SinglePricingCard
-          badge={{ icon: Crown, text: t('plans.enterprise.badge') }}
-          title={t('plans.enterprise.title')}
-          subtitle={t('plans.enterprise.subtitle')}
-          price={{ current: t('customPrice') }}
-          benefits={[
-            { text: t('plans.enterprise.benefits.b1'), icon: Building2 },
-            { text: t('plans.enterprise.benefits.b2'), icon: Shield },
-            { text: t('plans.enterprise.benefits.b3'), icon: Users },
-            { text: t('plans.enterprise.benefits.b4'), icon: Phone },
-          ]}
-          features={[
-            { text: t('plans.enterprise.features.f1') },
-            { text: t('plans.enterprise.features.f2') },
-            { text: t('plans.enterprise.features.f3') },
-            { text: t('plans.enterprise.features.f4') },
-            { text: t('plans.enterprise.features.f5') },
-            { text: t('plans.enterprise.features.f6') },
-          ]}
-          featuresIcon={Check}
-          featuresTitle={t('plans.enterprise.featuresTitle')}
-          primaryButton={{ text: t('plans.enterprise.button'), href: '/contact' }}
-          testimonials={[testimonials[2]]}
-          testimonialRotationSpeed={8000}
-        />
+                {/* CTA */}
+                <Link
+                  href={plan.href}
+                  className={cn(
+                    'mt-[22px] rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors',
+                    plan.dark
+                      ? 'bg-white text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:bg-zinc-800'
+                      : 'border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900',
+                  )}
+                >
+                  {t(`plans.${plan.key}.${plan.cta}`)}
+                </Link>
+
+                {/* Features */}
+                <div className="mt-[22px] flex flex-col gap-2.5">
+                  {feats.map((f) => (
+                    <div
+                      key={f}
+                      className={cn(
+                        'flex gap-2 text-[13px] leading-[1.4]',
+                        plan.dark
+                          ? 'text-zinc-200 dark:text-zinc-700'
+                          : 'text-zinc-700 dark:text-zinc-300',
+                      )}
+                    >
+                      <Check
+                        className={cn(
+                          'mt-0.5 h-[15px] w-[15px] flex-none',
+                          plan.dark
+                            ? 'text-green-400 dark:text-green-600'
+                            : 'text-green-600 dark:text-green-500',
+                        )}
+                        strokeWidth={2}
+                      />
+                      <span>{t(`plans.${plan.key}.features.${f}`)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-[22px] text-[13px] text-zinc-400 dark:text-zinc-500">{t('priceNote')}</p>
       </div>
     </section>
   );

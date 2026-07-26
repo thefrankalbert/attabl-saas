@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Button } from '@/components/ui/button';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.about');
@@ -14,31 +13,45 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AboutPage() {
   const t = await getTranslations('marketing.about');
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">{t('heading')}</h1>
+    <section className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-[760px] px-5 pb-24 pt-20 sm:px-7 sm:pt-[88px]">
+        <h1 className="text-[40px] font-semibold leading-[1.05] tracking-[-0.035em] text-zinc-950 dark:text-zinc-50">
+          {t('heading')}
+        </h1>
 
-      <div className="prose prose-neutral max-w-none space-y-6 text-neutral-600 dark:text-neutral-400">
-        <p className="text-lg">{t('intro')}</p>
+        <p className="mt-5 text-[19px] leading-[1.5] text-zinc-600 dark:text-zinc-400">
+          {t('intro')}
+        </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-12 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('visionTitle')}
         </h2>
-        <p>{t('visionBody')}</p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('visionBody')}
+        </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
           {t('techTitle')}
         </h2>
-        <p>{t('techBody')}</p>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('techBody')}
+        </p>
 
-        <div className="mt-12 flex gap-4">
-          <Button asChild>
-            <Link href="/contact">{t('contactButton')}</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/pricing">{t('pricingButton')}</Link>
-          </Button>
+        <div className="mt-12 flex flex-wrap gap-3">
+          <Link
+            href="/contact"
+            className="inline-flex items-center rounded-[10px] bg-zinc-950 px-[26px] py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            {t('contactButton')}
+          </Link>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center rounded-[10px] border border-zinc-200 bg-white px-[22px] py-3.5 text-[15px] font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+          >
+            {t('pricingButton')}
+          </Link>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

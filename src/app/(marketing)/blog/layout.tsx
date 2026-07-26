@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Blog - Conseils & Ressources pour la Restauration',
-  description:
-    'Guides pratiques, conseils et ressources pour digitaliser votre restaurant ou hôtel en Afrique.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.blog');
+  return { title: t('metaTitle'), description: t('metaDescription') };
+}
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
   return children;

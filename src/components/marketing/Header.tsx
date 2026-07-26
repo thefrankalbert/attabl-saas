@@ -1,288 +1,283 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useEffect, useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { AttablLogo } from './AttablLogo';
+import { LocaleToggle } from './LocaleToggle';
+
+const NAV_LINK =
+  'inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50';
+const PANEL_BASE =
+  'invisible absolute left-0 right-0 top-full z-50 -translate-y-2.5 border-b border-zinc-200 bg-white/95 opacity-0 shadow-[0_26px_44px_-30px_rgba(9,9,11,0.22)] backdrop-blur-md transition-[opacity,transform,visibility] duration-200 dark:border-zinc-800 dark:bg-zinc-950/95';
+const PANEL_OPEN = 'visible translate-y-0 opacity-100';
+const MEGA_BIG =
+  'text-3xl font-semibold tracking-[-0.025em] text-zinc-950 transition-colors group-hover/panel:text-zinc-400 hover:!text-zinc-950 dark:text-zinc-50 dark:group-hover/panel:text-zinc-500 dark:hover:!text-zinc-50';
+const CTA_PRIMARY =
+  'inline-flex items-center rounded-lg bg-zinc-900 px-[15px] py-2 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200';
 
 export default function Header() {
   const t = useTranslations('marketing.header');
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<'solutions' | 'features' | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const solId = useId();
+  const featId = useId();
+  const newsId = useId();
+  const searchId = useId();
 
+  // Close open menu on Escape or outside click.
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(null);
     };
-  }, [mobileOpen]);
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-nav-root]')) setOpen(null);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [open]);
 
-  const segments = [
-    {
-      label: t('segments.restaurants.label'),
-      href: '/restaurants',
-      description: t('segments.restaurants.description'),
-    },
-    {
-      label: t('segments.hotels.label'),
-      href: '/hotels',
-      description: t('segments.hotels.description'),
-    },
-    {
-      label: t('segments.quickService.label'),
-      href: '/quick-service',
-      description: t('segments.quickService.description'),
-    },
-    {
-      label: t('segments.barsCafes.label'),
-      href: '/bars-cafes',
-      description: t('segments.barsCafes.description'),
-    },
-    {
-      label: t('segments.fastFood.label'),
-      href: '/fast-food',
-      description: t('segments.fastFood.description'),
-    },
+  const solutions = [
+    { label: t('segments.restaurants.label'), href: '/solutions#ind-restaurant' },
+    { label: t('segments.hotels.label'), href: '/solutions#ind-hotel' },
+    { label: t('segments.quickService.label'), href: '/solutions#ind-qsr' },
+    { label: t('segments.barsCafes.label'), href: '/solutions#ind-bar' },
+  ];
+  const fcat = [
+    { k: 'menu', href: '/features#fcat-menu' },
+    { k: 'checkout', href: '/features#fcat-caisse' },
+    { k: 'kitchen', href: '/features#fcat-cuisine' },
+    { k: 'stock', href: '/features#fcat-stock' },
+    { k: 'reports', href: '/features#fcat-rapports' },
+    { k: 'team', href: '/features#fcat-equipe' },
   ];
 
-  const features = [
-    {
-      label: t('featuresList.menu.label'),
-      href: '/features#menu',
-      description: t('featuresList.menu.description'),
-    },
-    {
-      label: t('featuresList.orders.label'),
-      href: '/features#orders',
-      description: t('featuresList.orders.description'),
-    },
-    {
-      label: t('featuresList.stock.label'),
-      href: '/features#stock',
-      description: t('featuresList.stock.description'),
-    },
-    {
-      label: t('featuresList.analytics.label'),
-      href: '/features#analytics',
-      description: t('featuresList.analytics.description'),
-    },
-    {
-      label: t('featuresList.currencies.label'),
-      href: '/features#currencies',
-      description: t('featuresList.currencies.description'),
-    },
-  ];
+  const trigger = (key: string, id: string, label: string) => (
+    <Button
+      type="button"
+      variant="ghost"
+      aria-haspopup="true"
+      aria-expanded={open === key}
+      aria-controls={id}
+      onClick={() => setOpen(open === key ? null : key)}
+      className={cn(NAV_LINK, 'h-auto bg-transparent hover:bg-transparent')}
+    >
+      {label}
+      <ChevronDown
+        className={cn(
+          'h-[11px] w-[11px] transition-transform duration-200',
+          open === key && 'rotate-180',
+        )}
+      />
+    </Button>
+  );
 
   return (
-    <>
-      {/* Header */}
-      <header className="fixed left-0 right-0 top-0 z-50 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex w-full items-center px-4 py-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Attabl
+    <header
+      data-nav-root
+      className="sticky top-0 z-50 flex h-[58px] items-center justify-center border-b border-zinc-200 bg-white/85 backdrop-blur-lg backdrop-saturate-[180%] dark:border-zinc-800 dark:bg-zinc-950/85"
+    >
+      {/* Frosted overlay dimming the page behind an open mega-menu */}
+      {open && (
+        <div
+          aria-hidden
+          className="fixed inset-x-0 bottom-0 top-[58px] z-40 bg-white/55 backdrop-blur-[7px] dark:bg-zinc-950/55"
+        />
+      )}
+      <div className="flex w-full max-w-[1200px] items-center justify-between px-5 sm:px-7">
+        <Link href="/" className="shrink-0">
+          <AttablLogo size="nav" />
+        </Link>
+
+        {/* Center nav (desktop) */}
+        <nav className="hidden items-center gap-0.5 lg:flex">
+          {/* Solutions */}
+          <div
+            className="static"
+            onMouseEnter={() => setOpen('sol')}
+            onMouseLeave={() => setOpen(null)}
+          >
+            {trigger('sol', solId, t('solutions'))}
+            <div id={solId} role="menu" className={cn(PANEL_BASE, open === 'sol' && PANEL_OPEN)}>
+              <div className="group/panel mx-auto flex max-w-[1144px] flex-col gap-0.5 px-7 py-11">
+                {solutions.map((s) => (
+                  <Link key={s.href} role="menuitem" href={s.href} className={MEGA_BIG}>
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Fonctionnalites */}
+          <div
+            className="static"
+            onMouseEnter={() => setOpen('feat')}
+            onMouseLeave={() => setOpen(null)}
+          >
+            {trigger('feat', featId, t('features'))}
+            <div id={featId} role="menu" className={cn(PANEL_BASE, open === 'feat' && PANEL_OPEN)}>
+              <div className="group/panel mx-auto grid max-w-[1144px] grid-cols-1 gap-x-12 gap-y-1 px-7 py-11 sm:grid-cols-2">
+                {fcat.map((f) => (
+                  <Link key={f.k} role="menuitem" href={f.href} className={MEGA_BIG}>
+                    {t(`fcat.${f.k}`)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <Link href="/pricing" className={NAV_LINK}>
+            {t('pricing')}
           </Link>
 
-          {/* Navigation */}
-          <nav className="ml-8 hidden items-center gap-6 lg:ml-16 md:flex lg:gap-10">
-            <Button
-              type="button"
-              variant="ghost"
-              onMouseEnter={() => setActiveMegaMenu('solutions')}
-              onClick={() =>
-                setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
-              }
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
-            >
-              {t('solutions')}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onMouseEnter={() => setActiveMegaMenu('features')}
-              onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
-            >
-              {t('features')}
-            </Button>
-            <Link
-              href="/pricing"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              {t('pricing')}
-            </Link>
-            <Link
-              href="/nouveautes"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              {t('news')}
-            </Link>
-            <Link
-              href="/blog"
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              {t('blog')}
-            </Link>
-          </nav>
+          {/* Nouveautes */}
+          <div
+            className="static"
+            onMouseEnter={() => setOpen('news')}
+            onMouseLeave={() => setOpen(null)}
+          >
+            {trigger('news', newsId, t('news'))}
+            <div id={newsId} role="menu" className={cn(PANEL_BASE, open === 'news' && PANEL_OPEN)}>
+              <div className="mx-auto flex max-w-[1144px] flex-col gap-1 px-7 py-11">
+                <Link
+                  role="menuitem"
+                  href="/nouveautes"
+                  className="text-sm font-medium text-zinc-700 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+                >
+                  {t('newsMenu.releases')}
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/nouveautes"
+                  className="text-sm font-medium text-zinc-700 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+                >
+                  {t('newsMenu.changelog')}
+                </Link>
+              </div>
+            </div>
+          </div>
 
-          {/* Actions */}
-          <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
-            <Link
-              href="/login"
-              className="hidden text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors md:block"
-            >
-              {t('login')}
-            </Link>
-            <Button asChild className="hidden md:flex">
-              <Link href="/signup">{t('getStarted')}</Link>
-            </Button>
+          <Link href="/blog" className={NAV_LINK}>
+            {t('blog')}
+          </Link>
+        </nav>
 
-            {/* Mobile hamburger */}
+        {/* Right actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/support" className={cn(NAV_LINK, 'hidden lg:inline-flex')}>
+            {t('support')}
+          </Link>
+          <Link href="/login" className={cn(NAV_LINK, 'hidden lg:inline-flex')}>
+            {t('login')}
+          </Link>
+
+          {/* Search */}
+          <div className="static hidden lg:block" onMouseLeave={() => setOpen(null)}>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
-              onClick={() => setMobileOpen((prev) => !prev)}
-              className="min-h-[44px] min-w-[44px] rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 md:hidden"
+              aria-haspopup="true"
+              aria-expanded={open === 'search'}
+              aria-controls={searchId}
+              aria-label={t('searchLabel')}
+              onClick={() => setOpen(open === 'search' ? null : 'search')}
+              className="h-[34px] w-[34px] rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
             >
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Search className="h-[17px] w-[17px]" />
             </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mega Menu */}
-      {activeMegaMenu && (
-        <div
-          onMouseLeave={() => setActiveMegaMenu(null)}
-          className="fixed left-0 right-0 top-0 z-40 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 pt-[65px]"
-        >
-          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-            {activeMegaMenu === 'solutions' && (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {segments.map((seg) => (
-                  <Link
-                    key={seg.href}
-                    href={seg.href}
-                    onClick={() => setActiveMegaMenu(null)}
-                    className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
-                      {seg.label}
-                    </span>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                      {seg.description}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {activeMegaMenu === 'features' && (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {features.map((feat) => (
-                  <Link
-                    key={feat.href}
-                    href={feat.href}
-                    onClick={() => setActiveMegaMenu(null)}
-                    className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
-                      {feat.label}
-                    </span>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                      {feat.description}
-                    </p>
-                  </Link>
-                ))}
-                <Link
-                  href="/features"
-                  onClick={() => setActiveMegaMenu(null)}
-                  className="rounded-lg p-4 text-sm font-semibold text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  {t('allFeatures')} &rarr;
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-white dark:bg-neutral-950 lg:hidden">
-          <div className="flex h-full flex-col overflow-y-auto px-4 py-20 pb-[env(safe-area-inset-bottom,20px)] sm:px-6">
-            <div className="space-y-1">
-              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                {t('solutions')}
-              </p>
-              {segments.map((seg) => (
-                <Link
-                  key={seg.href}
-                  href={seg.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                >
-                  {seg.label}
-                </Link>
-              ))}
+            <div id={searchId} className={cn(PANEL_BASE, open === 'search' && PANEL_OPEN)}>
+              <form action="/recherche" className="mx-auto max-w-[1144px] px-7 py-11">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-0 top-2.5 h-[30px] w-[30px] text-zinc-400" />
+                  <Input
+                    type="search"
+                    name="q"
+                    placeholder={t('searchPlaceholder')}
+                    aria-label={t('searchLabel')}
+                    className="h-auto rounded-none border-0 border-b-2 border-zinc-200 bg-transparent px-0 pb-4 pl-[46px] pt-1.5 text-[30px] font-medium tracking-[-0.02em] text-zinc-950 shadow-none focus-visible:border-zinc-900 focus-visible:ring-0 dark:border-zinc-700 dark:text-zinc-50 dark:focus-visible:border-zinc-300"
+                  />
+                </div>
+              </form>
             </div>
-            <div className="mt-6 space-y-1">
-              <Link
-                href="/features"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+          </div>
+
+          <Link href="/signup" className={cn(CTA_PRIMARY, 'hidden lg:inline-flex')}>
+            {t('getStarted')}
+          </Link>
+          <LocaleToggle />
+
+          {/* Mobile menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('openMenu')}
+                className="h-[38px] w-[38px] rounded-lg border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 lg:hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
               >
-                {t('features')}
-              </Link>
-              <Link
-                href="/pricing"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                {t('pricing')}
-              </Link>
-              <Link
-                href="/nouveautes"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                {t('news')}
-              </Link>
-              <Link
-                href="/blog"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                {t('blog')}
-              </Link>
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                {t('login')}
-              </Link>
-            </div>
-            <div className="mt-auto pt-6 space-y-4">
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                  {t('appearance')}
-                </span>
-                <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors" />
-              </div>
-              <Button asChild className="w-full">
-                <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                  {t('getStartedFree')}
-                </Link>
+                <Menu className="h-[18px] w-[18px]" />
               </Button>
-            </div>
-          </div>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="w-full max-w-sm border-zinc-200 bg-white p-0 dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <SheetHeader className="border-b border-zinc-200 px-5 py-4 text-left dark:border-zinc-800">
+                <SheetTitle>
+                  <AttablLogo size="nav" />
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-0.5 px-4 py-4">
+                {[
+                  { label: t('solutions'), href: '/solutions' },
+                  { label: t('features'), href: '/features' },
+                  { label: t('pricing'), href: '/pricing' },
+                  { label: t('news'), href: '/nouveautes' },
+                  { label: t('blog'), href: '/blog' },
+                  { label: t('support'), href: '/support' },
+                  { label: t('login'), href: '/login' },
+                ].map((l) => (
+                  <SheetClose asChild key={`${l.label}-${l.href}`}>
+                    <Link
+                      href={l.href}
+                      className="border-b border-zinc-100 px-2 py-3 text-[15px] font-medium text-zinc-900 dark:border-zinc-900 dark:text-zinc-100"
+                    >
+                      {l.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+                <SheetClose asChild>
+                  <Link
+                    href="/signup"
+                    className="mt-3 justify-center rounded-lg bg-zinc-900 px-4 py-3 text-center text-[15px] font-semibold text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
+                  >
+                    {t('getStartedFree')}
+                  </Link>
+                </SheetClose>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
-      )}
-    </>
+      </div>
+    </header>
   );
 }
