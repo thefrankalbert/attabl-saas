@@ -266,7 +266,7 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
               seeAllHref={`/sites/${site}/menu`}
               seeAllLabel={t('seeAll')}
             />
-            <div className="grid grid-cols-4 gap-2.5 px-4">
+            <div className="grid grid-cols-3 gap-2.5 px-4 min-[380px]:grid-cols-4">
               {clientCategories.map((cat) => (
                 <CategoryTile
                   key={cat.id}
