@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { BarChart3 } from 'lucide-react';
 import { ReportsSkeleton } from '@/components/admin/reports/ReportsSkeleton';
@@ -13,11 +14,27 @@ import type { CurrencyCode } from '@/types/admin.types';
 import type { Period } from '@/components/admin/reports/reports.types';
 import { useReportExports } from '@/components/admin/reports/useReportExports';
 import { ReportsSummaryHeader } from '@/components/admin/reports/ReportsSummaryHeader';
-import { RevenueChartCard } from '@/components/admin/reports/RevenueChartCard';
 import { TopProductsCard } from '@/components/admin/reports/TopProductsCard';
 import { ProductRankingTable } from '@/components/admin/reports/ProductRankingTable';
-import { CategoryBreakdownCard } from '@/components/admin/reports/CategoryBreakdownCard';
-import { ServerPerformanceCard } from '@/components/admin/reports/ServerPerformanceCard';
+
+// recharts-backed cards - lazy-load so recharts stays out of the reports route bundle.
+const CHART_CARD_FALLBACK = (
+  <div className="h-[320px] w-full animate-pulse rounded-xl border border-[var(--border)] bg-[var(--card)]" />
+);
+const RevenueChartCard = dynamic(
+  () => import('@/components/admin/reports/RevenueChartCard').then((m) => m.RevenueChartCard),
+  { ssr: false, loading: () => CHART_CARD_FALLBACK },
+);
+const CategoryBreakdownCard = dynamic(
+  () =>
+    import('@/components/admin/reports/CategoryBreakdownCard').then((m) => m.CategoryBreakdownCard),
+  { ssr: false, loading: () => CHART_CARD_FALLBACK },
+);
+const ServerPerformanceCard = dynamic(
+  () =>
+    import('@/components/admin/reports/ServerPerformanceCard').then((m) => m.ServerPerformanceCard),
+  { ssr: false, loading: () => CHART_CARD_FALLBACK },
+);
 
 // --- Types ----------------------------------------------
 
