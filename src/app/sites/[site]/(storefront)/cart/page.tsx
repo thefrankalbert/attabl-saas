@@ -382,7 +382,7 @@ export default function CartPage() {
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A]"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-6 h-6" />
@@ -390,18 +390,18 @@ export default function CartPage() {
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
-          <div className="w-32 h-32 bg-[#F6F6F6] rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-16 h-16 text-[#B0B0B0]" strokeWidth={1.5} />
+          <div className="w-32 h-32 bg-[var(--color-surface-alt)] rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-16 h-16 text-[var(--color-ink-soft)]" strokeWidth={1.5} />
           </div>
-          <h2 className="text-[20px] font-bold text-[#1A1A1A] mb-2 text-center">
+          <h2 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
             {t('emptyCart')}
           </h2>
-          <p className="text-[13px] text-[#737373] text-center mb-8 max-w-[280px]">
+          <p className="text-[13px] text-[var(--color-ink-muted)] text-center mb-8 max-w-[280px]">
             {t('emptyCartDesc')}
           </p>
           <Button
             asChild
-            className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+            className="h-[52px] px-8 rounded-xl bg-[var(--color-ink)] text-white text-[15px] font-semibold hover:bg-black"
           >
             <Link href={menuPath}>
               <ArrowLeft className="w-4 h-4" />
@@ -425,23 +425,23 @@ export default function CartPage() {
       }}
     >
       {/* Cart header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-[#EEEEEE]">
+      <div className="sticky top-0 z-40 bg-white border-b border-[var(--color-divider)]">
         <div className="max-w-lg mx-auto px-[14px] py-3 flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[#1A1A1A]"
+            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)]"
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[16px] font-semibold leading-[1.15] tracking-[-0.4px] text-[#1A1A1A]">
+            <h1 className="truncate text-[16px] font-semibold leading-[1.15] tracking-[-0.4px] text-[var(--color-ink)]">
               {t('cartTitle')}
             </h1>
             {(tenant?.name || tableNum) && (
-              <div className="mt-px flex items-center gap-1 text-[11.5px] text-[#737373]">
+              <div className="mt-px flex items-center gap-1 text-[11.5px] text-[var(--color-ink-muted)]">
                 <MapPin className="h-[11px] w-[11px] shrink-0" strokeWidth={2} />
                 <span className="truncate">
                   {[tenant?.name, tableNum ? t('tableLabel', { num: tableNum }) : null]
@@ -457,13 +457,15 @@ export default function CartPage() {
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-xl">
+          <div className="p-4 bg-[#FEF2F2] border border-[var(--color-divider)] rounded-xl">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#FF3008] shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-[var(--color-promo)] shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-semibold text-[#FF3008] text-[13px]">{error}</p>}
+                {error && (
+                  <p className="font-semibold text-[var(--color-promo)] text-[13px]">{error}</p>
+                )}
                 {validationErrors.length > 0 && (
-                  <ul className="mt-1 text-[13px] text-[#FF3008] list-disc list-inside">
+                  <ul className="mt-1 text-[13px] text-[var(--color-promo)] list-disc list-inside">
                     {validationErrors.map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
@@ -496,17 +498,20 @@ export default function CartPage() {
               variant="ghost"
               onClick={() => setNotesOpen(true)}
               aria-expanded={false}
-              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[var(--color-ink)] py-3 hover:text-black"
             >
               <ChefHat className="w-4 h-4" />
               <span>{t('cartNotesLabel')}</span>
-              <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+              <ChevronRight className="w-4 h-4 ml-auto text-[var(--color-ink-soft)]" />
             </Button>
           </section>
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label
+                htmlFor="cart-notes"
+                className="text-[13px] font-semibold text-[var(--color-ink)]"
+              >
                 {t('cartNotesLabel')}
               </Label>
               <Button
@@ -519,7 +524,7 @@ export default function CartPage() {
                   // closed programmatically before a blur fires.
                   setNoteFocused(false);
                 }}
-                className="text-[#737373] hover:text-[#1A1A1A] h-11 w-11"
+                className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] h-11 w-11"
                 aria-label={t('ariaClose')}
               >
                 <X className="w-4 h-4" />
@@ -535,10 +540,10 @@ export default function CartPage() {
                 placeholder={t('cartNotesPlaceholder')}
                 maxLength={NOTES_MAX_LENGTH}
                 autoFocus
-                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus-visible:ring-0 focus-visible:border-[#D4D4D4] resize-none transition-colors"
+                className="w-full min-h-[80px] bg-[var(--color-surface-alt)] border border-[var(--color-divider)] rounded-xl px-3 py-3 text-[16px] md:text-[14px] font-normal text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus:outline-none focus-visible:ring-0 focus-visible:border-[#D4D4D4] resize-none transition-colors"
               />
               <div className="mt-1 flex justify-end">
-                <span className="text-[11px] text-[#B0B0B0]">
+                <span className="text-[11px] text-[var(--color-ink-soft)]">
                   {notesLength}/{NOTES_MAX_LENGTH}
                 </span>
               </div>
@@ -647,7 +652,7 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[54px] justify-between rounded-full bg-[#1A1A1A] px-5 text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] disabled:opacity-100 disabled:bg-[#1A1A1A]"
+            className="w-full h-[54px] justify-between rounded-full bg-[var(--color-ink)] px-5 text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] disabled:opacity-100 disabled:bg-[var(--color-ink)]"
           >
             {isSubmitting ? (
               <Loader2 className="mx-auto w-6 h-6 animate-spin" />
