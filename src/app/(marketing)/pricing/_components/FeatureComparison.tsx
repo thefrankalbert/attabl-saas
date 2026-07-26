@@ -11,6 +11,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { featureCategories, type ComparisonValue } from '../pricing-data';
 
 function FeatureCell({
@@ -20,24 +21,20 @@ function FeatureCell({
 }: {
   value: ComparisonValue;
   unlimitedLabel: string;
-  supportLabels: {
-    whatsappPro: string;
-    whatsappBusiness: string;
-    whatsappEnterprise: string;
-  };
+  supportLabels: { whatsappPro: string; whatsappBusiness: string; whatsappEnterprise: string };
 }) {
-  if (value === true) return <Check className="w-4 h-4 text-green-600 mx-auto" />;
+  if (value === true)
+    return <Check className="mx-auto h-4 w-4 text-green-600 dark:text-green-500" strokeWidth={2} />;
   if (value === false)
-    return <Minus className="w-4 h-4 text-neutral-300 dark:text-neutral-600 mx-auto" />;
+    return <Minus className="mx-auto h-4 w-4 text-zinc-300 dark:text-zinc-600" />;
   if ('kind' in value) {
     if (value.kind === 'unlimited') {
       return (
-        <span className="text-xs font-medium text-neutral-900 dark:text-white">
+        <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
           {unlimitedLabel}
         </span>
       );
     }
-    // text kind: may be a direct value or a support label key
     const v = value.value;
     const resolved =
       v === 'whatsappPro'
@@ -47,15 +44,16 @@ function FeatureCell({
           : v === 'whatsappEnterprise'
             ? supportLabels.whatsappEnterprise
             : v;
-    return <span className="text-xs font-medium text-neutral-900 dark:text-white">{resolved}</span>;
+    return <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{resolved}</span>;
   }
   return null;
 }
 
+const PLAN_NAMES = ['Starter', 'Pro', 'Business', 'Enterprise'];
+const PRO_HL = 'bg-zinc-100 dark:bg-zinc-800/60';
+
 export function FeatureComparison() {
   const t = useTranslations('marketing.pricing');
-
-  const planNames = ['STARTER', 'PRO', 'BUSINESS', 'ENTERPRISE'];
 
   const supportLabels = {
     whatsappPro: t('comparison.categories.support.features.whatsappPro'),
@@ -63,25 +61,37 @@ export function FeatureComparison() {
     whatsappEnterprise: t('comparison.categories.support.features.whatsappEnterprise'),
   };
   const unlimitedLabel = t('comparison.unlimited');
+  const values = (f: (typeof featureCategories)[number]['features'][number]) => [
+    f.starter,
+    f.pro,
+    f.business,
+    f.enterprise,
+  ];
 
   return (
-    <section className="bg-neutral-50 dark:bg-neutral-900 py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <h2 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white text-center mb-12">
-          {t('comparison.title')}
+    <section className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-[1080px] px-5 pt-[96px] sm:px-7">
+        <h2 className="text-center text-[32px] font-semibold tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
+          {t('compareTitle')}
         </h2>
+        <p className="mx-auto mb-10 mt-2 max-w-[440px] text-center text-base text-zinc-500 dark:text-zinc-400">
+          {t('compareSubtitle')}
+        </p>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <Table>
             <TableHeader>
-              <TableRow className="border-b-2 border-neutral-200 dark:border-neutral-700">
-                <TableHead className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
+              <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/40">
+                <TableHead className="w-[40%] px-5 py-4 text-left text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
                   {t('comparison.featureColumn')}
                 </TableHead>
-                {planNames.map((name) => (
+                {PLAN_NAMES.map((name) => (
                   <TableHead
                     key={name}
-                    className="text-center py-4 px-2 text-sm font-bold text-neutral-900 dark:text-white w-[15%]"
+                    className={cn(
+                      'w-[15%] px-2 py-4 text-center text-[13px] font-semibold text-zinc-900 dark:text-zinc-100',
+                      name === 'Pro' && PRO_HL,
+                    )}
                   >
                     {name}
                   </TableHead>
@@ -91,10 +101,10 @@ export function FeatureComparison() {
             <TableBody>
               {featureCategories.map((cat) => (
                 <Fragment key={cat.key}>
-                  <TableRow>
+                  <TableRow className="border-0 hover:bg-transparent">
                     <TableCell
                       colSpan={5}
-                      className="pt-8 pb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
+                      className="px-5 pb-3 pt-8 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400 dark:text-zinc-500"
                     >
                       {t(`comparison.categories.${cat.key}.title`)}
                     </TableCell>
@@ -102,39 +112,23 @@ export function FeatureComparison() {
                   {cat.features.map((f) => (
                     <TableRow
                       key={f.labelKey}
-                      className="border-b border-neutral-100 dark:border-neutral-800"
+                      className="border-b border-zinc-100 hover:bg-transparent dark:border-zinc-800/60"
                     >
-                      <TableCell className="py-3 pr-4 text-sm text-neutral-700 dark:text-neutral-300">
+                      <TableCell className="px-5 py-3 text-sm text-zinc-700 dark:text-zinc-300">
                         {t(`comparison.categories.${cat.key}.features.${f.labelKey}`)}
                       </TableCell>
-                      <TableCell className="py-3 px-2 text-center">
-                        <FeatureCell
-                          value={f.starter}
-                          unlimitedLabel={unlimitedLabel}
-                          supportLabels={supportLabels}
-                        />
-                      </TableCell>
-                      <TableCell className="py-3 px-2 text-center">
-                        <FeatureCell
-                          value={f.pro}
-                          unlimitedLabel={unlimitedLabel}
-                          supportLabels={supportLabels}
-                        />
-                      </TableCell>
-                      <TableCell className="py-3 px-2 text-center">
-                        <FeatureCell
-                          value={f.business}
-                          unlimitedLabel={unlimitedLabel}
-                          supportLabels={supportLabels}
-                        />
-                      </TableCell>
-                      <TableCell className="py-3 px-2 text-center">
-                        <FeatureCell
-                          value={f.enterprise}
-                          unlimitedLabel={unlimitedLabel}
-                          supportLabels={supportLabels}
-                        />
-                      </TableCell>
+                      {values(f).map((v, i) => (
+                        <TableCell
+                          key={i}
+                          className={cn('px-2 py-3 text-center', i === 1 && PRO_HL)}
+                        >
+                          <FeatureCell
+                            value={v}
+                            unlimitedLabel={unlimitedLabel}
+                            supportLabels={supportLabels}
+                          />
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </Fragment>

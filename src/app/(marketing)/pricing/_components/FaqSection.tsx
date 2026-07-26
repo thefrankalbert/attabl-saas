@@ -1,63 +1,39 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { FAQ_KEYS } from '../pricing-data';
-
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="border-b border-neutral-200 dark:border-neutral-800">
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left h-auto px-0 hover:bg-transparent"
-      >
-        <span className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
-          {question}
-        </span>
-        <ChevronDown
-          className={cn(
-            'w-5 h-5 text-neutral-400 shrink-0 transition-transform',
-            open && 'rotate-180',
-          )}
-        />
-      </Button>
-      <div
-        className={cn(
-          'overflow-hidden transition-all duration-200',
-          open ? 'max-h-40 pb-5' : 'max-h-0',
-        )}
-      >
-        <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">{answer}</p>
-      </div>
-    </div>
-  );
-}
 
 export function FaqSection() {
   const t = useTranslations('marketing.pricing');
 
   return (
-    <section className="bg-white dark:bg-neutral-950 py-20">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <h2 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-8 text-center">
+    <section className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-[740px] px-5 py-[96px] sm:px-7">
+        <h2 className="mb-10 text-center text-[32px] font-semibold leading-[1.1] tracking-[-0.025em] text-zinc-950 dark:text-zinc-50">
           {t('faq.title')}
         </h2>
-        <div>
+        <Accordion type="single" collapsible className="flex flex-col gap-2.5">
           {FAQ_KEYS.map((k) => (
-            <FaqItem
+            <AccordionItem
               key={k}
-              question={t(`faq.items.${k}.question`)}
-              answer={t(`faq.items.${k}.answer`)}
-            />
+              value={k}
+              className="overflow-hidden rounded-[14px] border border-zinc-200 bg-white px-6 dark:border-zinc-800 dark:bg-zinc-900/40"
+            >
+              <AccordionTrigger className="py-5 text-left text-[17px] font-medium tracking-[-0.01em] text-zinc-950 hover:no-underline dark:text-zinc-50">
+                {t(`faq.items.${k}.question`)}
+              </AccordionTrigger>
+              <AccordionContent className="pb-5 text-[15.5px] leading-[1.55] text-zinc-600 dark:text-zinc-400">
+                {t(`faq.items.${k}.answer`)}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );

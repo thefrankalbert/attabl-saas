@@ -4,81 +4,31 @@ import { createAdminClient } from '@/lib/supabase/admin';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static marketing pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: BASE_URL,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1.0,
-    },
-    {
-      url: `${BASE_URL}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/features`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/restaurants`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/hotels`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/bars-cafes`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/boulangeries`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/dark-kitchens`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/food-trucks`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/quick-service`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/nouveautes`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+  // Static marketing pages. Per-industry routes (/restaurants, /hotels, ...) now
+  // 308-redirect to /solutions#ind-*, so only the canonical /solutions is listed.
+  const now = new Date();
+  const marketingRoutes: {
+    path: string;
+    changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'];
+    priority: number;
+  }[] = [
+    { path: '', changeFrequency: 'weekly', priority: 1.0 },
+    { path: '/pricing', changeFrequency: 'weekly', priority: 0.9 },
+    { path: '/features', changeFrequency: 'weekly', priority: 0.8 },
+    { path: '/solutions', changeFrequency: 'monthly', priority: 0.8 },
+    { path: '/materiel', changeFrequency: 'monthly', priority: 0.6 },
+    { path: '/support', changeFrequency: 'monthly', priority: 0.6 },
+    { path: '/nouveautes', changeFrequency: 'weekly', priority: 0.6 },
+    { path: '/blog', changeFrequency: 'weekly', priority: 0.6 },
+    { path: '/about', changeFrequency: 'monthly', priority: 0.5 },
+    { path: '/contact', changeFrequency: 'monthly', priority: 0.5 },
   ];
+  const staticPages: MetadataRoute.Sitemap = marketingRoutes.map((r) => ({
+    url: `${BASE_URL}${r.path}`,
+    lastModified: now,
+    changeFrequency: r.changeFrequency,
+    priority: r.priority,
+  }));
 
   // Dynamic tenant menu pages
   let tenantPages: MetadataRoute.Sitemap = [];

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
-import { TcoComparisonTable } from '@/components/marketing/TcoComparisonTable';
 import {
   initAbVariants,
   subscribeAbVariants,
@@ -11,7 +10,11 @@ import {
 import type { BillingPeriod } from './pricing-data';
 import { PricingHero } from './_components/PricingHero';
 import { PlanCards } from './_components/PlanCards';
+import { TrialBand } from './_components/TrialBand';
 import { FeatureComparison } from './_components/FeatureComparison';
+import { CostOverThreeYears } from './_components/CostOverThreeYears';
+import { IncludedEverywhere } from './_components/IncludedEverywhere';
+import { WhichPlan } from './_components/WhichPlan';
 import { FaqSection } from './_components/FaqSection';
 
 export default function PricingPage() {
@@ -38,23 +41,17 @@ export default function PricingPage() {
 
   return (
     <>
-      {/* Hero */}
       <PricingHero
         effectivePeriod={effectivePeriod}
         showSemiannual={showSemiannual}
         setPeriod={setPeriod}
       />
-
-      {/* Plan Cards */}
       <PlanCards effectivePeriod={effectivePeriod} />
-
-      {/* TCO Comparison */}
-      <TcoComparisonTable />
-
-      {/* Feature Comparison Grid */}
+      <TrialBand />
       <FeatureComparison />
-
-      {/* FAQ */}
+      <CostOverThreeYears />
+      <IncludedEverywhere />
+      <WhichPlan />
       <FaqSection />
     </>
   );

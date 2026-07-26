@@ -1,99 +1,90 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { AttablLogo } from './AttablLogo';
+
+const COL_LINK =
+  'text-[13px] text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50';
 
 export default async function Footer() {
   const t = await getTranslations('marketing.footer');
+  const year = new Date().getFullYear();
 
-  const footerColumns = [
+  const columns = [
     {
       title: t('columns.product.title'),
       links: [
         { label: t('columns.product.links.features'), href: '/features' },
         { label: t('columns.product.links.pricing'), href: '/pricing' },
-        { label: t('columns.product.links.demo'), href: '/signup' },
+        { label: t('columns.product.links.news'), href: '/nouveautes' },
+        { label: t('columns.product.links.materiel'), href: '/materiel' },
       ],
     },
     {
       title: t('columns.solutions.title'),
       links: [
-        { label: t('columns.solutions.links.restaurants'), href: '/restaurants' },
-        { label: t('columns.solutions.links.hotels'), href: '/hotels' },
-        { label: t('columns.solutions.links.quickService'), href: '/quick-service' },
-        { label: t('columns.solutions.links.barsCafes'), href: '/bars-cafes' },
-        { label: t('columns.solutions.links.fastFood'), href: '/fast-food' },
+        { label: t('columns.solutions.links.restaurants'), href: '/solutions#ind-restaurant' },
+        { label: t('columns.solutions.links.hotels'), href: '/solutions#ind-hotel' },
+        { label: t('columns.solutions.links.barsCafes'), href: '/solutions#ind-bar' },
       ],
     },
     {
       title: t('columns.company.title'),
       links: [
         { label: t('columns.company.links.about'), href: '/about' },
-        { label: t('columns.company.links.contact'), href: '/contact' },
         { label: t('columns.company.links.blog'), href: '/blog' },
-      ],
-    },
-    {
-      title: t('columns.legal.title'),
-      links: [
-        { label: t('columns.legal.links.terms'), href: '/legal' },
-        { label: t('columns.legal.links.privacy'), href: '/privacy' },
+        { label: t('columns.company.links.contact'), href: '/contact' },
+        { label: t('columns.company.links.support'), href: '/support' },
       ],
     },
   ];
 
-  const taglineLines = t('tagline').split('\n');
-
   return (
-    <footer className="border-t border-neutral-200 dark:border-white/10 bg-white dark:bg-black">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        {/* Logo + Link columns on one row */}
-        <div className="flex flex-col gap-8 sm:flex-row sm:gap-12">
-          {/* Logo */}
-          <div className="shrink-0">
-            <Link
-              href="/"
-              className="font-[family-name:var(--font-inter)] text-xl font-bold text-neutral-900 dark:text-white"
-            >
-              Attabl
-            </Link>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              {taglineLines.map((line, idx) => (
-                <span key={idx}>
-                  {line}
-                  {idx < taglineLines.length - 1 && <br />}
-                </span>
-              ))}
+    <footer className="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="mx-auto max-w-[1200px] px-5 py-[52px] sm:px-7">
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
+            <AttablLogo size="footer" />
+            <p className="mt-3 max-w-[250px] text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {t('tagline')}
             </p>
+            <a
+              href="mailto:contact@attabl.com"
+              className="mt-3 inline-block text-[13px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"
+            >
+              contact@attabl.com
+            </a>
           </div>
-
-          {/* Link groups */}
-          <div className="flex flex-1 flex-wrap gap-8 sm:gap-12">
-            {footerColumns.map((column) => (
-              <div key={column.title}>
-                <h3 className="mb-2 font-[family-name:var(--font-inter)] text-sm font-semibold text-neutral-900 dark:text-white">
-                  {column.title}
-                </h3>
-                <ul className="space-y-1.5">
-                  {column.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="block text-xs text-neutral-500 dark:text-neutral-400 transition-colors hover:text-neutral-900 dark:hover:text-white"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+          {columns.map((col) => (
+            <div key={col.title}>
+              <div className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
+                {col.title}
               </div>
-            ))}
-          </div>
+              <div className="mt-3.5 flex flex-col gap-2.5">
+                {col.links.map((l) => (
+                  <Link key={l.href} href={l.href} className={COL_LINK}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-
-        {/* Copyright */}
-        <div className="mt-8 border-t border-neutral-200 dark:border-white/10 pt-6">
-          <p className="text-xs text-neutral-500">
-            {t('copyright', { year: new Date().getFullYear() })}
-          </p>
+        <div className="mt-11 border-t border-zinc-200 pt-5 text-[13px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          {t('copyright', { year })}
+          {' - '}
+          <Link
+            href="/legal"
+            className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
+          >
+            {t('columns.legal.links.mentions')}
+          </Link>
+          {' - '}
+          <Link
+            href="/privacy"
+            className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
+          >
+            {t('columns.legal.links.privacy')}
+          </Link>
         </div>
       </div>
     </footer>

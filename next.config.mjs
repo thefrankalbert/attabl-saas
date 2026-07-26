@@ -82,6 +82,17 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Legacy per-industry landing routes are now anchored sections of /solutions.
+    // 308 permanent redirects preserve any external links / search-engine entries.
+    return [
+      { source: '/restaurants', destination: '/solutions#ind-restaurant', permanent: true },
+      { source: '/hotels', destination: '/solutions#ind-hotel', permanent: true },
+      { source: '/quick-service', destination: '/solutions#ind-qsr', permanent: true },
+      { source: '/fast-food', destination: '/solutions#ind-qsr', permanent: true },
+      { source: '/bars-cafes', destination: '/solutions#ind-bar', permanent: true },
+    ];
+  },
   // Rewrites are handled by middleware.ts for better control
   // async rewrites() { ... }
 };

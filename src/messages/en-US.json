@@ -118,7 +118,9 @@
     "service": "Service",
     "discount": "Discount",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "notFoundSearch": "Search",
+    "notFoundPopular": "Most visited pages"
   },
   "checkout": {
     "successTitle": "Payment successful!",
@@ -275,7 +277,8 @@
       "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial on the Pro plan.",
       "hero": {
         "title": "Clear pricing. No surprises.",
-        "subtitle": "14-day free trial on every plan. Try everything before you pay."
+        "subtitle": "14-day free trial on every plan. Try everything before you pay.",
+        "eyebrow": "Pricing"
       },
       "billing": {
         "monthly": "Monthly",
@@ -285,7 +288,7 @@
         "yearlyDiscount": "-20%",
         "noCommitment": "No credit card. No commitment."
       },
-      "priceSuffix": "XAF/month",
+      "priceSuffix": "FCFA/mo",
       "customPrice": "Custom",
       "plans": {
         "starter": {
@@ -460,55 +463,6 @@
           }
         }
       },
-      "tco": {
-        "title": "Why ATTABL?",
-        "subtitle": "Real cost over 12 months, all included.",
-        "headers": {
-          "feature": "Cost breakdown",
-          "attabl": "ATTABL Pro",
-          "toast": "Toast",
-          "square": "Square",
-          "lightspeed": "Lightspeed"
-        },
-        "rows": {
-          "software": {
-            "label": "Software / year",
-            "attabl": "758,400 XAF",
-            "toast": "~1,380,000 XAF",
-            "square": "~840,000 XAF",
-            "lightspeed": "~1,440,000 XAF"
-          },
-          "hardware": {
-            "label": "Hardware required",
-            "attabl": "None",
-            "toast": "None",
-            "square": "~175,000 XAF",
-            "lightspeed": "None"
-          },
-          "fees": {
-            "label": "Transaction fees",
-            "attabl": "0%",
-            "toast": "2.49%",
-            "square": "2.6%",
-            "lightspeed": "2.6%"
-          },
-          "commitment": {
-            "label": "Commitment",
-            "attabl": "Monthly",
-            "toast": "Annual",
-            "square": "Monthly",
-            "lightspeed": "Annual"
-          },
-          "total": {
-            "label": "TOTAL 12 months",
-            "attabl": "~758,400 XAF",
-            "toast": ">1,380,000 XAF",
-            "square": "~1,015,000 XAF",
-            "lightspeed": ">1,440,000 XAF"
-          }
-        },
-        "note": "Indicative pricing in XAF. Sources: official vendor websites, April 2026."
-      },
       "faq": {
         "title": "Frequently asked questions",
         "items": {
@@ -563,7 +517,70 @@
           "company": "La Terrasse, Dakar",
           "content": "In 3 months, our revenue grew 25%. The digital menu pushes customers to order more."
         }
-      }
+      },
+      "priceNote": "Price per month, in FCFA. The total is charged once, based on the chosen period.",
+      "billedMonthly": "billed monthly",
+      "billedTotal": "{total} FCFA total",
+      "perDay": "about ~{amount} FCFA per day",
+      "essai": {
+        "title": "For 14 days, you test everything.",
+        "body": "The trial gives full access to the Pro plan, no credit card. You judge on your own service.",
+        "f1": "Kitchen display",
+        "f2": "Register",
+        "f3": "Stock and recipes",
+        "f4": "Table plan",
+        "t1": "Change plan any time",
+        "t2": "Your data stays yours",
+        "t3": "Email support on all plans"
+      },
+      "cost3y": {
+        "title": "Over three years, about 30% less.",
+        "body": "Built here, billed in CFA francs. No imported license, no exchange rate inflating the bill.",
+        "attablLabel": "Attabl Pro - yearly",
+        "attablPrice": "~ 2.4M",
+        "attablSub": "FCFA over 3 years, all in.",
+        "attablP1": "Updates included",
+        "attablP2": "French-speaking support included",
+        "attablP3": "No exchange fees",
+        "rivalLabel": "Typical imported solution",
+        "rivalPrice": "~ 3.5M",
+        "rivalSub": "FCFA over 3 years, options excluded.",
+        "rivalP1": "Priced in foreign currency",
+        "rivalP2": "Support abroad",
+        "rivalP3": "Built for another market",
+        "disclaimer": "Indicative estimate, for a venue on the yearly Pro plan compared to an equivalent imported register solution. Your case may vary."
+      },
+      "included": {
+        "title": "Included in every plan.",
+        "c1t": "No commitment",
+        "c1b": "Monthly stops whenever you want.",
+        "c2t": "Your data stays yours",
+        "c2b": "You leave with it, if you leave.",
+        "c3t": "Updates included",
+        "c3b": "New features arrive at no extra cost.",
+        "c4t": "A team here",
+        "c4b": "Yaounde, Ouagadougou, N'Djamena."
+      },
+      "whichPlan": {
+        "title": "Which plan for you?",
+        "subtitle": "Spot the profile closest to yours. You can always change later.",
+        "p1tag": "Starting out",
+        "p1title": "Counter, cafe, takeaway",
+        "p1body": "A simple register, an online menu, the daily total right. Without complicating your life.",
+        "p1cta": "Start on Starter",
+        "p2tag": "Most chosen",
+        "p2title": "Table restaurant, 50+ covers",
+        "p2body": "Kitchen display, table plan, stock, tips, reports. The full bistro, built for the rush.",
+        "p2cta": "Take Pro",
+        "p3tag": "Growing",
+        "p3title": "Hotel, several venues",
+        "p3body": "Room service, delivery, multi-site reports and priority support. One console for everything.",
+        "p3cta": "Go Business",
+        "help": "Unsure which one?",
+        "helpLink": "We help you decide"
+      },
+      "compareTitle": "Compare the plans.",
+      "compareSubtitle": "Everything included, plan by plan."
     },
     "privacy": {
       "metaTitle": "Privacy Policy",
@@ -584,216 +601,258 @@
       "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used."
     },
     "features": {
-      "metaTitle": "Features",
-      "metaDescription": "Discover all ATTABL features: digital menu, orders, stock, analytics and more.",
-      "heroTitle": "Everything you need to run your restaurant",
-      "heroSubtitle": "Menu, orders, stock, recipes, payments. All in one place, from your phone.",
+      "metaTitle": "Features - Attabl",
+      "metaDescription": "Menu, register, kitchen, stock, reports, team: everything you need to run your service.",
+      "eyebrow": "Features",
+      "heroTitle": "Everything you need to run your service.",
+      "heroSubtitle": "Menu, register, kitchen, stock, team. One single app, built for the pace of a real restaurant.",
+      "heroImageAlt": "The Attabl dashboard",
+      "cta": {
+        "title": "See it all on your own service.",
+        "primary": "Try it free",
+        "secondary": "See pricing"
+      },
       "categories": {
         "menu": {
-          "title": "Menu & Orders",
+          "title": "Menu & orders",
+          "desc": "The guest orders, the order arrives. Dine-in, takeaway, delivery or room.",
+          "offer": "QR menu from Starter - delivery and room service with Business",
+          "mediaAlt": "Orders by channel",
           "items": {
-            "digitalMenu": {
-              "title": "Bilingual digital menu",
-              "description": "QR code, FR/EN, paid modifiers"
+            "qr": {
+              "title": "Online QR menu",
+              "desc": "Your dishes in photos, in French and English, on the guest phone."
             },
-            "serviceModes": {
-              "title": "4 service modes",
-              "description": "Dine-in, takeaway, delivery, room service"
+            "brand": {
+              "title": "Custom QR code",
+              "desc": "Your colors, your logo, your sign."
+            },
+            "dine": {
+              "title": "Dine-in orders",
+              "desc": "Service takes and tracks each table."
+            },
+            "bag": {
+              "title": "Takeaway orders",
+              "desc": "Prepared and tracked from the register."
+            },
+            "truck": {
+              "title": "Delivery orders",
+              "desc": "Track runs and drivers."
+            },
+            "bed": {
+              "title": "Room service",
+              "desc": "For hotels: order from the room."
+            }
+          }
+        },
+        "caisse": {
+          "title": "Register & payment",
+          "desc": "A simple, traceable register that keeps going even when the network drops.",
+          "offer": "Register from Starter - multi-currency and tips from Pro",
+          "items": {
+            "card": {
+              "title": "Register",
+              "desc": "Log every order, every receipt traced."
+            },
+            "coins": {
+              "title": "Multi-currency display",
+              "desc": "XAF, EUR, USD by your region."
+            },
+            "tip": {
+              "title": "Built-in tips",
+              "desc": "Split per employee, no manual math."
+            },
+            "offline": {
+              "title": "Offline mode",
+              "desc": "The register runs locally and re-syncs."
+            },
+            "daily": {
+              "title": "Accurate daily total",
+              "desc": "Your total adds up on its own, every night."
+            }
+          }
+        },
+        "cuisine": {
+          "title": "Kitchen & prep",
+          "desc": "The kitchen sees everything, cooks in the right order, never loses a ticket.",
+          "offer": "Included from the Pro plan",
+          "mediaAlt": "Kitchen display: digital tickets per table",
+          "items": {
+            "kds": {
+              "title": "Kitchen display",
+              "desc": "Digital tickets per table, with a timer."
+            },
+            "tables": {
+              "title": "Table plan",
+              "desc": "The state of each table, live."
+            },
+            "staff": {
+              "title": "Staff assignment",
+              "desc": "Who serves what, who cashes what."
+            },
+            "recipes": {
+              "title": "Recipe sheets",
+              "desc": "The real food cost of each dish."
             }
           }
         },
         "stock": {
-          "title": "Stock & Recipes",
+          "title": "Stock & suppliers",
+          "desc": "Stock stops surprising you: alerts before you run out, costs in view.",
+          "offer": "Included from the Pro plan",
+          "mediaAlt": "Inventory: levels, thresholds and costs",
           "items": {
-            "autoStock": {
-              "title": "Automatic stock",
-              "description": "Real-time deduction per ingredient"
+            "stock": {
+              "title": "Stock management",
+              "desc": "Every product, its level, its cost."
+            },
+            "alerts": {
+              "title": "Out-of-stock alerts",
+              "desc": "An alert the moment you drop below the threshold."
+            },
+            "suppliers": {
+              "title": "Supplier tracking",
+              "desc": "Orders and deliveries, no notebook."
+            },
+            "cost": {
+              "title": "Food cost",
+              "desc": "Real margin per dish and per recipe."
             }
           }
         },
-        "business": {
-          "title": "Business",
+        "rapports": {
+          "title": "Reports & analytics",
+          "desc": "Your numbers live, no recounting. Best sellers, channels, multi-venue.",
+          "offer": "Reports from Pro - multi-venue with Business",
           "items": {
-            "analytics": {
-              "title": "Real-time analytics",
-              "description": "Revenue, best-sellers, trends"
+            "dashboard": {
+              "title": "Dashboard",
+              "desc": "Today's sales, average ticket, active tables."
             },
-            "multiCurrency": {
-              "title": "Multi-currency",
-              "description": "XAF, EUR, USD"
+            "reports": {
+              "title": "Sales reports",
+              "desc": "By day, by channel, by employee."
             },
-            "multiTenant": {
-              "title": "Multiple establishments",
-              "description": "Manage several establishments"
+            "bestsellers": {
+              "title": "Best sellers",
+              "desc": "What works, what lags."
+            },
+            "multivenue": {
+              "title": "Multi-venue reports",
+              "desc": "All your venues in one view."
+            }
+          }
+        },
+        "equipe": {
+          "title": "Team & staff",
+          "desc": "Several venues, several roles, one administration.",
+          "offer": "2 venues from Pro - up to 10 with Business",
+          "items": {
+            "roles": {
+              "title": "Managers & staff",
+              "desc": "Each role, its access."
+            },
+            "multivenue": {
+              "title": "Multi-venue",
+              "desc": "Restaurant, hotel, chain: one console."
+            },
+            "unlimited": {
+              "title": "Unlimited menus & items",
+              "desc": "As many menus as you need."
+            },
+            "ownership": {
+              "title": "Your data stays yours",
+              "desc": "You leave whenever you want, with your data."
             }
           }
         }
       }
     },
     "home": {
-      "videoHero": {
-        "titleLine1": "Small counter",
-        "titleLine2": "or big brand.",
-        "titleLine3": "Claim your turf.",
-        "subtitle": "Your guests order from their phone. Your kitchen sees everything in real time. Your numbers land without effort.",
+      "hero": {
+        "title": "Your restaurant,\nunder control.",
+        "subtitle": "Your register, your orders, your stock. One single app.",
         "ctaPrimary": "Try it free",
-        "ctaSecondary": "See how it works",
-        "segments": {
-          "restaurant": "Restaurant",
-          "hotel": "Hotel",
-          "quickservice": "Quick-Service",
-          "bar": "Bar & Cafe",
-          "fastfood": "Fast-Food"
-        },
-        "preview": {
-          "greeting": "Good afternoon,",
-          "date": "Sunday, March 16",
-          "dashboard": "Dashboard",
-          "revenue7Days": "Revenue - 7 days",
-          "revenue": "Revenue",
-          "ordersShort": "Orders",
-          "avgBasket": "Avg basket",
-          "orders": "Orders",
-          "viewAll": "View all",
-          "status": {
-            "ready": "Ready",
-            "inProgress": "In progress",
-            "pending": "Pending"
-          },
-          "days": {
-            "mon": "Mon",
-            "tue": "Tue",
-            "wed": "Wed",
-            "thu": "Thu",
-            "fri": "Fri",
-            "sat": "Sat",
-            "sun": "Sun"
-          },
-          "quickActions": {
-            "qrCodes": "QR Codes",
-            "reports": "Reports",
-            "stock": "Stock"
-          },
-          "stats": {
-            "revenue": "Revenue",
-            "orders": "Orders",
-            "articles": "Items",
-            "tables": "Tables",
-            "checkins": "Check-ins",
-            "rooms": "Rooms",
-            "occupancy": "Occup.",
-            "avgTime": "Avg time",
-            "cocktails": "Cocktails",
-            "drive": "Drive"
-          }
-        }
+        "ctaDemo": "Request a demo",
+        "trust": "14 days free - No credit card required",
+        "imageAlt": "The Attabl dashboard: average ticket, active tables, QR codes and revenue by sales channel"
       },
-      "productShowcase": {
-        "title": "Five modules. One tool.",
-        "subtitle": "From your first customer to your hundredth, ATTABL grows with you.",
-        "revenueLabel": "Monthly revenue",
-        "ordersLabel": "Orders / day",
-        "cards": {
-          "pilot": {
-            "verb": "PILOT",
-            "title": "Your revenue, live",
-            "description": "Today's sales, top dishes, weekly trends. You know exactly where you stand, at any moment."
-          },
-          "sell": {
-            "verb": "SELL",
-            "title": "Your menu, no paper",
-            "description": "Customers scan, browse, order. Bilingual, with photos. No more laminated menus lying around."
-          },
-          "prepare": {
-            "verb": "PREPARE",
-            "title": "Zero misses in the kitchen",
-            "description": "Every order lands on the kitchen screen in real time. No more shouting between the floor and the stoves."
-          },
-          "cashIn": {
-            "verb": "COLLECT",
-            "title": "Cash, card or mobile money",
-            "description": "Take payment the way your customers pay. XAF, EUR, USD. Automatic reconciliation."
-          },
-          "manage": {
-            "verb": "MANAGE",
-            "title": "Stock under control",
-            "description": "Every dish sold deducts the ingredients. Alerts when stock runs low. No more delivery surprises."
-          }
-        }
+      "stock": {
+        "badge": "Stock & inventory",
+        "title": "Stock stops surprising you.",
+        "body": "Every product, its level, its cost. An alert fires before you run out, and food cost stays in view, recipe by recipe.",
+        "link": "See stock management",
+        "browserLabel": "Inventory",
+        "imageAlt": "Inventory table: current stock, alert threshold, unit cost and status of each product"
       },
-      "segmentsSection": {
-        "title": "One tool. Your business.",
-        "subtitle": "From the counter to the palace, Attabl speaks your language.",
-        "learnMore": "Learn more",
-        "cards": {
-          "restaurants": {
-            "title": "Restaurants",
-            "description": "Order ticket, kitchen screen, bill. Your dining room and kitchen finally connected."
+      "showcase": {
+        "title": "One screen for the whole service.",
+        "subtitle": "From order to register, from kitchen to supplier. Built for the pace of a real restaurant.",
+        "tabs": {
+          "dashboard": {
+            "title": "Dashboard",
+            "desc": "Today's sales, average ticket, active tables, revenue by channel."
           },
-          "hotels": {
-            "title": "Hotels",
-            "description": "Room service, F&B, multilingual. Your rooms and restaurant in one dashboard."
+          "orders": {
+            "title": "Orders",
+            "desc": "Dine-in, takeaway, delivery or room. All in one queue."
           },
-          "quickService": {
-            "title": "Quick-Service",
-            "description": "Pace, KDS, counter express. Every second counts during the lunch rush."
-          },
-          "barsCafes": {
-            "title": "Bars & Cafes",
-            "description": "Daily board, counter, terrace. Wastage under control, menu updated in 30 seconds."
-          },
-          "fastFood": {
-            "title": "Fast-Food",
-            "description": "Kiosks, drive-through, multi-site. High-volume pace, without losing the thread."
-          }
-        }
-      },
-      "presenceSection": {
-        "badge": "Presence in Africa",
-        "title": "Already in 3 countries",
-        "subtitle": "ATTABL supports restaurant and hospitality professionals across francophone Africa."
-      },
-      "featuresShowcase": {
-        "title": "Not just a tool. An ecosystem.",
-        "subtitle": "Everything you need to run your kitchen, your floor and your books.",
-        "cards": {
-          "menu": {
-            "title": "QR Menu",
-            "description": "Your customers scan and order from their table. Bilingual, with photos. Paper menus are done."
-          },
-          "pos": {
-            "title": "Point of Sale",
-            "description": "Fast touch checkout. Cash, card, mobile money - one screen for everything."
-          },
-          "payments": {
-            "title": "Payments",
-            "description": "XAF, EUR, USD. Mobile money built in. Automatic reconciliation every evening."
-          },
-          "analytics": {
-            "title": "Analytics & AI",
-            "description": "Your sales, your trends, your alerts. Answers, not spreadsheets."
+          "kitchen": {
+            "title": "Kitchen display",
+            "desc": "Tickets reach the kitchen, in the right order, no paper."
           },
           "stock": {
-            "title": "Stock & Ingredients",
-            "description": "Every dish sold deducts its ingredients. Alerts when it is time to restock."
-          },
-          "team": {
-            "title": "Team & Service",
-            "description": "Roles, shifts, performance. Manage your crew, not your paperwork."
+            "title": "Stock & inventory",
+            "desc": "Levels, alert thresholds and food cost, always up to date."
           }
         }
       },
-      "socialProof": {
-        "badge": "Testimonials",
-        "title": "They trust us",
-        "subtitle": "Restaurants, hotels and cafes who transformed their service with ATTABL."
+      "allInOne": {
+        "title": "Everything you need, in one app.",
+        "subtitle": "Six feature families, from the online menu to multi-venue reports.",
+        "chips": {
+          "menu": "Menu & orders",
+          "register": "Register & payment",
+          "kitchen": "Kitchen & prep",
+          "stock": "Stock & suppliers",
+          "reports": "Reports & analytics",
+          "team": "Team & staff"
+        },
+        "link": "All features"
       },
-      "cta": {
+      "pricing": {
+        "title": "Clear pricing. No commitment.",
+        "body": "From {price} per month, about {perDay} per day. 14-day trial, no credit card.",
+        "ctaPrimary": "See pricing",
+        "ctaSecondary": "Compare plans"
+      },
+      "faq": {
+        "title": "What people ask before they sign.",
+        "items": {
+          "q1": {
+            "q": "What if the internet drops mid-service?",
+            "a": "The register keeps running locally and syncs on its own when the network returns. You lose nothing."
+          },
+          "q2": {
+            "q": "Will my team pick it up?",
+            "a": "It takes one morning. We train your team with you, on-site or on WhatsApp."
+          },
+          "q3": {
+            "q": "Do I need to buy hardware?",
+            "a": "No. It's software. It runs on your phone, tablet or computer."
+          },
+          "q4": {
+            "q": "What if I want to stop?",
+            "a": "No commitment. You leave whenever you want, and you take your data with you."
+          }
+        }
+      },
+      "finalCta": {
         "title": "Your business deserves better than a notebook and a calculator.",
-        "subtitle": "Account created in 2 minutes. Your menu live today.",
-        "primary": "Launch my restaurant - free",
-        "secondary": "See how it works",
-        "footer": "14 free days - No credit card required - 24/7 WhatsApp support"
+        "subtitle": "Account created in 2 minutes. Your menu online today.",
+        "ctaPrimary": "Launch my restaurant, free",
+        "whatsapp": "Message us on WhatsApp",
+        "trust": "14 days free - No credit card required"
       }
     },
     "header": {
@@ -806,53 +865,36 @@
       "getStarted": "Get started",
       "getStartedFree": "Start for free",
       "openMenu": "Open menu",
-      "closeMenu": "Close menu",
-      "appearance": "Appearance",
       "allFeatures": "All features",
       "segments": {
         "restaurants": {
-          "label": "Restaurants",
-          "description": "Fine dining and table service"
+          "label": "Restaurants"
         },
         "hotels": {
-          "label": "Hotels",
-          "description": "Room service and multi-venues"
+          "label": "Hotels"
         },
         "quickService": {
-          "label": "Quick-Service",
-          "description": "Speed and efficiency"
+          "label": "Quick-Service"
         },
         "barsCafes": {
-          "label": "Bars & Cafes",
-          "description": "Counter and terrace"
-        },
-        "fastFood": {
-          "label": "Fast-Food",
-          "description": "Optimized speed and volume"
+          "label": "Bars & Cafes"
         }
       },
-      "featuresList": {
-        "menu": {
-          "label": "Digital Menu",
-          "description": "QR code, bilingual, modifiers"
-        },
-        "orders": {
-          "label": "Orders",
-          "description": "4 service modes"
-        },
-        "stock": {
-          "label": "Stock & Recipes",
-          "description": "Automatic inventory deduction"
-        },
-        "analytics": {
-          "label": "Analytics",
-          "description": "Real-time reports"
-        },
-        "currencies": {
-          "label": "Multi-currency",
-          "description": "XAF, EUR, USD"
-        }
-      }
+      "support": "Support",
+      "fcat": {
+        "menu": "Menu & orders",
+        "checkout": "Register & payment",
+        "kitchen": "Kitchen & prep",
+        "stock": "Stock & suppliers",
+        "reports": "Reports & analytics",
+        "team": "Team & staff"
+      },
+      "newsMenu": {
+        "releases": "Release notes",
+        "changelog": "Feature log"
+      },
+      "searchPlaceholder": "Search attabl.com",
+      "searchLabel": "Search"
     },
     "footer": {
       "tagline": "The modern tool\nfor hospitality",
@@ -863,7 +905,8 @@
           "links": {
             "features": "Features",
             "pricing": "Pricing",
-            "demo": "Demo"
+            "news": "What's new",
+            "materiel": "Hardware"
           }
         },
         "solutions": {
@@ -871,9 +914,7 @@
           "links": {
             "restaurants": "Restaurants",
             "hotels": "Hotels",
-            "quickService": "Quick-Service",
-            "barsCafes": "Bars & Cafes",
-            "fastFood": "Fast-Food"
+            "barsCafes": "Bars & Cafes"
           }
         },
         "company": {
@@ -881,14 +922,14 @@
           "links": {
             "about": "About",
             "contact": "Contact",
-            "blog": "Blog"
+            "blog": "Blog",
+            "support": "Support"
           }
         },
         "legal": {
-          "title": "Legal",
           "links": {
-            "terms": "Terms",
-            "privacy": "Privacy"
+            "privacy": "Privacy",
+            "mentions": "Legal notice"
           }
         }
       }
@@ -924,95 +965,454 @@
       "section5Body": "For any question regarding these ToS, contact us at"
     },
     "nouveautes": {
-      "pageTitle": "What's new",
-      "pageSubtitle": "The latest features and improvements from Attabl.",
-      "ctaTitle": "Ready to try?",
-      "ctaSubtitle": "14 days free. No credit card.",
-      "ctaButton": "Get started",
-      "tagNew": "New",
-      "tagImprovement": "Improvement",
-      "dateFeb2026": "February 2026",
-      "dateJan2026": "January 2026",
-      "dateDec2025": "December 2025",
-      "updates": {
-        "rbacTitle": "Role-based permissions",
-        "rbacDescription": "6 roles (owner, admin, manager, cashier, chef, server) with granular permissions. Each teammate sees exactly what they need.",
-        "i18nTitle": "Internationalization (2 languages)",
-        "i18nDescription": "Interface available in French and English. Switch language with one click.",
-        "autolockTitle": "Auto-lock on inactivity",
-        "autolockDescription": "Protect sensitive data: the screen locks after a configurable period of inactivity.",
-        "stockAlertTitle": "Stock alerts by email",
-        "stockAlertDescription": "Receive an automatic email when an ingredient drops below the critical threshold. Resend integration.",
-        "suppliersTitle": "Suppliers module",
-        "suppliersDescription": "Manage your suppliers, contacts and product references directly from the dashboard.",
-        "stockHistoryTitle": "Stock movement history",
-        "stockHistoryDescription": "Complete traceability: every entry, exit and adjustment is recorded with author and reason.",
-        "landingTitle": "Landing page redesign",
-        "landingDescription": "New visual identity with hero video, mega-menu, segment pages and Framer Motion animations.",
-        "qrTitle": "Premium custom QR Code",
-        "qrDescription": "6 QR code templates with real-time preview and PDF export."
+      "metaTitle": "What's new - Attabl",
+      "metaDescription": "Attabl's update log: new features, improvements and fixes.",
+      "eyebrow": "What's new",
+      "title": "What just landed in Attabl.",
+      "subtitle": "We improve Attabl every week, from your service feedback. Here is the log.",
+      "subscribe": "Subscribe to updates",
+      "filters": {
+        "all": "All",
+        "new": "New",
+        "improvement": "Improvement",
+        "fix": "Fix"
+      },
+      "cta": {
+        "title": "An idea to improve your service?",
+        "subtitle": "Many of these updates come from restaurateurs like you.",
+        "primary": "Write to us",
+        "secondary": "See the features"
+      },
+      "releases": {
+        "r1": {
+          "title": "Tips split per employee",
+          "body": "Every tip is tied to the employee who cashed it, and split automatically at the end of service. No more manual math.",
+          "i1": "Automatic split per employee",
+          "i2": "Tips report in the dashboard",
+          "i3": "History per service"
+        },
+        "r2": {
+          "title": "Offline mode, more solid",
+          "body": "The register keeps running locally when the network drops and re-syncs without duplicates as soon as the connection returns.",
+          "i1": "Re-sync with no duplicates",
+          "i2": "Live network status indicator",
+          "i3": "Tickets kept at their real time"
+        },
+        "r3": {
+          "title": "Multi-venue reports",
+          "body": "Compare your sites in one view: sales, average ticket, best sellers, per venue or consolidated.",
+          "i1": "Consolidated view across sites",
+          "i2": "Site-to-site comparison",
+          "i3": "Filter by period and channel",
+          "mediaAlt": "Dashboard: revenue by sales channel"
+        },
+        "r4": {
+          "title": "Automatic stock draw-down per recipe",
+          "body": "For each dish sold, the recipe ingredients are removed from stock. Your levels stay right with no data entry.",
+          "i1": "Recipe and stock linked",
+          "i2": "Thresholds recalculated",
+          "i3": "Food cost updated in real time"
+        },
+        "r5": {
+          "title": "Kitchen display fixes",
+          "body": "Several fixes on the kitchen display for big services.",
+          "i1": "Ticket order stabilized",
+          "i2": "More accurate timer",
+          "i3": "Kitchen notes display fixed",
+          "mediaAlt": "Kitchen display: digital tickets per table"
+        },
+        "r6": {
+          "title": "Custom QR code with your branding",
+          "body": "The code on your tables now carries your colors and your logo. Several print-ready templates.",
+          "i1": "Your colors and logo",
+          "i2": "Print-ready templates",
+          "i3": "One code per table, generated in a click"
+        },
+        "r7": {
+          "title": "Multi-currency display",
+          "body": "Your online menu can show prices in FCFA, euros or dollars, depending on the guest.",
+          "i1": "FCFA, EUR, USD",
+          "i2": "Currency choice on the guest side",
+          "i3": "Reference price always in FCFA"
+        },
+        "r8": {
+          "title": "Table plan and assignments",
+          "body": "The floor is drawn in Attabl: each table has its state, each employee their tables.",
+          "i1": "Live floor plan",
+          "i2": "Staff assignment per table",
+          "i3": "Table state from the register"
+        },
+        "r9": {
+          "title": "Room service and delivery",
+          "body": "Two new channels for the Business plan: ordering from the room for hotels, and delivery.",
+          "i1": "Ordering from the room (hotels)",
+          "i2": "Delivery channel with tracking",
+          "i3": "Reports by sales channel"
+        }
       }
     },
-    "landings": {
-      "shared": {
-        "ctaPrimary": "Get started",
-        "ctaSecondary": "View pricing",
-        "ctaSubtitle": "Try it free."
+    "solutions": {
+      "metaTitle": "Solutions by venue type - Attabl",
+      "metaDescription": "Restaurant, hotel, quick-service, bar & cafe: Attabl adapts to your kind of venue.",
+      "eyebrow": "Solutions",
+      "title": "One app. Every kind of venue.",
+      "subtitle": "Your guests order from their phone. Your kitchen sees everything in real time. Your numbers add up on their own.",
+      "recommended": "Recommended",
+      "viewOffer": "See the {offer} plan",
+      "exploreFeatures": "Explore the features",
+      "industries": {
+        "restaurant": {
+          "tag": "Restaurant",
+          "mediaLabel": "Dashboard",
+          "title": "The restaurant, at the table.",
+          "lead": "The floor takes it, the kitchen gets it, the register follows. No paper, no back-and-forth.",
+          "points": {
+            "p1": "Online QR menu (FR/EN)",
+            "p2": "Table plan and assignments",
+            "p3": "Live kitchen display",
+            "p4": "Reports and best sellers"
+          },
+          "offerWhy": "Kitchen display, table plan and stock are included from the Pro plan."
+        },
+        "hotel": {
+          "tag": "Hotel",
+          "mediaLabel": "Inventory",
+          "title": "Room service, digitized.",
+          "lead": "Guests order from their room. Restaurant, bar and room service in one console.",
+          "points": {
+            "p1": "Room service from the room",
+            "p2": "Multiple points of sale (restaurant, bar)",
+            "p3": "Advanced multi-venue reports",
+            "p4": "Built-in delivery"
+          },
+          "offerWhy": "Room service, delivery and multi-venue come with the Business plan."
+        },
+        "qsr": {
+          "tag": "Quick-service",
+          "mediaLabel": "Orders",
+          "title": "Fast service, no queue.",
+          "lead": "Order and payment in seconds. The kitchen keeps up in the right order.",
+          "points": {
+            "p1": "Fast counter register",
+            "p2": "Dine-in and takeaway",
+            "p3": "Prioritized kitchen display",
+            "p4": "Offline register mode"
+          },
+          "offerWhy": "Register, QR menu and dashboard from Starter. The kitchen display comes with Pro."
+        },
+        "bar": {
+          "tag": "Bar & Cafe",
+          "mediaLabel": "Stock",
+          "title": "A counter that counts right.",
+          "lead": "Every round logged, every stock tracked, every tip shared.",
+          "points": {
+            "p1": "Fast counter payment",
+            "p2": "Drink stock and out-of-stock alerts",
+            "p3": "Tips per employee",
+            "p4": "Best sellers in real time"
+          },
+          "offerWhy": "Stock, out-of-stock alerts and tips are included from the Pro plan."
+        }
       },
-      "quickService": {
-        "heroTitle": "High volume, zero downtime.",
-        "heroSubtitle": "Counter, drive-through, delivery - every order tracked, every second counts.",
-        "feature1Title": "KDS: the screen that drives your pace",
-        "feature1Description": "Orders appear in real time on the kitchen screen. Auto-priority by service time. Your team knows what to prep, in what order, without anyone shouting.",
-        "feature2Title": "Fast POS: checkout in 3 taps",
-        "feature2Description": "Cash, card, mobile money. Average ticket shown live. During the lunch rush, every second at the counter is one more order served.",
-        "feature3Title": "Zero stockouts during the rush",
-        "feature3Description": "Stock alerts before the peak hits. Your key ingredients won't run out at the worst moment. Product rotation tracked continuously.",
-        "ctaTitle": "Serve faster. Lose less. Stay in control."
+      "useCases": {
+        "title": "What it changes, on a service night.",
+        "subtitle": "Not promises. Real situations you live, fixed.",
+        "cards": {
+          "restaurant": {
+            "tag": "Restaurant",
+            "title": "The room is full, the kitchen keeps up.",
+            "body": "Orders reach the kitchen without the server crossing the room. Less waiting, fewer misses, more covers served."
+          },
+          "hotel": {
+            "tag": "Hotel",
+            "title": "The guest orders without picking up the phone.",
+            "body": "Restaurant, bar, room service: each order reaches the kitchen with its origin, no phone call and no wrong room."
+          },
+          "bar": {
+            "tag": "Bar & Cafe",
+            "title": "Stock stops surprising you.",
+            "body": "Every round draws down what it should, an alert fires before you run out, and tips are shared with no end-of-service math."
+          }
+        }
       },
-      "barsCafes": {
-        "heroTitle": "Coffee counter in the morning, cocktail terrace in the evening.",
-        "heroSubtitle": "Your menu adapts, your stock too. Daily specials and drink tracking in one place.",
-        "feature1Title": "Daily board and QR code, together",
-        "feature1Description": "Your daily menu on QR - cocktails, hot drinks, boards. Guests order from the terrace without flagging a server. You update the board in 30 seconds.",
-        "feature2Title": "Drink wastage tracked in real time",
-        "feature2Description": "Every drink served is deducted from stock. You see wastage before it becomes a loss. Whether you're a bartender or a barista, you know exactly what's going out and what's left.",
-        "feature3Title": "Your best-sellers, night after night",
-        "feature3Description": "Which cocktails are moving tonight? Which hot drink sells best in the morning? Adjust your menu and your happy hour based on what the numbers say.",
-        "ctaTitle": "Your counter deserves better than a spreadsheet."
+      "steps": {
+        "title": "Whatever your venue, you start the same way.",
+        "subtitle": "Account created in 2 minutes. Your menu online today.",
+        "s1": {
+          "title": "Create your account",
+          "body": "2 minutes, no credit card. 14 days of full access to the Pro plan."
+        },
+        "s2": {
+          "title": "Build your menu",
+          "body": "Your dishes, your photos, your prices in FCFA. Each table QR generates itself."
+        },
+        "s3": {
+          "title": "Start the service",
+          "body": "Orders come in, the kitchen keeps up, the dashboard counts for you."
+        }
       },
-      "fastFood": {
-        "heroTitle": "1 kiosk or 10 locations. Same control.",
-        "heroSubtitle": "Kitchen screen, order kiosks, drive-through, central stock. High-volume at scale.",
-        "feature1Title": "KDS and kiosks: the winning pair",
-        "feature1Description": "Your order kiosks send directly to the kitchen. KDS screen sorts, prioritises, times. Reduced wait times, higher throughput, zero prep errors.",
-        "feature2Title": "Multi-site dashboard",
-        "feature2Description": "Each location's performance in real time - average ticket, throughput, drive-through time. Compare. Spot the underperforming site. Act.",
-        "feature3Title": "Centralised stock across the chain",
-        "feature3Description": "Central supply management for all your locations. Per-site alerts before stockouts. No more combos off the menu because of missing ingredients.",
-        "ctaTitle": "Grow without losing control."
+      "cta": {
+        "title": "We set Attabl up for your venue.",
+        "subtitle": "A French-speaking team in Yaounde, Ouagadougou and N'Djamena. We set it up with you.",
+        "primary": "Start for free",
+        "secondary": "See pricing"
+      }
+    },
+    "blog": {
+      "metaTitle": "Blog - Advice for restaurants in Africa",
+      "metaDescription": "Practical guides to digitize your restaurant or hotel in Africa.",
+      "eyebrow": "The Blog",
+      "title": "Run your restaurant better.",
+      "subtitle": "Management, service, stock, numbers. Concrete ideas, written for local restaurateurs.",
+      "all": "All",
+      "author": "Attabl team",
+      "readingSuffix": "read",
+      "cta": {
+        "title": "Try it all on your own service.",
+        "subtitle": "14 days free. No credit card required.",
+        "button": "Try it free"
+      }
+    },
+    "materiel": {
+      "metaTitle": "Compatible hardware - Attabl",
+      "metaDescription": "Attabl runs on the devices you already own. Phone, tablet, receipt printer: add hardware at your own pace.",
+      "eyebrow": "Hardware",
+      "title": "Nothing to buy to get started.",
+      "subtitle": "Attabl runs on the devices you already own. Add hardware later, at your own pace.",
+      "devices": {
+        "phone": {
+          "title": "Your phone",
+          "body": "Take orders and follow service from an Android or iPhone smartphone."
+        },
+        "tablet": {
+          "title": "Your tablet",
+          "body": "One tablet is enough as a register at the counter or in the dining room."
+        },
+        "printer": {
+          "title": "Receipt printer",
+          "body": "Works with the most common Bluetooth and network thermal printers."
+        },
+        "drawer": {
+          "title": "Cash drawer",
+          "body": "Connects to the printer and opens on every cash payment."
+        },
+        "terminal": {
+          "title": "Card terminal",
+          "body": "Take card payments. Mobile Money is coming soon."
+        },
+        "scanner": {
+          "title": "Barcode scanner",
+          "body": "For counter sales and quick stocktaking."
+        }
       },
-      "hotels": {
-        "heroTitle": "Room service, restaurant, bar. One dashboard.",
-        "heroSubtitle": "Guests order from their room in their language. Your F&B team sees everything in real time.",
-        "feature1Title": "QR code per room, digital room service",
-        "feature1Description": "Every room has its own QR code. Guests order from bed - continental breakfast, minibar, full meal. Zero front desk calls, zero lost tickets.",
-        "feature2Title": "All your F&B under one roof",
-        "feature2Description": "Restaurant, bar lounge, pool, room service. One dashboard for all your outlets. Your room nights and your F&B finally connected.",
-        "feature3Title": "Guests come from everywhere",
-        "feature3Description": "Menu in French, English and more. Payment in XAF, EUR, USD. Check-in or check-out, guests are served in their language and pay how they want.",
-        "ctaTitle": "Your F&B deserves a system as good as your hotel."
+      "kits": {
+        "title": "Three setups, depending on your room.",
+        "subtitle": "Start with what you have. Add one piece when you need it.",
+        "recommended": "Recommended",
+        "items": {
+          "counter": {
+            "place": "The counter",
+            "name": "Essential kit",
+            "for": "For the cafe, the bar or takeaway.",
+            "i1": "A phone or a tablet",
+            "i2": "Receipt printer",
+            "i3": "Cash drawer"
+          },
+          "room": {
+            "place": "The dining room",
+            "name": "Restaurant kit",
+            "for": "For table service, kitchen included.",
+            "i1": "A tablet at the register",
+            "i2": "Kitchen screen on a tablet",
+            "i3": "Receipt printer + drawer",
+            "i4": "Servers' phones"
+          },
+          "hotel": {
+            "place": "The hotel",
+            "name": "Multi-point kit",
+            "for": "For restaurant, bar and room service.",
+            "i1": "One tablet per point of sale",
+            "i2": "Dedicated kitchen screen",
+            "i3": "Printers per station",
+            "i4": "In-room QR codes"
+          }
+        }
       },
-      "restaurants": {
-        "heroTitle": "Front of house, kitchen, bill. All connected.",
-        "heroSubtitle": "From the order ticket to the final bill, nothing gets lost between your dining room and your kitchen.",
-        "feature1Title": "Your daily menu, live",
-        "feature1Description": "Daily specials, allergens, photos, modifiers. Guests browse and order from their table. No more laminated menus gathering dust.",
-        "feature2Title": "Kitchen sees every ticket",
-        "feature2Description": "Every order ticket hits the kitchen screen at the right moment. Starters, mains, desserts - each station gets its part. Zero forgotten dishes, zero shouting across the pass.",
-        "feature3Title": "Recipes, margins, covers",
-        "feature3Description": "Food cost per dish, lunch and dinner service covers, weekly best-sellers. You know exactly where you stand before mise en place every morning.",
-        "ctaTitle": "Your dinner service deserves better than a notepad and a calculator."
+      "reassure": {
+        "wireless": {
+          "title": "Bluetooth and network",
+          "body": "Your printers connect with no messy cables."
+        },
+        "brands": {
+          "title": "Common brands",
+          "body": "Works with the most widespread thermal printers."
+        },
+        "nocontract": {
+          "title": "No hardware contract",
+          "body": "Buy your hardware wherever you want, whenever you want."
+        },
+        "offline": {
+          "title": "Works offline",
+          "body": "The register keeps running even when the network drops."
+        }
+      },
+      "cta": {
+        "title": "Not sure about your hardware?",
+        "subtitle": "Tell us what you already have. We'll tell you what works, and what you really need.",
+        "primary": "Ask us the question",
+        "secondary": "See pricing"
+      }
+    },
+    "recherche": {
+      "metaTitle": "Search - Attabl",
+      "metaDescription": "Find a page on the Attabl site.",
+      "title": "Search",
+      "subtitle": "Type to search the site.",
+      "placeholder": "Search...",
+      "label": "Search the site",
+      "empty": "No page matches your search.",
+      "pages": {
+        "solutions": {
+          "title": "Solutions",
+          "description": "Restaurant, hotel, quick service, bar and cafe: Attabl fits your room."
+        },
+        "features": {
+          "title": "Features",
+          "description": "Menu, register, kitchen, stock, reports and team. Everything Attabl does."
+        },
+        "pricing": {
+          "title": "Pricing",
+          "description": "Clear prices in FCFA. Starter, Pro, Business and Enterprise."
+        },
+        "materiel": {
+          "title": "Hardware",
+          "description": "Attabl runs on the devices you already own. Add hardware at your own pace."
+        },
+        "nouveautes": {
+          "title": "What's new",
+          "description": "The latest updates and release notes for Attabl."
+        },
+        "blog": {
+          "title": "Blog",
+          "description": "Tips and stories for restaurant and hotel owners."
+        },
+        "about": {
+          "title": "About",
+          "description": "Who we are and why we build Attabl."
+        },
+        "contact": {
+          "title": "Contact",
+          "description": "A question? Write to us, we answer fast."
+        }
+      }
+    },
+    "support": {
+      "metaTitle": "Support - Attabl",
+      "metaDescription": "Frequently asked questions, getting-started guides and Attabl support contact. Same-day answers, in French.",
+      "eyebrow": "Support",
+      "title": "You are never on your own.",
+      "subtitle": "Help in French, from people who have seen an evening rush. Search for an answer, or write to us.",
+      "searchPlaceholder": "Search for an answer...",
+      "searchLabel": "Search help",
+      "searchButton": "Search",
+      "categories": {
+        "start": {
+          "title": "Getting started",
+          "body": "Create your account, build your menu, generate QR codes."
+        },
+        "pos": {
+          "title": "Register and orders",
+          "body": "Take payments, manage tables, the kitchen screen and channels."
+        },
+        "stock": {
+          "title": "Stock and recipes",
+          "body": "Levels, alert thresholds, recipe sheets and suppliers."
+        },
+        "billing": {
+          "title": "Payments and pricing",
+          "body": "Plans, billing, currencies and free trial."
+        },
+        "team": {
+          "title": "Account and team",
+          "body": "Managers, staff, roles and multi-location access."
+        },
+        "network": {
+          "title": "Outages and network",
+          "body": "Offline mode, resync, drops in the middle of service."
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "subtitle": "None of these answers fit?",
+        "cta": "Write to us, we answer fast.",
+        "items": {
+          "q1": {
+            "q": "How long to get up and running?",
+            "a": "One morning. You create your account, build your menu and generate your QR codes the same day."
+          },
+          "q2": {
+            "q": "What if the network drops mid-service?",
+            "a": "The register keeps running offline. Your orders resync as soon as the connection is back."
+          },
+          "q3": {
+            "q": "What devices do I need?",
+            "a": "The ones you already own. A phone or a tablet is enough to start. Add a printer and drawer later."
+          },
+          "q4": {
+            "q": "How are payments taken?",
+            "a": "Card and cash from day one. Mobile Money is coming soon."
+          },
+          "q5": {
+            "q": "Can I manage several locations?",
+            "a": "Yes. One account, several locations, with roles and access per person."
+          },
+          "q6": {
+            "q": "Is there any commitment?",
+            "a": "No. You try 14 days free, then pay monthly. No contract on hardware."
+          }
+        }
+      },
+      "guides": {
+        "title": "Getting-started guides",
+        "subtitle": "The first steps, explained simply. In one morning, you are ready.",
+        "items": {
+          "g1": {
+            "time": "5 min",
+            "title": "Create your account and your restaurant",
+            "body": "The account, the location, the first settings."
+          },
+          "g2": {
+            "time": "15 min",
+            "title": "Build your menu and your QR codes",
+            "body": "Your dishes, your photos, one QR code per table."
+          },
+          "g3": {
+            "time": "10 min",
+            "title": "Add your team and start service",
+            "body": "The roles, the access, and off you go."
+          }
+        },
+        "perks": {
+          "p1": "Same-day answers, in French",
+          "p2": "We train your team with you",
+          "p3": "Even offline, service goes on"
+        }
+      },
+      "contact": {
+        "title": "Still stuck?",
+        "hours": "A person answers you, Monday to Saturday, from 8 am to 10 pm.",
+        "whatsapp": {
+          "title": "WhatsApp",
+          "body": "The fastest, even during service."
+        },
+        "email": {
+          "title": "Email",
+          "body": "support@attabl.com"
+        },
+        "cities": {
+          "title": "Where to find us",
+          "body": "Yaounde, Ouagadougou, N'Djamena."
+        }
       }
     }
   },
@@ -4198,15 +4598,12 @@
     "installOnHomeScreen": "Install {appName} on your home screen"
   },
   "contact": {
-    "back": "Back",
-    "title": "Let's schedule a meeting",
-    "subtitle": "Fill out the form and our team will get back to you within 24 hours.",
     "successTitle": "Request sent",
     "newMessage": "New message",
     "labelName": "Full name",
     "placeholderName": "John Smith",
-    "labelCompany": "Establishment",
-    "placeholderCompany": "The Plaza Hotel",
+    "labelCompany": "Your venue",
+    "placeholderCompany": "Le Jardin, Ouagadougou",
     "labelEmail": "Business email",
     "placeholderEmail": "john@hotel-plaza.com",
     "labelMessage": "Your message",
@@ -4214,14 +4611,54 @@
     "submitting": "Sending...",
     "submitButton": "Send request",
     "disclaimer": "By submitting, you agree to be contacted by our team.",
-    "demoTitle": "A demo is worth a thousand words",
-    "demoSubtitle": "Discover how Attabl can transform your establishment management in 20 minutes.",
-    "statDemoTime": "20 min",
-    "statDemoLabel": "Personalized demo",
-    "statResponseTime": "24h",
-    "statResponseLabel": "Response time",
-    "statTrialTime": "14 days",
-    "statTrialLabel": "Free trial included"
+    "eyebrow": "Contact",
+    "heroTitle": "Let's talk about your restaurant.",
+    "heroSubtitle": "A French-speaking team in Yaounde, Ouagadougou and N'Djamena. We reply within 24 h.",
+    "formTitle": "Write to us",
+    "formSubtitle": "Tell us where you stand. We come back with a concrete answer, not a pitch.",
+    "formNote": "We usually reply the same day, in French.",
+    "chWhatsapp": "WhatsApp",
+    "chWhatsappDesc": "The fastest. We answer during service.",
+    "chWhatsappCta": "Open WhatsApp",
+    "chEmail": "Email",
+    "chOffices": "Our offices",
+    "chDemoTitle": "Prefer to see Attabl in action?",
+    "chDemoSub": "14-day trial, no credit card.",
+    "chDemoCta": "Try it free",
+    "citiesTitle": "Three cities, one team.",
+    "citiesSubtitle": "Attabl is present in Cameroon, Burkina Faso and Chad. We know your market because we work in it.",
+    "cities": {
+      "yaounde": {
+        "name": "Yaounde",
+        "country": "Cameroon",
+        "phone": "+237 6 58 65 10 50"
+      },
+      "ouaga": {
+        "name": "Ouagadougou",
+        "country": "Burkina Faso",
+        "phone": "+226 65 56 54 11"
+      },
+      "ndjamena": {
+        "name": "N'Djamena",
+        "country": "Chad",
+        "phone": "+235 64 94 03 72"
+      }
+    },
+    "faqTitle": "Frequently asked.",
+    "faq": {
+      "q1": {
+        "q": "How fast do you reply?",
+        "a": "Within 24 h usually, often the same day. On WhatsApp, we answer during service."
+      },
+      "q2": {
+        "q": "Can I try before talking to anyone?",
+        "a": "Yes. A full 14-day trial, no credit card. Write to us whenever you want."
+      },
+      "q3": {
+        "q": "Where are you exactly?",
+        "a": "A French-speaking team in Yaounde, Ouagadougou and N'Djamena. We know your market."
+      }
+    }
   },
   "errors": {
     "notAuthenticated": "Not authenticated",
