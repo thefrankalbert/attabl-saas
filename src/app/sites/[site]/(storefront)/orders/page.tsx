@@ -33,11 +33,11 @@ export default async function OrdersPage({
   const t = await getTranslations('tenant');
 
   return (
-    <div className="h-full bg-white text-[#1A1A1A]">
+    <div className="h-full bg-white text-[var(--color-ink)]">
       {/* Sticky header: title + pill tabs */}
       <div className="sticky top-0 z-40 bg-white">
         <div className="max-w-lg mx-auto px-4 pt-4 pb-3">
-          <h1 className="text-[19px] font-semibold tracking-[-0.6px] text-[#1A1A1A]">
+          <h1 className="text-[19px] font-semibold tracking-[-0.6px] text-[var(--color-ink)]">
             {t('ordersTitle')}
           </h1>
           <div className="mt-3">

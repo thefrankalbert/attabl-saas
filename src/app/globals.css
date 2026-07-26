@@ -845,3 +845,25 @@ body {
 .scrollbar-none {
   scrollbar-width: none;
 }
+
+/*
+ * Global reduced-motion fallback (WCAG 2.3.3).
+ * Only ~3 components read useReducedMotion; this covers every CSS-driven
+ * transition/animation and the decorative infinite loops (gradient-move,
+ * marquee, shiny-text, ping/pulse) for users who ask the OS to reduce motion.
+ * (framer-motion JS/rAF animations are not caught here - those still rely on
+ * useReducedMotion in the component.)
+ * Durations collapse to ~instant rather than 0, so the END state (final opacity,
+ * position, color) still applies - state changes and hierarchy are preserved,
+ * only the motion between states is removed.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

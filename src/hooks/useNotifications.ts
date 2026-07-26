@@ -50,7 +50,8 @@ export function useNotifications({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        // Explicit columns (rule 05) - matches the Notification interface exactly.
+        .select('id, tenant_id, user_id, type, title, body, link, read, created_at')
         .eq('tenant_id', tenantId)
         .or(userId ? `user_id.eq.${userId},user_id.is.null` : 'user_id.is.null')
         .order('created_at', { ascending: false })

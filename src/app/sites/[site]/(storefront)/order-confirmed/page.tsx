@@ -294,9 +294,9 @@ function OrderConfirmedContent() {
     return (
       <div
         className="h-full bg-white flex flex-col items-center justify-center px-4 text-center"
-        style={{ color: '#1A1A1A' }}
+        style={{ color: 'var(--color-ink)' }}
       >
-        <p className="mb-4" style={{ color: '#B0B0B0' }}>
+        <p className="mb-4" style={{ color: 'var(--color-ink-soft)' }}>
           {fetchError ? t('errorHint') : t('orderNotFound')}
         </p>
         {fetchError ? (
@@ -306,7 +306,7 @@ function OrderConfirmedContent() {
               setLoading(true);
               setRetryTick((n) => n + 1);
             }}
-            className="rounded-xl bg-[#1A1A1A] px-6 py-3 font-medium text-white hover:bg-black"
+            className="rounded-xl bg-[var(--color-ink)] px-6 py-3 font-medium text-white hover:bg-black"
           >
             {t('retry')}
           </Button>
@@ -314,7 +314,7 @@ function OrderConfirmedContent() {
           <Link
             href={menuPath}
             className="text-white px-6 py-3 rounded-xl font-medium"
-            style={{ backgroundColor: '#1A1A1A' }}
+            style={{ backgroundColor: 'var(--color-ink)' }}
           >
             {t('backToMenu')}
           </Link>
@@ -430,7 +430,7 @@ function OrderConfirmedContent() {
             size="icon"
             onClick={() => setView('confirmation')}
             aria-label={t('ariaGoBack')}
-            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[#1A1A1A]"
+            className="h-[38px] w-[38px] shrink-0 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-ink)]"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -450,7 +450,7 @@ function OrderConfirmedContent() {
         {showReadyBanner && (
           <div
             className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 animate-pulse-once"
-            style={{ backgroundColor: '#1A1A1A' }}
+            style={{ backgroundColor: 'var(--color-ink)' }}
           >
             <BellRing className="w-6 h-6 shrink-0" />
             <div className="flex-1 min-w-0">
@@ -480,7 +480,7 @@ function OrderConfirmedContent() {
               variant="ghost"
               onClick={requestPermission}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors h-auto justify-start"
-              style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-ink)' }}
             >
               <Bell className="w-4 h-4 shrink-0" />
               <span>{t('enableNotifications')}</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
@@ -10,7 +11,6 @@ import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
 import { QRQuickCard } from './dashboard/QRQuickCard';
-import { RevenueChart } from './dashboard/RevenueChart';
 import { OrdersTable } from './dashboard/OrdersTable';
 import type {
   DashboardBucketSeries,
@@ -30,6 +30,15 @@ type DashboardClientProps = UseDashboardDataParams & {
 };
 
 const EMPTY_CHANNELS: DashboardChannelSeries = { week: [], month: [], quarter: [] };
+
+// Chart pulls in recharts (~100kb gz). Lazy-load it so the default admin bundle stays lean;
+// placeholder reserves the card height to avoid layout shift while it streams in.
+const RevenueChart = dynamic(() => import('./dashboard/RevenueChart').then((m) => m.RevenueChart), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[360px] w-full animate-pulse rounded-xl border border-[var(--border)] bg-[var(--card)]" />
+  ),
+});
 
 export default function DashboardClient(props: DashboardClientProps) {
   const {

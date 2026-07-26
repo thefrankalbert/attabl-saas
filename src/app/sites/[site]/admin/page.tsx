@@ -98,20 +98,13 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
 
   const supabase = await createClient();
 
-  // Get current user's name for greeting
+  // Get current user for greeting. The admin_users name lookup is folded into the
+  // dashboard Promise.all below (it only needs authUser.id) instead of blocking it.
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
-  let userName: string | undefined;
-  if (authUser) {
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('full_name')
-      .eq('user_id', authUser.id)
-      .eq('tenant_id', tenant.id)
-      .single();
-    userName = adminUser?.full_name || (authUser.user_metadata?.full_name as string);
-  }
+  // Metadata fallback set up front so a dashboard-batch failure still greets the user.
+  let userName = authUser?.user_metadata?.full_name as string | undefined;
 
   let initialStats: DashboardStats = {
     ordersToday: 0,
@@ -156,6 +149,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       lowStockRes,
       tablesRes,
       openSessionsRes,
+      adminUserRes,
     ] = await Promise.all([
       // Today's orders (stats)
       supabase
@@ -242,7 +236,21 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .select('table_number')
         .eq('tenant_id', tenant.id)
         .eq('status', 'open'),
+
+      // Current user's display name for the greeting - folded into the batch
+      // (only needs authUser.id). .single() resolves with {data,error}, so a
+      // missing row never rejects the Promise.all.
+      authUser
+        ? supabase
+            .from('admin_users')
+            .select('full_name')
+            .eq('user_id', authUser.id)
+            .eq('tenant_id', tenant.id)
+            .single()
+        : Promise.resolve({ data: null as { full_name: string | null } | null }),
     ]);
+
+    userName = adminUserRes.data?.full_name || userName;
 
     // --- Today stats -------------------------------------
     const ordersData = ordersRes.data || [];
