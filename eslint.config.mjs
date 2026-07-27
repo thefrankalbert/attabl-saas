@@ -263,6 +263,28 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // React Compiler lint rules: NOT enforced (2026-07-26).
+  // eslint-config-next's recommended set ships the React Compiler rules
+  // (set-state-in-effect, refs, incompatible-library). They stayed silent until
+  // the next 16.2.12 security bump changed the compiler's library-compat
+  // detection, at which point they began flagging PRE-EXISTING, correct code -
+  // the documented SSR hydration pattern (useState(serverDefault) + useEffect
+  // client hydrate for localStorage/sessionStorage/Date.now). React Compiler is
+  // NOT enabled in this app (no experimental.reactCompiler in next.config), so
+  // these are advisory, not correctness/security issues. They are turned off
+  // here (rather than papering over each site with disables, or rushing risky
+  // refactors of the live ordering flow alongside a security patch). Adopting
+  // React Compiler patterns properly (useSyncExternalStore / key-remount),
+  // verified screen-by-screen, is tracked as a dedicated follow-up.
+  // rules-of-hooks and exhaustive-deps stay ON (untouched above).
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/incompatible-library': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -14,7 +14,10 @@ overrides:
   '@anthropic-ai/sdk@>=0.79.0 <0.91.1': 0.109.0
   '@babel/core@<=7.29.0': '>=7.29.6'
   '@opentelemetry/core@<2.8.0': '>=2.8.0'
-  brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
+  # brace-expansion ReDoS (GHSA-mh99-v99m-4gvg) is patched ONLY in 5.0.8, whose
+  # export shape needs a modern minimatch - hence minimatch is pinned to 10.2.5
+  # below (only exceljs still pulled an old minimatch; verified: Excel export OK).
+  brace-expansion: 5.0.8
   dompurify: '>=3.3.2'
   dompurify@<3.4.0: '>=3.4.0'
   dompurify@<3.4.7: '>=3.4.7'
@@ -26,12 +29,12 @@ overrides:
   dompurify@>=1.0.10 <3.4.0: '>=3.4.0'
   dompurify@>=3.0.0 <=3.4.7: '>=3.4.8'
   dompurify@>=3.0.1 <3.4.0: '>=3.4.0'
-  fast-uri: '>=3.1.2'
-  minimatch@<3.1.4: '>=3.1.4'
-  minimatch@>=9.0.0 <9.0.7: '>=9.0.7'
+  fast-uri: 4.1.1
+  minimatch: 10.2.5
   picomatch@<2.3.2: '>=2.3.2'
   picomatch@>=4.0.0 <4.0.4: '>=4.0.4'
-  postcss@<8.5.10: '>=8.5.10'
+  postcss@<8.5.18: 8.5.23
+  sharp@<0.35.0: 0.35.3
   rollup@>=4.0.0 <4.59.0: '>=4.59.0'
   serialize-javascript: '>=7.0.3'
   uuid@<11.1.1: '>=11.1.1'
