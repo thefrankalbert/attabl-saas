@@ -44,7 +44,7 @@ export function OrdersTableToolbar({
   ];
 
   return (
-    <div className="mb-3 flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <div className="inline-flex gap-0.5 rounded-[0.625rem] bg-[var(--muted)] p-[3px]">
         {TABS.map(({ key, label }) => (
           <Button

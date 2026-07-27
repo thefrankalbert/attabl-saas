@@ -3,19 +3,12 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { csvCell } from '@/lib/utils/csv';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Order } from '@/types/admin.types';
 import {
   HEAD_CLS,
@@ -117,7 +110,6 @@ export function OrdersTable({
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
   const rows = filtered.slice(safePage * pageSize, safePage * pageSize + pageSize);
-  const colCount = 6 + (cols.type ? 1 : 0) + (cols.payment ? 1 : 0) + (cols.items ? 1 : 0);
 
   const toggleRow = (id: string) =>
     setSelected((prev) => {
@@ -188,92 +180,108 @@ export function OrdersTable({
   };
 
   return (
-    <div className="px-3 sm:px-5">
-      {/* Toolbar: tabs + selection count */}
-      <OrdersTableToolbar
-        tab={tab}
-        counts={counts}
-        onChangeTab={changeTab}
-        cols={cols}
-        setCols={setCols}
-        adminBase={adminBase}
-      />
-
-      {/* Selection bar (maquette .sel-bar) */}
-      {selected.size > 0 && (
-        <OrdersTableSelectionBar
-          count={selected.size}
-          canChangeStatus={!!onStatusChange}
-          onBulkAdvance={bulkAdvance}
-          onBulkCancel={bulkCancel}
-          onExport={exportCsv}
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+      {/* Controls header: tabs, column picker and pagination, pinned to the top */}
+      <div className="flex flex-col gap-3 border-b border-[var(--border)] p-3 sm:p-4">
+        <OrdersTableToolbar
+          tab={tab}
+          counts={counts}
+          onChangeTab={changeTab}
+          cols={cols}
+          setCols={setCols}
+          adminBase={adminBase}
         />
-      )}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-[var(--muted)] hover:bg-[var(--muted)]">
-              <TableHead className={cn(HEAD_CLS, 'w-10')}>
-                <Checkbox
-                  checked={allPageSelected}
-                  onCheckedChange={togglePage}
-                  aria-label="Select page"
-                />
-              </TableHead>
-              <TableHead className={HEAD_CLS}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => toggleSort('id')}
-                  className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
-                >
-                  {t('colOrder')}
-                  {sortKey === 'id' &&
-                    (sortDir === 'asc' ? (
-                      <ChevronUp className="size-3.5 opacity-70" />
-                    ) : (
-                      <ChevronDown className="size-3.5 opacity-70" />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead className={HEAD_CLS}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => toggleSort('time')}
-                  className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
-                >
-                  {t('colTime')}
-                  {sortKey === 'time' &&
-                    (sortDir === 'asc' ? (
-                      <ChevronUp className="size-3.5 opacity-70" />
-                    ) : (
-                      <ChevronDown className="size-3.5 opacity-70" />
-                    ))}
-                </Button>
-              </TableHead>
-              {cols.type && <TableHead className={HEAD_CLS}>{t('colType')}</TableHead>}
-              <TableHead className={HEAD_CLS}>{t('colStatus')}</TableHead>
-              {cols.payment && <TableHead className={HEAD_CLS}>{t('colPayment')}</TableHead>}
-              <TableHead className={cn(HEAD_CLS, 'text-right')}>{t('colAmount')}</TableHead>
-              {cols.items && <TableHead className={HEAD_CLS}>{t('colItems')}</TableHead>}
-              <TableHead className={cn(HEAD_CLS, 'w-10')} />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={colCount}
-                  className="h-24 text-center text-[13px] text-[var(--muted-foreground)]"
-                >
-                  {t('ordersTableEmpty')}
-                </TableCell>
+        {/* Selection bar (maquette .sel-bar) */}
+        {selected.size > 0 && (
+          <OrdersTableSelectionBar
+            count={selected.size}
+            canChangeStatus={!!onStatusChange}
+            onBulkAdvance={bulkAdvance}
+            onBulkCancel={bulkCancel}
+            onExport={exportCsv}
+          />
+        )}
+
+        <OrdersTableFooter
+          selectedCount={selected.size}
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          setPage={setPage}
+          safePage={safePage}
+          pageCount={pageCount}
+        />
+      </div>
+
+      {/* Live orders or the empty state - fills the rest of the card */}
+      <div className="flex-1 overflow-auto">
+        {rows.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-[var(--muted)]">
+              <ReceiptText className="size-6 text-[var(--muted-foreground)]" strokeWidth={1.75} />
+            </span>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-[var(--foreground)]">
+                {t('ordersTableEmpty')}
+              </p>
+              <p className="mx-auto max-w-xs text-[13px] text-[var(--muted-foreground)]">
+                {t('ordersTableEmptyHint')}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[var(--muted)] hover:bg-[var(--muted)]">
+                <TableHead className={cn(HEAD_CLS, 'w-10')}>
+                  <Checkbox
+                    checked={allPageSelected}
+                    onCheckedChange={togglePage}
+                    aria-label="Select page"
+                  />
+                </TableHead>
+                <TableHead className={HEAD_CLS}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => toggleSort('id')}
+                    className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
+                  >
+                    {t('colOrder')}
+                    {sortKey === 'id' &&
+                      (sortDir === 'asc' ? (
+                        <ChevronUp className="size-3.5 opacity-70" />
+                      ) : (
+                        <ChevronDown className="size-3.5 opacity-70" />
+                      ))}
+                  </Button>
+                </TableHead>
+                <TableHead className={HEAD_CLS}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => toggleSort('time')}
+                    className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
+                  >
+                    {t('colTime')}
+                    {sortKey === 'time' &&
+                      (sortDir === 'asc' ? (
+                        <ChevronUp className="size-3.5 opacity-70" />
+                      ) : (
+                        <ChevronDown className="size-3.5 opacity-70" />
+                      ))}
+                  </Button>
+                </TableHead>
+                {cols.type && <TableHead className={HEAD_CLS}>{t('colType')}</TableHead>}
+                <TableHead className={HEAD_CLS}>{t('colStatus')}</TableHead>
+                {cols.payment && <TableHead className={HEAD_CLS}>{t('colPayment')}</TableHead>}
+                <TableHead className={cn(HEAD_CLS, 'text-right')}>{t('colAmount')}</TableHead>
+                {cols.items && <TableHead className={HEAD_CLS}>{t('colItems')}</TableHead>}
+                <TableHead className={cn(HEAD_CLS, 'w-10')} />
               </TableRow>
-            ) : (
-              rows.map((o) => (
+            </TableHeader>
+            <TableBody>
+              {rows.map((o) => (
                 <OrdersTableRow
                   key={o.id}
                   order={o}
@@ -285,21 +293,11 @@ export function OrdersTable({
                   nowMs={nowMs}
                   formatValue={formatValue}
                 />
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
-
-      {/* Footer: selection text (left) + rows-per-page + page indicator + nav (right) */}
-      <OrdersTableFooter
-        selectedCount={selected.size}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setPage={setPage}
-        safePage={safePage}
-        pageCount={pageCount}
-      />
     </div>
   );
 }

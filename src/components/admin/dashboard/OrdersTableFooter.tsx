@@ -33,7 +33,7 @@ export function OrdersTableFooter({
   const t = useTranslations('admin');
 
   return (
-    <div className="mt-3 flex flex-col items-stretch gap-3 px-1 sm:flex-row sm:items-center">
+    <div className="flex flex-col items-stretch gap-3 px-1 sm:flex-row sm:items-center">
       <div className="flex-1 text-[13px] text-[var(--muted-foreground)]">
         {t('selectedCount', { count: selectedCount })}
       </div>

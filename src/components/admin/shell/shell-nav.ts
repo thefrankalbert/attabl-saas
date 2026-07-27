@@ -12,6 +12,7 @@ import {
   Boxes,
   Truck,
   FileText,
+  QrCode,
 } from 'lucide-react';
 
 // --- Types ----------------------------------------------
@@ -39,6 +40,7 @@ export const CATALOGUE: ShellNavItem[] = [
   { path: '/menus', groupId: 'organization', icon: BookOpen, labelKey: 'navMenus' },
   { path: '/categories', groupId: 'organization', icon: LayoutGrid, labelKey: 'navCategories' },
   { path: '/items', groupId: 'organization', icon: UtensilsCrossed, labelKey: 'navDishes' },
+  { path: '/qr-codes', groupId: 'organization', icon: QrCode, labelKey: 'navQrCodes' },
 ];
 
 export const GESTION: ShellNavItem[] = [
