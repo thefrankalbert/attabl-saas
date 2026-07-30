@@ -72,6 +72,40 @@ Apres un deploy qui touche le shell ou le dashboard : verifier la surface reelle
 prod (au moins 1 viewport desktop + 1 mobile) AVANT de considerer la tache finie.
 Si un skew d'assets est suspecte : hard refresh d'abord, puis juger.
 
+## 4bis. Un merge ne suffit PAS a livrer - verifier la promotion (piege recurrent)
+
+Sur ce projet, un merge sur `main` cree bien un deploiement `target=production` qui
+passe READY, mais Vercel ne lui assigne PAS toujours le domaine `attabl.com`. Le
+code est alors builde mais **jamais servi** :
+
+- `503c0eec` (PR #293, vitrine marketing) : jamais aliase, prod restee sur l'ancien
+  build pendant des jours.
+- `6cb54d46` (PR #294) : aliase seulement apres un `vercel promote` manuel.
+
+La configuration du projet est pourtant SAINE (verifie 2026-07-30 via l'API Vercel :
+`link.productionBranch=main`, domaines `attabl.com` + `*.attabl.com` verifies sans
+`gitBranch` ni `redirect`, `autoAssignCustomDomains=true`, `rollingRelease=null`,
+`lastRollbackTarget=null`). Il n'y a donc AUCUN reglage a corriger : le comportement
+vient de la plateforme. La seule parade est de verifier apres chaque merge.
+
+**Procedure obligatoire apres chaque merge sur main :**
+
+```bash
+./scripts/promote-prod.sh          # verifie et promeut si necessaire
+./scripts/promote-prod.sh --check  # verifie seulement (CI / doute)
+```
+
+Sortie grep-friendly : `^prod: IN-SYNC|PROMOTED|OUT-OF-SYNC|ERROR`.
+
+- Le discriminant FIABLE est `curl https://attabl.com/api/version?cb=$(date +%s)` :
+  il renvoie le SHA du commit reellement servi. Comparer a `git rev-parse origin/main`.
+- NE PAS se fier au check "Vercel" de GitHub : il reste `pending` (etat de PR
+  `UNSTABLE`) bien apres que le deploiement soit READY. Verifier avec
+  `npx vercel inspect <url>` ou l'API.
+- NE PAS conclure "c'est du cache" sans preuve : verifier les en-tetes
+  (`x-vercel-cache`, `age`, `cache-control`). Un `MISS` + `age: 0` + `no-store`
+  signifie que le domaine sert vraiment l'ancien deploiement.
+
 ## 5. Composants fixed/sticky superposes (piege recurrent)
 
 Avant d'ajouter un element `fixed`/`sticky`, verifier tous les autres elements
