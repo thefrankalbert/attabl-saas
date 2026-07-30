@@ -18,7 +18,6 @@ export function usePOSCart(zones: Zone[], allTables: Table[], cart: CartItem[]) 
   // Initialize picker zone when dialog opens
   useEffect(() => {
     if (showTablePicker && zones.length > 0 && !pickerZoneId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: one-time default zone selection when the picker dialog opens; guarded by !pickerZoneId so it sets once and cannot loop (2026-06-18)
       setPickerZoneId(zones[0].id);
     }
   }, [showTablePicker, zones, pickerZoneId]);

@@ -10,7 +10,6 @@ import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
-import { QRQuickCard } from './dashboard/QRQuickCard';
 import { OrdersTable } from './dashboard/OrdersTable';
 import type {
   DashboardBucketSeries,
@@ -220,14 +219,29 @@ export default function DashboardClient(props: DashboardClientProps) {
   }
 
   return (
-    // Maquette layout: vertical stack (KPI cards -> revenue chart -> orders
-    // table), full width, scrolling within the admin shell's main area.
-    <div className="flex flex-col gap-6 py-6">
-      <SectionCards cards={sectionCards} />
-      <div className="px-3 sm:px-5">
-        <QRQuickCard href={`${adminBase}/qr-codes`} tableCount={initialActiveTables.total} />
+    // Dashboard layout: the live orders table owns the full-height left column;
+    // the KPI cards (2 across) sit top-right with the revenue chart beneath them.
+    // Below xl everything stacks: KPI cards, then the orders, then the chart.
+    <div className="grid grid-cols-1 gap-6 py-6 xl:grid-cols-[minmax(0,1fr)_440px]">
+      {/* KPI cards - tablet: first; desktop: top-right */}
+      <div className="order-1 xl:col-start-2 xl:row-start-1 xl:self-start">
+        <SectionCards cards={sectionCards} />
       </div>
-      <div className="px-3 sm:px-5">
+
+      {/* Live orders - tablet: second; desktop: full-height left column */}
+      <div className="order-2 min-w-0 xl:col-start-1 xl:row-start-1 xl:row-span-2">
+        <OrdersTable
+          orders={recentOrders}
+          formatValue={fmtF}
+          locale={locale}
+          adminBase={adminBase}
+          nowMs={currentTime.getTime()}
+          onStatusChange={handleStatusChange}
+        />
+      </div>
+
+      {/* Revenue chart - tablet: last; desktop: bottom-right */}
+      <div className="order-3 min-w-0 px-3 sm:px-5 xl:col-start-2 xl:row-start-2 xl:self-start">
         <RevenueChart
           series={initialChannelBuckets}
           formatValue={fmtF}
@@ -235,6 +249,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           labels={{
             title: t('chartRevenueTitle'),
             desc: t('chartRevenueDesc'),
+            empty: t('chartRevenueEmpty'),
             surplace: t('channelSurplace'),
             emporter: t('channelEmporter'),
             range90d: t('range90d'),
@@ -244,14 +259,6 @@ export default function DashboardClient(props: DashboardClientProps) {
           }}
         />
       </div>
-      <OrdersTable
-        orders={recentOrders}
-        formatValue={fmtF}
-        locale={locale}
-        adminBase={adminBase}
-        nowMs={currentTime.getTime()}
-        onStatusChange={handleStatusChange}
-      />
     </div>
   );
 }

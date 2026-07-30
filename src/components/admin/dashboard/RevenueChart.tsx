@@ -23,6 +23,8 @@ type RangeKey = 'quarter' | 'month' | 'week';
 interface RevenueChartLabels {
   title: string;
   desc: string;
+  /** Shown in place of the chart when the selected range has no sales */
+  empty: string;
   surplace: string;
   emporter: string;
   range90d: string;
@@ -61,11 +63,13 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)] shadow-[0_1px_2px_0_rgb(0_0_0/0.05)]">
-      <div className="relative grid gap-1.5 px-6 pt-6">
-        <div className="text-sm font-semibold">{labels.title}</div>
-        <div className="text-[13px] text-[var(--muted-foreground)]">{labels.desc}</div>
-        <div className="absolute right-6 top-6 flex items-center gap-3">
-          <div className="hidden items-center gap-[14px] text-xs text-[var(--muted-foreground)] md:flex">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-6">
+        <div className="grid gap-1.5">
+          <div className="text-sm font-semibold">{labels.title}</div>
+          <div className="text-[13px] text-[var(--muted-foreground)]">{labels.desc}</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-[14px] whitespace-nowrap text-xs text-[var(--muted-foreground)] md:flex">
             <span className="flex items-center gap-1.5">
               <span
                 className="size-2.5 rounded-[3px]"
@@ -153,7 +157,10 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
                 tickLine={false}
                 axisLine={false}
                 width={44}
-                tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+                tickFormatter={(v: number) => {
+                  if (v >= 1_000_000) return `${Math.round(v / 100_000) / 10}M`;
+                  return v >= 1000 ? `${Math.round(v / 1000)}k` : String(v);
+                }}
                 stroke="var(--muted-foreground)"
                 fontSize={11}
               />
@@ -190,7 +197,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
           </ChartContainer>
         ) : (
           <div className="flex h-[250px] items-center justify-center text-[13px] text-[var(--muted-foreground)]">
-            {labels.desc}
+            {labels.empty}
           </div>
         )}
       </div>
