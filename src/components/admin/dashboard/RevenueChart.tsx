@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 import type { DashboardChannelSeries } from '@/types/dashboard.types';
 
 type RangeKey = 'quarter' | 'month' | 'week';
@@ -42,15 +41,6 @@ interface RevenueChartProps {
 export function RevenueChart({ series, formatValue, locale, labels }: RevenueChartProps) {
   const [range, setRange] = useState<RangeKey>('quarter');
   const data = useMemo(() => series[range] ?? [], [series, range]);
-
-  // Recharts se dimensionne sur le DOM : rendu cote serveur il recoit -1x-1 et
-  // avertit. On garde l'en-tete en SSR et on monte le graphe apres hydratation,
-  // a hauteur identique pour ne pas decaler la carte.
-  const mounted = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
 
   const config: ChartConfig = useMemo(
     () => ({
@@ -137,9 +127,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
       </div>
 
       <div className="px-6 pb-6 pt-2">
-        {!mounted ? (
-          <div className="h-[250px]" />
-        ) : hasData ? (
+        {hasData ? (
           <ChartContainer config={config} className="h-[250px] w-full">
             <AreaChart data={data} margin={{ left: 4, right: 8, top: 10, bottom: 0 }}>
               <defs>

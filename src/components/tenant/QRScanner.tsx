@@ -76,7 +76,6 @@ export default function QRScanner({
   const [scannedResult, setScannedResult] = useState<QRScanResult | null>(null);
 
   // Reset on open/close
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional: isOpen is an external prop boundary; full multi-field reset required on each open/close cycle; component persists across open/close so useState initializer is insufficient (2026-05-05) */
   useEffect(() => {
     if (!isOpen) {
       setScanStatus('loading');
@@ -90,7 +89,6 @@ export default function QRScanner({
     setMatchedTable(null);
     setScannedResult(null);
   }, [isOpen]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // loading -> scanning transition (gives camera time to init)
   useEffect(() => {
