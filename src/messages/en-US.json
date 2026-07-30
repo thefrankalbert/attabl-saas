@@ -1779,6 +1779,7 @@
     "kpiTablesFoot": "{used} of {total} in use",
     "chartRevenueTitle": "Total revenue",
     "chartRevenueDesc": "Revenue by sales channel",
+    "chartRevenueEmpty": "No sales in this period.",
     "channelSurplace": "Dine-in",
     "channelEmporter": "Takeaway",
     "ordersTableTitle": "Orders",

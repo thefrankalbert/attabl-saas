@@ -249,6 +249,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           labels={{
             title: t('chartRevenueTitle'),
             desc: t('chartRevenueDesc'),
+            empty: t('chartRevenueEmpty'),
             surplace: t('channelSurplace'),
             emporter: t('channelEmporter'),
             range90d: t('range90d'),

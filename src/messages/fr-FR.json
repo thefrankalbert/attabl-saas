@@ -1779,6 +1779,7 @@
     "kpiTablesFoot": "{used} sur {total} occupées",
     "chartRevenueTitle": "Total des revenus",
     "chartRevenueDesc": "Chiffre d'affaires par canal de vente",
+    "chartRevenueEmpty": "Aucune vente sur cette periode.",
     "channelSurplace": "Sur place",
     "channelEmporter": "A emporter",
     "ordersTableTitle": "Commandes",

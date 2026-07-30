@@ -23,6 +23,8 @@ type RangeKey = 'quarter' | 'month' | 'week';
 interface RevenueChartLabels {
   title: string;
   desc: string;
+  /** Shown in place of the chart when the selected range has no sales */
+  empty: string;
   surplace: string;
   emporter: string;
   range90d: string;
@@ -195,7 +197,7 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
           </ChartContainer>
         ) : (
           <div className="flex h-[250px] items-center justify-center text-[13px] text-[var(--muted-foreground)]">
-            {labels.desc}
+            {labels.empty}
           </div>
         )}
       </div>
