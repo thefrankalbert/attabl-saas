@@ -44,8 +44,8 @@ export function OrdersTableToolbar({
   ];
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="inline-flex gap-0.5 rounded-[0.625rem] bg-[var(--muted)] p-[3px]">
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="inline-flex max-w-full flex-wrap gap-0.5 rounded-[0.625rem] bg-[var(--muted)] p-[3px]">
         {TABS.map(({ key, label }) => (
           <Button
             key={key}
@@ -74,7 +74,7 @@ export function OrdersTableToolbar({
         ))}
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

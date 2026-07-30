@@ -317,7 +317,9 @@
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --c-surplace: #16a34a;
+  /* Canaux de vente du graphe dashboard. Teintes issues de CHART_PALETTE
+     (oklch 0.70 0.15, hues espacees) - pas de vert en admin, cf regle 09. */
+  --c-surplace: oklch(0.7 0.15 308);
   --c-emporter: #2563eb;
   --success: oklch(0.63 0.17 149);
   --warning: oklch(0.7 0.16 70);
@@ -393,7 +395,9 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --c-surplace: #4ade80;
+  /* A redeclarer ici : les blocs clair/sombre sont deux selecteurs :has()
+     disjoints, ils ne cascadent pas l'un sur l'autre. */
+  --c-surplace: oklch(0.7 0.15 308);
   --c-emporter: #60a5fa;
   --success: oklch(0.7 0.15 150);
   --warning: oklch(0.75 0.15 75);

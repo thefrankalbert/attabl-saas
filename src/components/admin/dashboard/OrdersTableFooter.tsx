@@ -33,12 +33,12 @@ export function OrdersTableFooter({
   const t = useTranslations('admin');
 
   return (
-    <div className="flex flex-col items-stretch gap-3 px-1 sm:flex-row sm:items-center">
-      <div className="flex-1 text-[13px] text-[var(--muted-foreground)]">
+    <div className="flex flex-wrap items-center gap-3 px-1">
+      <div className="flex-1 whitespace-nowrap text-[13px] text-[var(--muted-foreground)]">
         {t('selectedCount', { count: selectedCount })}
       </div>
-      <div className="flex items-center gap-5">
-        <div className="flex items-center gap-2 text-[13px] font-medium">
+      <div className="ml-auto flex items-center gap-5">
+        <div className="flex items-center gap-2 whitespace-nowrap text-[13px] font-medium">
           {t('rowsPerPage')}
           <Select
             value={String(pageSize)}
@@ -59,7 +59,7 @@ export function OrdersTableFooter({
             </SelectContent>
           </Select>
         </div>
-        <span className="text-[13px] font-medium">
+        <span className="whitespace-nowrap text-[13px] font-medium">
           {t('pageOf', { page: safePage + 1, total: pageCount })}
         </span>
         <div className="flex gap-1">
