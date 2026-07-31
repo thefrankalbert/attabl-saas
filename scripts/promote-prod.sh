@@ -18,8 +18,9 @@
 # enverrait du code non merge en production.
 #
 # Usage :
-#   ./scripts/promote-prod.sh            # verifie, et promeut si necessaire
-#   ./scripts/promote-prod.sh --check    # verifie seulement, ne promeut pas
+#   ./scripts/promote-prod.sh                # verifie, et promeut si necessaire
+#   ./scripts/promote-prod.sh --check        # verifie seulement, ne promeut pas
+#   ./scripts/promote-prod.sh --wait 15      # attend que le build soit READY (CI)
 #
 # Authentification : VERCEL_TOKEN, sinon le token du CLI (`vercel login`).
 # Sortie grep-friendly : ^prod: IN-SYNC|PROMOTED|OUT-OF-SYNC|NOT-READY|ERROR
@@ -28,7 +29,21 @@ set -euo pipefail
 
 DOMAIN="${PROD_DOMAIN:-https://attabl.com}"
 CHECK_ONLY=false
-[[ "${1:-}" == "--check" ]] && CHECK_ONLY=true
+WAIT_MINUTES=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check) CHECK_ONLY=true ;;
+    --wait)
+      WAIT_MINUTES="${2:-15}"
+      shift
+      ;;
+    *)
+      echo "usage: $0 [--check] [--wait <minutes>]" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -87,13 +102,14 @@ fi
 API="https://api.vercel.com/v6/deployments?projectId=${PROJECT_ID}&target=production&limit=20"
 [[ -n "$TEAM_ID" ]] && API="${API}&teamId=${TEAM_ID}"
 
-RESPONSE="$(curl -fsS "$API" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || true)"
-if [[ -z "$RESPONSE" || "$RESPONSE" == *'"error"'* ]]; then
-  echo "prod: ERROR - API Vercel inaccessible (token expire ? relancer 'vercel login')"
-  exit 1
-fi
-
-MATCH="$(EXPECTED="$EXPECTED" RESPONSE="$RESPONSE" node -e '
+find_deployment() {
+  local response
+  response="$(curl -fsS "$API" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || true)"
+  if [[ -z "$response" || "$response" == *'"error"'* ]]; then
+    echo "APIFAIL - -"
+    return
+  fi
+  EXPECTED="$EXPECTED" RESPONSE="$response" node -e '
 const deps = (JSON.parse(process.env.RESPONSE).deployments || []).filter(
   (d) => (d.meta || {}).githubCommitSha === process.env.EXPECTED,
 );
@@ -101,15 +117,32 @@ const ready = deps.find((d) => d.state === "READY");
 if (ready) process.stdout.write(`READY https://${ready.url} ${ready.readySubstate || "?"}`);
 else if (deps.length) process.stdout.write(`${deps[0].state} - -`);
 else process.stdout.write("ABSENT - -");
-')"
+'
+}
 
-read -r STATE DEPLOY_URL SUBSTATE <<<"$MATCH"
-
-if [[ "$STATE" != "READY" ]]; then
-  echo "prod: NOT-READY - aucun deploiement production READY pour ${EXPECTED:0:8} (etat: ${STATE})"
-  echo "  -> build en cours ou en echec : verifier sur vercel.com avant de reessayer"
-  exit 1
-fi
+# Le build Vercel prend quelques minutes : en CI on attend qu'il soit READY
+# plutot que d'echouer. En local (WAIT_MINUTES=0) on rend la main tout de suite.
+DEADLINE=$(($(date +%s) + WAIT_MINUTES * 60))
+while :; do
+  read -r STATE DEPLOY_URL SUBSTATE <<<"$(find_deployment)"
+  [[ "$STATE" == "READY" ]] && break
+  if [[ "$STATE" == "APIFAIL" ]]; then
+    echo "prod: ERROR - API Vercel inaccessible (token expire ? relancer 'vercel login')"
+    exit 1
+  fi
+  if [[ "$STATE" == "ERROR" || "$STATE" == "CANCELED" ]]; then
+    echo "prod: ERROR - le deploiement de ${EXPECTED:0:8} a echoue (${STATE})"
+    exit 1
+  fi
+  if (($(date +%s) >= DEADLINE)); then
+    echo "prod: NOT-READY - aucun deploiement production READY pour ${EXPECTED:0:8} (etat: ${STATE})"
+    [[ "$WAIT_MINUTES" -gt 0 ]] && echo "  -> toujours pas pret apres ${WAIT_MINUTES} min"
+    echo "  -> build en cours ou en echec : verifier sur vercel.com avant de reessayer"
+    exit 1
+  fi
+  echo "  build ${STATE} pour ${EXPECTED:0:8}, nouvelle tentative dans 30 s..."
+  sleep 30
+done
 
 echo "deploiement cible     : ${DEPLOY_URL} (substate ${SUBSTATE})"
 npx --yes vercel promote "$DEPLOY_URL" --scope "$TEAM_ID" 2>&1 | tail -2
