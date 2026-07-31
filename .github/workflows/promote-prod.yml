@@ -1,0 +1,73 @@
+name: Promote production
+
+# Promeut automatiquement le deploiement production apres chaque push sur main.
+#
+# Pourquoi ce workflow existe : sur ce projet, Vercel cree bien un deploiement
+# `target=production` a chaque merge, il passe READY, mais il reste en substate
+# STAGED et le domaine attabl.com continue de servir l'ancien build. Mesures :
+#   - l'assignation se faisait en 1-2 s jusqu'au 21/07/2026, plus jamais depuis le 26/07
+#   - un deploiement de test est reste STAGED plus de 18 h sans intervention
+#   - les autres projets de la meme equipe Vercel sont promus en 0-1 s : le probleme
+#     est propre a ce projet, sa configuration etant par ailleurs saine
+# Consequence : sans promotion, du code merge reste invisible en production. C'est
+# arrive a la vitrine marketing (503c0eec), restee non servie pendant des jours.
+#
+# Secret requis (Settings -> Secrets and variables -> Actions) :
+#   VERCEL_TOKEN   token cree sur https://vercel.com/account/tokens
+#                  (scope : l'equipe qui possede le projet)
+# Sans ce secret, le job ne fait rien et l'explique dans son resume - il n'echoue
+# pas, pour ne pas transformer chaque merge en alerte rouge.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: promote-prod
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote production deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Promote (attend le build, puis promeut si necessaire)
+        id: promote
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "### Promotion production ignoree" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Le secret \`VERCEL_TOKEN\` n'est pas configure." >> "$GITHUB_STEP_SUMMARY"
+            echo "Creer un token sur https://vercel.com/account/tokens puis :" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo 'gh secret set VERCEL_TOKEN' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "En attendant, lancer \`./scripts/promote-prod.sh\` en local apres chaque merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ./scripts/promote-prod.sh --wait 15 | tee /tmp/promote.log
+
+      - name: Resume
+        if: always()
+        run: |
+          if [ -f /tmp/promote.log ]; then
+            {
+              echo "### Promotion production"
+              echo ""
+              echo '```'
+              cat /tmp/promote.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
