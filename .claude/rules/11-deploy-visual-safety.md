@@ -72,39 +72,69 @@ Apres un deploy qui touche le shell ou le dashboard : verifier la surface reelle
 prod (au moins 1 viewport desktop + 1 mobile) AVANT de considerer la tache finie.
 Si un skew d'assets est suspecte : hard refresh d'abord, puis juger.
 
-## 4bis. Un merge ne suffit PAS a livrer - verifier la promotion (piege recurrent)
+## 4bis. Un merge ne suffit PAS a livrer - la promotion production
 
 Sur ce projet, un merge sur `main` cree bien un deploiement `target=production` qui
-passe READY, mais Vercel ne lui assigne PAS toujours le domaine `attabl.com`. Le
-code est alors builde mais **jamais servi** :
+passe `READY`, mais il reste en substate **`STAGED`** : le domaine `attabl.com`
+continue de servir l'ancien build. Le code est alors builde mais **jamais servi**.
+C'est arrive a `503c0eec` (PR #293, vitrine marketing), restee non servie pendant
+des jours sans que personne le voie.
 
-- `503c0eec` (PR #293, vitrine marketing) : jamais aliase, prod restee sur l'ancien
-  build pendant des jours.
-- `6cb54d46` (PR #294) : aliase seulement apres un `vercel promote` manuel.
+### Ce que l'audit a etabli (2026-07-30/31, mesures et non hypotheses)
 
-La configuration du projet est pourtant SAINE (verifie 2026-07-30 via l'API Vercel :
-`link.productionBranch=main`, domaines `attabl.com` + `*.attabl.com` verifies sans
-`gitBranch` ni `redirect`, `autoAssignCustomDomains=true`, `rollingRelease=null`,
-`lastRollbackTarget=null`). Il n'y a donc AUCUN reglage a corriger : le comportement
-vient de la plateforme. La seule parade est de verifier apres chaque merge.
+1. **Ce n'est pas un delai.** Un deploiement production de test est reste `STAGED`
+   plus de **18 heures** sans aucune intervention.
+2. **La regression est datee.** Ecart mesure entre `ready` et `aliasAssigned` sur
+   les 13 derniers deploiements production : **1 a 2 s** du 18 au 21 juillet
+   (8 deploiements d'affilee), puis **jamais** a partir du 26 juillet.
+3. **Ce n'est pas le compte.** Les autres projets de la meme equipe Vercel sont
+   promus en 0-1 s, `lamaisonomade` y compris le 27 juillet (donc apres la
+   bascule). Le probleme est **propre au projet attabl-saas**.
+4. **Ce n'est pas un reglage.** Diff complet des reglages contre un projet qui
+   fonctionne : aucune difference pertinente. `link.productionBranch=main`,
+   domaines verifies et `misconfigured=false`, `autoAssignCustomDomains=true`,
+   `rollingRelease=null`, `lastRollbackTarget=null`, compte sans `softBlock` ni
+   `featureBlocks`, plan hobby actif.
+5. **Seule particularite restante** : attabl-saas est le seul projet a avoir un
+   domaine **wildcard** (`*.attabl.com`). Symptome associe : sur `lamaisonomade`,
+   `targets.production.alias` contient le domaine custom ; sur attabl-saas il ne
+   contient que les URLs `vercel.app`, `attabl.com` en est absent.
 
-**Procedure obligatoire apres chaque merge sur main :**
+Conclusion : comportement cote plateforme, specifique a ce projet. Ne pas perdre
+de temps a chercher un reglage a corriger, et ne PAS detacher/rattacher le domaine
+(tous les sous-domaines tenants en dependent).
+
+### La parade
+
+Un workflow (`.github/workflows/promote-prod.yml`) promeut automatiquement apres
+chaque push sur `main`. Il exige le secret `VERCEL_TOKEN` (token cree sur
+https://vercel.com/account/tokens, puis `gh secret set VERCEL_TOKEN`). Sans le
+secret, il ne casse pas le merge : il explique la marche a suivre dans son resume.
+
+En local, ou si le workflow est indisponible :
 
 ```bash
-./scripts/promote-prod.sh          # verifie et promeut si necessaire
-./scripts/promote-prod.sh --check  # verifie seulement (CI / doute)
+./scripts/promote-prod.sh            # verifie et promeut si necessaire
+./scripts/promote-prod.sh --check    # verifie seulement
+./scripts/promote-prod.sh --wait 15  # attend la fin du build (usage CI)
 ```
 
-Sortie grep-friendly : `^prod: IN-SYNC|PROMOTED|OUT-OF-SYNC|ERROR`.
+Sortie grep-friendly : `^prod: IN-SYNC|PROMOTED|OUT-OF-SYNC|NOT-READY|ERROR`.
+Le deploiement est choisi **par son commit**, jamais "le plus recent" : le plus
+recent est souvent une preview de branche, et la promouvoir enverrait du code non
+merge en production.
+
+### Pieges verifies
 
 - Le discriminant FIABLE est `curl https://attabl.com/api/version?cb=$(date +%s)` :
   il renvoie le SHA du commit reellement servi. Comparer a `git rev-parse origin/main`.
 - NE PAS se fier au check "Vercel" de GitHub : il reste `pending` (etat de PR
-  `UNSTABLE`) bien apres que le deploiement soit READY. Verifier avec
+  `UNSTABLE`) plus d'une heure apres que le deploiement soit READY. Verifier avec
   `npx vercel inspect <url>` ou l'API.
-- NE PAS conclure "c'est du cache" sans preuve : verifier les en-tetes
-  (`x-vercel-cache`, `age`, `cache-control`). Un `MISS` + `age: 0` + `no-store`
-  signifie que le domaine sert vraiment l'ancien deploiement.
+- NE PAS conclure "c'est du cache" sans preuve : un `x-vercel-cache: MISS` avec
+  `age: 0` et `no-store` signifie que le domaine sert vraiment l'ancien deploiement.
+- Le token du CLI (`vercel login`) EXPIRE (constate en une nuit). Pour la CI,
+  utiliser un token cree dans le dashboard, pas celui de la session locale.
 
 ## 5. Composants fixed/sticky superposes (piege recurrent)
 
