@@ -221,8 +221,14 @@ interface StaffMember {
   adminUserId?: string;
 }
 
-// Shared password for every account (demo only): DemoAttabl2026.
-const DEMO_PASSWORD = 'DemoAttabl2026';
+// Shared password for every demo account. Never hardcoded: the previous literal
+// stayed readable in a public repo for months and had to be rotated in production.
+const DEMO_PASSWORD = env.DEMO_SEED_PASSWORD || process.env.DEMO_SEED_PASSWORD;
+
+if (!DEMO_PASSWORD) {
+  console.error('Missing DEMO_SEED_PASSWORD (set it in .env.local, never commit it)');
+  process.exit(1);
+}
 
 const STAFF: StaffMember[] = [
   {
@@ -1115,7 +1121,7 @@ function printSummary() {
   );
   log(`Ventes:   ${ventes.days[0]} -> ${ventes.days[6]} (exactes, verifiees)`);
   log('');
-  log('Comptes demo (mdp DemoAttabl2026):');
+  log('Comptes demo (mot de passe : voir DEMO_SEED_PASSWORD dans .env.local) :');
   for (const s of STAFF) log(`  ${s.email} (${s.role})`);
   log('');
   log('TEST 5 (inventaire physique du 2026-07-20) - a saisir en UI le jour J:');
