@@ -34,12 +34,12 @@ https://claude.ai/code/artifact/8e94306a-40de-46c1-ac97-3855a41ccdff
 
 Un seul compte a donner au client (patron du restaurant) :
 
-| Champ        | Valeur                  |
-| ------------ | ----------------------- |
-| Email        | `owner@demo.attabl.com` |
-| Mot de passe | `DemoAttabl2026`        |
+| Champ        | Valeur                                                 |
+| ------------ | ------------------------------------------------------ |
+| Email        | `owner@demo.attabl.com`                                |
+| Mot de passe | voir `DEMO_SEED_PASSWORD` (.env.local, jamais commite) |
 
-Autres comptes disponibles (meme mot de passe `DemoAttabl2026`) pour montrer les roles
+Autres comptes disponibles (meme mot de passe) pour montrer les roles
 et les droits differents :
 
 | Role    | Email                      | Personne       |
