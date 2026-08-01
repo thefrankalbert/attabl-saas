@@ -61,6 +61,9 @@ jobs:
             echo "En attendant, lancer \`./scripts/promote-prod.sh\` en local apres chaque merge." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # pipefail : sans lui, l'echec du script serait masque par le tee et le
+          # job passerait "success" avec une promotion ratee (constate, run 30678857094)
+          set -o pipefail
           ./scripts/promote-prod.sh --wait 15 | tee /tmp/promote.log
 
       - name: Resume
