@@ -262,10 +262,19 @@ interface StaffMember {
   adminUserId?: string;
 }
 
+// Shared password for every QA account. Never hardcoded: same treatment as
+// seed-demo.ts (DEMO_SEED_PASSWORD) after the demo literal leaked for months.
+const QA_SEED_PASSWORD = env.QA_SEED_PASSWORD || process.env.QA_SEED_PASSWORD;
+
+if (!QA_SEED_PASSWORD) {
+  console.error('Missing QA_SEED_PASSWORD (set it in .env.local, never commit it)');
+  process.exit(1);
+}
+
 const STAFF: StaffMember[] = [
   {
     email: 'owner@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Frank Albert',
     role: 'owner',
     phone: '+235 66 00 00 00',
@@ -273,7 +282,7 @@ const STAFF: StaffMember[] = [
   },
   {
     email: 'chef@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Chef Marco Rossi',
     role: 'chef',
     phone: '+235 66 10 10 10',
@@ -281,7 +290,7 @@ const STAFF: StaffMember[] = [
   },
   {
     email: 'manager@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Sophie Dubois',
     role: 'manager',
     phone: '+235 66 20 20 20',
@@ -289,7 +298,7 @@ const STAFF: StaffMember[] = [
   },
   {
     email: 'caisse@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Amadou Toure',
     role: 'cashier',
     phone: '+235 66 30 30 30',
@@ -297,7 +306,7 @@ const STAFF: StaffMember[] = [
   },
   {
     email: 'serveur1@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Ibrahim Mahamat',
     role: 'waiter',
     phone: '+235 66 40 40 40',
@@ -305,7 +314,7 @@ const STAFF: StaffMember[] = [
   },
   {
     email: 'serveur2@attabl-qa.test',
-    password: 'Demo2024!',
+    password: QA_SEED_PASSWORD,
     fullName: 'Fatima Abdoulaye',
     role: 'waiter',
     phone: '+235 66 50 50 50',
@@ -1882,13 +1891,13 @@ function printSummary() {
   Announcements:  ${migrations.hasAnnouncements ? '2' : 'SKIPPED (table not available)'}
   Orders:         ~310 (300 historical + 10 live)
 
-  Login Credentials:
-    Owner:    owner@attabl-qa.test / Demo2024!
-    Chef:     chef@attabl-qa.test / Demo2024!
-    Manager:  manager@attabl-qa.test / Demo2024!
-    Cashier:  caisse@attabl-qa.test / Demo2024!
-    Waiter1:  serveur1@attabl-qa.test / Demo2024!
-    Waiter2:  serveur2@attabl-qa.test / Demo2024!
+  Login Credentials (password: QA_SEED_PASSWORD from .env.local):
+    Owner:    owner@attabl-qa.test
+    Chef:     chef@attabl-qa.test
+    Manager:  manager@attabl-qa.test
+    Cashier:  caisse@attabl-qa.test
+    Waiter1:  serveur1@attabl-qa.test
+    Waiter2:  serveur2@attabl-qa.test
 
   URL (dev):  http://attabl-qa.localhost:3000
   URL (prod): https://attabl-qa.attabl.com

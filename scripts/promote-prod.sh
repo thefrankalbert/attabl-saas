@@ -34,7 +34,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) CHECK_ONLY=true ;;
     --wait)
-      WAIT_MINUTES="${2:-15}"
+      if [[ -z "${2:-}" || ! "$2" =~ ^[0-9]+$ ]]; then
+        echo "usage: $0 [--check] [--wait <minutes>]" >&2
+        exit 2
+      fi
+      WAIT_MINUTES="$2"
       shift
       ;;
     *)
@@ -74,13 +78,19 @@ if [[ "$CHECK_ONLY" == true ]]; then
 fi
 
 # --- Identite du projet -----------------------------------------------------
+# En CI, .vercel/ n'existe pas (gitignore) : les IDs viennent de l'environnement.
+# Ce ne sont pas des secrets, ils sont poses en clair dans le workflow.
+PROJECT_ID="${VERCEL_PROJECT_ID:-}"
+TEAM_ID="${VERCEL_TEAM_ID:-}"
 LINK="${ROOT}/.vercel/project.json"
-if [[ ! -f "$LINK" ]]; then
-  echo "prod: ERROR - ${LINK} introuvable (lancer 'vercel link')"
+if [[ -z "$PROJECT_ID" && -f "$LINK" ]]; then
+  PROJECT_ID="$(node -p "require('${LINK}').projectId")"
+  TEAM_ID="$(node -p "require('${LINK}').orgId || ''")"
+fi
+if [[ -z "$PROJECT_ID" ]]; then
+  echo "prod: ERROR - projet inconnu (definir VERCEL_PROJECT_ID ou lancer 'vercel link')"
   exit 1
 fi
-PROJECT_ID="$(node -p "require('${LINK}').projectId")"
-TEAM_ID="$(node -p "require('${LINK}').orgId || ''")"
 
 # --- Token ------------------------------------------------------------------
 TOKEN="${VERCEL_TOKEN:-}"
@@ -145,7 +155,9 @@ while :; do
 done
 
 echo "deploiement cible     : ${DEPLOY_URL} (substate ${SUBSTATE})"
-npx --yes vercel promote "$DEPLOY_URL" --scope "$TEAM_ID" 2>&1 | tail -2
+SCOPE_ARGS=()
+[[ -n "$TEAM_ID" ]] && SCOPE_ARGS=(--scope "$TEAM_ID")
+npx --yes vercel promote "$DEPLOY_URL" --token "$TOKEN" "${SCOPE_ARGS[@]}" 2>&1 | tail -2
 
 sleep 5
 SERVED="$(served_sha || true)"
