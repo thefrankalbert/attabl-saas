@@ -36,9 +36,31 @@ declare const self: ServiceWorkerGlobalScope;
 // feature for staff tablets. The shared-tablet retention concern is handled by
 // clearing these caches on logout (message handler below), not by refusing to
 // cache (which broke offline admin entirely).
+// L'hote Supabase: presque toutes les lectures admin ne passent PAS par /api/,
+// elles vont directement a PostgREST depuis le navigateur (useOrders,
+// useKitchenData, useDashboardStats, useAssignments, usePosUnpaidOrders,
+// useNotifications, useSettingsData... 18 hooks). Ce sont donc des requetes
+// CROSS-ORIGIN, que la derniere regle de defaultCache capture en NetworkFirst et
+// ecrit dans un cache nomme 'cross-origin'. Les corps contiennent customer_name,
+// customer_phone, notes et totaux. La garde sameOrigin ci-dessous ne les voyait
+// pas, et 'cross-origin' ne figurait pas dans RUNTIME_DOC_CACHES: ces donnees
+// survivaient donc a la deconnexion sur une tablette partagee.
+// On cible les CHEMINS de l'API Supabase plutot que son hote: le worker est
+// compile a part et rien ne garantit qu'une variable NEXT_PUBLIC_* y soit inlinee.
+// Un `process` indefini a l'execution ferait planter le service worker entier,
+// donc toute la PWA. Ces trois prefixes sont ceux de PostgREST, de l'auth et du
+// realtime; /storage/v1/ en est volontairement ABSENT, les photos de menu doivent
+// rester cachees pour que la carte s'affiche hors ligne.
+const SUPABASE_API_PREFIXES = ['/rest/v1/', '/auth/v1/', '/realtime/v1/'];
+
 const noCacheAuthenticated: RuntimeCaching[] = [
   {
     matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/api/'),
+    handler: new NetworkOnly(),
+  },
+  {
+    matcher: ({ url, sameOrigin }) =>
+      !sameOrigin && SUPABASE_API_PREFIXES.some((p) => url.pathname.startsWith(p)),
     handler: new NetworkOnly(),
   },
 ];
@@ -48,7 +70,17 @@ const noCacheAuthenticated: RuntimeCaching[] = [
 // serwist's defaultCache stores RSC payloads under 'pages-rsc' and
 // 'pages-rsc-prefetch' (not 'rsc'/'rsc-prefetch'). 'pages' is the legacy
 // next-pwa name, kept for stranded devices.
-const RUNTIME_DOC_CACHES = ['others', 'pages', 'pages-rsc', 'pages-rsc-prefetch', 'next-data'];
+// 'cross-origin' est ajoute pour les appareils deja en service: le nouveau SW ne
+// l'alimente plus (regle NetworkOnly ci-dessus), mais l'ancien l'a peut-etre
+// rempli de donnees clients. Le purger a la deconnexion les efface.
+const RUNTIME_DOC_CACHES = [
+  'others',
+  'pages',
+  'pages-rsc',
+  'pages-rsc-prefetch',
+  'next-data',
+  'cross-origin',
+];
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,

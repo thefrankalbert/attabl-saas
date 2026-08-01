@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -449,6 +449,8 @@ export function usePOSData(tenantId: string) {
   );
 
   // --- Order creation -------------------------------------
+  const submitLockRef = useRef(false);
+
   const handleOrder = (
     status: 'pending' | 'delivered',
     options?: {
@@ -460,7 +462,14 @@ export function usePOSData(tenantId: string) {
     // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
     // two taps would create two distinct orders. Block while a submit is in
     // flight (the idempotency key only dedupes one submit's network retries).
-    if (createOrder.isPending) return;
+    //
+    // Verrou explicite et NON `createOrder.isPending`: une mutation mise en pause
+    // par TanStack reste `isPending` indefiniment, si bien que le garde avalait en
+    // silence toutes les commandes suivantes des que le reseau tombait. Le verrou
+    // est relache dans onSettled, qui se declenche aussi bien au succes qu'a
+    // l'echec, y compris quand l'outbox prend le relais hors ligne.
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
 
     // Mint the idempotency key once per compose. It survives the network retry /
     // durable outbox replay so an offline-sent order never duplicates.
@@ -524,6 +533,9 @@ export function usePOSData(tenantId: string) {
         onError: (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
           toast({ title: t('orderError'), description: message, variant: 'destructive' });
+        },
+        onSettled: () => {
+          submitLockRef.current = false;
         },
       },
     );
