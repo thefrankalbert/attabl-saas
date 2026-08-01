@@ -45,6 +45,10 @@ jobs:
         id: promote
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # Identite du projet : .vercel/ est gitignore, donc absent du checkout CI.
+          # Ces IDs ne sont pas des secrets (ils figurent dans chaque URL du dashboard).
+          VERCEL_PROJECT_ID: prj_OOUWEUFyKahM0MhubD3ESdekq6xL
+          VERCEL_TEAM_ID: team_dnfIixBQWI1oNxE83sE1R2ia
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "### Promotion production ignoree" >> "$GITHUB_STEP_SUMMARY"
