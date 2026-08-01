@@ -124,9 +124,9 @@ const deps = (JSON.parse(process.env.RESPONSE).deployments || []).filter(
   (d) => (d.meta || {}).githubCommitSha === process.env.EXPECTED,
 );
 const ready = deps.find((d) => d.state === "READY");
-if (ready) process.stdout.write(`READY https://${ready.url} ${ready.readySubstate || "?"}`);
-else if (deps.length) process.stdout.write(`${deps[0].state} - -`);
-else process.stdout.write("ABSENT - -");
+if (ready) process.stdout.write(`READY ${ready.uid} https://${ready.url} ${ready.readySubstate || "?"}`);
+else if (deps.length) process.stdout.write(`${deps[0].state} - - -`);
+else process.stdout.write("ABSENT - - -");
 '
 }
 
@@ -134,7 +134,7 @@ else process.stdout.write("ABSENT - -");
 # plutot que d'echouer. En local (WAIT_MINUTES=0) on rend la main tout de suite.
 DEADLINE=$(($(date +%s) + WAIT_MINUTES * 60))
 while :; do
-  read -r STATE DEPLOY_URL SUBSTATE <<<"$(find_deployment)"
+  read -r STATE DEPLOY_ID DEPLOY_URL SUBSTATE <<<"$(find_deployment)"
   [[ "$STATE" == "READY" ]] && break
   if [[ "$STATE" == "APIFAIL" ]]; then
     echo "prod: ERROR - API Vercel inaccessible (token expire ? relancer 'vercel login')"
@@ -155,11 +155,20 @@ while :; do
 done
 
 echo "deploiement cible     : ${DEPLOY_URL} (substate ${SUBSTATE})"
-SCOPE_ARGS=()
-[[ -n "$TEAM_ID" ]] && SCOPE_ARGS=(--scope "$TEAM_ID")
-npx --yes vercel promote "$DEPLOY_URL" --token "$TOKEN" "${SCOPE_ARGS[@]}" 2>&1 | tail -2
+# Promotion via l'API et non le CLI: `vercel promote` charge d'abord le profil
+# utilisateur et echoue en "User not found (404)" avec un token a portee limitee
+# (constate en CI). L'API accepte ce token - c'est elle qui a trouve le deploiement.
+PROMOTE_API="https://api.vercel.com/v10/projects/${PROJECT_ID}/promote/${DEPLOY_ID}"
+[[ -n "$TEAM_ID" ]] && PROMOTE_API="${PROMOTE_API}?teamId=${TEAM_ID}"
+HTTP_CODE="$(curl -s -o /tmp/promote-resp.json -w '%{http_code}' -X POST "$PROMOTE_API" -H "Authorization: Bearer ${TOKEN}")"
+if [[ "$HTTP_CODE" != 2* ]]; then
+  echo "prod: ERROR - l'API de promotion a repondu HTTP ${HTTP_CODE}"
+  head -c 300 /tmp/promote-resp.json; echo
+  exit 1
+fi
+echo "promotion demandee (HTTP ${HTTP_CODE})"
 
-sleep 5
+sleep 15
 SERVED="$(served_sha || true)"
 if [[ "$SERVED" == "$EXPECTED" ]]; then
   echo "prod: PROMOTED - ${DOMAIN} sert maintenant ${SERVED:0:8}"
