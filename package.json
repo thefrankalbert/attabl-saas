@@ -130,7 +130,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "eslint-config-prettier": "^10.1.8",
-    "happy-dom": "^20.7.0",
+    "happy-dom": "^20.8.9",
     "husky": "^9.1.7",
     "knip": "^6.17.1",
     "lint-staged": "^16.2.7",
@@ -140,7 +140,7 @@
     "supabase": "^2.75.3",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.9",
-    "xlsx": "0.18.5"
+    "vite": "^7.3.6",
+    "vitest": "^4.1.9"
   }
 }

@@ -14,7 +14,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
+import { buildXlsx } from '../../../src/services/__tests__/xlsx-fixture';
 import { getAdmin, teardownTenantBySlug } from '../../journeys/fixtures/seed';
 import { journeyEnv } from '../../journeys/fixtures/env';
 import { createSupplierImportService } from '../../../src/services/supplier-import.service';
@@ -29,13 +29,6 @@ let tenantId: string;
 let tenantBId: string;
 let categoryId: string;
 let categoryBId: string;
-
-function buildXlsx(aoa: unknown[][]): ArrayBuffer {
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
-}
 
 async function seedMenuItem(name: string, tid: string = tenantId): Promise<string> {
   const { data, error } = await db
@@ -312,7 +305,7 @@ describe('supplier import service (real DB)', () => {
     await db.from('suppliers').insert({ tenant_id: tenantBId, name: existingName });
 
     const newName = `Nouveau-${randomUUID().slice(0, 6)}`;
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Name', 'Phone', 'Email'],
       [existingName.toLowerCase(), '+225 99', 'up@x.ci'], // update (case-insensitive)
       [newName, '+225 88', 'new@x.ci'], // insert
@@ -350,7 +343,7 @@ describe('recipe import service end-to-end (real RPC)', () => {
 
     const first = await svc.importFromExcel(
       tenantId,
-      buildXlsx([
+      await buildXlsx([
         ['Dish', 'Ingredient', 'Unit', 'Quantity', 'Notes'],
         [dish, `Poulet-${dish}`, 'kg', 0.3, ''],
         [dish, `Plantain-${dish}`, 'kg', 0.2, ''],
@@ -363,7 +356,7 @@ describe('recipe import service end-to-end (real RPC)', () => {
 
     const second = await svc.importFromExcel(
       tenantId,
-      buildXlsx([
+      await buildXlsx([
         ['Dish', 'Ingredient', 'Unit', 'Quantity', 'Notes'],
         [dish, `Poulet-${dish}`, 'kg', 0.45, 'plus'],
       ]),

@@ -111,23 +111,63 @@ export function parseBooleanCell(value: unknown, defaultValue: boolean): boolean
 }
 
 /**
+ * Aplatit une valeur de cellule exceljs vers la valeur simple que le reste du
+ * code attend.
+ *
+ * exceljs ne rend pas toujours un scalaire: une formule arrive en
+ * `{ formula, result }`, un texte enrichi en `{ richText: [...] }`, un lien en
+ * `{ text, hyperlink }`. Sans cette normalisation, un fichier client contenant
+ * une simple formule de total ou une cellule mise en forme donnerait `[object
+ * Object]` a l'import au lieu de sa valeur.
+ */
+function flattenCell(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (value instanceof Date) return value;
+  if (typeof value !== 'object') return value;
+
+  const cell = value as Record<string, unknown>;
+  if ('result' in cell) return flattenCell(cell.result);
+  if ('text' in cell) return cell.text;
+  if (Array.isArray(cell.richText)) {
+    return cell.richText.map((part) => (part as { text?: string }).text ?? '').join('');
+  }
+  if ('error' in cell) return null;
+  return value;
+}
+
+/**
  * Reads the first sheet of an Excel workbook as an array-of-arrays (aoa).
- * The first inner array is the header row. Empty trailing cells are preserved
- * by the underlying reader as sparse arrays.
+ * The first inner array is the header row.
+ *
+ * Lu avec exceljs, deja utilise pour l'EXPORT. La bibliotheque xlsx (SheetJS) a
+ * ete retiree du projet: sa derniere version publiee sur npm (0.18.5) porte deux
+ * failles hautes non corrigees (pollution de prototype et ReDoS), et l'editeur ne
+ * publie plus les correctifs que sur son propre CDN. Ces failles s'ouvraient sur
+ * un fichier UPLOADE par un utilisateur, donc sur une entree non fiable.
  *
  * @throws when the workbook contains no sheet.
  */
 export async function readFirstSheetRows(buffer: ArrayBuffer): Promise<unknown[][]> {
-  const XLSX = await import('xlsx');
-  const workbook = XLSX.read(buffer, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
+  const ExcelJS = await import('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
 
-  if (!sheetName) {
+  if (!sheet) {
     throw new Error('EMPTY_WORKBOOK');
   }
 
-  const sheet = workbook.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  const rows: unknown[][] = [];
+  // `includeEmpty` garde les lignes vides intercalees: isEmptyRow s'en charge
+  // ensuite, et les sauter ici decalerait la numerotation vue par l'utilisateur
+  // dans les messages d'erreur ("ligne 7").
+  sheet.eachRow({ includeEmpty: true }, (row) => {
+    // `row.values` est indexe a partir de 1 (la case 0 est toujours vide).
+    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+    rows.push(values.map(flattenCell));
+  });
+
+  return rows;
 }
 
 /** True when a sheet row is entirely empty (all cells null/undefined/''). */

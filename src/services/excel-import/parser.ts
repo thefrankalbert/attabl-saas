@@ -1,4 +1,5 @@
 import { ServiceError } from '../errors';
+import { readFirstSheetRows } from '@/lib/excel-parse';
 import { mapHeaders } from './columns';
 import { excelRowSchema } from './row-schema';
 import { parseBooleanCell, parseNumericCell } from './cells';
@@ -13,16 +14,18 @@ import type { ParsedRow, ImportRowError } from './types';
 export async function parseExcelBuffer(
   buffer: ArrayBuffer,
 ): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }> {
-  const XLSX = await import('xlsx');
-  const workbook = XLSX.read(buffer, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-
-  if (!sheetName) {
-    throw new ServiceError('The Excel file contains no sheets', 'VALIDATION');
+  // Lecture partagee avec l'import de fiches techniques: une seule
+  // implementation, donc un seul endroit ou la lecture de fichiers uploades peut
+  // se tromper. Voir readFirstSheetRows pour le retrait de SheetJS.
+  let rawData: unknown[][];
+  try {
+    rawData = await readFirstSheetRows(buffer);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'EMPTY_WORKBOOK') {
+      throw new ServiceError('The Excel file contains no sheets', 'VALIDATION');
+    }
+    throw error;
   }
-
-  const sheet = workbook.Sheets[sheetName];
-  const rawData = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
 
   if (rawData.length < 2) {
     throw new ServiceError(

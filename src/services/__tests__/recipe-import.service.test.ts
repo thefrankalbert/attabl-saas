@@ -1,20 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
 import { createRecipeImportService } from '../recipe-import.service';
 import { ServiceError } from '../errors';
+import { buildXlsx } from './xlsx-fixture';
+import { readFirstSheetRows } from '@/lib/excel-parse';
 import type { RecipeImportRpcRow } from '@/types/inventory.types';
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
-
-function buildXlsx(aoa: unknown[][]): ArrayBuffer {
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
-}
 
 interface MockOpts {
   menuItems?: Array<{ id: string; name: string }>;
@@ -49,7 +43,7 @@ describe('recipe-import.service parseExcel', () => {
   it('maps unit aliases (pcs -> piece, litre -> L) and groups rows per dish', async () => {
     const { supabase } = makeSupabase();
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Plat', 'Ingrédient', 'Unité', 'Quantité', 'Notes'],
       ['Poulet DG', 'Poulet', 'kg', '0,3', ''],
       ['Poulet DG', 'Oeuf', 'pcs', 2, 'frais'],
@@ -66,7 +60,7 @@ describe('recipe-import.service parseExcel', () => {
   it('collects row errors for unknown unit, non-positive qty and missing ingredient', async () => {
     const { supabase } = makeSupabase();
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['A', 'X', 'gallons', 1], // unknown unit
       ['A', 'Y', 'kg', 0], // qty <= 0
@@ -80,7 +74,7 @@ describe('recipe-import.service parseExcel', () => {
   it('throws VALIDATION when required columns are missing', async () => {
     const { supabase } = makeSupabase();
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient'],
       ['A', 'X'],
     ]);
@@ -102,7 +96,7 @@ describe('recipe-import.service importFromExcel', () => {
       },
     });
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['Poulet DG', 'Poulet', 'kg', 0.3], // clean
       ['Inconnu', 'Riz', 'kg', 0.2], // unknown dish -> error
@@ -125,7 +119,7 @@ describe('recipe-import.service importFromExcel', () => {
   it('does not call the RPC when every row is invalid', async () => {
     const { supabase, rpcCalls } = makeSupabase({ menuItems: [] });
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['Ghost', 'Riz', 'kg', 1],
     ]);
@@ -141,7 +135,7 @@ describe('recipe-import.service importFromExcel', () => {
       rpcResult: { data: null, error: { message: 'MENU_ITEM_NOT_FOUND' } },
     });
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['Poulet DG', 'Poulet', 'kg', 0.3],
     ]);
@@ -156,7 +150,7 @@ describe('recipe-import.service importFromExcel', () => {
       rpcResult: { data: null, error: { message: 'INVALID_UNIT: gallons' } },
     });
     const svc = createRecipeImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['Poulet DG', 'Poulet', 'kg', 0.3],
     ]);
@@ -170,8 +164,9 @@ describe('recipe-import.service importFromExcel', () => {
     const svc = createRecipeImportService(supabase);
     const buf = await svc.generateTemplate();
     expect(Buffer.isBuffer(buf)).toBe(true);
-    const wb = XLSX.read(buf, { type: 'buffer' });
-    const aoa = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+    const aoa = await readFirstSheetRows(
+      buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
+    );
     // Styled workbook adds a branded title band + subtitle before the header row,
     // so locate the header row by its known first column rather than assuming row 0.
     const headerRow = aoa.find((r) => (r as string[])?.includes('Dish')) as string[] | undefined;
