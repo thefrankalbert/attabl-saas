@@ -39,7 +39,11 @@ jobs:
           version: latest
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # CI-01: alignee sur ci.yml (Node 20) et sur `engines` de package.json.
+          # Deux jobs sur deux majeures de Node peuvent resoudre des arbres de
+          # dependances differents: l'audit ne portait alors pas sur ce qui est
+          # reellement builde et deploye.
+          node-version: '20'
           cache: 'pnpm'
       # --ignore-scripts: this job only audits the dependency graph; it does not
       # need native build steps. Newer pnpm (version: latest) hard-errors on

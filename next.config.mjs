@@ -14,13 +14,32 @@ const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+// CFG-01. `hostname: '**.supabase.co'` autorisait /_next/image a proxifier
+// N'IMPORTE QUEL projet Supabase du monde. Un tiers pouvait donc faire servir ses
+// images par notre domaine, a nos frais d'optimisation, sous notre reputation.
+//
+// On epingle sur l'hote reel du projet. Si la variable est absente (build sans
+// environnement: lint, typecheck, worktree de travail), on retombe sur le motif
+// large: ces builds ne servent aucune image, et faire echouer le build a cet
+// endroit casserait la CI sans rien proteger. Sur Vercel la variable est toujours
+// definie, donc le trou est ferme la ou il compte.
+const supabaseImageHostname = (() => {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return '**.supabase.co';
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return '**.supabase.co';
+  }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: supabaseImageHostname,
         pathname: '/storage/v1/object/public/**',
       },
     ],
@@ -77,8 +96,18 @@ const nextConfig = {
         // The Serwist worker must never be pinned by the browser HTTP cache or
         // the CDN: a stale /sw.js is exactly what stranded devices on old JS
         // before. `no-store` guarantees the SW update check fetches the live one.
+        //
+        // CFG-02: SOURCE UNIQUE. `vercel.json` definissait les memes en-tetes avec
+        // une valeur DIFFERENTE (`no-cache, no-store, must-revalidate`) - deux
+        // sources pour un en-tete, donc personne ne savait laquelle s'appliquait.
+        // On garde celle-ci parce qu'elle vaut aussi en local (`pnpm start`), la ou
+        // vercel.json ne s'applique pas: meme comportement partout.
         source: '/sw.js',
-        headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          // Repris de vercel.json: autorise le worker a controler toute l'origine.
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
       },
     ];
   },
@@ -118,15 +147,11 @@ export default withSentryConfig(analyze(withNextIntl(nextConfig)), {
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-side errors will fail.
   tunnelRoute: '/monitoring',
 
-  // Webpack-specific options (not supported with Turbopack)
-  webpack: {
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    treeshake: {
-      removeDebugLogging: true,
-    },
-    // Automatically instrument React components to track their render lifecycle
-    reactComponentAnnotation: {
-      enabled: true,
-    },
-  },
+  // CFG-02. Un bloc `webpack: { treeshake, reactComponentAnnotation }` vivait ici.
+  // Il etait INERTE: ce projet builde avec Turbopack ("Next.js 16.2.12 (Turbopack)"
+  // dans la sortie de build), et ces options sont propres a Webpack. Il donnait donc
+  // une fausse assurance - on croyait les logs Sentry tree-shakes et les composants
+  // annotes, rien de tout cela n'avait lieu. Supprime plutot que laisse en place:
+  // une configuration morte finit toujours par etre lue comme active.
+  // Si Sentry publie un equivalent Turbopack, c'est ici qu'il ira.
 });
