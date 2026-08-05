@@ -14,7 +14,7 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig, RuntimeCaching } from 'serwist';
 import { Serwist, NetworkOnly } from 'serwist';
-import { getOrderOutbox } from '../lib/offline/outbox-idb';
+import { getOrderOutbox, readOutboxIdentity } from '../lib/offline/outbox-idb';
 import { replayOrderEntry, OUTBOX_SYNC_TAG } from '../lib/offline/outbox-replay';
 
 declare global {
@@ -185,7 +185,15 @@ async function drainOutbox(): Promise<void> {
   const outbox = getOrderOutbox();
   if (!outbox) return;
   try {
-    await outbox.drain(replayOrderEntry);
+    // Identite lue depuis IndexedDB: le worker n'a pas acces au module de page.
+    // Sans elle, canReplayEntry refuserait toutes les entrees nominatives et ce
+    // drain ne ferait rien, alors que c'est justement le chemin qui couvre
+    // "onglet ferme pendant la coupure".
+    const identity = await readOutboxIdentity();
+    await outbox.drain(replayOrderEntry, {
+      currentUserId: identity?.userId,
+      currentTenantId: identity?.tenantId,
+    });
   } catch {
     // Leave entries queued; the page-side interval/online drain is the fallback
     // for browsers without Background Sync (e.g. Safari/iOS).

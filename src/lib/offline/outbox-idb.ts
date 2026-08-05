@@ -10,8 +10,15 @@ import type { OutboxStore, OutboxEntry } from './outbox';
 import { createOutbox, type Outbox } from './outbox';
 
 const DB_NAME = 'attabl-offline';
-const DB_VERSION = 1;
+// v2: ajout du store `identity`. Le service worker draine la file en Background
+// Sync, dans un contexte sans React: sans identite persistee il ne pourrait
+// rejouer AUCUNE entree nominative (elles le sont toutes depuis OFF-07), donc la
+// synchro en arriere-plan deviendrait inerte - et les entrees finiraient par
+// expirer au bout de MAX_AGE_MS, ce qui transformerait une degradation en perte.
+const DB_VERSION = 2;
 const STORE = 'order-outbox';
+const IDENTITY_STORE = 'identity';
+const IDENTITY_KEY = 'current';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -20,6 +27,9 @@ function openDb(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(IDENTITY_STORE)) {
+        db.createObjectStore(IDENTITY_STORE);
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -89,4 +99,45 @@ export function getOrderOutbox(): Outbox | null {
     singleton = createOutbox(createIdbOutboxStore());
   }
   return singleton;
+}
+
+/** Identite persistee, lisible depuis le service worker (OFF-07). */
+export interface PersistedIdentity {
+  userId: string;
+  tenantId: string;
+}
+
+/** Ecrit (ou efface avec null) l'identite courante. Best-effort: ne leve jamais. */
+export async function persistOutboxIdentity(identity: PersistedIdentity | null): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  try {
+    const dbi = await openDb();
+    const tx = dbi.transaction(IDENTITY_STORE, 'readwrite');
+    const store = tx.objectStore(IDENTITY_STORE);
+    if (identity) {
+      await promisify(store.put(identity, IDENTITY_KEY));
+    } else {
+      await promisify(store.delete(IDENTITY_KEY));
+    }
+    dbi.close();
+  } catch {
+    // Best-effort: sans identite persistee le worker ne drainera simplement pas
+    // les entrees nominatives, ce qui est le comportement sur (rien n'est perdu).
+  }
+}
+
+/** Lit l'identite persistee. Utilisable depuis le service worker. */
+export async function readOutboxIdentity(): Promise<PersistedIdentity | null> {
+  if (typeof indexedDB === 'undefined') return null;
+  try {
+    const dbi = await openDb();
+    const tx = dbi.transaction(IDENTITY_STORE, 'readonly');
+    const value = await promisify<PersistedIdentity | undefined>(
+      tx.objectStore(IDENTITY_STORE).get(IDENTITY_KEY),
+    );
+    dbi.close();
+    return value ?? null;
+  } catch {
+    return null;
+  }
 }

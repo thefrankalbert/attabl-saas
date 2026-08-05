@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getOrderOutbox } from '@/lib/offline/outbox-idb';
+import { getOutboxIdentity } from '@/lib/offline/outbox-identity';
 import { replayOrderEntry, OUTBOX_CHANGED_EVENT } from '@/lib/offline/submit-order';
 import type { OutboxEntry } from '@/lib/offline/outbox';
 import { logger } from '@/lib/logger';
@@ -45,14 +46,25 @@ export function useOrderOutbox(): UseOrderOutbox {
     // Still refresh the count so a freshly-queued order shows in the banner. The
     // 'online' event re-triggers a real drain the moment the network is back.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setPendingBoth(await outbox.count());
+      setPendingBoth(await outbox.countDrainable(getOutboxIdentity() ?? undefined));
       return;
     }
     if (draining.current) return; // avoid overlapping drains (interval + event)
     draining.current = true;
     try {
-      const result = await outbox.drain(replayOrderEntry);
-      setPendingBoth(result.stillQueued);
+      // currentUserId cloisonne le rejeu (OFF-07): les entrees mises en file par
+      // une autre session restent en file au lieu de partir sous celle-ci.
+      const identity = getOutboxIdentity();
+      const result = await outbox.drain(replayOrderEntry, {
+        currentUserId: identity?.userId,
+        currentTenantId: identity?.tenantId,
+      });
+      // stillQueued compte TOUT, y compris les entrees d'une autre session que
+      // cette session ne peut pas drainer (OFF-07). Les afficher donnerait un
+      // compteur qui ne descend jamais quoi que fasse l'operateur - et un badge
+      // rouge permanent est un badge qu'on cesse de regarder, donc le vrai signal
+      // d'alerte se noie.
+      setPendingBoth(Math.max(0, result.stillQueued - result.skippedForeign));
       if (result.permanentlyFailed.length > 0) {
         setRejected((prev) => [...prev, ...result.permanentlyFailed]);
       }
@@ -70,7 +82,7 @@ export function useOrderOutbox(): UseOrderOutbox {
     if (!outbox) return;
 
     let cancelled = false;
-    void outbox.count().then((n) => {
+    void outbox.countDrainable(getOutboxIdentity() ?? undefined).then((n) => {
       if (!cancelled) setPendingBoth(n);
     });
     void flush();

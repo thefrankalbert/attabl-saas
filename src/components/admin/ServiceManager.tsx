@@ -262,9 +262,12 @@ export default function ServiceManager({ tenantId, currency }: Props) {
 
   const handleRelease = useCallback(
     (assignmentId: string) => {
-      releaseAssignment.mutate(assignmentId);
+      // Resolu ici plutot qu'en prop a travers le plan de salle: sert de cle
+      // d'ordre de rejeu hors ligne (OFF-08), release et assign d'une meme table.
+      const tableId = assignments.find((a) => a.id === assignmentId)?.table_id;
+      releaseAssignment.mutate({ assignmentId, tableId });
     },
-    [releaseAssignment],
+    [releaseAssignment, assignments],
   );
 
   // -- Keyboard shortcuts ------------------------------------

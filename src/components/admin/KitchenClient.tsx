@@ -219,6 +219,23 @@ export default function KitchenClient({
         </div>
       )}
 
+      {kitchen.stale && (
+        // OFF-04. Un ecran fige qui affiche une heure de mise a jour fraiche fait
+        // croire au chef qu'aucune commande n'arrive. Tant que la resynchro
+        // echoue, on le dit, avec l'heure du dernier succes REEL.
+        <div
+          role="status"
+          className="bg-[var(--destructive)] px-4 py-2 text-center text-sm font-medium text-[var(--destructive-foreground)]"
+        >
+          {t('staleScreen', {
+            time: kitchen.lastUpdate.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          })}
+        </div>
+      )}
+
       <KitchenFilters
         activeCount={kitchen.totalActive}
         completedToday={kitchen.completedToday}

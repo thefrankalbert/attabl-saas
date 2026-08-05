@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, X, ArrowLeft, Delete, Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { actionMarkOrderPaid } from '@/app/actions/orders';
+import { submitOrder } from '@/lib/offline/submit-order';
 import { formatCurrency } from '@/lib/utils/currency';
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
@@ -109,6 +109,9 @@ export default function PaymentModal({
   const method: PaymentMethod = 'cash';
   const [amountReceived, setAmountReceived] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  // Cle d'idempotence de l'encaissement, stable tant que le paiement n'a pas
+  // abouti (voir handleProcessPayment).
+  const payRequestIdRef = useRef<string | null>(null);
 
   const [tipFixed, setTipFixed] = useState<number>(0);
   const [customTip, setCustomTip] = useState<string>('');
@@ -183,26 +186,52 @@ export default function PaymentModal({
       // e.g. a double-tap or a concurrent cashier - surface a distinct message
       // instead of implying this tap took a second payment.
       let alreadySettled = false;
+      let queued = false;
       if (order?.id) {
-        try {
-          // tipAmount is a MAJOR keypad value; markPaid stores orders.tip_amount
-          // in integer MINOR units, so convert at the boundary.
-          const tipMinor = tipAmount > 0 ? toMinorUnits(tipAmount, orderCurrency) : undefined;
-          const result = await actionMarkOrderPaid(order.tenant_id, order.id, method, tipMinor);
-          if (result.error) throw new Error(result.error);
-          alreadySettled = result.paid === false;
-        } catch (paymentError) {
-          const description = paymentError instanceof Error ? paymentError.message : undefined;
-          toast({ title: t('paymentError'), description, variant: 'destructive' });
+        // tipAmount is a MAJOR keypad value; markPaid stores orders.tip_amount
+        // in integer MINOR units, so convert at the boundary.
+        const tipMinor = tipAmount > 0 ? toMinorUnits(tipAmount, orderCurrency) : undefined;
+
+        // OFF-05. Cet encaissement passait par un appel direct a
+        // actionMarkOrderPaid, donc hors outbox: une coupure reseau le faisait
+        // echouer avec un toast rouge alors que le caissier avait deja empoche
+        // l'argent, et la table restait ouverte en base. On passe par l'endpoint
+        // idempotent, qui met en file hors ligne et dedoublonne au rejeu -
+        // indispensable puisque markPaid ecrit dans le grand livre payments.
+        //
+        // La cle est frappee UNE fois par tentative et conservee tant que le
+        // paiement n'a pas abouti: un second tap apres un echec rejoue la meme
+        // cle au lieu d'encaisser deux fois.
+        payRequestIdRef.current ??= crypto.randomUUID();
+        const result = await submitOrder({
+          endpoint: '/api/orders/mutations',
+          clientRequestId: payRequestIdRef.current,
+          body: { type: 'pay', orderId: order.id, method, tipMinor },
+        });
+
+        if (result.status === 'rejected' || result.status === 'failed') {
+          toast({ title: t('paymentError'), description: result.error, variant: 'destructive' });
           setIsProcessing(false);
           return;
         }
+
+        queued = result.status === 'queued';
+        if (result.status === 'sent') {
+          alreadySettled = (result.data as { paid?: boolean } | null)?.paid === false;
+        }
+        // Encaissement abouti (envoye ou durablement mis en file): la cle a joue
+        // son role, la prochaine addition en frappera une nouvelle.
+        payRequestIdRef.current = null;
       }
 
       setIsProcessing(false);
       // For existing orders, payment was persisted above - show success toast
       if (order?.id) {
-        toast({ title: alreadySettled ? t('paymentAlreadySettled') : t('paymentSuccess') });
+        if (queued) {
+          toast({ title: t('paymentQueued'), description: t('paymentQueuedDesc') });
+        } else {
+          toast({ title: alreadySettled ? t('paymentAlreadySettled') : t('paymentSuccess') });
+        }
       }
       // For POS orders, pass payment data - the caller handles the toast after order creation
       onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });

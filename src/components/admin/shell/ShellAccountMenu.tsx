@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { CreditCard, Settings, ChevronsUpDown, CircleUser, LifeBuoy, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/components/ui/use-toast';
+import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
 import type { SettingsTab } from './SettingsDialog';
 
 interface ShellAccountMenuProps {
@@ -40,6 +43,49 @@ export function ShellAccountMenu({
   onOpenSettings,
 }: ShellAccountMenuProps) {
   const t = useTranslations('sidebar');
+  const { toast } = useToast();
+
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  // OFF-03. On ne se deconnecte pas tant que des commandes encaissees n'ont pas
+  // ete envoyees: la file survivrait a la session et serait rejouee plus tard
+  // sous l'identite du serveur suivant. On draine d'abord si le reseau est la,
+  // et on ne bloque que si la file reste pleine.
+  //
+  // On N'UTILISE PAS form.submit() apres l'attente: le formulaire vit dans le
+  // portail Radix du menu, que le clic sur l'item DEMONTE. Apres l'await le
+  // noeud n'est plus rattache au document, et la specification HTML interdit a
+  // un form detache de naviguer - submit() ne fait alors rien du tout et
+  // l'utilisateur reste connecte en croyant s'etre deconnecte. On envoie donc la
+  // requete nous-memes et on navigue a la main, sans dependre d'un noeud DOM.
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const { blocked, pending, lost } = await prepareLogoutInBrowser();
+
+      if (blocked) {
+        toast({
+          title: t('logoutBlocked'),
+          description:
+            lost > 0
+              ? t('logoutLostDesc', { count: lost })
+              : t('logoutBlockedDesc', { count: pending }),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await fetch('/api/auth/signout', { method: 'POST' });
+    } catch {
+      // Le nettoyage local a echoue (IndexedDB indisponible, quota). On ne piege
+      // PAS l'utilisateur sur une tablette partagee: la deconnexion prime.
+      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {});
+    } finally {
+      setLoggingOut(false);
+    }
+    window.location.assign('/login');
+  };
 
   return (
     <DropdownMenu>
@@ -130,18 +176,25 @@ export function ShellAccountMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <form action="/api/auth/signout" method="post">
-          <DropdownMenuItem asChild className="text-[var(--destructive)]">
-            <Button
-              type="submit"
-              variant="ghost"
-              className="h-auto w-full justify-start gap-2 px-2.5 py-2 font-normal text-[var(--destructive)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-            >
-              <LogOut className="size-4" />
-              {t('logout')}
-            </Button>
-          </DropdownMenuItem>
-        </form>
+        {/* onSelect preventDefault: garde le menu monte pendant l'attente du
+            nettoyage, sinon Radix le demonte au clic et l'item disparait sous le
+            doigt avant meme que le message de blocage puisse s'afficher. */}
+        <DropdownMenuItem
+          asChild
+          className="text-[var(--destructive)]"
+          onSelect={(e) => e.preventDefault()}
+        >
+          <Button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 px-2.5 py-2 font-normal text-[var(--destructive)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
+          >
+            <LogOut className="size-4" />
+            {t('logout')}
+          </Button>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -2,13 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
-import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
+import { assignmentLimiter, orderSettlementLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import {
   orderMutationSchema,
   type OrderMutationInput,
 } from '@/lib/validations/order-mutation.schema';
-import { actionUpdateOrderStatus } from '@/app/actions/orders';
+import { actionUpdateOrderStatus, actionMarkOrderPaid } from '@/app/actions/orders';
 import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assignments';
 
 // Single idempotent endpoint for offline-replayable order mutations (status
@@ -23,7 +23,7 @@ import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assig
 async function dispatch(
   tenantId: string,
   input: OrderMutationInput,
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; error?: string; paid?: boolean }> {
   switch (input.type) {
     case 'status':
       return actionUpdateOrderStatus(tenantId, input.orderId, input.status);
@@ -31,6 +31,8 @@ async function dispatch(
       return actionAssignServer(tenantId, input.tableId, input.serverId);
     case 'release':
       return actionReleaseAssignment(tenantId, input.assignmentId);
+    case 'pay':
+      return actionMarkOrderPaid(tenantId, input.orderId, input.method, input.tipMinor);
   }
 }
 
@@ -39,24 +41,35 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    // Own bucket (not the order-creation 'orders' bucket): a reconnect burst of
-    // queued status/assign replays must not starve the ability to take NEW
-    // orders behind a single restaurant NAT IP.
-    const ip = getClientIp(request);
-    const { success: allowed } = await assignmentLimiter.check(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Trop de requetes' },
-        { status: 429, headers: { 'Retry-After': '60' } },
-      );
-    }
-
+    // Le corps est lu AVANT la limitation de debit, contrairement a l'ordre
+    // habituel des routes. Raison: le compartiment depend du type de mutation, et
+    // un encaissement ne doit pas partager le budget des changements de statut.
+    // Le cout est borne (un JSON.parse, taille plafonnee par la plateforme) et
+    // verifyOrigin a deja filtre les appels hors domaine juste au-dessus.
     const body = await request.json().catch(() => null);
     const parsed = orderMutationSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 });
     }
     const input = parsed.data;
+
+    // Compartiment propre (pas celui de la creation de commande): une rafale de
+    // rejeux de statut/assignation a la reconnexion ne doit pas affamer la prise
+    // de NOUVELLES commandes derriere l'IP NAT unique du restaurant.
+    //
+    // Les encaissements ont leur PROPRE compartiment, plus large: partager les
+    // 30/min des assignations les faisait tomber en 429 en coup de feu, et comme
+    // un 429 est classe transitoire, le paiement partait en file avec le message
+    // "en attente de reseau" alors que le reseau allait tres bien.
+    const limiter = input.type === 'pay' ? orderSettlementLimiter : assignmentLimiter;
+    const ip = getClientIp(request);
+    const { success: allowed } = await limiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requetes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
 
     const supabase = await createClient();
     const {
@@ -140,7 +153,7 @@ export async function POST(request: Request) {
     // Run the mutation. If it fails, release the key so the outbox can retry
     // (transient) or the operator can re-enter (permanent) without being blocked
     // by a key that never produced an effect.
-    let result: { success?: boolean; error?: string };
+    let result: { success?: boolean; error?: string; paid?: boolean };
     try {
       result = await dispatch(tenantId, input);
     } catch (err) {
@@ -172,7 +185,10 @@ export async function POST(request: Request) {
       .update({ processed_at: new Date().toISOString() })
       .eq('client_request_id', input.client_request_id);
 
-    return NextResponse.json({ success: true });
+    // `paid: false` remonte le no-op idempotent de markPaid (commande deja
+    // reglee): la caisse affiche alors "deja encaissee" au lieu de laisser croire
+    // que ce tap a pris un second paiement.
+    return NextResponse.json({ success: true, paid: result.paid });
   } catch (err) {
     logger.error('Order mutation route failed', {
       error: err instanceof Error ? err.message : String(err),

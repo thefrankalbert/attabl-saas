@@ -187,6 +187,27 @@ export const pdfImportLimiter = createLimiter(
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 
 /**
+ * Encaissements en caisse: 120 requetes / minute par IP.
+ *
+ * Compartiment SEPARE de `assignmentLimiter`. Un restaurant est derriere une
+ * seule box, donc une seule IP: les 30/min du compartiment assignation sont
+ * partages par toutes les tablettes ET couvrent deja les changements de statut
+ * cuisine et les assignations de serveur. Y ajouter les encaissements les faisait
+ * tomber en 429 en plein coup de feu; comme un 429 est classe transitoire, le
+ * paiement partait en file avec le message "en attente de reseau" alors que le
+ * reseau allait parfaitement bien - un mensonge affiche au caissier.
+ *
+ * Fail-open assume (pas de troisieme argument): si Upstash tombe, un restaurant
+ * doit continuer d'encaisser. La route est de toute facon authentifiee et le
+ * tenant derive cote serveur, donc ce compartiment borne l'usage, il ne porte pas
+ * la securite.
+ */
+export const orderSettlementLimiter = createLimiter(
+  'order-settlement',
+  Ratelimit.slidingWindow(120, '1 m'),
+);
+
+/**
  * Invitation management (authenticated: create / list / cancel / resend).
  * 30 requests / 10 minutes per IP, fail-closed (create/resend send emails).
  * Kept separate from the public accept/validate buckets so a manager's

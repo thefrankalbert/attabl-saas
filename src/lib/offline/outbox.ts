@@ -26,6 +26,20 @@ export interface OutboxEntry {
   attempts: number;
   /** Last error message (network or server), for diagnostics/UI. */
   lastError?: string;
+  /**
+   * Identite de la session qui a mis l'entree en file (OFF-07). Optionnels: les
+   * entrees deja presentes sur les tablettes en service ne les portent pas, et
+   * doivent continuer de partir - on ne peut pas deviner leur proprietaire.
+   */
+  ownerUserId?: string;
+  ownerTenantId?: string;
+  /**
+   * Ressource visee, pour garantir l'ordre de rejeu PAR ressource (OFF-08).
+   * Ex: `table:<id>`. Sans elle, `drain` continue apres un echec, si bien qu'une
+   * entree repoussee s'applique APRES une entree plus recente de la meme
+   * ressource. Absente = entree independante, aucun ordre a garantir.
+   */
+  scopeKey?: string;
 }
 
 /** Minimal persistence contract the outbox needs. Implemented by IndexedDB. */
@@ -50,27 +64,105 @@ export type ReplayFn = (entry: OutboxEntry) => Promise<ReplayOutcome>;
 /** Stop retrying an entry after this many attempts (avoid infinite loops). */
 export const MAX_ATTEMPTS = 12;
 
+/**
+ * Duree de vie d'une entree en file (OFF-06).
+ *
+ * `createdAt` etait stocke mais servait UNIQUEMENT au tri: aucune expiration.
+ * Combine au fait qu'un echec reseau pur ne consomme pas le budget de tentatives
+ * (ce qui est voulu, sinon une panne longue detruirait les commandes), une entree
+ * etait immortelle.
+ *
+ * Scenario: le routeur meurt samedi 22h30, la tablette garde 11 commandes en
+ * file, personne ne rallume avant lundi. Lundi 9h les 11 commandes de samedi soir
+ * sont creees avec l'horodatage de lundi, tombent sur l'ecran cuisine du
+ * petit-dejeuner, destockent l'inventaire de lundi et polluent le chiffre
+ * d'affaires du jour. `create_order_with_items` n'a aucune notion d'anciennete.
+ *
+ * 6 heures = l'horizon d'un service. Au-dela, la commande ne doit plus partir
+ * toute seule: elle remonte a l'operateur via permanentlyFailed (bandeau rouge
+ * "commandes non synchronisees"), qui decide de la ressaisir ou non.
+ */
+export const MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Plafond de taille de la file (OFF-06).
+ *
+ * Sans plafond, une panne prolongee ou une boucle de rejeu remplit le quota
+ * IndexedDB de la tablette; le navigateur commence alors a refuser les ecritures,
+ * et c'est la file elle-meme qui casse - donc l'inverse de ce qu'elle protege.
+ * Au-dela, mieux vaut refuser franchement la mise en file et le dire au caissier
+ * que de faire semblant.
+ */
+export const MAX_ENTRIES = 500;
+
 export interface DrainResult {
   succeeded: number;
   permanentlyFailed: OutboxEntry[];
   stillQueued: number;
+  /**
+   * Entrees laissees en file parce qu'elles appartiennent a une AUTRE session
+   * (OFF-07). Elles ne sont ni rejouees ni supprimees: elles attendent que leur
+   * proprietaire revienne. L'interface peut ainsi dire "N commandes d'une autre
+   * session" au lieu de laisser un compteur qui ne descend jamais sans raison.
+   */
+  skippedForeign: number;
+}
+
+/**
+ * La session donnee peut-elle rejouer cette entree (OFF-07) ?
+ *
+ * Predicat UNIQUE, partage par `drain` et `countDrainable`. Les deux doivent
+ * repondre exactement la meme chose: si `drain` refuse de rejouer une entree que
+ * `countDrainable` compte comme en attente, la deconnexion se bloque pour de bon
+ * (le compteur ne descend jamais) et l'operateur est piege.
+ *
+ * Une entree sans proprietaire (mise en file avant cette version) est rejouable
+ * par tout le monde: on ne peut pas deviner a qui elle appartient, et la bloquer
+ * definitivement serait pire que de la faire partir.
+ */
+export function canReplayEntry(
+  entry: OutboxEntry,
+  currentUserId?: string,
+  currentTenantId?: string,
+): boolean {
+  if (entry.ownerUserId && entry.ownerUserId !== currentUserId) return false;
+  if (entry.ownerTenantId && entry.ownerTenantId !== currentTenantId) return false;
+  return true;
 }
 
 export function createOutbox(store: OutboxStore) {
   return {
-    /** Queue a write. Returns the stored entry. */
+    /**
+     * Queue a write. Returns the stored entry, ou `null` si la file est pleine
+     * (MAX_ENTRIES): l'appelant doit alors signaler un echec franc plutot que de
+     * laisser croire que l'ecriture est en securite.
+     */
     async enqueue(input: {
       id: string;
       endpoint: string;
       body: unknown;
       now: number;
-    }): Promise<OutboxEntry> {
+      ownerUserId?: string;
+      ownerTenantId?: string;
+      scopeKey?: string;
+    }): Promise<OutboxEntry | null> {
+      const existing = await store.getAll();
+      // Un rejeu de la MEME cle n'est pas un ajout: il doit pouvoir passer meme a
+      // plafond atteint, sinon on perdrait l'entree qu'on cherche a mettre a jour.
+      const isNew = !existing.some((e) => e.id === input.id);
+      if (isNew && existing.length >= MAX_ENTRIES) {
+        return null;
+      }
+
       const entry: OutboxEntry = {
         id: input.id,
         endpoint: input.endpoint,
         body: input.body,
         createdAt: input.now,
         attempts: 0,
+        ownerUserId: input.ownerUserId,
+        ownerTenantId: input.ownerTenantId,
+        scopeKey: input.scopeKey,
       };
       await store.put(entry);
       return entry;
@@ -88,6 +180,21 @@ export function createOutbox(store: OutboxStore) {
       return (await store.getAll()).length;
     },
 
+    /**
+     * Entrees que la session donnee peut REELLEMENT faire partir.
+     *
+     * A utiliser partout ou l'on bloque l'utilisateur sur "il reste des choses a
+     * envoyer" - typiquement la deconnexion (OFF-03). Compter toutes les entrees
+     * y inclurait celles d'un autre serveur, que cette session ne peut pas
+     * drainer (OFF-07): le compteur ne descendrait jamais et l'utilisateur ne
+     * pourrait plus se deconnecter. C'est justement le cas ou il en a besoin,
+     * puisque ce n'est pas son compte.
+     */
+    async countDrainable(identity?: { userId?: string; tenantId?: string }): Promise<number> {
+      const all = await store.getAll();
+      return all.filter((e) => canReplayEntry(e, identity?.userId, identity?.tenantId)).length;
+    },
+
     async remove(id: string): Promise<void> {
       await store.delete(id);
     },
@@ -100,12 +207,75 @@ export function createOutbox(store: OutboxStore) {
      * design: order matters (a table's orders should replay in sequence) and it
      * avoids hammering a just-recovered network.
      */
-    async drain(replay: ReplayFn): Promise<DrainResult> {
+    async drain(
+      replay: ReplayFn,
+      options?: { now?: number; currentUserId?: string; currentTenantId?: string },
+    ): Promise<DrainResult> {
       const entries = await this.list();
+      const now = options?.now ?? Date.now();
+      const currentUserId = options?.currentUserId;
+      const currentTenantId = options?.currentTenantId;
       let succeeded = 0;
+      let skippedForeign = 0;
       const permanentlyFailed: OutboxEntry[] = [];
+      // Ressources dont une entree vient d'etre repoussee (OFF-08). Tant qu'une
+      // entree d'un scope n'est pas passee, on ne joue pas les suivantes du meme
+      // scope, sinon elles s'appliqueraient dans le desordre. Les autres
+      // ressources continuent en parallele.
+      const blockedScopes = new Set<string>();
 
       for (const entry of entries) {
+        if (entry.scopeKey && blockedScopes.has(entry.scopeKey)) {
+          continue;
+        }
+
+        // Cloisonnement par session (OFF-07). On ne rejoue pas la commande d'un
+        // autre serveur: elle serait enregistree sous l'identite courante, ou pire
+        // detruite si le tenant differe. Une entree sans proprietaire connu
+        // (mise en file avant cette version) reste rejouee: on ne peut pas
+        // deviner, et la perdre serait pire.
+        // Cloisonnement par session (OFF-07). Le cas tenant est le PLUS
+        // destructeur: sur une tablette partagee entre deux etablissements du
+        // meme groupe, rejouer une commande de A sous la session de B fait
+        // repondre 400 "articles plus disponibles" (les menu_item_id n'existent
+        // pas chez B), ce que classifyStatus classe en `permanent` - la commande
+        // est alors supprimee definitivement.
+        //
+        // Le predicat refuse AUSSI quand aucune identite n'est fournie: le drain
+        // du service worker (Background Sync) tourne sans React, donc sans
+        // identite, et le laisser rejouer une entree nominative reviendrait a la
+        // faire partir sous une session inconnue.
+        //
+        // Le service worker, lui, relit l'identite persistee dans IndexedDB
+        // (outbox-idb.ts, store `identity`) et la passe ici: la synchro en
+        // arriere-plan continue donc de fonctionner. Sans cela son drain serait
+        // inerte, et les entrees finiraient par depasser MAX_AGE_MS - une
+        // degradation se serait transformee en perte seche.
+        if (!canReplayEntry(entry, currentUserId, currentTenantId)) {
+          skippedForeign += 1;
+          // Le scope reste BLOQUE: sauter une entree etrangere sans bloquer sa
+          // ressource rouvrirait exactement le desordre que scopeKey empeche.
+          // Fatou met en file `release(table 5)`, sa session tombe; Ibrahim met
+          // en file `assign(table 5)`. Sans cette ligne, l'assign d'Ibrahim part,
+          // puis le release de Fatou s'applique plus tard et libere une table
+          // assignee 20 minutes plus tot.
+          if (entry.scopeKey) blockedScopes.add(entry.scopeKey);
+          continue;
+        }
+
+        // Expiration AVANT tout appel reseau: une commande trop vieille ne doit
+        // pas partir toute seule, meme si le serveur l'accepterait volontiers.
+        if (now - entry.createdAt > MAX_AGE_MS) {
+          try {
+            await store.delete(entry.id);
+            permanentlyFailed.push({ ...entry, lastError: 'expired' });
+          } catch {
+            // Suppression impossible: on laisse l'entree, elle expirera au drain
+            // suivant. Surtout ne pas la rejouer.
+          }
+          continue;
+        }
+
         let outcome: ReplayOutcome;
         try {
           outcome = await replay(entry);
@@ -138,6 +308,7 @@ export function createOutbox(store: OutboxStore) {
           // keep the entry indefinitely without dropping it.
           if (outcome.countsAsAttempt === false) {
             await store.put({ ...entry, lastError: outcome.reason });
+            if (entry.scopeKey) blockedScopes.add(entry.scopeKey);
             continue;
           }
           const attempts = entry.attempts + 1;
@@ -147,6 +318,10 @@ export function createOutbox(store: OutboxStore) {
             continue;
           }
           await store.put({ ...entry, attempts, lastError: outcome.reason });
+          // L'entree reste en file: tout ce qui vise la meme ressource attend son
+          // tour, sinon le rejeu d'un `release` s'appliquerait apres un `assign`
+          // plus recent et la table se retrouverait sans serveur.
+          if (entry.scopeKey) blockedScopes.add(entry.scopeKey);
         } catch {
           // Store op failed for this entry; leave it queued and move on.
           continue;
@@ -154,7 +329,7 @@ export function createOutbox(store: OutboxStore) {
       }
 
       const stillQueued = (await store.getAll()).length;
-      return { succeeded, permanentlyFailed, stillQueued };
+      return { succeeded, permanentlyFailed, stillQueued, skippedForeign };
     },
   };
 }
