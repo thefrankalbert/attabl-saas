@@ -18,6 +18,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { assertNotProduction } from './assert-not-production';
 
 // ─── ENV LOADING (no dotenv dependency) ────────────────────────────────────
 function loadEnv(): Record<string, string> {
@@ -51,6 +52,15 @@ const SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVIC
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+// Meme raison que seed-demo: ce script ecrit massivement en base et lit
+// `.env.local`, qui pointe sur la PRODUCTION.
+try {
+  assertNotProduction(SUPABASE_URL, 'seed-qa');
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 }
 
