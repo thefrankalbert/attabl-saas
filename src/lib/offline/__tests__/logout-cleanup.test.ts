@@ -74,4 +74,36 @@ describe('prepareLogout', () => {
     expect(result).toEqual({ blocked: true, pending: 0, lost: 4 });
     expect(deps.deleteQueryCache).not.toHaveBeenCalled();
   });
+
+  it('force: laisse sortir sans JAMAIS toucher a la file, mais purge le cache de lecture', async () => {
+    // Sans porte de sortie, une panne reseau en fin de service immobiliserait la
+    // tablette: file impossible a vider donc deconnexion impossible, donc le
+    // serveur suivant ne peut pas prendre son poste. Le forcage laisse sortir,
+    // et surtout ne supprime PAS les commandes encaissees.
+    const deps = makeDeps({
+      countPending: vi.fn().mockResolvedValue(3),
+      isOnline: vi.fn().mockReturnValue(false),
+    });
+
+    const result = await prepareLogout(deps, { force: true });
+
+    expect(result).toEqual({ blocked: false, pending: 3, lost: 0 });
+    // Le cache de LECTURE part quand meme: c'est lui qui exposerait le chiffre
+    // d'affaires de la session precedente au serveur suivant.
+    expect(deps.deleteQueryCache).toHaveBeenCalledOnce();
+    // La file, elle, est intacte: aucun drain force, aucune suppression.
+    expect(deps.drain).not.toHaveBeenCalled();
+  });
+
+  it('force: remonte quand meme les commandes detruites par le drain', async () => {
+    // Forcer ne doit pas rendre la perte silencieuse: si le drain a supprime des
+    // entrees expirees, l'appelant doit pouvoir le dire a l'operateur.
+    const countPending = vi.fn().mockResolvedValueOnce(2).mockResolvedValueOnce(0);
+    const deps = makeDeps({ countPending, drain: vi.fn().mockResolvedValue({ lost: 2 }) });
+
+    const result = await prepareLogout(deps, { force: true });
+
+    expect(result).toEqual({ blocked: false, pending: 0, lost: 2 });
+    expect(deps.deleteQueryCache).toHaveBeenCalledOnce();
+  });
 });

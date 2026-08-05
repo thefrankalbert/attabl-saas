@@ -2587,7 +2587,10 @@
     },
     "logoutBlocked": "Cannot sign out yet",
     "logoutBlockedDesc": "{count} order(s) not sent yet. Reconnect the network and wait for the counter to reach zero.",
-    "logoutLostDesc": "{count} order(s) could not be sent and are lost. Write them down before continuing, then click Sign out again."
+    "logoutLostDesc": "{count} order(s) could not be sent and are lost. Write them down before continuing, then click Sign out again.",
+    "logoutForceExplain": "If you sign out now, these orders are not lost: they stay on this tablet and will be sent when you sign back in here. Nobody else can send them for you.",
+    "logoutStay": "Stay signed in",
+    "logoutForce": "Sign out anyway"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",

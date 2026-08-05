@@ -2587,7 +2587,10 @@
     },
     "logoutBlocked": "Deconnexion impossible",
     "logoutBlockedDesc": "{count} commande(s) pas encore envoyee(s). Reconnectez le reseau et attendez que le compteur retombe a zero.",
-    "logoutLostDesc": "{count} commande(s) n'ont pas pu etre envoyees et sont perdues. Notez-les avant de continuer, puis recliquez sur Deconnexion."
+    "logoutLostDesc": "{count} commande(s) n'ont pas pu etre envoyees et sont perdues. Notez-les avant de continuer, puis recliquez sur Deconnexion.",
+    "logoutForceExplain": "Si vous vous deconnectez maintenant, ces commandes ne sont pas perdues : elles restent sur cette tablette et repartiront quand vous vous reconnecterez ici. Personne d'autre ne peut les envoyer a votre place.",
+    "logoutStay": "Rester connecte",
+    "logoutForce": "Se deconnecter quand meme"
   },
   "kitchen": {
     "title": "Cuisine (KDS)",

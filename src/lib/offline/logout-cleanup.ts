@@ -61,15 +61,39 @@ export interface LogoutCleanupResult {
   lost: number;
 }
 
+export interface PrepareLogoutOptions {
+  /**
+   * Deconnexion assumee malgre des ecritures en attente.
+   *
+   * Sans cette porte de sortie, une panne reseau en fin de service
+   * IMMOBILISERAIT la tablette: la file ne peut pas se vider, donc le serveur
+   * sortant ne peut jamais se deconnecter, donc le suivant ne peut pas prendre
+   * son service. Un blocage total pendant le coup de feu est un defaut plus
+   * grave que celui qu'on cherche a eviter.
+   *
+   * Ce que le forcage NE fait PAS: supprimer la file. Les ecritures restent en
+   * base locale, marquees au nom de leur auteur (OFF-07), et repartiront quand
+   * cette personne se reconnectera sur cette tablette. L'interface DOIT le dire
+   * mot pour mot avant de proposer ce bouton: c'est la difference entre un choix
+   * informe et une perte silencieuse.
+   */
+  force?: boolean;
+}
+
 /**
  * A appeler AVANT de soumettre la deconnexion.
  *
  * Draine la file si le reseau est la, puis:
  *   - file vide     -> purge le cache de lecture, autorise la deconnexion;
  *   - file non vide -> ne supprime RIEN et bloque, en renvoyant le nombre
- *     d'ecritures en attente pour que l'interface puisse le dire a l'operateur.
+ *     d'ecritures en attente pour que l'interface puisse le dire a l'operateur;
+ *   - file non vide + `force` -> purge le cache de lecture, laisse la file
+ *     intacte, et autorise la deconnexion.
  */
-export async function prepareLogout(deps: LogoutCleanupDeps): Promise<LogoutCleanupResult> {
+export async function prepareLogout(
+  deps: LogoutCleanupDeps,
+  options: PrepareLogoutOptions = {},
+): Promise<LogoutCleanupResult> {
   let pending = await deps.countPending();
   let lost = 0;
 
@@ -81,15 +105,17 @@ export async function prepareLogout(deps: LogoutCleanupDeps): Promise<LogoutClea
     pending = await deps.countPending();
   }
 
-  if (pending > 0 || lost > 0) {
+  if ((pending > 0 || lost > 0) && !options.force) {
     // On ne purge RIEN et on ne deconnecte pas: soit il reste des commandes a
     // envoyer, soit certaines viennent d'etre perdues et l'operateur doit
     // l'apprendre maintenant, pas decouvrir un trou en caisse en fin de service.
     return { blocked: true, pending, lost };
   }
 
+  // Le cache de LECTURE part dans tous les cas, y compris en forcage: c'est lui
+  // qui exposerait le chiffre d'affaires et les clients au suivant. La file, non.
   await deps.deleteQueryCache();
-  return { blocked: false, pending: 0, lost: 0 };
+  return { blocked: false, pending, lost };
 }
 
 /** Supprime la base de cache de lecture. Resout meme si la suppression est bloquee. */

@@ -19,6 +19,18 @@ import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assig
 // once. Thin controller: it derives the tenant server-side and delegates to the
 // same server actions the online path uses.
 
+/**
+ * Age au-dela duquel une reservation d'idempotence non traitee est consideree
+ * abandonnee et peut etre reprise.
+ *
+ * Choisi tres au-dessus de la duree d'une requete normale (une mutation de
+ * commande repond en dizaines de millisecondes, et la fonction serveur elle-meme
+ * est plafonnee bien en dessous d'une minute). Descendre ce seuil risquerait de
+ * relancer une mutation encore en vol; le monter laisserait un encaissement
+ * reel bloque plus longtemps en "non synchronise" cote caisse.
+ */
+const STALE_CLAIM_MS = 60_000;
+
 /** Runs the mutation for a given (already tenant-derived) request. */
 async function dispatch(
   tenantId: string,
@@ -137,17 +149,47 @@ export async function POST(request: Request) {
         if (existing?.processed_at) {
           return NextResponse.json({ success: true, deduped: true });
         }
-        // ponytail: a claim whose owner crashed mid-request stays NULL forever
-        // and keeps answering 409 until the outbox hits MAX_ATTEMPTS and
-        // surfaces it to the operator - rare, bounded, visible. Add a stale-
-        // claim takeover (created_at > 60s -> re-run) if it ever shows up.
-        return NextResponse.json({ error: 'Requete en cours' }, { status: 409 });
+        // Reprise d'une reservation abandonnee. Sans elle, un appelant qui meurt
+        // entre l'insertion de la cle et la fin de la mutation (onglet ferme,
+        // tablette en veille, timeout de la fonction) laisse une ligne
+        // processed_at NULL pour toujours: chaque rejeu recoit 409 jusqu'a
+        // epuisement du budget de tentatives, et un encaissement reel est
+        // signale a l'operateur comme non synchronise alors qu'il n'a jamais
+        // ete applique.
+        //
+        // La prise est ATOMIQUE: l'UPDATE ne matche que si la ligne est encore
+        // non traitee ET encore vieille. Deux repreneurs simultanes ne peuvent
+        // pas gagner tous les deux - Postgres reevalue le WHERE apres avoir pris
+        // le verrou de ligne, donc le second ne matche plus rien et repart en
+        // 409. Le delai depasse largement une requete normale: en dessous, on
+        // relancerait une mutation encore en vol.
+        const staleCutoff = new Date(Date.now() - STALE_CLAIM_MS).toISOString();
+        const { data: takenOver } = await supabase
+          .from('order_mutation_requests')
+          .update({ created_at: new Date().toISOString() })
+          .eq('client_request_id', input.client_request_id)
+          .is('processed_at', null)
+          .lt('created_at', staleCutoff)
+          .select('client_request_id')
+          .maybeSingle();
+
+        if (!takenOver) {
+          // Reservation encore fraiche: une autre tentative est vraiment en vol.
+          // 409 -> l'outbox garde l'entree et reessaie.
+          return NextResponse.json({ error: 'Requete en cours' }, { status: 409 });
+        }
+        logger.warn('Order mutation stale claim taken over', {
+          tenantId,
+          type: input.type,
+        });
+        // Reservation reprise: on poursuit et on execute la mutation.
+      } else {
+        logger.error('Order mutation idempotency claim failed', {
+          code: claimError.code,
+          tenantId,
+        });
+        return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
       }
-      logger.error('Order mutation idempotency claim failed', {
-        code: claimError.code,
-        tenantId,
-      });
-      return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
     }
 
     // Run the mutation. If it fails, release the key so the outbox can retry
