@@ -1,20 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
 import { createSupplierImportService } from '../supplier-import.service';
 import { ServiceError } from '../errors';
+import { buildXlsx } from './xlsx-fixture';
+import { readFirstSheetRows } from '@/lib/excel-parse';
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
-
-/** Build an .xlsx ArrayBuffer from an array-of-arrays. */
-function buildXlsx(aoa: unknown[][]): ArrayBuffer {
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
-}
 
 interface MockOpts {
   existing?: Array<{ id: string; name: string }>;
@@ -63,7 +56,7 @@ describe('supplier-import.service parseExcel', () => {
   it('maps tolerant FR/EN headers and parses rows', async () => {
     const { supabase } = makeSupabase();
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Nom', 'Contact', 'Téléphone', 'Email', 'Adresse', 'Notes', 'Actif'],
       ['Boulangerie', 'Amadou', '+225 07', 'a@b.ci', 'Abidjan', 'Lundi', 'Oui'],
     ]);
@@ -83,7 +76,7 @@ describe('supplier-import.service parseExcel', () => {
   it('throws VALIDATION when the required name column is missing', async () => {
     const { supabase } = makeSupabase();
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Contact', 'Phone'],
       ['Amadou', '+225'],
     ]);
@@ -93,7 +86,7 @@ describe('supplier-import.service parseExcel', () => {
   it('collects a row error for a bad email but keeps other rows', async () => {
     const { supabase } = makeSupabase();
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Name', 'Email'],
       ['Good Co', 'ok@x.com'],
       ['Bad Co', 'not-an-email'],
@@ -107,7 +100,7 @@ describe('supplier-import.service parseExcel', () => {
   it('skips fully empty rows', async () => {
     const { supabase } = makeSupabase();
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([['Name'], ['A'], ['', ''], ['B']]);
+    const buffer = await buildXlsx([['Name'], ['A'], ['', ''], ['B']]);
     const { rows, errors } = await svc.parseExcel(buffer);
     expect(rows.map((r) => r.name)).toEqual(['A', 'B']);
     expect(errors).toHaveLength(0);
@@ -120,7 +113,7 @@ describe('supplier-import.service importFromExcel', () => {
       existing: [{ id: 's1', name: 'Boulangerie' }],
     });
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Name', 'Phone'],
       ['boulangerie', '+225 11'], // case-insensitive match -> update
       ['Nouveau Fournisseur', '+225 22'], // new -> insert
@@ -140,7 +133,7 @@ describe('supplier-import.service importFromExcel', () => {
   it('merges parse errors into the result and skips them', async () => {
     const { supabase } = makeSupabase({ existing: [] });
     const svc = createSupplierImportService(supabase);
-    const buffer = buildXlsx([
+    const buffer = await buildXlsx([
       ['Name', 'Email'],
       ['Ok Co', 'ok@x.com'],
       ['Bad Co', 'nope'],
@@ -156,8 +149,9 @@ describe('supplier-import.service importFromExcel', () => {
     const svc = createSupplierImportService(supabase);
     const buf = await svc.generateTemplate();
     expect(Buffer.isBuffer(buf)).toBe(true);
-    const wb = XLSX.read(buf, { type: 'buffer' });
-    const aoa = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+    const aoa = await readFirstSheetRows(
+      buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
+    );
     // Styled workbook adds a branded title band + subtitle before the header row,
     // so locate the header row by its known first column rather than assuming row 0.
     const headerRow = aoa.find((r) => (r as string[])?.includes('Name')) as string[] | undefined;
