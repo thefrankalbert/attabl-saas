@@ -13,7 +13,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(18);
 
 -- ---------------------------------------------------------------- DB-02 tenants
 -- Les colonnes commerciales et de facturation ne doivent plus etre lisibles.
@@ -102,13 +102,25 @@ select throws_ok(
 reset role;
 
 -- Assertions structurelles, hors role.
+-- Une seule exception attendue: l INSERT newsletter (formulaire public du site
+-- vitrine). Toute AUTRE ecriture accordee a anon doit faire echouer ce test.
 select is(
   (select count(*)::int
    from information_schema.role_table_grants
    where grantee = 'anon' and table_schema = 'public'
-     and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')),
+     and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')
+     and not (table_name = 'newsletter_subscriber' and privilege_type = 'INSERT')),
   0,
-  'DB-12: plus aucun privilege d ecriture pour anon dans le schema public'
+  'DB-12: aucun privilege d ecriture pour anon, hors l INSERT newsletter'
+);
+
+select ok(
+  exists (
+    select 1 from information_schema.role_table_grants
+    where grantee = 'anon' and table_schema = 'public'
+      and table_name = 'newsletter_subscriber' and privilege_type = 'INSERT'
+  ),
+  'DB-12 non-regression: le formulaire newsletter du site vitrine peut toujours inserer'
 );
 
 select is(

@@ -31,6 +31,19 @@ revoke insert, update, delete, truncate, references, trigger
   on all tables in schema public
   from anon;
 
+-- EXCEPTION, une seule, verifiee: l'inscription a la newsletter du site vitrine.
+-- src/app/actions/newsletter.ts insere dans newsletter_subscriber avec le client
+-- serveur, donc en role anon pour un visiteur non connecte. C'est delibere: la
+-- policy "Enable insert public" existe depuis 20260207000001 et son WITH CHECK a
+-- ete resserre par 20260702000000. Sans ce grant, le formulaire renverrait une
+-- erreur en production sans que personne ne le remarque.
+--
+-- Verifie sur l'ensemble du depot: c'est le SEUL chemin d'ecriture en role anon.
+-- La creation de commande du storefront passe par createAdminClient()
+-- (service_role) et la RPC create_order_with_items, dont l'EXECUTE est deja
+-- reserve au service_role (20260630030000). anon n'y touche pas.
+grant insert on table public.newsletter_subscriber to anon;
+
 -- Meme traitement pour les tables futures: sans cela, la prochaine table creee
 -- par le role proprietaire redonnerait ces privileges a anon.
 alter default privileges in schema public
