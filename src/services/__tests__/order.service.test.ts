@@ -583,6 +583,9 @@ describe('OrderService', () => {
         tenantId: 'tenant-123',
         items: [{ id: 'item-1', name: 'Pizza', price: 10, quantity: 1 }] as OrderItemInput[],
         total: 10,
+        // F2: la devise de comptabilisation est desormais obligatoire sur ce
+        // chemin - un repli silencieux sur XAF etait une erreur d'un facteur 100.
+        display_currency: 'XAF',
         clientRequestId: 'key-123',
       });
 
@@ -610,6 +613,7 @@ describe('OrderService', () => {
         tenantId: 'tenant-123',
         items: [{ id: 'item-1', name: 'Pizza', price: 20, quantity: 1 }] as OrderItemInput[],
         total: 20,
+        display_currency: 'XAF',
         clientRequestId: 'key-dup',
       });
 
@@ -633,6 +637,7 @@ describe('OrderService', () => {
         tenantId: 'tenant-123',
         items: [{ id: 'item-1', name: 'Pizza', price: 5, quantity: 1 }] as OrderItemInput[],
         total: 5,
+        display_currency: 'XAF',
       });
 
       expect(rpc).toHaveBeenLastCalledWith(

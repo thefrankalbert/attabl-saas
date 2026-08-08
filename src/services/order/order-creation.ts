@@ -73,9 +73,21 @@ export function createCreationMethods(supabase: SupabaseClient) {
 
       // Money crosses the boundary here: CreateOrderInput carries MAJOR-unit
       // amounts (menu prices, computed pricing) and the DB stores integer MINOR
-      // units. Convert every transactional amount with the order's currency
-      // (orders.display_currency; null -> default XAF, a 0-decimal identity).
+      // units. Convert every transactional amount with the order's currency.
+      //
+      // F2: la devise n'est plus OPTIONNELLE sur ce chemin. `toMinorUnits(x,
+      // undefined)` retombait silencieusement sur XAF (zero decimale): pour un
+      // tenant en EUR, 12,50 devenait 13, relu 0,13 EUR. Un repli silencieux sur
+      // une devise a zero decimale est une erreur d'un facteur 100 qui ne laisse
+      // aucune trace. Un appelant qui l'oublie doit echouer bruyamment, pas
+      // ecrire un montant faux dans le registre.
       const currency = input.display_currency;
+      if (!currency) {
+        throw new ServiceError(
+          'Devise de comptabilisation manquante a la creation de commande',
+          'VALIDATION',
+        );
+      }
 
       // Build items array for the DB function
       const itemsJson = input.items.map((item) => {
