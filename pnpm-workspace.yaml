@@ -38,7 +38,11 @@ overrides:
   # nanoid: GHSA-2v37-7h3g-55p8, avis publie apres le lot dependances du 05/08.
   # Tire par next>postcss>nanoid, donc dependance de PRODUCTION: l'audit --prod
   # echoue tant que la borne n'est pas posee. Corrige a partir de 3.3.17.
-  nanoid@<3.3.17: '>=3.3.17'
+  # BORNE A LA LIGNE 3: '>=3.3.17' seul resolvait en 6.0.1, dont le champ engines
+  # est `^22 || ^24 || >=26` alors que la CI et `engines` de package.json ciblent
+  # Node 20. Ca passait aujourd'hui, mais un `engine-strict` ou une montee de
+  # pnpm aurait casse l'install sans rapport visible avec cet avis.
+  nanoid@<3.3.17: '>=3.3.17 <4'
   # tar: une faille CRITIQUE plus quatre hautes, tirees par la CLI supabase.
   tar: '>=7.5.21'
   # vite est tire par vitest (outillage de test). Cle SIMPLE et non `vite@>=7.0.0`:
