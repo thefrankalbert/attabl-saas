@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
-import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { openingHoursSchema } from '@/lib/validations/tenant.schema';
@@ -180,23 +179,21 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     // Upload to Supabase Storage
     setUploading(true);
     try {
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop() || 'png';
-      const filePath = `${tenant.id}/logo.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('menu-items')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        throw uploadError;
+      // Upload via /api/upload, comme LogoCropper et MenuStep. La route derive le
+      // tenant de la SESSION, valide les octets magiques du fichier et applique le
+      // rate limiting. L'upload direct depuis le navigateur ne faisait aucun des
+      // trois: le type declare suffisait a stocker n'importe quel contenu.
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'menu-items');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
       }
+      const { url } = await res.json();
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('menu-items').getPublicUrl(filePath);
-
-      form.setValue('logo_url', publicUrl);
+      form.setValue('logo_url', url);
 
       toast({
         title: t('logoUploaded'),

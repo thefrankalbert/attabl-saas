@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
-import { compressImage, uploadToStorage } from '@/lib/image-compress';
-import { createClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/image-compress';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { MenuItemRow } from './menu/MenuItemRow';
 import { type Category, buildCategoriesFromData } from './menu/menu-data';
@@ -134,9 +133,21 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
         quality: 0.8,
         type: 'image/jpeg',
       });
-      const supabase = createClient();
-      const publicUrl = await uploadToStorage(compressed, 'menu-items', supabase);
-      updateArticle(categoryId, itemId, 'imageUrl', publicUrl);
+      // Upload via /api/upload, comme LogoCropper. La route derive le tenant de la
+      // SESSION et range le fichier sous `<tenant_id>/...`. L'upload direct depuis
+      // le navigateur ecrivait a plat, sans dossier tenant: c'est ce qui rendait
+      // les photos de plats modifiables et supprimables par n'importe quel autre
+      // restaurant (mesure en production le 2026-08-05).
+      const formData = new FormData();
+      formData.append('file', compressed, 'photo.jpg');
+      formData.append('bucket', 'menu-items');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const { url } = await res.json();
+      updateArticle(categoryId, itemId, 'imageUrl', url);
     } catch {
       // Fallback to object URL if upload fails
       const url = URL.createObjectURL(file);

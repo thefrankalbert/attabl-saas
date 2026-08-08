@@ -55,32 +55,3 @@ export async function compressImage(
     );
   });
 }
-
-/**
- * Upload a blob to Supabase Storage and return the public URL.
- */
-export async function uploadToStorage(
-  blob: Blob,
-  bucket: string,
-  supabase: {
-    storage: {
-      from: (b: string) => {
-        upload: (
-          p: string,
-          f: Blob,
-          o: { upsert: boolean },
-        ) => Promise<{ error: { message: string } | null }>;
-        getPublicUrl: (p: string) => { data: { publicUrl: string } };
-      };
-    };
-  },
-): Promise<string> {
-  const ext = blob.type === 'image/png' ? 'png' : 'jpg';
-  const fileName = `${crypto.randomUUID()}_${Date.now()}.${ext}`;
-
-  const { error } = await supabase.storage.from(bucket).upload(fileName, blob, { upsert: false });
-  if (error) throw new Error(error.message);
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
-  return data.publicUrl;
-}
