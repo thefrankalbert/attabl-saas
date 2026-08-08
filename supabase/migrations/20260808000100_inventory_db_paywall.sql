@@ -16,8 +16,10 @@
 -- Il reproduit canAccessFeature EXACTEMENT (src/lib/plans/features.ts): un tenant
 -- est entitle quand son plan EFFECTIF est pro/business/enterprise, ou
 --   - 'pro' pendant un essai actif (status='trial' ET trial_ends_at dans le futur),
---   - sinon son propre subscription_plan (les statuts cancelled / paused /
---     past_due conservent le dernier plan),
+--   - sinon son propre subscription_plan, SAUF si le statut est 'cancelled' ou
+--     'frozen' qui retombent sur 'starter' ('paused' et 'past_due' conservent le
+--     dernier plan: arret volontaire et temporaire pour l'un, relance Stripe en
+--     cours pour l'autre),
 --   - 'starter' si le plan est absent ou inconnu.
 -- canAccessInventory etant vrai pour pro/business/enterprise et faux pour starter,
 -- l'entitlement se reduit a: essai actif OU plan dans (pro, business, enterprise).
@@ -57,9 +59,16 @@ BEGIN
   FROM tenants
   WHERE id = NEW.tenant_id;
 
+  -- COALESCE: si la ligne tenant est introuvable, les trois variables restent
+  -- NULL et l'expression vaudrait NULL, donc `IF NOT NULL` serait faux et le
+  -- trigger laisserait passer. Un paywall qui s'ouvre quand il ne sait pas n'est
+  -- pas un paywall: on retombe explicitement sur 'starter', non entitle.
   v_entitled :=
     (v_status = 'trial' AND v_trial_ends IS NOT NULL AND v_trial_ends > now())
-    OR (v_plan IN ('pro', 'business', 'enterprise'));
+    OR (
+      COALESCE(v_status, '') NOT IN ('cancelled', 'frozen')
+      AND COALESCE(v_plan, 'starter') IN ('pro', 'business', 'enterprise')
+    );
 
   IF NOT v_entitled THEN
     RAISE EXCEPTION 'Inventory module requires the Pro plan or higher'

@@ -229,6 +229,10 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
         stripe_customer_id: 'cus_456',
         stripe_subscription_id: 'sub_789',
         subscription_status: 'active',
+        // Audit: un tenant gele qui souscrit doit retrouver sa vitrine. Sans
+        // is_active, il payait et restait eteint.
+        is_active: true,
+        past_due_since: null,
         subscription_plan: 'pro',
         billing_interval: 'yearly',
       });
@@ -265,6 +269,9 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
 
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'active',
+        // Audit: is_active suit le statut dans les DEUX sens, sinon un tenant
+        // gele qui repaie reste eteint sans que rien ne le signale.
+        is_active: true,
         // F3: la date d'entree en impaye est effacee des que le statut redevient
         // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
         past_due_since: null,

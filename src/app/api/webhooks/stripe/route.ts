@@ -79,6 +79,20 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
   }
 }
 
+/**
+ * `is_active` DOIT suivre le statut d'abonnement, dans les deux sens.
+ *
+ * Trouve en audit: le gel posait is_active=false, mais AUCUN chemin ne le
+ * remettait a true. Un restaurateur gele qui payait repassait 'active' avec
+ * is_active a false: vitrine morte, POST /api/orders refuse, QR codes de salle
+ * inoperants - pour un client qui venait de payer, et sans le moindre log.
+ * Poser la valeur ici, a chaque ecriture de statut, est le seul moyen de ne pas
+ * dependre du fait que chaque handler y pense.
+ */
+function isActiveForStatus(status: SubscriptionStatus): boolean {
+  return status === 'trial' || status === 'active' || status === 'past_due';
+}
+
 export async function POST(request: Request) {
   let stripe: ReturnType<typeof getStripe>;
   let webhookSecret: string;
@@ -199,6 +213,10 @@ export async function POST(request: Request) {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             subscription_status: mappedStatus,
+            // Un tenant gele (essai expire, impaye) qui souscrit doit retrouver
+            // sa vitrine. Sans cette ligne il payait et restait eteint.
+            is_active: isActiveForStatus(mappedStatus),
+            past_due_since: null,
           };
 
           // Ajouter le plan si fourni (valide contre l'enum, on ignore une valeur inattendue)
@@ -275,6 +293,9 @@ export async function POST(request: Request) {
 
         const updateData: Record<string, unknown> = {
           subscription_status: mappedStatus,
+          // is_active suit le statut dans les DEUX sens: un tenant gele qui
+          // repaie doit retrouver sa vitrine, pas rester eteint en silence.
+          is_active: isActiveForStatus(mappedStatus),
         };
 
         // F3: horodater l'entree en impaye pour pouvoir la BORNER. Sans cette
@@ -564,9 +585,12 @@ export async function POST(request: Request) {
 
         const { error: paidError } = await supabase
           .from('tenants')
-          .update({ subscription_status: 'active', past_due_since: null })
+          .update({ subscription_status: 'active', past_due_since: null, is_active: true })
           .eq('stripe_customer_id', customerId)
-          .in('subscription_status', ['past_due', 'frozen']);
+          // 'frozen' est volontairement EXCLU: un gel pour litige (chargeback) ne
+          // doit pas etre leve par la facture du mois suivant. Seul un impaye
+          // regularise se recupere ici; un litige se resout par dispute.closed.
+          .eq('subscription_status', 'past_due');
 
         if (paidError) {
           logger.error('invoice.paid recovery failed', paidError);

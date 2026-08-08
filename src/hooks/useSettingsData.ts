@@ -149,7 +149,12 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif'];
+    // Aligne sur /api/upload, qui valide aussi les OCTETS MAGIQUES. SVG et GIF
+    // sont retires volontairement: un SVG est un document actif, et servi depuis
+    // un bucket public il devient un vecteur de XSS stocke. Les annoncer ici
+    // alors que le serveur les refuse donnait un apercu du logo a l'ecran suivi
+    // d'une erreur opaque, sans que le logo soit jamais enregistre.
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: t('invalidFileType'),

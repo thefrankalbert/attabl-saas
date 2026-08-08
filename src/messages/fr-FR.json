@@ -2328,7 +2328,7 @@
     "logoUploaded": "Logo mis à jour",
     "logoUploadError": "Erreur lors du téléversement du logo",
     "invalidFileType": "Format de fichier invalide",
-    "logoAcceptedFormats": "Formats acceptés : PNG, JPG, WebP, SVG, GIF",
+    "logoAcceptedFormats": "Formats acceptés : PNG, JPG, WebP",
     "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue de la Republique...",
