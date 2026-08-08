@@ -15,17 +15,19 @@
 -- POURQUOI ON NE SCOPE PAS LES FICHIERS EXISTANTS
 --
 -- Le reflexe serait de copier le modele de `qr-designs`, qui scope sur
--- (storage.foldername(name))[1] = tenant. Mesure avant d'ecrire, sur les 121
--- fichiers reels du bucket:
---   - 0 / 121 sont ranges dans un dossier (noms a plat: `<uuid>_<horodatage>.jpg`)
---   - 0 / 121 ont un prefixe correspondant a un menu_items.id
---   - 0 / 121 ont un prefixe correspondant a un tenants.id
---   - 54 / 121 seulement sont references par un menu_items.image_url
---   - 44 / 121 seulement ont un `owner`
--- Il n'existe donc AUCUNE attribution fiable au tenant pour 67 fichiers. Scoper
--- par dossier aurait rendu les 121 photos non modifiables ET aurait pu les faire
--- disparaitre des pages. C'est exactement le genre de migration "evidente" qui
--- casse la production.
+-- (storage.foldername(name))[1] = tenant. Mesure en production le 2026-08-08,
+-- sur les 121 fichiers reels du bucket:
+--   - 77 / 121 sont ranges dans un dossier (prefixe tenant ou slug de la demo)
+--   - 44 / 121 sont a plat (`<uuid>_<horodatage>.jpg`), sans attribution possible
+--   - sur ces 44, TROIS SEULEMENT sont referencees par un menu_items.image_url;
+--     les 41 autres sont des orphelines qu'aucun plat n'affiche
+-- Scoper par dossier sans reprise prealable rendrait ces 44 fichiers
+-- non modifiables. Les trois qui comptent doivent etre recopiees sous
+-- `<tenant_id>/` avec mise a jour de image_url AVANT que ces policies mordent;
+-- les 41 autres ne sont referencees par rien.
+--
+-- (Une mesure anterieure annoncait 54 fichiers references sur 121: elle etait
+-- fausse, la jointure comparait mal les URL. Chiffres ci-dessus re-mesures.)
 --
 -- CE QUE FAIT CETTE MIGRATION
 --
@@ -48,9 +50,13 @@
 -- CE QUE CETTE MIGRATION NE FAIT PAS: fermer la LECTURE. Le bucket est public
 -- par conception (les photos de plats sont affichees sur une vitrine publique),
 -- donc n'importe qui connaissant une URL lit la photo de n'importe quel
--- restaurant. C'est acceptable pour ce contenu. La policy SELECT qui autorise
--- l'ENUMERATION du bucket n'est en revanche versionnee nulle part dans ce
--- depot: elle n'a jamais ete mesuree, et elle reste un angle mort declare.
+-- restaurant. C'est acceptable pour ce contenu.
+--
+-- L'ENUMERATION, elle, est deja fermee - mesure le 2026-08-08 et non plus
+-- supposee: RLS est ACTIVE sur storage.objects et il n'existe AUCUNE policy
+-- SELECT, ni pour ce bucket ni pour un autre. `storage.list()` ne renvoie donc
+-- rien a un client anon ou authentifie; seule la lecture par URL directe
+-- fonctionne, ce qui est le comportement voulu d'un bucket public.
 --
 -- Consequence assumee: remplacer une ANCIENNE photo laisse l'ancien fichier
 -- orphelin dans le bucket (sa suppression echoue silencieusement, elle n'est plus
