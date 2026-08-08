@@ -191,6 +191,11 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('bucket', 'menu-items');
+      // Le logo precedent est supprime par la route apres un televersement
+      // reussi: sans cela, chaque changement laissait un fichier mort dans un
+      // bucket public. La route verifie que le chemin appartient bien au tenant.
+      const previousLogo = form.getValues('logo_url');
+      if (previousLogo) formData.append('replaces', previousLogo);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Upload failed' }));
