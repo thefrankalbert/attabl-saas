@@ -93,6 +93,36 @@ function isActiveForStatus(status: SubscriptionStatus): boolean {
   return status === 'trial' || status === 'active' || status === 'past_due';
 }
 
+/**
+ * Le client Stripe du litige, ou null si on ne peut pas le resoudre.
+ *
+ * L'appel etait fait sans try/catch: un timeout ou un 429 de l'API Stripe
+ * remontait au catch externe, qui supprime la ligne d'idempotence et renvoie
+ * 500. Stripe rejoue alors pendant trois jours, et un taux d'echec durable finit
+ * par lui faire DESACTIVER l'endpoint - ce qui ferait perdre
+ * checkout.session.completed et invoice.paid pour TOUS les clients. Un litige ne
+ * doit pas pouvoir mettre l'activation d'abonnement en peril.
+ *
+ * `payment_intent` est `string | PaymentIntent` cote Stripe: on gere les deux
+ * plutot que de mentir au typage avec un `as string`.
+ */
+async function disputeCustomerId(
+  stripe: ReturnType<typeof getStripe>,
+  dispute: Stripe.Dispute,
+): Promise<string | null> {
+  const pi = dispute.payment_intent;
+  if (!pi) return null;
+  if (typeof pi !== 'string') return typeof pi.customer === 'string' ? pi.customer : null;
+
+  try {
+    const intent = await stripe.paymentIntents.retrieve(pi);
+    return typeof intent.customer === 'string' ? intent.customer : null;
+  } catch (err) {
+    logger.error('Impossible de resoudre le client du litige', err, { disputeId: dispute.id });
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   let stripe: ReturnType<typeof getStripe>;
   let webhookSecret: string;
@@ -515,10 +545,7 @@ export async function POST(request: Request) {
       // reversible: si le litige est gagne, le case ci-dessous le degele.
       case 'charge.dispute.created': {
         const dispute = event.data.object as Stripe.Dispute;
-        const customerId = dispute.payment_intent
-          ? ((await stripe.paymentIntents.retrieve(dispute.payment_intent as string))
-              .customer as string)
-          : null;
+        const customerId = await disputeCustomerId(stripe, dispute);
 
         if (!customerId) {
           logger.warn('Dispute created without resolvable customer', { disputeId: dispute.id });
@@ -553,10 +580,7 @@ export async function POST(request: Request) {
           break;
         }
 
-        const customerId = dispute.payment_intent
-          ? ((await stripe.paymentIntents.retrieve(dispute.payment_intent as string))
-              .customer as string)
-          : null;
+        const customerId = await disputeCustomerId(stripe, dispute);
 
         if (!customerId) break;
 

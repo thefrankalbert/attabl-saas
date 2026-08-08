@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage } from '@/lib/image-compress';
+import { logger } from '@/lib/logger';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { MenuItemRow } from './menu/MenuItemRow';
 import { type Category, buildCategoriesFromData } from './menu/menu-data';
@@ -148,10 +149,13 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       }
       const { url } = await res.json();
       updateArticle(categoryId, itemId, 'imageUrl', url);
-    } catch {
-      // Fallback to object URL if upload fails
-      const url = URL.createObjectURL(file);
-      updateArticle(categoryId, itemId, 'imageUrl', url);
+    } catch (err) {
+      // Ne PAS retomber sur une URL d'objet local. Un `blob:` enregistre comme
+      // imageUrl meurt au rechargement de la page: le restaurateur croit sa
+      // photo enregistree, et le plat se retrouve sans image. Le champ reste
+      // vide et l'echec est journalise - une photo manquante se voit et se
+      // reessaie, une URL morte non.
+      logger.error('Upload de la photo du plat echoue', err, { categoryId, itemId });
     } finally {
       setUploadingItemId(null);
     }
