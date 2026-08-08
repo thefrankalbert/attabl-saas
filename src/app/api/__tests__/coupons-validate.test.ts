@@ -13,6 +13,13 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+// DB-06: la lecture des coupons passe desormais par le client admin, la policy
+// publique qui exposait toute la table ayant ete supprimee. Le module admin est
+// marque server-only: sans ce mock, son import fait echouer la suite entiere.
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => ({})),
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn(),
 }));
