@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '../errors';
 import type { TenantValidationResult } from './order-types';
+import { isSubscriptionUsable } from '@/lib/plans/features';
+import type { SubscriptionStatus } from '@/types/billing';
 
 export function createQueryMethods(supabase: SupabaseClient) {
   return {
@@ -26,6 +28,16 @@ export function createQueryMethods(supabase: SupabaseClient) {
 
       if (!tenant.is_active) {
         throw new ServiceError('Ce restaurant est temporairement indisponible', 'VALIDATION');
+      }
+
+      // F6: ne pas dependre du SEUL is_active. Le cron de gel laissait
+      // is_active=true, contrairement au webhook subscription.deleted; comme le
+      // middleware ne protege que /sites/<slug>/admin, la vitrine et POST
+      // /api/orders restaient ouverts et un tenant gele continuait d'encaisser.
+      // Le statut est desormais verifie ici aussi: deux verrous independants
+      // valent mieux qu'un seul qu'un chemin d'ecriture peut oublier de poser.
+      if (!isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus | null)) {
+        throw new ServiceError('Ce restaurant est temporairement indisponible', 'UNAUTHORIZED');
       }
 
       return {

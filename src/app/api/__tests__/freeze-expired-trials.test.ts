@@ -55,7 +55,12 @@ describe('GET /api/cron/freeze-expired-trials', () => {
     expect(json.success).toBe(true);
     expect(json.frozen).toBe(2);
     // Only trials that expired AND never got a Stripe subscription are frozen.
-    expect(builder.update).toHaveBeenCalledWith({ subscription_status: 'frozen' });
+    // F6: le gel aligne is_active sur le webhook subscription.deleted. Sans lui,
+    // la vitrine et POST /api/orders restaient ouverts pour un essai expire.
+    expect(builder.update).toHaveBeenCalledWith({
+      subscription_status: 'frozen',
+      is_active: false,
+    });
     expect(builder.eq).toHaveBeenCalledWith('subscription_status', 'trial');
     expect(builder.is).toHaveBeenCalledWith('stripe_subscription_id', null);
   });

@@ -108,7 +108,9 @@ describe('OrderService', () => {
     it('should return tenant id when tenant exists and is active', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('tenants').single.mockResolvedValue({
-        data: { id: 'tenant-123', is_active: true },
+        // F6: validateTenant exige desormais un statut d'abonnement entitlant,
+        // pas seulement is_active - le cron de gel laissait is_active a true.
+        data: { id: 'tenant-123', is_active: true, subscription_status: 'active' },
         error: null,
       });
 

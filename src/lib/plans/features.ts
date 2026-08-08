@@ -167,8 +167,16 @@ export function getEffectivePlan(
     return 'pro';
   }
 
-  // Cancelled/paused - still use their last plan (grace period)
-  // past_due - still use their plan (Stripe handles retries)
+  // F3: 'cancelled' n'est PAS une periode de grace. Stripe garde l'abonnement
+  // actif jusqu'a la fin de la periode payee et n'envoie 'canceled' qu'apres:
+  // quand ce statut arrive, le client a cesse de payer et n'a plus rien a
+  // consommer. Le traiter comme entitlant revenait a offrir le plan a vie a qui
+  // resiliait. 'paused' et 'past_due' gardent leur plan: le premier est un arret
+  // volontaire et temporaire, le second une relance en cours cote Stripe.
+  if (status === 'cancelled') {
+    return 'starter';
+  }
+
   // Fallback to 'starter' if plan is missing or not recognized
   return plan && plan in PLAN_LIMITS ? plan : 'starter';
 }

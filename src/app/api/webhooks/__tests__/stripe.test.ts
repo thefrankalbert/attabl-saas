@@ -173,8 +173,11 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(await getWrittenStatus('past_due')).toBe('past_due');
     });
 
-    it('maps "unpaid" to "past_due"', async () => {
-      expect(await getWrittenStatus('unpaid')).toBe('past_due');
+    // F3: 'unpaid' est la FIN de la relance Stripe. Le mapper sur 'past_due',
+    // qui reste entitlant, laissait le tenant garder son plan a vie quand le
+    // reglage Stripe de fin de relance est "mark as unpaid" plutot que "cancel".
+    it('maps "unpaid" to "frozen"', async () => {
+      expect(await getWrittenStatus('unpaid')).toBe('frozen');
     });
 
     it('maps unknown status to "frozen" (fail-closed) and logs warning', async () => {
@@ -262,6 +265,9 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
 
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'active',
+        // F3: la date d'entree en impaye est effacee des que le statut redevient
+        // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
+        past_due_since: null,
         billing_interval: 'monthly',
         subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
         subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),

@@ -120,15 +120,14 @@ export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, 
  *  bucket so browsing the search modal cannot deplete the order limit). */
 export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(60, '1 m'));
 
-/** Payment initiation (Wave, Orange Money): 5 requests / minute per IP. Fail-closed. */
-export const paymentInitiationLimiter = createLimiter(
-  'payment-init',
-  Ratelimit.slidingWindow(5, '1 m'),
-  true,
-);
-
-/** Payment webhooks (Wave, Orange Money): 120 requests / minute per IP. */
-export const webhookLimiter = createLimiter('webhooks', Ratelimit.slidingWindow(120, '1 m'));
+// KNIP-RL: `paymentInitiationLimiter` et `webhookLimiter` vivaient ici, exportes
+// et jamais appeles. Mesure faite avant de trancher: ils n'ont AUCUN appelant
+// possible. Les routes Wave et Orange Money n'existent pas encore, et le seul
+// webhook du produit est celui de Stripe - qui ne doit surtout pas etre limite
+// par IP: Stripe reessaie, et brider ses tentatives ferait perdre des evenements
+// de facturation. Ils sont donc supprimes plutot que branches au hasard. Le jour
+// ou la route Wave arrive, son limiteur tient en trois lignes, ecrites avec la
+// fenetre que ce fournisseur exige vraiment.
 
 /** Checkout: 5 requests / 10 minutes per IP. Fail-closed: block if Redis is down
  * in production to prevent unbounded checkout sessions during an outage. */
