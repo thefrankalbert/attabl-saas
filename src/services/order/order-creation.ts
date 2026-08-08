@@ -3,6 +3,7 @@ import { ServiceError } from '../errors';
 import { logger } from '@/lib/logger';
 import { toMinorUnits } from '@/lib/utils/money';
 import type { CreateOrderInput, CreateOrderResult } from './order-types';
+import { verifiedPriceKey } from './verified-price-key';
 
 export function createCreationMethods(supabase: SupabaseClient) {
   return {
@@ -90,7 +91,10 @@ export function createCreationMethods(supabase: SupabaseClient) {
           item_name_en: item.name_en || null,
           quantity: item.quantity,
           // price_at_order: server-verified MAJOR menu price -> integer minor units.
-          price_at_order: toMinorUnits(input.verifiedPrices?.get(item.id) ?? item.price, currency),
+          price_at_order: toMinorUnits(
+            input.verifiedPrices?.get(verifiedPriceKey(item)) ?? item.price,
+            currency,
+          ),
           customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,

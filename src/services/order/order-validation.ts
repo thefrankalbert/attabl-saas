@@ -5,6 +5,7 @@ import { ServiceError } from '../errors';
 import { logger } from '@/lib/logger';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import type { OrderPreviewIssue, OrderPreviewResult } from './order-types';
+import { verifiedPriceKey } from './verified-price-key';
 
 export function createValidationMethods(supabase: SupabaseClient) {
   return {
@@ -185,7 +186,9 @@ export function createValidationMethods(supabase: SupabaseClient) {
         );
         const itemRemoved = invalidItemIds.includes(item.id);
         if (!itemRemoved && !itemHasBlockingIssue) {
-          verifiedPrices.set(item.id, expectedPrice);
+          // Cle par LIGNE de panier (article + variante), pas par article: deux
+          // variantes du meme article s'ecrasaient l'une l'autre (F8).
+          verifiedPrices.set(verifiedPriceKey(item), expectedPrice);
           calculatedTotal += (expectedPrice + modifiersTotal) * item.quantity;
         }
       }
