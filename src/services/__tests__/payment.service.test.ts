@@ -588,3 +588,19 @@ describe('idempotence et atomicite du registre de caisse (F5)', () => {
     expect(summary.net).toBe(0);
   });
 });
+
+// Trouve en audit: `summarize` court-circuite le statut a 'comp' mais laisse net
+// a 0, donc le plafond voyait un solde restant egal au total et acceptait un
+// encaissement plein sur une addition OFFERTE. Le registre aurait encaisse de
+// l'argent sur une commande gratuite, et le rapport des gratuites aurait cesse
+// de correspondre a la caisse.
+it('recordTender refuse d_encaisser une commande offerte', async () => {
+  const mock = createMockSupabase(baseOrder({ payment_status: 'comp' }));
+  const service = createPaymentService(asSupabase(mock));
+
+  await expect(
+    service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash' }),
+  ).rejects.toThrow('Impossible d encaisser une commande offerte');
+
+  expect(mock._ledger).toHaveLength(0);
+});

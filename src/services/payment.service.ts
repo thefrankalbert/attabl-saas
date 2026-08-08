@@ -59,6 +59,14 @@ export function createPaymentService(supabase: SupabaseClient) {
       if (order.status === 'cancelled') {
         throw new ServiceError('Impossible d encaisser une commande annulee', 'CONFLICT');
       }
+      // Une commande OFFERTE est close et sans solde: `summarize` la court-circuite
+      // a 'comp' mais laisse net a 0, donc le plafond calculait un solde restant
+      // egal au total et acceptait un encaissement plein. Le registre aurait
+      // enregistre de l'argent sur une addition offerte, et le rapport des
+      // gratuites (get_daily_comps) aurait cesse de correspondre a la caisse.
+      if (order.payment_status === 'comp') {
+        throw new ServiceError('Impossible d encaisser une commande offerte', 'CONFLICT');
+      }
 
       // F5: plafonner au solde restant du. Le seul garde-fou etait cote interface
       // (OrderPaymentPanel desactive le bouton quand remaining <= 0), et une

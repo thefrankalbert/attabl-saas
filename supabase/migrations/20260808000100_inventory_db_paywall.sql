@@ -24,13 +24,20 @@
 -- canAccessInventory etant vrai pour pro/business/enterprise et faux pour starter,
 -- l'entitlement se reduit a: essai actif OU plan dans (pro, business, enterprise).
 --
--- PERIMETRE DELIBERE: seules les tables de CONFIGURATION du module sont
--- couvertes (ingredients, suppliers, stock_counts). Le grand livre des mouvements
--- (ingredient_movements) et les lignes de comptage en sont volontairement exclus:
--- ils sont ecrits par destock_order lors d'une commande, en service_role. Un
--- trigger bloquant y ferait echouer la PRISE DE COMMANDE d'un tenant qui vient de
--- retrograder - on transformerait un probleme de facturation en panne de service.
--- Sans ingredient ni fiche technique creables, la porte est deja fermee en amont.
+-- PERIMETRE DELIBERE, corrige apres audit: seules les tables de CONFIGURATION du
+-- module sont couvertes (ingredients, suppliers, stock_counts), et sur
+-- `ingredients` uniquement a l'INSERT.
+--
+-- La premiere version armait aussi l'UPDATE sur `ingredients`. C'etait un defaut:
+-- `destock_order` fait exactement cet UPDATE, une fois par ligne de recette, a
+-- chaque commande payee. Le trigger y aurait fait echouer le destockage d'un
+-- tenant retrograde - un probleme de facturation transforme en panne de service,
+-- precisement ce que l'en-tete pretendait eviter en excluant le grand livre.
+--
+-- Le grand livre des mouvements (ingredient_movements) et les lignes de comptage
+-- restent hors perimetre pour la meme raison. Sans ingredient ni fournisseur ni
+-- comptage CREABLES, la porte est fermee la ou elle doit l'etre: a l'entree du
+-- module, pas sur le chemin d'une commande en cours de service.
 --
 -- SECURITY DEFINER pour que le trigger lise `tenants` quel que soit le RLS de
 -- l'ecrivain.
@@ -81,9 +88,19 @@ $$;
 
 -- La creation d'un trigger n'est pas idempotente: le drop-if-exists rend la
 -- migration rejouable sans erreur.
+-- ingredients: INSERT SEULEMENT, et c'est important.
+--
+-- `destock_order` fait `UPDATE ingredients SET current_stock = ...` une fois PAR
+-- LIGNE DE RECETTE, a l'interieur du verrou consultatif de la commande. Armer le
+-- trigger sur UPDATE reviendrait donc a: (1) faire un SELECT sur `tenants` par
+-- ligne de recette sur le chemin chaud de la prise de commande, et (2) faire
+-- ECHOUER le destockage d'un tenant retrograde - dont les commandes doivent
+-- continuer a passer. Le paywall doit empecher d'UTILISER le module, pas de
+-- servir un client. Creer un ingredient, c'est utiliser le module; voir son
+-- stock bouger parce qu'un plat est parti, non.
 DROP TRIGGER IF EXISTS trg_enforce_inventory_entitlement ON public.ingredients;
 CREATE TRIGGER trg_enforce_inventory_entitlement
-  BEFORE INSERT OR UPDATE ON public.ingredients
+  BEFORE INSERT ON public.ingredients
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_inventory_entitlement();
 
