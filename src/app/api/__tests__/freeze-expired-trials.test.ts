@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Le cron enchaine deux formes de requete: un UPDATE ... SELECT (essais expires)
+// et un SELECT ... LIMIT suivi d'un UPDATE ... IN (impayes, plafonnes). Le
+// builder est donc chainable ET thenable: n'importe quel maillon peut terminer
+// la chaine, et c'est `mockSelect` qui fournit le resultat.
 const mockSelect = vi.fn();
-const builder = {
-  from: vi.fn(() => builder),
-  update: vi.fn(() => builder),
-  eq: vi.fn(() => builder),
-  lt: vi.fn(() => builder),
-  is: vi.fn(() => builder),
-  select: mockSelect,
-};
+type Builder = Record<string, unknown>;
+const builder: Builder = {};
+for (const method of ['from', 'update', 'eq', 'lt', 'is', 'in', 'order', 'limit', 'select']) {
+  builder[method] = vi.fn(() => builder);
+}
+builder.then = (resolve: (value: unknown) => unknown) =>
+  Promise.resolve(mockSelect()).then(resolve);
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => builder),
@@ -54,6 +57,10 @@ describe('GET /api/cron/freeze-expired-trials', () => {
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.frozen).toBe(2);
+    // Le gel d'impaye est plafonne par execution: la migration retro-remplit
+    // tous les impayes avec la meme date, ils franchissent donc le seuil le meme
+    // jour. Sans plafond, une seule execution eteindrait toute la population.
+    expect(builder.limit).toHaveBeenCalledWith(25);
     // Only trials that expired AND never got a Stripe subscription are frozen.
     // F6: le gel aligne is_active sur le webhook subscription.deleted. Sans lui,
     // la vitrine et POST /api/orders restaient ouverts pour un essai expire.

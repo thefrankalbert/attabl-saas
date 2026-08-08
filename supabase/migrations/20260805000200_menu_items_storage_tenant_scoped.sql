@@ -35,9 +35,22 @@
 --     URL, aucune policy SELECT requise) mais ne sont plus modifiables par un
 --     autre tenant - ni par personne d'autre que le service_role
 --
--- Le code d'upload est adapte dans le meme lot (src/hooks/useSettingsData.ts):
--- les nouveaux fichiers partent sous `<tenant_id>/`. Sans ce changement, plus
--- aucun upload ne passerait.
+-- ETAT REEL APRES LE LOT (corrige apres audit - la phrase precedente decrivait
+-- une etape intermediaire): plus AUCUN ecrivain authentifie ne subsiste sur ce
+-- bucket. Les quatre chemins d'upload (onboarding, hook partage, logo des
+-- reglages, LogoCropper) passent desormais par /api/upload, qui ecrit avec le
+-- client service_role - donc hors RLS. Ces trois policies ne sont donc plus des
+-- autorisations, ce sont des refus: elles ferment la porte que le reroutage
+-- vient de cesser d'emprunter. C'est le bon etat de securite, mais il faut le
+-- dire dans ce sens - une future fonctionnalite qui reprendrait l'ecriture
+-- directe depuis le navigateur se heurterait a elles, et c'est voulu.
+--
+-- CE QUE CETTE MIGRATION NE FAIT PAS: fermer la LECTURE. Le bucket est public
+-- par conception (les photos de plats sont affichees sur une vitrine publique),
+-- donc n'importe qui connaissant une URL lit la photo de n'importe quel
+-- restaurant. C'est acceptable pour ce contenu. La policy SELECT qui autorise
+-- l'ENUMERATION du bucket n'est en revanche versionnee nulle part dans ce
+-- depot: elle n'a jamais ete mesuree, et elle reste un angle mort declare.
 --
 -- Consequence assumee: remplacer une ANCIENNE photo laisse l'ancien fichier
 -- orphelin dans le bucket (sa suppression echoue silencieusement, elle n'est plus

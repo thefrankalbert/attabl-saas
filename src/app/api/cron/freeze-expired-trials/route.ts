@@ -26,6 +26,9 @@ import { runApiRoute } from '@/lib/api-route-context';
 /** Delai avant de geler un impaye, aligne sur la duree de relance Stripe. */
 const PAST_DUE_GRACE_DAYS = 15;
 
+/** Plafond de gels d'impayes par execution (voir le commentaire au point d'appel). */
+const MAX_PAST_DUE_FREEZES_PER_RUN = 25;
+
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     const cronSecret = process.env.CRON_SECRET;
@@ -68,18 +71,52 @@ export async function GET(request: Request) {
       Date.now() - PAST_DUE_GRACE_DAYS * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const { data: pastDue, error: pastDueError } = await supabase
+    // Le gel d'impaye est PLAFONNE par execution. La migration qui introduit
+    // past_due_since retro-remplit tous les tenants deja en impaye avec la meme
+    // valeur (`now()`), faute de connaitre leur vraie date d'entree: ils
+    // franchissent donc le seuil LE MEME JOUR. Sans plafond, une seule execution
+    // pourrait eteindre d'un coup toute la population impayee - vitrines et
+    // commandes comprises. Le plafond etale l'effet sur plusieurs executions et
+    // laisse le temps de voir passer une anomalie dans les logs.
+    const { data: pastDueCandidates, error: candidatesError } = await supabase
       .from('tenants')
-      .update(freezeUpdate)
+      .select('id')
       .eq('subscription_status', 'past_due')
       // Un past_due_since NULL ne satisfait pas la comparaison (NULL < x vaut
       // NULL en SQL): les tenants sans date sont exclus sans clause de plus.
       .lt('past_due_since', graceCutoff)
-      .select('id');
+      .order('past_due_since', { ascending: true })
+      .limit(MAX_PAST_DUE_FREEZES_PER_RUN);
 
-    if (pastDueError) {
-      logger.error('freeze_expired_past_due failed', pastDueError);
+    if (candidatesError) {
+      logger.error('freeze_expired_past_due candidates failed', candidatesError);
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
+
+    const candidateIds = (pastDueCandidates ?? []).map((t) => t.id);
+    let pastDue: { id: string }[] = [];
+
+    if (candidateIds.length > 0) {
+      const { data: updated, error: pastDueError } = await supabase
+        .from('tenants')
+        .update(freezeUpdate)
+        .in('id', candidateIds)
+        // Re-verifie le statut a l'ecriture: un tenant peut avoir paye entre la
+        // selection et la mise a jour, et il ne doit pas etre gele pour autant.
+        .eq('subscription_status', 'past_due')
+        .select('id');
+
+      if (pastDueError) {
+        logger.error('freeze_expired_past_due failed', pastDueError);
+        return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+      }
+      pastDue = updated ?? [];
+    }
+
+    if (candidateIds.length === MAX_PAST_DUE_FREEZES_PER_RUN) {
+      logger.warn('Plafond de gels d impayes atteint, le reste suivra', {
+        cap: MAX_PAST_DUE_FREEZES_PER_RUN,
+      });
     }
 
     const frozen = data?.length ?? 0;
