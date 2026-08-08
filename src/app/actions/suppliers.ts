@@ -5,9 +5,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupplierService } from '@/services/supplier.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types/supplier.types';
 
 const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
+
+// Les fournisseurs font partie du module Inventaire, fonctionnalite Pro. Une
+// Server Action est un endpoint POST adressable: gater la page ne suffit pas.
+const SUPPLIERS_PLAN_ERROR = 'Le module Fournisseurs est reserve au plan Pro.';
 
 const uuidSchema = z.string().uuid();
 
@@ -46,6 +51,9 @@ async function checkSupplierPermissions(
       [...ALLOWED_ROLES],
       'inventory.edit',
     );
+    if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {
+      return { error: SUPPLIERS_PLAN_ERROR, supabase: null };
+    }
     return { error: null, supabase };
   } catch (err) {
     if (err instanceof AuthError) {

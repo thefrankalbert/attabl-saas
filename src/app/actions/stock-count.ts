@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createInventoryService } from '@/services/inventory.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import {
   openStockCountSchema,
   saveStockCountLinesSchema,
@@ -13,6 +14,10 @@ import {
 import type { OpenStockCountInput, StockCountLineInput } from '@/types/inventory.types';
 
 const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
+
+// L'inventaire physique fait partie du module Inventaire, fonctionnalite Pro.
+// Une Server Action est un endpoint POST adressable: gater la page ne suffit pas.
+const STOCK_COUNT_PLAN_ERROR = "L'inventaire physique est reserve au plan Pro.";
 
 type ActionResult<T = undefined> =
   | { success: true; data?: T; error?: never }
@@ -27,6 +32,9 @@ async function checkStockCountPermissions(
       [...ALLOWED_ROLES],
       'inventory.edit',
     );
+    if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {
+      return { error: STOCK_COUNT_PLAN_ERROR, supabase: null };
+    }
     return { error: null, supabase };
   } catch (err) {
     if (err instanceof AuthError) {

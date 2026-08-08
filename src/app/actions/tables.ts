@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { createTableConfigService } from '@/services/table-config.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -17,9 +18,22 @@ const zoneIdSchema = z.string().uuid();
 const tableIdSchema = z.string().uuid();
 const venueIdSchema = z.string().uuid();
 
+// Le plan de salle est une fonctionnalite Pro (settings/tables/page.tsx gate deja
+// sur canAccessTables). Une Server Action est un endpoint POST adressable par son
+// Action ID: sans cette garde, un tenant Starter creait zones et tables sans
+// jamais voir l'ecran.
+const TABLES_PLAN_ERROR = 'Le plan de salle est reserve au plan Pro.';
+
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'orders.manage');
+    const { supabase } = await getAuthenticatedUserForTenant(
+      tenantId,
+      ['owner', 'admin', 'manager'],
+      'orders.manage',
+    );
+    if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessTables'))) {
+      return { error: TABLES_PLAN_ERROR };
+    }
     return { error: null };
   } catch (err) {
     if (err instanceof AuthError) {

@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createInventoryService } from '@/services/inventory.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { isFeatureEntitled, type GatedFeature } from '@/lib/plans/assert-feature';
 import type {
   Ingredient,
   CreateIngredientInput,
@@ -18,6 +19,13 @@ import type {
 import { LOSS_REASONS } from '@/types/inventory.types';
 
 const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
+
+// Le module Inventaire est une fonctionnalite Pro. La page la gate deja
+// (inventory/page.tsx, canAccessInventory), mais une Server Action est un
+// endpoint POST adressable par son Action ID: sans cette garde, un tenant
+// Starter appelait les mutations directement, sans jamais voir l'ecran.
+const INVENTORY_PLAN_ERROR = 'Le module Inventaire est reserve au plan Pro.';
+const RECIPES_PLAN_ERROR = 'Les fiches techniques sont reservees au plan Pro.';
 
 // READ surfaces (reports) are gated purely on the permission, not a coarse role
 // list - mirroring the page's requireAdminPermission('inventory.view'). Passing
@@ -113,6 +121,8 @@ type ActionResult<T = undefined> =
 
 async function checkInventoryPermissions(
   tenantId: string,
+  feature: GatedFeature = 'canAccessInventory',
+  planError: string = INVENTORY_PLAN_ERROR,
 ): Promise<{ error: null; supabase: SupabaseClient } | { error: string; supabase: null }> {
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
@@ -120,6 +130,9 @@ async function checkInventoryPermissions(
       [...ALLOWED_ROLES],
       'inventory.edit',
     );
+    if (!(await isFeatureEntitled(supabase, tenantId, feature))) {
+      return { error: planError, supabase: null };
+    }
     return { error: null, supabase };
   } catch (err) {
     if (err instanceof AuthError) {
@@ -145,6 +158,9 @@ async function checkInventoryViewPermissions(
       [...VIEW_ROLES],
       'inventory.view',
     );
+    if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {
+      return { error: INVENTORY_PLAN_ERROR, supabase: null };
+    }
     return { error: null, supabase };
   } catch (err) {
     if (err instanceof AuthError) {
@@ -351,7 +367,15 @@ export async function actionSetRecipe(
   const parsed = setRecipeSchema.safeParse({ tenantId, menuItemId, lines });
   if (!parsed.success) return { error: 'Invalid input' };
 
-  const { error: permError, supabase } = await checkInventoryPermissions(tenantId);
+  // Les fiches techniques ont leur propre drapeau (recipes/page.tsx gate sur
+  // canAccessRecipes). Aujourd'hui les deux basculent au meme palier, mais gater
+  // sur canAccessInventory rouvrirait le trou le jour ou la grille tarifaire les
+  // separe - c'est exactement ce genre d'ecart qui a cree ce constat.
+  const { error: permError, supabase } = await checkInventoryPermissions(
+    tenantId,
+    'canAccessRecipes',
+    RECIPES_PLAN_ERROR,
+  );
   if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
 
   try {
