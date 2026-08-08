@@ -52,6 +52,16 @@ export interface TenderInput {
   amount: number;
   method: string;
   createdBy?: string | null;
+  /**
+   * Cle d'idempotence frappee par le client au moment du geste (F5).
+   *
+   * Sans elle, un retry reseau ou une tablette relancee inserait un SECOND
+   * mouvement de caisse: la commande passait 'paid' avec le double encaisse. Un
+   * plafond applicatif ne suffit pas - deux requetes concurrentes lisent le meme
+   * solde. La garantie est portee par un index unique
+   * (tenant_id, client_request_id).
+   */
+  clientRequestId?: string | null;
 }
 
 export interface CompInput {

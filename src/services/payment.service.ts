@@ -49,7 +49,7 @@ export function createPaymentService(supabase: SupabaseClient) {
     async recordTender(
       orderId: string,
       tenantId: string,
-      { amount, method, createdBy }: TenderInput,
+      { amount, method, createdBy, clientRequestId }: TenderInput,
     ): Promise<PaymentSummary> {
       if (amount <= 0) {
         throw new ServiceError('Le montant doit etre superieur a zero', 'VALIDATION');
@@ -80,9 +80,17 @@ export function createPaymentService(supabase: SupabaseClient) {
         method,
         status: 'completed',
         created_by: createdBy ?? null,
+        client_request_id: clientRequestId ?? null,
       });
 
       if (error) {
+        // 23505 = violation de l'index unique (tenant_id, client_request_id).
+        // C'est un REJEU, pas une erreur: le premier envoi a deja encaisse. On
+        // renvoie l'etat courant sans second mouvement de caisse, exactement
+        // comme la creation de commande le fait pour sa propre cle.
+        if (error.code === '23505' && clientRequestId) {
+          return this.getSummary(orderId, tenantId);
+        }
         throw new ServiceError('Erreur lors de l enregistrement du paiement', 'INTERNAL', error);
       }
 
@@ -98,33 +106,38 @@ export function createPaymentService(supabase: SupabaseClient) {
     async refund(
       orderId: string,
       tenantId: string,
-      { amount, method, createdBy }: TenderInput,
+      { amount, method, createdBy, clientRequestId }: TenderInput,
     ): Promise<PaymentSummary> {
       if (amount <= 0) {
         throw new ServiceError('Le montant doit etre superieur a zero', 'VALIDATION');
       }
 
       const order = await fetchOrder(supabase, orderId, tenantId);
-      const tenders = await fetchTenders(supabase, orderId, tenantId);
-      const summary = summarize(order, tenders);
 
-      if (amount > summary.net) {
-        throw new ServiceError(
-          'Le montant du remboursement depasse le montant encaisse',
-          'VALIDATION',
-        );
-      }
-
-      const { error } = await supabase.from('payments').insert({
-        tenant_id: tenantId,
-        order_id: orderId,
-        amount,
-        method,
-        status: 'refunded',
-        created_by: createdBy ?? null,
+      // F5: le controle "montant <= net" vit dans la RPC, PAS ici. Lu cote
+      // application, il etait un TOCTOU: `summarize` etait evalue AVANT
+      // l'insertion, donc deux remboursements concurrents du net total passaient
+      // tous les deux le test et sortaient DEUX FOIS l'argent de la caisse. La
+      // RPC verrouille la commande (SELECT ... FOR UPDATE) et recalcule le net
+      // dans la meme transaction que l'INSERT: le second attend, puis echoue.
+      const { error } = await supabase.rpc('record_refund', {
+        p_order_id: orderId,
+        p_tenant_id: tenantId,
+        p_amount: amount,
+        p_method: method,
+        p_created_by: createdBy ?? null,
+        p_client_request_id: clientRequestId ?? null,
       });
 
       if (error) {
+        // La RPC leve check_violation quand le montant depasse le net encaisse:
+        // c'est une erreur d'entree, pas une panne.
+        if (error.code === '23514' || /depasse le montant encaisse/.test(error.message ?? '')) {
+          throw new ServiceError(
+            'Le montant du remboursement depasse le montant encaisse',
+            'VALIDATION',
+          );
+        }
         throw new ServiceError('Erreur lors du remboursement', 'INTERNAL', error);
       }
 

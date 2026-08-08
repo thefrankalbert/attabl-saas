@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Loader2, RotateCcw, Plus } from 'lucide-react';
@@ -53,6 +53,11 @@ export default function OrderPaymentPanel({
   const [loading, setLoading] = useState(false);
   const [tenderAmount, setTenderAmount] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  // Cles d'idempotence, une par geste d'encaissement en cours. Declarees avec
+  // les autres hooks: `if (!summary) return null` plus bas rend tout hook
+  // ulterieur conditionnel (react-hooks/rules-of-hooks).
+  const tenderKeyRef = useRef<string | null>(null);
+  const refundKeyRef = useRef<string | null>(null);
 
   const {
     data: summary,
@@ -95,13 +100,26 @@ export default function OrderPaymentPanel({
     // The cashier types a MAJOR-unit amount (e.g. 12.50); the ledger stores minor.
     const amount = parseFloat(tenderAmount);
     if (!Number.isFinite(amount) || amount <= 0) return;
+    // F5: la cle est frappee UNE FOIS par geste et conservee tant que le geste
+    // n'a pas abouti. Un double-tap ou une tablette relancee rejoue donc la MEME
+    // cle, et l'index unique en base refuse le second mouvement de caisse. Sans
+    // elle, la commande passait 'paid' avec le double encaisse.
+    tenderKeyRef.current ??= crypto.randomUUID();
     setLoading(true);
-    const res = await actionRecordTender(tenantId, orderId, toMinorUnits(amount, currency), 'cash');
+    const res = await actionRecordTender(
+      tenantId,
+      orderId,
+      toMinorUnits(amount, currency),
+      'cash',
+      tenderKeyRef.current,
+    );
     setLoading(false);
     if (res.error) {
       toast({ title: t('paymentError'), description: res.error, variant: 'destructive' });
       return;
     }
+    // Geste abouti: la prochaine saisie est un NOUVEAU mouvement de caisse.
+    tenderKeyRef.current = null;
     toast({ title: t('tenderRecorded') });
     setTenderAmount('');
     await load();
@@ -113,12 +131,20 @@ export default function OrderPaymentPanel({
     const amount = parseFloat(refundAmount);
     if (!Number.isFinite(amount) || amount <= 0) return;
     setLoading(true);
-    const res = await actionRefundOrder(tenantId, orderId, toMinorUnits(amount, currency), 'cash');
+    refundKeyRef.current ??= crypto.randomUUID();
+    const res = await actionRefundOrder(
+      tenantId,
+      orderId,
+      toMinorUnits(amount, currency),
+      'cash',
+      refundKeyRef.current,
+    );
     setLoading(false);
     if (res.error) {
       toast({ title: t('refundError'), description: res.error, variant: 'destructive' });
       return;
     }
+    refundKeyRef.current = null;
     toast({ title: t('refunded') });
     setRefundAmount('');
     await load();

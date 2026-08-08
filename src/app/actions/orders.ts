@@ -48,6 +48,9 @@ const recordTenderSchema = z.object({
   orderId: z.string().uuid(),
   amount: z.number().positive(),
   method: paymentMethodSchema,
+  // F5: cle d'idempotence frappee par le client. Optionnelle pour ne pas casser
+  // un appelant existant, mais la garantie n'existe que si elle est fournie.
+  clientRequestId: z.string().uuid().optional(),
 });
 
 const refundOrderSchema = z.object({
@@ -55,6 +58,9 @@ const refundOrderSchema = z.object({
   orderId: z.string().uuid(),
   amount: z.number().positive(),
   method: paymentMethodSchema,
+  // F5: cle d'idempotence frappee par le client. Optionnelle pour ne pas casser
+  // un appelant existant, mais la garantie n'existe que si elle est fournie.
+  clientRequestId: z.string().uuid().optional(),
 });
 
 const updateItemStatusSchema = z.object({
@@ -450,6 +456,7 @@ export async function actionRecordTender(
   orderId: string,
   amount: number,
   method: string,
+  clientRequestId?: string,
 ): Promise<{
   success?: boolean;
   paymentStatus?: PaymentStatus;
@@ -457,7 +464,13 @@ export async function actionRecordTender(
   due?: number;
   error?: string;
 }> {
-  const parsed = recordTenderSchema.safeParse({ tenantId, orderId, amount, method });
+  const parsed = recordTenderSchema.safeParse({
+    tenantId,
+    orderId,
+    amount,
+    method,
+    clientRequestId,
+  });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
   }
@@ -475,6 +488,7 @@ export async function actionRecordTender(
         amount: parsed.data.amount,
         method: parsed.data.method,
         createdBy: adminUserId,
+        clientRequestId: parsed.data.clientRequestId,
       },
     );
     return {
@@ -505,8 +519,15 @@ export async function actionRefundOrder(
   orderId: string,
   amount: number,
   method: string,
+  clientRequestId?: string,
 ): Promise<{ success?: boolean; paymentStatus?: PaymentStatus; error?: string }> {
-  const parsed = refundOrderSchema.safeParse({ tenantId, orderId, amount, method });
+  const parsed = refundOrderSchema.safeParse({
+    tenantId,
+    orderId,
+    amount,
+    method,
+    clientRequestId,
+  });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
   }
@@ -524,6 +545,7 @@ export async function actionRefundOrder(
         amount: parsed.data.amount,
         method: parsed.data.method,
         createdBy: adminUserId,
+        clientRequestId: parsed.data.clientRequestId,
       },
     );
     return { success: true, paymentStatus: summary.paymentStatus };
