@@ -123,6 +123,34 @@ describe('createPaymentService', () => {
     vi.clearAllMocks();
   });
 
+  // F5: le seul garde-fou etait cote interface. Un rejeu reseau ou une tablette
+  // relancee inserait deux fois le montant total: la commande passait 'paid' avec
+  // 20 000 encaisses pour 10 000 en caisse, et rien ne le signalait.
+  it('recordTender rejette un second encaissement du total (F5)', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+
+    const first = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 10000,
+      method: 'cash',
+      createdBy: 'admin-1',
+    });
+    expect(first.net).toBe(10000);
+    expect(first.paymentStatus).toBe('paid');
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, {
+        amount: 10000,
+        method: 'cash',
+        createdBy: 'admin-1',
+      }),
+    ).rejects.toThrow('Montant superieur au solde du');
+
+    const after = await service.getSummary(ORDER_ID, TENANT);
+    expect(after.net).toBe(10000);
+    expect(after.net).toBe(after.due);
+  });
+
   it('recordTender partial then completing -> partial then paid', async () => {
     const mock = createMockSupabase(baseOrder());
     const service = createPaymentService(asSupabase(mock));

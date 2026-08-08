@@ -16,6 +16,7 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -37,18 +38,23 @@ const paymentSummarySchema = z.object({
   orderId: z.string().uuid(),
 });
 
+// F5: `method` etait un texte libre de 50 caracteres. Le registre de caisse
+// acceptait donc 'bitcoin' ou n'importe quelle chaine, ce qui casse tout
+// rapprochement par moyen de paiement. Restreint au registre du produit.
+const paymentMethodSchema = z.enum(ALL_PAYMENT_METHOD_IDS as [string, ...string[]]);
+
 const recordTenderSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
   amount: z.number().positive(),
-  method: z.string().min(1).max(50),
+  method: paymentMethodSchema,
 });
 
 const refundOrderSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
   amount: z.number().positive(),
-  method: z.string().min(1).max(50),
+  method: paymentMethodSchema,
 });
 
 const updateItemStatusSchema = z.object({

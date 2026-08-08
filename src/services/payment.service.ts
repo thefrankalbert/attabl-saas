@@ -60,6 +60,19 @@ export function createPaymentService(supabase: SupabaseClient) {
         throw new ServiceError('Impossible d encaisser une commande annulee', 'CONFLICT');
       }
 
+      // F5: plafonner au solde restant du. Le seul garde-fou etait cote interface
+      // (OrderPaymentPanel desactive le bouton quand remaining <= 0), et une
+      // interface ne protege pas une caisse: sur une commande de 10 000, un rejeu
+      // reseau ou une tablette relancee inserait DEUX tenders de 10 000. La
+      // commande passait 'paid' avec 20 000 encaisses pour 10 000 en caisse, et
+      // rien ne le signalait. Un sur-encaissement volontaire (rendu de monnaie) se
+      // gere en amont, pas en gonflant le registre.
+      const remaining =
+        dueFor(order) - summarize(order, await fetchTenders(supabase, orderId, tenantId)).net;
+      if (amount > remaining) {
+        throw new ServiceError('Montant superieur au solde du', 'VALIDATION');
+      }
+
       const { error } = await supabase.from('payments').insert({
         tenant_id: tenantId,
         order_id: orderId,
