@@ -39,5 +39,7 @@ export default async function ServicePage({ params }: { params: Promise<{ site: 
     );
   }
 
-  return <ServiceManager tenantId={tenant.id} />;
+  // Devise de comptabilisation du tenant. Repli sur XAF, la devise par defaut du
+  // produit, quand la colonne est vide - jamais une valeur en dur cote composant.
+  return <ServiceManager tenantId={tenant.id} currency={tenant.currency ?? 'XAF'} />;
 }

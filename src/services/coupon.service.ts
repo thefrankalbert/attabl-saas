@@ -128,9 +128,14 @@ export function createCouponService(supabase: SupabaseClient): CouponService {
       } else {
         // Percentage
         discountAmount = (orderSubtotal * coupon.discount_value) / 100;
-        if (coupon.max_discount_amount) {
-          discountAmount = Math.min(discountAmount, coupon.max_discount_amount);
-        }
+      }
+      // F7: le plafond s'applique aux DEUX types. Il n'etait pose que dans la
+      // branche pourcentage, donc un coupon fixe de 20 000 avec un plafond a
+      // 5 000 appliquait bien 20 000. La perte restait bornee par le sous-total
+      // (cap suivant), mais le plafond saisi par le restaurateur etait ignore -
+      // il croyait avoir limite sa remise et ne l'avait pas fait.
+      if (coupon.max_discount_amount) {
+        discountAmount = Math.min(discountAmount, coupon.max_discount_amount);
       }
 
       // Never discount more than subtotal

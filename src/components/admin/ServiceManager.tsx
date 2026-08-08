@@ -30,9 +30,11 @@ import type { AdminUser, Order } from '@/types/admin.types';
 
 interface Props {
   tenantId: string;
+  /** Devise de comptabilisation du tenant. Les montants stockes sont en unites mineures. */
+  currency: string;
 }
 
-export default function ServiceManager({ tenantId }: Props) {
+export default function ServiceManager({ tenantId, currency }: Props) {
   const t = useTranslations('service');
   const tc = useTranslations('common');
 
@@ -381,7 +383,7 @@ export default function ServiceManager({ tenantId }: Props) {
         vm={selectedVM}
         servers={serverVMs}
         currentOrder={currentOrder}
-        currencySymbol={'XAF'}
+        currency={currency}
         freeTables={freeTables}
         onClose={() => setSelectedId(null)}
         onAssignServer={handleAssignFromDetail}
