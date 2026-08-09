@@ -35,8 +35,14 @@ const redis = isConfigured
 // Log rate limiting status at module load (startup)
 // Using console.warn to avoid circular dependency with logger at module level
 if (!isConfigured) {
+  // CONSOLE-PROD. L'ancien message annoncait "rate limiting disabled", ce qui
+  // est FAUX en production: sans Redis, check() renvoie success:false et bloque
+  // donc TOUTES les requetes limitees. Lire "desactive" au moment ou le site
+  // refuse tout est exactement le message qui envoie chercher la panne ailleurs.
   console.warn(
-    '[rate-limit] WARN: Redis not configured - rate limiting disabled in this environment',
+    process.env.NODE_ENV === 'production'
+      ? '[rate-limit] ERREUR: Redis non configure EN PRODUCTION - toutes les requetes limitees seront REFUSEES'
+      : '[rate-limit] WARN: Redis non configure - limitation inactive hors production (les requetes passent)',
   );
 }
 
@@ -113,8 +119,10 @@ export const oauthSignupLimiter = createLimiter(
   true,
 );
 
-/** Orders: 20 requests / minute per IP */
-export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
+/** Orders: 20 requests / minute per IP. RL-FAILOPEN: fail-closed - une panne
+ *  Upstash ouvrait simultanement la creation de commandes et le formulaire de
+ *  contact, soit les deux surfaces de spam les plus rentables du produit. */
+export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'), true);
 
 /** Menu search corpus: read-only GET, 60 requests / minute per IP (separate
  *  bucket so browsing the search modal cannot deplete the order limit). */
@@ -157,11 +165,15 @@ export const onboardingCompleteLimiter = createLimiter(
   Ratelimit.slidingWindow(5, '10 m'),
 );
 
-/** Contact form: 3 requests / hour per IP */
-export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'));
+/** Contact form: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
+export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'), true);
 
-/** Newsletter: 3 requests / hour per IP */
-export const newsletterLimiter = createLimiter('newsletter', Ratelimit.slidingWindow(3, '1 h'));
+/** Newsletter: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
+export const newsletterLimiter = createLimiter(
+  'newsletter',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
 
 /** Excel menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
 export const excelImportLimiter = createLimiter(
@@ -174,6 +186,7 @@ export const excelImportLimiter = createLimiter(
 export const supportsExportLimiter = createLimiter(
   'supports-export',
   Ratelimit.slidingWindow(10, '1 m'),
+  true,
 );
 
 /** PDF menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
@@ -298,6 +311,23 @@ export const revalidateMenuLimiter = createLimiter(
 /**
  * Extract client IP from a Request object (API routes).
  * Checks x-forwarded-for, x-real-ip, then falls back to 'anonymous'.
+ *
+ * IP-SPOOF - HYPOTHESE D'HEBERGEMENT, a relire si elle change.
+ *
+ * On retient le PREMIER element de `X-Forwarded-For`, qui est la partie la plus
+ * a gauche donc la plus facile a forger: n'importe qui peut envoyer
+ * `X-Forwarded-For: 1.2.3.4` et se fabriquer un compartiment de debit neuf a
+ * chaque requete, ce qui annule la limitation.
+ *
+ * C'est inoperant ICI parce que Vercel PREPEND l'IP reelle a l'en-tete avant
+ * que la requete n'atteigne la fonction: le premier element est donc toujours
+ * celui du proxy, pas celui du client. La garantie vient de l'hebergeur, pas de
+ * ce code.
+ *
+ * Si le projet quitte Vercel, ou passe derriere un proxy supplementaire, cette
+ * fonction devient une passoire et doit etre reecrite pour lire l'element a
+ * DROITE (le dernier ajoute par l'infrastructure de confiance), ou pour se fier
+ * a un en-tete signe par le proxy.
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
