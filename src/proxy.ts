@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server';
 import { buildCspHeader } from '@/lib/csp';
 import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import { isAdminRouteDenied } from '@/lib/auth/admin-route-guard';
+import { TENANT_SLUG_HEADER, TENANT_SLUG_HINT_HEADER } from '@/lib/auth/tenant-header';
 
 // Routes qui nécessitent une authentification
 // Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
@@ -98,8 +99,11 @@ export async function proxy(request: NextRequest) {
   // x-csp-nonce header, which Next ignores).
   request.headers.set('Content-Security-Policy', buildCspHeader(nonce));
 
-  // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this
-  request.headers.delete('x-tenant-slug');
+  // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this.
+  // Le hint suit la meme regle: sans cela un client poserait lui-meme le hint et
+  // reproduirait exactement le trou que HDR-REFERER ferme.
+  request.headers.delete(TENANT_SLUG_HEADER);
+  request.headers.delete(TENANT_SLUG_HINT_HEADER);
 
   // 1. Extract subdomain and pathname early for routing decisions
   const hostname = request.headers.get('host') || '';
@@ -144,6 +148,12 @@ export async function proxy(request: NextRequest) {
         sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
           response.cookies.set(cookie.name, cookie.value);
         });
+        // CSP-CUSTOM-DOMAIN. Cette sortie anticipee etait la SEULE des huit a ne
+        // pas poser la CSP. Or `isAppRootOnlyPath` couvre /login, /signup,
+        // /onboarding, /checkout, /reset-password, /forgot-password et /auth/*:
+        // un tenant sur domaine custom servait donc ses pages d'identification
+        // et de paiement sans aucune politique de securite du contenu.
+        response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
         return response;
       }
 
@@ -169,7 +179,9 @@ export async function proxy(request: NextRequest) {
         const referer = request.headers.get('referer') || '';
         const refererSitesMatch = referer.match(/\/sites\/([^/]+)/);
         if (refererSitesMatch) {
-          request.headers.set('x-tenant-slug', refererSitesMatch[1]);
+          // HDR-REFERER: le `Referer` est forgeable, donc il alimente le HINT,
+          // jamais l'en-tete de confiance. Voir src/lib/auth/tenant-header.ts.
+          request.headers.set(TENANT_SLUG_HINT_HEADER, refererSitesMatch[1]);
         }
       }
       const resp = NextResponse.next({ request: { headers: request.headers } });
@@ -310,7 +322,10 @@ export async function proxy(request: NextRequest) {
     const referer = request.headers.get('referer') || '';
     const refererMatch = referer.match(/\/sites\/([^/]+)/);
     if (refererMatch) {
-      request.headers.set('x-tenant-slug', refererMatch[1]);
+      // HDR-REFERER: hint et non en-tete de confiance. Cette branche s'applique
+      // a TOUTES les routes /api/ du domaine principal, c'etait donc la plus
+      // large surface ou la garantie "le slug vient du serveur" etait fausse.
+      request.headers.set(TENANT_SLUG_HINT_HEADER, refererMatch[1]);
       const response = NextResponse.next({
         request: { headers: request.headers },
       });

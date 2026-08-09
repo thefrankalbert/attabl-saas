@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
     // 2. Resolve the ACTIVE tenant from the middleware-injected slug (multi-tenant safe),
     //    then verify the user is an owner/admin of THAT tenant.
-    const tenantSlug = request.headers.get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(request.headers).slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: 'Contexte tenant manquant' }, { status: 400 });
     }

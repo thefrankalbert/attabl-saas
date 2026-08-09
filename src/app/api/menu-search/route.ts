@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     }
 
     const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(headersList).slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }

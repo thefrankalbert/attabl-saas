@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
     const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(headersList).slug;
     if (!tenantSlug) return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
 
     const { data: tenant } = await supabase

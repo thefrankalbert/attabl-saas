@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse, after } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(headersList).slug;
 
     if (!tenantSlug) {
       return NextResponse.json({ error: t('tenantNotIdentified') }, { status: 400 });

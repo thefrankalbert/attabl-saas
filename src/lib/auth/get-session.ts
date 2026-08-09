@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { hasPermission } from '@/lib/permissions';
@@ -112,7 +113,7 @@ export async function getAuthenticatedUserWithTenant(
   // on their OLDEST membership instead of the tenant they are actually viewing
   // (e.g. editing the wrong restaurant's settings). When the header is present
   // and the user is an active member of that tenant, scope to it.
-  const tenantSlug = (await headers()).get('x-tenant-slug');
+  const tenantSlug = readTenantSlug(await headers()).slug;
   if (tenantSlug) {
     const { data: tenant } = await supabase
       .from('tenants')
