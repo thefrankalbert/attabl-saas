@@ -4,7 +4,12 @@ import { NextResponse, after } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { createOrderSchema } from '@/lib/validations/order.schema';
-import { orderLimiter, untrustedOrderLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  orderLimiter,
+  untrustedOrderLimiter,
+  couponClaimLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
@@ -198,6 +203,31 @@ export async function POST(request: Request) {
 
     // 7. Atomically claim coupon usage BEFORE order creation to prevent double-spend
     if (couponResult?.couponId) {
+      // ORDER-SPAM. Le point exact ou le dommage devient IRREVERSIBLE: claimUsage
+      // incremente le budget du coupon, et rien ne le rend au restaurateur.
+      //
+      // La garde vit ici plutot qu'a l'entree de la route parce que c'est ici que
+      // se joue le seul dommage qu'on ne peut pas defaire. Une commande fantome
+      // s'annule en cuisine; une campagne promo videe la nuit, non. Et posee ici,
+      // elle ne coute rien au convive qui commande sans code promo, c'est-a-dire
+      // l'immense majorite.
+      //
+      // La cle inclut le CODE: viser trois codes differents ne donne pas trois
+      // fois le quota du meme code, et un attaquant doit deviner chaque code
+      // separement. Elle inclut le tenant: un code `BIENVENUE` chez A et chez B
+      // sont deux campagnes distinctes.
+      const claimIdentifier = `${ip}:${tenantSlug}:${coupon_code}`;
+      const { success: claimAllowed } = await couponClaimLimiter.check(claimIdentifier);
+      if (!claimAllowed) {
+        logger.warn('ORDER-SPAM: rafale de reclamations sur un code promo', {
+          tenantSlug,
+        });
+        return NextResponse.json(
+          { error: t('rateLimited') },
+          { status: 429, headers: { 'Retry-After': '3600' } },
+        );
+      }
+
       const claimed = await couponService.claimUsage(couponResult.couponId);
       if (!claimed) {
         return NextResponse.json({ error: t('invalidCoupon') }, { status: 400 });

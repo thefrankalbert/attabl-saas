@@ -44,12 +44,15 @@ const mockRateLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
 // ORDER-SPAM: compartiment distinct, applique aux seules commandes dont le
 // tenant ne vient pas d'une source serveur.
 const mockUntrustedRateLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
+// ORDER-SPAM: garde sur la reclamation de coupon, le seul dommage irreversible.
+const mockCouponClaimCheck = vi.fn<() => Promise<{ success: boolean }>>();
 
 vi.mock('@/lib/rate-limit', () => ({
   orderLimiter: { check: (...args: unknown[]) => mockRateLimitCheck(...(args as [])) },
   untrustedOrderLimiter: {
     check: (...args: unknown[]) => mockUntrustedRateLimitCheck(...(args as [])),
   },
+  couponClaimLimiter: { check: (...args: unknown[]) => mockCouponClaimCheck(...(args as [])) },
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
@@ -235,6 +238,7 @@ describe('POST /api/orders', () => {
     // Default: rate limit passes
     mockRateLimitCheck.mockResolvedValue({ success: true });
     mockUntrustedRateLimitCheck.mockResolvedValue({ success: true });
+    mockCouponClaimCheck.mockResolvedValue({ success: true });
 
     // Default: headers return x-tenant-slug
     mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
@@ -342,6 +346,36 @@ describe('POST /api/orders', () => {
     expect(mockUntrustedRateLimitCheck).toHaveBeenCalledWith('127.0.0.1:cible');
     expect(status).toBe(429);
     expect(body.error).toBe('rateLimited');
+  });
+
+  it('refuse la reclamation d un code promo en rafale, AVANT claimUsage', async () => {
+    // ORDER-SPAM. `claimUsage` incremente le budget du coupon et rien ne le rend
+    // au restaurateur: c'est le seul dommage IRREVERSIBLE de cette route. Une
+    // commande fantome s'annule en cuisine, une campagne promo videe la nuit non.
+    mockValidateCoupon.mockResolvedValue({
+      valid: true,
+      discountAmount: 500,
+      coupon: { id: 'coupon-1' },
+    } as unknown as CouponValidationResult);
+    mockCouponClaimCheck.mockResolvedValue({ success: false });
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest({ ...validOrderBody(), coupon_code: 'PROMO10' }));
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(429);
+    // Le point qui compte: le budget n'a PAS ete entame.
+    expect(mockClaimUsage).not.toHaveBeenCalled();
+    expect(mockCouponClaimCheck).toHaveBeenCalledWith('127.0.0.1:test-restaurant:PROMO10');
+  });
+
+  it('ne consulte pas la garde coupon quand la commande n a pas de code promo', async () => {
+    // L'immense majorite des commandes. Elles ne doivent rien payer pour une
+    // protection qui ne les concerne pas.
+    const { POST } = await import('@/app/api/orders/route');
+    await POST(createMockRequest(validOrderBody()));
+
+    expect(mockCouponClaimCheck).not.toHaveBeenCalled();
   });
 
   // -- 2. Missing tenant slug → 400 --------------------------
@@ -570,6 +604,7 @@ describe('POST /api/orders - auto-destock wiring', () => {
     vi.clearAllMocks();
     mockRateLimitCheck.mockResolvedValue({ success: true });
     mockUntrustedRateLimitCheck.mockResolvedValue({ success: true });
+    mockCouponClaimCheck.mockResolvedValue({ success: true });
     mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
     mockValidateTenant.mockResolvedValue({
       id: 'tenant-abc',

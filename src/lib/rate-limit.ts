@@ -119,10 +119,48 @@ export const oauthSignupLimiter = createLimiter(
   true,
 );
 
-/** Orders: 20 requests / minute per IP. RL-FAILOPEN: fail-closed - une panne
- *  Upstash ouvrait simultanement la creation de commandes et le formulaire de
- *  contact, soit les deux surfaces de spam les plus rentables du produit. */
-export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'), true);
+/**
+ * Commandes: 20 par minute et par (IP, tenant). FAIL-OPEN, deliberement.
+ *
+ * RL-FAILOPEN demandait de passer ce compartiment en fail-closed. Applique tel
+ * quel, une simple panne Upstash renvoyait 429 sur TOUTE creation de commande:
+ * plus aucun convive ne peut commander, dans tous les restaurants a la fois.
+ * C'est le chemin de recette du produit, et la panne serait invisible cote
+ * restaurateur - il verrait juste sa salle ne plus rien commander.
+ *
+ * Le dommage qu'on evitait en fermant est REVERSIBLE: une commande fantome
+ * s'annule d'un geste en cuisine. Celui qu'on causait ne l'est pas: un service
+ * perdu ne se rattrape pas. On garde donc fail-open ici, et on ferme la ou le
+ * dommage est vraiment irreversible - voir `couponClaimLimiter`.
+ *
+ * Les autres compartiments demandes par RL-FAILOPEN (contact, newsletter,
+ * export) restent fail-closed: leur indisponibilite ne coute rien a personne.
+ */
+export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
+
+/**
+ * Reclamation d'un code promo: 3 par heure et par (IP, tenant, code).
+ * FAIL-CLOSED, et c'est ici que ca compte.
+ *
+ * ORDER-SPAM. C'est le SEUL dommage irreversible de la creation de commande:
+ * `claimUsage` incremente le compteur d'usage du coupon AVANT meme que la
+ * commande n'existe, et rien ne le rend au restaurateur. Une campagne promo
+ * peut donc etre videe par un script, et le restaurateur ne comprend qu'apres
+ * coup pourquoi son budget est parti en une nuit.
+ *
+ * Trois tentatives par heure sur un MEME code depuis une MEME adresse est trois
+ * fois plus permissif qu'un usage humain reel (on saisit un code promo une fois,
+ * eventuellement deux si on se trompe), et ferme la boucle scriptee.
+ *
+ * Fail-closed assume: si Upstash tombe, on refuse les codes promo pendant la
+ * panne. Le convive paie plein tarif au lieu de ne pas pouvoir commander - une
+ * degradation, pas un arret.
+ */
+export const couponClaimLimiter = createLimiter(
+  'coupon-claim',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
 
 /**
  * ORDER-SPAM. Commandes dont le tenant n'est PAS etabli par une source serveur:
