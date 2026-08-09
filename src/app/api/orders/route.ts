@@ -4,7 +4,12 @@ import { NextResponse, after } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { createOrderSchema } from '@/lib/validations/order.schema';
-import { orderLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  orderLimiter,
+  untrustedOrderLimiter,
+  couponClaimLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
@@ -35,9 +40,22 @@ export async function POST(request: Request) {
     const originError = verifyOrigin(request);
     if (originError) return originError;
 
-    // 1. Rate limiting
+    const headersList = await headers();
+    const { slug: tenantSlug, trusted } = readTenantSlug(headersList);
+
+    if (!tenantSlug) {
+      return NextResponse.json({ error: t('tenantNotIdentified') }, { status: 400 });
+    }
+
+    // 1. ORDER-SPAM. Le compartiment est desormais indexe par (IP, tenant) et
+    // non par IP seule. Deux consequences, toutes deux voulues:
+    //  - un attaquant ne peut plus vider le budget d'un code promo d'un tenant
+    //    donne en noyant l'endpoint depuis une seule adresse;
+    //  - un restaurant en coup de feu ne consomme plus le quota des autres, la
+    //    limite globale par IP etant partagee entre TOUS les tenants.
     const ip = getClientIp(request);
-    const { success: allowed } = await orderLimiter.check(ip);
+    const identifier = `${ip}:${tenantSlug}`;
+    const { success: allowed } = await orderLimiter.check(identifier);
     if (!allowed) {
       return NextResponse.json(
         { error: t('rateLimited') },
@@ -45,11 +63,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const headersList = await headers();
-    const tenantSlug = readTenantSlug(headersList).slug;
-
-    if (!tenantSlug) {
-      return NextResponse.json({ error: t('tenantNotIdentified') }, { status: 400 });
+    // Quand le tenant ne vient PAS d'une source serveur (sous-domaine, domaine
+    // custom, chemin /sites/), il ne peut venir que du `Referer` - forgeable.
+    // C'est le seul chemin qu'emprunte l'attaque, et aucun convive normal n'y
+    // passe. On le borne donc beaucoup plus serre, en plus de la limite ci-dessus.
+    if (!trusted) {
+      const { success: untrustedAllowed } = await untrustedOrderLimiter.check(identifier);
+      if (!untrustedAllowed) {
+        logger.warn('ORDER-SPAM: rafale de commandes sans tenant de confiance', {
+          tenantSlug,
+        });
+        return NextResponse.json(
+          { error: t('rateLimited') },
+          { status: 429, headers: { 'Retry-After': '3600' } },
+        );
+      }
     }
 
     // 2. Parse and validate input with Zod
@@ -175,6 +203,31 @@ export async function POST(request: Request) {
 
     // 7. Atomically claim coupon usage BEFORE order creation to prevent double-spend
     if (couponResult?.couponId) {
+      // ORDER-SPAM. Le point exact ou le dommage devient IRREVERSIBLE: claimUsage
+      // incremente le budget du coupon, et rien ne le rend au restaurateur.
+      //
+      // La garde vit ici plutot qu'a l'entree de la route parce que c'est ici que
+      // se joue le seul dommage qu'on ne peut pas defaire. Une commande fantome
+      // s'annule en cuisine; une campagne promo videe la nuit, non. Et posee ici,
+      // elle ne coute rien au convive qui commande sans code promo, c'est-a-dire
+      // l'immense majorite.
+      //
+      // La cle inclut le CODE: viser trois codes differents ne donne pas trois
+      // fois le quota du meme code, et un attaquant doit deviner chaque code
+      // separement. Elle inclut le tenant: un code `BIENVENUE` chez A et chez B
+      // sont deux campagnes distinctes.
+      const claimIdentifier = `${ip}:${tenantSlug}:${coupon_code}`;
+      const { success: claimAllowed } = await couponClaimLimiter.check(claimIdentifier);
+      if (!claimAllowed) {
+        logger.warn('ORDER-SPAM: rafale de reclamations sur un code promo', {
+          tenantSlug,
+        });
+        return NextResponse.json(
+          { error: t('rateLimited') },
+          { status: 429, headers: { 'Retry-After': '3600' } },
+        );
+      }
+
       const claimed = await couponService.claimUsage(couponResult.couponId);
       if (!claimed) {
         return NextResponse.json({ error: t('invalidCoupon') }, { status: 400 });
