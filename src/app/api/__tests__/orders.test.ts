@@ -41,9 +41,15 @@ vi.mock('@/lib/supabase/server', () => ({
 
 // --- Rate-limit mock -------------------------------------------
 const mockRateLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
+// ORDER-SPAM: compartiment distinct, applique aux seules commandes dont le
+// tenant ne vient pas d'une source serveur.
+const mockUntrustedRateLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
 
 vi.mock('@/lib/rate-limit', () => ({
   orderLimiter: { check: (...args: unknown[]) => mockRateLimitCheck(...(args as [])) },
+  untrustedOrderLimiter: {
+    check: (...args: unknown[]) => mockUntrustedRateLimitCheck(...(args as [])),
+  },
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
@@ -228,6 +234,7 @@ describe('POST /api/orders', () => {
 
     // Default: rate limit passes
     mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockUntrustedRateLimitCheck.mockResolvedValue({ success: true });
 
     // Default: headers return x-tenant-slug
     mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
@@ -294,6 +301,45 @@ describe('POST /api/orders', () => {
     const response = await POST(request);
     const { status, body } = await parseResponse(response);
 
+    expect(status).toBe(429);
+    expect(body.error).toBe('rateLimited');
+  });
+
+  // -- 1b. ORDER-SPAM ----------------------------------------
+
+  it('indexe le compartiment de debit par (IP, tenant) et non par IP seule', async () => {
+    // Sans le tenant dans la cle, un restaurant en coup de feu consommait le
+    // quota de TOUS les autres, et un attaquant pouvait vider le budget d'un
+    // code promo cible depuis une seule adresse.
+    const { POST } = await import('@/app/api/orders/route');
+    await POST(createMockRequest(validOrderBody()));
+
+    expect(mockRateLimitCheck).toHaveBeenCalledWith('127.0.0.1:test-restaurant');
+  });
+
+  it('n applique PAS le compartiment serre quand le tenant vient du serveur', async () => {
+    // Parcours client normal: sous-domaine ou domaine custom. Le convive ne doit
+    // jamais rencontrer la limite anti-spam.
+    const { POST } = await import('@/app/api/orders/route');
+    await POST(createMockRequest(validOrderBody()));
+
+    expect(mockUntrustedRateLimitCheck).not.toHaveBeenCalled();
+  });
+
+  it('applique le compartiment serre quand le tenant ne vient que du Referer', async () => {
+    // ORDER-SPAM. Sur le domaine principal le slug ne peut venir que du
+    // `Referer`, forgeable hors navigateur: un script bouclait sur
+    // POST /api/orders avec un Referer pointant un concurrent, et chaque requete
+    // creait une VRAIE commande - son en cuisine, email, destockage, et
+    // consommation irreversible du budget d'un code promo.
+    mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug-hint': 'cible' }));
+    mockUntrustedRateLimitCheck.mockResolvedValue({ success: false });
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest(validOrderBody()));
+    const { status, body } = await parseResponse(response);
+
+    expect(mockUntrustedRateLimitCheck).toHaveBeenCalledWith('127.0.0.1:cible');
     expect(status).toBe(429);
     expect(body.error).toBe('rateLimited');
   });
@@ -523,6 +569,7 @@ describe('POST /api/orders - auto-destock wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockUntrustedRateLimitCheck.mockResolvedValue({ success: true });
     mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
     mockValidateTenant.mockResolvedValue({
       id: 'tenant-abc',

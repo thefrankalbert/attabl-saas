@@ -124,6 +124,29 @@ export const oauthSignupLimiter = createLimiter(
  *  contact, soit les deux surfaces de spam les plus rentables du produit. */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'), true);
 
+/**
+ * ORDER-SPAM. Commandes dont le tenant n'est PAS etabli par une source serveur:
+ * 5 par heure et par (IP, tenant), fail-closed.
+ *
+ * Sur le domaine principal, le slug ne peut venir que du `Referer`, forgeable
+ * hors navigateur. Un script pouvait donc boucler sur
+ * `POST https://attabl.com/api/orders` avec un `Referer` pointant un concurrent,
+ * et chaque requete creait une VRAIE commande: notification et son en cuisine,
+ * email comportemental, destockage si l'inventaire est actif, et surtout
+ * consommation IRREVERSIBLE du budget d'un code promo via claimUsage.
+ *
+ * Ce compartiment ne touche pas le parcours client normal: un convive commande
+ * depuis `<slug>.attabl.com` ou un domaine custom, donc avec un slug etabli par
+ * le serveur, et ne passe jamais ici. Seule la commande depuis
+ * `attabl.com/sites/<slug>/...` l'emprunte - un chemin marginal, ou 5 commandes
+ * par heure restent largement au-dessus de l'usage reel.
+ */
+export const untrustedOrderLimiter = createLimiter(
+  'orders-untrusted',
+  Ratelimit.slidingWindow(5, '1 h'),
+  true,
+);
+
 /** Menu search corpus: read-only GET, 60 requests / minute per IP (separate
  *  bucket so browsing the search modal cannot deplete the order limit). */
 export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(60, '1 m'));
