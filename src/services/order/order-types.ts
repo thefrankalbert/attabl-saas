@@ -21,6 +21,7 @@ export interface CreateOrderInput {
   coupon_id?: string;
   server_id?: string;
   display_currency?: string;
+  /** Prix verifies serveur, indexes par LIGNE de panier (voir verifiedPriceKey). */
   verifiedPrices?: Map<string, number>;
   preparation_zone?: OrderPreparationZone;
   /** Per-item preparation zone, keyed by menu_item_id. Denormalized from category at order time. */

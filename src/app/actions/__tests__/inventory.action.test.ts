@@ -32,6 +32,25 @@ vi.mock('@/services/inventory.service', () => ({
 const TENANT_ID = '22222222-2222-4222-a222-222222222222';
 const INGREDIENT_ID = '33333333-3333-4333-a333-333333333333';
 
+/**
+ * Client Supabase minimal servant la ligne `tenants` que lit la garde de plan.
+ * Le module Inventaire est Pro: sans abonnement entitlant, l'action doit refuser
+ * AVANT d'appeler le service, meme si le role et la permission sont bons.
+ */
+function supabaseOnPlan(plan: string, status = 'active') {
+  return {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: { subscription_plan: plan, subscription_status: status, trial_ends_at: null },
+          }),
+        }),
+      }),
+    }),
+  };
+}
+
 const validInput = {
   ingredient_id: INGREDIENT_ID,
   quantity: 3,
@@ -42,7 +61,10 @@ const validInput = {
 describe('actionRecordLoss', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUserForTenant.mockResolvedValue({ supabase: {}, user: { id: 'user-9' } });
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
     mockRecordLoss.mockResolvedValue(undefined);
   });
 
@@ -112,7 +134,10 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUserForTenant.mockResolvedValue({ supabase: {}, user: { id: 'user-9' } });
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
     mockReceiveStock.mockResolvedValue(undefined);
   });
 
@@ -221,7 +246,10 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
 describe('actionCreateIngredient / actionUpdateIngredient purchase-unit schema', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUserForTenant.mockResolvedValue({ supabase: {}, user: { id: 'user-9' } });
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
   });
 
   it('rejects units_per_purchase <= 0 on create', async () => {
@@ -249,7 +277,10 @@ describe('actionCreateIngredient / actionUpdateIngredient purchase-unit schema',
 describe('actionGetLossesByReason (READ gated at inventory.view)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUserForTenant.mockResolvedValue({ supabase: {}, user: { id: 'user-9' } });
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
     mockGetLossesByReason.mockResolvedValue([]);
   });
 
@@ -292,5 +323,52 @@ describe('actionGetLossesByReason (READ gated at inventory.view)', () => {
 
     expect(result).toEqual({ error: 'Permissions insuffisantes' });
     expect(mockGetLossesByReason).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * F4: une Server Action est un endpoint POST adressable par son Action ID. Gater
+ * la PAGE sur canAccessInventory ne gate pas la MUTATION: un tenant Starter
+ * (39 000 XAF) pouvait piloter le module Inventaire, vendu avec le plan Pro
+ * (79 000 XAF), sans jamais ouvrir l'ecran. Ces tests verrouillent le refus cote
+ * serveur - role et permission valides, plan insuffisant.
+ */
+describe('garde de plan (F4)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('starter'),
+      user: { id: 'user-9' },
+    });
+  });
+
+  it('refuse une ECRITURE a un tenant starter et n_ecrit rien', async () => {
+    const { actionRecordLoss } = await import('@/app/actions/inventory');
+    const result = await actionRecordLoss(TENANT_ID, validInput);
+
+    expect(result).toEqual({ error: 'Le module Inventaire est reserve au plan Pro.' });
+    expect(mockRecordLoss).not.toHaveBeenCalled();
+  });
+
+  it('refuse une LECTURE de rapport a un tenant starter', async () => {
+    const { actionGetLossesByReason } = await import('@/app/actions/inventory');
+    const result = await actionGetLossesByReason(TENANT_ID);
+
+    expect(result).toEqual({ error: 'Le module Inventaire est reserve au plan Pro.' });
+    expect(mockGetLossesByReason).not.toHaveBeenCalled();
+  });
+
+  it('laisse passer un tenant pro', async () => {
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: supabaseOnPlan('pro'),
+      user: { id: 'user-9' },
+    });
+    mockRecordLoss.mockResolvedValue(undefined);
+
+    const { actionRecordLoss } = await import('@/app/actions/inventory');
+    const result = await actionRecordLoss(TENANT_ID, validInput);
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecordLoss).toHaveBeenCalled();
   });
 });

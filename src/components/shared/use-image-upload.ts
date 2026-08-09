@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/client';
 import { compressImage } from '@/lib/image-compress';
 import { getCroppedBlob } from './image-crop';
 
@@ -95,20 +94,21 @@ export function useImageUpload({
         type: 'image/jpeg',
       });
 
-      const supabase = createClient();
-      const fileName = `${crypto.randomUUID()}_${Date.now()}.jpg`;
+      // Upload via /api/upload: la route derive le tenant de la SESSION et range
+      // le fichier sous `<tenant_id>/...`. L'upload direct depuis le navigateur
+      // ecrivait a plat, sans dossier tenant - c'est ce qui rendait les photos
+      // modifiables et supprimables par n'importe quel autre restaurant.
+      const formData = new FormData();
+      formData.append('file', compressed, 'image.jpg');
+      formData.append('bucket', bucket);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const { url } = await res.json();
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, compressed, { upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(bucket).getPublicUrl(fileName);
-
-      onChange(publicUrl);
+      onChange(url);
       resetCrop();
     } catch (err: unknown) {
       logger.error('Upload error', err);

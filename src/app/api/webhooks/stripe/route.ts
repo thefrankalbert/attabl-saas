@@ -4,6 +4,7 @@ import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getStripe, getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
+import { isSubscriptionUsable } from '@/lib/plans/features';
 import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 const VALID_PLANS: readonly SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
@@ -54,7 +55,13 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
     case 'canceled':
       return 'cancelled';
     case 'unpaid':
-      return 'past_due';
+      // F3: 'unpaid' est la FIN de la relance Stripe, pas une etape de plus.
+      // Le mapper sur 'past_due' - qui reste entitlant - avait une consequence
+      // qu'on ne voyait nulle part: si le reglage Stripe de fin de relance est
+      // "mark subscription as unpaid" plutot que "cancel", aucun
+      // customer.subscription.deleted n'arrive JAMAIS, et le tenant garde son
+      // plan gratuitement, sans borne de temps. 'frozen' est non entitlant.
+      return 'frozen';
     case 'incomplete':
       // Initial payment not yet confirmed: bounded grace (past_due), self-corrects
       // to 'active' on the next webhook once payment succeeds.
@@ -70,6 +77,51 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
       // a known status arriving later will restore the correct state.
       logger.warn('Unknown Stripe status, defaulting to frozen (fail-closed)', { stripeStatus });
       return 'frozen';
+  }
+}
+
+/**
+ * `is_active` DOIT suivre le statut d'abonnement, dans les deux sens.
+ *
+ * Trouve en audit: le gel posait is_active=false, mais AUCUN chemin ne le
+ * remettait a true. Un restaurateur gele qui payait repassait 'active' avec
+ * is_active a false: vitrine morte, POST /api/orders refuse, QR codes de salle
+ * inoperants - pour un client qui venait de payer, et sans le moindre log.
+ * Poser la valeur ici, a chaque ecriture de statut, est le seul moyen de ne pas
+ * dependre du fait que chaque handler y pense.
+ *
+ * La regle vit dans `isSubscriptionUsable`: une seconde table de verite ici
+ * divergerait au premier statut ajoute.
+ */
+const isActiveForStatus = isSubscriptionUsable;
+
+/**
+ * Le client Stripe du litige, ou null si on ne peut pas le resoudre.
+ *
+ * L'appel etait fait sans try/catch: un timeout ou un 429 de l'API Stripe
+ * remontait au catch externe, qui supprime la ligne d'idempotence et renvoie
+ * 500. Stripe rejoue alors pendant trois jours, et un taux d'echec durable finit
+ * par lui faire DESACTIVER l'endpoint - ce qui ferait perdre
+ * checkout.session.completed et invoice.paid pour TOUS les clients. Un litige ne
+ * doit pas pouvoir mettre l'activation d'abonnement en peril.
+ *
+ * `payment_intent` est `string | PaymentIntent` cote Stripe: on gere les deux
+ * plutot que de mentir au typage avec un `as string`.
+ */
+async function disputeCustomerId(
+  stripe: ReturnType<typeof getStripe>,
+  dispute: Stripe.Dispute,
+): Promise<string | null> {
+  const pi = dispute.payment_intent;
+  if (!pi) return null;
+  if (typeof pi !== 'string') return typeof pi.customer === 'string' ? pi.customer : null;
+
+  try {
+    const intent = await stripe.paymentIntents.retrieve(pi);
+    return typeof intent.customer === 'string' ? intent.customer : null;
+  } catch (err) {
+    logger.error('Impossible de resoudre le client du litige', err, { disputeId: dispute.id });
+    return null;
   }
 }
 
@@ -193,6 +245,10 @@ export async function POST(request: Request) {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             subscription_status: mappedStatus,
+            // Un tenant gele (essai expire, impaye) qui souscrit doit retrouver
+            // sa vitrine. Sans cette ligne il payait et restait eteint.
+            is_active: isActiveForStatus(mappedStatus),
+            past_due_since: null,
           };
 
           // Ajouter le plan si fourni (valide contre l'enum, on ignore une valeur inattendue)
@@ -269,7 +325,24 @@ export async function POST(request: Request) {
 
         const updateData: Record<string, unknown> = {
           subscription_status: mappedStatus,
+          // is_active suit le statut dans les DEUX sens: un tenant gele qui
+          // repaie doit retrouver sa vitrine, pas rester eteint en silence.
+          is_active: isActiveForStatus(mappedStatus),
         };
+
+        // F3: horodater l'entree en impaye pour pouvoir la BORNER. Sans cette
+        // date, rien ne mesure depuis quand un tenant est en past_due, et il y
+        // reste indefiniment avec son plan. On ne la reecrit pas si elle existe
+        // deja: c'est la PREMIERE transition qui compte, sinon chaque webhook de
+        // relance Stripe remettrait le compteur a zero et la borne ne serait
+        // jamais atteinte. Effacee des que le tenant repasse a un statut sain.
+        if (mappedStatus === 'past_due') {
+          if (tenant.subscription_status !== 'past_due') {
+            updateData.past_due_since = new Date().toISOString();
+          }
+        } else {
+          updateData.past_due_since = null;
+        }
 
         // Detect plan/interval change via price ID
         const currentPriceId = subscription.items?.data?.[0]?.price?.id;
@@ -465,6 +538,93 @@ export async function POST(request: Request) {
           invoiceId: invoice.id,
           hostedInvoiceUrl: invoice.hosted_invoice_url,
         });
+        break;
+      }
+
+      // F10: un chargeback ne declenchait AUCUNE action. Le client contestait le
+      // prelevement, recuperait son argent, et gardait son acces pendant le
+      // litige comme apres. Le tenant est gele des l'ouverture du litige - c'est
+      // reversible: si le litige est gagne, le case ci-dessous le degele.
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute;
+        const customerId = await disputeCustomerId(stripe, dispute);
+
+        if (!customerId) {
+          logger.warn('Dispute created without resolvable customer', { disputeId: dispute.id });
+          break;
+        }
+
+        const { error: disputeError } = await supabase
+          .from('tenants')
+          .update({ subscription_status: 'frozen', is_active: false })
+          .eq('stripe_customer_id', customerId);
+
+        if (disputeError) {
+          logger.error('Dispute freeze failed', disputeError);
+          await supabase.from('stripe_events').delete().eq('id', event.id);
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
+
+        logger.warn('Tenant frozen after chargeback', { customerId, disputeId: dispute.id });
+        break;
+      }
+
+      case 'charge.dispute.closed': {
+        // Le degel n'est PAS automatique quand le litige est perdu: l'argent est
+        // parti, le tenant reste gele jusqu'a regularisation. Il ne l'est que si
+        // le litige est gagne ('won'), c'est-a-dire si le paiement tient.
+        const dispute = event.data.object as Stripe.Dispute;
+        if (dispute.status !== 'won') {
+          logger.warn('Dispute closed against us, tenant stays frozen', {
+            disputeId: dispute.id,
+            status: dispute.status,
+          });
+          break;
+        }
+
+        const customerId = await disputeCustomerId(stripe, dispute);
+
+        if (!customerId) break;
+
+        const { error: unfreezeError } = await supabase
+          .from('tenants')
+          .update({ subscription_status: 'active', is_active: true })
+          .eq('stripe_customer_id', customerId)
+          .eq('subscription_status', 'frozen');
+
+        if (unfreezeError) {
+          logger.error('Dispute unfreeze failed', unfreezeError);
+          await supabase.from('stripe_events').delete().eq('id', event.id);
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
+
+        logger.info('Tenant unfrozen after winning dispute', { customerId, disputeId: dispute.id });
+        break;
+      }
+
+      // F10: filet idempotent. Si un customer.subscription.updated se perd, une
+      // facture payee suffit a prouver que l'abonnement est sain - sans elle, un
+      // tenant pouvait rester en past_due alors qu'il avait paye.
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        const { error: paidError } = await supabase
+          .from('tenants')
+          .update({ subscription_status: 'active', past_due_since: null, is_active: true })
+          .eq('stripe_customer_id', customerId)
+          // 'frozen' est volontairement EXCLU: un gel pour litige (chargeback) ne
+          // doit pas etre leve par la facture du mois suivant. Seul un impaye
+          // regularise se recupere ici; un litige se resout par dispute.closed.
+          .eq('subscription_status', 'past_due');
+
+        if (paidError) {
+          logger.error('invoice.paid recovery failed', paidError);
+          await supabase.from('stripe_events').delete().eq('id', event.id);
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
+
+        logger.info('Invoice paid, subscription state reconciled', { customerId });
         break;
       }
 

@@ -393,6 +393,11 @@ export async function POST(request: Request) {
         discount_amount: pricing.discountAmount,
         tip_amount: tipValue,
         coupon_id: couponResult?.couponId,
+        // F2: le POS n'envoyait PAS display_currency. `toMinorUnits(x, undefined)`
+        // retombait alors sur XAF, zero decimale: pour un tenant en EUR, 12,50
+        // devenait 13, relu 0,13 EUR. Facteur 100 dans l'autre sens que la
+        // vitrine. La devise de comptabilisation est passee explicitement.
+        display_currency: tenant.currency ?? 'XAF',
         server_id: adminUser.id,
         verifiedPrices,
         preparation_zone: preparationZone,

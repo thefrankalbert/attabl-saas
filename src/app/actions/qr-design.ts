@@ -8,26 +8,15 @@ import { createQrDesignService } from '@/services/qr-design.service';
 import { createAuditService } from '@/services/audit.service';
 import { saveQrDesignSchema, assignQrDesignSchema } from '@/lib/validations/qr-design.schema';
 import { getTranslations } from 'next-intl/server';
-import { canAccessFeature } from '@/lib/plans/features';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { uploadLimiter, assignmentLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
-import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 /** Shared plan-entitlement check for QR customization (mirrors the trigger). */
 async function assertQrCustomizationEntitled(
   supabase: Awaited<ReturnType<typeof getAuthenticatedUserWithTenant>>['supabase'],
   tenantId: string,
 ): Promise<boolean> {
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('subscription_plan, subscription_status, trial_ends_at')
-    .eq('id', tenantId)
-    .maybeSingle();
-  return canAccessFeature(
-    'canAccessQrCustomization',
-    tenant?.subscription_plan as SubscriptionPlan | null,
-    tenant?.subscription_status as SubscriptionStatus | null,
-    tenant?.trial_ends_at ?? null,
-  );
+  return isFeatureEntitled(supabase, tenantId, 'canAccessQrCustomization');
 }
 
 /**

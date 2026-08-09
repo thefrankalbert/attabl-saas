@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
-import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { openingHoursSchema } from '@/lib/validations/tenant.schema';
@@ -150,7 +149,12 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif'];
+    // Aligne sur /api/upload, qui valide aussi les OCTETS MAGIQUES. SVG et GIF
+    // sont retires volontairement: un SVG est un document actif, et servi depuis
+    // un bucket public il devient un vecteur de XSS stocke. Les annoncer ici
+    // alors que le serveur les refuse donnait un apercu du logo a l'ecran suivi
+    // d'une erreur opaque, sans que le logo soit jamais enregistre.
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: t('invalidFileType'),
@@ -180,23 +184,26 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     // Upload to Supabase Storage
     setUploading(true);
     try {
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop() || 'png';
-      const filePath = `${tenant.id}/logo.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('menu-items')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        throw uploadError;
+      // Upload via /api/upload, comme LogoCropper et MenuStep. La route derive le
+      // tenant de la SESSION, valide les octets magiques du fichier et applique le
+      // rate limiting. L'upload direct depuis le navigateur ne faisait aucun des
+      // trois: le type declare suffisait a stocker n'importe quel contenu.
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'menu-items');
+      // Le logo precedent est supprime par la route apres un televersement
+      // reussi: sans cela, chaque changement laissait un fichier mort dans un
+      // bucket public. La route verifie que le chemin appartient bien au tenant.
+      const previousLogo = form.getValues('logo_url');
+      if (previousLogo) formData.append('replaces', previousLogo);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
       }
+      const { url } = await res.json();
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('menu-items').getPublicUrl(filePath);
-
-      form.setValue('logo_url', publicUrl);
+      form.setValue('logo_url', url);
 
       toast({
         title: t('logoUploaded'),

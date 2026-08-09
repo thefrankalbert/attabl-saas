@@ -2328,7 +2328,7 @@
     "logoUploaded": "Logo updated",
     "logoUploadError": "Error uploading logo",
     "invalidFileType": "Invalid file format",
-    "logoAcceptedFormats": "Accepted formats: PNG, JPG, WebP, SVG, GIF",
+    "logoAcceptedFormats": "Accepted formats: PNG, JPG, WebP",
     "logoUploading": "Uploading logo...",
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 Main Street...",

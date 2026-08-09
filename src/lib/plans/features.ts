@@ -167,8 +167,22 @@ export function getEffectivePlan(
     return 'pro';
   }
 
-  // Cancelled/paused - still use their last plan (grace period)
-  // past_due - still use their plan (Stripe handles retries)
+  // F3 + audit: l'entitlement DERIVE du statut, il ne le duplique pas.
+  //
+  // Cette fonction ne regardait pas le statut du tout. Un tenant 'cancelled',
+  // 'frozen', 'pending' ou 'paused' gardait donc toutes les fonctionnalites de
+  // son plan, alors que isSubscriptionUsable le declarait inutilisable partout
+  // ailleurs (middleware, garde de commande). Le gel ne gelait rien, et qui
+  // resiliait gardait son plan a vie.
+  //
+  // Enumerer les statuts fautifs ici recreerait la meme derive au prochain
+  // statut ajoute. Une seule source: si l'abonnement n'est pas utilisable, le
+  // plan effectif est 'starter'. 'past_due' reste utilisable et garde son plan -
+  // la relance Stripe est en cours, et le cron de gel le borne dans le temps.
+  if (!isSubscriptionUsable(status)) {
+    return 'starter';
+  }
+
   // Fallback to 'starter' if plan is missing or not recognized
   return plan && plan in PLAN_LIMITS ? plan : 'starter';
 }

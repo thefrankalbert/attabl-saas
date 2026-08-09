@@ -45,6 +45,7 @@ type OrderRow = {
  */
 function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
   let seq = ledger.length;
+  const usedKeys = new Set<string>();
 
   function selectBuilder(rows: () => unknown[]) {
     // Terminal-or-chainable on .eq, terminal on .maybeSingle / .order.
@@ -77,6 +78,13 @@ function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
       return {
         select: vi.fn(() => selectBuilder(() => ledger)),
         insert: vi.fn(async (row: Omit<LedgerRow, 'id' | 'created_at'>) => {
+          // Simule l'index unique (tenant_id, client_request_id): un rejeu porte
+          // la meme cle et doit etre refuse par la BASE, pas par l'application.
+          const key = (row as { client_request_id?: string | null }).client_request_id;
+          if (key && usedKeys.has(key)) {
+            return { error: { code: '23505', message: 'duplicate key' } };
+          }
+          if (key) usedKeys.add(key);
           seq += 1;
           ledger.push({
             id: `pay-${seq}`,
@@ -93,7 +101,42 @@ function createMockSupabase(order: OrderRow, ledger: LedgerRow[] = []) {
     throw new Error(`Unexpected table ${table}`);
   });
 
-  return { from, _order: order, _ledger: ledger };
+  // record_refund: la RPC verrouille la commande et recalcule le net DANS la
+  // transaction. Le mock reproduit son contrat - controle du montant cote base,
+  // rejeu par cle - parce que c'est desormais la base qui porte la garantie.
+  const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
+    if (name !== 'record_refund') throw new Error(`Unexpected rpc ${name}`);
+    const key = args.p_client_request_id as string | null;
+    if (key && usedKeys.has(key)) return { data: null, error: null };
+
+    const net = ledger.reduce(
+      (sum, t) => sum + (t.status === 'refunded' ? -t.amount : t.amount),
+      0,
+    );
+    const amount = args.p_amount as number;
+    if (amount > net) {
+      return {
+        data: null,
+        error: {
+          code: '23514',
+          message: 'Le montant du remboursement depasse le montant encaisse',
+        },
+      };
+    }
+    if (key) usedKeys.add(key);
+    seq += 1;
+    ledger.push({
+      id: `pay-${seq}`,
+      amount,
+      method: args.p_method as string,
+      status: 'refunded',
+      created_by: (args.p_created_by as string | null) ?? null,
+      created_at: new Date(2026, 5, 30, 12, 0, seq).toISOString(),
+    });
+    return { data: `pay-${seq}`, error: null };
+  });
+
+  return { from, rpc, _order: order, _ledger: ledger };
 }
 
 function asSupabase(mock: ReturnType<typeof createMockSupabase>): SupabaseClient {
@@ -121,6 +164,34 @@ function baseOrder(overrides: Partial<OrderRow> = {}): OrderRow {
 describe('createPaymentService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // F5: le seul garde-fou etait cote interface. Un rejeu reseau ou une tablette
+  // relancee inserait deux fois le montant total: la commande passait 'paid' avec
+  // 20 000 encaisses pour 10 000 en caisse, et rien ne le signalait.
+  it('recordTender rejette un second encaissement du total (F5)', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+
+    const first = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 10000,
+      method: 'cash',
+      createdBy: 'admin-1',
+    });
+    expect(first.net).toBe(10000);
+    expect(first.paymentStatus).toBe('paid');
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, {
+        amount: 10000,
+        method: 'cash',
+        createdBy: 'admin-1',
+      }),
+    ).rejects.toThrow('Montant superieur au solde du');
+
+    const after = await service.getSummary(ORDER_ID, TENANT);
+    expect(after.net).toBe(10000);
+    expect(after.net).toBe(after.due);
   });
 
   it('recordTender partial then completing -> partial then paid', async () => {
@@ -432,4 +503,104 @@ describe('createPaymentService - compOrder', () => {
       service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' }),
     ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
+});
+
+/**
+ * F5, seconde moitie. Le plafond applicatif livre plus tot est un
+ * read-then-write: il arrete le double-clic SERIALISE et rien d'autre. La
+ * garantie contre un rejeu ou une concurrence reelle est portee par la base -
+ * index unique (tenant_id, client_request_id) pour l'encaissement, verrou
+ * SELECT ... FOR UPDATE dans record_refund pour le remboursement.
+ */
+describe('idempotence et atomicite du registre de caisse (F5)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('un rejeu du meme encaissement n_insere pas un second mouvement', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    const key = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+    const first = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 4000,
+      method: 'cash',
+      createdBy: 'admin-1',
+      clientRequestId: key,
+    });
+    expect(first.net).toBe(4000);
+
+    // Meme geste rejoue: la base refuse, le service renvoie l'etat courant sans
+    // lever - un rejeu n'est pas une erreur, c'est le meme encaissement.
+    const replay = await service.recordTender(ORDER_ID, TENANT, {
+      amount: 4000,
+      method: 'cash',
+      createdBy: 'admin-1',
+      clientRequestId: key,
+    });
+
+    expect(replay.net).toBe(4000);
+    expect(mock._ledger).toHaveLength(1);
+  });
+
+  it('le remboursement passe par la RPC verrouillante, pas par un INSERT direct', async () => {
+    const mock = createMockSupabase(baseOrder({ payment_status: 'paid', paid_at: 'x' }), [
+      {
+        id: 'pay-1',
+        amount: 10000,
+        method: 'cash',
+        status: 'completed',
+        created_by: null,
+        created_at: '2026-06-30T12:00:00.000Z',
+      },
+    ]);
+    const service = createPaymentService(asSupabase(mock));
+
+    await service.refund(ORDER_ID, TENANT, { amount: 10000, method: 'cash' });
+
+    expect(mock.rpc).toHaveBeenCalledWith(
+      'record_refund',
+      expect.objectContaining({ p_order_id: ORDER_ID, p_tenant_id: TENANT, p_amount: 10000 }),
+    );
+  });
+
+  it('un second remboursement du net total est refuse par la base', async () => {
+    const mock = createMockSupabase(baseOrder({ payment_status: 'paid', paid_at: 'x' }), [
+      {
+        id: 'pay-1',
+        amount: 10000,
+        method: 'cash',
+        status: 'completed',
+        created_by: null,
+        created_at: '2026-06-30T12:00:00.000Z',
+      },
+    ]);
+    const service = createPaymentService(asSupabase(mock));
+
+    await service.refund(ORDER_ID, TENANT, { amount: 10000, method: 'cash' });
+
+    // Le net est retombe a zero: le second ne peut plus sortir d'argent.
+    await expect(
+      service.refund(ORDER_ID, TENANT, { amount: 10000, method: 'cash' }),
+    ).rejects.toThrow('depasse le montant encaisse');
+
+    const summary = await service.getSummary(ORDER_ID, TENANT);
+    expect(summary.net).toBe(0);
+  });
+});
+
+// Trouve en audit: `summarize` court-circuite le statut a 'comp' mais laisse net
+// a 0, donc le plafond voyait un solde restant egal au total et acceptait un
+// encaissement plein sur une addition OFFERTE. Le registre aurait encaisse de
+// l'argent sur une commande gratuite, et le rapport des gratuites aurait cesse
+// de correspondre a la caisse.
+it('recordTender refuse d_encaisser une commande offerte', async () => {
+  const mock = createMockSupabase(baseOrder({ payment_status: 'comp' }));
+  const service = createPaymentService(asSupabase(mock));
+
+  await expect(
+    service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash' }),
+  ).rejects.toThrow('Impossible d encaisser une commande offerte');
+
+  expect(mock._ledger).toHaveLength(0);
 });

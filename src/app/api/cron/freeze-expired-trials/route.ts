@@ -23,6 +23,12 @@ import { runApiRoute } from '@/lib/api-route-context';
 // Vercel cron jobs trigger a GET request (with Authorization: Bearer CRON_SECRET
 // when the secret is set). A POST-only handler would 405 and the cron would never
 // run - keep this as GET so the scheduled job actually fires.
+/** Delai avant de geler un impaye, aligne sur la duree de relance Stripe. */
+const PAST_DUE_GRACE_DAYS = 15;
+
+/** Plafond de gels d'impayes par execution (voir le commentaire au point d'appel). */
+const MAX_PAST_DUE_FREEZES_PER_RUN = 25;
+
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     const cronSecret = process.env.CRON_SECRET;
@@ -38,9 +44,15 @@ export async function GET(request: Request) {
 
     const nowIso = new Date().toISOString();
     const supabase = createAdminClient();
+    // F6: le webhook customer.subscription.deleted met is_active=false; ce cron
+    // ne le faisait pas. Or le middleware ne protege que /sites/<slug>/admin: la
+    // vitrine et POST /api/orders restaient ouverts, et validateTenant ne
+    // regardait que is_active. Un essai expire continuait donc d'encaisser.
+    const freezeUpdate = { subscription_status: 'frozen', is_active: false } as const;
+
     const { data, error } = await supabase
       .from('tenants')
-      .update({ subscription_status: 'frozen' })
+      .update(freezeUpdate)
       .eq('subscription_status', 'trial')
       .lt('trial_ends_at', nowIso)
       .is('stripe_subscription_id', null)
@@ -51,9 +63,66 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 
-    const frozen = data?.length ?? 0;
-    logger.info('Expired unpaid trials frozen', { frozen });
+    // F3: borner l'impaye. Sans borne, un tenant dont la relance Stripe s'acheve
+    // sur "unpaid" garde son plan a vie. PAST_DUE_GRACE_DAYS est aligne sur la
+    // duree de relance Stripe par defaut (~15 jours): geler plus tot punirait un
+    // client dont le paiement va encore aboutir.
+    const graceCutoff = new Date(
+      Date.now() - PAST_DUE_GRACE_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    return NextResponse.json({ success: true, frozen });
+    // Le gel d'impaye est PLAFONNE par execution. La migration qui introduit
+    // past_due_since retro-remplit tous les tenants deja en impaye avec la meme
+    // valeur (`now()`), faute de connaitre leur vraie date d'entree: ils
+    // franchissent donc le seuil LE MEME JOUR. Sans plafond, une seule execution
+    // pourrait eteindre d'un coup toute la population impayee - vitrines et
+    // commandes comprises. Le plafond etale l'effet sur plusieurs executions et
+    // laisse le temps de voir passer une anomalie dans les logs.
+    const { data: pastDueCandidates, error: candidatesError } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('subscription_status', 'past_due')
+      // Un past_due_since NULL ne satisfait pas la comparaison (NULL < x vaut
+      // NULL en SQL): les tenants sans date sont exclus sans clause de plus.
+      .lt('past_due_since', graceCutoff)
+      .order('past_due_since', { ascending: true })
+      .limit(MAX_PAST_DUE_FREEZES_PER_RUN);
+
+    if (candidatesError) {
+      logger.error('freeze_expired_past_due candidates failed', candidatesError);
+      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
+
+    const candidateIds = (pastDueCandidates ?? []).map((t) => t.id);
+    let pastDue: { id: string }[] = [];
+
+    if (candidateIds.length > 0) {
+      const { data: updated, error: pastDueError } = await supabase
+        .from('tenants')
+        .update(freezeUpdate)
+        .in('id', candidateIds)
+        // Re-verifie le statut a l'ecriture: un tenant peut avoir paye entre la
+        // selection et la mise a jour, et il ne doit pas etre gele pour autant.
+        .eq('subscription_status', 'past_due')
+        .select('id');
+
+      if (pastDueError) {
+        logger.error('freeze_expired_past_due failed', pastDueError);
+        return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+      }
+      pastDue = updated ?? [];
+    }
+
+    if (candidateIds.length === MAX_PAST_DUE_FREEZES_PER_RUN) {
+      logger.warn('Plafond de gels d impayes atteint, le reste suivra', {
+        cap: MAX_PAST_DUE_FREEZES_PER_RUN,
+      });
+    }
+
+    const frozen = data?.length ?? 0;
+    const frozenPastDue = pastDue?.length ?? 0;
+    logger.info('Expired unpaid trials frozen', { frozen, frozenPastDue });
+
+    return NextResponse.json({ success: true, frozen, frozenPastDue });
   });
 }

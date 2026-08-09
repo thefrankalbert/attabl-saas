@@ -144,7 +144,8 @@ describe('order.service multi-tenant isolation', () => {
     const preview = await service.previewOrderItems(TENANT_A, items);
 
     // Server-verified price must be tenant A's 1000, never tenant B's 9999.
-    expect(preview.verifiedPrices.get(sharedId)).toBe(1000);
+    // Cle par ligne de panier (article + variante), sans variante ici (F8).
+    expect(preview.verifiedPrices.get(`${sharedId}:`)).toBe(1000);
     expect(preview.validatedSubtotal).toBe(1000);
     expect(preview.valid).toBe(true);
   });

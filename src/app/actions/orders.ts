@@ -11,11 +11,11 @@ import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
 import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
-import { canAccessFeature } from '@/lib/plans/features';
-import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -37,18 +37,29 @@ const paymentSummarySchema = z.object({
   orderId: z.string().uuid(),
 });
 
+// F5: `method` etait un texte libre de 50 caracteres. Le registre de caisse
+// acceptait donc 'bitcoin' ou n'importe quelle chaine, ce qui casse tout
+// rapprochement par moyen de paiement. Restreint au registre du produit.
+const paymentMethodSchema = z.enum(ALL_PAYMENT_METHOD_IDS as [string, ...string[]]);
+
 const recordTenderSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
   amount: z.number().positive(),
-  method: z.string().min(1).max(50),
+  method: paymentMethodSchema,
+  // F5: cle d'idempotence frappee par le client. Optionnelle pour ne pas casser
+  // un appelant existant, mais la garantie n'existe que si elle est fournie.
+  clientRequestId: z.string().uuid().optional(),
 });
 
 const refundOrderSchema = z.object({
   tenantId: z.string().uuid(),
   orderId: z.string().uuid(),
   amount: z.number().positive(),
-  method: z.string().min(1).max(50),
+  method: paymentMethodSchema,
+  // F5: cle d'idempotence frappee par le client. Optionnelle pour ne pas casser
+  // un appelant existant, mais la garantie n'existe que si elle est fournie.
+  clientRequestId: z.string().uuid().optional(),
 });
 
 const updateItemStatusSchema = z.object({
@@ -220,20 +231,11 @@ export async function actionUpdateOrderStatus(
       //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
       await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
 
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('subscription_plan, subscription_status, trial_ends_at')
-        .eq('id', parsed.data.tenantId)
-        .maybeSingle();
-
-      const hasInventory =
-        !!tenant &&
-        canAccessFeature(
-          'canAccessInventory',
-          tenant.subscription_plan as SubscriptionPlan | null,
-          tenant.subscription_status as SubscriptionStatus | null,
-          tenant.trial_ends_at as string | null,
-        );
+      const hasInventory = await isFeatureEntitled(
+        supabase,
+        parsed.data.tenantId,
+        'canAccessInventory',
+      );
 
       if (hasInventory) {
         const adminSupabase = createAdminClient();
@@ -395,19 +397,7 @@ export async function actionMarkOrderPaid(
     // Plan gate: tips are Pro+ (canAccessTips, see pricing-data.ts). Enforce here
     // because payment-time tips reach the DB via markPaid, not the order route.
     if ((parsed.data.tipAmount ?? 0) > 0) {
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('subscription_plan, subscription_status, trial_ends_at')
-        .eq('id', parsed.data.tenantId)
-        .maybeSingle();
-      if (
-        !canAccessFeature(
-          'canAccessTips',
-          tenant?.subscription_plan as SubscriptionPlan | null,
-          tenant?.subscription_status as SubscriptionStatus | null,
-          tenant?.trial_ends_at ?? null,
-        )
-      ) {
+      if (!(await isFeatureEntitled(supabase, parsed.data.tenantId, 'canAccessTips'))) {
         return { error: 'Les pourboires ne sont pas inclus dans votre plan.' };
       }
     }
@@ -444,6 +434,7 @@ export async function actionRecordTender(
   orderId: string,
   amount: number,
   method: string,
+  clientRequestId?: string,
 ): Promise<{
   success?: boolean;
   paymentStatus?: PaymentStatus;
@@ -451,7 +442,13 @@ export async function actionRecordTender(
   due?: number;
   error?: string;
 }> {
-  const parsed = recordTenderSchema.safeParse({ tenantId, orderId, amount, method });
+  const parsed = recordTenderSchema.safeParse({
+    tenantId,
+    orderId,
+    amount,
+    method,
+    clientRequestId,
+  });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
   }
@@ -469,6 +466,7 @@ export async function actionRecordTender(
         amount: parsed.data.amount,
         method: parsed.data.method,
         createdBy: adminUserId,
+        clientRequestId: parsed.data.clientRequestId,
       },
     );
     return {
@@ -499,8 +497,15 @@ export async function actionRefundOrder(
   orderId: string,
   amount: number,
   method: string,
+  clientRequestId?: string,
 ): Promise<{ success?: boolean; paymentStatus?: PaymentStatus; error?: string }> {
-  const parsed = refundOrderSchema.safeParse({ tenantId, orderId, amount, method });
+  const parsed = refundOrderSchema.safeParse({
+    tenantId,
+    orderId,
+    amount,
+    method,
+    clientRequestId,
+  });
   if (!parsed.success) {
     return { error: 'Donnees invalides' };
   }
@@ -518,6 +523,7 @@ export async function actionRefundOrder(
         amount: parsed.data.amount,
         method: parsed.data.method,
         createdBy: adminUserId,
+        clientRequestId: parsed.data.clientRequestId,
       },
     );
     return { success: true, paymentStatus: summary.paymentStatus };

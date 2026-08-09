@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { formatAmountMinor } from '@/lib/utils/money';
 import { formatInitials, formatTimeHHMM } from './service-status';
 import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDialog';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
@@ -21,7 +22,8 @@ interface Props {
   vm: ServiceTableVM | null;
   servers: ServiceServerVM[];
   currentOrder: Order | null;
-  currencySymbol: string;
+  /** Devise du tenant. Les montants des lignes sont en unites MINEURES. */
+  currency: string;
   /** Tables with no open session - the valid destinations for a reassign. */
   freeTables: ReassignFreeTable[];
   onClose: () => void;
@@ -69,7 +71,7 @@ export function ServiceTableDetail({
   vm,
   servers,
   currentOrder,
-  currencySymbol,
+  currency,
   freeTables,
   onClose,
   onAssignServer,
@@ -250,7 +252,7 @@ export function ServiceTableDetail({
                         {item.name}
                       </div>
                       <span className="font-mono text-app-text">
-                        {(item.price * item.quantity).toFixed(2)} {currencySymbol}
+                        {formatAmountMinor(item.price * item.quantity, currency)}
                       </span>
                     </div>
                   ))}
@@ -258,7 +260,7 @@ export function ServiceTableDetail({
                 <div className="mt-1.5 flex items-center justify-between rounded bg-app-elevated px-3 py-2 text-xs">
                   <span className="text-app-text-muted">{labels.orderTotal}</span>
                   <span className="font-mono font-semibold text-app-text">
-                    {orderTotal.toFixed(2)} {currencySymbol}
+                    {formatAmountMinor(orderTotal, currency)}
                   </span>
                 </div>
                 {currentOrder.service_type === 'dine_in' && (

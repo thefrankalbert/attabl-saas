@@ -34,6 +34,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    // F1. Une session valide ne suffisait PAS. Cette route cree un tenant, et le
+    // plan etait pris dans le corps de la requete: n'importe quel compte connecte
+    // - y compris un serveur embauche pour une soiree - pouvait s'attribuer un
+    // tenant Business gratuit a vie (149 000 XAF/mois de perte par tenant).
+    //
+    // Cette route sert UNIQUEMENT a ajouter un etablissement a un groupe
+    // existant (unique appelant: AddRestaurantWizard, depuis l'admin). L'appelant
+    // doit donc deja etre proprietaire ACTIF d'un tenant. L'inscription d'un
+    // nouveau client passe par un autre chemin (signup.service) et n'est pas
+    // affectee.
+    const { data: ownership } = await supabase
+      .from('admin_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('role', 'owner')
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (!ownership) {
+      logger.warn('Restaurant creation refused: caller is not an active owner', {
+        userId: user.id,
+      });
+      return NextResponse.json(
+        { error: "Seul le proprietaire d'un etablissement peut en ajouter un autre" },
+        { status: 403 },
+      );
+    }
+
     // 2. Parse and validate input
     let body: unknown;
     try {
@@ -48,7 +77,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Données invalides', details: errors }, { status: 400 });
     }
 
-    const { name, type, slug: requestedSlug, plan } = parseResult.data;
+    // F1. `plan` est volontairement IGNORE, meme s'il est encore accepte par le
+    // schema (le formulaire l'envoie). Un plan payant ne s'obtient que par un
+    // paiement Stripe abouti, via le webhook. Le lire ici revenait a laisser le
+    // client choisir ce qu'il facture.
+    const { name, type, slug: requestedSlug } = parseResult.data;
+    const plan = 'trial';
 
     // 3. Use admin client for operations that bypass RLS
     const adminSupabase = createAdminClient();

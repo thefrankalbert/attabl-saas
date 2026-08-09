@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -76,9 +77,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
     }
 
-    // Use anon server client + security-definer RPC for tenant lookup (no RLS bypass).
-    // Coupon SELECT is covered by the "Public can validate active coupons" RLS policy
-    // which allows read of is_active = true coupons - sufficient for customer checkout.
+    // Resolution du tenant: client ANON + RPC security-definer, aucun contournement
+    // de RLS. C'est une donnee publique (un slug de restaurant).
     const supabase = await createClient();
 
     const { data: tenantRows, error: tenantError } = await supabase.rpc('get_tenant_by_slug', {
@@ -91,8 +91,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 404 });
     }
 
-    // 4. Validate coupon using server-derived tenantId
-    const couponService = createCouponService(supabase);
+    // 4. Validation du coupon avec le tenantId derive cote serveur.
+    //
+    // Le client de LECTURE des coupons est le client admin, et c'est deliberé.
+    // Cette route s'appuyait sur la policy "Public can validate active coupons",
+    // qui rendait TOUTE la table lisible par un anonyme - c'est le constat DB-06:
+    // n'importe qui pouvait enumerer les campagnes promo de tous les restaurants
+    // (codes, montants, plafonds) avec la seule cle anon presente dans le bundle.
+    // La migration 20260731000500 supprime cette policy; sans ce changement, la
+    // saisie d'un code promo en caisse cesserait de fonctionner le jour ou elle
+    // est appliquee.
+    //
+    // Valider cote serveur ne rouvre pas l'enumeration: la route ne repond que
+    // par valide/invalide pour un code EXACT, elle est bornee par `orderLimiter`
+    // et exige une origine legitime (verifyOrigin ci-dessus). C'est le meme
+    // patron que /api/orders, qui valide deja le coupon avec le client admin.
+    const couponService = createCouponService(createAdminClient());
     const result = await couponService.validateCoupon(code, tenant.id, subtotal, tenant.currency);
 
     return NextResponse.json(result);

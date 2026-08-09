@@ -200,7 +200,15 @@ export async function POST(request: Request) {
         discount_amount: pricing.discountAmount,
         tip_amount: tip_amount ?? 0,
         coupon_id: couponResult?.couponId,
-        display_currency,
+        // F2: la devise de COMPTABILISATION est celle du tenant, jamais la
+        // preference d'affichage du client (stockee en localStorage et envoyee
+        // dans le corps). Le montant est calcule plus haut avec `tenant.currency`
+        // par calculateOrderTotal; le passer ensuite en EUR faisait convertir
+        // 5 000 XAF en 500 000 unites mineures, relues 5 000,00 EUR a
+        // l'encaissement - soit environ 3,3 millions XAF pour une addition de
+        // 5 000. `display_currency` du corps reste valide par le plan juste
+        // au-dessus (assertOrderFeaturesAllowed), il ne sert plus qu'a cela.
+        display_currency: tenant?.currency ?? 'XAF',
         verifiedPrices,
         preparation_zone: preparationZone,
         itemPreparationZones,

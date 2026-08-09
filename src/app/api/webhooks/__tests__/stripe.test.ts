@@ -157,6 +157,41 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       return updatePayload?.subscription_status as string;
     }
 
+    /** La valeur de is_active ecrite pour un statut Stripe donne. */
+    async function getWrittenIsActive(stripeStatus: string): Promise<unknown> {
+      const chain = setupSupabaseChain({
+        selectResult: { data: { id: 'tenant-1' }, error: null },
+      });
+
+      const event = makeStripeEvent('customer.subscription.updated', {
+        customer: 'cus_123',
+        status: stripeStatus,
+        items: { data: [{ current_period_start: 1000000, current_period_end: 2000000 }] },
+      });
+      mockConstructEvent.mockReturnValue(event);
+
+      await POST(makeRequest());
+
+      const updatePayload = chain.updateFn.mock.calls[0]?.[0] as
+        | Record<string, unknown>
+        | undefined;
+      return updatePayload?.is_active;
+    }
+
+    // Trouve en audit: le gel posait is_active=false sans qu'aucun chemin ne le
+    // remette a true. Un client gele qui payait restait eteint - vitrine morte,
+    // commandes refusees - sans le moindre log. is_active doit suivre le statut
+    // DANS LES DEUX SENS.
+    it('is_active suit le statut dans les deux sens', async () => {
+      expect(await getWrittenIsActive('active')).toBe(true);
+      expect(await getWrittenIsActive('trialing')).toBe(true);
+      // La relance Stripe est en cours: on ne coupe pas encore le service.
+      expect(await getWrittenIsActive('past_due')).toBe(true);
+      // Decision produit confirmee: pas de paiement, pas de vitrine.
+      expect(await getWrittenIsActive('canceled')).toBe(false);
+      expect(await getWrittenIsActive('unpaid')).toBe(false);
+    });
+
     it('maps "trialing" to "trial"', async () => {
       expect(await getWrittenStatus('trialing')).toBe('trial');
     });
@@ -173,8 +208,11 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(await getWrittenStatus('past_due')).toBe('past_due');
     });
 
-    it('maps "unpaid" to "past_due"', async () => {
-      expect(await getWrittenStatus('unpaid')).toBe('past_due');
+    // F3: 'unpaid' est la FIN de la relance Stripe. Le mapper sur 'past_due',
+    // qui reste entitlant, laissait le tenant garder son plan a vie quand le
+    // reglage Stripe de fin de relance est "mark as unpaid" plutot que "cancel".
+    it('maps "unpaid" to "frozen"', async () => {
+      expect(await getWrittenStatus('unpaid')).toBe('frozen');
     });
 
     it('maps unknown status to "frozen" (fail-closed) and logs warning', async () => {
@@ -226,6 +264,10 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
         stripe_customer_id: 'cus_456',
         stripe_subscription_id: 'sub_789',
         subscription_status: 'active',
+        // Audit: un tenant gele qui souscrit doit retrouver sa vitrine. Sans
+        // is_active, il payait et restait eteint.
+        is_active: true,
+        past_due_since: null,
         subscription_plan: 'pro',
         billing_interval: 'yearly',
       });
@@ -262,6 +304,12 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
 
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'active',
+        // Audit: is_active suit le statut dans les DEUX sens, sinon un tenant
+        // gele qui repaie reste eteint sans que rien ne le signale.
+        is_active: true,
+        // F3: la date d'entree en impaye est effacee des que le statut redevient
+        // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
+        past_due_since: null,
         billing_interval: 'monthly',
         subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
         subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),

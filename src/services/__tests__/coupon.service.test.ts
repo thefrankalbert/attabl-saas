@@ -219,6 +219,27 @@ describe('CouponService', () => {
       expect(result.discountAmount).toBe(50);
     });
 
+    // F7: le plafond n'etait applique que dans la branche pourcentage. Un coupon
+    // fixe de 20 000 plafonne a 5 000 appliquait bien 20 000: le restaurateur
+    // croyait avoir borne sa remise et ne l'avait pas fait.
+    it('should cap FIXED discount at max_discount_amount too', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('coupons').single.mockResolvedValue({
+        data: makeCoupon({
+          discount_type: 'fixed',
+          discount_value: 20000,
+          max_discount_amount: 5000,
+        }),
+        error: null,
+      });
+
+      const service = createCouponService(asSupabase(supabase));
+      const result = await service.validateCoupon('FIXE20K', 'tenant-123', 50000);
+
+      expect(result.valid).toBe(true);
+      expect(result.discountAmount).toBe(5000);
+    });
+
     it('should calculate fixed discount correctly', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('coupons').single.mockResolvedValue({
