@@ -1,4 +1,5 @@
 import 'server-only';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 
 import { headers } from 'next/headers';
 
@@ -34,7 +35,7 @@ export async function requireAdminPermission(
   permission: PermissionCode,
 ): Promise<AdminPermissionContext> {
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug') || site;
+  const tenantSlug = readTenantSlug(headersList).slug || site;
 
   const supabase = await createClient();
   const [
@@ -122,7 +123,7 @@ export async function getAdminPermission(
   permission: PermissionCode,
 ): Promise<boolean> {
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug') || site;
+  const tenantSlug = readTenantSlug(headersList).slug || site;
 
   const supabase = await createClient();
   const [

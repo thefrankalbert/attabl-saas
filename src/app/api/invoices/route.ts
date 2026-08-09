@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
     // Derive the tenant from the sub-domain context (x-tenant-slug, injected by
     // the proxy) - NOT an arbitrary admin_users row - so a multi-tenant owner
     // sees the invoices of the restaurant they are actually viewing.
-    const tenantSlug = (await headers()).get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(await headers()).slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 400 });
     }

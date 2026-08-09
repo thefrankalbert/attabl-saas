@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { exportRequestSchema } from '@/lib/validations/supports.schema';
 import { supportsExportLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { verifyOrigin } from '@/lib/csrf';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { Document, Page, Text, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
 import React from 'react';
@@ -60,6 +61,13 @@ async function buildQrDataUrl(url: string, style: string): Promise<string> {
 }
 
 export async function POST(request: Request) {
+  // SUPPORTS-EXPORT. Cette route mutante etait l'une des trois seules sans
+  // verification d'origine. Les deux autres le sont legitimement (le webhook
+  // Stripe est protege par signature, la simulation d'abonnement par une double
+  // garde); celle-ci ne l'etait pas, elle etait simplement oubliee.
+  const originErr = verifyOrigin(request);
+  if (originErr) return originErr;
+
   // 1. Rate limiting
   const ip = getClientIp(request);
   const { success: allowed } = await supportsExportLimiter.check(ip);
@@ -82,30 +90,36 @@ export async function POST(request: Request) {
 
   const { config } = parsed.data;
 
-  // 3. Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 4. Derive tenant from session (never trust client-supplied tenant identifiers)
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('tenant_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!adminUser) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // 3-4. Auth, permission et tenant du CONTEXTE de la requete.
+  //
+  // SUPPORTS-EXPORT. L'ancien code cumulait trois defauts. Aucune garde de
+  // permission: la page /admin/supports exige `menu.edit` cote middleware, mais
+  // l'API sous-jacente n'exigeait rien, donc n'importe quel membre actif - un
+  // serveur compris - pouvait generer les PDF. Et un `maybeSingle()` sans filtre
+  // de tenant: pour un owner multi-etablissements PostgREST renvoie une erreur,
+  // ce qui rendait la fonction inutilisable pour la cible principale du produit.
+  // `is_active` et `deleted_at` n'etaient pas filtres non plus.
+  //
+  // getAuthenticatedUserWithTenant resout les trois d'un coup: il exige la
+  // permission, scope sur le tenant du header (donc le bon etablissement pour un
+  // owner multi-sites) et ne retient que les appartenances vivantes.
+  type Auth = Awaited<ReturnType<typeof getAuthenticatedUserWithTenant>>;
+  let tenantId: string;
+  let supabase: Auth['supabase'];
+  let user: Auth['user'];
+  try {
+    ({ tenantId, supabase, user } = await getAuthenticatedUserWithTenant('menu.edit'));
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
   }
 
   const { data: tenant } = await supabase
     .from('tenants')
     .select('slug, logo_url')
-    .eq('id', adminUser.tenant_id)
+    .eq('id', tenantId)
     .maybeSingle();
   if (!tenant) {
     return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });

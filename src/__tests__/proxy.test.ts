@@ -140,6 +140,15 @@ function injectedTenantSlug(res: NextResponse): string | null {
   return res.headers.get('x-middleware-request-x-tenant-slug');
 }
 
+/**
+ * Le slug DEDUIT DU REFERER (HDR-REFERER). Volontairement separe du precedent:
+ * une route ne doit jamais autoriser sur cette valeur sans requete
+ * d'appartenance, le `Referer` etant forgeable hors navigateur.
+ */
+function injectedTenantSlugHint(res: NextResponse): string | null {
+  return res.headers.get('x-middleware-request-x-tenant-slug-hint');
+}
+
 function cookieNames(res: NextResponse): string[] {
   return res.cookies.getAll().map((c) => c.name);
 }
@@ -277,17 +286,36 @@ describe('proxy - x-tenant-slug anti-spoofing', () => {
     expect(injectedTenantSlug(res)).not.toBe('attacker-tenant');
   });
 
-  it('derives x-tenant-slug from the Referer for an API call from a /sites/<slug> page (not from a client header)', async () => {
+  it('met le slug deduit du Referer dans le HINT, jamais dans l en-tete de confiance', async () => {
     const res = await proxy(
       makeRequest('attabl.com', '/api/orders', {
         referer: 'https://attabl.com/sites/radisson/cart',
         'x-tenant-slug': 'attacker-tenant',
       }),
     );
-    // /api/orders is a SKIP_AUTH prefix served on the main domain; the proxy must
-    // derive the tenant from the trusted Referer, not the client-supplied header.
-    expect(injectedTenantSlug(res)).toBe('radisson');
-    expect(injectedTenantSlug(res)).not.toBe('attacker-tenant');
+    // HDR-REFERER. Le `Referer` est entierement forgeable hors navigateur, et
+    // verifyOrigin n'exige que l'appartenance a *.attabl.com - trivialement
+    // satisfait par `Referer: https://attabl.com/sites/<cible>/menu`. Le slug
+    // qui en vient alimente donc le hint, et l'en-tete de confiance reste VIDE.
+    //
+    // Ce n'etait pas exploitable (chaque route authentifiee revalide
+    // l'appartenance), le danger etait structurel: une route ajoutee demain qui
+    // ferait confiance a `x-tenant-slug` sans requete `admin_users` serait
+    // immediatement exploitable en cross-tenant.
+    expect(injectedTenantSlugHint(res)).toBe('radisson');
+    expect(injectedTenantSlug(res)).toBeNull();
+  });
+
+  it('efface un hint envoye par le client', async () => {
+    const res = await proxy(
+      makeRequest('attabl.com', '/api/orders', {
+        'x-tenant-slug-hint': 'attacker-tenant',
+      }),
+    );
+    // Sans Referer legitime, rien ne doit subsister: le client ne pose ni l'un
+    // ni l'autre des deux en-tetes.
+    expect(injectedTenantSlugHint(res)).toBeNull();
+    expect(injectedTenantSlug(res)).toBeNull();
   });
 });
 

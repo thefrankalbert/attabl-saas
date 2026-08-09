@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     // session instead when the user is an active member of exactly ONE tenant
     // (the common case for restaurant staff). Ambiguous membership -> 400, and
     // the outbox retries from a page context that does carry the slug.
-    const tenantSlug = (await headers()).get('x-tenant-slug');
+    const tenantSlug = readTenantSlug(await headers()).slug;
     let tenantId: string | null = null;
     if (tenantSlug) {
       const { data: tenant } = await supabase

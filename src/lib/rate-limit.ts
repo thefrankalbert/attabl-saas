@@ -35,8 +35,14 @@ const redis = isConfigured
 // Log rate limiting status at module load (startup)
 // Using console.warn to avoid circular dependency with logger at module level
 if (!isConfigured) {
+  // CONSOLE-PROD. L'ancien message annoncait "rate limiting disabled", ce qui
+  // est FAUX en production: sans Redis, check() renvoie success:false et bloque
+  // donc TOUTES les requetes limitees. Lire "desactive" au moment ou le site
+  // refuse tout est exactement le message qui envoie chercher la panne ailleurs.
   console.warn(
-    '[rate-limit] WARN: Redis not configured - rate limiting disabled in this environment',
+    process.env.NODE_ENV === 'production'
+      ? '[rate-limit] ERREUR: Redis non configure EN PRODUCTION - toutes les requetes limitees seront REFUSEES'
+      : '[rate-limit] WARN: Redis non configure - limitation inactive hors production (les requetes passent)',
   );
 }
 
@@ -113,8 +119,71 @@ export const oauthSignupLimiter = createLimiter(
   true,
 );
 
-/** Orders: 20 requests / minute per IP */
+/**
+ * Commandes: 20 par minute et par (IP, tenant). FAIL-OPEN, deliberement.
+ *
+ * RL-FAILOPEN demandait de passer ce compartiment en fail-closed. Applique tel
+ * quel, une simple panne Upstash renvoyait 429 sur TOUTE creation de commande:
+ * plus aucun convive ne peut commander, dans tous les restaurants a la fois.
+ * C'est le chemin de recette du produit, et la panne serait invisible cote
+ * restaurateur - il verrait juste sa salle ne plus rien commander.
+ *
+ * Le dommage qu'on evitait en fermant est REVERSIBLE: une commande fantome
+ * s'annule d'un geste en cuisine. Celui qu'on causait ne l'est pas: un service
+ * perdu ne se rattrape pas. On garde donc fail-open ici, et on ferme la ou le
+ * dommage est vraiment irreversible - voir `couponClaimLimiter`.
+ *
+ * Les autres compartiments demandes par RL-FAILOPEN (contact, newsletter,
+ * export) restent fail-closed: leur indisponibilite ne coute rien a personne.
+ */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
+
+/**
+ * Reclamation d'un code promo: 3 par heure et par (IP, tenant, code).
+ * FAIL-CLOSED, et c'est ici que ca compte.
+ *
+ * ORDER-SPAM. C'est le SEUL dommage irreversible de la creation de commande:
+ * `claimUsage` incremente le compteur d'usage du coupon AVANT meme que la
+ * commande n'existe, et rien ne le rend au restaurateur. Une campagne promo
+ * peut donc etre videe par un script, et le restaurateur ne comprend qu'apres
+ * coup pourquoi son budget est parti en une nuit.
+ *
+ * Trois tentatives par heure sur un MEME code depuis une MEME adresse est trois
+ * fois plus permissif qu'un usage humain reel (on saisit un code promo une fois,
+ * eventuellement deux si on se trompe), et ferme la boucle scriptee.
+ *
+ * Fail-closed assume: si Upstash tombe, on refuse les codes promo pendant la
+ * panne. Le convive paie plein tarif au lieu de ne pas pouvoir commander - une
+ * degradation, pas un arret.
+ */
+export const couponClaimLimiter = createLimiter(
+  'coupon-claim',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
+
+/**
+ * ORDER-SPAM. Commandes dont le tenant n'est PAS etabli par une source serveur:
+ * 5 par heure et par (IP, tenant), fail-closed.
+ *
+ * Sur le domaine principal, le slug ne peut venir que du `Referer`, forgeable
+ * hors navigateur. Un script pouvait donc boucler sur
+ * `POST https://attabl.com/api/orders` avec un `Referer` pointant un concurrent,
+ * et chaque requete creait une VRAIE commande: notification et son en cuisine,
+ * email comportemental, destockage si l'inventaire est actif, et surtout
+ * consommation IRREVERSIBLE du budget d'un code promo via claimUsage.
+ *
+ * Ce compartiment ne touche pas le parcours client normal: un convive commande
+ * depuis `<slug>.attabl.com` ou un domaine custom, donc avec un slug etabli par
+ * le serveur, et ne passe jamais ici. Seule la commande depuis
+ * `attabl.com/sites/<slug>/...` l'emprunte - un chemin marginal, ou 5 commandes
+ * par heure restent largement au-dessus de l'usage reel.
+ */
+export const untrustedOrderLimiter = createLimiter(
+  'orders-untrusted',
+  Ratelimit.slidingWindow(5, '1 h'),
+  true,
+);
 
 /** Menu search corpus: read-only GET, 60 requests / minute per IP (separate
  *  bucket so browsing the search modal cannot deplete the order limit). */
@@ -157,11 +226,15 @@ export const onboardingCompleteLimiter = createLimiter(
   Ratelimit.slidingWindow(5, '10 m'),
 );
 
-/** Contact form: 3 requests / hour per IP */
-export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'));
+/** Contact form: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
+export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'), true);
 
-/** Newsletter: 3 requests / hour per IP */
-export const newsletterLimiter = createLimiter('newsletter', Ratelimit.slidingWindow(3, '1 h'));
+/** Newsletter: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
+export const newsletterLimiter = createLimiter(
+  'newsletter',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
 
 /** Excel menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
 export const excelImportLimiter = createLimiter(
@@ -174,6 +247,7 @@ export const excelImportLimiter = createLimiter(
 export const supportsExportLimiter = createLimiter(
   'supports-export',
   Ratelimit.slidingWindow(10, '1 m'),
+  true,
 );
 
 /** PDF menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
@@ -298,6 +372,23 @@ export const revalidateMenuLimiter = createLimiter(
 /**
  * Extract client IP from a Request object (API routes).
  * Checks x-forwarded-for, x-real-ip, then falls back to 'anonymous'.
+ *
+ * IP-SPOOF - HYPOTHESE D'HEBERGEMENT, a relire si elle change.
+ *
+ * On retient le PREMIER element de `X-Forwarded-For`, qui est la partie la plus
+ * a gauche donc la plus facile a forger: n'importe qui peut envoyer
+ * `X-Forwarded-For: 1.2.3.4` et se fabriquer un compartiment de debit neuf a
+ * chaque requete, ce qui annule la limitation.
+ *
+ * C'est inoperant ICI parce que Vercel PREPEND l'IP reelle a l'en-tete avant
+ * que la requete n'atteigne la fonction: le premier element est donc toujours
+ * celui du proxy, pas celui du client. La garantie vient de l'hebergeur, pas de
+ * ce code.
+ *
+ * Si le projet quitte Vercel, ou passe derriere un proxy supplementaire, cette
+ * fonction devient une passoire et doit etre reecrite pour lire l'element a
+ * DROITE (le dernier ajoute par l'infrastructure de confiance), ou pour se fier
+ * a un en-tete signe par le proxy.
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');

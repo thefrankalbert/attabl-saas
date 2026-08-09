@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
     //    Coupon validation is a public, read-only endpoint (no user data, just checks
     //    whether a code exists for a tenant) so trusting the client slug here is OK.
     const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug') || bodyTenantSlug;
+    const tenantSlug = readTenantSlug(headersList).slug || bodyTenantSlug;
 
     if (!tenantSlug) {
       // Mask this internal error with a generic "invalid code" message for users
