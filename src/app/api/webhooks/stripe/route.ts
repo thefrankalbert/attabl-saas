@@ -4,6 +4,7 @@ import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getStripe, getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
+import { isSubscriptionUsable } from '@/lib/plans/features';
 import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 const VALID_PLANS: readonly SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
@@ -88,10 +89,11 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
  * inoperants - pour un client qui venait de payer, et sans le moindre log.
  * Poser la valeur ici, a chaque ecriture de statut, est le seul moyen de ne pas
  * dependre du fait que chaque handler y pense.
+ *
+ * La regle vit dans `isSubscriptionUsable`: une seconde table de verite ici
+ * divergerait au premier statut ajoute.
  */
-function isActiveForStatus(status: SubscriptionStatus): boolean {
-  return status === 'trial' || status === 'active' || status === 'past_due';
-}
+const isActiveForStatus = isSubscriptionUsable;
 
 /**
  * Le client Stripe du litige, ou null si on ne peut pas le resoudre.

@@ -11,12 +11,11 @@ import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
 import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
-import { canAccessFeature } from '@/lib/plans/features';
-import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
 import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -232,20 +231,11 @@ export async function actionUpdateOrderStatus(
       //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
       await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
 
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('subscription_plan, subscription_status, trial_ends_at')
-        .eq('id', parsed.data.tenantId)
-        .maybeSingle();
-
-      const hasInventory =
-        !!tenant &&
-        canAccessFeature(
-          'canAccessInventory',
-          tenant.subscription_plan as SubscriptionPlan | null,
-          tenant.subscription_status as SubscriptionStatus | null,
-          tenant.trial_ends_at as string | null,
-        );
+      const hasInventory = await isFeatureEntitled(
+        supabase,
+        parsed.data.tenantId,
+        'canAccessInventory',
+      );
 
       if (hasInventory) {
         const adminSupabase = createAdminClient();
@@ -407,19 +397,7 @@ export async function actionMarkOrderPaid(
     // Plan gate: tips are Pro+ (canAccessTips, see pricing-data.ts). Enforce here
     // because payment-time tips reach the DB via markPaid, not the order route.
     if ((parsed.data.tipAmount ?? 0) > 0) {
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('subscription_plan, subscription_status, trial_ends_at')
-        .eq('id', parsed.data.tenantId)
-        .maybeSingle();
-      if (
-        !canAccessFeature(
-          'canAccessTips',
-          tenant?.subscription_plan as SubscriptionPlan | null,
-          tenant?.subscription_status as SubscriptionStatus | null,
-          tenant?.trial_ends_at ?? null,
-        )
-      ) {
+      if (!(await isFeatureEntitled(supabase, parsed.data.tenantId, 'canAccessTips'))) {
         return { error: 'Les pourboires ne sont pas inclus dans votre plan.' };
       }
     }
