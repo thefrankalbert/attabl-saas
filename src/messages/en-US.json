@@ -2584,7 +2584,13 @@
       "exportPdfError": "PDF export failed",
       "exportPngError": "PNG export failed",
       "tenantNotFound": "Restaurant not found"
-    }
+    },
+    "logoutBlocked": "Cannot sign out yet",
+    "logoutBlockedDesc": "{count} order(s) not sent yet. Reconnect the network and wait for the counter to reach zero.",
+    "logoutLostDesc": "{count} order(s) could not be sent and are lost. Write them down before continuing, then click Sign out again.",
+    "logoutForceExplain": "If you sign out now, these orders are not lost: they stay on this tablet and will be sent when you sign back in here. Nobody else can send them for you.",
+    "logoutStay": "Stay signed in",
+    "logoutForce": "Sign out anyway"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",
@@ -2654,7 +2660,8 @@
     "courseDessert": "Desserts",
     "courseDrink": "Drinks",
     "fireCourse": "Fire",
-    "holdCourse": "Hold"
+    "holdCourse": "Hold",
+    "staleScreen": "Screen not synced since {time}"
   },
   "pos": {
     "title": "Point of Sale",
@@ -2748,7 +2755,9 @@
     "ticketNumberTooltip": "Ticket #{number} of the day",
     "productsTab": "Products",
     "couponInvalid": "Invalid coupon",
-    "couponValidationError": "Validation error"
+    "couponValidationError": "Validation error",
+    "paymentQueued": "Payment waiting for network",
+    "paymentQueuedDesc": "No connection. The payment is saved and will sync as soon as the network is back."
   },
   "users": {
     "title": "Users",
@@ -3456,7 +3465,9 @@
     "compedBadge": "Comped",
     "compSuccess": "Order comped",
     "compError": "Could not comp the order",
-    "cannotCompPaid": "This order is already paid. Use a refund instead."
+    "cannotCompPaid": "This order is already paid. Use a refund instead.",
+    "paymentQueued": "Payment waiting for network",
+    "paymentQueuedDesc": "No connection. The payment is saved and will sync as soon as the network is back."
   },
   "orderNote": {
     "title": "Manager notes",

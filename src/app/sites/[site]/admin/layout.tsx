@@ -10,6 +10,7 @@ import { SubscriptionBanners } from '@/components/admin/SubscriptionBanners';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
+import { OutboxIdentity } from '@/components/shared/OutboxIdentity';
 import { APP_VERSION } from '@/lib/app-version';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
@@ -266,6 +267,7 @@ export default async function AdminLayout({
           >
             <PermissionsProvider role={userRole}>
               <OfflineIndicator />
+              <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
               <CommandPalette />
               <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
                 <AdminIdleWrapper

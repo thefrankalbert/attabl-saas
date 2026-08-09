@@ -45,6 +45,11 @@ export function OfflineIndicator() {
       {showPending && (
         <div className="flex items-center justify-center gap-2 bg-amber-500/15 py-2 text-sm font-medium text-amber-500 ring-1 ring-amber-500/30">
           <UploadCloud className="h-4 w-4" />
+          {/* Le compte est expose a part du libelle traduit: un test de bout en
+              bout doit pouvoir lire le nombre sans dependre de la langue. */}
+          <span data-testid="outbox-pending-count" className="sr-only">
+            {pending}
+          </span>
           {tc('outboxPending', { count: pending })}
         </div>
       )}

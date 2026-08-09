@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -449,6 +449,15 @@ export function usePOSData(tenantId: string) {
   );
 
   // --- Order creation -------------------------------------
+  const submitLockRef = useRef(false);
+  // OFF-11. La cle d'idempotence doit survivre a un ECHEC, pas seulement aux
+  // reessais reseau d'un meme envoi. Frappee a chaque tap, elle laissait le
+  // scenario suivant ouvert: l'envoi echoue, le panier reste plein (onError ne
+  // le vide pas), le caissier retape - et cree une SECONDE commande alors qu'il
+  // croit rejouer la premiere. On garde donc la cle jusqu'au succes, comme
+  // PaymentModal le fait deja pour l'encaissement.
+  const orderRequestIdRef = useRef<string | null>(null);
+
   const handleOrder = (
     status: 'pending' | 'delivered',
     options?: {
@@ -460,11 +469,21 @@ export function usePOSData(tenantId: string) {
     // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
     // two taps would create two distinct orders. Block while a submit is in
     // flight (the idempotency key only dedupes one submit's network retries).
-    if (createOrder.isPending) return;
+    //
+    // Verrou explicite et NON `createOrder.isPending`: une mutation mise en pause
+    // par TanStack reste `isPending` indefiniment, si bien que le garde avalait en
+    // silence toutes les commandes suivantes des que le reseau tombait. Le verrou
+    // est relache dans onSettled, qui se declenche aussi bien au succes qu'a
+    // l'echec, y compris quand l'outbox prend le relais hors ligne.
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
 
     // Mint the idempotency key once per compose. It survives the network retry /
-    // durable outbox replay so an offline-sent order never duplicates.
-    const clientRequestId = crypto.randomUUID();
+    // durable outbox replay so an offline-sent order never duplicates. `??=`:
+    // un retap apres echec REJOUE la meme cle au lieu d'en creer une nouvelle
+    // (OFF-11). Remise a null au succes seulement, quand le panier est vide.
+    orderRequestIdRef.current ??= crypto.randomUUID();
+    const clientRequestId = orderRequestIdRef.current;
 
     createOrder.mutate(
       {
@@ -511,6 +530,9 @@ export function usePOSData(tenantId: string) {
               description: serverNum ? `#${serverNum}` : undefined,
             });
           }
+          // La commande est partie (ou est durablement en file): la prochaine
+          // composition est une commande DIFFERENTE, elle merite sa propre cle.
+          orderRequestIdRef.current = null;
           updateOrderNumber(orderNumber + 1);
           setCart([]);
           setOrderNotes('');
@@ -524,6 +546,9 @@ export function usePOSData(tenantId: string) {
         onError: (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
           toast({ title: t('orderError'), description: message, variant: 'destructive' });
+        },
+        onSettled: () => {
+          submitLockRef.current = false;
         },
       },
     );

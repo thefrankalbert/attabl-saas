@@ -11,6 +11,7 @@
  */
 
 import { getOrderOutbox } from './outbox-idb';
+import { getOutboxIdentity } from './outbox-identity';
 import type { Outbox } from './outbox';
 import { classifyStatus, readJson, replayOrderEntry, OUTBOX_SYNC_TAG } from './outbox-replay';
 
@@ -62,6 +63,12 @@ export interface SubmitOrderArgs {
   fetchImpl?: typeof fetch;
   outbox?: Outbox | null;
   now?: number;
+  /**
+   * Ressource visee (`table:<id>`, `order:<id>`). Garantit l'ordre de rejeu par
+   * ressource au drain (OFF-08). A omettre quand l'ecriture est independante,
+   * comme la creation d'une commande.
+   */
+  scopeKey?: string;
 }
 
 export async function submitOrder({
@@ -71,6 +78,7 @@ export async function submitOrder({
   fetchImpl = fetch,
   outbox = getOrderOutbox(),
   now = Date.now(),
+  scopeKey,
 }: SubmitOrderArgs): Promise<SubmitResult> {
   const fullBody = { ...body, client_request_id: clientRequestId };
 
@@ -80,7 +88,24 @@ export async function submitOrder({
       // so surface a failure rather than silently dropping the order.
       return { status: 'failed', error: reason };
     }
-    await outbox.enqueue({ id: clientRequestId, endpoint, body: fullBody, now });
+    // Marque l'entree avec la session qui l'a produite (OFF-07): au rejeu, le
+    // drain refuse de la faire partir sous l'identite de quelqu'un d'autre.
+    const identity = getOutboxIdentity();
+    const entry = await outbox.enqueue({
+      id: clientRequestId,
+      endpoint,
+      body: fullBody,
+      now,
+      ownerUserId: identity?.userId,
+      ownerTenantId: identity?.tenantId,
+      scopeKey,
+    });
+    if (!entry) {
+      // File pleine (MAX_ENTRIES). On refuse franchement: laisser croire que la
+      // commande est en securite alors qu'elle n'a pas ete stockee serait pire
+      // que l'erreur affichee au caissier.
+      return { status: 'failed', error: 'outbox-full' };
+    }
     // Nudge any mounted outbox UI to refresh its count / attempt a drain.
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event(OUTBOX_CHANGED_EVENT));

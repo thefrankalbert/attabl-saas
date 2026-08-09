@@ -14,11 +14,39 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
-import {
-  actionUpdateOrderStatus,
-  actionUpdateItemStatus,
-  actionSetCourseHeld,
-} from '@/app/actions/orders';
+import { submitOrder } from '@/lib/offline/submit-order';
+
+/**
+ * OFF-12. Envoie un geste de cuisine par le dispositif outbox au lieu d'appeler
+ * la Server Action en direct.
+ *
+ * Avant, l'ecran cuisine etait le seul poste a ne pas beneficier du hors ligne:
+ * marquer 14 articles "prets" pendant une coupure, c'etait 14 erreurs rouges et
+ * tout le travail perdu, alors que le meme geste au niveau COMMANDE etait deja
+ * durable. Meme endpoint idempotent, meme cle rejouee a l'identique.
+ *
+ * `scopeKey` = la commande: les gestes d'une meme commande se rejouent DANS
+ * L'ORDRE (OFF-08). Sans lui, un "tout pret" pourrait s'appliquer avant le
+ * changement d'article qui le precede et l'ecran afficherait un etat incoherent.
+ *
+ * La forme de retour imite celle des Server Actions (`{ error }`) pour rester
+ * un remplacement direct sur les appels existants. Une mise en file compte comme
+ * un succes: l'action est durablement capturee, le bandeau de synchronisation
+ * porte l'information de ce qui reste a envoyer.
+ */
+async function sendKitchenMutation(
+  body: Record<string, unknown>,
+  orderId: string,
+): Promise<{ error?: string }> {
+  const result = await submitOrder({
+    endpoint: '/api/orders/mutations',
+    body,
+    clientRequestId: crypto.randomUUID(),
+    scopeKey: `order:${orderId}`,
+  });
+  if (result.status === 'sent' || result.status === 'queued') return {};
+  return { error: result.error };
+}
 
 // --- Types ----------------------------------------------
 
@@ -58,6 +86,11 @@ export interface UseKitchenDataReturn {
   showMockData: boolean;
   setShowMockData: (v: boolean) => void;
   lastUpdate: Date;
+  /**
+   * true = l'ecran n'a pas reussi a se resynchroniser (OFF-04). `lastUpdate`
+   * reste alors l'heure du dernier succes reel, pas celle du dernier essai.
+   */
+  stale: boolean;
   isFullscreen: boolean;
   activeTab: ColumnKey;
   setActiveTab: (tab: ColumnKey) => void;
@@ -123,6 +156,7 @@ export function useKitchenData({
   const [loading, setLoading] = useState(true);
   const [showMockData, setShowMockData] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [stale, setStale] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const [activeTab, setActiveTab] = useSessionState<ColumnKey>('kitchen:activeTab', 'pending');
 
@@ -209,8 +243,19 @@ export function useKitchenData({
 
       setOrders(mapped as Order[]);
       setLastUpdate(new Date());
+      setStale(false);
     } catch (error) {
       logger.error('KDS loading error', error);
+      // OFF-04. NE PAS toucher a lastUpdate ici. Auparavant le chargement ne
+      // pouvait pas echouer hors ligne: la requete PostgREST etait servie depuis
+      // le cache du service worker, renvoyait un 200 avec une liste vieille de
+      // jusqu'a une heure, et le code marquait quand meme "derniere mise a jour:
+      // maintenant". Le chef voyait un ecran vivant et en deduisait qu'aucune
+      // nouvelle commande n'arrivait, alors que l'ecran etait fige.
+      // Depuis OFF-02 ces lectures sont NetworkOnly, donc ce catch est vraiment
+      // atteint hors ligne: on marque l'ecran comme non synchronise et on laisse
+      // lastUpdate a l'heure du dernier succes REEL.
+      setStale(true);
     } finally {
       setLoading(false);
     }
@@ -302,7 +347,10 @@ export function useKitchenData({
     allItems: { id: string; item_status?: string }[],
   ) => {
     try {
-      const result = await actionUpdateItemStatus(tenantId, orderId, [itemId], newStatus);
+      const result = await sendKitchenMutation(
+        { type: 'item_status', orderId, itemIds: [itemId], status: newStatus },
+        orderId,
+      );
       if (result.error) {
         toast({ title: tc('error'), variant: 'destructive' });
         return;
@@ -313,7 +361,10 @@ export function useKitchenData({
       );
 
       if (allReady && allItems.length > 0) {
-        const result = await actionUpdateOrderStatus(tenantId, orderId, 'ready');
+        const result = await sendKitchenMutation(
+          { type: 'status', orderId, status: 'ready' },
+          orderId,
+        );
         if (result.error) {
           toast({ title: tc('error'), variant: 'destructive' });
           loadOrders();
@@ -332,14 +383,20 @@ export function useKitchenData({
   const markAllItemsReady = async (orderId: string, itemIds: string[]) => {
     try {
       if (itemIds.length > 0) {
-        const result = await actionUpdateItemStatus(tenantId, orderId, itemIds, 'ready');
+        const result = await sendKitchenMutation(
+          { type: 'item_status', orderId, itemIds, status: 'ready' },
+          orderId,
+        );
         if (result.error) {
           toast({ title: tc('error'), variant: 'destructive' });
           return;
         }
       }
 
-      const result = await actionUpdateOrderStatus(tenantId, orderId, 'ready');
+      const result = await sendKitchenMutation(
+        { type: 'status', orderId, status: 'ready' },
+        orderId,
+      );
 
       if (result.error) {
         toast({ title: tc('error'), variant: 'destructive' });
@@ -357,7 +414,10 @@ export function useKitchenData({
   // --- Fire/hold a course (KDS coursing) ------------------
   const setCourseHeld = async (orderId: string, course: string, held: boolean) => {
     try {
-      const result = await actionSetCourseHeld(tenantId, orderId, course, held);
+      const result = await sendKitchenMutation(
+        { type: 'course_held', orderId, course, held },
+        orderId,
+      );
       if (result.error) {
         toast({ title: tc('error'), variant: 'destructive' });
       }
@@ -475,6 +535,7 @@ export function useKitchenData({
     showMockData,
     setShowMockData,
     lastUpdate,
+    stale,
     isFullscreen,
     activeTab,
     setActiveTab,

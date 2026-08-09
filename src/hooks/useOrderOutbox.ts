@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getOrderOutbox } from '@/lib/offline/outbox-idb';
+import { getOutboxIdentity } from '@/lib/offline/outbox-identity';
 import { replayOrderEntry, OUTBOX_CHANGED_EVENT } from '@/lib/offline/submit-order';
 import type { OutboxEntry } from '@/lib/offline/outbox';
 import { logger } from '@/lib/logger';
@@ -45,16 +46,31 @@ export function useOrderOutbox(): UseOrderOutbox {
     // Still refresh the count so a freshly-queued order shows in the banner. The
     // 'online' event re-triggers a real drain the moment the network is back.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setPendingBoth(await outbox.count());
+      setPendingBoth(await outbox.countDrainable(getOutboxIdentity() ?? undefined));
       return;
     }
     if (draining.current) return; // avoid overlapping drains (interval + event)
     draining.current = true;
     try {
-      const result = await outbox.drain(replayOrderEntry);
-      setPendingBoth(result.stillQueued);
-      if (result.permanentlyFailed.length > 0) {
-        setRejected((prev) => [...prev, ...result.permanentlyFailed]);
+      // currentUserId cloisonne le rejeu (OFF-07): les entrees mises en file par
+      // une autre session restent en file au lieu de partir sous celle-ci.
+      const identity = getOutboxIdentity();
+      const result = await outbox.drain(replayOrderEntry, {
+        currentUserId: identity?.userId,
+        currentTenantId: identity?.tenantId,
+      });
+      // stillQueued compte TOUT, y compris les entrees d'une autre session que
+      // cette session ne peut pas drainer (OFF-07). Les afficher donnerait un
+      // compteur qui ne descend jamais quoi que fasse l'operateur - et un badge
+      // rouge permanent est un badge qu'on cesse de regarder, donc le vrai signal
+      // d'alerte se noie.
+      setPendingBoth(Math.max(0, result.stillQueued - result.skippedForeign));
+      // Relire le journal persistant plutot que d'empiler la valeur de retour:
+      // il contient AUSSI ce que le service worker a perdu en Background Sync,
+      // que cette page n'a jamais vu passer. La cle `id` dedoublonne pour nous.
+      const journal = await outbox.listRejected();
+      if (journal.length > 0 || result.permanentlyFailed.length > 0) {
+        setRejected(journal);
       }
     } catch (err) {
       logger.error('Order outbox drain failed', { err });
@@ -63,15 +79,32 @@ export function useOrderOutbox(): UseOrderOutbox {
     }
   }, [setPendingBoth]);
 
-  const dismissRejected = useCallback(() => setRejected([]), []);
+  const dismissRejected = useCallback(() => {
+    setRejected([]);
+    // Vider aussi le journal persistant: sinon le bandeau reviendrait au
+    // prochain drain, et un bandeau qu'on ne peut pas faire taire est un
+    // bandeau que l'operateur apprend a ignorer.
+    const outbox = getOrderOutbox();
+    if (outbox) {
+      void outbox.clearRejected().catch((err) => {
+        logger.error('Order outbox clearRejected failed', { err });
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const outbox = getOrderOutbox();
     if (!outbox) return;
 
     let cancelled = false;
-    void outbox.count().then((n) => {
+    void outbox.countDrainable(getOutboxIdentity() ?? undefined).then((n) => {
       if (!cancelled) setPendingBoth(n);
+    });
+    // Au montage, relire les pertes deja consignees AVANT tout drain: c'est le
+    // cas "le caissier recharge la page apres une coupure" - sans cette lecture
+    // il ne saurait jamais qu'il a perdu des tickets.
+    void outbox.listRejected().then((entries) => {
+      if (!cancelled && entries.length > 0) setRejected(entries);
     });
     void flush();
 

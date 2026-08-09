@@ -222,6 +222,7 @@ export function POSCartFooter({
       {/* Action Buttons */}
       <div className="grid grid-cols-7 gap-2">
         <Button
+          data-testid="pos-send-order"
           variant="outline"
           className="col-span-2 min-h-[48px] rounded-xl gap-1.5 touch-manipulation"
           disabled={cart.length === 0}

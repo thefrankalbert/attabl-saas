@@ -2584,7 +2584,13 @@
       "exportPdfError": "Erreur lors de l'export PDF",
       "exportPngError": "Erreur lors de l'export PNG",
       "tenantNotFound": "Restaurant introuvable"
-    }
+    },
+    "logoutBlocked": "Deconnexion impossible",
+    "logoutBlockedDesc": "{count} commande(s) pas encore envoyee(s). Reconnectez le reseau et attendez que le compteur retombe a zero.",
+    "logoutLostDesc": "{count} commande(s) n'ont pas pu etre envoyees et sont perdues. Notez-les avant de continuer, puis recliquez sur Deconnexion.",
+    "logoutForceExplain": "Si vous vous deconnectez maintenant, ces commandes ne sont pas perdues : elles restent sur cette tablette et repartiront quand vous vous reconnecterez ici. Personne d'autre ne peut les envoyer a votre place.",
+    "logoutStay": "Rester connecte",
+    "logoutForce": "Se deconnecter quand meme"
   },
   "kitchen": {
     "title": "Cuisine (KDS)",
@@ -2654,7 +2660,8 @@
     "courseDessert": "Desserts",
     "courseDrink": "Boissons",
     "fireCourse": "Envoyer",
-    "holdCourse": "Retenir"
+    "holdCourse": "Retenir",
+    "staleScreen": "Ecran non synchronise depuis {time}"
   },
   "pos": {
     "title": "Caisse (POS)",
@@ -2748,7 +2755,9 @@
     "ticketNumberTooltip": "Ticket {number} du jour",
     "productsTab": "Produits",
     "couponInvalid": "Coupon invalide",
-    "couponValidationError": "Erreur de validation"
+    "couponValidationError": "Erreur de validation",
+    "paymentQueued": "Encaissement en attente de reseau",
+    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistre et partira des le retour du reseau."
   },
   "users": {
     "title": "Utilisateurs",
@@ -3456,7 +3465,9 @@
     "compedBadge": "Offert",
     "compSuccess": "Commande offerte",
     "compError": "Impossible d'offrir la commande",
-    "cannotCompPaid": "Cette commande est deja payee. Utilisez un remboursement."
+    "cannotCompPaid": "Cette commande est deja payee. Utilisez un remboursement.",
+    "paymentQueued": "Encaissement en attente de reseau",
+    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistre et partira des le retour du reseau."
   },
   "orderNote": {
     "title": "Notes du gerant",
