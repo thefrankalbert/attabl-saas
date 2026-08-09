@@ -23,7 +23,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:responsive": "playwright test tests/e2e/responsive.spec.ts",
-    "test:e2e:ci": "playwright test tests/e2e/home.spec.ts",
+    "test:e2e:ci": "playwright test tests/e2e/home.spec.ts tests/e2e/segments.spec.ts",
     "test:journey": "playwright test --config tests/journeys/playwright.config.ts",
     "test:journey:ui": "playwright test --config tests/journeys/playwright.config.ts --ui",
     "load:k6": "k6 run tests/journeys/load/order-rush.k6.js",

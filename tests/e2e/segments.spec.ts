@@ -1,46 +1,70 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Segment marketing pages — verifies each vertical page loads correctly.
- * Tests the segment terminology system from the visitor's perspective.
+ * Pages segment (industries) - verifie ce qui existe REELLEMENT.
+ *
+ * Historique: ce fichier testait six pages par segment (/restaurants, /hotels,
+ * /bars-cafes, /retail, /salons, /pharmacies) avec un h1 propre a chacune. Ces
+ * pages n'existent plus:
+ *   - les trois premieres sont des redirections 308 vers des ancres de
+ *     /solutions (next.config.mjs, bloc redirects),
+ *   - les trois autres n'ont ni page ni redirection (404), et retail/salons/
+ *     pharmacies ne sont pas modelisees comme industries dans solutions/page.tsx.
+ * Le test echouait donc en CI en lisant le h1 partage de /solutions la ou il
+ * attendait un h1 par segment. Il est realigne sur la structure actuelle: une
+ * page /solutions, un h1, quatre blocs industrie en h2, plus les redirections
+ * heritees.
  */
-test.describe('Segment Marketing Pages', () => {
-  const segments = [
-    { path: '/restaurants', heading: /précision|excellence/i },
-    { path: '/hotels', heading: /service en chambre|room service/i },
-    { path: '/bars-cafes', heading: /comptoir|terrasse/i },
-    { path: '/retail', heading: /catalogue|commerce/i },
-    { path: '/salons', heading: /élégance|gestion/i },
-    { path: '/pharmacies', heading: /pharmacie|connectée/i },
+test.describe('Pages segment (industries)', () => {
+  test('/solutions se charge avec son titre et son CTA', async ({ page }) => {
+    await page.goto('/solutions');
+
+    await expect(page).toHaveTitle(/ATTABL/i);
+
+    const heading = page.locator('h1').first();
+    await expect(heading).toBeVisible({ timeout: 10000 });
+    await expect(heading).toHaveText(/Une application\./i);
+
+    const cta = page.locator('a[href*="signup"]').first();
+    await expect(cta).toBeVisible();
+  });
+
+  // Les quatre industries reellement modelisees (INDUSTRIES dans
+  // src/app/(marketing)/solutions/page.tsx). Fragments sans accent: le contrat
+  // porte sur le bloc rendu, pas sur la ponctuation exacte de la copy.
+  const industries = [
+    { anchor: 'ind-restaurant', title: /Le restaurant/i },
+    { anchor: 'ind-hotel', title: /Le service en chambre/i },
+    { anchor: 'ind-qsr', title: /Le service rapide/i },
+    { anchor: 'ind-bar', title: /Le comptoir qui compte/i },
   ];
 
-  for (const segment of segments) {
-    test(`${segment.path} page loads with correct content`, async ({ page }) => {
-      await page.goto(segment.path);
+  for (const industry of industries) {
+    test(`bloc ${industry.anchor} present avec son titre`, async ({ page }) => {
+      await page.goto('/solutions');
 
-      // Page should load successfully
-      await expect(page).toHaveTitle(/ATTABL/i);
-
-      // Hero heading should be visible
-      const heading = page.locator('h1').first();
-      await expect(heading).toBeVisible({ timeout: 10000 });
-      await expect(heading).toHaveText(segment.heading);
-
-      // Should have a signup CTA
-      const cta = page.locator('a[href*="signup"]').first();
-      await expect(cta).toBeVisible();
+      const section = page.locator(`#${industry.anchor}`);
+      await expect(section).toBeVisible({ timeout: 10000 });
+      await expect(section.locator('h2').first()).toHaveText(industry.title);
     });
   }
 
-  test('landing page segments section lists all verticals', async ({ page }) => {
-    await page.goto('/');
+  // Les anciennes URL par segment restent indexees et partagees: si une
+  // redirection saute, un visiteur tombe sur un 404 sans que rien ne le signale.
+  const legacyRoutes = [
+    { from: '/restaurants', anchor: 'ind-restaurant' },
+    { from: '/hotels', anchor: 'ind-hotel' },
+    { from: '/quick-service', anchor: 'ind-qsr' },
+    { from: '/fast-food', anchor: 'ind-qsr' },
+    { from: '/bars-cafes', anchor: 'ind-bar' },
+  ];
 
-    // Wait for segments section to load
-    await page.waitForSelector('text=Conçu pour votre activité', { timeout: 10000 });
+  for (const route of legacyRoutes) {
+    test(`${route.from} redirige vers /solutions#${route.anchor}`, async ({ page }) => {
+      await page.goto(route.from);
 
-    // Verify new segments are present
-    await expect(page.locator('text=Commerces')).toBeVisible();
-    await expect(page.locator('text=Salons')).toBeVisible();
-    await expect(page.locator('text=Pharmacies')).toBeVisible();
-  });
+      await expect(page).toHaveURL(new RegExp(`/solutions#${route.anchor}$`));
+      await expect(page.locator(`#${route.anchor}`)).toBeVisible({ timeout: 10000 });
+    });
+  }
 });

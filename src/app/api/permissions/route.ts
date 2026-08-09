@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
@@ -51,7 +52,7 @@ async function verifyOwner(
 }
 
 async function resolveTenantId(): Promise<string | null> {
-  const tenantSlug = (await headers()).get('x-tenant-slug');
+  const tenantSlug = readTenantSlug(await headers()).slug;
   if (!tenantSlug) return null;
   const tenant = await getTenant(tenantSlug);
   return tenant?.id ?? null;

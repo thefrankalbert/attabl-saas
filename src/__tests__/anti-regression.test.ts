@@ -86,10 +86,27 @@ describe('Securite', () => {
     expect(content).toContain('persistSession: false');
   });
 
-  it('proxy.ts doit strip le header x-tenant-slug des requetes client', () => {
+  it('proxy.ts doit strip les deux headers de tenant envoyes par le client', () => {
     const content = readFile('src/proxy.ts');
-    // Le proxy doit supprimer le header x-tenant-slug injecte par le client
-    expect(content).toMatch(/delete.*x-tenant-slug|x-tenant-slug.*delete/i);
+    // Les slugs sont desormais poses via des constantes (HDR-REFERER), donc on
+    // verifie la suppression des DEUX en-tetes: sans le hint, un client poserait
+    // lui-meme `x-tenant-slug-hint` et reproduirait le trou qu'on vient de fermer.
+    expect(content).toMatch(/delete\(TENANT_SLUG_HEADER\)/);
+    expect(content).toMatch(/delete\(TENANT_SLUG_HINT_HEADER\)/);
+  });
+
+  it('aucune route API ne lit le header de tenant en direct', async () => {
+    // HDR-REFERER, garde d'architecture. Tout passe par readTenantSlug(), qui
+    // rend explicite la provenance du slug (serveur ou Referer). Lire l'en-tete
+    // en direct redonnerait a une route l'illusion que le slug vient forcement
+    // du serveur - l'exacte croyance qui rendait ce lot necessaire.
+    const { readdirSync } = await import('node:fs');
+    const files = readdirSync('src/app/api', { recursive: true, encoding: 'utf8' })
+      .filter((f) => f.endsWith('.ts') && !f.includes('__tests__'))
+      .map((f) => `src/app/api/${f}`);
+    expect(files.length).toBeGreaterThan(0);
+    const offenders = files.filter((f: string) => readFile(f).includes("get('x-tenant-slug'"));
+    expect(offenders, 'routes lisant le header en direct au lieu de readTenantSlug()').toEqual([]);
   });
 
   it('le webhook Stripe doit verifier la signature', () => {

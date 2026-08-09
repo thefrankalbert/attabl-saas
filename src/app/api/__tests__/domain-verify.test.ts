@@ -9,8 +9,21 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(),
+// DOMAIN-VERIFY: la route ne fait plus un simple getUser(), elle exige
+// `settings.edit` via getAuthenticatedUserWithTenant. Le mock suit.
+const { MockAuthError } = vi.hoisted(() => ({
+  MockAuthError: class extends Error {
+    status: number;
+    constructor(message: string, status: number) {
+      super(message);
+      this.status = status;
+    }
+  },
+}));
+
+vi.mock('@/lib/auth/get-session', () => ({
+  getAuthenticatedUserWithTenant: vi.fn(),
+  AuthError: MockAuthError,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -23,7 +36,7 @@ vi.mock('@/lib/logger', () => ({
 
 import { POST } from '../domain-verify/route';
 import { domainVerifyLimiter } from '@/lib/rate-limit';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -51,24 +64,6 @@ function mockRateLimit(allowed: boolean) {
     remaining: allowed ? 4 : 0,
     reset: Date.now() + 600_000,
   });
-}
-
-function createMockSupabase(overrides?: {
-  authUser?: { id: string; email: string } | null;
-  authError?: { message: string } | null;
-}) {
-  const user = overrides?.authUser ?? { id: 'user-1', email: 'admin@test.com' };
-  const authError = overrides?.authError ?? null;
-
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: authError ? null : user },
-        error: authError,
-      }),
-    },
-    from: vi.fn(),
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -99,20 +94,34 @@ describe('POST /api/domain-verify', () => {
 
   it('returns 401 when user is not authenticated', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase({ authUser: null, authError: { message: 'No session' } });
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(getAuthenticatedUserWithTenant).mockRejectedValue(
+      new AuthError('Non authentifie', 401),
+    );
 
     const res = await POST(buildRequest({ domain: 'test.com' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(401);
-    expect(json.error).toContain('Non autorise');
+    expect(json.error).toContain('Non authentifie');
+  });
+
+  it('returns 403 when the member lacks settings.edit', async () => {
+    // DOMAIN-VERIFY. Le point du correctif: une session valide ne suffit plus.
+    // Avant, un serveur de n'importe quel etablissement pouvait declencher une
+    // verification de domaine.
+    mockRateLimit(true);
+    vi.mocked(getAuthenticatedUserWithTenant).mockRejectedValue(
+      new AuthError('Permissions insuffisantes', 403),
+    );
+
+    const res = await POST(buildRequest({ domain: 'test.com' }));
+
+    expect(res.status).toBe(403);
   });
 
   it('returns 400 when body is malformed JSON', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase();
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
 
     const res = await POST(buildRequest(undefined, { malformed: true }));
     const json = (await res.json()) as { error: string };
@@ -123,8 +132,7 @@ describe('POST /api/domain-verify', () => {
 
   it('returns 400 when domain is missing', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase();
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
 
     const res = await POST(buildRequest({}));
     const json = (await res.json()) as { error: string };
@@ -135,8 +143,7 @@ describe('POST /api/domain-verify', () => {
 
   it('returns verified: true when CNAME points to Vercel', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase();
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -156,8 +163,7 @@ describe('POST /api/domain-verify', () => {
 
   it('returns verified: false when CNAME does not point to Vercel', async () => {
     mockRateLimit(true);
-    const mock = createMockSupabase();
-    vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(getAuthenticatedUserWithTenant).mockResolvedValue({} as never);
 
     const res = await POST(buildRequest({ domain: 'other.example.com' }));
     const json = (await res.json()) as { verified: boolean; domain: string };

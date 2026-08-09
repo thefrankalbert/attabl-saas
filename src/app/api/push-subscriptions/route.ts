@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
 import { subscribeSchema } from '@/lib/validations/push-subscription.schema';
 import { pushSubscriptionLimiter, getClientIp } from '@/lib/rate-limit';
@@ -26,13 +27,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // PUSH-TENANT. La route ignorait le tenant du contexte et resolvait par
+    // `order('created_at').limit(1)`, c'est-a-dire l'appartenance la PLUS
+    // ANCIENNE. Un owner de deux etablissements s'abonnait donc toujours aux
+    // alertes du premier, quel que soit celui qu'il avait ouvert - et recevait
+    // les notifications de cuisine du mauvais restaurant.
+    let tenantId: string;
+    let user: Awaited<ReturnType<typeof getAuthenticatedUserWithTenant>>['user'];
+    let supabase: Awaited<ReturnType<typeof getAuthenticatedUserWithTenant>>['supabase'];
+    try {
+      ({ tenantId, user, supabase } = await getAuthenticatedUserWithTenant());
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return NextResponse.json({ error: error.message }, { status: error.status });
+      }
+      throw error;
     }
 
     const body = await request.json();
@@ -44,24 +53,10 @@ export async function POST(request: NextRequest) {
 
     const { endpoint, p256dh, auth } = parsed.data;
 
-    // Derive tenant_id from admin_users - never trust client-supplied tenant_id
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('tenant_id')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Tenant not found for user' }, { status: 403 });
-    }
-
     // Upsert subscription (unique on user_id + endpoint)
     const { error } = await supabase.from('push_subscriptions').upsert(
       {
-        tenant_id: adminUser.tenant_id,
+        tenant_id: tenantId,
         user_id: user.id,
         endpoint,
         p256dh,

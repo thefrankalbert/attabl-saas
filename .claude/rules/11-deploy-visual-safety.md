@@ -108,8 +108,26 @@ de temps a chercher un reglage a corriger, et ne PAS detacher/rattacher le domai
 
 Un workflow (`.github/workflows/promote-prod.yml`) promeut automatiquement apres
 chaque push sur `main`. Il exige le secret `VERCEL_TOKEN` (token cree sur
-https://vercel.com/account/tokens, puis `gh secret set VERCEL_TOKEN`). Sans le
-secret, il ne casse pas le merge : il explique la marche a suivre dans son resume.
+https://vercel.com/account/tokens, puis `gh secret set VERCEL_TOKEN`). Le secret
+EST configure et le workflow fonctionne : sans lui, il ne casse pas le merge, il
+explique la marche a suivre dans son resume.
+
+**Aucune etape manuelle n'est requise apres un merge.** Mesure du 09/08/2026,
+deux merges d'affilee (`70553be5`, `1d0cbe96`) : merge -> build -> promotion ->
+domaine a jour en **environ 3 minutes**, sans intervention.
+
+```
+19:58:13  attendu 70553be5 / servi 6bef62ef   <- normal, le build tourne
+20:00:46  promotion demandee (HTTP 201)
+20:01:02  prod: PROMOTED - attabl.com sert maintenant 70553be5
+```
+
+**Piege : ne PAS verifier dans la minute qui suit le merge.** Le domaine sert
+encore l'ancien commit tant que le build n'est pas fini, et `--check` repond alors
+`OUT-OF-SYNC`. Ce n'est PAS une panne de promotion, c'est un build en cours.
+Attendre ~3 min, ou lire le resultat du workflow `promote-prod` sur le commit, qui
+est la source de verite. Conclure "la promotion est bloquee" sur une verification
+prematuree fait perdre du temps a l'utilisateur (constate le 09/08/2026).
 
 En local, ou si le workflow est indisponible :
 
@@ -135,6 +153,13 @@ merge en production.
   `age: 0` et `no-store` signifie que le domaine sert vraiment l'ancien deploiement.
 - Le token du CLI (`vercel login`) EXPIRE (constate en une nuit). Pour la CI,
   utiliser un token cree dans le dashboard, pas celui de la session locale.
+- Contre-verification du 09/08/2026, pistes que l'audit de juillet n'avait pas
+  ouvertes - toutes negatives, NE PAS les rouvrir : `attabl.com` et `*.attabl.com`
+  ont `gitBranch=null` et `redirect=null` (aucun domaine lie a une branche) ; les
+  8 derniers deploiements production sont tous `readySubstate=PROMOTED` avec
+  `aliasAssigned=true` et **aucun `aliasError`** ; `lastRollbackTarget=null`,
+  pas de rolling release. La configuration du projet est saine. Il ne reste plus
+  rien a corriger cote projet : le workflow EST la procedure normale.
 
 ## 5. Composants fixed/sticky superposes (piege recurrent)
 

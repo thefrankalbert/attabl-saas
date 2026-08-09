@@ -25,11 +25,24 @@ export default async function TenantsPage() {
     redirect('/login');
   }
 
-  // Check if the user has super_admin or owner role in any tenant
+  // Check if the user has super_admin or owner role in any tenant.
+  //
+  // ADMIN-TENANTS-BAN. `is_active` et `deleted_at` sont filtres ici comme
+  // partout ailleurs dans le code. Cette page etait la SEULE exception, et la
+  // consequence n'etait pas theorique: un owner banni gardait l'acces, et la
+  // branche owner recharge ensuite ses etablissements via createAdminClient()
+  // (service_role, donc RLS contournee). Un compte banni portant un
+  // `is_super_admin` historique obtenait l'annuaire de TOUS les tenants.
+  //
+  // Le filtre vit sur la requete plutot que dans isSuperAdmin(): il faut aussi
+  // assainir la derivation `isOwner` et le `full_name` lus plus bas, que le
+  // helper ne couvre pas.
   const { data: adminUsers } = await supabase
     .from('admin_users')
     .select('is_super_admin, role, full_name, tenant_id')
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .is('deleted_at', null);
 
   const isSuperAdmin = (adminUsers || []).some(
     (au) => au.is_super_admin === true || au.role === 'super_admin',

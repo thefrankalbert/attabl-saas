@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
 import { domainVerifySchema } from '@/lib/validations/domain.schema';
 import { domainVerifyLimiter, getClientIp } from '@/lib/rate-limit';
@@ -20,14 +20,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Auth check: only authenticated users can verify domains
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
+    // 1. DOMAIN-VERIFY. La route n'exigeait qu'une session valide: n'importe
+    // quel utilisateur authentifie - un serveur de n'importe quel etablissement
+    // compris - pouvait declencher une verification de domaine. Le domaine
+    // custom est un reglage d'etablissement, il releve donc de `settings.edit`.
+    try {
+      await getAuthenticatedUserWithTenant('settings.edit');
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return NextResponse.json({ error: error.message }, { status: error.status });
+      }
+      throw error;
     }
 
     // 2. Parse and validate input

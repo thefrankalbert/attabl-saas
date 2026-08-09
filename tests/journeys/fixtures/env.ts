@@ -6,8 +6,9 @@
  * Supabase fournie le contient, on stoppe tout immediatement.
  */
 
-// Ref du projet Supabase de PRODUCTION Attabl. Ne jamais cibler en test.
-const PROD_SUPABASE_REFS = ['nqufpobuozrzwpeijkxt'];
+// Ref du projet Supabase de PRODUCTION Attabl. Source unique: scripts/assert-not-production.ts
+// (deux copies divergent, et la copie oubliee est celle qui laisse passer une ecriture en prod).
+import { PROD_SUPABASE_REFS } from '../../../scripts/assert-not-production';
 
 // Hotes de PRODUCTION de l'app. Le harnais pilote l'app sur JOURNEY_BASE_URL:
 // si cette URL pointe sur la prod, les parcours (signup, commandes) ecriraient
@@ -90,8 +91,29 @@ export function hasSeedEnv(): boolean {
 }
 
 /** true si Stripe test mode est configure. */
+/**
+ * Les 9 prix exiges par `src/lib/stripe/server.ts` (3 plans x 3 periodicites).
+ * Ils sont lus par `requireEnv`, qui LEVE si la variable manque.
+ */
+const REQUIRED_STRIPE_PRICE_ENV = [
+  'NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY',
+  'NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL',
+  'NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY',
+  'NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY',
+  'NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL',
+  'NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY',
+  'NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY',
+  'NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL',
+  'NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY',
+];
+
 export function hasStripeTestEnv(): boolean {
-  return journeyEnv.stripeSecretKey.startsWith('sk_test_');
+  if (!journeyEnv.stripeSecretKey.startsWith('sk_test_')) return false;
+  // La cle secrete ne suffit PAS: un checkout resout aussi un identifiant de prix.
+  // Sans cette verification, le test ne se skippait pas et partait quand meme, pour
+  // echouer plus loin sur un requireEnv - un echec qui accuse le checkout alors que
+  // c'est l'environnement de test qui est incomplet.
+  return REQUIRED_STRIPE_PRICE_ENV.every((name) => Boolean(process.env[name]));
 }
 
 /**

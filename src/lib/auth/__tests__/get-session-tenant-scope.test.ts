@@ -31,7 +31,7 @@ import { getAuthenticatedUserWithTenant } from '../get-session';
 
 function chain(result: { data: unknown }) {
   const c: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'is', 'order', 'limit']) c[m] = vi.fn(() => c);
+  for (const m of ['select', 'eq', 'is', 'or', 'order', 'limit']) c[m] = vi.fn(() => c);
   c.maybeSingle = vi.fn(() => Promise.resolve(result));
   return c;
 }
@@ -73,24 +73,42 @@ describe('getAuthenticatedUserWithTenant - tenant scoping', () => {
     expect(res.adminUserId).toBe('membership-A');
   });
 
-  it('falls back to oldest membership when the header tenant exists but the user is not a member', async () => {
+  it('refuse quand le tenant du header existe mais que l utilisateur n en est pas membre', async () => {
+    // SESSION-FALLBACK. Avant, on retombait ici sur l'appartenance la plus
+    // ANCIENNE. Il n'y avait pas d'elevation cross-tenant, mais un deputy
+    // confus: l'action partait EN SILENCE sur le mauvais etablissement. Un
+    // super_admin ouvrant /sites/client-b/admin/settings et modifiant les taux
+    // de TVA voyait sa modification atterrir sur SON tenant, sans erreur.
     mockHeaderGet.mockReturnValue('foreign-tenant');
-    let adminUsersCall = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'tenants') return chain({ data: { id: 'tenant-foreign' } });
+      // Ni appartenance scopee, ni ligne super_admin vivante.
+      return chain({ data: null });
+    });
+
+    await expect(getAuthenticatedUserWithTenant()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('resout un super_admin en owner virtuel SUR LE TENANT DU HEADER', async () => {
+    // Un operateur plateforme n'a aucune ligne admin_users sur les tenants
+    // clients: le layout lui fabrique un owner virtuel sans creer de ligne.
+    // Sans cette resolution, le refus ci-dessus casserait la console plateforme.
+    mockHeaderGet.mockReturnValue('client-b');
+    let adminUsersCall = 0;
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'tenants') return chain({ data: { id: 'tenant-client-b' } });
       adminUsersCall += 1;
-      // first admin_users call = scoped lookup (not a member -> null)
-      // second admin_users call = oldest-membership fallback
+      // 1er appel = lookup scope (non membre) ; 2e = ligne super_admin vivante.
       return adminUsersCall === 1
         ? chain({ data: null })
-        : chain({ data: { id: 'membership-A', tenant_id: 'tenant-A', role: 'admin' } });
+        : chain({ data: { id: 'membership-super' } });
     });
 
     const res = await getAuthenticatedUserWithTenant();
 
-    // Never elevates into the foreign tenant; uses the user's own oldest membership.
-    expect(res.tenantId).toBe('tenant-A');
-    expect(res.adminUserId).toBe('membership-A');
+    expect(res.tenantId).toBe('tenant-client-b');
+    expect(res.role).toBe('owner');
+    expect(res.adminUserId).toBe('membership-super');
   });
 });
 

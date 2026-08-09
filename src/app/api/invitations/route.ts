@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
       // membership. Deriving the tenant from admin_users by user_id alone breaks for
       // multi-tenant owners (>1 row -> .single() returns null -> false 403).
       const headersList = await headers();
-      const tenantSlug = headersList.get('x-tenant-slug');
+      const tenantSlug = readTenantSlug(headersList).slug;
       if (!tenantSlug) {
         return NextResponse.json({ error: 'Tenant non identifie' }, { status: 400 });
       }
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
       // membership. Never derive the tenant from admin_users by user_id alone - it
       // breaks for multi-tenant owners and is ambiguous about which tenant to invite to.
       const headersList = await headers();
-      const tenantSlug = headersList.get('x-tenant-slug');
+      const tenantSlug = readTenantSlug(headersList).slug;
       if (!tenantSlug) {
         return NextResponse.json({ error: 'Tenant non identifie' }, { status: 400 });
       }
