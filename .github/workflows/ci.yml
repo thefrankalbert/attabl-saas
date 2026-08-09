@@ -26,9 +26,12 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
+        # Pas de `version:` ici. La version vient de `packageManager` dans
+        # package.json, seule source de verite: c'est ce qui garantit que la CI
+        # installe la meme version que la machine de dev. Definir les deux fait
+        # echouer l'action des l'installation ("Multiple versions of pnpm
+        # specified"), ce qui bloque toute PR touchant package.json.
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Get pnpm store directory
         shell: bash
@@ -140,9 +143,12 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
+        # Pas de `version:` ici. La version vient de `packageManager` dans
+        # package.json, seule source de verite: c'est ce qui garantit que la CI
+        # installe la meme version que la machine de dev. Definir les deux fait
+        # echouer l'action des l'installation ("Multiple versions of pnpm
+        # specified"), ce qui bloque toute PR touchant package.json.
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Get pnpm store directory
         shell: bash
