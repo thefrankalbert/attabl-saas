@@ -2,13 +2,23 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
-import { assignmentLimiter, orderSettlementLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  assignmentLimiter,
+  orderSettlementLimiter,
+  kitchenItemLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import {
   orderMutationSchema,
   type OrderMutationInput,
 } from '@/lib/validations/order-mutation.schema';
-import { actionUpdateOrderStatus, actionMarkOrderPaid } from '@/app/actions/orders';
+import {
+  actionUpdateOrderStatus,
+  actionMarkOrderPaid,
+  actionUpdateItemStatus,
+  actionSetCourseHeld,
+} from '@/app/actions/orders';
 import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assignments';
 
 // Single idempotent endpoint for offline-replayable order mutations (status
@@ -45,6 +55,10 @@ async function dispatch(
       return actionReleaseAssignment(tenantId, input.assignmentId);
     case 'pay':
       return actionMarkOrderPaid(tenantId, input.orderId, input.method, input.tipMinor);
+    case 'item_status':
+      return actionUpdateItemStatus(tenantId, input.orderId, input.itemIds, input.status);
+    case 'course_held':
+      return actionSetCourseHeld(tenantId, input.orderId, input.course, input.held);
   }
 }
 
@@ -73,7 +87,15 @@ export async function POST(request: Request) {
     // 30/min des assignations les faisait tomber en 429 en coup de feu, et comme
     // un 429 est classe transitoire, le paiement partait en file avec le message
     // "en attente de reseau" alors que le reseau allait tres bien.
-    const limiter = input.type === 'pay' ? orderSettlementLimiter : assignmentLimiter;
+    // Les gestes article de la cuisine ont eux aussi leur compartiment: le KDS
+    // envoie une requete PAR article, donc leur cadence n'a rien de commun avec
+    // celle des assignations (OFF-12).
+    const limiter =
+      input.type === 'pay'
+        ? orderSettlementLimiter
+        : input.type === 'item_status' || input.type === 'course_held'
+          ? kitchenItemLimiter
+          : assignmentLimiter;
     const ip = getClientIp(request);
     const { success: allowed } = await limiter.check(ip);
     if (!allowed) {

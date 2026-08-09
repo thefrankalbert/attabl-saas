@@ -47,6 +47,14 @@ export interface OutboxStore {
   put(entry: OutboxEntry): Promise<void>;
   getAll(): Promise<OutboxEntry[]>;
   delete(id: string): Promise<void>;
+  /**
+   * Journal des entrees definitivement perdues (OFF-06). Optionnel: un store en
+   * memoire (tests) peut s'en passer, le drain degrade alors vers l'ancien
+   * comportement "en memoire seulement".
+   */
+  putRejected?(entry: OutboxEntry): Promise<void>;
+  listRejected?(): Promise<OutboxEntry[]>;
+  clearRejected?(): Promise<void>;
 }
 
 /** Outcome of replaying one entry against the server. */
@@ -328,8 +336,42 @@ export function createOutbox(store: OutboxStore) {
         }
       }
 
+      // OFF-06: une entree perdue doit SURVIVRE au contexte qui l'a constatee.
+      // Sans ce journal, `permanentlyFailed` n'existait que dans la valeur de
+      // retour: le drain du service worker (Background Sync) la jetait purement
+      // et simplement, et cote page elle ne vivait que dans un state React,
+      // efface au premier rechargement. Une commande ENCAISSEE expiree a
+      // MAX_AGE_MS disparaissait donc sans que personne ne le voie, compteur
+      // revenu a zero - exactement le trou en caisse que ce lot doit rendre
+      // visible. On persiste ici, en un seul endroit, pour que les deux
+      // appelants en beneficient sans avoir a y penser.
+      if (permanentlyFailed.length > 0 && store.putRejected) {
+        for (const entry of permanentlyFailed) {
+          try {
+            await store.putRejected(entry);
+          } catch {
+            // Journal indisponible: on ne perd pas le drain pour autant, la
+            // valeur de retour reste exacte pour l'appelant en cours.
+          }
+        }
+      }
+
       const stillQueued = (await store.getAll()).length;
       return { succeeded, permanentlyFailed, stillQueued, skippedForeign };
+    },
+
+    /**
+     * Entrees perdues consignees par les drains precedents, y compris ceux du
+     * service worker. C'est ce qui permet au bandeau d'alerte de reapparaitre
+     * apres un rechargement de page.
+     */
+    async listRejected(): Promise<OutboxEntry[]> {
+      return (await store.listRejected?.()) ?? [];
+    },
+
+    /** Vide le journal une fois que l'operateur a pris connaissance des pertes. */
+    async clearRejected(): Promise<void> {
+      await store.clearRejected?.();
     },
   };
 }

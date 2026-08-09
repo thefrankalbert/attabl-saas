@@ -15,10 +15,16 @@ const DB_NAME = 'attabl-offline';
 // rejouer AUCUNE entree nominative (elles le sont toutes depuis OFF-07), donc la
 // synchro en arriere-plan deviendrait inerte - et les entrees finiraient par
 // expirer au bout de MAX_AGE_MS, ce qui transformerait une degradation en perte.
-const DB_VERSION = 2;
+// v3: ajout du store `rejected`. Une entree definitivement perdue (expiration a
+// MAX_AGE_MS, rejet serveur, budget de tentatives epuise) doit rester visible
+// APRES le contexte qui l'a constatee: le service worker draine sans React, et
+// un state React disparait au rechargement. Sans ce store, une commande
+// encaissee pouvait disparaitre sans laisser de trace a l'operateur.
+const DB_VERSION = 3;
 const STORE = 'order-outbox';
 const IDENTITY_STORE = 'identity';
 const IDENTITY_KEY = 'current';
+const REJECTED_STORE = 'rejected';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -30,6 +36,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(IDENTITY_STORE)) {
         db.createObjectStore(IDENTITY_STORE);
+      }
+      if (!db.objectStoreNames.contains(REJECTED_STORE)) {
+        db.createObjectStore(REJECTED_STORE, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -71,6 +80,37 @@ export function createIdbOutboxStore(): OutboxStore {
       try {
         const tx = dbi.transaction(STORE, 'readwrite');
         await promisify(tx.objectStore(STORE).delete(id));
+        await txDone(tx);
+      } finally {
+        dbi.close();
+      }
+    },
+    async putRejected(entry: OutboxEntry): Promise<void> {
+      const dbi = await openDb();
+      try {
+        const tx = dbi.transaction(REJECTED_STORE, 'readwrite');
+        await promisify(tx.objectStore(REJECTED_STORE).put(entry));
+        await txDone(tx);
+      } finally {
+        dbi.close();
+      }
+    },
+    async listRejected(): Promise<OutboxEntry[]> {
+      const dbi = await openDb();
+      try {
+        const tx = dbi.transaction(REJECTED_STORE, 'readonly');
+        return await promisify(
+          tx.objectStore(REJECTED_STORE).getAll() as IDBRequest<OutboxEntry[]>,
+        );
+      } finally {
+        dbi.close();
+      }
+    },
+    async clearRejected(): Promise<void> {
+      const dbi = await openDb();
+      try {
+        const tx = dbi.transaction(REJECTED_STORE, 'readwrite');
+        await promisify(tx.objectStore(REJECTED_STORE).clear());
         await txDone(tx);
       } finally {
         dbi.close();

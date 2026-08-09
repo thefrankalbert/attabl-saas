@@ -450,6 +450,13 @@ export function usePOSData(tenantId: string) {
 
   // --- Order creation -------------------------------------
   const submitLockRef = useRef(false);
+  // OFF-11. La cle d'idempotence doit survivre a un ECHEC, pas seulement aux
+  // reessais reseau d'un meme envoi. Frappee a chaque tap, elle laissait le
+  // scenario suivant ouvert: l'envoi echoue, le panier reste plein (onError ne
+  // le vide pas), le caissier retape - et cree une SECONDE commande alors qu'il
+  // croit rejouer la premiere. On garde donc la cle jusqu'au succes, comme
+  // PaymentModal le fait deja pour l'encaissement.
+  const orderRequestIdRef = useRef<string | null>(null);
 
   const handleOrder = (
     status: 'pending' | 'delivered',
@@ -472,8 +479,11 @@ export function usePOSData(tenantId: string) {
     submitLockRef.current = true;
 
     // Mint the idempotency key once per compose. It survives the network retry /
-    // durable outbox replay so an offline-sent order never duplicates.
-    const clientRequestId = crypto.randomUUID();
+    // durable outbox replay so an offline-sent order never duplicates. `??=`:
+    // un retap apres echec REJOUE la meme cle au lieu d'en creer une nouvelle
+    // (OFF-11). Remise a null au succes seulement, quand le panier est vide.
+    orderRequestIdRef.current ??= crypto.randomUUID();
+    const clientRequestId = orderRequestIdRef.current;
 
     createOrder.mutate(
       {
@@ -520,6 +530,9 @@ export function usePOSData(tenantId: string) {
               description: serverNum ? `#${serverNum}` : undefined,
             });
           }
+          // La commande est partie (ou est durablement en file): la prochaine
+          // composition est une commande DIFFERENTE, elle merite sa propre cle.
+          orderRequestIdRef.current = null;
           updateOrderNumber(orderNumber + 1);
           setCart([]);
           setOrderNotes('');

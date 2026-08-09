@@ -208,6 +208,30 @@ export const orderSettlementLimiter = createLimiter(
 );
 
 /**
+ * Gestes AU NIVEAU ARTICLE de l'ecran cuisine: 240 requetes / minute par IP.
+ *
+ * Compartiment SEPARE, et le plus large des trois, pour la meme raison que
+ * `orderSettlementLimiter` mais en pire: le KDS marque UN article a la fois
+ * (toggleItemStatus envoie `[itemId]`). Une commande de 14 articles, c'est 14
+ * requetes, et un restaurant en coup de feu fait tourner plusieurs commandes en
+ * parallele depuis plusieurs tablettes derriere une seule IP. Les 30/min du
+ * compartiment assignation seraient epuises en quelques secondes.
+ *
+ * Ce que couterait un compartiment trop etroit ici est precisement ce que le
+ * LOT 3 corrige: un 429 est classe transitoire, donc le geste partirait dans
+ * l'outbox avec "en attente de reseau" alors que le reseau va bien, et le
+ * cuisinier verrait son ecran figer sans comprendre.
+ *
+ * Fail-open assume (pas de troisieme argument): si Upstash tombe, une cuisine
+ * doit continuer d'avancer. La route est authentifiee et le tenant derive cote
+ * serveur; ce compartiment borne l'usage, il ne porte pas la securite.
+ */
+export const kitchenItemLimiter = createLimiter(
+  'kitchen-item',
+  Ratelimit.slidingWindow(240, '1 m'),
+);
+
+/**
  * Invitation management (authenticated: create / list / cancel / resend).
  * 30 requests / 10 minutes per IP, fail-closed (create/resend send emails).
  * Kept separate from the public accept/validate buckets so a manager's

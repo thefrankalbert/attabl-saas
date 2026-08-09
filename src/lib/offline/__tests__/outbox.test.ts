@@ -25,6 +25,29 @@ function memoryStore(seed: OutboxEntry[] = []): OutboxStore {
   };
 }
 
+/**
+ * Store QUI JOURNALISE, comme l'implementation IndexedDB reelle. Le store
+ * memoire ci-dessus n'implemente pas les methodes optionnelles: il sert de
+ * temoin pour verifier que le drain degrade proprement sans journal.
+ */
+function journalingStore(seed: OutboxEntry[] = []): OutboxStore & { rejected: OutboxEntry[] } {
+  const base = memoryStore(seed);
+  const rejected: OutboxEntry[] = [];
+  return {
+    ...base,
+    rejected,
+    async putRejected(entry) {
+      rejected.push(entry);
+    },
+    async listRejected() {
+      return [...rejected];
+    },
+    async clearRejected() {
+      rejected.length = 0;
+    },
+  };
+}
+
 // Horloge de drain calee sur les entrees de test (createdAt 0 a 3): sans elle,
 // Date.now() rendrait toutes les entrees plus vieilles que MAX_AGE_MS et le drain
 // les expirerait avant meme de les rejouer.
@@ -412,5 +435,73 @@ describe('createOutbox', () => {
     expect(replayed).toEqual(['autre-table']);
     expect(result.skippedForeign).toBe(1);
     expect((await ob.list()).map((e) => e.id).sort()).toEqual(['assign-ibrahim', 'release-fatou']);
+  });
+});
+
+/**
+ * OFF-06. Une perte doit survivre au contexte qui l'a constatee: le drain du
+ * service worker jetait la valeur de retour, et cote page elle ne vivait que
+ * dans un state React efface au rechargement. Une commande ENCAISSEE pouvait
+ * donc disparaitre sans laisser de trace.
+ */
+describe('journal des pertes definitives', () => {
+  it('consigne une entree expiree, pas seulement dans la valeur de retour', async () => {
+    const store = journalingStore([
+      { id: 'vieille', endpoint: '/x', body: {}, createdAt: 0, attempts: 0 },
+    ]);
+    const ob = createOutbox(store);
+
+    const result = await ob.drain(async () => ({ kind: 'success' }) as ReplayOutcome, {
+      now: MAX_AGE_MS + 1,
+    });
+
+    expect(result.permanentlyFailed.map((e) => e.id)).toEqual(['vieille']);
+    // Le point du correctif: relisible APRES coup, par un autre contexte.
+    expect((await ob.listRejected()).map((e) => e.id)).toEqual(['vieille']);
+    expect((await ob.listRejected())[0].lastError).toBe('expired');
+  });
+
+  it('consigne un rejet serveur definitif', async () => {
+    const store = journalingStore([
+      { id: 'refusee', endpoint: '/x', body: {}, createdAt: 0, attempts: 0 },
+    ]);
+    const ob = createOutbox(store);
+
+    await ob.drain(async () => ({ kind: 'permanent', reason: 'articles indisponibles' }), {
+      now: 1,
+    });
+
+    const journal = await ob.listRejected();
+    expect(journal).toHaveLength(1);
+    expect(journal[0].lastError).toBe('articles indisponibles');
+  });
+
+  it('vide le journal quand l operateur a pris connaissance des pertes', async () => {
+    const store = journalingStore([
+      { id: 'refusee', endpoint: '/x', body: {}, createdAt: 0, attempts: 0 },
+    ]);
+    const ob = createOutbox(store);
+    await ob.drain(async () => ({ kind: 'permanent', reason: 'refus' }), { now: 1 });
+    expect(await ob.listRejected()).toHaveLength(1);
+
+    await ob.clearRejected();
+
+    expect(await ob.listRejected()).toEqual([]);
+  });
+
+  it('degrade sans casser quand le store ne journalise pas', async () => {
+    // Temoin: un store sans les methodes optionnelles (SSR, IndexedDB bloque)
+    // doit continuer de drainer, en retombant sur l ancien comportement.
+    const store = memoryStore([
+      { id: 'refusee', endpoint: '/x', body: {}, createdAt: 0, attempts: 0 },
+    ]);
+    const ob = createOutbox(store);
+
+    const result = await ob.drain(async () => ({ kind: 'permanent', reason: 'refus' }), {
+      now: 1,
+    });
+
+    expect(result.permanentlyFailed).toHaveLength(1);
+    expect(await ob.listRejected()).toEqual([]);
   });
 });

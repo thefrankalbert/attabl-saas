@@ -65,8 +65,12 @@ export function useOrderOutbox(): UseOrderOutbox {
       // rouge permanent est un badge qu'on cesse de regarder, donc le vrai signal
       // d'alerte se noie.
       setPendingBoth(Math.max(0, result.stillQueued - result.skippedForeign));
-      if (result.permanentlyFailed.length > 0) {
-        setRejected((prev) => [...prev, ...result.permanentlyFailed]);
+      // Relire le journal persistant plutot que d'empiler la valeur de retour:
+      // il contient AUSSI ce que le service worker a perdu en Background Sync,
+      // que cette page n'a jamais vu passer. La cle `id` dedoublonne pour nous.
+      const journal = await outbox.listRejected();
+      if (journal.length > 0 || result.permanentlyFailed.length > 0) {
+        setRejected(journal);
       }
     } catch (err) {
       logger.error('Order outbox drain failed', { err });
@@ -75,7 +79,18 @@ export function useOrderOutbox(): UseOrderOutbox {
     }
   }, [setPendingBoth]);
 
-  const dismissRejected = useCallback(() => setRejected([]), []);
+  const dismissRejected = useCallback(() => {
+    setRejected([]);
+    // Vider aussi le journal persistant: sinon le bandeau reviendrait au
+    // prochain drain, et un bandeau qu'on ne peut pas faire taire est un
+    // bandeau que l'operateur apprend a ignorer.
+    const outbox = getOrderOutbox();
+    if (outbox) {
+      void outbox.clearRejected().catch((err) => {
+        logger.error('Order outbox clearRejected failed', { err });
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const outbox = getOrderOutbox();
@@ -84,6 +99,12 @@ export function useOrderOutbox(): UseOrderOutbox {
     let cancelled = false;
     void outbox.countDrainable(getOutboxIdentity() ?? undefined).then((n) => {
       if (!cancelled) setPendingBoth(n);
+    });
+    // Au montage, relire les pertes deja consignees AVANT tout drain: c'est le
+    // cas "le caissier recharge la page apres une coupure" - sans cette lecture
+    // il ne saurait jamais qu'il a perdu des tickets.
+    void outbox.listRejected().then((entries) => {
+      if (!cancelled && entries.length > 0) setRejected(entries);
     });
     void flush();
 

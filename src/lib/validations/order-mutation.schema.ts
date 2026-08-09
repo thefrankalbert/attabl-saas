@@ -43,6 +43,27 @@ export const orderMutationSchema = z.discriminatedUnion('type', [
     // Unites MINEURES entieres (le pourboire est stocke en minor dans orders).
     tipMinor: z.number().int().nonnegative().optional(),
   }),
+  // OFF-12. Les actions AU NIVEAU ARTICLE de l'ecran cuisine passaient en direct,
+  // hors outbox. Un cuisinier qui marque 14 articles "prets" pendant une coupure
+  // recoltait 14 erreurs rouges et perdait tout son travail, alors que le meme
+  // geste au niveau COMMANDE etait deja durable. Meme dispositif, meme
+  // idempotence: le rejeu porte la meme cle et le serveur deduplique.
+  z.object({
+    type: z.literal('item_status'),
+    client_request_id: clientRequestId,
+    orderId: z.string().uuid(),
+    // Borne haute alignee sur une commande realiste; la validation fine est
+    // faite par updateItemStatusSchema cote action.
+    itemIds: z.array(z.string().uuid()).min(1).max(200),
+    status: z.string().min(1).max(50),
+  }),
+  z.object({
+    type: z.literal('course_held'),
+    client_request_id: clientRequestId,
+    orderId: z.string().uuid(),
+    course: z.string().min(1).max(50),
+    held: z.boolean(),
+  }),
 ]);
 
 export type OrderMutationInput = z.infer<typeof orderMutationSchema>;
