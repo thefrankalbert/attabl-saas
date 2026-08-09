@@ -127,6 +127,9 @@ export async function getAuthenticatedUserWithTenant(
         .eq('user_id', user.id)
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
+        // SESSION-FALLBACK: `deleted_at` etait filtre par le repli plus bas mais
+        // PAS ici. Une appartenance soft-deleted scopait donc encore.
+        .is('deleted_at', null)
         .maybeSingle();
 
       if (scoped) {
@@ -147,8 +150,57 @@ export async function getAuthenticatedUserWithTenant(
           supabase,
         };
       }
-      // Header present but the user is not a member of that tenant: fall through
-      // to the oldest-membership lookup below (never elevate cross-tenant).
+
+      // SESSION-FALLBACK, cas super_admin. Un operateur plateforme n'a en general
+      // AUCUNE ligne admin_users sur les tenants clients: le layout admin lui
+      // fabrique un owner virtuel sans creer de ligne. Sans cette resolution, il
+      // tomberait dans le refus ci-dessous et la console plateforme casserait.
+      // Une seule requete: elle etablit le statut ET fournit la ligne dont on a
+      // besoin pour `adminUserId`. Seules les appartenances VIVANTES conferent
+      // le god mode, un operateur revoque doit le perdre.
+      const { data: superRow } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .is('deleted_at', null)
+        .or('is_super_admin.eq.true,role.eq.super_admin')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (superRow) {
+        if (requiredPermission) {
+          await enforceTenantPermission(supabase, tenant.id, 'owner', null, requiredPermission);
+        }
+        // Owner virtuel SUR LE TENANT DU HEADER, comme le layout: l'operateur
+        // opere bien sur l'etablissement qu'il regarde.
+        return {
+          user,
+          tenantId: tenant.id,
+          role: 'owner',
+          adminUserId: superRow.id,
+          supabase,
+        };
+      }
+
+      // SESSION-FALLBACK. Avant, on retombait ici sur l'appartenance la plus
+      // ANCIENNE de l'utilisateur. Il n'y avait pas d'elevation cross-tenant,
+      // mais un deputy confus: l'action partait en silence sur le mauvais
+      // etablissement. Le scenario mesure dans l'audit: un super_admin ouvre
+      // /sites/client-b/admin/settings, modifie le nom, le domaine custom ou les
+      // taux de TVA, et la modification atterrit sur SON tenant a lui, sans
+      // erreur ni alerte. Meme mecanique pour les moyens de paiement, les
+      // designs QR, la creation d'etablissement et /api/admin/reset (destructif).
+      //
+      // Le slug designe un tenant qui existe et dont l'utilisateur n'est pas
+      // membre actif: on refuse. Le repli reste reserve au cas ou aucun slug
+      // n'accompagne la requete.
+      logger.warn('Tenant scope refuse: utilisateur non membre du tenant demande', {
+        userId: user.id,
+        tenantSlug,
+      });
+      throw new AuthError('Acces non autorise pour ce tenant', 403);
     }
   }
 
