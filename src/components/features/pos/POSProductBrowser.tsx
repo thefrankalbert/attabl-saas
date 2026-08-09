@@ -281,6 +281,7 @@ export default function POSProductBrowser({
                   {catItems.map((item) => (
                     <Button
                       key={item.id}
+                      data-testid="pos-menu-item"
                       variant="outline"
                       onClick={() => handleItemClick(item)}
                       className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal overflow-visible"
