@@ -62,7 +62,10 @@ if [ -f supabase/config.toml ]; then
 fi
 
 log "supabase start (stack local vierge)"
-supabase start >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
+# -x edge-runtime: le projet n'a aucune Edge Function, ce conteneur ne sert donc a
+# aucun parcours. Il est en revanche une cause frequente d'echec de `supabase start`
+# sur un poste de dev. L'exclure raccourcit le demarrage et supprime cette panne.
+supabase start -x edge-runtime >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
 
 log "charge le schema prod (snapshot) dans le local"
 psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$SCHEMA_FIXTURE" >/dev/null || { echo "load schema echoue"; exit 1; }
@@ -119,6 +122,15 @@ NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
   UPSTASH_REDIS_REST_URL="" UPSTASH_REDIS_REST_TOKEN="" \
   STRIPE_SECRET_KEY="${JOURNEY_STRIPE_SECRET_KEY:-}" \
   STRIPE_WEBHOOK_SECRET="$WEBHOOK_SECRET" \
+  NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY="${NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL="${NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY="${NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY="${NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL="${NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY="${NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY="${NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL="${NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL:-}" \
+  NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY="${NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY:-}" \
   ALLOW_DEV_AUTH_BYPASS=true PORT="$DEV_PORT" pnpm dev >/tmp/journeys-dev.log 2>&1 &
 DEV_PID=$!
 

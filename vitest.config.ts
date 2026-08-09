@@ -12,16 +12,23 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/services/**', 'src/lib/validations/**', 'src/lib/**'],
-      // Ratchet floors: set to the current measured coverage (2026-06-18) so coverage
-      // can only go UP, never regress. Previous 70/65 values were aspirational and never
-      // enforced in CI (the gate ran `pnpm test`, not `pnpm test:coverage`), so they were
-      // decorative. Now that CI runs `test:coverage`, these floors actually gate PRs.
-      // Raise them toward the 70/65 target as tests are added.
+      // Ratchet floors: set to the current measured coverage so elle ne peut que
+      // MONTER, jamais regresser.
+      //
+      // Remontes le 2026-08-05 (LOT 7.1 #6). Les valeurs precedentes
+      // (38/44/30/38, mesure du 2026-06-18) etaient devenues tres en dessous du
+      // reel: un plancher trop bas laisse passer une perte de couverture sans
+      // rien signaler, donc il ne protege plus de rien.
+      //
+      // Mesure du 2026-08-05: statements 50,63 / branches 43,98 /
+      // functions 54,06 / lines 51,32. Les planchers sont poses JUSTE en dessous,
+      // assez pres pour attraper une regression, assez loin pour ne pas casser la
+      // CI sur une variation d'un dixieme.
       thresholds: {
-        lines: 38,
-        functions: 44,
-        branches: 30,
-        statements: 38,
+        lines: 49,
+        functions: 52,
+        branches: 42,
+        statements: 48,
       },
     },
   },
