@@ -38,11 +38,14 @@ export default defineConfig({
       //
       // Passe 2 (2026-08-10) : garde de permission des pages admin. Mesure du
       // jour : statements 55,98 / branches 47,49 / functions 57,52 / lines 56,97.
+      //
+      // Passe 3 (2026-08-10) : finalisation d'onboarding. Mesure du jour :
+      // statements 57,41 / branches 49,11 / functions 58,56 / lines 58,41.
       thresholds: {
-        lines: 56,
-        functions: 57,
-        branches: 47,
-        statements: 55,
+        lines: 58,
+        functions: 58,
+        branches: 49,
+        statements: 57,
       },
     },
   },
