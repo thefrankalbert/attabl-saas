@@ -34,6 +34,13 @@ export interface OutboxEntry {
   ownerUserId?: string;
   ownerTenantId?: string;
   /**
+   * Epoch ms de reservation pour rejeu (OFF-09). Pose atomiquement par
+   * `store.claim` au demarrage d'un rejeu, efface quand le rejeu rend la main.
+   * Une reservation plus vieille que CLAIM_TTL_MS est consideree abandonnee: le
+   * contexte qui la detenait a disparu (onglet ferme, worker tue).
+   */
+  claimedAt?: number;
+  /**
    * Ressource visee, pour garantir l'ordre de rejeu PAR ressource (OFF-08).
    * Ex: `table:<id>`. Sans elle, `drain` continue apres un echec, si bien qu'une
    * entree repoussee s'applique APRES une entree plus recente de la meme
@@ -55,6 +62,27 @@ export interface OutboxStore {
   putRejected?(entry: OutboxEntry): Promise<void>;
   listRejected?(): Promise<OutboxEntry[]>;
   clearRejected?(): Promise<void>;
+  /**
+   * OFF-09. Reserve une entree pour rejeu, en UNE transaction.
+   *
+   * Le verrou de `useOrderOutbox` est une ref locale a la page: il ne voit pas
+   * le service worker, qui draine dans un contexte distinct. Deux drains
+   * pouvaient donc rejouer la meme entree, et surtout le second pouvait la
+   * REECRIRE apres que le premier l'ait supprimee - une commande deja partie
+   * ressuscitait, et le compteur de commandes en attente affichait un chiffre
+   * faux a l'operateur.
+   *
+   * Renvoie false si l'entree a disparu (deja traitee ailleurs) ou si une
+   * reservation non expiree la detient. Optionnel: un store en memoire (tests)
+   * peut s'en passer, le drain degrade alors vers l'ancien comportement.
+   */
+  claim?(id: string, now: number, ttlMs: number): Promise<boolean>;
+  /**
+   * OFF-09. Ecrit une entree SEULEMENT si elle est encore en file, en UNE
+   * transaction. C'est ce qui empeche la resurrection: un `put` inconditionnel
+   * recree l'entree supprimee entre-temps par l'autre contexte.
+   */
+  putIfPresent?(entry: OutboxEntry): Promise<boolean>;
 }
 
 /** Outcome of replaying one entry against the server. */
@@ -91,6 +119,16 @@ export const MAX_ATTEMPTS = 12;
  * "commandes non synchronisees"), qui decide de la ressaisir ou non.
  */
 export const MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Duree de vie d'une reservation de rejeu (OFF-09).
+ *
+ * 60 secondes: largement au-dessus d'un aller-retour reseau, meme sur un lien
+ * degrade, et assez court pour qu'une entree reservee par un contexte disparu
+ * (onglet ferme, service worker tue en plein rejeu) reparte au drain suivant
+ * plutot que de rester bloquee jusqu'a MAX_AGE_MS.
+ */
+export const CLAIM_TTL_MS = 60 * 1000;
 
 /**
  * Plafond de taille de la file (OFF-06).
@@ -136,6 +174,26 @@ export function canReplayEntry(
   if (entry.ownerUserId && entry.ownerUserId !== currentUserId) return false;
   if (entry.ownerTenantId && entry.ownerTenantId !== currentTenantId) return false;
   return true;
+}
+
+/**
+ * Reecrit une entree qui reste en file apres un rejeu infructueux (OFF-09).
+ *
+ * Deux choses en une: la reservation est rendue (`claimedAt` efface, l'entree
+ * repart au drain suivant sans attendre CLAIM_TTL_MS), et l'ecriture ne recree
+ * pas une entree supprimee entre-temps par l'autre contexte de drain.
+ *
+ * `putIfPresent` est optionnel: un store qui ne l'implemente pas retombe sur
+ * l'ancien comportement, ce qui reste correct quand il n'y a qu'un seul drain.
+ */
+async function writeBack(store: OutboxStore, entry: OutboxEntry): Promise<void> {
+  const released: OutboxEntry = { ...entry };
+  delete released.claimedAt;
+  if (store.putIfPresent) {
+    await store.putIfPresent(released);
+    return;
+  }
+  await store.put(released);
 }
 
 export function createOutbox(store: OutboxStore) {
@@ -284,6 +342,21 @@ export function createOutbox(store: OutboxStore) {
           continue;
         }
 
+        // OFF-09. Reservation atomique AVANT le reseau. Sans elle, le drain de
+        // la page et celui du service worker rejouent la meme entree, et le
+        // perdant reecrit une entree que le gagnant vient de supprimer: la
+        // commande ressuscite et le compteur ment a l'operateur.
+        if (store.claim) {
+          const reserved = await store.claim(entry.id, now, CLAIM_TTL_MS);
+          if (!reserved) {
+            // Un autre contexte s'en occupe (ou l'a deja traitee). Sa ressource
+            // reste bloquee: laisser passer la suivante casserait l'ordre par
+            // ressource que scopeKey garantit.
+            if (entry.scopeKey) blockedScopes.add(entry.scopeKey);
+            continue;
+          }
+        }
+
         let outcome: ReplayOutcome;
         try {
           outcome = await replay(entry);
@@ -315,7 +388,7 @@ export function createOutbox(store: OutboxStore) {
           // actually answered (countsAsAttempt !== false). Pure network failures
           // keep the entry indefinitely without dropping it.
           if (outcome.countsAsAttempt === false) {
-            await store.put({ ...entry, lastError: outcome.reason });
+            await writeBack(store, { ...entry, lastError: outcome.reason });
             if (entry.scopeKey) blockedScopes.add(entry.scopeKey);
             continue;
           }
@@ -325,7 +398,7 @@ export function createOutbox(store: OutboxStore) {
             permanentlyFailed.push({ ...entry, attempts, lastError: outcome.reason });
             continue;
           }
-          await store.put({ ...entry, attempts, lastError: outcome.reason });
+          await writeBack(store, { ...entry, attempts, lastError: outcome.reason });
           // L'entree reste en file: tout ce qui vise la meme ressource attend son
           // tour, sinon le rejeu d'un `release` s'appliquerait apres un `assign`
           // plus recent et la table se retrouverait sans serveur.

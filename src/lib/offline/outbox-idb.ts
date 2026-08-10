@@ -85,6 +85,44 @@ export function createIdbOutboxStore(): OutboxStore {
         dbi.close();
       }
     },
+    async claim(id: string, now: number, ttlMs: number): Promise<boolean> {
+      const dbi = await openDb();
+      try {
+        // Lecture ET ecriture dans la MEME transaction readwrite: c'est ce qui
+        // rend la reservation atomique vis-a-vis du service worker (OFF-09).
+        // Un get suivi d'un put dans deux transactions laisserait la fenetre
+        // exacte que ce correctif ferme.
+        const tx = dbi.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        const current = await promisify<OutboxEntry | undefined>(store.get(id));
+        if (!current) {
+          // Deja traitee et supprimee par l'autre contexte: ne rien recreer.
+          return false;
+        }
+        if (current.claimedAt !== undefined && now - current.claimedAt < ttlMs) {
+          return false;
+        }
+        await promisify(store.put({ ...current, claimedAt: now }));
+        await txDone(tx);
+        return true;
+      } finally {
+        dbi.close();
+      }
+    },
+    async putIfPresent(entry: OutboxEntry): Promise<boolean> {
+      const dbi = await openDb();
+      try {
+        const tx = dbi.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        const current = await promisify<OutboxEntry | undefined>(store.get(entry.id));
+        if (!current) return false;
+        await promisify(store.put(entry));
+        await txDone(tx);
+        return true;
+      } finally {
+        dbi.close();
+      }
+    },
     async putRejected(entry: OutboxEntry): Promise<void> {
       const dbi = await openDb();
       try {
