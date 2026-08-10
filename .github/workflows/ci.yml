@@ -186,3 +186,77 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}
+
+  # LOT 7.3 [TEST-03]. Les parcours critiques tournent contre une base Supabase
+  # LOCALE et EPHEMERE, creee par `supabase start` a chaque run. C'est ce qui
+  # debloque ce que le job E2E ci-dessus ne peut pas faire (voir son commentaire):
+  # plus besoin d'une base partagee versionnee, la stack est jetable.
+  #
+  # AUCUN secret. Les cles `service_role` sont generees par la stack locale, et
+  # le seed comme le teardown ne touchent qu'elle. C'est la condition pour que ce
+  # job tourne sur les PR de forks sans exposer quoi que ce soit.
+  #
+  # Les jobs Stripe (parcours 01 et 06) restent NOCTURNES, jamais sur PR: le
+  # compte Stripe a une limite de Test Clocks actives, et deux PR concurrentes
+  # se casseraient mutuellement.
+  journeys:
+    name: Journeys (BOLA + commande + permissions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        # Pas de `version:` ici, meme raison que le job e2e: la version vient de
+        # `packageManager` dans package.json. En definir une seconde fait echouer
+        # l'action ("Multiple versions of pnpm specified").
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Supabase CLI
+        # `run-journeys-local.sh` appelle `supabase` en global, pas via pnpm.
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Parcours critiques (Supabase local ephemere)
+        # UN SEUL argument, pas trois invocations. Playwright traite l'argument
+        # positionnel comme une regex sur les chemins: les trois parcours
+        # tournent donc sur UN seul bootstrap. Trois invocations redemarreraient
+        # la stack Supabase trois fois, soit 6 a 10 minutes perdues pour rien.
+        run: bash scripts/run-journeys-local.sh "08-bola|04-service|03-staff"
+
+      - name: Rapport Playwright (en cas d echec)
+        # Sans cet artefact, un echec de parcours n'est qu'une ligne rouge: le
+        # rapport HTML porte la trace, la capture et le DOM du moment exact.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journeys-report
+          path: playwright-report-journeys/
+          retention-days: 7
