@@ -101,6 +101,15 @@ if [[ "$QUIET" == false ]]; then
   for d in .worktrees/*/; do
     [[ -d "$d" ]] || continue
     nom="${d%/}"
+    # PIEGE: `git -C <dossier-fantome>` REMONTE au depot principal et rapporte
+    # SON etat. Sans ce garde-fou, un residu de build etait inventorie comme un
+    # worktree portant la branche `main`: bonne reponse par accident, et
+    # trompeuse des que main est sale ou sur une branche non fusionnee.
+    # Les fantomes sont deja traites en section 2, on ne les inventorie pas ici.
+    if [[ "$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)" != "$ROOT/$nom" ]]; then
+      printf '  %-28s %-22s %s\n' "$(basename "$nom")" "-" "dossier fantome (voir plus haut)"
+      continue
+    fi
     branche="$(git -C "$d" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
     sale="$(git -C "$d" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
     # ATTENTION au squash. Ce depot merge en squash: la branche n'est alors
