@@ -359,7 +359,12 @@ export async function seedOrderRow(
       order_number: opts.orderNumber ?? `JT-${tenantId.slice(0, 8)}-001`,
       status: 'pending',
       subtotal: total,
-      tax: 0,
+      // `orders.tax` (numeric) a ete SUPPRIMEE par la migration
+      // 20260630040000, lors du passage des montants en entiers: le champ vivant
+      // est `tax_amount` (bigint, unites mineures). Ce seed ecrivait encore
+      // l'ancienne colonne et echouait sur toute base reconstruite depuis les
+      // migrations - invisible tant que rien ne lancait les parcours en CI.
+      tax_amount: 0,
       total,
       preparation_zone: 'kitchen',
     })
