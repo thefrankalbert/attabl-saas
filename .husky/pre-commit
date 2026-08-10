@@ -34,6 +34,19 @@ else
   echo "WARNING: gitleaks not installed, secret scan skipped. Run: brew install gitleaks"
 fi
 
+# Gate 0c: Worktrees — le magasin pnpm doit rester ancre au projet courant.
+# Le node_modules du depot principal s'etait retrouve pointe vers
+# .worktrees/lot3-offline : supprimer ce worktree merge aurait casse les
+# dependances du depot, sans que rien ne relie la cause a l'effet.
+# Muet quand tout va bien. Ne bloque QUE sur un magasin hors projet, jamais sur
+# des artefacts de build (un garde-fou trop bavard finit desactive).
+bash scripts/verifier-worktrees.sh --quiet || {
+  echo ""
+  echo "COMMIT BLOQUE: le magasin pnpm d'un checkout sort de son projet."
+  echo "Inventaire complet : bash scripts/verifier-worktrees.sh"
+  exit 1
+}
+
 # Gate 1: TypeScript — catch broken imports/types before commit
 pnpm typecheck || exit 1
 
