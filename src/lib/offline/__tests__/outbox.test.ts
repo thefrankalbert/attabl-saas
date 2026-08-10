@@ -3,6 +3,7 @@ import {
   createOutbox,
   MAX_ATTEMPTS,
   MAX_AGE_MS,
+  CLAIM_TTL_MS,
   MAX_ENTRIES,
   type OutboxEntry,
   type OutboxStore,
@@ -503,5 +504,133 @@ describe('journal des pertes definitives', () => {
 
     expect(result.permanentlyFailed).toHaveLength(1);
     expect(await ob.listRejected()).toEqual([]);
+  });
+});
+
+/**
+ * Store qui implemente la reservation atomique, comme l'IndexedDB reelle.
+ * `claim` et `putIfPresent` operent sur la meme Map en une seule etape
+ * synchrone: c'est l'equivalent en memoire d'une transaction readwrite.
+ */
+type ClaimingStore = OutboxStore & {
+  map: Map<string, OutboxEntry>;
+  // Rendues obligatoires ici: ce store EXISTE pour tester la reservation, et
+  // l'optionalite de l'interface rendrait chaque appel de test non typable.
+  claim: NonNullable<OutboxStore['claim']>;
+  putIfPresent: NonNullable<OutboxStore['putIfPresent']>;
+};
+
+function claimingStore(seed: OutboxEntry[] = []): ClaimingStore {
+  const map = new Map<string, OutboxEntry>(seed.map((e) => [e.id, e]));
+  return {
+    map,
+    async put(entry) {
+      map.set(entry.id, entry);
+    },
+    async getAll() {
+      return [...map.values()];
+    },
+    async delete(id) {
+      map.delete(id);
+    },
+    async claim(id, now, ttlMs) {
+      const current = map.get(id);
+      if (!current) return false;
+      if (current.claimedAt !== undefined && now - current.claimedAt < ttlMs) return false;
+      map.set(id, { ...current, claimedAt: now });
+      return true;
+    },
+    async putIfPresent(entry) {
+      if (!map.has(entry.id)) return false;
+      map.set(entry.id, entry);
+      return true;
+    },
+  };
+}
+
+// --- OFF-09: course entre le drain de la page et celui du service worker -----
+describe('OFF-09 reservation de rejeu', () => {
+  it('refuse un second rejeu tant que la reservation tient', async () => {
+    // Le scenario reel: la page draine, le service worker draine en Background
+    // Sync au meme instant. Sans reservation, les DEUX rejouent la commande.
+    const store = claimingStore([entry('a')]);
+    const ob = createOutbox(store);
+
+    const premier = await store.claim('a', CLOCK.now, CLAIM_TTL_MS);
+    expect(premier).toBe(true);
+
+    let rejeux = 0;
+    const result = await ob.drain(async () => {
+      rejeux += 1;
+      return { kind: 'success' } as ReplayOutcome;
+    }, CLOCK);
+
+    expect(rejeux).toBe(0);
+    expect(result.succeeded).toBe(0);
+    // L'entree reste en file: elle appartient au contexte qui l'a reservee.
+    expect(await ob.count()).toBe(1);
+  });
+
+  it('reprend une reservation abandonnee passe le delai', async () => {
+    // Onglet ferme ou worker tue en plein rejeu: sans expiration, la commande
+    // resterait bloquee jusqu'a MAX_AGE_MS, soit six heures, puis serait perdue.
+    const store = claimingStore([entry('a')]);
+    const ob = createOutbox(store);
+
+    await store.claim('a', 0, CLAIM_TTL_MS);
+
+    const result = await ob.drain(async () => ({ kind: 'success' }) as ReplayOutcome, {
+      now: CLAIM_TTL_MS + 1,
+    });
+
+    expect(result.succeeded).toBe(1);
+    expect(await ob.count()).toBe(0);
+  });
+
+  it('ne ressuscite pas une entree supprimee pendant le rejeu', async () => {
+    // Le coeur du constat: le perdant de la course reecrivait l'entree que le
+    // gagnant venait de supprimer. La commande revenait en file alors qu'elle
+    // etait deja partie, et le compteur affichait un chiffre faux a l'operateur.
+    const store = claimingStore([entry('a')]);
+    const ob = createOutbox(store);
+
+    const result = await ob.drain(async () => {
+      // L'autre contexte termine et supprime pendant notre appel reseau.
+      store.map.delete('a');
+      return { kind: 'retry', reason: 'hors ligne', countsAsAttempt: false } as ReplayOutcome;
+    }, CLOCK);
+
+    expect(await ob.count()).toBe(0);
+    expect(result.stillQueued).toBe(0);
+  });
+
+  it('rend la reservation quand l entree reste en file', async () => {
+    // Une entree gardee apres un echec doit repartir au drain SUIVANT, sans
+    // attendre l'expiration: sinon une tablette hors ligne n'enverrait qu'une
+    // commande par minute au retour du reseau.
+    const store = claimingStore([entry('a')]);
+    const ob = createOutbox(store);
+
+    await ob.drain(
+      async () =>
+        ({ kind: 'retry', reason: 'hors ligne', countsAsAttempt: false }) as ReplayOutcome,
+      CLOCK,
+    );
+
+    expect(store.map.get('a')?.claimedAt).toBeUndefined();
+
+    const result = await ob.drain(async () => ({ kind: 'success' }) as ReplayOutcome, CLOCK);
+    expect(result.succeeded).toBe(1);
+  });
+
+  it('draine normalement avec un store sans reservation', async () => {
+    // Degradation: les tablettes deja en service portent l'ancien store.
+    const store = memoryStore([entry('a')]);
+    const ob = createOutbox(store);
+
+    const result = await ob.drain(async () => ({ kind: 'success' }) as ReplayOutcome, CLOCK);
+
+    expect(result.succeeded).toBe(1);
+    expect(await ob.count()).toBe(0);
   });
 });
