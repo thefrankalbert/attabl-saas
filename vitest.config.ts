@@ -35,11 +35,14 @@ export default defineConfig({
       // que les seuils d'origine (70/70/65/70) avaient fini par etre effondres a
       // 38/44/30/38 plutot que tenus. La cible reste 70; on y va par passes, en
       // commencant par ce qui protege l'argent et les acces.
+      //
+      // Passe 2 (2026-08-10) : garde de permission des pages admin. Mesure du
+      // jour : statements 55,98 / branches 47,49 / functions 57,52 / lines 56,97.
       thresholds: {
-        lines: 55,
-        functions: 56,
-        branches: 46,
-        statements: 54,
+        lines: 56,
+        functions: 57,
+        branches: 47,
+        statements: 55,
       },
     },
   },
