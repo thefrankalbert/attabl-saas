@@ -41,11 +41,16 @@ export default defineConfig({
       //
       // Passe 3 (2026-08-10) : finalisation d'onboarding. Mesure du jour :
       // statements 57,41 / branches 49,11 / functions 58,56 / lines 58,41.
+      //
+      // Passe 4 (2026-08-11) : tarification Stripe et garde super-admin. Mesure
+      // du jour : statements 58,37 / branches 49,81 / functions 59,83 /
+      // lines 59,36. Cette passe a trouve un vrai defaut au passage (recherche
+      // inverse prix -> plan qui rendait toujours null), corrige dans la meme PR.
       thresholds: {
-        lines: 58,
-        functions: 58,
+        lines: 59,
+        functions: 59,
         branches: 49,
-        statements: 57,
+        statements: 58,
       },
     },
   },

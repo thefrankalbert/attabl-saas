@@ -79,10 +79,17 @@ export function getStripePriceId(
 }
 
 // Reverse-lookup: find plan name from a Stripe price ID
+//
+// Itere sur getStripePricesInstance() et NON sur le proxy STRIPE_PRICES: un
+// proxy dont la cible est `{}` n'expose aucune cle a l'enumeration (le piege
+// `get` n'est jamais consulte par Object.entries, qui passe par `ownKeys` sur
+// la cible vide). La boucle tournait donc a vide et les deux recherches
+// inverses rendaient TOUJOURS null - le webhook ne detectait aucun changement
+// de formule, et un client qui montait de plan gardait l'ancien.
 export function getPlanFromPriceId(
   priceId: string,
 ): Exclude<SubscriptionPlan, 'enterprise'> | null {
-  for (const [plan, intervals] of Object.entries(STRIPE_PRICES)) {
+  for (const [plan, intervals] of Object.entries(getStripePricesInstance())) {
     for (const [, id] of Object.entries(intervals)) {
       if (id === priceId) return plan as Exclude<SubscriptionPlan, 'enterprise'>;
     }
@@ -91,8 +98,9 @@ export function getPlanFromPriceId(
 }
 
 // Reverse-lookup: find billing interval from a Stripe price ID
+// Meme raison que ci-dessus: enumerer l'instance, pas le proxy.
 export function getIntervalFromPriceId(priceId: string): BillingInterval | null {
-  for (const [, intervals] of Object.entries(STRIPE_PRICES)) {
+  for (const [, intervals] of Object.entries(getStripePricesInstance())) {
     for (const [interval, id] of Object.entries(intervals)) {
       if (id === priceId) return interval as BillingInterval;
     }
