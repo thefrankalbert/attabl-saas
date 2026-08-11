@@ -46,11 +46,16 @@ export default defineConfig({
       // du jour : statements 58,37 / branches 49,81 / functions 59,83 /
       // lines 59,36. Cette passe a trouve un vrai defaut au passage (recherche
       // inverse prix -> plan qui rendait toujours null), corrige dans la meme PR.
+      //
+      // Passe 5 (2026-08-11) : acceptation d'invitation et listing des
+      // invitations en attente (42,68 -> 95,12 % sur invitation.service.ts).
+      // Mesure du jour : statements 59,26 / branches 50,94 / functions 60,06 /
+      // lines 60,33.
       thresholds: {
-        lines: 59,
-        functions: 59,
-        branches: 49,
-        statements: 58,
+        lines: 60,
+        functions: 60,
+        branches: 50,
+        statements: 59,
       },
     },
   },
