@@ -51,11 +51,17 @@ export default defineConfig({
       // invitations en attente (42,68 -> 95,12 % sur invitation.service.ts).
       // Mesure du jour : statements 59,26 / branches 50,94 / functions 60,06 /
       // lines 60,33.
+      //
+      // Passe 6 (2026-08-14) : import Excel de carte (colonnes, cellules,
+      // analyse ligne a ligne). Mesure du jour : statements 60,77 /
+      // branches 52,58 / functions 60,90 / lines 61,86. Cette passe a trouve un
+      // defaut d'argent au passage (separateur de milliers : "1,500" lu 1.5,
+      // donc des prix divises par mille), corrige dans la meme PR.
       thresholds: {
-        lines: 60,
+        lines: 61,
         functions: 60,
-        branches: 50,
-        statements: 59,
+        branches: 52,
+        statements: 60,
       },
     },
   },

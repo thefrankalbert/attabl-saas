@@ -63,8 +63,25 @@ export function mapHeaders(
 }
 
 /**
- * Parses a cell value into a number or null.
- * Handles string prices like "12,50", "12.50" or "$12.50".
+ * Lit une cellule numerique (prix, quantite) venue d'un fichier uploade.
+ *
+ * Le separateur de milliers est le piege central, et il coutait de l'argent.
+ * L'ancienne version remplacait la PREMIERE virgule par un point puis lisait le
+ * resultat: `"1,500"` - ce qu'ecrit Excel en locale anglaise pour 1500 - donnait
+ * `1.5`. Un restaurateur important sa carte voyait ses prix divises par mille,
+ * en silence: 1,5 reste un nombre positif, donc la validation le laissait
+ * passer. Sur un marche ou les prix sont a 4-6 chiffres (1 500, 25 000 FCFA),
+ * c'etait systematique. Meme effet en format europeen: `"1.500,75"` -> `1.5`.
+ *
+ * Regles appliquees:
+ * - Les deux separateurs presents : le DERNIER est le separateur decimal,
+ *   l'autre marque les milliers. Couvre `1,234.56` et `1.234,56`.
+ * - Un seul separateur suivi d'exactement 3 chiffres, ou repete : separateur de
+ *   milliers (`1,500` -> 1500). Sinon : separateur decimal (`12,50` -> 12.5).
+ *   L'ambiguite est levee dans le sens du marche d'ATTABL, ou le franc CFA n'a
+ *   pas de sous-unite et ou personne n'ecrit trois decimales pour un prix.
+ * - Le signe negatif est CONSERVE. Le faire disparaitre transformerait une
+ *   saisie fautive en prix valide; le garder laisse la validation la refuser.
  */
 export function parseNumericCell(value: unknown): number | null {
   if (value === null || value === undefined || value === '') {
@@ -75,12 +92,34 @@ export function parseNumericCell(value: unknown): number | null {
     return Number.isFinite(value) ? value : null;
   }
 
-  const cleaned = String(value)
-    .replace(/[^0-9.,-]/g, '')
-    .replace(',', '.');
-  const parsed = parseFloat(cleaned);
+  const brut = String(value).trim();
+  const negatif = brut.startsWith('-');
+  const chiffres = brut.replace(/[^0-9.,]/g, '');
+  if (chiffres === '') return null;
 
-  return Number.isNaN(parsed) ? null : parsed;
+  const dernierPoint = chiffres.lastIndexOf('.');
+  const derniereVirgule = chiffres.lastIndexOf(',');
+  let normalise: string;
+
+  if (dernierPoint >= 0 && derniereVirgule >= 0) {
+    const sepDecimal = dernierPoint > derniereVirgule ? '.' : ',';
+    const sepMilliers = sepDecimal === '.' ? ',' : '.';
+    normalise = chiffres.split(sepMilliers).join('').replace(sepDecimal, '.');
+  } else if (dernierPoint >= 0 || derniereVirgule >= 0) {
+    const sep = dernierPoint >= 0 ? '.' : ',';
+    const parties = chiffres.split(sep);
+    const derniere = parties[parties.length - 1];
+    normalise =
+      parties.length > 2 || derniere.length === 3
+        ? parties.join('')
+        : `${parties.slice(0, -1).join('')}.${derniere}`;
+  } else {
+    normalise = chiffres;
+  }
+
+  const parsed = parseFloat(normalise);
+  if (Number.isNaN(parsed)) return null;
+  return negatif ? -parsed : parsed;
 }
 
 /**
