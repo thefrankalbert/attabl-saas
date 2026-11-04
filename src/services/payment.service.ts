@@ -64,8 +64,15 @@ export function createPaymentService(supabase: SupabaseClient) {
       // egal au total et acceptait un encaissement plein. Le registre aurait
       // enregistre de l'argent sur une addition offerte, et le rapport des
       // gratuites (get_daily_comps) aurait cesse de correspondre a la caisse.
+      // Le message dit ce que le code fait vraiment: il n'existe aucun chemin
+      // d'annulation de l'offert dans l'application, donc envoyer l'utilisateur
+      // "annuler l'offert avant d'encaisser" le ferait chercher un bouton qui
+      // n'existe pas. Une commande offerte est definitive.
       if (order.payment_status === 'comp') {
-        throw new ServiceError('Impossible d encaisser une commande offerte', 'CONFLICT');
+        throw new ServiceError(
+          'Impossible d encaisser une commande offerte: une commande offerte est definitive.',
+          'CONFLICT',
+        );
       }
 
       // F5: plafonner au solde restant du. Le seul garde-fou etait cote interface

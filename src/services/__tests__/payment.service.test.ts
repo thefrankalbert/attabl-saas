@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createPaymentService } from '../payment.service';
+import { recompute } from '../payment.queries';
 import { ServiceError } from '../errors';
 
 // Mock the logger to avoid Sentry imports in tests.
@@ -603,4 +604,68 @@ it('recordTender refuse d_encaisser une commande offerte', async () => {
   ).rejects.toThrow('Impossible d encaisser une commande offerte');
 
   expect(mock._ledger).toHaveLength(0);
+});
+
+// ---------------------------------------------------------------------------
+// SVC-43 - defense en profondeur: `recompute` est le chemin d'ECRITURE
+// ---------------------------------------------------------------------------
+// `summarize` (lecture) court-circuite deja le statut 'comp'. `recompute`, qui
+// PERSISTE le statut, ne le faisait pas: il recalculait depuis un registre vide
+// et ecrasait 'comp' par 'pending' / 'partial' / 'paid'. Une commande offerte
+// redevenait alors payante et rentrait dans get_daily_revenue, pendant que
+// is_comp / comp_reason / comped_by restaient en base en contradiction.
+describe('recompute - une commande offerte ne redevient jamais payante', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('ne reecrit pas le statut d une commande offerte au registre vide', async () => {
+    const order = baseOrder({ payment_status: 'comp' });
+    const mock = createMockSupabase(order);
+
+    await recompute(asSupabase(mock), order, TENANT);
+
+    expect(mock._order.payment_status).toBe('comp');
+    expect(mock._order.paid_at).toBeNull();
+  });
+
+  // RES-2a: le scenario "commande offerte AVEC un tender au registre" que ce
+  // test decrivait n'est pas atteignable - `compOrder` est scope
+  // `.eq('payment_status', 'pending')`, et une commande qui porte un tender est
+  // deja passee 'partial' / 'paid' / 'refunded' par `recompute`. Un test d'un
+  // etat impossible ne peut pas echouer, donc ne prouve rien. Remplace par le
+  // SEUL chemin d'appelant reellement atteignable sur une commande offerte: le
+  // remboursement, dont la RPC refuse le montant (net = 0, le registre est vide
+  // par construction) et dont `recompute` ne doit rien ecrire.
+  it('un remboursement sur une commande offerte est refuse sans toucher au statut', async () => {
+    const order = baseOrder({ payment_status: 'comp' });
+    const mock = createMockSupabase(order);
+    const service = createPaymentService(asSupabase(mock));
+
+    await expect(
+      service.refund(ORDER_ID, TENANT, { amount: 10000, method: 'cash' }),
+    ).rejects.toThrow('depasse le montant encaisse');
+
+    expect(mock._order.payment_status).toBe('comp');
+    expect(mock._order.paid_at).toBeNull();
+    expect(mock._ledger).toHaveLength(0);
+  });
+
+  it('recalcule normalement un statut non offert', async () => {
+    const order = baseOrder({ payment_status: 'pending' });
+    const mock = createMockSupabase(order, [
+      {
+        id: 'pay-1',
+        amount: 4000,
+        method: 'cash',
+        status: 'completed',
+        created_by: null,
+        created_at: new Date(2026, 5, 30, 11, 0, 0).toISOString(),
+      },
+    ]);
+
+    await recompute(asSupabase(mock), order, TENANT);
+
+    expect(mock._order.payment_status).toBe('partial');
+  });
 });
