@@ -19,14 +19,32 @@ overrides:
   # below (only exceljs still pulled an old minimatch; verified: Excel export OK).
   # 5.0.9 corrige un CONTOURNEMENT de la mitigation precedente (GHSA-rgw5-rvv9-x895):
   # 5.0.8 restait vulnerable au DoS par tableaux intermediaires non bornes.
-  brace-expansion: 5.0.9
+  # 2026-11-04: 5.0.9 -> 5.0.11. Deux avis HAUTS de plus, tous deux des DoS par
+  # recursion non bornee (parseCommaParts, puis groupes d'accolades imbriques).
+  # Meme famille que les deux contournements precedents: la borne monte, le choix
+  # de minimatch 10.2.5 ci-dessous reste inchange. Un troisieme avis (expansion
+  # quadratique de `{a,b}`) impose 5.0.12 : meme borne minimale, pas un pin.
+  brace-expansion: '>=5.0.12'
   # CFG/LOT 5: 11 lignes `dompurify@<X` empilees ont ete consolidees en une seule.
   # Empilees, elles ne durcissaient rien de plus - la borne effective restait la plus
   # permissive - mais chaque nouvel avis en ajoutait une, et personne ne pouvait plus
   # dire quelle version etait reellement exigee. Une seule borne, la plus haute.
-  dompurify: '>=3.4.12'
+  # 2026-11-04: borne remontee de 3.4.12 a 3.4.17. Deux nouveaux avis, dont un
+  # CRITIQUE (contournement de SAFE_FOR_TEMPLATES par expressions de gabarit
+  # scindees) et un HAUT (IN_PLACE: un hook qui retire un parent ou un frere
+  # laisse le document dans un etat non assaini). jspdf epingle dompurify a
+  # 3.4.13 et est DEJA en derniere version (4.2.1), donc rien a monter en amont:
+  # la borne ici est le seul levier.
+  dompurify: '>=3.4.17'
   # 4.1.1 est vulnerable (GHSA-7p8r-x3mc-p8w7), corrige en 4.1.2.
-  fast-uri: 4.1.2
+  # 2026-11-04 : la VERSION EXACTE 4.1.2 s'est retournee contre nous. Cinq avis
+  # publies depuis la portent toujours sur 4.1.2 (3 HAUTS : confusion d'hote par
+  # canonicalisation IDN sautee, SSRF par IPv6 malforme, injection d'autorite par
+  # port non valide ; corriges en 4.1.3, 4.1.4 puis 4.2.3). Une borne epinglee a
+  # l'exact empeche justement de recevoir le correctif suivant : c'est devenu la
+  # seule source de failles HAUTES du graphe de PRODUCTION. Passage a une borne
+  # minimale, comme les autres lignes de ce fichier.
+  fast-uri: '>=4.2.3'
   # eslint tire encore une chaine flat-cache/flatted et js-yaml vulnerables.
   flatted: '>=3.4.2'
   js-yaml@>=4.0.0: '>=4.3.0'
@@ -34,7 +52,18 @@ overrides:
   # resout en 8.x, dont l'API differe, et @eslint/eslintrc plante au chargement
   # ("Cannot set properties of undefined (setting 'defaultMeta')") - donc lint KO.
   ajv@<6.14.0: '^6.14.0'
-  minimatch: 10.2.5
+  # 2026-11-04 : 10.2.5 -> >=11.0.1 (avis DoS via globparent), et ajout de glob
+  # >=14.0.2 (contournement d'annulation AbortSignal). C'etaient les deux
+  # dernieres failles du graphe de PRODUCTION. La montee a ete VERIFIEE a
+  # l'execution, pas supposee, sur les quatre consommateurs qui demandent une
+  # majeure inferieure : aller-retour xlsx complet d'exceljs (export Excel) OK ;
+  # readdir-glob (coeur d'archiver) tourne avec minimatch 11 ; la forme d'appel
+  # exacte globSync(p, {cwd, follow, ignore}) de @serwist/build fonctionne sur
+  # glob 14 (@serwist/build epingle pourtant glob a 13.0.6) ; glob 14 exporte
+  # toujours .sync. Si le build ou la regeneration de public/sw.js casse un jour
+  # ici, c'est la premiere ligne a remettre en arriere.
+  minimatch: '>=11.0.1'
+  glob: '>=14.0.2'
   # nanoid: GHSA-2v37-7h3g-55p8, avis publie apres le lot dependances du 05/08.
   # Tire par next>postcss>nanoid, donc dependance de PRODUCTION: l'audit --prod
   # echoue tant que la borne n'est pas posee. Corrige a partir de 3.3.17.
@@ -48,7 +77,12 @@ overrides:
   # vite est tire par vitest (outillage de test). Cle SIMPLE et non `vite@>=7.0.0`:
   # mesure sur ce depot, la forme avec plage ne s'applique pas a une dependance
   # peer - vite restait en 7.3.1 et l'audit continuait d'echouer.
-  vite: '>=7.3.5'
+  # 2026-11-04 : borne remontee de 7.3.5 a 7.3.7 (nouvel avis HAUT).
+  vite: '>=7.3.7'
+  # smol-toml (tire par knip, outillage de code mort) : avis HAUT.
+  smol-toml: '>=1.7.1'
+  # @humanfs/node (tire par eslint) : copie recursive suivant les liens symboliques.
+  '@humanfs/node': '>=0.16.8'
   # ws: seul >=8.21.0 corrige, y compris pour les chaines encore en 7.x (aucune
   # version 7 corrigee n'existe). webpack-bundle-analyzer est le seul a demander
   # la ligne 7, et il ne sert qu'au diagnostic de bundle (ANALYZE=true).
@@ -62,3 +96,16 @@ overrides:
   rollup@>=4.0.0 <4.59.0: '>=4.59.0'
   serialize-javascript: '>=7.0.3'
   uuid@<11.1.1: '>=11.1.1'
+  # --- Ajouts du 2026-11-04 (lot de montee next 16.4.5 / sentry 10.78) --------
+  # zod est une dependance DIRECTE montee a ^4.6.7 dans package.json, mais une
+  # seconde copie 4.4.1 restait tiree transitivement et portait l'avis HAUT
+  # (epuisement memoire sur collections contraintes surdimensionnees, corrige en
+  # 4.6.6). La borne aligne les deux copies.
+  zod: '>=4.6.7'
+  # browserslist: deux avis HAUTS (croissance memoire non bornee faute d'eviction
+  # de cache, et ecriture de prototype / plante sur une requete browserslist non
+  # fiable). Tire par next et par l'outillage CSS.
+  browserslist: '>=4.28.7'
+  # source-map-js: DoS de la boucle d'evenements via une recherche indexee de
+  # source. Tire par postcss, donc present dans le graphe de production.
+  source-map-js: '>=1.2.2'

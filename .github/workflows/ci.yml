@@ -73,10 +73,27 @@ jobs:
           fi
           echo "All critical files present."
 
-      # Gate 0.5: Dependency vulnerability audit (non-blocking warning for now,
-      # upgrade to --fail-on-high once all known CVEs are triaged)
+      # Gate 0.5: Dependency vulnerability audit - BLOQUANTE depuis 2026-11-04.
+      #
+      # Elle etait non bloquante ("warning for now, upgrade once all known CVEs
+      # are triaged"), et c'est exactement ce qui a laisse 7 failles CRITIQUES
+      # arriver en production, dont plusieurs RCE non authentifiees de Next.js
+      # 16.2.12. Un avertissement que personne ne lit ne protege de rien.
+      #
+      # Mesure du 2026-11-04 apres la montee de version : 0 critique, 0 haute,
+      # 0 moyenne, 0 basse sur `pnpm audit --prod`. La porte est donc posee au
+      # reel, pas au-dessus.
+      #
+      # Seuil a `high` et non `moderate` : une faille moyenne publiee demain sur
+      # une dependance transitive sans correctif disponible bloquerait TOUS les
+      # merges sans qu'une ligne soit plus sure. Meme seuil que security.yml,
+      # pour que les deux portes ne puissent pas diverger.
       - name: Security audit
-        run: pnpm audit --prod || echo "::warning::npm audit found vulnerabilities — review before release"
+        run: pnpm audit --prod --audit-level=high
+
+      # Visibilite sur ce qui est sous le seuil bloquant, sans bloquer.
+      - name: Security audit (moyennes et basses, non bloquant)
+        run: pnpm audit --prod --audit-level=moderate || echo "::warning::des failles moyennes ou basses existent - a traiter avant la prochaine release"
 
       # Gate 1: TypeScript type checking
       - name: Typecheck
