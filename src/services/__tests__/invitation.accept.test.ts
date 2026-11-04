@@ -24,6 +24,24 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+/**
+ * Adresse de la session du titulaire. Depuis la refutation R1 du contre-audit,
+ * l'adhesion d'un compte qui EXISTE DEJA exige une session authentifiee portant
+ * l'adresse invitee (voir invitation.token-consent.test.ts): le jeton seul ne
+ * prouve rien, l'invitant peut le lire. Les cas ci-dessous qui partent d'un
+ * membre existant fournissent donc cette session; ce qu'ils verifient (reprise
+ * de l'identite, arguments de la RPC, notification, courses) est inchange.
+ */
+const SESSION_TITULAIRE = 'nouveau@example.com';
+/**
+ * Identifiant du compte auth de cette session. Depuis la refutation R1' du
+ * contre-audit LOT 4, c'est CE compte qui est enrole - plus le `user_id` lu
+ * dans `admin_users`, colonne miroir modifiable par un owner. Il est
+ * volontairement DIFFERENT du `user_id` des lignes miroir simulees ci-dessous,
+ * pour que les assertions distinguent les deux sources.
+ */
+const SESSION_USER_ID = 'compte-auth-de-la-session';
+
 /** Invitation valide par defaut: en attente, expire dans une heure. */
 function invitationValide(surcharge: Record<string, unknown> = {}) {
   return {
@@ -159,7 +177,14 @@ function creerSimulation(options: Options = {}) {
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => ({ data: options.membreExistant ?? null, error: null }),
+              // `.limit(1)` et plus `.maybeSingle()`: admin_users n'est unique
+              // que par (tenant_id, email), donc un employe de deux restaurants
+              // a deux lignes et `.maybeSingle()` echouait en PGRST116
+              // (reserve S1' du contre-audit LOT 4).
+              limit: async () => ({
+                data: options.membreExistant ? [options.membreExistant] : [],
+                error: null,
+              }),
             }),
           }),
         };
@@ -243,15 +268,26 @@ describe('acceptInvitation - refus', () => {
     ).rejects.toBeInstanceOf(ServiceError);
   });
 
-  it('remonte une erreur de creation de compte sans donner l acces', async () => {
+  it('remonte une erreur de creation de compte sans donner l acces NI le message de la base', async () => {
+    // L'assertion d'origine exigeait que le message brut de GoTrue ("mot de
+    // passe trop faible") remonte jusqu'au client. C'est exactement l'oracle
+    // d'enumeration de comptes de la reserve S2': sur ce chemin, le message
+    // dit si l'adresse invitee possede deja un compte. Le contrat change donc
+    // de forme et devient plus exigeant: le refus reste un refus, l'acces
+    // n'est pas donne, ET le detail de la base ne sort plus.
     const { service, journal } = creerSimulation({
       membreExistant: null,
       erreurCreationCompte: { message: 'mot de passe trop faible' },
     });
 
-    await expect(
-      service.acceptInvitation({ token: 'jeton-valide', fullName: 'Awa', password: 'court' }),
-    ).rejects.toThrow('mot de passe trop faible');
+    const promesse = service.acceptInvitation({
+      token: 'jeton-valide',
+      fullName: 'Awa',
+      password: 'court',
+    });
+
+    await expect(promesse).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(promesse).rejects.not.toThrow(/mot de passe trop faible/);
     expect(journal.rpc).toHaveLength(0);
   });
 });
@@ -265,7 +301,13 @@ describe('acceptInvitation - course entre la verification et l ecriture', () => 
       erreurRpc: { message: 'INVITATION_EXPIRED: trop tard' },
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).rejects.toMatchObject({
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).rejects.toMatchObject({
       code: 'VALIDATION',
       message: 'Cette invitation a expire',
     });
@@ -280,7 +322,13 @@ describe('acceptInvitation - course entre la verification et l ecriture', () => 
       erreurRpc: { message: 'INVITATION_NOT_FOUND: deja consommee' },
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).rejects.toMatchObject({
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
   });
@@ -291,20 +339,37 @@ describe('acceptInvitation - course entre la verification et l ecriture', () => 
       erreurRpc: { message: 'deadlock detected' },
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).rejects.toMatchObject({
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).rejects.toMatchObject({
       code: 'INTERNAL',
     });
   });
 
   it('reste lisible quand la panne n a pas de message', async () => {
+    // Avant, le message rendu au client concatenait celui de la base (vide ->
+    // "Erreur inconnue"). Depuis S2' il est generique dans tous les cas: ce que
+    // ce test verrouille, c'est qu'une panne sans message reste une erreur
+    // INTERNE lisible, et non une chaine vide ou un "undefined".
     const { service } = creerSimulation({
       membreExistant: { user_id: 'u-1', email: 'nouveau@example.com' },
       erreurRpc: { message: '' },
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).rejects.toThrow(
-      'Erreur inconnue',
-    );
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).rejects.toMatchObject({
+      code: 'INTERNAL',
+      message: 'Impossible de vous ajouter a ce restaurant pour le moment. Reessayez plus tard.',
+    });
   });
 });
 
@@ -316,11 +381,19 @@ describe('acceptInvitation - chemin nominal', () => {
       membreExistant: { user_id: 'utilisateur-existant', email: 'nouveau@example.com' },
     });
 
-    const res = await service.acceptInvitation({ token: 'jeton-valide' });
+    const res = await service.acceptInvitation({
+      token: 'jeton-valide',
+      authenticatedEmail: SESSION_TITULAIRE,
+      authenticatedUserId: SESSION_USER_ID,
+    });
 
     expect(res).toEqual({ tenantSlug: 'mon-resto' });
     expect(journal.creationCompte).toHaveLength(0);
-    expect(journal.rpc[0].args.p_user_id).toBe('utilisateur-existant');
+    // R1': le compte rattache est celui de la SESSION, pas le `user_id` lu dans
+    // la ligne miroir ('utilisateur-existant'). L'assertion est plus exigeante
+    // qu'avant: elle distingue les deux sources au lieu de les confondre.
+    expect(journal.rpc[0].args.p_user_id).toBe(SESSION_USER_ID);
+    expect(journal.rpc[0].args.p_user_id).not.toBe('utilisateur-existant');
   });
 
   it('cree le compte pour un nouvel arrivant, avec email deja confirme', async () => {
@@ -351,7 +424,11 @@ describe('acceptInvitation - chemin nominal', () => {
       membreExistant: { user_id: 'u-1', email: 'nouveau@example.com' },
     });
 
-    await service.acceptInvitation({ token: 'jeton-valide' });
+    await service.acceptInvitation({
+      token: 'jeton-valide',
+      authenticatedEmail: SESSION_TITULAIRE,
+      authenticatedUserId: SESSION_USER_ID,
+    });
 
     expect(journal.rpc[0].nom).toBe('accept_invitation_membership');
     expect(journal.rpc[0].args.p_invitation_id).toBe('inv-reelle');
@@ -362,7 +439,11 @@ describe('acceptInvitation - chemin nominal', () => {
       membreExistant: { user_id: 'u-1', email: 'nouveau@example.com' },
     });
 
-    await service.acceptInvitation({ token: 'jeton-valide' });
+    await service.acceptInvitation({
+      token: 'jeton-valide',
+      authenticatedEmail: SESSION_TITULAIRE,
+      authenticatedUserId: SESSION_USER_ID,
+    });
 
     expect(journal.rpc[0].args.p_full_name).toBe('nouveau@example.com');
   });
@@ -373,7 +454,12 @@ describe('acceptInvitation - chemin nominal', () => {
       membreExistant: { user_id: 'u-1', email: 'nouveau@example.com' },
     });
 
-    await service.acceptInvitation({ token: 'jeton-valide', fullName: 'Awa' });
+    await service.acceptInvitation({
+      token: 'jeton-valide',
+      fullName: 'Awa',
+      authenticatedEmail: SESSION_TITULAIRE,
+      authenticatedUserId: SESSION_USER_ID,
+    });
 
     expect(journal.notifications[0]).toMatchObject({
       tenant_id: 'tenant-du-resto',
@@ -391,7 +477,13 @@ describe('acceptInvitation - chemin nominal', () => {
       erreurNotification: { message: 'table pleine' },
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).resolves.toEqual({
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).resolves.toEqual({
       tenantSlug: 'mon-resto',
     });
   });
@@ -402,7 +494,13 @@ describe('acceptInvitation - chemin nominal', () => {
       resultatRpc: null,
     });
 
-    await expect(service.acceptInvitation({ token: 'jeton-valide' })).resolves.toEqual({
+    await expect(
+      service.acceptInvitation({
+        token: 'jeton-valide',
+        authenticatedEmail: SESSION_TITULAIRE,
+        authenticatedUserId: SESSION_USER_ID,
+      }),
+    ).resolves.toEqual({
       tenantSlug: '',
     });
   });

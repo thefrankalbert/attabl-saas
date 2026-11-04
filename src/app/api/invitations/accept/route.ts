@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
@@ -20,6 +21,16 @@ export async function POST(request: Request) {
     // invitation prevents neighbours behind the same NAT/CGNAT from collectively
     // exhausting each other's acceptance retries. Read the token before schema
     // validation so the key is stable even on malformed payloads.
+    //
+    // CE QUE CE LIMITEUR NE BORNE PAS (reserve S4' du contre-audit LOT 4). Le
+    // rapport du lot precedent affirmait que "le limiteur token+IP borne les
+    // essais" de l'oracle residuel (savoir si une adresse invitee possede deja
+    // un compte). C'est FAUX: la cle contient le jeton, donc chaque nouvelle
+    // invitation ouvre un budget neuf. La vraie borne est en amont, a la
+    // CREATION de l'invitation: invitationManageLimiter, 30 par 10 minutes et
+    // par IP (src/lib/rate-limit.ts), soit de l'ordre de 4300 adresses
+    // sondables par jour et par IP - avec un courriel envoye a chacune, et la
+    // qualite d'owner/admin exigee. Le cout de l'oracle vient de la, pas d'ici.
     const tokenForKey =
       typeof (body as { token?: unknown })?.token === 'string'
         ? (body as { token: string }).token
@@ -40,6 +51,18 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    // SECURITE (refutation R1 du contre-audit LOT 2): l'adresse de la session
+    // est lue cote serveur avec auth.getUser() (jamais getSession(), jamais un
+    // champ du body). Le service l'exige quand l'adresse invitee possede deja
+    // un compte: sans elle, l'invitant - qui peut lire le jeton de
+    // l'invitation qu'il a creee - accepterait a la place du titulaire.
+    // L'absence de session n'est PAS un refus ici: un nouvel employe n'en a
+    // pas encore, et c'est le service qui tranche selon le cas.
+    const sessionClient = await createClient();
+    const {
+      data: { user: sessionUser },
+    } = await sessionClient.auth.getUser();
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);
@@ -69,6 +92,9 @@ export async function POST(request: Request) {
       token: parsed.data.token,
       fullName: parsed.data.full_name,
       password: parsed.data.password,
+      authenticatedEmail: sessionUser?.email ?? undefined,
+      // R1': l'identite enrolee vient de la session, pas de admin_users.email.
+      authenticatedUserId: sessionUser?.id ?? undefined,
     });
 
     return NextResponse.json({ success: true, tenantSlug });

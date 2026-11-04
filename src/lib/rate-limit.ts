@@ -397,6 +397,38 @@ export const adminResetLimiter = createLimiter(
   true,
 );
 
+/**
+ * Envoi d'un lien de reinitialisation de mot de passe par un administrateur
+ * (Server Action actionResetUserPassword): 3 par heure et par COMPTE CIBLE,
+ * fail-closed.
+ *
+ * Compartiment separe de `adminResetLimiter`, qui appartient a /api/admin/reset
+ * (remise a zero de donnees) : partager le budget ferait qu'un geste de support
+ * consomme le quota d'une action destructive, et l'inverse.
+ *
+ * Cle sur la CIBLE et non sur l'IP, volontairement, pour deux raisons mesurees
+ * sur ce produit : (1) le prejudice est par BOITE AUX LETTRES - des envois en
+ * rafale harcelent le titulaire et usent la reputation d'expedition du domaine,
+ * donc la delivrabilite de TOUS les emails d'ATTABL, y compris les confirmations
+ * de commande ; (2) un restaurant est derriere une seule IP, donc une cle par IP
+ * ferait collisionner des administrateurs legitimes entre eux tout en laissant un
+ * attaquant changer d'IP pour repartir a zero.
+ *
+ * 3 par heure, la meme franchise que l'equivalent public /api/forgot-password
+ * (3 par 10 minutes) mais sur une fenetre plus longue : un administrateur n'a
+ * aucune raison legitime de renvoyer ce lien plus de trois fois en une heure, et
+ * le titulaire peut toujours demander lui-meme une reinitialisation.
+ *
+ * Fail-closed : si Upstash tombe, on refuse. L'action envoie un courriel a un
+ * tiers, donc son indisponibilite ne coute qu'un report de quelques minutes,
+ * alors qu'un envoi non borne coute la delivrabilite du domaine.
+ */
+export const adminPasswordResetLinkLimiter = createLimiter(
+  'admin-password-reset-link',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
+
 /** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
 export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
 

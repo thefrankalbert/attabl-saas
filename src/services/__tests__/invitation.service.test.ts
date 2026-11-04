@@ -216,7 +216,13 @@ describe('InvitationService', () => {
       ).rejects.toMatchObject({ code: 'VALIDATION' });
     });
 
-    it('should add directly to admin_users and return accepted invitation when user already exists in auth', async () => {
+    // SECURITE (constat SVC-12): un compte qui existe deja ne doit JAMAIS etre
+    // ajoute directement dans admin_users. Cet ajout sans jeton ni consentement
+    // du titulaire etait la premiere marche de la prise de controle de compte:
+    // l'invitant obtenait une ligne admin_users sur le compte d'un tiers, puis
+    // s'en servait pour reinitialiser son mot de passe ou changer son email.
+    // Le titulaire doit recevoir une invitation a accepter lui-meme.
+    it('ne doit PAS ajouter directement dans admin_users quand le compte existe deja', async () => {
       const supabase = createMockSupabase({
         existingAuthUser: { id: 'existing-user-456', email: 'existing@example.com' },
       });
@@ -229,41 +235,43 @@ describe('InvitationService', () => {
         invitedBy: 'owner-123',
       });
 
-      expect(result.status).toBe('accepted');
-      expect(result.id).toBe('direct-add');
-      expect(result.email).toBe('existing@example.com');
-      expect(result.role).toBe('manager');
+      // Une invitation en attente, avec jeton: le titulaire devra l'accepter.
+      expect(result.status).toBe('pending');
+      expect(result.token).toBeTruthy();
+      expect(result.id).not.toBe('direct-add');
 
-      // Should have inserted into admin_users directly
-      expect(supabase.from).toHaveBeenCalledWith('admin_users');
+      // Aucune ecriture dans admin_users.
+      const adminUsersCalls = (
+        supabase.from as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls.filter((call: unknown[]) => call[0] === 'admin_users');
+      expect(adminUsersCalls).toHaveLength(0);
     });
 
-    it('should throw ServiceError when admin_users insert fails for existing user', async () => {
-      const supabase = createMockSupabase({
-        existingAuthUser: { id: 'existing-user-456', email: 'existing@example.com' },
-        adminUsersInsertError: true,
-      });
-      const service = createInvitationService(supabase);
-
-      await expect(
-        service.createInvitation({
-          tenantId: 'tenant-xyz',
-          email: 'existing@example.com',
-          role: 'staff',
-          invitedBy: 'owner-123',
+    it("ne doit pas permettre d'enumerer les comptes: meme reponse pour un email connu et inconnu", async () => {
+      const serviceKnown = createInvitationService(
+        createMockSupabase({
+          existingAuthUser: { id: 'existing-user-456', email: 'existing@example.com' },
         }),
-      ).rejects.toThrow(ServiceError);
+      );
+      const serviceUnknown = createInvitationService(
+        createMockSupabase({ existingAuthUser: null }),
+      );
 
-      await expect(
-        service.createInvitation({
-          tenantId: 'tenant-xyz',
-          email: 'existing@example.com',
-          role: 'staff',
-          invitedBy: 'owner-123',
-        }),
-      ).rejects.toMatchObject({
-        code: 'INTERNAL',
+      const known = await serviceKnown.createInvitation({
+        tenantId: 'tenant-xyz',
+        email: 'existing@example.com',
+        role: 'staff',
+        invitedBy: 'owner-123',
       });
+      const unknown = await serviceUnknown.createInvitation({
+        tenantId: 'tenant-xyz',
+        email: 'new@example.com',
+        role: 'staff',
+        invitedBy: 'owner-123',
+      });
+
+      expect(known.status).toBe(unknown.status);
+      expect(known.id).toBe(unknown.id);
     });
   });
 

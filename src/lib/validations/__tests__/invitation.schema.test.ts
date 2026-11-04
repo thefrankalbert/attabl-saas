@@ -72,20 +72,55 @@ describe('acceptInvitationSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects token-only payload: full_name and password are required', () => {
-    // Regression guard: the broken on-mount call sent { token, validate_only }
-    // with no credentials and slipped through to acceptInvitation(). Use
-    // validateInvitationSchema (GET /validate) for the read-only check instead.
+  // CHANGEMENT DE CONTRAT (reserve S4 du contre-audit LOT 2). Ces deux cas
+  // exigeaient full_name + password pour TOUT payload d'acceptation. Or le
+  // service les IGNORE des que l'adresse invitee possede un compte: le
+  // titulaire saisissait un mot de passe sans aucun effet, et l'adhesion par
+  // simple session (desormais la seule preuve de consentement acceptee, voir
+  // invitation.token-consent.test.ts) etait impossible.
+  //
+  // La protection n'est pas perdue, elle a change de couche:
+  //  - creation de compte sans nom ni mot de passe: refusee par le service
+  //    (ServiceError VALIDATION), verifie dans invitation.accept.test.ts
+  //    ("refuse un nouveau compte sans nom ni mot de passe");
+  //  - le motif d'origine de l'exigence (un appel vide au montage de la page
+  //    qui brulait un jeton du limiteur d'acceptation) est couvert par
+  //    validateInvitationSchema / GET /api/invitations/validate, qui a son
+  //    propre limiteur - cas verifies dans le describe suivant;
+  //  - les bornes restent appliquees des que les champs sont fournis (voir
+  //    "rejects short password" ci-dessus et les deux cas ci-dessous).
+  it('accepts a token-only payload: un titulaire deja inscrit rejoint avec sa session', () => {
     const result = acceptInvitationSchema.safeParse({ token: VALID_TOKEN });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it('rejects missing full_name', () => {
+  it('rejects a too-short full_name when one is provided', () => {
     const result = acceptInvitationSchema.safeParse({
       token: VALID_TOKEN,
+      full_name: 'J',
       password: 'SecurePass123!',
     });
     expect(result.success).toBe(false);
+  });
+
+  it('rejects a malformed token even without credentials', () => {
+    const result = acceptInvitationSchema.safeParse({ token: 'pas-un-jeton' });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('createInvitationSchema - normalisation de la casse', () => {
+  // Reserve S4: .eq() est sensible a la casse en Postgres. Sans minuscules a
+  // l'ecriture, "Victime@X.com" ne retrouvait pas le compte "victime@x.com" a
+  // l'acceptation, et le garde anti-doublon des invitations pending se
+  // contournait en changeant simplement la casse.
+  it('minuscule et detrime l adresse', () => {
+    const result = createInvitationSchema.safeParse({
+      email: '  Equipier@Resto-A.TEST  ',
+      role: 'waiter',
+    });
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.email).toBe('equipier@resto-a.test');
   });
 });
 
