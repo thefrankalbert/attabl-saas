@@ -17,7 +17,9 @@ import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session
  * `getAuthenticatedUserForTenant`. Le message rendu est generique (jamais le
  * detail de l'erreur), comme les autres refus de ces actions.
  */
-export interface TenantAdminCheck {
+// Local: aucun consommateur hors de ce module (reserve S4 du contre-audit
+// LOT 6). Le type de retour reste visible via la signature de la fonction.
+interface TenantAdminCheck {
   error: string | null;
   user: { id: string; email: string } | null;
   role: string | null;

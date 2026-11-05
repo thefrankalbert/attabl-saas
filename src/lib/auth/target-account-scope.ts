@@ -16,7 +16,9 @@ import { logger } from '@/lib/logger';
  * contenu dans ce tenant ?
  */
 
-export type TargetAccountScopeDenial = 'cross_tenant' | 'platform_account' | 'lookup_failed';
+// Local: aucun consommateur hors de ce module (reserve S4 du contre-audit
+// LOT 6, signalee par `pnpm knip` comme export inutilise).
+type TargetAccountScopeDenial = 'cross_tenant' | 'platform_account' | 'lookup_failed';
 
 export type TargetAccountScopeResult =
   | { allowed: true }
@@ -28,10 +30,44 @@ interface MembershipRow {
   is_super_admin: boolean | null;
   /**
    * Retire par la plateforme (console super-admin, `actionSoftDeleteAdminUser`).
-   * Une ligne soft-deleted n'ouvre plus aucun acces: toutes les resolutions de
-   * session filtrent `deleted_at is null` (src/lib/auth/get-session.ts).
+   *
+   * PORTEE EXACTE DE CET INVARIANT, a ne pas elargir (refutation R2 du
+   * contre-audit LOT 6, qui a montre que la version precedente de ce
+   * commentaire etait fausse). Une ligne soft-deleted n'ouvre plus aucun acces
+   * APPLICATIF: les trois resolutions de session filtrent `deleted_at is null`
+   * (src/lib/auth/get-session.ts:132, 166, 216), comme les gardes de route.
+   * En BASE, ce n'est pas vrai: les 66 policies passent par
+   * `get_my_tenant_ids_array()`, qui filtre `coalesce(is_active, true) = true`
+   * et JAMAIS `deleted_at` - le depot l'avait deja constate sans le corriger
+   * (en-tete de supabase/migrations/20260731000600_tenant_helpers_active_only.sql).
+   * Si une ligne retiree n'ouvre effectivement rien cote base, c'est uniquement
+   * parce que `softDeleteAdminUser` pose AUSSI `is_active = false`
+   * (src/services/platform-admin.service.ts). L'invariant repose donc sur
+   * `is_active`, pas sur `deleted_at`.
    */
   deleted_at: string | null;
+}
+
+export interface TargetAccountScopeOptions {
+  /**
+   * Ne compter, pour le verdict `cross_tenant`, que les appartenances NON
+   * retirees par la plateforme.
+   *
+   * OPT-IN, et volontairement reserve a `actionResetUserPassword` (refutation R2
+   * du contre-audit LOT 6: pose en defaut dans ce garde partage, le relachement
+   * descendait aussi sur `actionUpdateUserEmail`, qui ecrit l'identite du compte
+   * auth - la primitive de prise de controle, pas un envoi de courriel).
+   *
+   * Ce que ce relachement achete: une ligne `admin_users` parasite redevient
+   * recuperable SANS l'attaquant (la plateforme la retire depuis sa console, le
+   * gel du proprietaire legitime cesse). Ce qu'il coute, et pourquoi il reste
+   * cantonne a l'envoi d'un lien: l'invariant ci-dessus tient sur `is_active`,
+   * et `is_active` est justement la seule colonne de privilege restee
+   * inscriptible par le role `authenticated` (`GRANT UPDATE("is_active")`,
+   * supabase/schema.sql). Le pire effet de l'action relachee doit donc rester un
+   * courriel envoye sur la boite du TITULAIRE.
+   */
+  ignoreSoftDeletedMemberships?: boolean;
 }
 
 /**
@@ -48,29 +84,25 @@ interface MembershipRow {
  * Les lignes INACTIVES comptent: `is_active = false` est un etat de tenant, le
  * compte auth reste partage.
  *
- * Les lignes SOFT-DELETED par la plateforme ne comptent PAS pour le verdict
- * `cross_tenant` (correctif R2' point 2 du contre-audit LOT 4). C'est ce qui
- * rend une ligne `admin_users` parasite recuperable SANS l'attaquant: le
- * proprietaire legitime la signale, la plateforme la retire depuis sa console
- * (`actionSoftDeleteAdminUser`, super-admin, audite), et le gel du compte de
- * l'employe cesse. Tant qu'elles comptaient, le retrait cote plateforme
- * n'avait aucun effet sur ce garde et le gel etait definitif - c'est le defaut
- * precis que la refutation R2' pointe ("un journal n'est pas une suppression").
- * Une ligne soft-deleted ne confere aucun acces, donc l'ignorer ici ne rouvre
- * rien.
+ * Les lignes SOFT-DELETED par la plateforme comptent PAR DEFAUT. Un appelant
+ * peut demander de les ignorer pour le seul verdict `cross_tenant`, via
+ * `ignoreSoftDeletedMemberships` (correctif R2' point 2 du contre-audit LOT 4,
+ * recadre par la refutation R2 du contre-audit LOT 6: voir la documentation de
+ * cette option, qui dit ce que le relachement achete et ce qu'il coute).
  *
- * Le verdict `platform_account`, lui, continue de porter sur TOUTES les lignes,
- * soft-deleted comprises: un compte d'operateur de la plateforme ne doit jamais
- * devenir accessible a un admin de tenant parce que son appartenance a ete
- * retiree.
+ * Le verdict `platform_account`, lui, porte TOUJOURS sur toutes les lignes,
+ * soft-deleted comprises, quelle que soit l'option: un compte d'operateur de la
+ * plateforme ne doit jamais devenir accessible a un admin de tenant parce que
+ * son appartenance a ete retiree.
  *
  * Toute erreur de lecture refuse (fail-closed), ainsi qu'une cible qui n'a plus
- * aucune appartenance vivante.
+ * aucune appartenance a compter.
  */
 export async function checkTargetAccountScope(
   client: SupabaseClient,
   targetUserId: string,
   tenantId: string,
+  options: TargetAccountScopeOptions = {},
 ): Promise<TargetAccountScopeResult> {
   const { data, error } = await client
     .from('admin_users')
@@ -92,18 +124,20 @@ export async function checkTargetAccountScope(
     return { allowed: false, reason: 'platform_account' };
   }
 
-  // Appartenances qui ouvrent encore un acces (voir la note sur le soft-delete).
-  const liveRows = rows.filter((row) => row.deleted_at == null);
+  // Appartenances retenues pour le verdict `cross_tenant`. Par defaut: toutes.
+  const scopedRows = options.ignoreSoftDeletedMemberships
+    ? rows.filter((row) => row.deleted_at == null)
+    : rows;
 
-  if (liveRows.length === 0) {
-    logger.warn('checkTargetAccountScope: aucune appartenance vivante sur le compte cible', {
+  if (scopedRows.length === 0) {
+    logger.warn('checkTargetAccountScope: aucune appartenance a compter sur le compte cible', {
       tenantId,
       rowCount: rows.length,
     });
     return { allowed: false, reason: 'lookup_failed' };
   }
 
-  if (liveRows.some((row) => row.tenant_id !== tenantId)) {
+  if (scopedRows.some((row) => row.tenant_id !== tenantId)) {
     return { allowed: false, reason: 'cross_tenant' };
   }
 

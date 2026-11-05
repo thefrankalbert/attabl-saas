@@ -54,6 +54,14 @@ export async function POST(request: Request) {
     //    already confirmed, which we handle as a silent success (anti-enumeration).
     // password is required by TS types for type:'signup' but the Supabase API
     // accepts an empty string for existing users (it won't update their password).
+    //
+    // HYPOTHESE NON MESUREE (reserve S3 du contre-audit LOT 6), a ne pas lire
+    // comme un fait: la phrase ci-dessus ("it won't update their password") n'a
+    // jamais ete eprouvee contre une vraie instance GoTrue. Si un `password: ''`
+    // ECRASAIT le mot de passe d'un compte existant, cette route - publique,
+    // bornee a 3 par 10 minutes par IP - permettrait de vider le mot de passe de
+    // n'importe quel compte connu par son adresse. A trancher par une mesure sur
+    // base jetable, pas par relecture de la documentation.
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'signup',
       email,

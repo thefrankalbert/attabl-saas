@@ -429,6 +429,36 @@ export const adminPasswordResetLinkLimiter = createLimiter(
   true,
 );
 
+/**
+ * Compartiment PAR IP de la meme Server Action: 10 par 10 minutes, fail-closed.
+ *
+ * Pourquoi DEUX compartiments pour une seule action (reserve S1 du contre-audit
+ * LOT 6). `.claude/rules/05-backend-api.md` impose une limitation en PREMIERE
+ * etape, avant toute lecture et avant l'authentification. Mettre la cle par
+ * compte cible a cette place la rendait consommable par un appelant qui n'a
+ * passe aucun controle d'identite: trois appels et le patron ne pouvait plus
+ * depanner ce membre pendant une heure - et comme le refus par quota arrive
+ * AVANT la branche "non authentifie", les deux etats devenaient distinguables,
+ * donc le quota devenait un oracle d'activite de compte.
+ *
+ * Une cle par IP n'a aucun de ces deux defauts: elle ne depend d'aucun
+ * parametre venu du client, donc elle n'est pas dirigeable contre un compte
+ * choisi. Elle borne le trafic brut en premiere etape ; le prejudice reel
+ * (harcelement d'une boite aux lettres, reputation d'expedition du domaine)
+ * reste porte par `adminPasswordResetLinkLimiter`, desormais consomme APRES
+ * l'authentification.
+ *
+ * 10 par 10 minutes, et non 3 comme /api/forgot-password: un restaurant entier
+ * sort par une seule IP, et plusieurs administrateurs legitimes peuvent y
+ * depanner leurs equipes dans la meme fenetre. La borne par compte (3 / 1 h)
+ * reste la contrainte serieuse.
+ */
+export const adminPasswordResetLinkIpLimiter = createLimiter(
+  'admin-password-reset-link-ip',
+  Ratelimit.slidingWindow(10, '10 m'),
+  true,
+);
+
 /** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
 export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
 

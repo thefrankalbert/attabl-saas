@@ -29,7 +29,20 @@ type MembershipRow = {
   deleted_at?: string | null;
 };
 
-type TargetRow = { user_id: string; email: string; role: string } | null;
+type TargetRow = {
+  user_id: string;
+  email: string;
+  role: string;
+  full_name?: string | null;
+  /**
+   * Retire par la plateforme. Le mock de lecture ci-dessous se comporte comme
+   * Postgres: la ligne ne remonte PAS quand l'appelant a pose
+   * `.is('deleted_at', null)`, et elle remonte quand il ne l'a pas pose. Sans
+   * cela, un test ne pourrait pas distinguer les deux et n'aurait aucun pouvoir
+   * discriminant (reserve S2 du contre-audit LOT 6).
+   */
+  deleted_at?: string | null;
+} | null;
 
 let membershipRows: MembershipRow[] = [];
 let targetRow: TargetRow = null;
@@ -38,9 +51,12 @@ const updateUserById = vi.fn();
 const generateLink = vi.fn();
 const getUserById = vi.fn();
 const adminUsersUpdate = vi.fn();
+const adminUsersTargetIsFilter = vi.fn();
+const adminRpc = vi.fn();
 
 function buildAdminClient() {
   return {
+    rpc: (...args: unknown[]) => adminRpc(...args),
     auth: {
       admin: {
         updateUserById: (...args: unknown[]) => updateUserById(...args),
@@ -59,12 +75,21 @@ function buildAdminClient() {
               };
             }
             // Lecture de la ligne cible, scopee au tenant de l'appelant.
+            // `liveOnly` reproduit le filtre `.is('deleted_at', null)`.
+            const targetTerminal = (liveOnly: boolean) => {
+              const row = liveOnly && targetRow?.deleted_at != null ? null : targetRow;
+              return {
+                is: (column: string, value: unknown) => {
+                  adminUsersTargetIsFilter(column, value);
+                  return targetTerminal(column === 'deleted_at' && value === null);
+                },
+                single: () => Promise.resolve({ data: row, error: null }),
+                maybeSingle: () => Promise.resolve({ data: row, error: null }),
+              };
+            };
             return {
               eq: () => ({
-                eq: () => ({
-                  single: () => Promise.resolve({ data: targetRow, error: null }),
-                  maybeSingle: () => Promise.resolve({ data: targetRow, error: null }),
-                }),
+                eq: () => targetTerminal(false),
               }),
             };
           },
@@ -81,6 +106,7 @@ function buildAdminClient() {
           select: () => ({
             eq: () => ({
               single: () => Promise.resolve({ data: { slug: 'resto-a' }, error: null }),
+              maybeSingle: () => Promise.resolve({ data: { slug: 'resto-a' }, error: null }),
             }),
           }),
         };
@@ -98,10 +124,17 @@ function buildAdminClient() {
 let adminClient = buildAdminClient();
 
 const resetLinkLimiterCheck = vi.fn();
+const resetLinkIpLimiterCheck = vi.fn();
 
-vi.mock('next/headers', () => ({ headers: () => Promise.resolve(new Headers()) }));
+vi.mock('next/headers', () => ({
+  headers: () => Promise.resolve(new Headers({ 'x-forwarded-for': '203.0.113.7' })),
+}));
 vi.mock('@/lib/rate-limit', () => ({
   adminPasswordResetLinkLimiter: { check: (...args: unknown[]) => resetLinkLimiterCheck(...args) },
+  adminPasswordResetLinkIpLimiter: {
+    check: (...args: unknown[]) => resetLinkIpLimiterCheck(...args),
+  },
+  getClientIpFromHeaders: (h: Headers) => h.get('x-forwarded-for') ?? 'anonymous',
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next-intl/server', () => ({
@@ -121,7 +154,12 @@ vi.mock('@/services/email.service', () => ({
   sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
 }));
 
-import { actionResetUserPassword, actionUpdateUserEmail } from '@/app/actions/admin';
+import {
+  actionResetUserPassword,
+  actionUpdateUserEmail,
+  actionDeleteAdminUser,
+  actionUpdateAdminUser,
+} from '@/app/actions/admin';
 
 const TENANT_A = 'tenant-a';
 const TENANT_B = 'tenant-b';
@@ -154,6 +192,8 @@ describe('prise de controle de compte via les actions admin', () => {
     });
     mockSendPasswordResetEmail.mockResolvedValue(true);
     resetLinkLimiterCheck.mockResolvedValue({ success: true });
+    resetLinkIpLimiterCheck.mockResolvedValue({ success: true });
+    adminRpc.mockResolvedValue({ data: false, error: null });
   });
 
   describe('actionResetUserPassword', () => {
@@ -183,28 +223,85 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
     });
 
-    // RESERVE S5' du contre-audit: le test du cas relache jouait une cible dont
-    // l'adresse auth vivait DANS le tenant de l'appelant - la forme benigne. Le
-    // scenario qui rend le relachement dangereux est l'inverse: la victime est
-    // etrangere au tenant appelant, et c'est sa vraie boite qui recoit le
-    // courriel. C'est ce cas qui est verrouille ici.
-    it("refuse quand l'adresse auth de la cible est etrangere au tenant de l'appelant", async () => {
+    // RESERVE S2 du contre-audit LOT 6. Le cas qui occupait cette place etait un
+    // DOUBLON du precedent: ses `membershipRows` etaient identiques, le refus
+    // tombait au garde de perimetre, et `getUserById` n'etait jamais atteint -
+    // le mock d'adresse auth modifie n'avait donc aucun pouvoir sur le verdict.
+    //
+    // Le cas ci-dessous est, lui, discriminant: le garde AUTORISE (la cible n'a
+    // qu'une appartenance, dans le tenant de l'appelant), donc `getUserById` est
+    // bien atteint et c'est son resultat qui decide ou part le courriel. Il
+    // verrouille l'invariant que le miroir `admin_users.email` ne doit JAMAIS
+    // detourner le lien: un admin qui a reecrit ce miroir vers une adresse qu'il
+    // controle (actionUpdateUserEmail ecrit le miroir meme quand GoTrue n'a pas
+    // encore confirme le changement) ne doit pas recevoir le lien a la place du
+    // titulaire. Mutation de controle: faire partir le courriel sur
+    // `targetUser.email` au lieu de l'adresse auth fait tomber ce cas.
+    //
+    // Le controle "adresse auth hors du domaine du tenant" que R2' proposait est
+    // ECARTE, avec sa raison: un tenant ATTABL n'a aucun domaine de courriel
+    // verifie (le marche cible emploie des adresses gmail / yahoo pour ses
+    // equipes), donc la regle refuserait la majorite des membres legitimes tout
+    // en etant contournable par toute adresse du meme domaine grand public.
+    it("envoie le lien a l'adresse du COMPTE AUTH, jamais au miroir admin_users", async () => {
       actorIsOwnerOfTenantA();
-      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
-      membershipRows = [
-        { tenant_id: TENANT_A, role: 'manager', is_super_admin: false },
-        { tenant_id: TENANT_B, role: 'owner', is_super_admin: false },
-      ];
-      // La ligne du tenant A est le miroir pose par l'attaquant; le compte auth
-      // reel de la victime porte l'adresse de SON restaurant.
+      // Miroir reecrit par l'attaquant vers une adresse qu'il controle.
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'pirate@attaquant.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
       getUserById.mockResolvedValue({
-        data: { user: { id: VICTIM_AUTH_ID, email: 'victime@autre-resto.test' } },
+        data: { user: { id: VICTIM_AUTH_ID, email: 'titulaire@resto-a.test' } },
         error: null,
       });
 
       const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
 
+      expect(res.success).toBe(true);
+      expect(generateLink).toHaveBeenCalledWith({
+        type: 'recovery',
+        email: 'titulaire@resto-a.test',
+      });
+      const [sentTo] = mockSendPasswordResetEmail.mock.calls[0] as [string, { resetUrl: string }];
+      expect(sentTo).toBe('titulaire@resto-a.test');
+      expect(sentTo).not.toBe('pirate@attaquant.test');
+    });
+
+    // RESERVE S1 du contre-audit LOT 6. Le limiteur par COMPTE CIBLE etait
+    // consomme AVANT `checkTenantAdminPermissions`: un appelant qui n'avait
+    // passe aucun controle d'identite brulait les 3 envois par heure d'un compte
+    // precis (tout membre du tenant lit `admin_users.id` de ses collegues), et le
+    // refus par quota devenait distinguable de la reponse "non authentifie" -
+    // soit l'oracle d'activite de compte que le lot pretendait eviter.
+    //
+    // Troisieme voie retenue: un limiteur par IP en PREMIERE etape (la regle
+    // 05-backend-api.md exige une limitation avant tout le reste, et une cle IP
+    // n'est pas dirigeable contre un compte choisi), puis le limiteur par compte
+    // cible APRES l'authentification.
+    it('ne consomme pas le quota du compte cible quand l appelant n est pas authentifie', async () => {
+      mockGetAuthForTenant.mockRejectedValue(
+        Object.assign(new Error('non authentifie'), { status: 401 }),
+      );
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+
+      const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
+
+      expect(res.error).toBeTruthy();
+      expect(resetLinkIpLimiterCheck).toHaveBeenCalledWith('203.0.113.7');
+      expect(resetLinkLimiterCheck).not.toHaveBeenCalled();
+      expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+
+    it('borne le debit par IP avant toute authentification', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+      resetLinkIpLimiterCheck.mockResolvedValue({ success: false });
+
+      const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
+
       expect(res.error).toBe('permissionDenied');
+      expect(mockGetAuthForTenant).not.toHaveBeenCalled();
+      expect(resetLinkLimiterCheck).not.toHaveBeenCalled();
       expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
     });
 
@@ -373,6 +470,73 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(updateUserById).not.toHaveBeenCalled();
     });
 
+    // REFUTATION R2 du contre-audit LOT 6. Le relachement "les lignes retirees
+    // par la plateforme ne comptent plus" etait pose dans le garde PARTAGE, donc
+    // il descendait aussi ici - alors que le rapport ne le motivait que par
+    // l'envoi d'un courriel sur la boite du titulaire. Cette action-ci ECRIT
+    // l'identite du compte auth: c'est la primitive de prise de controle (ACT-14),
+    // elle ne doit compter AUCUNE ligne comme inexistante.
+    //
+    // La configuration ci-dessous n'est pas tordue: retirer un membre depuis la
+    // console plateforme EST un soft-delete (platform-admin.service.ts,
+    // `softDeleteAdminUser`). Un super_admin qui desinscrit un employe de son
+    // restaurant d'origine donnait donc, sans le savoir, a l'admin de l'autre
+    // tenant le droit de reecrire l'adresse du compte auth de cet employe.
+    it("refuse meme quand l'appartenance etrangere a ete retiree par la plateforme", async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = { user_id: VICTIM_AUTH_ID, email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [
+        { tenant_id: TENANT_A, role: 'manager', is_super_admin: false, deleted_at: null },
+        {
+          tenant_id: TENANT_B,
+          role: 'owner',
+          is_super_admin: false,
+          deleted_at: '2026-11-04T10:00:00.000Z',
+        },
+      ];
+
+      const res = await actionUpdateUserEmail(
+        TENANT_A,
+        'target-admin-row',
+        'pirate@attaquant.test',
+      );
+
+      expect(res.error).toBe('permissionDenied');
+      expect(updateUserById).not.toHaveBeenCalled();
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    // Meme invariant que `actionUpdateAdminUser` ci-dessous: une ligne retiree
+    // par la plateforme est gelee pour le tenant. Ici l'action ECRIT l'identite
+    // du compte auth, donc le gel compte double.
+    it('refuse d agir sur une ligne retiree par la plateforme', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: VICTIM_AUTH_ID,
+        email: 'equipier@resto-a.test',
+        role: 'manager',
+        deleted_at: '2026-11-04T10:00:00.000Z',
+      };
+      membershipRows = [
+        {
+          tenant_id: TENANT_A,
+          role: 'manager',
+          is_super_admin: false,
+          deleted_at: '2026-11-04T10:00:00.000Z',
+        },
+      ];
+
+      const res = await actionUpdateUserEmail(
+        TENANT_A,
+        'target-admin-row',
+        'pirate@attaquant.test',
+      );
+
+      expect(res.error).toBe('userNotFound');
+      expect(updateUserById).not.toHaveBeenCalled();
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
     it("n'auto-confirme jamais la nouvelle adresse (pas de email_confirm)", async () => {
       actorIsOwnerOfTenantA();
       targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
@@ -385,6 +549,152 @@ describe('prise de controle de compte via les actions admin', () => {
       const [, payload] = updateUserById.mock.calls[0] as [string, Record<string, unknown>];
       expect(payload.email).toBe('nouveau@resto-a.test');
       expect(payload).not.toHaveProperty('email_confirm');
+    });
+  });
+
+  // CONSTAT C-3 (contre-audit d'ensemble). La suppression etait la seule des
+  // trois actions a ne PAS appeler le garde de perimetre, alors qu'elle est la
+  // plus destructrice: la RPC `delete_admin_user_atomic` (SECURITY DEFINER)
+  // supprime la ligne, recompte les appartenances du compte auth, et si le
+  // compte n'en a plus aucune elle fait `DELETE FROM auth.users` - une
+  // destruction de compte globale, irreversible.
+  //
+  // Perimetre du garde pose ici, et ce qui est DELIBEREMENT laisse passer:
+  //  - `platform_account` et `lookup_failed` REFUSENT. Un compte d'operateur de
+  //    la plateforme n'est jamais gerable par un admin de tenant, et une lecture
+  //    des appartenances qui echoue ne doit pas aboutir a une destruction
+  //    (fail-closed).
+  //  - `cross_tenant` est AUTORISE, et c'est mesure sur le corps de la RPC, pas
+  //    suppose: quand la cible garde une appartenance vivante ailleurs,
+  //    `remaining_count >= 1` et le compte auth est CONSERVE - seule la ligne du
+  //    tenant appelant part. Refuser ce cas serait une regression pure: un
+  //    proprietaire doit pouvoir retirer de SON equipe un employe partage avec
+  //    un autre restaurant.
+  describe('actionDeleteAdminUser', () => {
+    it('refuse de supprimer un compte plateforme (super_admin)', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: VICTIM_AUTH_ID,
+        email: 'platform@attabl.test',
+        full_name: 'Operateur',
+        role: 'manager',
+      };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: true }];
+
+      const res = await actionDeleteAdminUser(TENANT_A, 'target-admin-row');
+
+      expect(res.error).toBe('permissionDenied');
+      expect(adminRpc).not.toHaveBeenCalled();
+    });
+
+    it('refuse (fail-closed) quand les appartenances du compte cible sont illisibles', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: VICTIM_AUTH_ID,
+        email: 'equipier@resto-a.test',
+        full_name: 'Equipier',
+        role: 'manager',
+      };
+      membershipRows = [];
+
+      const res = await actionDeleteAdminUser(TENANT_A, 'target-admin-row');
+
+      expect(res.error).toBe('permissionDenied');
+      expect(adminRpc).not.toHaveBeenCalled();
+    });
+
+    it('NON-REGRESSION: supprime un membre de son propre tenant', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'equipier@resto-a.test',
+        full_name: 'Equipier',
+        role: 'manager',
+      };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+
+      const res = await actionDeleteAdminUser(TENANT_A, 'target-admin-row');
+
+      expect(res.success).toBe(true);
+      expect(adminRpc).toHaveBeenCalledWith('delete_admin_user_atomic', {
+        p_admin_user_id: 'target-admin-row',
+        p_user_id: 'local-auth-id',
+      });
+    });
+
+    it('NON-REGRESSION: retire de son equipe un employe partage avec un autre restaurant', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'partage-auth-id',
+        email: 'partage@resto-a.test',
+        full_name: 'Employe partage',
+        role: 'manager',
+      };
+      membershipRows = [
+        { tenant_id: TENANT_A, role: 'manager', is_super_admin: false },
+        { tenant_id: TENANT_B, role: 'manager', is_super_admin: false },
+      ];
+
+      const res = await actionDeleteAdminUser(TENANT_A, 'target-admin-row');
+
+      expect(res.success).toBe(true);
+      expect(adminRpc).toHaveBeenCalledTimes(1);
+    });
+  });
+  // REFUTATION R2 (point 2.2) du contre-audit LOT 6, dernier morceau non livre.
+  //
+  // La remediation d'une ligne `admin_users` parasite est un soft-delete pose
+  // par la PLATEFORME (`platform-admin.service.ts`, `softDeleteAdminUser`:
+  // `deleted_at` + `is_active = false`). C'est ce retrait qui fait cesser le gel
+  // du proprietaire legitime, donc c'est la seule sortie de la boucle d'attaque.
+  //
+  // Or `actionUpdateAdminUser` ne lisait NI n'ecrivait aucun filtre
+  // `deleted_at`: un admin du tenant pouvait remettre `is_active = true` sur la
+  // ligne que la plateforme venait de retirer, et annuler la remediation en une
+  // requete. Un retrait plateforme n'etait pas un etat stable, alors que la
+  // ligne a disparu de son interface (`admin/users/page.tsx` filtre
+  // `deleted_at`): aucun geste legitime ne passe donc par ce chemin.
+  //
+  // La migration 20261105000000 pose la meme regle en base (policy RESTRICTIVE
+  // `Platform-removed admin rows are frozen for tenants`), mais elle ne peut pas
+  // suffire ici: cette action ecrit avec `createAdminClient()` (service_role),
+  // qui IGNORE le RLS. Les deux couches sont necessaires, chacune sur son
+  // chemin.
+  //
+  // La restauration reste possible, par le seul chemin prevu pour elle:
+  // `restoreAdminUser`, dans la console plateforme, reservee au super_admin.
+  describe('actionUpdateAdminUser - gel des lignes retirees par la plateforme', () => {
+    it('refuse de reactiver une ligne retiree par la plateforme', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: VICTIM_AUTH_ID,
+        email: 'equipier@resto-a.test',
+        role: 'manager',
+        deleted_at: '2026-11-04T10:00:00.000Z',
+      };
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { is_active: true });
+
+      expect(res.error).toBe('userNotFound');
+      expect(adminUsersTargetIsFilter).toHaveBeenCalledWith('deleted_at', null);
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('NON-REGRESSION: met toujours a jour une ligne vivante de son tenant', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'equipier@resto-a.test',
+        role: 'manager',
+        deleted_at: null,
+      };
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        full_name: 'Nom mis a jour',
+      });
+
+      expect(res.success).toBe(true);
+      expect(adminUsersUpdate).toHaveBeenCalledTimes(1);
     });
   });
 });

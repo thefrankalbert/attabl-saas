@@ -88,13 +88,12 @@ describe('checkTargetAccountScope', () => {
     });
   });
 
-  // Correctif R2' point 2: la plateforme (console super-admin) peut retirer une
-  // ligne admin_users parasite par soft-delete. Une ligne soft-deleted n'ouvre
-  // plus aucun acces - toutes les resolutions de session filtrent
-  // `deleted_at is null` (src/lib/auth/get-session.ts) - donc elle ne doit plus
-  // geler le proprietaire legitime. C'est ce qui rend le cas recuperable sans
-  // l'attaquant.
-  it('ignore une appartenance etrangere retiree par la plateforme (soft-delete)', async () => {
+  // REFUTATION R2 du contre-audit LOT 6. Le relachement "une ligne soft-deleted
+  // ne compte plus" doit etre DEMANDE par l'appelant, jamais etre le defaut: il
+  // etait pose dans ce garde partage, donc il relachait aussi
+  // actionUpdateUserEmail (la primitive de prise de controle), alors que seul
+  // l'envoi d'un lien de reinitialisation le justifiait.
+  it('par defaut, une appartenance etrangere retiree par la plateforme compte toujours', async () => {
     const { client } = clientReturning([
       { tenant_id: 'tenant-a', role: 'manager', is_super_admin: false, deleted_at: null },
       {
@@ -106,6 +105,32 @@ describe('checkTargetAccountScope', () => {
     ]);
 
     await expect(checkTargetAccountScope(client, 'user-1', 'tenant-a')).resolves.toEqual({
+      allowed: false,
+      reason: 'cross_tenant',
+    });
+  });
+
+  // Correctif R2' point 2: la plateforme (console super-admin) peut retirer une
+  // ligne admin_users parasite par soft-delete. Elle ne doit alors plus geler le
+  // proprietaire legitime - c'est ce qui rend le cas recuperable sans
+  // l'attaquant. Ce relachement est OPT-IN et reserve a l'envoi d'un lien de
+  // reinitialisation (cf. le cas precedent).
+  it('ignore une appartenance etrangere retiree par la plateforme quand l appelant le demande', async () => {
+    const { client } = clientReturning([
+      { tenant_id: 'tenant-a', role: 'manager', is_super_admin: false, deleted_at: null },
+      {
+        tenant_id: 'tenant-b',
+        role: 'owner',
+        is_super_admin: false,
+        deleted_at: '2026-11-04T10:00:00.000Z',
+      },
+    ]);
+
+    await expect(
+      checkTargetAccountScope(client, 'user-1', 'tenant-a', {
+        ignoreSoftDeletedMemberships: true,
+      }),
+    ).resolves.toEqual({
       allowed: true,
     });
   });
@@ -136,7 +161,11 @@ describe('checkTargetAccountScope', () => {
       },
     ]);
 
-    await expect(checkTargetAccountScope(client, 'user-1', 'tenant-a')).resolves.toEqual({
+    await expect(
+      checkTargetAccountScope(client, 'user-1', 'tenant-a', {
+        ignoreSoftDeletedMemberships: true,
+      }),
+    ).resolves.toEqual({
       allowed: false,
       reason: 'lookup_failed',
     });

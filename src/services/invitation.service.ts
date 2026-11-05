@@ -267,6 +267,16 @@ export function createInvitationService(supabase: SupabaseClient): InvitationSer
           throw new ServiceError('Nom et mot de passe requis pour un nouveau compte', 'VALIDATION');
         }
 
+        // HYPOTHESE NON MESUREE, et c'est TOUTE la securite de cette branche
+        // (reserve S3 du contre-audit LOT 6). A lire comme une hypothese, pas
+        // comme un fait: on suppose que GoTrue REFUSE `createUser` sur une
+        // adresse deja enregistree. On arrive ici quand AUCUNE ligne miroir ne
+        // porte l'adresse de l'invitation; si GoTrue renvoyait le compte
+        // existant au lieu de refuser, `userId` ci-dessous serait le compte
+        // d'un TIERS et la prise de controle serait de retour - sans session et
+        // sans consentement. Les tests simulent ce refus; il n'est pas eprouve
+        // contre une vraie base. A trancher par une mesure sur base jetable
+        // (procedure: memoire projet `reference_test_db_locale_pieges`).
         const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
           email: invitation.email,
           password: input.password,
