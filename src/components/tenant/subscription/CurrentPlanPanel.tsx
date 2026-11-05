@@ -35,6 +35,12 @@ interface CurrentPlanPanelProps {
   periodEnd: string | null;
   billingInterval: BillingInterval;
   hasSubscription: boolean;
+  /**
+   * Le prestataire d'encaissement actif heberge-t-il une page de gestion ?
+   * Stripe oui, un agregateur mobile money non (voir `lib/billing/provider`).
+   * Sans cette garde, le bouton menerait a une route qui ne peut rien rendre.
+   */
+  canOpenPortal: boolean;
   isBillingLoading: boolean;
   onManageBilling: () => void;
 }
@@ -51,6 +57,7 @@ export function CurrentPlanPanel({
   periodEnd,
   billingInterval,
   hasSubscription,
+  canOpenPortal,
   isBillingLoading,
   onManageBilling,
 }: CurrentPlanPanelProps) {
@@ -122,7 +129,7 @@ export function CurrentPlanPanel({
           </div>
         </div>
 
-        {hasSubscription && (
+        {hasSubscription && canOpenPortal && (
           <Button
             variant="outline"
             onClick={onManageBilling}

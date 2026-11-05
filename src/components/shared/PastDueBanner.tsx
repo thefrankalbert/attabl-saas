@@ -3,10 +3,20 @@
 import { CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { billingCapabilities } from '@/lib/billing/provider';
 import { logger } from '@/lib/logger';
 
 export function PastDueBanner() {
   const [loading, setLoading] = useState(false);
+  // Le portail de facturation est une CAPACITE du prestataire, pas un acquis:
+  // Stripe en heberge un, un agregateur mobile money non (voir
+  // `lib/billing/provider`). Sans portail, ce bouton meneraient a une route qui
+  // ne peut rien rendre.
+  //
+  // A FAIRE le jour ou un prestataire sans portail devient actif: le message
+  // ci-dessous dit "Mettez a jour votre carte", ce qui n'a pas de sens sans
+  // carte ni portail. Il faudra une invitation a regler la periode en cours.
+  const canOpenPortal = billingCapabilities().hostedPortal;
 
   const handleManageCard = async () => {
     setLoading(true);
@@ -31,14 +41,16 @@ export function PastDueBanner() {
           Votre paiement a échoué. Mettez à jour votre carte.
         </p>
       </div>
-      <Button
-        variant="default"
-        onClick={handleManageCard}
-        disabled={loading}
-        className="shrink-0 bg-status-warning text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 h-auto"
-      >
-        {loading ? 'Chargement...' : 'Mettre à jour'}
-      </Button>
+      {canOpenPortal && (
+        <Button
+          variant="default"
+          onClick={handleManageCard}
+          disabled={loading}
+          className="shrink-0 bg-status-warning text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 h-auto"
+        >
+          {loading ? 'Chargement...' : 'Mettre à jour'}
+        </Button>
+      )}
     </div>
   );
 }

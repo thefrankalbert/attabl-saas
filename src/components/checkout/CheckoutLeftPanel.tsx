@@ -2,7 +2,7 @@
 
 import { Check, ShieldCheck } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { PLAN_AMOUNTS } from '@/lib/stripe/pricing';
+import { PLAN_AMOUNTS } from '@/lib/billing/pricing';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 import {

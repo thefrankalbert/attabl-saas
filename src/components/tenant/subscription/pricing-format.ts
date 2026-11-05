@@ -1,4 +1,4 @@
-import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
+import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/billing/pricing';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
 export type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
