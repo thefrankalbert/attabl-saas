@@ -62,6 +62,18 @@ export interface ClientOrdersProps {
 export const ACTIVE_STATUSES = new Set(['pending', 'confirmed', 'preparing', 'ready']);
 export const TERMINAL_STATUSES = new Set(['delivered', 'served', 'completed', 'cancelled']);
 
+// Plafond du nombre d'ids de commande envoyes au RPC get_orders_for_tracking,
+// qui refuse au-dela (borne posee contre une amplification mesuree en prod:
+// 20000 ids acceptes, 4,5 s de CPU Postgres par requete, sans rate limiting
+// puisque l'appel part du navigateur droit sur l'API REST).
+//
+// On borne a la LECTURE et pas a l'ecriture, volontairement: la liste complete
+// reste en localStorage, parce que useClientSettings affiche au client son
+// nombre total de commandes passees. L'elaguer rognerait ce compteur. Borner
+// ici protege le RPC sans rien retirer a l'interface, et les clients fideles
+// qui ont deja une liste plus longue restent servis (les plus recentes).
+export const MAX_TRACKED_ORDER_IDS = 200;
+
 // --- Helpers ------------------------------------------------
 
 export function getStoredOrderIds(tenantSlug: string): string[] {
@@ -69,7 +81,10 @@ export function getStoredOrderIds(tenantSlug: string): string[] {
   try {
     // Namespaced per tenant so customers who order from multiple ATTABL
     // restaurants on the same device don't see ID leak across tenants.
-    return JSON.parse(localStorage.getItem(`attabl_${tenantSlug}_order_ids`) || '[]');
+    const parsed = JSON.parse(localStorage.getItem(`attabl_${tenantSlug}_order_ids`) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    // Les plus recentes sont en fin de liste (push a la commande).
+    return parsed.slice(-MAX_TRACKED_ORDER_IDS);
   } catch {
     return [];
   }

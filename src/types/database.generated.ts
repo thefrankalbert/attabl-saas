@@ -2950,7 +2950,6 @@ export type Database = {
       get_co_ordered_items: {
         Args: { p_cart_ids: string[]; p_limit?: number; p_tenant_id: string };
         Returns: {
-          frequency: number;
           menu_item_id: string;
         }[];
       };
@@ -3094,10 +3093,7 @@ export type Database = {
           name: string;
           service_charge_rate: number;
           slug: string;
-          subscription_plan: string;
-          subscription_status: string;
           tax_rate: number;
-          trial_ends_at: string;
         }[];
       };
       get_tenant_public_by_id: {
