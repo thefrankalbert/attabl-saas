@@ -4,12 +4,12 @@ import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { headers } from 'next/headers';
 
 import { getTenant } from '@/lib/cache';
-import { hasPermission } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
-import type { AdminRole, AdminUser } from '@/types/admin.types';
-import type { PermissionCode, RolePermissions } from '@/types/permission.types';
+import type { AdminRole } from '@/types/admin.types';
+import type { PermissionCode } from '@/types/permission.types';
 
 import { redirectToLogin, redirectToUnauthorized } from './redirect-to-main';
+import { resolveAdminPermission } from './resolve-admin-permission';
 
 export interface AdminPermissionContext {
   tenantId: string;
@@ -19,16 +19,17 @@ export interface AdminPermissionContext {
 /**
  * Server-side route guard for admin pages.
  *
- * Mirrors the user-resolution in the admin layout (direct tenant member OR
- * super_admin virtual-owner) and then enforces a single permission code. If the
- * authenticated user lacks the permission, redirects to /unauthorized.
+ * Enforces a single permission code for the authenticated user on the resolved
+ * tenant; redirects to /unauthorized when it is missing, /login when there is
+ * no session.
  *
  * This closes the gap where admin page ROUTES rendered for any authenticated
  * staff member regardless of role - sensitive write endpoints were already
  * permission-gated, but page shells (and their server-loaded data) were not.
  *
- * Resolution uses the same 3-level model as `hasPermission`:
- * individual override -> tenant role override -> default role matrix.
+ * The resolution lives in `resolve-admin-permission`, shared with the
+ * middleware gate: live membership (is_active, no deleted_at) OR live platform
+ * super_admin, then the 3-level `hasPermission` model.
  */
 export async function requireAdminPermission(
   site: string,
@@ -54,60 +55,13 @@ export async function requireAdminPermission(
     redirectToLogin();
   }
 
-  // 1. Direct tenant member
-  const { data: adminData } = await supabase
-    .from('admin_users')
-    .select('role, custom_permissions')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenant.id)
-    .single();
+  const { allowed, role } = await resolveAdminPermission(supabase, user.id, tenant.id, permission);
 
-  // hasPermission only reads `role` and `custom_permissions`.
-  let principal: Pick<AdminUser, 'role' | 'custom_permissions'>;
-
-  if (adminData) {
-    principal = {
-      role: adminData.role as AdminRole,
-      custom_permissions: adminData.custom_permissions,
-    };
-  } else {
-    // 2. Super admin (can access any tenant with owner-level access)
-    const { data: superAdminCheck } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('is_super_admin', true)
-      .limit(1)
-      .single();
-
-    if (!superAdminCheck) {
-      redirectToUnauthorized();
-    }
-
-    principal = { role: 'owner' as AdminRole, custom_permissions: null };
-  }
-
-  const adminUser = principal as AdminUser;
-
-  // 3. Per-tenant role override (medium priority in hasPermission resolution)
-  const { data: roleOverride } = await supabase
-    .from('role_permissions')
-    .select('role, permissions')
-    .eq('tenant_id', tenant.id)
-    .eq('role', adminUser.role)
-    .maybeSingle();
-
-  // hasPermission only reads `.permissions`; the select omits the other
-  // RolePermissions fields, so narrow via cast.
-  const override = roleOverride
-    ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
-    : null;
-
-  if (!hasPermission(adminUser, permission, override)) {
+  if (!allowed || !role) {
     redirectToUnauthorized();
   }
 
-  return { tenantId: tenant.id, role: adminUser.role };
+  return { tenantId: tenant.id, role };
 }
 
 /**
@@ -137,40 +91,6 @@ export async function getAdminPermission(
     return false;
   }
 
-  const { data: adminData } = await supabase
-    .from('admin_users')
-    .select('role, custom_permissions')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenant.id)
-    .single();
-
-  if (!adminData) {
-    // Super admins get owner-level access everywhere.
-    const { data: superAdminCheck } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('is_super_admin', true)
-      .limit(1)
-      .single();
-    return Boolean(superAdminCheck);
-  }
-
-  const principal = {
-    role: adminData.role as AdminRole,
-    custom_permissions: adminData.custom_permissions,
-  } as AdminUser;
-
-  const { data: roleOverride } = await supabase
-    .from('role_permissions')
-    .select('role, permissions')
-    .eq('tenant_id', tenant.id)
-    .eq('role', principal.role)
-    .maybeSingle();
-
-  const override = roleOverride
-    ? ({ permissions: roleOverride.permissions } as unknown as RolePermissions)
-    : null;
-
-  return hasPermission(principal, permission, override);
+  const { allowed } = await resolveAdminPermission(supabase, user.id, tenant.id, permission);
+  return allowed;
 }

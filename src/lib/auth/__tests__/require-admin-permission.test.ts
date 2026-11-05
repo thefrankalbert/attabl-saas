@@ -61,6 +61,14 @@ vi.mock('@/lib/supabase/server', () => ({
           filtres.push({ table, col, val });
           return builder;
         },
+        // `.is('deleted_at', null)` est le filtre qui ecarte les memberships
+        // supprimes en douceur. On l'enregistre comme un `eq` pour pouvoir
+        // l'assertionner: une garde qui l'oublierait rendrait leur ancien role
+        // a des comptes supprimes.
+        is(col: string, val: unknown) {
+          filtres.push({ table, col, val });
+          return builder;
+        },
         single: async () => reponses[table]?.shift() ?? { data: null },
         maybeSingle: async () => reponses[table]?.shift() ?? { data: null },
       };
@@ -141,12 +149,58 @@ describe('requireAdminPermission', () => {
 
     const ctx = await requireAdminPermission('resto', 'reports.view');
 
+    // On verifie le RESULTAT, pas l'appel interne a hasPermission. La garde
+    // autorise un super-admin sans passer par elle, et c'est equivalent:
+    // hasPermission renvoie true inconditionnellement pour le role `owner`
+    // (short-circuit, permissions.ts). Asserter l'appel reviendrait a figer un
+    // detail d'implementation au lieu de la regle.
     expect(ctx.role).toBe('owner');
-    expect(hasPermission).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'owner' }),
-      'reports.view',
-      null,
+  });
+
+  it('ignore un membre suspendu et retombe sur la verification super admin', async () => {
+    // Un membre suspendu (is_active=false) n'est PAS renvoye par la requete,
+    // puisqu'elle filtre: la garde passe donc au test super-admin, qui echoue
+    // ici. C'est ce qui empeche un compte desactive de garder son ancien role.
+    reponses.admin_users = [{ data: null }, { data: null }];
+
+    await expect(requireAdminPermission('resto', 'reports.view')).rejects.toBeInstanceOf(
+      RedirectUnauthorized,
     );
+
+    // La preuve que le refus vient bien des filtres et non d'autre chose.
+    expect(filtres).toContainEqual({ table: 'admin_users', col: 'is_active', val: true });
+    expect(filtres).toContainEqual({ table: 'admin_users', col: 'deleted_at', val: null });
+  });
+
+  it('filtre aussi les memberships morts sur le chemin super admin', async () => {
+    reponses.admin_users = [{ data: null }, { data: null }];
+
+    await expect(requireAdminPermission('resto', 'reports.view')).rejects.toBeInstanceOf(
+      RedirectUnauthorized,
+    );
+
+    // Deux requetes, chacune filtrant is_active ET deleted_at: un super-admin
+    // revoque ne doit pas garder un acces owner sur toute la plateforme.
+    const actifs = filtres.filter((f) => f.table === 'admin_users' && f.col === 'is_active');
+    const vivants = filtres.filter((f) => f.table === 'admin_users' && f.col === 'deleted_at');
+    expect(actifs).toHaveLength(2);
+    expect(vivants).toHaveLength(2);
+  });
+
+  it('accorde un acces owner a un membre marque super admin, quel que soit son role', async () => {
+    // Ecart corrige par l'unification: le garde du middleware court-circuitait
+    // sur is_super_admin de la ligne de membre, la garde de page l'ignorait. Un
+    // super-admin ayant aussi une ligne a role faible etait donc autorise par
+    // l'un et refuse par l'autre.
+    reponses.admin_users = [
+      { data: { role: 'waiter', custom_permissions: null, is_super_admin: true } },
+    ];
+    hasPermission.mockReturnValue(false);
+
+    const ctx = await requireAdminPermission('resto', 'reports.view');
+
+    expect(ctx.role).toBe('waiter');
+    expect(hasPermission).not.toHaveBeenCalled();
   });
 
   it('refuse un non-membre qui n est pas super admin', async () => {
