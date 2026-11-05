@@ -151,6 +151,32 @@ describe('OrderService', () => {
         code: 'VALIDATION',
       });
     });
+
+    // CTR7-1: une suspension decidee par le super-admin ne s'exprimait en base
+    // que par is_active=false. `suspended_at` etait ecrit et affiche dans la
+    // console plateforme, mais applique NULLE PART - alors que cinq ecritures du
+    // webhook Stripe remettent is_active a true en se basant sur le seul statut
+    // d'abonnement. La ligne ci-dessous (is_active=true + suspended_at pose) est
+    // exactement celle que cette fuite produisait: la prise de commande doit la
+    // refuser quand meme.
+    it('refuse les commandes d un tenant suspendu par la plateforme', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('tenants').single.mockResolvedValue({
+        data: {
+          id: 'tenant-123',
+          is_active: true,
+          subscription_status: 'active',
+          suspended_at: '2026-11-01T10:00:00.000Z',
+        },
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+
+      await expect(service.validateTenant('suspended-restaurant')).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+      });
+    });
   });
 
   describe('previewOrderItems', () => {

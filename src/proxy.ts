@@ -262,7 +262,13 @@ export async function proxy(request: NextRequest) {
         const tenantInfo = await getCachedTenant(adminSlug);
         if (
           tenantInfo &&
-          (tenantInfo.subscription_status === 'frozen' || tenantInfo.is_active === false)
+          (tenantInfo.subscription_status === 'frozen' ||
+            tenantInfo.is_active === false ||
+            // CTR7-1: une suspension plateforme ne reposait que sur is_active,
+            // que cinq ecritures du webhook Stripe pouvaient remettre a true.
+            // `suspended_at` etait ecrit et affiche, jamais applique: ce verrou
+            // le rend reel, comme deleted_at l'est deja (filtre du select).
+            !!tenantInfo.suspended_at)
         ) {
           const subscriptionUrl = new URL(
             `/sites/${adminSlug}/admin/subscription`,

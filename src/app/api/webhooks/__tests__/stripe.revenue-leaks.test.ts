@@ -67,6 +67,9 @@ import { POST } from '../stripe/route';
 /** Maillon `.eq()` chainable ET attendable, comme un builder postgrest. */
 interface EqChain extends PromiseLike<{ error: unknown }> {
   eq: (column: string, value: unknown) => EqChain;
+  // LOT 9 / CTR7-1: le builder porte desormais aussi `.is()` (garde de
+  // suspension sur `invoice.paid`). Le double doit suivre la vraie requete.
+  is: (column: string, value: unknown) => EqChain;
 }
 
 function makeEqChain(
@@ -75,6 +78,10 @@ function makeEqChain(
 ): EqChain {
   const chain: EqChain = {
     eq: (column, value) => {
+      onEq(column, value);
+      return chain;
+    },
+    is: (column, value) => {
       onEq(column, value);
       return chain;
     },
@@ -525,6 +532,15 @@ describe('RES-1 - customer.subscription.updated ne re-entitle pas un tenant gele
         subscription_status: 'past_due',
         subscription_plan: 'pro',
         billing_interval: 'monthly',
+        // LOT 9 / CTR7-1: la ligne est maintenant EXPLICITE sur ce qu'elle
+        // represente. Sans ces deux colonnes, le `{ is_active: true }` attendu
+        // ci-dessous benissait AUSSI la reactivation d'un tenant suspendu par
+        // la plateforme: `past_due` + `is_active=false` + `suspended_at` non
+        // nul est exactement la ligne d'une suspension, et l'assertion ne
+        // distinguait pas les deux. Le tenant suspendu a son propre test
+        // (stripe.suspension-litiges.test.ts).
+        suspended_at: null,
+        deleted_at: null,
       },
     });
     mockConstructEvent.mockReturnValue(subscriptionUpdatedEvent('past_due'));

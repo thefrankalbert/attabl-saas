@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { updateTolerantToMissingFreezeReason } from '@/lib/billing/freeze-reason';
 import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
 
 /**
@@ -62,12 +63,24 @@ export async function POST(request: Request) {
     subscription_status: mappedStatus,
     subscription_plan: plan,
     billing_interval: billingInterval,
+    // RES-1: cette route pretend ecrire "les colonnes EXACTES que le webhook
+    // ecrit" - elle oubliait la cause du gel. L'invariant du projet est
+    // "freeze_reason non nulle SI ET SEULEMENT SI subscription_status =
+    // 'frozen'": ecrire un statut NON gele sans effacer la cause le ROMPT, et
+    // laissait ici une cause 'dispute' heritee sur un tenant actif. Dixieme
+    // site d'ecriture de statut du depot; les neuf autres passent par
+    // freezeReasonForStatus (src/lib/billing/freeze-reason.ts).
+    freeze_reason: null,
   };
 
-  const { error: updateError } = await supabase
-    .from('tenants')
-    .update(updateData)
-    .eq('id', tenant_id);
+  // Meme tolerance que le webhook: tant que la colonne freeze_reason n'existe
+  // pas (le code part en production AVANT la migration), l'ecriture est rejouee
+  // sans la cause plutot que de rendre un 500.
+  const { error: updateError } = await updateTolerantToMissingFreezeReason(
+    updateData,
+    (payload) => supabase.from('tenants').update(payload).eq('id', tenant_id),
+    { tenant_id, handler: 'dev/simulate-subscription' },
+  );
 
   if (updateError) {
     logger.error('[dev] simulate-subscription DB update failed', updateError, { tenant_id });

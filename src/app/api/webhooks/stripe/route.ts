@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger';
 import { getStripe, getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
 import { isSubscriptionUsable } from '@/lib/plans/features';
 import {
+  type FreezeReason,
   FREEZE_REASONS,
   freezeReasonForStatus,
   selectTolerantToMissingFreezeReason,
@@ -179,11 +180,23 @@ async function disputeCustomerId(
   }
 }
 
-/** Statuts d'un litige encore OUVERT chez Stripe (argent toujours en jeu). */
-const OPEN_DISPUTE_STATUSES: readonly string[] = ['needs_response', 'under_review'];
+/**
+ * Les SEULS etats d'un litige qui ne retient plus d'argent: gagne, ou alerte
+ * precoce classee sans suite.
+ *
+ * CTR7-4: la liste etait ecrite a l'envers - elle enumerait les litiges
+ * "ouverts" (`needs_response`, `under_review`) et oubliait les deux etats
+ * d'alerte precoce (`warning_needs_response`, `warning_under_review`), pourtant
+ * presents dans `Dispute.Status`. Un litige en alerte comptait donc comme
+ * "aucun litige". Et un litige PERDU ne bloquait rien, alors que l'argent est
+ * parti. Enumerer ce qui LIBERE, et bloquer sur tout le reste, est la seule
+ * formulation qui resiste a un etat ajoute par Stripe demain.
+ */
+const SETTLED_DISPUTE_STATUSES: readonly string[] = ['won', 'warning_closed'];
 
 /**
- * Reste-t-il un litige OUVERT pour ce client, autre que celui qu'on ferme ?
+ * Reste-t-il, pour ce client, un litige qui retient de l'argent - autre que
+ * celui qu'on est en train de fermer ?
  *
  * La cause du gel (`freeze_reason`) dit qu'on a le droit de lever CE gel. Elle
  * ne dit pas s'il reste un AUTRE litige en cours: deux litiges simultanes
@@ -195,17 +208,18 @@ const OPEN_DISPUTE_STATUSES: readonly string[] = ['needs_response', 'under_revie
  * gele (fail-closed).
  *
  * Limite assumee, ecrite ici pour qu'elle ne surprenne personne: la lecture
- * porte sur les 100 derniers paiements du client. Un litige rattache a un
- * paiement plus ancien n'est pas vu. Le verrou principal reste la cause du gel.
+ * porte sur les 100 derniers paiements du client (`charges.list` n'est pas
+ * pagine: ni `has_more`, ni `autoPagingEach`). Un litige rattache a un paiement
+ * plus ancien n'est pas vu. Le verrou principal reste la cause du gel.
  *
  * Cout: un appel, plus un par paiement effectivement conteste - en pratique zero
  * ou un. On passe par `charges.list` parce que `disputes.list` ne sait pas
  * filtrer par client.
  */
-async function hasOpenDispute(
+async function hasUnsettledDispute(
   stripe: ReturnType<typeof getStripe>,
   customerId: string,
-  closingDisputeId: string,
+  closingDisputeId: string | null,
 ): Promise<boolean | null> {
   try {
     const charges = await stripe.charges.list({ customer: customerId, limit: 100 });
@@ -217,9 +231,9 @@ async function hasOpenDispute(
       const disputes = await stripe.disputes.list({ charge: chargeId, limit: 100 });
       for (const other of disputes.data) {
         // Le litige qu'on ferme ne doit pas se bloquer lui-meme.
-        if (other.id === closingDisputeId) continue;
-        if (OPEN_DISPUTE_STATUSES.includes(other.status)) {
-          logger.warn('Un autre litige est encore ouvert: le tenant reste gele', {
+        if (closingDisputeId !== null && other.id === closingDisputeId) continue;
+        if (!SETTLED_DISPUTE_STATUSES.includes(other.status)) {
+          logger.warn('Un litige retient encore de l argent: le tenant reste gele', {
             customerId,
             disputeId: other.id,
             disputeStatus: other.status,
@@ -233,6 +247,113 @@ async function hasOpenDispute(
     logger.error('Litiges du client illisibles: le tenant reste gele', err, { customerId });
     return null;
   }
+}
+
+/** Les deux colonnes qui portent une decision HUMAINE sur l'acces d'un tenant. */
+interface PlatformLocks {
+  suspended_at?: string | null;
+  deleted_at?: string | null;
+}
+
+/**
+ * CTR7-1 - `is_active` pour un statut donne, SAUF si la plateforme a coupe.
+ *
+ * Une suspension decidee par le super-admin ne s'exprimait en base que par
+ * `is_active = false`: `suspended_at` etait ecrit et affiche dans la console
+ * plateforme, mais applique NULLE PART. Or CINQ gestionnaires de ce fichier
+ * reecrivent `is_active` en le calculant sur le seul statut d'abonnement
+ * (`checkout.session.completed`, les deux branches de
+ * `customer.subscription.updated`, `invoice.payment_failed`,
+ * `charge.dispute.closed`), et `isActiveForStatus('past_due')` vaut `true`:
+ * un tenant suspendu dont Stripe disait encore `past_due` etait donc RALLUME
+ * par le premier evenement de relance - vitrine, prise de commande et tableau
+ * de bord rouverts, la console plateforme continuant d'afficher "suspendu".
+ *
+ * Le statut REEL de l'abonnement continue d'etre ecrit: la base ne doit pas
+ * mentir sur ce que dit Stripe. Seul l'ACCES est retenu, et il est rendu par
+ * `unsuspendTenant` / `restoreTenant`, qui sont les seuls chemins autorises a
+ * defaire une decision humaine.
+ *
+ * `deleted_at` est deja applique a la lecture partout (`order-queries`,
+ * `lib/cache`); il est ajoute ici par symetrie, pour qu'aucun evenement Stripe
+ * ne puisse reecrire `is_active = true` sur une ligne supprimee.
+ */
+function isActiveUnlessLocked(
+  status: SubscriptionStatus,
+  tenant: PlatformLocks | null | undefined,
+): boolean {
+  if (tenant?.suspended_at || tenant?.deleted_at) return false;
+  return isActiveForStatus(status);
+}
+
+/** L'etat de gel courant d'une ligne, tel que les gardes ci-dessous le lisent. */
+interface CurrentFreeze {
+  subscription_status?: string | null;
+  freeze_reason?: string | null;
+}
+
+/**
+ * CTR7-2 - la cause a ecrire, sans jamais ECRASER une cause deja posee.
+ *
+ * L'invariant "non nul si et seulement si `frozen`" rendait l'OUBLI d'une cause
+ * inoffensif, mais pas son ECRASEMENT - et c'est l'ecrasement qui se produit:
+ * la branche `else` de `customer.subscription.updated` ecrivait
+ * `stripe_unpaid` par-dessus `dispute`, donc un litige gagne ne degelait plus
+ * un client qui paie (`charge.dispute.closed` ne leve que la cause `dispute`).
+ *
+ * Regle: on n'ecrase jamais la cause d'un gel DEJA en place. Un tenant gele
+ * reste gele, et la raison qui l'a gele la premiere garde la main. L'effacement
+ * sur sortie de gel, lui, est conserve tel quel: c'est lui qui tient
+ * l'invariant.
+ */
+function freezeReasonPreservingCause(
+  nextStatus: SubscriptionStatus,
+  fallbackReason: FreezeReason,
+  current: CurrentFreeze | null | undefined,
+  context: Record<string, unknown>,
+): string | null {
+  const next = freezeReasonForStatus(nextStatus, fallbackReason);
+  if (next === null) return null;
+  if (current?.subscription_status === 'frozen' && current.freeze_reason) {
+    logger.info('Gel deja en place: la cause existante est conservee', {
+      ...context,
+      keptReason: current.freeze_reason,
+      refusedReason: next,
+    });
+    return current.freeze_reason;
+  }
+  return next;
+}
+
+/**
+ * CTR7-4 - faut-il rester gele parce qu'un litige retient de l'argent ?
+ *
+ * Seul `charge.dispute.closed` faisait ce controle. `customer.subscription.updated`
+ * et `checkout.session.completed` peuvent eux aussi degeler un tenant gele POUR
+ * LITIGE (il suffit que Stripe dise `active`), et ils ne le faisaient pas: le
+ * meme acces etait donc rendu ou refuse selon l'evenement qui arrivait en
+ * premier. Les trois passent desormais par ici.
+ *
+ * `true` = il faut rester gele. L'appel reseau n'est fait que quand l'ecriture
+ * RENDRAIT l'acces et que le gel courant a bien un litige pour cause.
+ */
+async function unsettledDisputeBlocksUnfreeze(
+  stripe: ReturnType<typeof getStripe>,
+  customerId: string | null | undefined,
+  current: CurrentFreeze | null | undefined,
+  grantsAccess: boolean,
+  closingDisputeId: string | null,
+): Promise<boolean> {
+  if (!grantsAccess) return false;
+  if (current?.subscription_status !== 'frozen') return false;
+  if (current.freeze_reason !== FREEZE_REASONS.DISPUTE) return false;
+  if (!customerId) {
+    // Gel pour litige et client Stripe inconnu: on ne peut rien verifier.
+    logger.warn('Gel pour litige sans client Stripe resolvable: le tenant reste gele', {});
+    return true;
+  }
+  // `true` (litige non regle) comme `null` (etat illisible): on reste gele.
+  return (await hasUnsettledDispute(stripe, customerId, closingDisputeId)) !== false;
 }
 
 export async function POST(request: Request) {
@@ -319,13 +440,23 @@ export async function POST(request: Request) {
 
         if (tenantId) {
           // Idempotency: skip if tenant already has this subscription ID
-          const { data: existingTenant } = await supabase
-            .from('tenants')
+          const { data: existingTenant } = await selectTolerantToMissingFreezeReason(
             // CTR-1: le statut de depart est necessaire pour appliquer la regle
             // du fichier (voir isEntitlingWithoutPayment).
-            .select('stripe_subscription_id, subscription_status')
-            .eq('id', tenantId)
-            .single();
+            // CTR7-1: les deux verrous humains, pour ne jamais rendre l'acces a
+            // un tenant suspendu ou supprime par la plateforme.
+            // CTR7-2: la cause courante, pour ne pas l'ecraser.
+            'stripe_subscription_id, subscription_status, suspended_at, deleted_at, freeze_reason',
+            (columns) =>
+              supabase.from('tenants').select(columns).eq('id', tenantId).single<{
+                stripe_subscription_id: string | null;
+                subscription_status: string | null;
+                suspended_at?: string | null;
+                deleted_at?: string | null;
+                freeze_reason?: string | null;
+              }>(),
+            { tenantId, handler: 'checkout.session.completed' },
+          );
 
           if (existingTenant?.stripe_subscription_id === subscriptionId) {
             logger.info('checkout.session.completed already processed, skipping', {
@@ -341,11 +472,13 @@ export async function POST(request: Request) {
           // l'inverse exact du fail-closed de charge.dispute.closed. `null` ici
           // signifie "etat non etabli", et on n'ecrit alors aucun acces.
           let mappedStatus: SubscriptionStatus | null = null;
+          let subscriptionUnreadable = false;
           if (subscriptionId) {
             try {
               const subscription = await stripe.subscriptions.retrieve(subscriptionId);
               mappedStatus = mapStripeStatus(subscription.status);
             } catch (err) {
+              subscriptionUnreadable = true;
               logger.error(
                 'Abonnement illisible chez Stripe: aucun acces accorde (fail-closed)',
                 err,
@@ -356,6 +489,29 @@ export async function POST(request: Request) {
             logger.warn('checkout.session.completed sans abonnement: aucun acces accorde', {
               tenantId,
             });
+          }
+
+          // CTR7-3: le fail-closed de ce gestionnaire etait TERMINAL. Le `catch`
+          // avalait l'echec, la route renvoyait 200, Stripe ne rejouait donc
+          // JAMAIS l'evenement du PREMIER paiement - et comme
+          // `stripe_subscription_id` etait quand meme ecrit, la garde
+          // d'idempotence ci-dessus bloquait toute retentative. Un tenant gele
+          // qui payait pendant un 429 de l'API Stripe restait eteint jusqu'au
+          // roulement de periode: un mois, un an sur une formule annuelle.
+          // `invoice.paid` ne peut rien rattraper (scope `past_due`).
+          //
+          // Un echec de LECTURE est transitoire: on n'ecrit rien du tout, on
+          // retire la ligne d'idempotence et on renvoie 500 pour que Stripe
+          // rejoue (trois jours). Aucun acces n'est accorde en aveugle, et le
+          // rejeu repart d'une ligne intacte. Le risque "endpoint desactive par
+          // Stripe" suppose un taux d'echec DURABLE de son propre API, pas un
+          // 429 isole - et il est preferable a la perte definitive du premier
+          // paiement. La session SANS abonnement, elle, est une condition
+          // PERMANENTE: la rejouer pendant trois jours ne servirait a rien,
+          // donc elle reste en 200.
+          if (subscriptionUnreadable) {
+            await supabase.from('stripe_events').delete().eq('id', event.id);
+            return NextResponse.json({ error: 'Subscription unreadable' }, { status: 500 });
           }
 
           // Mettre à jour le tenant avec les infos Stripe
@@ -372,6 +528,17 @@ export async function POST(request: Request) {
           // tenant gele se degelait tout seul en ouvrant une session de paiement
           // qu'il n'achevait pas, et son `past_due_since` etait EFFACE: un NULL
           // sort du filtre du cron (NULL < x vaut NULL), donc plus aucune borne.
+          const blockedByDispute =
+            mappedStatus === null
+              ? false
+              : await unsettledDisputeBlocksUnfreeze(
+                  stripe,
+                  customerId,
+                  existingTenant,
+                  isActiveUnlessLocked(mappedStatus, existingTenant),
+                  null,
+                );
+
           if (mappedStatus === null) {
             logger.warn('checkout.session.completed: statut non etabli, acces inchange', {
               tenantId,
@@ -385,14 +552,24 @@ export async function POST(request: Request) {
               currentStatus: existingTenant?.subscription_status,
               mappedStatus,
             });
+          } else if (blockedByDispute) {
+            // CTR7-4: un gel pour litige ne se leve pas tant qu'un litige
+            // retient de l'argent, quel que soit l'evenement qui arrive.
+            logger.warn('checkout.session.completed: litige non regle, acces inchange', {
+              tenantId,
+              mappedStatus,
+            });
           } else {
             updateData.subscription_status = mappedStatus;
             // Un tenant gele (essai expire, impaye) qui souscrit REELLEMENT doit
             // retrouver sa vitrine. Sans cette ligne il payait et restait eteint.
-            updateData.is_active = isActiveForStatus(mappedStatus);
-            updateData.freeze_reason = freezeReasonForStatus(
+            // CTR7-1: sauf si la plateforme l'a suspendu ou supprime.
+            updateData.is_active = isActiveUnlessLocked(mappedStatus, existingTenant);
+            updateData.freeze_reason = freezeReasonPreservingCause(
               mappedStatus,
               FREEZE_REASONS.STRIPE_UNPAID,
+              existingTenant,
+              { tenantId, handler: 'checkout.session.completed' },
             );
             // La borne d'impaye ne s'efface que sur un statut SAIN. L'effacer sur
             // un `past_due` ou un `frozen` supprimerait le compte a rebours du
@@ -457,11 +634,23 @@ export async function POST(request: Request) {
         const customerId = subscription.customer as string;
 
         // Récupérer le tenant
-        const { data: tenant, error: tenantError } = await supabase
-          .from('tenants')
-          .select('id, subscription_status, subscription_plan, billing_interval')
-          .eq('stripe_customer_id', customerId)
-          .single();
+        // CTR7-1: `suspended_at` / `deleted_at` (verrous humains, jamais
+        // defaits par un evenement Stripe). CTR7-2: `freeze_reason`, pour ne
+        // pas ecraser la cause d'un gel deja en place.
+        const { data: tenant, error: tenantError } = await selectTolerantToMissingFreezeReason(
+          'id, subscription_status, subscription_plan, billing_interval, suspended_at, deleted_at, freeze_reason',
+          (columns) =>
+            supabase.from('tenants').select(columns).eq('stripe_customer_id', customerId).single<{
+              id: string;
+              subscription_status: string | null;
+              subscription_plan: string | null;
+              billing_interval: string | null;
+              suspended_at?: string | null;
+              deleted_at?: string | null;
+              freeze_reason?: string | null;
+            }>(),
+          { customerId, handler: 'customer.subscription.updated' },
+        );
 
         if (tenantError || !tenant) {
           logger.warn('Subscription updated: tenant not found', { customerId });
@@ -481,14 +670,29 @@ export async function POST(request: Request) {
         // depuis un statut sain (voir isEntitlingWithoutPayment). Le plan, la
         // periode et l'intervalle continuent d'etre mis a jour: ce sont des
         // metadonnees, elles ne rendent aucun acces.
-        if (
+        const refusedByRule =
           isEntitlingWithoutPayment(mappedStatus) &&
-          !isHealthySubscriptionStatus(tenant.subscription_status)
-        ) {
-          logger.info('subscription.updated: statut non sain, acces inchange', {
+          !isHealthySubscriptionStatus(tenant.subscription_status);
+
+        // CTR7-4: ce gestionnaire pouvait lever un gel pour litige sur le seul
+        // mot de Stripe, alors que `charge.dispute.closed` verifiait les autres
+        // litiges. Meme acces, deux regles differentes selon l'evenement recu.
+        const refusedByDispute =
+          !refusedByRule &&
+          (await unsettledDisputeBlocksUnfreeze(
+            stripe,
+            customerId,
+            tenant,
+            isActiveUnlessLocked(mappedStatus, tenant),
+            null,
+          ));
+
+        if (refusedByRule || refusedByDispute) {
+          logger.info('subscription.updated: acces inchange', {
             tenantId: tenant.id,
             currentStatus: tenant.subscription_status,
             mappedStatus,
+            reason: refusedByRule ? 'statut non sain' : 'litige non regle',
           });
           // CTR-2: refuser le statut entrant ne doit pas faire PERDRE la
           // re-affirmation de `is_active`. L'ancien code l'ecrivait toujours;
@@ -502,17 +706,27 @@ export async function POST(request: Request) {
           // entrant: sur un tenant gele cela ecrit `false`, donc cette ligne ne
           // peut pas rendre d'acces. Le statut est garanti valide par la
           // contrainte CHECK de la colonne.
-          updateData.is_active = isActiveForStatus(
+          //
+          // CTR7-1: et JAMAIS a un tenant que la plateforme a suspendu ou
+          // supprime. C'est cette ligne, ajoutee par CTR-2, qui rallumait un
+          // tenant suspendu a chaque relance Stripe (`past_due -> past_due`):
+          // `isActiveForStatus('past_due')` vaut `true`, et l'ancien code,
+          // lui, ne partait meme pas en requete.
+          updateData.is_active = isActiveUnlessLocked(
             tenant.subscription_status as SubscriptionStatus,
+            tenant,
           );
         } else {
           updateData.subscription_status = mappedStatus;
           // is_active suit le statut dans les DEUX sens: un tenant gele qui
           // repaie doit retrouver sa vitrine, pas rester eteint en silence.
-          updateData.is_active = isActiveForStatus(mappedStatus);
-          updateData.freeze_reason = freezeReasonForStatus(
+          // CTR7-1: sauf verrou humain (suspension, suppression).
+          updateData.is_active = isActiveUnlessLocked(mappedStatus, tenant);
+          updateData.freeze_reason = freezeReasonPreservingCause(
             mappedStatus,
             FREEZE_REASONS.STRIPE_UNPAID,
+            tenant,
+            { tenantId: tenant.id, handler: 'customer.subscription.updated' },
           );
 
           // F3: horodater l'entree en impaye pour pouvoir la BORNER. Sans cette
@@ -678,7 +892,12 @@ export async function POST(request: Request) {
         // Marquer comme "past_due"
         const { data: tenant, error: tenantPaymentError } = await supabase
           .from('tenants')
-          .select('id, subscription_status')
+          // CTR7-1: ce gestionnaire ecrit `is_active: true` ('past_due' est
+          // entitlant). Il ne figurait dans AUCUNE liste d'ecrivains de
+          // `is_active`, et un impaye sur un tenant suspendu encore `active`
+          // chez Stripe rallumait donc l'acces - un ECHEC de paiement rendait
+          // le service. Les verrous humains sont lus ici aussi.
+          .select('id, subscription_status, suspended_at, deleted_at')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -710,7 +929,7 @@ export async function POST(request: Request) {
             // Ce gestionnaire etait le SEUL a ne pas reecrire is_active: il
             // laissait un statut entitlant avec une vitrine eteinte, l'etat
             // exact qui a deja casse des clients payants (voir isActiveForStatus).
-            is_active: isActiveForStatus('past_due'),
+            is_active: isActiveUnlessLocked('past_due', tenant),
             // On arrive forcement d'un statut sain: c'est donc la PREMIERE
             // transition vers l'impaye. Sans cette date, le cron de gel ne peut
             // pas borner l'impaye et le tenant garde son plan sans limite.
@@ -763,15 +982,70 @@ export async function POST(request: Request) {
           break;
         }
 
-        const { error: disputeError } = await updateTolerantToMissingFreezeReason(
-          {
+        // CTR7-2: ce gestionnaire ecrivait `freeze_reason = 'dispute'` SANS
+        // aucune lecture ni garde de statut, donc PAR-DESSUS la cause d'un gel
+        // deja en place (un impaye depasse gele par le cron, par exemple). Le
+        // gel du cron devenait alors un gel que `charge.dispute.closed` avait
+        // le droit de lever. Un tenant DEJA gele n'a rien a geler de plus: on
+        // se contente de re-affirmer la coupure d'acces, sans toucher a la
+        // cause. `customer.subscription.deleted` lit deja la ligne de la meme
+        // facon.
+        const { data: disputeTenant, error: disputeReadError } =
+          await selectTolerantToMissingFreezeReason(
+            'id, subscription_status, freeze_reason',
+            (columns) =>
+              supabase
+                .from('tenants')
+                .select(columns)
+                .eq('stripe_customer_id', customerId)
+                .maybeSingle<{
+                  id: string;
+                  subscription_status: string | null;
+                  freeze_reason?: string | null;
+                }>(),
+            { customerId, disputeId: dispute.id, handler: 'charge.dispute.created' },
+          );
+
+        let freezePayload: Record<string, unknown>;
+        let applyFreeze: (payload: Record<string, unknown>) => PromiseLike<{ error: unknown }>;
+
+        if (disputeReadError || !disputeTenant) {
+          // Ligne illisible (echec transitoire, ou DEUX tenants partageant le
+          // meme client Stripe: `maybeSingle` rend alors une erreur). Le gel ne
+          // doit JAMAIS etre saute - l'argent est en jeu - mais on ne peut pas
+          // affirmer une cause qu'on n'a pas lue: on gele sans ecrire de cause.
+          // Une cause deja presente survit donc, et un gel sans cause ne se
+          // leve pas tout seul: les deux directions sont sures.
+          logger.warn('Dispute created: ligne tenant illisible, gel sans cause', {
+            customerId,
+            disputeId: dispute.id,
+          });
+          freezePayload = { subscription_status: 'frozen', is_active: false };
+          applyFreeze = (payload) =>
+            supabase.from('tenants').update(payload).eq('stripe_customer_id', customerId);
+        } else if (disputeTenant.subscription_status === 'frozen') {
+          logger.info('Dispute created: tenant deja gele, cause existante conservee', {
+            tenantId: disputeTenant.id,
+            disputeId: dispute.id,
+            keptReason: disputeTenant.freeze_reason ?? null,
+          });
+          freezePayload = { is_active: false };
+          applyFreeze = (payload) =>
+            supabase.from('tenants').update(payload).eq('id', disputeTenant.id);
+        } else {
+          freezePayload = {
             subscription_status: 'frozen',
             is_active: false,
             // La cause: c'est le SEUL gel que charge.dispute.closed peut lever.
             freeze_reason: FREEZE_REASONS.DISPUTE,
-          },
-          (payload) =>
-            supabase.from('tenants').update(payload).eq('stripe_customer_id', customerId),
+          };
+          applyFreeze = (payload) =>
+            supabase.from('tenants').update(payload).eq('id', disputeTenant.id);
+        }
+
+        const { error: disputeError } = await updateTolerantToMissingFreezeReason(
+          freezePayload,
+          applyFreeze,
           { customerId, disputeId: dispute.id, handler: 'charge.dispute.created' },
         );
 
@@ -816,7 +1090,9 @@ export async function POST(request: Request) {
         //   2. l'etat relu chez Stripe - si cet acces est paye.
         const { data: tenant, error: disputeTenantError } =
           await selectTolerantToMissingFreezeReason(
-            'id, subscription_status, stripe_subscription_id, freeze_reason',
+            // CTR7-1: les verrous humains sont lus ici aussi - un litige gagne
+            // ne rallume pas un tenant que la plateforme a coupe.
+            'id, subscription_status, stripe_subscription_id, freeze_reason, suspended_at, deleted_at',
             (columns) =>
               supabase
                 .from('tenants')
@@ -827,6 +1103,8 @@ export async function POST(request: Request) {
                   subscription_status: string;
                   stripe_subscription_id: string | null;
                   freeze_reason?: string | null;
+                  suspended_at?: string | null;
+                  deleted_at?: string | null;
                 }>(),
             { customerId, disputeId: dispute.id, handler: 'charge.dispute.closed' },
           );
@@ -888,22 +1166,27 @@ export async function POST(request: Request) {
         // Seconde relecture, et seulement quand l'ecriture RENDRAIT l'acces:
         // deux litiges simultanes portent la meme cause, donc gagner le premier
         // ne doit pas rallumer le tenant tant que le second retient de l'argent.
-        if (isActiveForStatus(restoredStatus)) {
-          const openDispute = await hasOpenDispute(stripe, customerId, dispute.id);
-          if (openDispute !== false) {
-            // `true` (litige ouvert) comme `null` (etat illisible): on reste
-            // gele. Sans etat etabli, on ne rend pas l'acces.
-            logger.warn('Dispute gagne mais un litige reste ouvert ou illisible: tenant gele', {
-              tenantId: tenant.id,
-              disputeId: dispute.id,
-            });
-            break;
-          }
+        // Meme helper que les deux autres gestionnaires (CTR7-4).
+        if (
+          await unsettledDisputeBlocksUnfreeze(
+            stripe,
+            customerId,
+            tenant,
+            isActiveUnlessLocked(restoredStatus, tenant),
+            dispute.id,
+          )
+        ) {
+          logger.warn('Dispute gagne mais un litige n est pas regle ou est illisible: gele', {
+            tenantId: tenant.id,
+            disputeId: dispute.id,
+          });
+          break;
         }
 
         const unfreezeData: Record<string, unknown> = {
           subscription_status: restoredStatus,
-          is_active: isActiveForStatus(restoredStatus),
+          // CTR7-1: une suspension plateforme survit a un litige gagne.
+          is_active: isActiveUnlessLocked(restoredStatus, tenant),
           // Le statut restaure peut etre un AUTRE gel (Stripe dit 'unpaid'): la
           // cause suit alors ce gel-la, elle ne reste pas a 'dispute'.
           freeze_reason: freezeReasonForStatus(restoredStatus, FREEZE_REASONS.STRIPE_UNPAID),
@@ -969,7 +1252,15 @@ export async function POST(request: Request) {
               // (chargeback) ne doit pas etre leve par la facture du mois
               // suivant. Seul un impaye regularise se recupere ici; un litige se
               // resout par dispute.closed.
-              .eq('subscription_status', 'past_due'),
+              .eq('subscription_status', 'past_due')
+              // CTR7-1: ce gestionnaire n'a aucune lecture prealable (filet
+              // idempotent volontairement minimal), donc la garde ne peut etre
+              // qu'un filtre d'ecriture. Son payload est EXCLUSIVEMENT un bloc
+              // d'acces: rien n'est perdu a ne pas l'appliquer a un tenant que
+              // la plateforme a coupe. Une facture payee ne leve pas une
+              // suspension - seul `unsuspendTenant` le fait.
+              .is('suspended_at', null)
+              .is('deleted_at', null),
           { customerId, handler: 'invoice.paid' },
         );
 

@@ -1,7 +1,13 @@
 -- La CAUSE du gel d'un tenant (contre-audit LOT 5, constat CTR-1 / section 8)
 -- ============================================================================
--- `subscription_status = 'frozen'` est l'etat de gel GENERIQUE du projet. Il est
--- pose par CINQ chemins distincts:
+-- `subscription_status = 'frozen'` est l'etat de gel GENERIQUE du projet. Il
+-- a CINQ CAUSES possibles - et non cinq chemins: les chemins de code qui
+-- peuvent ecrire 'frozen' sont SEPT, parce que la cause stripe_unpaid est
+-- posee par trois gestionnaires differents (checkout.session.completed,
+-- customer.subscription.updated, charge.dispute.closed) et que le cron en a
+-- deux (essais expires, impayes depasses). Confondre les deux decomptes fait
+-- croire qu'il manque deux chemins et envoie les chercher pour rien.
+-- Les cinq causes:
 --
 --   dispute              charge.dispute.created (chargeback ouvert)
 --   subscription_deleted customer.subscription.deleted
@@ -32,9 +38,21 @@
 --
 -- Pas de retro-remplissage: on ne peut pas DEVINER la cause des gels existants,
 -- et une valeur inventee serait pire que NULL. Les tenants deja geles gardent
--- donc NULL et ne se degelent pas sur un litige gagne - la direction sure. Ils
--- se reparent par un paiement (checkout.session.completed ou invoice.paid), qui
--- reecrit statut et cause.
+-- donc NULL et ne se degelent pas sur un litige gagne - la direction sure. La
+-- plupart se reparent par un paiement (checkout.session.completed ou
+-- invoice.paid), qui reecrit statut et cause.
+--
+-- CONSEQUENCE ASSUMEE, a surveiller par l'exploitant: un tenant GELE POUR
+-- LITIGE au moment du deploiement, lui, n'a rien a payer - son abonnement est
+-- en ordre chez Stripe, c'est le chargeback qui l'a gele. Avec freeze_reason a
+-- NULL, charge.dispute.closed ne levera pas son gel quand il gagnera son
+-- litige: il restera coupe jusqu'au prochain customer.subscription.updated
+-- portant un statut sain (roulement de periode: jusqu'a un an sur une formule
+-- annuelle), ou jusqu'a une intervention manuelle. Ce n'est pas une fuite
+-- d'argent, c'est un client paye prive d'acces. Cout nul a eviter: AVANT
+-- d'appliquer cette migration, relever les tenants subscription_status='frozen'
+-- ayant un litige ouvert chez Stripe et leur poser freeze_reason='dispute' a la
+-- main - population qui se compte sur les doigts.
 --
 -- Pas de contrainte CHECK sur les valeurs: ajouter une cause cote code ne doit
 -- pas exiger une migration, et une valeur inconnue est traitee comme "pas un
@@ -44,9 +62,15 @@
 -- UPDATE sur public.tenants pour authenticated et anon, puis l'a re-accorde
 -- colonne par colonne. Une colonne ajoutee apres ne recoit aucun GRANT: elle est
 -- donc reservee a service_role, exactement comme subscription_status,
--- is_active et past_due_since. Les REVOKE ci-dessous sont redondants et
--- volontaires: ils rendent cette propriete explicite et versionnee, et ils
--- protegent le jour ou quelqu'un re-accorderait UPDATE au niveau table.
+-- is_active et past_due_since. Les REVOKE ci-dessous sont donc des NO-OP:
+-- aucun privilege n'a jamais ete accorde sur cette colonne, et Postgres emet au
+-- pire un WARNING sans faire echouer la migration. Ils sont conserves pour
+-- DOCUMENTER et VERSIONNER l'intention - rien de plus. Ils ne protegent de
+-- rien: un REVOKE execute aujourd'hui ne contraint pas un GRANT execute demain,
+-- et un privilege accorde au niveau TABLE couvre toutes les colonnes, y compris
+-- celles pour lesquelles un REVOKE colonne a ete tente auparavant. Si quelqu'un
+-- re-accorde un jour UPDATE au niveau table sur public.tenants, cette colonne
+-- sera exposee comme les autres: la seule parade est de ne pas le faire.
 --
 -- Rollback:
 --   alter table public.tenants drop column if exists freeze_reason;

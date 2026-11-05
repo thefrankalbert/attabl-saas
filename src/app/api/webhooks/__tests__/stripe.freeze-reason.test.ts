@@ -76,6 +76,11 @@ type QueryResult = { data: unknown; error: unknown };
 
 interface Chain extends PromiseLike<QueryResult> {
   eq: (column: string, value: unknown) => Chain;
+  // LOT 9 / CTR7-1: `invoice.paid` scope desormais son ecriture sur les tenants
+  // ni suspendus ni supprimes (`.is('suspended_at', null)`). Le double doit
+  // porter le meme maillon que le builder postgrest, sinon il ne represente
+  // plus la requete reellement envoyee.
+  is: (column: string, value: unknown) => Chain;
   maybeSingle: () => Promise<QueryResult>;
   single: () => Promise<QueryResult>;
 }
@@ -103,6 +108,10 @@ function setupMock(options: MockOptions = {}) {
   function makeChain(result: () => QueryResult, onEq?: (c: string, v: unknown) => void): Chain {
     const chain: Chain = {
       eq: (column, value) => {
+        onEq?.(column, value);
+        return chain;
+      },
+      is: (column, value) => {
         onEq?.(column, value);
         return chain;
       },
@@ -227,7 +236,15 @@ describe('CTR-1 - checkout.session.completed applique la regle du fichier', () =
     expect(payload).not.toHaveProperty('past_due_since');
   });
 
-  it('est fail-closed: un abonnement illisible chez Stripe ne rend aucun acces', async () => {
+  // LOT 9 / CTR7-3: l'attente est RENFORCEE, pas relachee. Ce test verifiait
+  // "200, et le bloc d'acces ne part pas" - ce qui blessait un fail-closed
+  // TERMINAL: Stripe ne rejouait jamais l'evenement du PREMIER paiement, et
+  // `stripe_subscription_id` ecrit faisait court-circuiter la garde
+  // d'idempotence a toute retentative. Il verifie maintenant qu'ABSOLUMENT
+  // rien n'est ecrit et que l'evenement redevient rejouable (500 + ligne
+  // d'idempotence retiree). Les trois `not.toHaveProperty` sont donc remplacees
+  // par une assertion strictement plus forte: zero ecriture.
+  it('est fail-closed ET rejouable quand l abonnement est illisible chez Stripe', async () => {
     const chain = setupMock({
       tenant: {
         id: 'tenant-1',
@@ -239,14 +256,11 @@ describe('CTR-1 - checkout.session.completed applique la regle du fichier', () =
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(500);
 
-    expect(chain.updatePayloads).toHaveLength(1);
-    const payload = chain.updatePayloads[0];
-    // L'ancien defaut 'active' partait en base sans qu'aucun etat n'ait ete lu.
-    expect(payload).not.toHaveProperty('subscription_status');
-    expect(payload).not.toHaveProperty('is_active');
-    expect(payload).not.toHaveProperty('past_due_since');
+    // L'ancien defaut 'active' partait en base sans qu'aucun etat n'ait ete lu;
+    // le correctif precedent n'ecrivait plus l'acces mais perdait l'evenement.
+    expect(chain.updatePayloads).toHaveLength(0);
   });
 
   it('est fail-closed quand la session ne porte aucun abonnement', async () => {

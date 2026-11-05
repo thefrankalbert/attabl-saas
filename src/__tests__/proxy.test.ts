@@ -89,7 +89,13 @@ const getCachedTenantByDomainMock = vi.fn<(domain: string) => Promise<string | n
   async () => null,
 );
 const getCachedTenantMock = vi.fn<
-  (slug: string) => Promise<{ subscription_status: string; is_active: boolean } | null>
+  (slug: string) => Promise<{
+    subscription_status: string;
+    is_active: boolean;
+    // LOT 9 / CTR7-1: la suspension plateforme est desormais un verrou applique,
+    // plus seulement une colonne affichee dans la console.
+    suspended_at?: string | null;
+  } | null>
 >(async () => null);
 
 vi.mock('@/lib/cache', () => ({
@@ -430,6 +436,32 @@ describe('proxy - frozen tenant guard', () => {
     getCachedTenantMock.mockResolvedValue({ subscription_status: 'frozen', is_active: true });
     const res = await proxy(makeRequest('attabl.com', '/sites/radisson/admin/subscription'));
     expect(res.status).not.toBe(307);
+  });
+
+  // CTR7-1: une suspension decidee par le super-admin ne s'exprimait en base
+  // que par `is_active = false`. `suspended_at` etait ecrit par
+  // platform-admin.service et affiche dans la console plateforme, mais applique
+  // NULLE PART - alors que cinq ecritures du webhook Stripe recalculent
+  // `is_active` sur le seul statut d'abonnement, et que
+  // `isSubscriptionUsable('past_due')` vaut `true`. La ligne ci-dessous
+  // (`past_due` + `is_active = true` + `suspended_at` pose) est exactement
+  // celle que cette fuite produisait, et celle qui peut DEJA exister en base:
+  // le tableau de bord doit la refuser quand meme.
+  it('redirects a platform-suspended tenant even when is_active is true', async () => {
+    mockUser = {
+      id: 'user-6b',
+      email_confirmed_at: '2026-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
+    };
+    getCachedTenantMock.mockResolvedValue({
+      subscription_status: 'past_due',
+      is_active: true,
+      suspended_at: '2026-11-01T10:00:00.000Z',
+    });
+    const res = await proxy(makeRequest('attabl.com', '/sites/radisson/admin/menu'));
+    expect(res.status).toBe(307);
+    const url = new URL(res.headers.get('location') as string);
+    expect(url.pathname).toBe('/sites/radisson/admin/subscription');
   });
 
   it('lets an active tenant admin through', async () => {
