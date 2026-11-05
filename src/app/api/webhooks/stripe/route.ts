@@ -490,6 +490,29 @@ export async function POST(request: Request) {
           // n'ecrit rien, on retire la ligne d'idempotence et on renvoie 500,
           // pour que Stripe rejoue a partir d'une ligne intacte.
           if (existingTenantError) {
+            // R10-2: distinguer l'illisible du INTROUVABLE. `.single()` sur zero
+            // ligne rend PGRST116, et c'est une condition PERMANENTE: le tenant
+            // a ete supprime, ou l'identifiant porte par la session est faux.
+            // Rejouer n'y changera rien, donc un 500 ferait rejouer Stripe
+            // pendant trois jours pour un evenement qui ne reussira jamais - et
+            // un endpoint qui echoue sans cesse finit DESACTIVE par Stripe,
+            // ce qui ferait perdre les evenements de TOUS les autres clients.
+            // C'est le meme raisonnement que le `break` du gestionnaire de
+            // litige plus bas. Un echec transitoire, lui, reste rejouable.
+            const isTenantMissing =
+              typeof existingTenantError === 'object' &&
+              existingTenantError !== null &&
+              (existingTenantError as { code?: string }).code === 'PGRST116';
+
+            if (isTenantMissing) {
+              logger.error(
+                'checkout.session.completed: tenant introuvable, evenement consomme',
+                existingTenantError,
+                { tenantId },
+              );
+              break;
+            }
+
             logger.error(
               'checkout.session.completed: ligne tenant illisible, aucun acces accorde',
               existingTenantError,

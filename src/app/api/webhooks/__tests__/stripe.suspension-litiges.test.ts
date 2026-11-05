@@ -528,6 +528,27 @@ describe('CTR7-3 - checkout.session.completed rejouable quand Stripe est illisib
     expect(chain.deletedEventIds).toEqual(['evt_test']);
   });
 
+  it('consomme l evenement quand le tenant est INTROUVABLE (PGRST116), sans boucle de rejeu', async () => {
+    // R10-2. `.single()` sur zero ligne rend PGRST116: le tenant a ete supprime
+    // ou l identifiant de la session est faux. C est PERMANENT, donc un 500
+    // ferait rejouer Stripe trois jours pour un evenement qui ne reussira
+    // jamais - et un endpoint durablement en erreur finit DESACTIVE, ce qui
+    // ferait perdre les evenements de TOUS les autres clients. Distinct du cas
+    // "illisible" juste au-dessus, qui lui est transitoire et doit rejouer.
+    const chain = setupMock({
+      tenant: null,
+      selectError: { code: 'PGRST116', message: 'JSON object requested, 0 rows' },
+    });
+    mockConstructEvent.mockReturnValue(checkoutEvent());
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(200);
+    expect(chain.updatePayloads).toHaveLength(0);
+    // La ligne d idempotence RESTE: l evenement est consomme, pas rejouable.
+    expect(chain.deletedEventIds).toEqual([]);
+  });
+
   it('reste en 200 quand la session ne porte simplement aucun abonnement', async () => {
     // Condition PERMANENTE: un 500 ferait rejouer Stripe pendant trois jours
     // pour rien, et un endpoint durablement en erreur finit DESACTIVE.
