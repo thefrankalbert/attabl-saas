@@ -73,27 +73,29 @@ jobs:
           fi
           echo "All critical files present."
 
-      # Gate 0.5: Dependency vulnerability audit - BLOQUANTE depuis 2026-11-04.
+      # L'audit de dependances N'EST PAS ici. Il vit dans security.yml, job
+      # "Dependency Audit": `pnpm audit --prod --audit-level=high`, deja
+      # bloquant, declenche sur les memes evenements (push main + PR vers main).
       #
-      # Elle etait non bloquante ("warning for now, upgrade once all known CVEs
-      # are triaged"), et c'est exactement ce qui a laisse 7 failles CRITIQUES
-      # arriver en production, dont plusieurs RCE non authentifiees de Next.js
-      # 16.2.12. Un avertissement que personne ne lit ne protege de rien.
+      # Une premiere version de ce lot avait ajoute ici une seconde porte
+      # d'audit, en justifiant par "c'est ce qui a laisse 7 failles critiques
+      # passer". Le contre-audit a montre que la premisse etait fausse: la porte
+      # bloquante existait deja. Les 7 failles critiques (dont des RCE non
+      # authentifiees de Next 16.2.12) n'ont franchi aucune porte - elles sont
+      # simplement apparues APRES le dernier merge, le 14 aout 2026, et aucune
+      # PR n'a ete ouverte depuis. Une porte ne protege que ce qui la traverse.
       #
-      # Mesure du 2026-11-04 apres la montee de version : 0 critique, 0 haute,
-      # 0 moyenne, 0 basse sur `pnpm audit --prod`. La porte est donc posee au
-      # reel, pas au-dessus.
+      # Dupliquer la commande n'aurait rien ajoute, et l'aurait placee AVANT
+      # typecheck/lint/test/build - un appel reseau sans `continue-on-error`,
+      # donc une panne de registre aurait fait echouer la CI entiere pour une
+      # raison sans rapport avec le code.
       #
-      # Seuil a `high` et non `moderate` : une faille moyenne publiee demain sur
-      # une dependance transitive sans correctif disponible bloquerait TOUS les
-      # merges sans qu'une ligne soit plus sure. Meme seuil que security.yml,
-      # pour que les deux portes ne puissent pas diverger.
-      - name: Security audit
-        run: pnpm audit --prod --audit-level=high
-
-      # Visibilite sur ce qui est sous le seuil bloquant, sans bloquer.
-      - name: Security audit (moyennes et basses, non bloquant)
-        run: pnpm audit --prod --audit-level=moderate || echo "::warning::des failles moyennes ou basses existent - a traiter avant la prochaine release"
+      # LE VRAI DEFAUT, lui, est ailleurs et n'est pas corrigeable dans ce
+      # fichier: la branche `main` n'a AUCUNE protection (mesure le 2026-11-04,
+      # l'API repond "Branch not protected"). Aucune de ces portes n'est donc
+      # REQUISE: une PR rouge peut etre mergee. Tant que la protection de
+      # branche n'est pas activee avec ces verifications en checks requis, les
+      # 5 portes sont consultatives.
 
       # Gate 1: TypeScript type checking
       - name: Typecheck
@@ -157,7 +159,13 @@ jobs:
   # separately. The playwright config boots `pnpm dev` via its webServer block.
   e2e:
     name: E2E Smoke
-    runs-on: ubuntu-latest
+    # Fige sur 24.04: GitHub a bascule `ubuntu-latest` sur Ubuntu 26.04 le
+    # 2026-11-04, et Playwright 1.58.2 ne connait pas cette image - l'install du
+    # navigateur echoue AVANT le moindre test ("Playwright does not support
+    # chromium on ubuntu26.04-x64"), donc ce job ne testait plus rien tout en
+    # paraissant rouge pour une raison de code. A remettre sur `ubuntu-latest`
+    # des que Playwright est monte a une version qui supporte 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     steps:
@@ -218,7 +226,13 @@ jobs:
   # se casseraient mutuellement.
   journeys:
     name: Journeys (BOLA + commande + permissions)
-    runs-on: ubuntu-latest
+    # Fige sur 24.04: GitHub a bascule `ubuntu-latest` sur Ubuntu 26.04 le
+    # 2026-11-04, et Playwright 1.58.2 ne connait pas cette image - l'install du
+    # navigateur echoue AVANT le moindre test ("Playwright does not support
+    # chromium on ubuntu26.04-x64"), donc ce job ne testait plus rien tout en
+    # paraissant rouge pour une raison de code. A remettre sur `ubuntu-latest`
+    # des que Playwright est monte a une version qui supporte 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
 
     steps:
