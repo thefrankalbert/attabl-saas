@@ -106,6 +106,79 @@ describe('createPlatformAdminService', () => {
     );
   });
 
+  // Un restaurant GELE ne se remet pas en service par un geste de suspension.
+  //
+  // Le gel est une decision de FACTURATION (essai expire, abonnement supprime,
+  // impaye, litige); la suspension est une decision de PLATEFORME. Les deux
+  // ecrivaient dans la meme colonne sans se parler: lever une suspension sur un
+  // restaurant gele le remettait en service, et le gel ne gelait plus rien.
+  // C'est une fuite de revenu, pas un detail d'ergonomie.
+  it('unsuspendTenant REFUSE de reactiver un restaurant gele', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: {
+          name: 'Resto',
+          slug: 'resto',
+          subscription_status: 'frozen',
+          freeze_reason: 'trial_expired',
+        },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).unsuspendTenant('t-1', actor)).rejects.toThrow(
+      ServiceError,
+    );
+    // Et surtout: RIEN n'a ete ecrit. Un refus qui ecrit quand meme ne protege rien.
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
+  it('le refus nomme la cause du gel, pour que l operateur sache quoi faire', async () => {
+    const { client } = makeAdmin({
+      tenants: {
+        row: {
+          name: 'Resto',
+          slug: 'resto',
+          subscription_status: 'frozen',
+          freeze_reason: 'stripe_unpaid',
+        },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).unsuspendTenant('t-1', actor)).rejects.toThrow(
+      /stripe_unpaid/,
+    );
+  });
+
+  it('restoreTenant REFUSE aussi de restaurer un restaurant gele', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: 'frozen', freeze_reason: null },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).restoreTenant('t-1', actor)).rejects.toThrow(
+      ServiceError,
+    );
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
+  // NON-REGRESSION: les restaurants NON geles doivent toujours pouvoir etre
+  // reactives. Sans ce cas, on aurait pu "proteger" en bloquant tout le monde.
+  it('unsuspendTenant reactive normalement un restaurant non gele', async () => {
+    const { client, updates, inserts } = makeAdmin({
+      tenants: { row: { name: 'Resto', slug: 'resto', subscription_status: 'active' } },
+    });
+
+    await createPlatformAdminService(client).unsuspendTenant('t-1', actor);
+
+    const upd = updates.find((u) => u.table === 'tenants')!;
+    expect(upd.payload.is_active).toBe(true);
+    expect(upd.payload.suspended_at).toBeNull();
+    expect(inserts.find((i) => i.table === 'platform_audit_log')!.payload.action).toBe(
+      'unsuspend_tenant',
+    );
+  });
+
   it('banAdminUser blocks login and audits ban_user with the tenant scope', async () => {
     const { client, updates, inserts } = makeAdmin({
       admin_users: { row: { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter' } },
