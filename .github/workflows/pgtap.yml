@@ -1,0 +1,90 @@
+# Tests pgTAP - privileges Postgres et policies RLS.
+#
+# POURQUOI CE WORKFLOW EXISTE. supabase/tests/rls/ contenait quatre fichiers de
+# tests et AUCUN executant: ils n'avaient jamais ete rejoues depuis leur
+# ecriture. Ils prouvent ce qu'aucun test Vitest ne peut prouver - que le refus
+# vient des PRIVILEGES et des policies, pas du code applicatif, puisqu'un test a
+# Supabase simule remplace justement la couche qui refuse. Une preuve qu'on ne
+# rejoue pas n'est plus une preuve.
+#
+# Le serveur de production est en PostgreSQL 17.x, donc on installe 17 depuis
+# PGDG: la version du runner Ubuntu est plus ancienne, et le schema est dumpe
+# par pg_dump 17.
+
+name: pgTAP (privileges et RLS)
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/run-pgtap.sh'
+      - '.github/workflows/pgtap.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/run-pgtap.sh'
+      - '.github/workflows/pgtap.yml'
+
+concurrency:
+  group: pgtap-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgtap:
+    name: Privileges et RLS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PostgreSQL 17 et pgTAP depuis PGDG
+        run: |
+          set -euo pipefail
+          # Le depot PGDG est necessaire pour la 17: le runner n'embarque qu'une
+          # version plus ancienne, et `postgresql-17-pgtap` n'existe que la.
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCCB5DB.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          # Le runner a deja un cluster sur 5432: on arrete tout avant d'installer
+          # la 17, sinon les deux se disputent le port.
+          sudo systemctl stop postgresql || true
+          sudo apt-get install -y -qq postgresql-17 postgresql-17-pgtap
+          /usr/lib/postgresql/17/bin/psql --version
+
+      - name: Demarrer le cluster 17 et creer la base de test
+        run: |
+          set -euo pipefail
+          # Le cluster cree par le paquet peut etre sur un autre port si 5432
+          # etait pris. On force 5433 pour ne dependre de rien.
+          sudo pg_dropcluster --stop 17 main || true
+          sudo pg_createcluster 17 main -p 5433 -- --auth=trust --locale=C
+          sudo pg_ctlcluster 17 main start
+          sudo -u postgres /usr/lib/postgresql/17/bin/createdb -p 5433 attabl_pgtap
+          sudo -u postgres /usr/lib/postgresql/17/bin/psql -p 5433 -c "alter user postgres password 'postgres'"
+
+      - name: Lancer les tests
+        run: |
+          set -euo pipefail
+          bash scripts/run-pgtap.sh \
+            --db-url "postgresql://postgres:postgres@127.0.0.1:5433/attabl_pgtap" \
+            | tee pgtap.log
+          # Contrat de sortie: la derniere ligne dit PASS ou FAIL.
+          grep -qE '^pgtap: [0-9]+/[0-9]+ passed$' pgtap.log
+
+      - name: Resume
+        if: always()
+        run: |
+          {
+            echo "## Tests pgTAP"
+            echo ''
+            echo '```'
+            tail -20 pgtap.log 2>/dev/null || echo 'aucune sortie'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
