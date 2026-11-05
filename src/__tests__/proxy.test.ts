@@ -464,6 +464,103 @@ describe('proxy - frozen tenant guard', () => {
     expect(url.pathname).toBe('/sites/radisson/admin/subscription');
   });
 
+  // B-1 (contre-audit FINAL-LOTS-8-9): les huit tests de cette garde passaient
+  // TOUS par `attabl.com/sites/<slug>/admin`, une forme d'URL qu'aucun
+  // navigateur de client ne produit. En production le tenant arrive par
+  // `<slug>.attabl.com/admin/...` (ou par son domaine personnalise), ou
+  // `pathname` vaut `/admin/...`: la regex `^/sites/([^/]+)/admin` ne matchait
+  // donc pas, et les trois clauses du verrou (`frozen`, `is_active = false`,
+  // `suspended_at`) ne s'evaluaient JAMAIS sur le chemin reel. Un tableau de
+  // bord de tenant coupe restait ouvert.
+  //
+  // Un test par forme d'URL, et chacun eprouve les DEUX etats de coupure.
+  const lockedStates: Array<
+    [string, { subscription_status: string; is_active: boolean; suspended_at?: string | null }]
+  > = [
+    ['gele', { subscription_status: 'frozen', is_active: true }],
+    [
+      'suspendu par la plateforme',
+      {
+        subscription_status: 'past_due',
+        is_active: true,
+        suspended_at: '2026-11-01T10:00:00.000Z',
+      },
+    ],
+  ];
+
+  const authedUser = (id: string) => {
+    mockUser = {
+      id,
+      email_confirmed_at: '2026-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
+    };
+  };
+
+  it('redirects a locked tenant on its SUBDOMAIN (chemin de production)', async () => {
+    for (const [label, tenant] of lockedStates) {
+      authedUser(`sub-${label}`);
+      getCachedTenantMock.mockResolvedValue(tenant);
+      const res = await proxy(makeRequest('radisson.attabl.com', '/admin/menu'));
+      expect(res.status, label).toBe(307);
+      const url = new URL(res.headers.get('location') as string);
+      // La redirection reste sur la forme d'URL d'origine: `/sites/...` n'existe
+      // pas cote client sur un sous-domaine.
+      expect(url.pathname, label).toBe('/admin/subscription');
+      expect(url.host, label).toBe('radisson.attabl.com');
+    }
+  });
+
+  it('redirects a locked tenant on its CUSTOM DOMAIN', async () => {
+    for (const [label, tenant] of lockedStates) {
+      authedUser(`cd-${label}`);
+      getCachedTenantByDomainMock.mockResolvedValue('radisson');
+      getCachedTenantMock.mockResolvedValue(tenant);
+      const res = await proxy(makeRequest('carte.leresto.bf', '/admin/orders'));
+      expect(res.status, label).toBe(307);
+      const url = new URL(res.headers.get('location') as string);
+      expect(url.pathname, label).toBe('/admin/subscription');
+      expect(url.host, label).toBe('carte.leresto.bf');
+    }
+  });
+
+  it('redirects a locked tenant on the MAIN DOMAIN (/sites/<slug>/admin)', async () => {
+    for (const [label, tenant] of lockedStates) {
+      authedUser(`main-${label}`);
+      getCachedTenantMock.mockResolvedValue(tenant);
+      const res = await proxy(makeRequest('attabl.com', '/sites/radisson/admin/menu'));
+      expect(res.status, label).toBe(307);
+      const url = new URL(res.headers.get('location') as string);
+      expect(url.pathname, label).toBe('/sites/radisson/admin/subscription');
+    }
+  });
+
+  // L'exception qui doit survivre au correctif: un client gele qui ne peut plus
+  // atteindre sa page d'abonnement ne peut plus payer pour se degeler.
+  it('keeps the subscription page reachable on every URL form', async () => {
+    authedUser('sub-page');
+    getCachedTenantMock.mockResolvedValue({ subscription_status: 'frozen', is_active: false });
+
+    expect(
+      (await proxy(makeRequest('radisson.attabl.com', '/admin/subscription'))).status,
+    ).not.toBe(307);
+    expect(
+      (await proxy(makeRequest('radisson.attabl.com', '/admin/subscription/invoices'))).status,
+    ).not.toBe(307);
+
+    getCachedTenantByDomainMock.mockResolvedValue('radisson');
+    expect((await proxy(makeRequest('carte.leresto.bf', '/admin/subscription'))).status).not.toBe(
+      307,
+    );
+  });
+
+  it('lets an active tenant admin through on the subdomain too', async () => {
+    authedUser('active-sub');
+    getCachedTenantMock.mockResolvedValue({ subscription_status: 'active', is_active: true });
+    const res = await proxy(makeRequest('radisson.attabl.com', '/admin/menu'));
+    expect(res.status).not.toBe(307);
+    expect(rewriteTarget(res)).toBe('/sites/radisson/admin/menu');
+  });
+
   it('lets an active tenant admin through', async () => {
     mockUser = {
       id: 'user-6',

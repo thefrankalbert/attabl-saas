@@ -306,6 +306,23 @@ interface CurrentFreeze {
  * sur sortie de gel, lui, est conserve tel quel: c'est lui qui tient
  * l'invariant.
  */
+/**
+ * B-3 - la regle "un gel DEJA en place garde sa cause", ecrite UNE seule fois.
+ *
+ * Elle etait ecrite deux fois, et differemment: le helper ci-dessous exigeait
+ * une cause NON VIDE, alors que `charge.dispute.created` ne regardait que le
+ * statut. Sur un tenant `frozen` dont `freeze_reason` est NULL - l'etat de tout
+ * tenant gele pendant la fenetre de tolerance, puisque c'est exactement ce que
+ * produit `updateTolerantToMissingFreezeReason` - la cause `dispute` n'etait
+ * donc plus posee, et `charge.dispute.closed` refusait ensuite de degeler: un
+ * client qui GAGNE son litige, et qui n'a rien a payer, restait gele jusqu'au
+ * roulement de periode. Un gel sans cause n'est pas un gel a preserver: c'est
+ * un gel dont la cause est encore a ecrire.
+ */
+function keepsExistingFreezeCause(current: CurrentFreeze | null | undefined): boolean {
+  return current?.subscription_status === 'frozen' && !!current.freeze_reason;
+}
+
 function freezeReasonPreservingCause(
   nextStatus: SubscriptionStatus,
   fallbackReason: FreezeReason,
@@ -314,13 +331,13 @@ function freezeReasonPreservingCause(
 ): string | null {
   const next = freezeReasonForStatus(nextStatus, fallbackReason);
   if (next === null) return null;
-  if (current?.subscription_status === 'frozen' && current.freeze_reason) {
+  if (keepsExistingFreezeCause(current)) {
     logger.info('Gel deja en place: la cause existante est conservee', {
       ...context,
-      keptReason: current.freeze_reason,
+      keptReason: current?.freeze_reason,
       refusedReason: next,
     });
-    return current.freeze_reason;
+    return current?.freeze_reason ?? next;
   }
   return next;
 }
@@ -440,23 +457,47 @@ export async function POST(request: Request) {
 
         if (tenantId) {
           // Idempotency: skip if tenant already has this subscription ID
-          const { data: existingTenant } = await selectTolerantToMissingFreezeReason(
-            // CTR-1: le statut de depart est necessaire pour appliquer la regle
-            // du fichier (voir isEntitlingWithoutPayment).
-            // CTR7-1: les deux verrous humains, pour ne jamais rendre l'acces a
-            // un tenant suspendu ou supprime par la plateforme.
-            // CTR7-2: la cause courante, pour ne pas l'ecraser.
-            'stripe_subscription_id, subscription_status, suspended_at, deleted_at, freeze_reason',
-            (columns) =>
-              supabase.from('tenants').select(columns).eq('id', tenantId).single<{
-                stripe_subscription_id: string | null;
-                subscription_status: string | null;
-                suspended_at?: string | null;
-                deleted_at?: string | null;
-                freeze_reason?: string | null;
-              }>(),
-            { tenantId, handler: 'checkout.session.completed' },
-          );
+          const { data: existingTenant, error: existingTenantError } =
+            await selectTolerantToMissingFreezeReason(
+              // CTR-1: le statut de depart est necessaire pour appliquer la regle
+              // du fichier (voir isEntitlingWithoutPayment).
+              // CTR7-1: les deux verrous humains, pour ne jamais rendre l'acces a
+              // un tenant suspendu ou supprime par la plateforme.
+              // CTR7-2: la cause courante, pour ne pas l'ecraser.
+              'stripe_subscription_id, subscription_status, suspended_at, deleted_at, freeze_reason',
+              (columns) =>
+                supabase.from('tenants').select(columns).eq('id', tenantId).single<{
+                  stripe_subscription_id: string | null;
+                  subscription_status: string | null;
+                  suspended_at?: string | null;
+                  deleted_at?: string | null;
+                  freeze_reason?: string | null;
+                }>(),
+              { tenantId, handler: 'checkout.session.completed' },
+            );
+
+          // B-4: ce gestionnaire etait le SEUL des quatre a jeter l'erreur de
+          // lecture. `existingTenant` valait alors `undefined`, donc
+          // `isActiveUnlessLocked(statut, undefined)` ne voyait AUCUN verrou et
+          // ecrivait `is_active = true` sur un tenant suspendu ou supprime par
+          // la plateforme - l'inverse exact de ce que la ligne qui l'appelle
+          // promet. La garde "statut non sain" devenait elle aussi inoperante,
+          // `isHealthySubscriptionStatus(undefined)` etant faux.
+          //
+          // Les trois autres gestionnaires se contentent de `break` parce
+          // qu'ils n'ont rien a perdre: aucun premier paiement ne depend d'eux.
+          // Celui-ci, oui (CTR7-3). Comme pour l'abonnement illisible: on
+          // n'ecrit rien, on retire la ligne d'idempotence et on renvoie 500,
+          // pour que Stripe rejoue a partir d'une ligne intacte.
+          if (existingTenantError) {
+            logger.error(
+              'checkout.session.completed: ligne tenant illisible, aucun acces accorde',
+              existingTenantError,
+              { tenantId },
+            );
+            await supabase.from('stripe_events').delete().eq('id', event.id);
+            return NextResponse.json({ error: 'Tenant row unreadable' }, { status: 500 });
+          }
 
           if (existingTenant?.stripe_subscription_id === subscriptionId) {
             logger.info('checkout.session.completed already processed, skipping', {
@@ -1023,7 +1064,7 @@ export async function POST(request: Request) {
           freezePayload = { subscription_status: 'frozen', is_active: false };
           applyFreeze = (payload) =>
             supabase.from('tenants').update(payload).eq('stripe_customer_id', customerId);
-        } else if (disputeTenant.subscription_status === 'frozen') {
+        } else if (keepsExistingFreezeCause(disputeTenant)) {
           logger.info('Dispute created: tenant deja gele, cause existante conservee', {
             tenantId: disputeTenant.id,
             disputeId: dispute.id,

@@ -82,6 +82,82 @@ function isPublicMainDomainPath(pathname: string): boolean {
   return false;
 }
 
+/**
+ * B-1 - la forme de l'URL n'a rien a dire sur l'etat du tenant.
+ *
+ * Le verrou d'etat (gel, desactivation, suspension plateforme) ne portait que
+ * sur `^/sites/<slug>/admin`, la forme du DOMAINE PRINCIPAL. Or un client
+ * arrive par `<slug>.attabl.com/admin/...`, ou par son domaine personnalise:
+ * `pathname` vaut alors `/admin/...`, et la reecriture vers `/sites/<slug>`
+ * n'a pas encore eu lieu (elle est en fin de fonction pour le sous-domaine, et
+ * la branche domaine personnalise RETOURNE avant la garde). Les trois clauses
+ * du verrou ne s'evaluaient donc jamais sur le chemin reel de production.
+ *
+ * La garde RBAC qui suit resolvait DEJA les deux formes: cette fonction est
+ * cette resolution, mise en commun, pour que les deux gardes portent sur la
+ * meme. `adminBase` retient la forme d'origine, parce qu'une redirection vers
+ * `/sites/<slug>/...` ne veut rien dire sur un sous-domaine.
+ */
+function resolveAdminGate(
+  pathname: string,
+  slugFromHost: string | null,
+): { slug: string; subPath: string; adminBase: string } | null {
+  const mainAdmin = pathname.match(/^\/sites\/([^/]+)\/admin(\/.*)?$/);
+  if (mainAdmin) {
+    return {
+      slug: mainAdmin[1],
+      subPath: mainAdmin[2] || '',
+      adminBase: `/sites/${mainAdmin[1]}/admin`,
+    };
+  }
+  // Les consoles plateforme (/admin/tenants, /admin/platform) vivent sous
+  // src/app/ et n'appartiennent a aucun tenant: isAppRootOnlyPath les exclut.
+  if (slugFromHost && !isAppRootOnlyPath(pathname) && /^\/admin(\/|$)/.test(pathname)) {
+    return {
+      slug: slugFromHost,
+      subPath: pathname.replace(/^\/admin/, ''),
+      adminBase: '/admin',
+    };
+  }
+  return null;
+}
+
+/** L'acces d'un tenant est-il coupe ? Une seule definition, trois formes d'URL. */
+function isTenantAccessLocked(
+  tenant: {
+    subscription_status?: string | null;
+    is_active?: boolean | null;
+    suspended_at?: string | null;
+  } | null,
+): boolean {
+  if (!tenant) return false;
+  return (
+    tenant.subscription_status === 'frozen' ||
+    tenant.is_active === false ||
+    // CTR7-1: une suspension plateforme ne reposait que sur is_active, que cinq
+    // ecritures du webhook Stripe pouvaient remettre a true. `suspended_at`
+    // etait ecrit et affiche, jamais applique: ce verrou le rend reel, comme
+    // deleted_at l'est deja (filtre du select de getCachedTenant).
+    !!tenant.suspended_at
+  );
+}
+
+/**
+ * L'URL de redirection si l'acces du tenant est coupe, `null` sinon.
+ *
+ * L'exception doit survivre: la page d'abonnement reste atteignable, sinon un
+ * client gele ne peut plus payer pour se degeler.
+ */
+async function lockedTenantRedirectUrl(
+  gate: { slug: string; subPath: string; adminBase: string },
+  origin: string,
+): Promise<URL | null> {
+  if (gate.subPath.startsWith('/subscription')) return null;
+  const tenantInfo = await getCachedTenant(gate.slug);
+  if (!isTenantAccessLocked(tenantInfo)) return null;
+  return new URL(`${gate.adminBase}/subscription`, origin);
+}
+
 export async function proxy(request: NextRequest) {
   // SECURITY: Block x-middleware-subrequest header to prevent middleware bypass (CVE-2025-29927)
   if (request.headers.get('x-middleware-subrequest')) {
@@ -140,6 +216,22 @@ export async function proxy(request: NextRequest) {
 
       // Set x-tenant-slug on REQUEST headers so server components can read it
       request.headers.set('x-tenant-slug', tenantSlug);
+
+      // B-1: cette branche RETOURNE avant la garde d'etat du tenant plus bas,
+      // donc le tableau de bord d'un tenant coupe restait ouvert sur son
+      // domaine personnalise. Le verrou est applique ici, sur la meme
+      // resolution que les deux autres formes d'URL.
+      const customDomainGate = resolveAdminGate(pathname, tenantSlug);
+      if (customDomainGate) {
+        const lockedUrl = await lockedTenantRedirectUrl(customDomainGate, request.nextUrl.origin);
+        if (lockedUrl) {
+          const redirectResponse = NextResponse.redirect(lockedUrl);
+          sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+            redirectResponse.cookies.set(cookie.name, cookie.value);
+          });
+          return redirectResponse;
+        }
+      }
 
       if (pathname.startsWith('/api/') || isAppRootOnlyPath(pathname)) {
         const response = NextResponse.next({
@@ -252,34 +344,20 @@ export async function proxy(request: NextRequest) {
     }
 
     // B2: Block frozen/inactive tenants from admin pages (except subscription page)
-    const adminMatch = pathname.match(/^\/sites\/([^/]+)\/admin(\/.*)?$/);
-    if (user && adminMatch) {
-      const adminSlug = adminMatch[1];
-      const adminSubPath = adminMatch[2] || '';
-      const isSubscriptionPage = adminSubPath.startsWith('/subscription');
-
-      if (!isSubscriptionPage) {
-        const tenantInfo = await getCachedTenant(adminSlug);
-        if (
-          tenantInfo &&
-          (tenantInfo.subscription_status === 'frozen' ||
-            tenantInfo.is_active === false ||
-            // CTR7-1: une suspension plateforme ne reposait que sur is_active,
-            // que cinq ecritures du webhook Stripe pouvaient remettre a true.
-            // `suspended_at` etait ecrit et affiche, jamais applique: ce verrou
-            // le rend reel, comme deleted_at l'est deja (filtre du select).
-            !!tenantInfo.suspended_at)
-        ) {
-          const subscriptionUrl = new URL(
-            `/sites/${adminSlug}/admin/subscription`,
-            request.nextUrl.origin,
-          );
-          const redirectResponse = NextResponse.redirect(subscriptionUrl);
-          sessionResponse.cookies.getAll().forEach((cookie) => {
-            redirectResponse.cookies.set(cookie.name, cookie.value);
-          });
-          return redirectResponse;
-        }
+    // B-1: les DEUX formes d'URL (domaine principal `/sites/<slug>/admin` et
+    // sous-domaine `/admin`) passent par la meme resolution que la garde RBAC
+    // ci-dessous. Sur le sous-domaine - le chemin reel de production - cette
+    // garde ne s'evaluait pas du tout.
+    const hostSlug = subdomain && subdomain !== 'www' ? subdomain : null;
+    const adminGate = resolveAdminGate(pathname, hostSlug);
+    if (user && adminGate) {
+      const lockedUrl = await lockedTenantRedirectUrl(adminGate, request.nextUrl.origin);
+      if (lockedUrl) {
+        const redirectResponse = NextResponse.redirect(lockedUrl);
+        sessionResponse.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie.name, cookie.value);
+        });
+        return redirectResponse;
       }
     }
 
@@ -288,34 +366,23 @@ export async function proxy(request: NextRequest) {
     // Sensitive admin routes (users, settings, billing, reports, inventory, pos,
     // marketing editors) require a specific permission; operational routes
     // (orders, kitchen, menus, ...) stay open to all members.
-    if (user) {
-      let gateSlug: string | null = null;
-      let gateSubPath: string | null = null;
-      const mainAdmin = pathname.match(/^\/sites\/([^/]+)\/admin(\/.*)?$/);
-      if (mainAdmin) {
-        gateSlug = mainAdmin[1];
-        gateSubPath = mainAdmin[2] || '';
-      } else if (subdomain && subdomain !== 'www' && /^\/admin(\/|$)/.test(pathname)) {
-        gateSlug = subdomain;
-        gateSubPath = pathname.replace(/^\/admin/, '') || '';
-      }
-
-      if (gateSlug && gateSubPath !== null) {
-        const requiredPermission = permissionForAdminSubPath(gateSubPath);
-        if (requiredPermission) {
-          const gateTenant = await getCachedTenant(gateSlug);
-          if (
-            gateTenant &&
-            (await isAdminRouteDenied(supabase, user.id, gateTenant.id, requiredPermission))
-          ) {
-            const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
-            const unauthorizedUrl = new URL('/unauthorized', mainDomain);
-            const redirectResponse = NextResponse.redirect(unauthorizedUrl);
-            sessionResponse.cookies.getAll().forEach((cookie) => {
-              redirectResponse.cookies.set(cookie.name, cookie.value);
-            });
-            return redirectResponse;
-          }
+    // Meme resolution que la garde B2 ci-dessus (B-1: une seule definition de
+    // "quel tenant, quelle sous-route" pour les deux gardes).
+    if (user && adminGate) {
+      const requiredPermission = permissionForAdminSubPath(adminGate.subPath);
+      if (requiredPermission) {
+        const gateTenant = await getCachedTenant(adminGate.slug);
+        if (
+          gateTenant &&
+          (await isAdminRouteDenied(supabase, user.id, gateTenant.id, requiredPermission))
+        ) {
+          const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+          const unauthorizedUrl = new URL('/unauthorized', mainDomain);
+          const redirectResponse = NextResponse.redirect(unauthorizedUrl);
+          sessionResponse.cookies.getAll().forEach((cookie) => {
+            redirectResponse.cookies.set(cookie.name, cookie.value);
+          });
+          return redirectResponse;
         }
       }
     }

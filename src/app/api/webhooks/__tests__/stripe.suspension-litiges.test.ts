@@ -730,3 +730,87 @@ describe('RES-2 - PGRST204 est traite comme 42703 (colonne absente)', () => {
     expect(chain.selectedColumns.some((c) => !c.includes('freeze_reason'))).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// B-3 / B-4 (contre-audit FINAL-LOTS-8-9) - les deux coutures restantes
+// ---------------------------------------------------------------------------
+
+describe('B-3 - un gel SANS cause reste une cause a poser', () => {
+  /**
+   * La regle "ne jamais ecraser la cause" etait ecrite differemment des deux
+   * cotes de la couture: `freezeReasonPreservingCause` exige une cause NON
+   * VIDE, alors que `charge.dispute.created` ne regardait que le statut. Sur un
+   * tenant `frozen` dont `freeze_reason` est NULL - l'etat de tout tenant gele
+   * pendant la fenetre de tolerance, puisque c'est exactement ce que produit
+   * `updateTolerantToMissingFreezeReason` - la cause `dispute` n'etait plus
+   * posee, et `charge.dispute.closed` refusait ensuite de degeler. Un client qui
+   * GAGNE son litige, et qui n'a rien a payer, restait gele jusqu'au roulement
+   * de periode: un an sur une formule annuelle.
+   */
+  it('charge.dispute.created pose la cause dispute sur un tenant gele sans cause', async () => {
+    const chain = setupMock({
+      tenant: { id: 'tenant-1', subscription_status: 'frozen', freeze_reason: null },
+    });
+    mockConstructEvent.mockReturnValue(
+      makeStripeEvent('charge.dispute.created', {
+        id: 'dp_1',
+        payment_intent: { customer: 'cus_1' },
+      }),
+    );
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+
+    expect(chain.updatePayloads).toHaveLength(1);
+    expect(chain.updatePayloads[0].is_active).toBe(false);
+    expect(chain.updatePayloads[0].freeze_reason).toBe('dispute');
+    expect(chain.updateFilters).toEqual([['id', 'tenant-1']]);
+  });
+
+  it('charge.dispute.closed degele alors le client qui gagne son litige', async () => {
+    // La suite du scenario: sans la cause posee ci-dessus, ce degel est mort.
+    const chain = setupMock({
+      tenant: {
+        id: 'tenant-1',
+        subscription_status: 'frozen',
+        stripe_subscription_id: 'sub_1',
+        freeze_reason: 'dispute',
+        suspended_at: null,
+        deleted_at: null,
+      },
+    });
+    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'active' });
+    mockConstructEvent.mockReturnValue(disputeWonEvent());
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    expect(chain.updatePayloads[0].subscription_status).toBe('active');
+    expect(chain.updatePayloads[0].is_active).toBe(true);
+    expect(chain.updatePayloads[0].freeze_reason).toBeNull();
+  });
+});
+
+describe('B-4 - checkout.session.completed est fail-closed sur une lecture en echec', () => {
+  /**
+   * C'etait le SEUL des quatre gestionnaires a jeter l'erreur de lecture du
+   * tenant (`const { data: existingTenant } = ...`). `existingTenant` valait
+   * alors `undefined`, donc `isActiveUnlessLocked(status, undefined)` ne voyait
+   * AUCUN verrou et ecrivait `is_active = true` sur un tenant suspendu ou
+   * supprime par la plateforme - exactement ce que le commentaire de la ligne
+   * promet de ne jamais faire.
+   */
+  it('renvoie 500 et n ecrit RIEN quand la ligne tenant est illisible', async () => {
+    const chain = setupMock({ selectError: { message: 'timeout' } });
+    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'active' });
+    mockConstructEvent.mockReturnValue(checkoutEvent());
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(500);
+    expect(chain.updatePayloads).toHaveLength(0);
+    // Comme pour CTR7-3: la ligne d'idempotence est retiree, pour que le rejeu
+    // de Stripe reparte d'une ligne intacte et que le PREMIER paiement ne soit
+    // pas perdu.
+    expect(chain.deletedEventIds).toEqual(['evt_test']);
+  });
+});

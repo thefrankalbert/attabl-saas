@@ -110,18 +110,35 @@ select is(
 --    proprietaire legitime revenait indefiniment.
 --    Une policy RESTRICTIVE ne leve pas d erreur: elle ne fait correspondre
 --    aucune ligne. On mesure donc l etat APRES.
---    On ecrit `full_name` et non `is_active`: depuis la section 4 de la
---    migration, `is_active` n est plus inscriptible du tout par un role client
---    (cas 7), donc l ecrire ici leverait un 42501 et mesurerait le privilege au
---    lieu de la policy. C est bien la POLICY qu on veut eprouver ici.
+--
+--    QUI joue ce cas est ce qui le rend discriminant (reserve B-5 du
+--    contre-audit FINAL-LOTS-8-9). Joue par le SERVEUR sur la ligne d un tiers,
+--    il ne prouvait plus rien depuis la section 4 de la migration: la nouvelle
+--    policy PERMISSIVE (`user_id = auth.uid()`) suffisait a ne faire
+--    correspondre aucune ligne, la RESTRICTIVE n etait jamais la raison du
+--    refus, et on pouvait supprimer cette derniere entierement sans faire
+--    echouer le test - c etait devenu un doublon du cas 7.
+--
+--    On joue donc la VICTIME sur SA PROPRE ligne: la permissive AUTORISE
+--    (`user_id = auth.uid()`), seule la RESTRICTIVE
+--    (`deleted_at is null or is_super_admin()`) peut refuser. La relecture
+--    fonctionne, la policy SELECT ouvrant sa propre ligne a chaque membre
+--    (`user_id = auth.uid() or ...`). Et on ecrit `full_name`, pas `is_active`:
+--    depuis la section 4, `is_active` n est plus inscriptible du tout par un
+--    role client (cas 6), donc l ecrire ici leverait un 42501 et mesurerait le
+--    privilege au lieu de la policy.
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000003"}';
 update public.admin_users
   set full_name = 'Reactivee par le tenant'
   where id = 'cccccccc-0000-0000-0000-000000000003';
 select is(
   (select full_name from public.admin_users where id = 'cccccccc-0000-0000-0000-000000000003'),
   null,
-  'LOT8 R1: une ligne retiree par la plateforme n est pas modifiable par le tenant'
+  'LOT8 R1: une ligne retiree par la plateforme n est pas modifiable par son titulaire'
 );
+
+-- On revient au SERVEUR pour les cas suivants.
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000002"}';
 
 -- 6. CORRECTION (section 4 de la migration): `is_active` est une colonne de
 --    PRIVILEGE, retiree de la liste blanche cliente. Sans ce revoke, un serveur

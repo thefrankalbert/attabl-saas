@@ -36,14 +36,25 @@ interface MembershipRow {
    * commentaire etait fausse). Une ligne soft-deleted n'ouvre plus aucun acces
    * APPLICATIF: les trois resolutions de session filtrent `deleted_at is null`
    * (src/lib/auth/get-session.ts:132, 166, 216), comme les gardes de route.
-   * En BASE, ce n'est pas vrai: les 66 policies passent par
-   * `get_my_tenant_ids_array()`, qui filtre `coalesce(is_active, true) = true`
-   * et JAMAIS `deleted_at` - le depot l'avait deja constate sans le corriger
-   * (en-tete de supabase/migrations/20260731000600_tenant_helpers_active_only.sql).
-   * Si une ligne retiree n'ouvre effectivement rien cote base, c'est uniquement
-   * parce que `softDeleteAdminUser` pose AUSSI `is_active = false`
+   * En BASE, ce n'est pas vrai: les policies passent par
+   * `get_my_tenant_ids_array()`, et aucune ne regarde `deleted_at` - sauf la
+   * policy RESTRICTIVE de la migration 20261105000000, qui ne couvre que
+   * l'UPDATE de `admin_users` par un role client. Si une ligne retiree
+   * n'ouvre effectivement rien cote base, c'est uniquement parce que
+   * `softDeleteAdminUser` pose AUSSI `is_active = false`
    * (src/services/platform-admin.service.ts). L'invariant repose donc sur
    * `is_active`, pas sur `deleted_at`.
+   *
+   * HYPOTHESE, a traiter comme telle (reserve B-5 du contre-audit
+   * FINAL-LOTS-8-9): que `get_my_tenant_ids_array()` filtre
+   * `coalesce(is_active, true) = true` vient de
+   * supabase/migrations/20260731000600_tenant_helpers_active_only.sql, dont
+   * l'application en production n'est PAS etablie - le dump
+   * supabase/schema.sql, qui est anterieur, declare encore cette fonction sans
+   * aucun filtre, et la memoire du projet dit les migrations RLS non prouvees
+   * appliquees. Si cette migration n'est pas en place, une ligne retiree reste
+   * comptee par les policies: c'est exactement pour cela que le relachement
+   * ci-dessous reste cantonne a l'envoi d'un lien.
    */
   deleted_at: string | null;
 }
@@ -62,10 +73,12 @@ export interface TargetAccountScopeOptions {
    * recuperable SANS l'attaquant (la plateforme la retire depuis sa console, le
    * gel du proprietaire legitime cesse). Ce qu'il coute, et pourquoi il reste
    * cantonne a l'envoi d'un lien: l'invariant ci-dessus tient sur `is_active`,
-   * et `is_active` est justement la seule colonne de privilege restee
-   * inscriptible par le role `authenticated` (`GRANT UPDATE("is_active")`,
-   * supabase/schema.sql). Le pire effet de l'action relachee doit donc rester un
-   * courriel envoye sur la boite du TITULAIRE.
+   * donc sur une colonne que `authenticated` a longtemps pu ecrire lui-meme
+   * (`GRANT UPDATE("is_active")`). La migration 20261105000000 le lui retire
+   * (`revoke update (is_active) ... from authenticated`, section 4), ce qui
+   * renforce l'invariant - mais cette migration n'est pas encore appliquee, et
+   * un re-grant futur rouvrirait la meme porte. Le pire effet de l'action
+   * relachee doit donc rester un courriel envoye sur la boite du TITULAIRE.
    */
   ignoreSoftDeletedMemberships?: boolean;
 }

@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { menuSearchLimiter, getClientIp } from '@/lib/rate-limit';
+import { isSubscriptionUsable } from '@/lib/plans/features';
 import type { MenuItem } from '@/types/admin.types';
+import type { SubscriptionStatus } from '@/types/billing';
 
 const FALLBACK_ERRORS = {
   rateLimited: 'Trop de requetes. Reessayez plus tard.',
@@ -34,13 +36,29 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
+    // B-2: cette route etait la QUATRIEME surface qui sert la carte d'un tenant,
+    // et la seule des quatre a ne lire que `is_active`. Elle sert jusqu'a 150
+    // articles avec leurs prix: elle doit refuser exactement ce que refusent la
+    // vitrine, la prise de commande et le tableau de bord. La condition est
+    // celle de `validateTenant` (src/services/order/order-queries.ts):
+    // `deleted_at` filtre a la requete, puis `suspended_at` (suspension
+    // plateforme) et le statut d'abonnement, parce qu'un tenant `frozen` peut
+    // tres bien porter `is_active = true` (c'est ce que `unsuspendTenant`
+    // produit).
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id, is_active')
+      .select('id, is_active, suspended_at, subscription_status')
       .eq('slug', tenantSlug)
+      .is('deleted_at', null)
       .single();
 
-    if (tenantError || !tenant || !tenant.is_active) {
+    if (
+      tenantError ||
+      !tenant ||
+      !tenant.is_active ||
+      tenant.suspended_at ||
+      !isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus | null)
+    ) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }
 
