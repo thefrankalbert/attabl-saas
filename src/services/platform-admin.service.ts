@@ -88,15 +88,47 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
     }
   }
 
-  async function getTenantLabel(tenantId: string): Promise<{ name: string; slug: string }> {
+  async function getTenantLabel(tenantId: string): Promise<{
+    name: string;
+    slug: string;
+    subscription_status: string;
+    freeze_reason: string | null;
+  }> {
     const { data, error } = await admin
       .from('tenants')
-      .select('name, slug')
+      .select('name, slug, subscription_status, freeze_reason')
       .eq('id', tenantId)
       .maybeSingle();
     if (error) throw new ServiceError('Erreur lors du chargement du restaurant', 'INTERNAL', error);
     if (!data) throw new ServiceError('Restaurant introuvable', 'NOT_FOUND');
     return data;
+  }
+
+  /**
+   * Un restaurant GELE ne se remet pas en service par un geste de suspension.
+   *
+   * Le gel (`subscription_status = 'frozen'`) est une decision de facturation:
+   * essai expire, abonnement supprime, impaye, litige. La suspension est une
+   * decision de plateforme, independante. `unsuspendTenant` et `restoreTenant`
+   * ecrivaient `is_active: true` SANS regarder le statut d'abonnement: lever une
+   * suspension sur un restaurant gele le remettait donc en service, et le gel ne
+   * gelait plus rien. C'est une fuite de revenu, pas un detail d'ergonomie.
+   *
+   * La contrainte `tenants_gel_implique_inactif` (migration 20261105200000) bloque
+   * desormais l'ecriture en base. Mais une contrainte rend une erreur brute: cette
+   * garde existe pour que l'operateur lise une phrase qui lui dit quoi faire,
+   * plutot qu'une violation de contrainte.
+   */
+  function assertNonGele(
+    tenant: { subscription_status: string; freeze_reason: string | null },
+    geste: string,
+  ): void {
+    if (tenant.subscription_status !== 'frozen') return;
+    const cause = tenant.freeze_reason ? ` (cause: ${tenant.freeze_reason})` : '';
+    throw new ServiceError(
+      `Ce restaurant est gele${cause}. Levez d'abord le gel d'abonnement avant de ${geste}.`,
+      'VALIDATION',
+    );
   }
 
   async function getAdminUserLabel(
@@ -138,6 +170,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async unsuspendTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
+      assertNonGele(label, 'reactiver ce restaurant');
       const { error } = await admin
         .from('tenants')
         .update({
@@ -182,6 +215,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async restoreTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
+      assertNonGele(label, 'restaurer ce restaurant');
       const { error } = await admin
         .from('tenants')
         .update({
