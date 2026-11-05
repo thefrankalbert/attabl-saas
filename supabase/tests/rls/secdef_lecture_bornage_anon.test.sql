@@ -18,7 +18,9 @@
 --   - get_orders_for_tracking acceptait 20000 ids (HTTP 200, 4,5 s de CPU).
 --
 -- Il protege les DEUX sens: la fuite est fermee (cas 1, 4, 6, 7) ET l'usage
--- legitime passe toujours (cas 2, 3, 5, 8, 9, 10). Sans les seconds, on "corrige"
+-- legitime passe toujours (cas 2, 3, 5, 8, 9, 10). Les cas 11 et 12 verrouillent
+-- un contournement du plafond lui-meme, trouve APRES le premier correctif.
+-- Sans les cas de non-regression, on "corrige"
 -- en cassant la vitrine et le suivi de commande.
 --
 -- Execution: psql "$LOCAL_DB" -f supabase/tests/rls/secdef_lecture_bornage_anon.test.sql
@@ -27,7 +29,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(10);
+select plan(12);
 
 -- Jeu d essai minimal: un restaurant, une categorie, deux plats, une commande
 -- qui contient les deux (c est la co-occurrence que la RPC exploite).
@@ -173,6 +175,41 @@ select is(
               array['dddd1111-0000-0000-0000-00000000000a'::uuid]) -> 0 -> 'order_items')),
   2,
   'get_orders_for_tracking: anon suit toujours sa commande et ses 2 articles');
+
+-- ---------------------------------------------- 11-12. CONTOURNEMENT PAR IMBRICATION
+-- Le premier correctif (20261105140000) bornait avec `array_length(arr, 1)`, qui
+-- ne compte que la PREMIERE dimension. PostgREST accepte un tableau JSON imbrique
+-- et le passe a Postgres en 2-D: mesure en production, un tableau de 10000 ids
+-- presente array_length(x,1)=2, donc la borne ne declenchait pas. Le plafond
+-- etait contournable par le seul fait d'imbriquer sa charge.
+--
+-- 20261105150000 aplatit avec `array(select unnest(...))` avant de compter, ce
+-- qui neutralise l'imbrication ET renormalise les bornes d'indice a 1.
+
+-- 11. La vraie commande est placee dans un tableau 2-D de 600 ids, en position
+--     301 apres aplatissement - donc hors des 200 derniers. Elle doit disparaitre.
+--     Avant 20261105150000, elle etait vue: 600 ids etaient scannes.
+select is(
+  (select jsonb_array_length(public.get_orders_for_tracking(
+     'aaaa1111-0000-0000-0000-00000000000a',
+     array[
+       array(select gen_random_uuid() from generate_series(1, 300)),
+       array['dddd1111-0000-0000-0000-00000000000a'::uuid]
+         || array(select gen_random_uuid() from generate_series(1, 299))
+     ]))),
+  0,
+  'get_orders_for_tracking: un tableau imbrique ne contourne plus le plafond');
+
+-- 12. Meme contournement sur le panier: 2 x 100 ids passaient la borne de 100.
+select throws_ok(
+  $q$ select public.get_co_ordered_items(
+        'aaaa1111-0000-0000-0000-00000000000a',
+        array[array(select gen_random_uuid() from generate_series(1, 100)),
+              array(select gen_random_uuid() from generate_series(1, 100))],
+        6) $q$,
+  '22023',
+  null,
+  'get_co_ordered_items: un panier imbrique de 200 ids est refuse');
 
 reset role;
 
