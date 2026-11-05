@@ -44,16 +44,17 @@ jobs:
           set -euo pipefail
           # Le depot PGDG est necessaire pour la 17: le runner n'embarque qu'une
           # version plus ancienne, et `postgresql-17-pgtap` n'existe que la.
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail --silent --show-error \
-            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
-            https://www.postgresql.org/media/keys/ACCCB5DB.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
-            http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          #
+          # On passe par le script officiel de postgresql-common et PAS par un
+          # telechargement de cle a la main: l'URL historique de la cle
+          # (media/keys/ACCCB5DB.asc) renvoie desormais 404, ce qui faisait
+          # echouer ce workflow en 7 secondes. Le script gere la cle, le nom de
+          # la distribution et la ligne de depot, et reste maintenu en amont.
           sudo apt-get update -qq
-          # Le runner a deja un cluster sur 5432: on arrete tout avant d'installer
-          # la 17, sinon les deux se disputent le port.
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          # Le runner a deja un cluster: on l'arrete avant d'installer la 17,
+          # sinon les deux se disputent le port.
           sudo systemctl stop postgresql || true
           sudo apt-get install -y -qq postgresql-17 postgresql-17-pgtap
           /usr/lib/postgresql/17/bin/psql --version
