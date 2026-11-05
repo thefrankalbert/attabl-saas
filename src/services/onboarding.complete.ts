@@ -55,6 +55,13 @@ export async function completeOnboarding(
   }
   if (data.currency) {
     tenantUpdate.currency = data.currency;
+    // `supported_currencies` restait au defaut de la base ('{XAF}') meme quand
+    // le restaurant choisissait une autre devise. Or la vitrine lit CETTE
+    // colonne pour proposer un changement de devise au convive
+    // (sites/[site]/(storefront)/layout.tsx et settings/page.tsx): un
+    // restaurant en XOF se serait donc vu proposer le XAF, une devise qui
+    // n'est pas la sienne.
+    tenantUpdate.supported_currencies = [data.currency];
   }
   if (data.language) {
     tenantUpdate.default_locale = data.language;

@@ -53,7 +53,12 @@ export const onboardingCompleteSchema = z.object({
       .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
       .optional(),
     description: z.string().max(500).optional(),
-    currency: z.string().max(10).optional(),
+    // Seules les devises que la couche monetaire sait traiter (lib/constants
+    // CURRENCIES + DINERO_CURRENCIES de money.ts). Accepter une autre chaine
+    // n'echoue PAS a l'execution: money.ts retombe en silence sur la devise par
+    // defaut, donc une devise a 2 decimales serait calculee comme une devise
+    // sans decimale. Meme enum que tenant.schema.ts.
+    currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
     language: z.string().max(10).optional(),
     tenantSlug: z.string().max(100).optional(),
     menuItems: z.array(menuItemSchema).max(50).optional(),

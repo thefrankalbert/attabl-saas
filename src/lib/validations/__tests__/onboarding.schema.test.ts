@@ -145,3 +145,31 @@ describe('onboardingCompleteSchema', () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('devise acceptee a la fin de l onboarding', () => {
+  // Le selecteur proposait NEUF devises (dont GBP, MAD, TND, CAD, CHF) alors
+  // que la couche monetaire n'en connait que quatre. Et ce schema acceptait
+  // n'importe quelle chaine de 10 caracteres. Une devise inconnue ne fait PAS
+  // echouer l'application: money.ts retombe en silence sur la devise par
+  // defaut, donc un montant a 2 decimales - ou 3 pour le dinar tunisien -
+  // aurait ete calcule comme une devise sans decimale. Le refus doit donc
+  // venir d'ici, a l'entree.
+  const base = { data: { tenantName: 'Chez Amadou' } };
+
+  it.each(['XAF', 'XOF', 'EUR', 'USD'])('accepte %s, que money.ts sait traiter', (devise) => {
+    const r = onboardingCompleteSchema.safeParse({ data: { ...base.data, currency: devise } });
+    expect(r.success).toBe(true);
+  });
+
+  it.each(['GBP', 'MAD', 'TND', 'CAD', 'CHF'])(
+    'refuse %s, que money.ts calculerait faux en silence',
+    (devise) => {
+      const r = onboardingCompleteSchema.safeParse({ data: { ...base.data, currency: devise } });
+      expect(r.success).toBe(false);
+    },
+  );
+
+  it('reste optionnelle', () => {
+    expect(onboardingCompleteSchema.safeParse(base).success).toBe(true);
+  });
+});
