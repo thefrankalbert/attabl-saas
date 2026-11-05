@@ -140,6 +140,15 @@ export async function updateMenu(
     .single();
 
   if (error) {
+    // `.single()` sur ZERO ligne rend PGRST116. Ici cela ne veut pas dire
+    // "panne" mais "cette carte n'existe pas, ou n'appartient pas a ce
+    // restaurant" - le filtre porte sur `id` ET `tenant_id`. Les confondre
+    // donnait un 500 et un message "erreur serveur" la ou le restaurateur
+    // aurait du lire "carte introuvable". Un 500 envoie chercher une panne qui
+    // n'existe pas.
+    if ((error as { code?: string }).code === 'PGRST116') {
+      throw new ServiceError('Carte introuvable dans ce restaurant', 'NOT_FOUND');
+    }
     logger.error('Failed to update menu', { error: error.message });
     throw new ServiceError('Erreur lors de la mise à jour de la carte', 'INTERNAL');
   }
@@ -155,15 +164,25 @@ export async function deleteMenu(
   menuId: string,
   tenantId: string,
 ): Promise<void> {
-  const { error } = await supabase
+  // `count: 'exact'` n'est pas un detail: un DELETE qui ne correspond a RIEN ne
+  // rend AUCUNE erreur. Sans ce compte, supprimer une carte inexistante - ou
+  // appartenant a un AUTRE restaurant, puisque le filtre porte aussi sur
+  // `tenant_id` - repondait "succes". L'interface annoncait alors une
+  // suppression qui n'avait pas eu lieu, et le restaurateur voyait sa carte
+  // toujours la. Un succes mensonger coute plus cher qu'une erreur franche.
+  const { error, count } = await supabase
     .from('menus')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', menuId)
     .eq('tenant_id', tenantId);
 
   if (error) {
     logger.error('Failed to delete menu', { error: error.message });
     throw new ServiceError('Erreur lors de la suppression de la carte', 'INTERNAL');
+  }
+
+  if (count === 0) {
+    throw new ServiceError('Carte introuvable dans ce restaurant', 'NOT_FOUND');
   }
 }
 

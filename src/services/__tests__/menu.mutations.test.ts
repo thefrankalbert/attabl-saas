@@ -7,7 +7,11 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-type QueryResult = { data?: unknown; error?: { message: string } | null };
+type QueryResult = {
+  data?: unknown;
+  error?: { message: string; code?: string } | null;
+  count?: number | null;
+};
 
 type Query = {
   insert: ReturnType<typeof vi.fn>;
@@ -237,6 +241,35 @@ describe('menu.mutations updateMenu', () => {
       updateMenu(client, 'tenant-1', { id: 'menu-1', name: 'Nouvelle carte' }),
     ).rejects.toMatchObject({ code: 'INTERNAL' });
   });
+
+  // `.single()` sur zero ligne rend PGRST116. Ce n'est pas une panne: c'est que
+  // la carte n'existe pas, ou qu'elle appartient a un autre restaurant - le
+  // filtre porte sur id ET tenant_id. Les confondre donnait un 500 et un message
+  // "erreur serveur", qui envoie chercher une panne inexistante.
+  it('rend NOT_FOUND et non INTERNAL quand la carte n existe pas (PGRST116)', async () => {
+    const { client } = mockSupabase({
+      results: [
+        { data: null, error: { message: 'JSON object requested, 0 rows', code: 'PGRST116' } },
+      ],
+    });
+
+    await expect(
+      updateMenu(client, 'tenant-1', { id: 'inconnu', name: 'Nouvelle carte' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  // NON-REGRESSION: une VRAIE panne doit rester INTERNAL. Sans ce cas, on
+  // pourrait "corriger" en transformant toute erreur en NOT_FOUND, ce qui
+  // masquerait les pannes au lieu de les signaler.
+  it('garde INTERNAL pour une erreur de base qui n est PAS un PGRST116', async () => {
+    const { client } = mockSupabase({
+      results: [{ data: null, error: { message: 'deadlock detected', code: '40P01' } }],
+    });
+
+    await expect(
+      updateMenu(client, 'tenant-1', { id: 'menu-1', name: 'Nouvelle carte' }),
+    ).rejects.toMatchObject({ code: 'INTERNAL' });
+  });
 });
 
 describe('menu.mutations deleteMenu', () => {
@@ -257,6 +290,35 @@ describe('menu.mutations deleteMenu', () => {
     await expect(deleteMenu(client, 'menu-1', 'tenant-1')).rejects.toMatchObject({
       code: 'INTERNAL',
     });
+  });
+
+  // Un DELETE qui ne correspond a RIEN ne rend aucune erreur. Sans compter les
+  // lignes touchees, supprimer une carte inexistante - ou appartenant a un AUTRE
+  // restaurant, puisque le filtre porte aussi sur tenant_id - repondait "succes".
+  // L'interface annoncait une suppression qui n'avait pas eu lieu, et le journal
+  // d'audit enregistrait un geste qui ne s'etait pas produit.
+  it('refuse de rendre un succes quand AUCUNE ligne n a ete supprimee', async () => {
+    const { client } = mockSupabase({ results: [{ error: null, count: 0 }] });
+
+    await expect(deleteMenu(client, 'inconnu', 'tenant-1')).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('demande bien a Postgres de compter les lignes supprimees', async () => {
+    const { client, queries } = mockSupabase({ results: [{ error: null, count: 1 }] });
+
+    await deleteMenu(client, 'menu-1', 'tenant-1');
+
+    // Sans `count: 'exact'`, le compte revient undefined et la garde ci-dessus
+    // ne protege plus rien: elle passerait sur toutes les suppressions.
+    expect(queries[0]!.delete).toHaveBeenCalledWith({ count: 'exact' });
+  });
+
+  it('supprime normalement quand une ligne est bien touchee', async () => {
+    const { client } = mockSupabase({ results: [{ error: null, count: 1 }] });
+
+    await expect(deleteMenu(client, 'menu-1', 'tenant-1')).resolves.toBeUndefined();
   });
 });
 
