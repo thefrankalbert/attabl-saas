@@ -117,6 +117,44 @@ export type Database = {
           },
         ];
       };
+      ads: {
+        Row: {
+          created_at: string;
+          id: string;
+          image_url: string;
+          is_active: boolean;
+          link: string | null;
+          sort_order: number;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          image_url: string;
+          is_active?: boolean;
+          link?: string | null;
+          sort_order?: number;
+          tenant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          image_url?: string;
+          is_active?: boolean;
+          link?: string | null;
+          sort_order?: number;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ads_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ai_credits_ledger: {
         Row: {
           created_at: string | null;
@@ -250,6 +288,59 @@ export type Database = {
           },
         ];
       };
+      audit_log: {
+        Row: {
+          action: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          metadata: Json | null;
+          new_data: Json | null;
+          old_data: Json | null;
+          tenant_id: string | null;
+          user_email: string | null;
+          user_id: string | null;
+          user_role: string | null;
+        };
+        Insert: {
+          action: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          metadata?: Json | null;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          tenant_id?: string | null;
+          user_email?: string | null;
+          user_id?: string | null;
+          user_role?: string | null;
+        };
+        Update: {
+          action?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          metadata?: Json | null;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          tenant_id?: string | null;
+          user_email?: string | null;
+          user_id?: string | null;
+          user_role?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
@@ -319,6 +410,55 @@ export type Database = {
             columns: ['venue_id'];
             isOneToOne: false;
             referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string | null;
+          created_at: string;
+          discount_amount: number;
+          id: string;
+          order_id: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          coupon_id?: string | null;
+          created_at?: string;
+          discount_amount?: number;
+          id?: string;
+          order_id?: string | null;
+          tenant_id: string;
+        };
+        Update: {
+          coupon_id?: string | null;
+          created_at?: string;
+          discount_amount?: number;
+          id?: string;
+          order_id?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'coupon_redemptions_coupon_id_fkey';
+            columns: ['coupon_id'];
+            isOneToOne: false;
+            referencedRelation: 'coupons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'coupon_redemptions_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'coupon_redemptions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
             referencedColumns: ['id'];
           },
         ];
@@ -439,6 +579,64 @@ export type Database = {
           },
         ];
       };
+      house_accounts: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          settled_at: string | null;
+          settled_by: string | null;
+          status: string;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          settled_at?: string | null;
+          settled_by?: string | null;
+          status?: string;
+          tenant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          settled_at?: string | null;
+          settled_by?: string | null;
+          status?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'house_accounts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'house_accounts_settled_by_fkey';
+            columns: ['settled_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'house_accounts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ingredients: {
         Row: {
           category: string | null;
@@ -449,8 +647,10 @@ export type Database = {
           is_active: boolean;
           min_stock_alert: number;
           name: string;
+          purchase_unit: string | null;
           tenant_id: string;
           unit: string;
+          units_per_purchase: number;
           updated_at: string;
         };
         Insert: {
@@ -462,8 +662,10 @@ export type Database = {
           is_active?: boolean;
           min_stock_alert?: number;
           name: string;
+          purchase_unit?: string | null;
           tenant_id: string;
           unit?: string;
+          units_per_purchase?: number;
           updated_at?: string;
         };
         Update: {
@@ -475,13 +677,72 @@ export type Database = {
           is_active?: boolean;
           min_stock_alert?: number;
           name?: string;
+          purchase_unit?: string | null;
           tenant_id?: string;
           unit?: string;
+          units_per_purchase?: number;
           updated_at?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'ingredients_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      invitations: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          custom_permissions: Json | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          role: string;
+          status: string;
+          tenant_id: string;
+          token: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          created_at?: string;
+          custom_permissions?: Json | null;
+          email: string;
+          expires_at: string;
+          id?: string;
+          invited_by: string;
+          role: string;
+          status?: string;
+          tenant_id: string;
+          token: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          created_at?: string;
+          custom_permissions?: Json | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          role?: string;
+          status?: string;
+          tenant_id?: string;
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invitations_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invitations_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -893,6 +1154,24 @@ export type Database = {
           },
         ];
       };
+      newsletter_subscriber: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+        };
+        Relationships: [];
+      };
       notifications: {
         Row: {
           body: string | null;
@@ -998,6 +1277,8 @@ export type Database = {
           course: string | null;
           created_at: string;
           customer_notes: string | null;
+          fired_at: string | null;
+          held: boolean;
           id: string;
           item_name: string;
           item_name_en: string | null;
@@ -1010,11 +1291,14 @@ export type Database = {
           quantity: number;
           selected_option: Json | null;
           selected_variant: Json | null;
+          tenant_id: string;
         };
         Insert: {
           course?: string | null;
           created_at?: string;
           customer_notes?: string | null;
+          fired_at?: string | null;
+          held?: boolean;
           id?: string;
           item_name: string;
           item_name_en?: string | null;
@@ -1027,11 +1311,14 @@ export type Database = {
           quantity?: number;
           selected_option?: Json | null;
           selected_variant?: Json | null;
+          tenant_id: string;
         };
         Update: {
           course?: string | null;
           created_at?: string;
           customer_notes?: string | null;
+          fired_at?: string | null;
+          held?: boolean;
           id?: string;
           item_name?: string;
           item_name_en?: string | null;
@@ -1044,6 +1331,7 @@ export type Database = {
           quantity?: number;
           selected_option?: Json | null;
           selected_variant?: Json | null;
+          tenant_id?: string;
         };
         Relationships: [
           {
@@ -1060,12 +1348,102 @@ export type Database = {
             referencedRelation: 'orders';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'order_items_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      order_mutation_requests: {
+        Row: {
+          client_request_id: string;
+          created_at: string;
+          processed_at: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          client_request_id: string;
+          created_at?: string;
+          processed_at?: string | null;
+          tenant_id: string;
+        };
+        Update: {
+          client_request_id?: string;
+          created_at?: string;
+          processed_at?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_mutation_requests_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      order_notes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          note: string;
+          order_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note: string;
+          order_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string;
+          order_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_notes_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'order_notes_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'order_notes_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
         ];
       };
       orders: {
         Row: {
           assigned_to: string | null;
           cashier_id: string | null;
+          client_request_id: string | null;
+          comp_amount: number | null;
+          comp_reason: string | null;
+          comped_at: string | null;
+          comped_by: string | null;
           completed_at: string | null;
           coupon_id: string | null;
           created_at: string;
@@ -1074,7 +1452,9 @@ export type Database = {
           delivery_address: string | null;
           discount_amount: number | null;
           display_currency: string | null;
+          house_account_id: string | null;
           id: string;
+          is_comp: boolean;
           notes: string | null;
           orange_money_notif_token: string | null;
           orange_money_pay_token: string | null;
@@ -1085,10 +1465,11 @@ export type Database = {
           payment_status: string | null;
           preparation_zone: string;
           room_number: string | null;
+          served_at: string | null;
           server_id: string | null;
           service_charge_amount: number | null;
-          served_at: string | null;
           service_type: string | null;
+          session_id: string | null;
           status: string;
           subtotal: number;
           table_id: string | null;
@@ -1104,6 +1485,11 @@ export type Database = {
         Insert: {
           assigned_to?: string | null;
           cashier_id?: string | null;
+          client_request_id?: string | null;
+          comp_amount?: number | null;
+          comp_reason?: string | null;
+          comped_at?: string | null;
+          comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
           created_at?: string;
@@ -1112,7 +1498,9 @@ export type Database = {
           delivery_address?: string | null;
           discount_amount?: number | null;
           display_currency?: string | null;
+          house_account_id?: string | null;
           id?: string;
+          is_comp?: boolean;
           notes?: string | null;
           orange_money_notif_token?: string | null;
           orange_money_pay_token?: string | null;
@@ -1123,10 +1511,11 @@ export type Database = {
           payment_status?: string | null;
           preparation_zone?: string;
           room_number?: string | null;
+          served_at?: string | null;
           server_id?: string | null;
           service_charge_amount?: number | null;
-          served_at?: string | null;
           service_type?: string | null;
+          session_id?: string | null;
           status?: string;
           subtotal: number;
           table_id?: string | null;
@@ -1142,6 +1531,11 @@ export type Database = {
         Update: {
           assigned_to?: string | null;
           cashier_id?: string | null;
+          client_request_id?: string | null;
+          comp_amount?: number | null;
+          comp_reason?: string | null;
+          comped_at?: string | null;
+          comped_by?: string | null;
           completed_at?: string | null;
           coupon_id?: string | null;
           created_at?: string;
@@ -1150,7 +1544,9 @@ export type Database = {
           delivery_address?: string | null;
           discount_amount?: number | null;
           display_currency?: string | null;
+          house_account_id?: string | null;
           id?: string;
+          is_comp?: boolean;
           notes?: string | null;
           orange_money_notif_token?: string | null;
           orange_money_pay_token?: string | null;
@@ -1161,10 +1557,11 @@ export type Database = {
           payment_status?: string | null;
           preparation_zone?: string;
           room_number?: string | null;
+          served_at?: string | null;
           server_id?: string | null;
           service_charge_amount?: number | null;
-          served_at?: string | null;
           service_type?: string | null;
+          session_id?: string | null;
           status?: string;
           subtotal?: number;
           table_id?: string | null;
@@ -1193,6 +1590,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'orders_comped_by_fkey';
+            columns: ['comped_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'orders_coupon_id_fkey';
             columns: ['coupon_id'];
             isOneToOne: false;
@@ -1200,10 +1604,24 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'orders_house_account_id_fkey';
+            columns: ['house_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'house_accounts';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'orders_server_id_fkey';
             columns: ['server_id'];
             isOneToOne: false;
             referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'orders_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -1225,6 +1643,64 @@ export type Database = {
             columns: ['venue_id'];
             isOneToOne: false;
             referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payments: {
+        Row: {
+          amount: number;
+          client_request_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          method: string;
+          order_id: string;
+          status: string;
+          tenant_id: string;
+        };
+        Insert: {
+          amount: number;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          method: string;
+          order_id: string;
+          status?: string;
+          tenant_id: string;
+        };
+        Update: {
+          amount?: number;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          method?: string;
+          order_id?: string;
+          status?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
             referencedColumns: ['id'];
           },
         ];
@@ -1272,6 +1748,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'platform_audit_log_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          p256dh: string;
+          tenant_id: string;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          p256dh: string;
+          tenant_id: string;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          p256dh?: string;
+          tenant_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_subscriptions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      qr_designs: {
+        Row: {
+          config: Json;
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          config: Json;
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'qr_designs_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -1355,6 +1907,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      role_permissions: {
+        Row: {
+          id: string;
+          permissions: Json;
+          role: string;
+          tenant_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          permissions?: Json;
+          role: string;
+          tenant_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          permissions?: Json;
+          role?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'role_permissions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'role_permissions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       settings: {
         Row: {
           id: string;
@@ -1429,6 +2023,105 @@ export type Database = {
           },
         ];
       };
+      stock_count_lines: {
+        Row: {
+          count_id: string;
+          counted_qty: number | null;
+          created_at: string;
+          id: string;
+          ingredient_id: string;
+          tenant_id: string;
+          theoretical_qty: number;
+          variance: number | null;
+        };
+        Insert: {
+          count_id: string;
+          counted_qty?: number | null;
+          created_at?: string;
+          id?: string;
+          ingredient_id: string;
+          tenant_id: string;
+          theoretical_qty?: number;
+          variance?: number | null;
+        };
+        Update: {
+          count_id?: string;
+          counted_qty?: number | null;
+          created_at?: string;
+          id?: string;
+          ingredient_id?: string;
+          tenant_id?: string;
+          theoretical_qty?: number;
+          variance?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stock_count_lines_count_id_fkey';
+            columns: ['count_id'];
+            isOneToOne: false;
+            referencedRelation: 'stock_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'stock_count_lines_ingredient_id_fkey';
+            columns: ['ingredient_id'];
+            isOneToOne: false;
+            referencedRelation: 'ingredients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'stock_count_lines_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      stock_counts: {
+        Row: {
+          committed_at: string | null;
+          committed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          reference: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          committed_at?: string | null;
+          committed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          reference?: string | null;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          committed_at?: string | null;
+          committed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          reference?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stock_counts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       stock_movements: {
         Row: {
           created_at: string;
@@ -1438,6 +2131,7 @@ export type Database = {
           movement_type: string;
           notes: string | null;
           quantity: number;
+          reason_code: string | null;
           reference_id: string | null;
           supplier_id: string | null;
           tenant_id: string;
@@ -1450,6 +2144,7 @@ export type Database = {
           movement_type: string;
           notes?: string | null;
           quantity: number;
+          reason_code?: string | null;
           reference_id?: string | null;
           supplier_id?: string | null;
           tenant_id: string;
@@ -1462,6 +2157,7 @@ export type Database = {
           movement_type?: string;
           notes?: string | null;
           quantity?: number;
+          reason_code?: string | null;
           reference_id?: string | null;
           supplier_id?: string | null;
           tenant_id?: string;
@@ -1613,37 +2309,34 @@ export type Database = {
           },
         ];
       };
-      qr_designs: {
+      table_sessions: {
         Row: {
-          config: Json;
-          created_at: string;
+          closed_at: string | null;
           id: string;
-          is_default: boolean;
-          name: string;
+          opened_at: string;
+          status: string;
+          table_number: string;
           tenant_id: string;
-          updated_at: string;
         };
         Insert: {
-          config: Json;
-          created_at?: string;
+          closed_at?: string | null;
           id?: string;
-          is_default?: boolean;
-          name: string;
+          opened_at?: string;
+          status?: string;
+          table_number: string;
           tenant_id: string;
-          updated_at?: string;
         };
         Update: {
-          config?: Json;
-          created_at?: string;
+          closed_at?: string | null;
           id?: string;
-          is_default?: boolean;
-          name?: string;
+          opened_at?: string;
+          status?: string;
+          table_number?: string;
           tenant_id?: string;
-          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'qr_designs_tenant_id_fkey';
+            foreignKeyName: 'table_sessions_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -1712,6 +2405,41 @@ export type Database = {
           },
         ];
       };
+      tenant_supports: {
+        Row: {
+          config: Json;
+          created_at: string;
+          id: string;
+          tenant_id: string;
+          type: string;
+          updated_at: string;
+        };
+        Insert: {
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          tenant_id: string;
+          type?: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          tenant_id?: string;
+          type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_supports_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tenants: {
         Row: {
           activation_events: Json;
@@ -1724,6 +2452,7 @@ export type Database = {
           country: string | null;
           created_at: string;
           currency: string | null;
+          custom_domain: string | null;
           default_locale: string | null;
           deleted_at: string | null;
           deleted_by: string | null;
@@ -1733,6 +2462,7 @@ export type Database = {
           enable_tax: boolean | null;
           enabled_payment_methods: string[];
           establishment_type: string | null;
+          freeze_reason: string | null;
           group_id: string | null;
           id: string;
           idle_timeout_minutes: number | null;
@@ -1747,6 +2477,7 @@ export type Database = {
           onboarding_completed: boolean | null;
           onboarding_completed_at: string | null;
           opening_hours: Json;
+          past_due_since: string | null;
           phone: string | null;
           primary_color: string | null;
           screen_lock_mode: string | null;
@@ -1779,6 +2510,7 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           currency?: string | null;
+          custom_domain?: string | null;
           default_locale?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
@@ -1788,6 +2520,7 @@ export type Database = {
           enable_tax?: boolean | null;
           enabled_payment_methods?: string[];
           establishment_type?: string | null;
+          freeze_reason?: string | null;
           group_id?: string | null;
           id?: string;
           idle_timeout_minutes?: number | null;
@@ -1802,6 +2535,7 @@ export type Database = {
           onboarding_completed?: boolean | null;
           onboarding_completed_at?: string | null;
           opening_hours?: Json;
+          past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
           screen_lock_mode?: string | null;
@@ -1834,6 +2568,7 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           currency?: string | null;
+          custom_domain?: string | null;
           default_locale?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
@@ -1843,6 +2578,7 @@ export type Database = {
           enable_tax?: boolean | null;
           enabled_payment_methods?: string[];
           establishment_type?: string | null;
+          freeze_reason?: string | null;
           group_id?: string | null;
           id?: string;
           idle_timeout_minutes?: number | null;
@@ -1857,6 +2593,7 @@ export type Database = {
           onboarding_completed?: boolean | null;
           onboarding_completed_at?: string | null;
           opening_hours?: Json;
+          past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
           screen_lock_mode?: string | null;
@@ -2120,9 +2857,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      adjust_ingredient_stock: {
-        Args: { p_delta: number; p_ingredient_id: string; p_tenant_id: string };
-        Returns: undefined;
+      accept_invitation_membership: {
+        Args: {
+          p_full_name: string;
+          p_invitation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       adjust_ingredient_stock_tx: {
         Args: {
@@ -2136,9 +2877,30 @@ export type Database = {
         };
         Returns: number;
       };
+      assert_tenant_member: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      cancel_stock_count: {
+        Args: { p_count_id: string; p_tenant_id: string };
+        Returns: undefined;
+      };
+      claim_activation_event: {
+        Args: { p_event_key: string; p_tenant_id: string };
+        Returns: boolean;
+      };
       claim_coupon_usage: { Args: { p_coupon_id: string }; Returns: boolean };
+      commit_stock_count: {
+        Args: {
+          p_committed_by?: string;
+          p_count_id: string;
+          p_tenant_id: string;
+        };
+        Returns: number;
+      };
       create_order_with_items: {
         Args: {
+          p_client_request_id?: string;
           p_coupon_id?: string;
           p_customer_name?: string;
           p_customer_phone?: string;
@@ -2167,7 +2929,7 @@ export type Database = {
         Returns: boolean;
       };
       destock_order: {
-        Args: { p_order_id: string; p_tenant_id: string };
+        Args: { p_created_by?: string; p_order_id: string; p_tenant_id: string };
         Returns: number;
       };
       expire_stale_payment_sessions: {
@@ -2178,11 +2940,26 @@ export type Database = {
         Args: { p_name: string; p_tenant_id: string };
         Returns: string;
       };
+      get_category_breakdown: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          category: string;
+          revenue: number;
+        }[];
+      };
       get_co_ordered_items: {
         Args: { p_cart_ids: string[]; p_limit?: number; p_tenant_id: string };
         Returns: {
           frequency: number;
           menu_item_id: string;
+        }[];
+      };
+      get_daily_comps: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          comp_count: number;
+          comp_total: number;
+          day: string;
         }[];
       };
       get_daily_revenue: {
@@ -2191,6 +2968,25 @@ export type Database = {
           day: string;
           order_count: number;
           revenue: number;
+        }[];
+      };
+      get_house_account_balances: {
+        Args: { p_tenant_id: string };
+        Returns: {
+          account_id: string;
+          name: string;
+          open_orders: number;
+          outstanding: number;
+          status: string;
+        }[];
+      };
+      get_losses_by_reason: {
+        Args: { p_end?: string; p_start?: string; p_tenant_id: string };
+        Returns: {
+          nb_movements: number;
+          reason_code: string;
+          total_cost_value: number;
+          total_qty: number;
         }[];
       };
       get_my_tenant_ids: { Args: never; Returns: string[] };
@@ -2225,6 +3021,49 @@ export type Database = {
           tenant_plan: string;
           tenant_slug: string;
           tenant_status: string;
+        }[];
+      };
+      get_server_performance: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string };
+        Returns: {
+          orders: number;
+          revenue: number;
+          server_id: string;
+          server_name: string;
+        }[];
+      };
+      get_staff_stock_report: {
+        Args: { p_end: string; p_start: string; p_tenant_id: string };
+        Returns: {
+          adjustment_out_qty: number;
+          author_id: string;
+          author_name: string;
+          in_qty: number;
+          manual_remove_qty: number;
+          movements_count: number;
+          order_destock_qty: number;
+          out_qty: number;
+        }[];
+      };
+      get_stock_movements_page: {
+        Args: { p_limit?: number; p_offset?: number; p_tenant_id: string };
+        Returns: {
+          author_name: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          ingredient_id: string;
+          ingredient_name: string;
+          ingredient_unit: string;
+          movement_type: string;
+          notes: string;
+          quantity: number;
+          reason_code: string;
+          reference_id: string;
+          supplier_id: string;
+          supplier_name: string;
+          tenant_id: string;
+          total_count: number;
         }[];
       };
       get_stock_status: {
@@ -2288,9 +3127,9 @@ export type Database = {
           revenue: number;
         }[];
       };
-      increment_coupon_usage: {
-        Args: { p_coupon_id: string };
-        Returns: undefined;
+      import_recipes_tx: {
+        Args: { p_rows: Json; p_tenant_id: string };
+        Returns: Json;
       };
       increment_login_count: {
         Args: { admin_user_id: string };
@@ -2301,7 +3140,32 @@ export type Database = {
         Returns: number;
       };
       is_super_admin: { Args: never; Returns: boolean };
+      is_table_occupied: {
+        Args: { p_table_number: string; p_tenant_id: string };
+        Returns: boolean;
+      };
       next_order_number: { Args: { p_tenant_id: string }; Returns: string };
+      open_stock_count: {
+        Args: {
+          p_created_by?: string;
+          p_ingredient_ids?: string[];
+          p_reference?: string;
+          p_tenant_id: string;
+        };
+        Returns: string;
+      };
+      provision_group_restaurant: {
+        Args: {
+          p_email: string;
+          p_group_id: string;
+          p_name: string;
+          p_plan: string;
+          p_slug: string;
+          p_type: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       provision_signup_tenant: {
         Args: {
           p_email: string;
@@ -2314,16 +3178,55 @@ export type Database = {
         };
         Returns: Json;
       };
+      reassign_order_table: {
+        Args: {
+          p_new_table_number: string;
+          p_order_id: string;
+          p_tenant_id: string;
+        };
+        Returns: undefined;
+      };
+      reconcile_stock_ledger: {
+        Args: { p_created_by?: string; p_tenant_id: string };
+        Returns: number;
+      };
+      record_loss_tx: {
+        Args: {
+          p_created_by?: string;
+          p_ingredient_id: string;
+          p_notes?: string;
+          p_quantity: number;
+          p_reason_code: string;
+          p_tenant_id: string;
+        };
+        Returns: number;
+      };
+      record_refund: {
+        Args: {
+          p_amount: number;
+          p_client_request_id?: string;
+          p_created_by?: string;
+          p_method: string;
+          p_order_id: string;
+          p_tenant_id: string;
+        };
+        Returns: string;
+      };
       reset_tenant_data: {
         Args: { p_reset_type: string; p_tenant_id: string };
         Returns: Json;
       };
       restock_order: {
-        Args: { p_order_id: string; p_tenant_id: string };
+        Args: { p_created_by?: string; p_order_id: string; p_tenant_id: string };
         Returns: number;
+      };
+      save_stock_count_lines: {
+        Args: { p_count_id: string; p_lines: Json; p_tenant_id: string };
+        Returns: undefined;
       };
       set_opening_stock: {
         Args: {
+          p_created_by?: string;
           p_ingredient_id: string;
           p_quantity: number;
           p_tenant_id: string;
@@ -2337,6 +3240,16 @@ export type Database = {
       unclaim_coupon_usage: {
         Args: { p_coupon_id: string };
         Returns: undefined;
+      };
+      verify_stock_ledger: {
+        Args: { p_tenant_id: string };
+        Returns: {
+          current_stock: number;
+          drift: number;
+          ingredient_id: string;
+          ledger_sum: number;
+          name: string;
+        }[];
       };
     };
     Enums: {
