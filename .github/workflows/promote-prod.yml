@@ -31,7 +31,7 @@ jobs:
   promote:
     name: Promote production deployment
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 32
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +64,23 @@ jobs:
           # pipefail : sans lui, l'echec du script serait masque par le tee et le
           # job passerait "success" avec une promotion ratee (constate, run 30678857094)
           set -o pipefail
-          ./scripts/promote-prod.sh --wait 15 | tee /tmp/promote.log
+          # --wait 25 et non 15. Mesure du 2026-11-05 (run 42082848092): le
+          # deploiement de a63ab202 a bien ete cree par Vercel, mais 16,7 minutes
+          # apres le demarrage de ce workflow. L'attente de 15 minutes l'a donc
+          # manque de cent secondes, et le job a echoue sur `prod: NOT-READY`
+          # alors que rien n'etait casse - la prod servait le commit precedent,
+          # sain, et un simple `gh run rerun` a suffi ensuite.
+          #
+          # Les cinq autres deploiements de la meme journee sont apparus en 1 a
+          # 2 minutes: 16,7 min est donc un cas rare, pas la norme. Mais une porte
+          # qui vire au rouge pour cent secondes de retard finit par ne plus etre
+          # crue, et c'est ca le vrai risque. 25 min laisse 50% de marge sur le
+          # pire cas observe.
+          #
+          # `timeout-minutes` du job est monte en consequence: il DOIT rester
+          # superieur a --wait, sinon le job est tue avant que le script ait pu
+          # conclure, et on perd son diagnostic.
+          ./scripts/promote-prod.sh --wait 25 | tee /tmp/promote.log
 
       - name: Resume
         if: always()

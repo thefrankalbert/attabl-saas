@@ -20,7 +20,7 @@
 # Usage :
 #   ./scripts/promote-prod.sh                # verifie, et promeut si necessaire
 #   ./scripts/promote-prod.sh --check        # verifie seulement, ne promeut pas
-#   ./scripts/promote-prod.sh --wait 15      # attend que le build soit READY (CI)
+#   ./scripts/promote-prod.sh --wait 25      # attend que le build soit READY (CI)
 #
 # Authentification : VERCEL_TOKEN, sinon le token du CLI (`vercel login`).
 # Sortie grep-friendly : ^prod: IN-SYNC|PROMOTED|OUT-OF-SYNC|NOT-READY|ERROR
