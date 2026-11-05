@@ -7,7 +7,7 @@ import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
-import { resolveCheckoutTenant } from '@/lib/stripe/checkout-tenant';
+import { resolveCheckoutTenant } from '@/lib/billing/checkout-tenant';
 import { toCheckoutApiError } from '@/lib/stripe/checkout-errors';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 

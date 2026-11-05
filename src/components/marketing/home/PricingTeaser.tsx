@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { PLAN_AMOUNTS } from '@/lib/stripe/pricing';
+import { PLAN_AMOUNTS } from '@/lib/billing/pricing';
 
 export async function PricingTeaser() {
   const [t, locale] = await Promise.all([getTranslations('marketing.home.pricing'), getLocale()]);

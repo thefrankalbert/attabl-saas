@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
+import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/billing/pricing';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 

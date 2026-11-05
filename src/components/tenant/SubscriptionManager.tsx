@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { billingCapabilities } from '@/lib/billing/provider';
 import { logger } from '@/lib/logger';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 import { CurrentPlanPanel } from './subscription/CurrentPlanPanel';
@@ -124,6 +125,7 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
           periodEnd={tenant.subscription_current_period_end}
           billingInterval={billingInterval}
           hasSubscription={hasSubscription}
+          canOpenPortal={billingCapabilities().hostedPortal}
           isBillingLoading={isBillingLoading}
           onManageBilling={handleManageBilling}
         />
