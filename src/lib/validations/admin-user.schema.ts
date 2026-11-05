@@ -9,8 +9,13 @@ const PERMISSION_CODE_SET = new Set<string>(PERMISSION_CODES);
  */
 
 export const createAdminUserSchema = z.object({
+  // trim + lowercase comme updateUserEmailSchema: admin_users.email sert de cle
+  // de resolution du compte a l'acceptation d'une invitation, et .eq() est
+  // sensible a la casse en Postgres.
   email: z
     .string()
+    .trim()
+    .toLowerCase()
     .email('Adresse email invalide')
     .max(255, "L'email ne doit pas dépasser 255 caractères"),
   password: z
@@ -24,6 +29,19 @@ export const createAdminUserSchema = z.object({
   role: z.enum(['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'], {
     message: 'Le rôle est requis',
   }),
+});
+
+/**
+ * Schema for changing a member's email (actionUpdateUserEmail).
+ * Remplace un test regex artisanal: toute entree utilisateur passe par Zod.
+ */
+export const updateUserEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('Adresse email invalide')
+    .max(255, "L'email ne doit pas depasser 255 caracteres"),
 });
 
 /**

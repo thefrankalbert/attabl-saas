@@ -64,12 +64,51 @@ describe('GET /api/cron/freeze-expired-trials', () => {
     // Only trials that expired AND never got a Stripe subscription are frozen.
     // F6: le gel aligne is_active sur le webhook subscription.deleted. Sans lui,
     // la vitrine et POST /api/orders restaient ouverts pour un essai expire.
+    //
+    // LOT 7: le cron gele pour DEUX causes distinctes (essai expire, impaye
+    // depasse). Elles ne partagent plus un seul payload: `charge.dispute.closed`
+    // ne doit lever que le gel pose par un litige, donc chaque chemin ecrit la
+    // sienne.
+    expect(builder.update).toHaveBeenCalledWith({
+      subscription_status: 'frozen',
+      is_active: false,
+      freeze_reason: 'trial_expired',
+    });
+    expect(builder.eq).toHaveBeenCalledWith('subscription_status', 'trial');
+    expect(builder.is).toHaveBeenCalledWith('stripe_subscription_id', null);
+  });
+
+  it('gele un impaye depasse avec sa propre cause', async () => {
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
+    expect(response.status).toBe(200);
+
+    expect(builder.update).toHaveBeenCalledWith({
+      subscription_status: 'frozen',
+      is_active: false,
+      freeze_reason: 'past_due_overdue',
+    });
+    expect(builder.in).toHaveBeenCalledWith('id', ['a', 'b']);
+  });
+
+  it('rejoue le gel sans la cause quand la colonne n existe pas encore', async () => {
+    // Le code part en production AVANT la migration: un 42703 ne doit pas
+    // empecher le gel, qui est la direction sure.
+    mockSelect
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: '42703', message: 'column tenants.freeze_reason does not exist' },
+      })
+      .mockResolvedValue({ data: [{ id: 'a' }], error: null });
+
+    const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+    const response = await GET(createRequest('Bearer test-cron-secret'));
+
+    expect(response.status).toBe(200);
     expect(builder.update).toHaveBeenCalledWith({
       subscription_status: 'frozen',
       is_active: false,
     });
-    expect(builder.eq).toHaveBeenCalledWith('subscription_status', 'trial');
-    expect(builder.is).toHaveBeenCalledWith('stripe_subscription_id', null);
   });
 
   it('returns 500 when the update fails', async () => {

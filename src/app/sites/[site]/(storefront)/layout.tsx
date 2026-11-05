@@ -34,7 +34,17 @@ export default async function StorefrontLayout({
   // A suspended restaurant (super-admin action) must not serve the menu or take
   // orders. getCachedTenant already returns null for soft-deleted tenants (404);
   // here we additionally block the live-but-suspended case.
-  if (tenant && tenant.is_active === false) {
+  //
+  // CTR7-1: ce verrou ne lisait que `is_active`, alors qu'une suspension
+  // plateforme pose AUSSI `suspended_at` - une colonne qui etait ecrite et
+  // affichee dans la console, mais appliquee nulle part. Or le webhook Stripe
+  // recalcule `is_active` a chaque evenement d'abonnement: un tenant suspendu
+  // dont Stripe disait encore `past_due` repassait `is_active = true` et sa
+  // vitrine se rallumait. L'ecriture est desormais gardee cote webhook, mais la
+  // base peut DEJA porter une ligne dans cet etat: le verrou de lecture doit
+  // donc tenir seul, comme il le fait maintenant pour le tableau de bord
+  // (`proxy.ts`) et la prise de commande (`order-queries.ts`).
+  if (tenant && (tenant.is_active === false || tenant.suspended_at)) {
     return <StorefrontUnavailable />;
   }
 

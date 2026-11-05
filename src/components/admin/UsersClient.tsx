@@ -113,15 +113,46 @@ export default function UsersClient({
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState('');
-  const [editPassword, setEditPassword] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [sendingResetLink, setSendingResetLink] = useState(false);
 
   const openEditModal = (user: AdminUser) => {
     setEditingUser(user);
     setEditName(user.full_name || '');
     setEditEmail(user.email);
     setEditRole(user.role);
-    setEditPassword('');
+  };
+
+  // Le champ "nouveau mot de passe" a disparu: le serveur n'ecrit plus le mot
+  // de passe d'autrui (constat ACT-14), il envoie un lien de reinitialisation
+  // au titulaire. Garder un champ dont la valeur etait ignoree affichait
+  // "utilisateur mis a jour" alors que rien ne changeait: le patron croyait
+  // avoir donne un mot de passe a son equipier. L'action est donc explicite,
+  // et son message dit a quelle adresse le lien est parti.
+  const handleSendResetLink = async () => {
+    if (!editingUser) return;
+    setSendingResetLink(true);
+    try {
+      const res = await actionResetUserPassword(tenantId, editingUser.id);
+      if (res.error) {
+        toast({ title: res.error, variant: 'destructive' });
+        return;
+      }
+      // Le toast ne NOMME plus d'adresse (reserve S3' du contre-audit LOT 4).
+      // Il affichait `editingUser.email`, c'est-a-dire le miroir
+      // `admin_users.email`, alors que le serveur envoie le lien a l'adresse
+      // portee par le COMPTE AUTH de la cible (admin.ts, getUserById). Les deux
+      // divergent des qu'un changement d'adresse n'a pas ete confirme par le
+      // titulaire: le message affirmait alors un destinataire que le serveur
+      // n'avait pas utilise - le meme mensonge d'interface que ce lot pretend
+      // avoir ferme. Retourner l'adresse reellement utilisee aurait divulgue a
+      // l'appelant l'adresse privee du compte auth; on n'en nomme donc aucune.
+      toast({ title: t('resetLinkSent') });
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setSendingResetLink(false);
+    }
   };
 
   // Per-user permission override dialog
@@ -146,14 +177,6 @@ export default function UsersClient({
       // Update email if changed
       if (editEmail !== editingUser.email) {
         const res = await actionUpdateUserEmail(tenantId, editingUser.id, editEmail);
-        if (res.error) {
-          toast({ title: res.error, variant: 'destructive' });
-          return;
-        }
-      }
-      // Reset password if provided
-      if (editPassword.trim()) {
-        const res = await actionResetUserPassword(tenantId, editingUser.id, editPassword);
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return;
@@ -284,15 +307,17 @@ export default function UsersClient({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>{t('newPassword')}</Label>
-              <Input
-                type="password"
-                value={editPassword}
-                onChange={(e) => setEditPassword(e.target.value)}
-                placeholder={t('newPasswordPlaceholder')}
-                className="min-h-[44px]"
-              />
-              <p className="text-xs text-app-text-secondary">{t('passwordHint')}</p>
+              <Label>{t('passwordSection')}</Label>
+              <Button
+                variant="outline"
+                disabled={sendingResetLink}
+                onClick={handleSendResetLink}
+                className="w-full min-h-[44px] gap-2"
+              >
+                {sendingResetLink && <Loader2 className="w-4 h-4 animate-spin" />}
+                {t('sendResetLink')}
+              </Button>
+              <p className="text-xs text-app-text-secondary">{t('resetLinkHint')}</p>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button variant="ghost" onClick={() => setEditingUser(null)}>

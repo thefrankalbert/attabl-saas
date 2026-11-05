@@ -40,6 +40,8 @@ function AcceptInviteForm() {
   const token = searchParams.get('token');
 
   const [loading, setLoading] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
@@ -131,6 +133,38 @@ function AcceptInviteForm() {
     );
   }
 
+  // Adhesion d'un compte qui existe DEJA: aucun mot de passe a saisir (le
+  // serveur l'ignorait, ce qui faisait croire a l'invite qu'il en changeait
+  // un). Le serveur exige a la place la session du titulaire; s'il n'y en a
+  // pas, il repond 401 et on renvoie vers la connexion, qui ramene ici.
+  const handleJoinWithAccount = async () => {
+    setError(null);
+    setJoining(true);
+    try {
+      const res = await fetch('/api/invitations/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const data: { success?: boolean; tenantSlug?: string; error?: string } = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de l'acceptation");
+        setNeedsLogin(res.status === 401);
+        return;
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = `/sites/${data.tenantSlug}/admin`;
+      }, 2000);
+    } catch {
+      setError('Erreur de connexion au serveur');
+    } finally {
+      setJoining(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -184,6 +218,33 @@ function AcceptInviteForm() {
           <p className="text-app-text-secondary text-sm">
             Rejoignez l&apos;equipe sur ATTABL en cr&#233;ant votre compte.
           </p>
+        </div>
+
+        {/* Compte existant: aucun mot de passe a saisir, la session suffit. Le
+            serveur exige qu'elle porte l'adresse invitee. */}
+        <div className="mb-6 space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-10 text-sm font-medium rounded-md"
+            disabled={joining || loading}
+            onClick={handleJoinWithAccount}
+          >
+            {joining ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adh&#233;sion en cours...
+              </>
+            ) : (
+              <>J&apos;ai d&#233;j&#224; un compte ATTABL - rejoindre l&apos;equipe</>
+            )}
+          </Button>
+          {needsLogin && (
+            <p className="text-center text-xs text-app-text-muted">
+              Connectez-vous avec l&apos;adresse qui a recu cette invitation, puis rouvrez le lien
+              de votre email.
+            </p>
+          )}
         </div>
 
         {/* Form */}

@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { runApiRoute } from '@/lib/api-route-context';
+import {
+  FREEZE_REASONS,
+  updateTolerantToMissingFreezeReason,
+  type FreezeReason,
+} from '@/lib/billing/freeze-reason';
 
 /**
  * Freeze trials that expired without ever subscribing.
@@ -48,15 +53,26 @@ export async function GET(request: Request) {
     // ne le faisait pas. Or le middleware ne protege que /sites/<slug>/admin: la
     // vitrine et POST /api/orders restaient ouverts, et validateTenant ne
     // regardait que is_active. Un essai expire continuait donc d'encaisser.
-    const freezeUpdate = { subscription_status: 'frozen', is_active: false } as const;
+    //
+    // Les deux gels de ce cron ne partagent PLUS un seul payload: ils ont deux
+    // causes distinctes. `charge.dispute.closed` ne leve que le gel dont la
+    // cause est un litige, donc un gel sans cause - ou avec la mauvaise - ne se
+    // leve pas sur un litige gagne. Voir lib/billing/freeze-reason.
+    const freezeUpdate = (reason: FreezeReason) =>
+      ({ subscription_status: 'frozen', is_active: false, freeze_reason: reason }) as const;
 
-    const { data, error } = await supabase
-      .from('tenants')
-      .update(freezeUpdate)
-      .eq('subscription_status', 'trial')
-      .lt('trial_ends_at', nowIso)
-      .is('stripe_subscription_id', null)
-      .select('id');
+    const { data, error } = await updateTolerantToMissingFreezeReason(
+      freezeUpdate(FREEZE_REASONS.TRIAL_EXPIRED),
+      (payload) =>
+        supabase
+          .from('tenants')
+          .update(payload)
+          .eq('subscription_status', 'trial')
+          .lt('trial_ends_at', nowIso)
+          .is('stripe_subscription_id', null)
+          .select('id'),
+      { cause: FREEZE_REASONS.TRIAL_EXPIRED },
+    );
 
     if (error) {
       logger.error('freeze_expired_trials failed', error);
@@ -78,6 +94,28 @@ export async function GET(request: Request) {
     // pourrait eteindre d'un coup toute la population impayee - vitrines et
     // commandes comprises. Le plafond etale l'effet sur plusieurs executions et
     // laisse le temps de voir passer une anomalie dans les logs.
+    //
+    // Ce que le plafond coute, chiffre (CTR-4). Chaque execution retire jusqu'a
+    // MAX_PAST_DUE_FREEZES_PER_RUN candidats de l'ensemble `past_due`, et le cron
+    // tourne une fois par jour ("0 2 * * *", vercel.json). La borne reelle d'un
+    // impaye est donc:
+    //
+    //     PAST_DUE_GRACE_DAYS + ceil(K / MAX_PAST_DUE_FREEZES_PER_RUN) jours
+    //
+    // ou K est le nombre de candidats dont la date est anterieure ou egale a la
+    // sienne. Soit 15 + ceil(K/25): 19 jours pour K=100, 35 jours pour K=500.
+    // Ce n'est donc pas "sous 24 h", et ce n'est pas non plus "24 h x N" sans
+    // plus de precision.
+    //
+    // Deuxieme chose a savoir: le tri ci-dessous ne DISCRIMINE PAS des dates
+    // egales, et le retro-remplissage de la migration donne le meme `now()` a
+    // toute la population heritee. Un second critere deterministe (`id`) evite
+    // qu'un meme tenant soit repousse d'execution en execution au gre du plan
+    // d'execution Postgres.
+    //
+    // Relever le plafond echangerait ce retard contre le risque d'eteindre toute
+    // la population impayee d'un coup: le choix est assume, pas oublie. A revoir
+    // si le journal ci-dessous se met a crier a chaque execution.
     const { data: pastDueCandidates, error: candidatesError } = await supabase
       .from('tenants')
       .select('id')
@@ -86,6 +124,9 @@ export async function GET(request: Request) {
       // NULL en SQL): les tenants sans date sont exclus sans clause de plus.
       .lt('past_due_since', graceCutoff)
       .order('past_due_since', { ascending: true })
+      // Ordre total: `past_due_since` seul laisse les dates egales (tout le
+      // retro-remplissage) dans un ordre non defini.
+      .order('id', { ascending: true })
       .limit(MAX_PAST_DUE_FREEZES_PER_RUN);
 
     if (candidatesError) {
@@ -97,14 +138,19 @@ export async function GET(request: Request) {
     let pastDue: { id: string }[] = [];
 
     if (candidateIds.length > 0) {
-      const { data: updated, error: pastDueError } = await supabase
-        .from('tenants')
-        .update(freezeUpdate)
-        .in('id', candidateIds)
-        // Re-verifie le statut a l'ecriture: un tenant peut avoir paye entre la
-        // selection et la mise a jour, et il ne doit pas etre gele pour autant.
-        .eq('subscription_status', 'past_due')
-        .select('id');
+      const { data: updated, error: pastDueError } = await updateTolerantToMissingFreezeReason(
+        freezeUpdate(FREEZE_REASONS.PAST_DUE_OVERDUE),
+        (payload) =>
+          supabase
+            .from('tenants')
+            .update(payload)
+            .in('id', candidateIds)
+            // Re-verifie le statut a l'ecriture: un tenant peut avoir paye entre
+            // la selection et la mise a jour, et il ne doit pas etre gele.
+            .eq('subscription_status', 'past_due')
+            .select('id'),
+        { cause: FREEZE_REASONS.PAST_DUE_OVERDUE },
+      );
 
       if (pastDueError) {
         logger.error('freeze_expired_past_due failed', pastDueError);

@@ -139,7 +139,10 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
      */
     async function getWrittenStatus(stripeStatus: string): Promise<string> {
       const chain = setupSupabaseChain({
-        selectResult: { data: { id: 'tenant-1' }, error: null },
+        // RES-1: 'past_due' ne s'ecrit que depuis un statut SAIN. Le double ne
+        // portait aucun subscription_status, ce qui ne representait aucun tenant
+        // reel; 'active' est l'etat d'ou part une degradation.
+        selectResult: { data: { id: 'tenant-1', subscription_status: 'active' }, error: null },
       });
 
       const event = makeStripeEvent('customer.subscription.updated', {
@@ -160,7 +163,8 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
     /** La valeur de is_active ecrite pour un statut Stripe donne. */
     async function getWrittenIsActive(stripeStatus: string): Promise<unknown> {
       const chain = setupSupabaseChain({
-        selectResult: { data: { id: 'tenant-1' }, error: null },
+        // Meme raison que ci-dessus: un tenant sans statut n'existe pas.
+        selectResult: { data: { id: 'tenant-1', subscription_status: 'active' }, error: null },
       });
 
       const event = makeStripeEvent('customer.subscription.updated', {
@@ -268,6 +272,11 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
         // is_active, il payait et restait eteint.
         is_active: true,
         past_due_since: null,
+        // LOT 7: la cause du gel est ecrite a CHAQUE ecriture de statut, et
+        // vaut null des que le statut n'est pas 'frozen'. C'est cet effacement
+        // systematique qui garantit qu'un gel futur n'heritera jamais de la
+        // cause d'un gel precedent (voir lib/billing/freeze-reason).
+        freeze_reason: null,
         subscription_plan: 'pro',
         billing_interval: 'yearly',
       });
@@ -310,6 +319,8 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
         // F3: la date d'entree en impaye est effacee des que le statut redevient
         // sain, sinon le cron de gel finirait par geler un tenant qui a paye.
         past_due_since: null,
+        // LOT 7: statut sain, donc aucune cause de gel.
+        freeze_reason: null,
         billing_interval: 'monthly',
         subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
         subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),
@@ -340,6 +351,9 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'frozen',
         is_active: false,
+        // LOT 7: la cause du gel. charge.dispute.closed ne leve que le gel
+        // pose par un litige: celui-ci ne doit pas l'etre.
+        freeze_reason: 'subscription_deleted',
       });
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-del');
       expect(logger.warn).toHaveBeenCalledWith('Tenant frozen - subscription deleted', {
@@ -355,7 +369,9 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
   describe('invoice.payment_failed', () => {
     it('marks tenant as past_due', async () => {
       const chain = setupSupabaseChain({
-        selectResult: { data: { id: 'tenant-pay' }, error: null },
+        // ACT-19: l'impaye ne s'applique QUE depuis un statut sain - la ligne
+        // lue doit donc porter son statut, sinon rien n'est ecrit.
+        selectResult: { data: { id: 'tenant-pay', subscription_status: 'active' }, error: null },
       });
 
       const event = makeStripeEvent('invoice.payment_failed', {
@@ -368,6 +384,12 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
 
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'past_due',
+        // ACT-19: is_active suit le statut ici aussi, et la date d'entree en
+        // impaye est posee pour que le cron puisse le borner.
+        is_active: true,
+        past_due_since: expect.any(String),
+        // LOT 7: 'past_due' n'est pas un gel, la cause est donc effacee.
+        freeze_reason: null,
       });
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-pay');
       expect(logger.warn).toHaveBeenCalledWith('Payment failed for tenant', {

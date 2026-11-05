@@ -397,6 +397,68 @@ export const adminResetLimiter = createLimiter(
   true,
 );
 
+/**
+ * Envoi d'un lien de reinitialisation de mot de passe par un administrateur
+ * (Server Action actionResetUserPassword): 3 par heure et par COMPTE CIBLE,
+ * fail-closed.
+ *
+ * Compartiment separe de `adminResetLimiter`, qui appartient a /api/admin/reset
+ * (remise a zero de donnees) : partager le budget ferait qu'un geste de support
+ * consomme le quota d'une action destructive, et l'inverse.
+ *
+ * Cle sur la CIBLE et non sur l'IP, volontairement, pour deux raisons mesurees
+ * sur ce produit : (1) le prejudice est par BOITE AUX LETTRES - des envois en
+ * rafale harcelent le titulaire et usent la reputation d'expedition du domaine,
+ * donc la delivrabilite de TOUS les emails d'ATTABL, y compris les confirmations
+ * de commande ; (2) un restaurant est derriere une seule IP, donc une cle par IP
+ * ferait collisionner des administrateurs legitimes entre eux tout en laissant un
+ * attaquant changer d'IP pour repartir a zero.
+ *
+ * 3 par heure, la meme franchise que l'equivalent public /api/forgot-password
+ * (3 par 10 minutes) mais sur une fenetre plus longue : un administrateur n'a
+ * aucune raison legitime de renvoyer ce lien plus de trois fois en une heure, et
+ * le titulaire peut toujours demander lui-meme une reinitialisation.
+ *
+ * Fail-closed : si Upstash tombe, on refuse. L'action envoie un courriel a un
+ * tiers, donc son indisponibilite ne coute qu'un report de quelques minutes,
+ * alors qu'un envoi non borne coute la delivrabilite du domaine.
+ */
+export const adminPasswordResetLinkLimiter = createLimiter(
+  'admin-password-reset-link',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
+
+/**
+ * Compartiment PAR IP de la meme Server Action: 10 par 10 minutes, fail-closed.
+ *
+ * Pourquoi DEUX compartiments pour une seule action (reserve S1 du contre-audit
+ * LOT 6). `.claude/rules/05-backend-api.md` impose une limitation en PREMIERE
+ * etape, avant toute lecture et avant l'authentification. Mettre la cle par
+ * compte cible a cette place la rendait consommable par un appelant qui n'a
+ * passe aucun controle d'identite: trois appels et le patron ne pouvait plus
+ * depanner ce membre pendant une heure - et comme le refus par quota arrive
+ * AVANT la branche "non authentifie", les deux etats devenaient distinguables,
+ * donc le quota devenait un oracle d'activite de compte.
+ *
+ * Une cle par IP n'a aucun de ces deux defauts: elle ne depend d'aucun
+ * parametre venu du client, donc elle n'est pas dirigeable contre un compte
+ * choisi. Elle borne le trafic brut en premiere etape ; le prejudice reel
+ * (harcelement d'une boite aux lettres, reputation d'expedition du domaine)
+ * reste porte par `adminPasswordResetLinkLimiter`, desormais consomme APRES
+ * l'authentification.
+ *
+ * 10 par 10 minutes, et non 3 comme /api/forgot-password: un restaurant entier
+ * sort par une seule IP, et plusieurs administrateurs legitimes peuvent y
+ * depanner leurs equipes dans la meme fenetre. La borne par compte (3 / 1 h)
+ * reste la contrainte serieuse.
+ */
+export const adminPasswordResetLinkIpLimiter = createLimiter(
+  'admin-password-reset-link-ip',
+  Ratelimit.slidingWindow(10, '10 m'),
+  true,
+);
+
 /** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
 export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
 

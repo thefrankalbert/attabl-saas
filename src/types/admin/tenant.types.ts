@@ -19,6 +19,13 @@ export interface Tenant {
   subscription_plan?: SubscriptionPlan;
   subscription_status?: SubscriptionStatus;
   trial_ends_at?: string;
+  /**
+   * Suspension decidee par le super-admin de la plateforme. CTR7-1: elle est
+   * desormais APPLIQUEE (proxy admin, prise de commande), pas seulement
+   * affichee - le webhook Stripe reecrit `is_active` a chaque evenement.
+   * Volontairement absente de `toPublicTenant`: le convive n'a rien a en savoir.
+   */
+  suspended_at?: string | null;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   billing_interval?: BillingInterval;

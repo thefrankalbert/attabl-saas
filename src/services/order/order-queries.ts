@@ -15,7 +15,7 @@ export function createQueryMethods(supabase: SupabaseClient) {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select(
-          'id, is_active, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
+          'id, is_active, suspended_at, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
         )
         .eq('slug', slug)
         // Soft-deleted tenants accept no orders, independently of is_active.
@@ -28,6 +28,16 @@ export function createQueryMethods(supabase: SupabaseClient) {
 
       if (!tenant.is_active) {
         throw new ServiceError('Ce restaurant est temporairement indisponible', 'VALIDATION');
+      }
+
+      // CTR7-1: une suspension decidee par le super-admin n'etait portee QUE
+      // par is_active. `suspended_at` etait ecrit et affiche dans la console
+      // plateforme, mais applique nulle part - alors que le webhook Stripe
+      // reecrit is_active a chaque evenement d'abonnement. Une suspension
+      // devient un verrou a part entiere, comme deleted_at l'est deja
+      // ci-dessus: deux colonnes doivent etre fausses pour encaisser.
+      if (tenant.suspended_at) {
+        throw new ServiceError('Ce restaurant est temporairement indisponible', 'UNAUTHORIZED');
       }
 
       // F6: ne pas dependre du SEUL is_active. Le cron de gel laissait

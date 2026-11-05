@@ -83,6 +83,18 @@ export async function recompute(
   order: PaymentOrderRow,
   tenantId: string,
 ): Promise<void> {
+  // SVC-43: une commande OFFERTE est close et gratuite. `summarize` (chemin de
+  // LECTURE) court-circuitait deja 'comp', mais pas celui-ci, qui est le chemin
+  // d'ECRITURE: il recalculait le statut depuis le registre et ecrasait 'comp'
+  // par 'pending' / 'partial' / 'paid'. La commande redevenait alors payante et
+  // remontait dans get_daily_revenue, pendant que is_comp / comp_reason /
+  // comped_by restaient en base en contradiction avec le statut. Il n'existe
+  // AUCUN chemin d'annulation de l'offert dans le depot: une commande offerte
+  // est definitive, donc ce statut n'a jamais a etre recalcule.
+  if (order.payment_status === 'comp') {
+    return;
+  }
+
   const tenders = await fetchTenders(supabase, order.id, tenantId);
   const completed = tenders
     .filter((t) => t.status === 'completed')

@@ -49,6 +49,56 @@ describe('parseNumericCell', () => {
     expect(parseNumericCell(Number.POSITIVE_INFINITY)).toBeNull();
     expect(parseNumericCell(NaN)).toBeNull();
   });
+
+  /**
+   * Non-regression du defaut du 2026-08-14. L'ancienne lecture remplacait la
+   * PREMIERE virgule par un point: "1,500" - ce qu'ecrit Excel en locale
+   * anglaise pour 1500 - donnait 1.5. Les prix importes etaient divises par
+   * mille, en silence, puisque 1.5 reste un nombre positif valide.
+   */
+  describe('separateur de milliers', () => {
+    it('lit un millier ecrit a l anglaise', () => {
+      expect(parseNumericCell('1,500')).toBe(1500);
+      expect(parseNumericCell('25,000')).toBe(25000);
+      expect(parseNumericCell('1,234,567')).toBe(1234567);
+    });
+
+    it('lit un millier ecrit a l europeenne', () => {
+      expect(parseNumericCell('1.500')).toBe(1500);
+      expect(parseNumericCell('1.234.567')).toBe(1234567);
+    });
+
+    it('lit les deux separateurs a la fois, le dernier etant le decimal', () => {
+      expect(parseNumericCell('1,234.56')).toBe(1234.56);
+      expect(parseNumericCell('1.234,56')).toBe(1234.56);
+      expect(parseNumericCell('1.500,75')).toBe(1500.75);
+    });
+
+    it('lit encore les decimales simples', () => {
+      // Le correctif ne doit pas casser le cas d'origine: un ou deux chiffres
+      // apres le separateur restent des decimales.
+      expect(parseNumericCell('12,50')).toBe(12.5);
+      expect(parseNumericCell('12.50')).toBe(12.5);
+      expect(parseNumericCell('12,5')).toBe(12.5);
+    });
+
+    it('conserve le signe negatif au lieu de le faire disparaitre', () => {
+      // Le supprimer transformerait une faute de saisie en valeur valide; le
+      // garder laisse la validation la refuser.
+      expect(parseNumericCell('-500')).toBe(-500);
+      expect(parseNumericCell('-1,500')).toBe(-1500);
+    });
+
+    it('accepte un montant accompagne de sa devise', () => {
+      expect(parseNumericCell('2 500 FCFA')).toBe(2500);
+      expect(parseNumericCell('1 500')).toBe(1500);
+    });
+
+    it('rend null quand il ne reste aucun chiffre', () => {
+      expect(parseNumericCell('FCFA')).toBeNull();
+      expect(parseNumericCell('---')).toBeNull();
+    });
+  });
 });
 
 describe('parseBooleanCell', () => {
