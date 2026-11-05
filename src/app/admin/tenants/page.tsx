@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { notFound } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
 import { APP_VERSION } from '@/lib/app-version';
+import { mapMembershipRows, pickHomeTenantSlug } from '@/lib/auth/post-login-destination';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +39,7 @@ export default async function TenantsPage() {
   // helper ne couvre pas.
   const { data: adminUsers } = await supabase
     .from('admin_users')
-    .select('is_super_admin, role, full_name, tenant_id')
+    .select('is_super_admin, role, full_name, tenant_id, tenants(slug, created_at)')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .is('deleted_at', null);
@@ -50,9 +50,17 @@ export default async function TenantsPage() {
 
   const isOwner = (adminUsers || []).some((au) => au.role === 'owner');
 
-  // Only super admins and owners can access this page
+  // Only super admins and owners can access this page.
+  //
+  // Un utilisateur CONNECTE ne doit jamais voir de 404: cette page repondait
+  // `notFound()`, et comme la connexion y envoyait tout le monde, un serveur ou
+  // un cuisinier invite depuis l'espace admin tombait sur "Page not found" a
+  // chaque connexion. On le renvoie desormais a son espace. Rien n'est ouvert
+  // ici: l'annuaire lui-meme reste refuse, et son espace verifie ses droits
+  // page par page.
   if (!isSuperAdmin && !isOwner) {
-    notFound();
+    const slug = pickHomeTenantSlug(mapMembershipRows(adminUsers));
+    redirect(slug ? `/sites/${slug}/admin` : '/unauthorized');
   }
 
   // Server-side data fetching - never let the client query tenants directly
