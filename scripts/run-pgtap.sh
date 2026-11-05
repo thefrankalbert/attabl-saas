@@ -155,25 +155,58 @@ echo "[4/4] tests"
 TOTAL=0
 FAILED=0
 FILES=0
+BROKEN=0
 for t in supabase/tests/rls/*.test.sql; do
   FILES=$((FILES+1))
-  OUT="$(psql "$DB_URL" -X -q -f "$t" 2>&1)"
-  # Format TAP: une ligne par assertion, `ok N` ou `not ok N`.
+  # -A -t sont OBLIGATOIRES, pas une preference. Sans eux psql formate la sortie
+  # de pgTAP en tableau aligne avec en-tete et bordures:
+  #       plan
+  #     --------
+  #      1..8
+  # Les lignes ne commencent donc pas par `ok`/`not ok`/`1..`, aucun motif ne
+  # correspond, et le fichier est compte 0 assertion. C'est le bug qui a rendu
+  # un premier run "vert" avec 0/0: un executant qui ne prouve rien est pire que
+  # pas d'executant, parce qu'il donne l'illusion d'une couverture.
+  OUT="$(psql "$DB_URL" -X -q -A -t -f "$t" 2>&1)"
+
+  # Le plan declare par le test (`select plan(N)` -> ligne `1..N`). C'est le
+  # juge: si le nombre d'assertions vues ne l'egale pas, le fichier s'est
+  # interrompu en route, meme sans aucun `not ok`.
+  PLAN="$(printf '%s\n' "$OUT" | sed -nE 's/^1\.\.([0-9]+)$/\1/p' | head -1)"
   n_ok="$(printf '%s\n' "$OUT" | grep -cE '^ok [0-9]+' || true)"
   n_ko="$(printf '%s\n' "$OUT" | grep -cE '^not ok [0-9]+' || true)"
-  TOTAL=$((TOTAL + n_ok + n_ko))
+  seen=$((n_ok + n_ko))
+  TOTAL=$((TOTAL + seen))
   FAILED=$((FAILED + n_ko))
-  if [ "$n_ko" -gt 0 ] || [ $((n_ok + n_ko)) -eq 0 ]; then
-    echo "      ECHEC $(basename "$t") ($n_ok ok / $n_ko not ok)"
-    printf '%s\n' "$OUT" | grep -E '^not ok|^# |ERROR' | head -12 | sed 's/^/        /'
+
+  if [ -z "$PLAN" ]; then
+    BROKEN=$((BROKEN+1))
+    echo "      CASSE $(basename "$t") - aucun plan TAP lu (le test n'a pas demarre)"
+    printf '%s\n' "$OUT" | grep -iE 'error|fatal' | head -5 | sed 's/^/        /'
+  elif [ "$seen" -ne "$PLAN" ]; then
+    BROKEN=$((BROKEN+1))
+    echo "      CASSE $(basename "$t") - plan $PLAN mais $seen assertion(s) vue(s)"
+    printf '%s\n' "$OUT" | grep -iE '^not ok|error|fatal' | head -8 | sed 's/^/        /'
+  elif [ "$n_ko" -gt 0 ]; then
+    echo "      ECHEC $(basename "$t") ($n_ok ok / $n_ko not ok sur $PLAN)"
+    printf '%s\n' "$OUT" | grep -E '^not ok|^# ' | head -12 | sed 's/^/        /'
   else
-    echo "      ok    $(basename "$t") ($n_ok assertions)"
+    echo "      ok    $(basename "$t") ($n_ok/$PLAN assertions)"
   fi
 done
 
-
 if [ "$FILES" -eq 0 ]; then
   echo "pgtap: ERROR - aucun fichier de test trouve dans supabase/tests/rls/"
+  exit 1
+fi
+# Un total nul est un ECHEC, jamais un succes. Sans cette garde, un executant
+# qui ne lance rien rend 0/0 et la CI passe au vert.
+if [ "$TOTAL" -eq 0 ]; then
+  echo "pgtap: ERROR - 0 assertion executee sur $FILES fichier(s): l'executant est casse"
+  exit 1
+fi
+if [ "$BROKEN" -gt 0 ]; then
+  echo "pgtap: ERROR - $BROKEN fichier(s) interrompu(s) avant la fin de leur plan"
   exit 1
 fi
 if [ "$FAILED" -gt 0 ]; then
