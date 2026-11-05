@@ -39,7 +39,11 @@ export function useOnboarding() {
     phone: '',
     tableCount: 10,
     language: 'fr-FR',
-    currency: 'EUR',
+    // Marche de lancement: Burkina Faso, donc XOF (franc CFA d'Afrique de
+    // l'Ouest). Le defaut etait 'EUR', ce qui presentait l'euro a un
+    // restaurateur ouagalais. Reste modifiable dans le meme formulaire, puis
+    // dans les Parametres.
+    currency: 'XOF',
     starRating: undefined,
     hasRestaurant: undefined,
     hasTerrace: undefined,

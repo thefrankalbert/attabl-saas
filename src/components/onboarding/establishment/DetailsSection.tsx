@@ -155,19 +155,24 @@ export function DetailsSection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {/*
+                  UNIQUEMENT les devises que la couche monetaire sait traiter
+                  (CURRENCIES dans lib/constants, DINERO_CURRENCIES dans money.ts).
+                  GBP, MAD, TND, CAD et CHF etaient proposees ici sans etre
+                  supportees: money.ts retombe en SILENCE sur la devise par defaut
+                  quand il ne connait pas un code, donc une devise a 2 decimales -
+                  ou 3 pour le TND - aurait ete calculee comme une devise sans
+                  decimale. Proposer un choix qu'on ne sait pas honorer est pire
+                  que ne pas le proposer.
+
+                  Les deux francs CFA sont des devises DISTINCTES: XOF a l'Ouest
+                  (Burkina, Senegal, Cote d'Ivoire), XAF en Afrique centrale
+                  (Cameroun, Tchad).
+                */}
+                <SelectItem value="XOF">XOF - FCFA (Afrique de l&apos;Ouest)</SelectItem>
+                <SelectItem value="XAF">XAF - FCFA (Afrique centrale)</SelectItem>
                 <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
                 <SelectItem value="USD">USD ($)</SelectItem>
-                <SelectItem value="GBP">GBP ({'£'})</SelectItem>
-                <SelectItem value="XAF">XAF (FCFA)</SelectItem>
-                <SelectItem value="XOF">XOF (FCFA)</SelectItem>
-                <SelectItem value="MAD">
-                  MAD ({'\u062f'}.{'\u0645'}.)
-                </SelectItem>
-                <SelectItem value="TND">
-                  TND ({'\u062f'}.{'\u062a'})
-                </SelectItem>
-                <SelectItem value="CAD">CAD ($)</SelectItem>
-                <SelectItem value="CHF">CHF (Fr.)</SelectItem>
               </SelectContent>
             </Select>
           </div>

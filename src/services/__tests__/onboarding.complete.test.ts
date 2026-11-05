@@ -182,6 +182,31 @@ describe('mise a jour du tenant', () => {
     expect(maj.default_locale).toBe('fr');
   });
 
+  it('aligne supported_currencies sur la devise choisie', async () => {
+    // `supported_currencies` restait au defaut de la base ('{XAF}') meme quand
+    // le restaurant choisissait une autre devise. La vitrine lit CETTE colonne
+    // pour proposer un changement de devise au convive: un restaurant
+    // burkinabe en XOF se voyait donc proposer le XAF, la devise d'Afrique
+    // centrale - deux francs CFA distincts.
+    await completeOnboarding(fakeSupabase(), 't1', donnees({ currency: 'XOF' }));
+
+    const maj = appels.find((a) => a.table === 'tenants' && a.op === 'update')?.payload as Record<
+      string,
+      unknown
+    >;
+    expect(maj.supported_currencies).toEqual(['XOF']);
+  });
+
+  it('ne touche pas supported_currencies quand aucune devise n est fournie', async () => {
+    await completeOnboarding(fakeSupabase(), 't1', donnees({ tenantName: 'Sans devise' }));
+
+    const maj = appels.find((a) => a.table === 'tenants' && a.op === 'update')?.payload as Record<
+      string,
+      unknown
+    >;
+    expect(maj).not.toHaveProperty('supported_currencies');
+  });
+
   it('ne bloque PAS quand le suivi de progression echoue', async () => {
     // Le suivi est de la telemetrie: son echec ne doit pas priver le
     // restaurateur de son etablissement.
