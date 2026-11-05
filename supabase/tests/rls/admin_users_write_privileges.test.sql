@@ -18,7 +18,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(6);
+select plan(8);
 
 -- Jeu d essai: un tenant, son proprietaire, un serveur, et une victime qui
 -- n appartient a aucun tenant (le compte qu un attaquant chercherait a
@@ -110,13 +110,43 @@ select is(
 --    proprietaire legitime revenait indefiniment.
 --    Une policy RESTRICTIVE ne leve pas d erreur: elle ne fait correspondre
 --    aucune ligne. On mesure donc l etat APRES.
+--    On ecrit `full_name` et non `is_active`: depuis la section 4 de la
+--    migration, `is_active` n est plus inscriptible du tout par un role client
+--    (cas 7), donc l ecrire ici leverait un 42501 et mesurerait le privilege au
+--    lieu de la policy. C est bien la POLICY qu on veut eprouver ici.
 update public.admin_users
-  set is_active = true
+  set full_name = 'Reactivee par le tenant'
   where id = 'cccccccc-0000-0000-0000-000000000003';
 select is(
-  (select is_active from public.admin_users where id = 'cccccccc-0000-0000-0000-000000000003'),
-  false,
-  'LOT8 R1: une ligne retiree par la plateforme n est pas reactivable par le tenant'
+  (select full_name from public.admin_users where id = 'cccccccc-0000-0000-0000-000000000003'),
+  null,
+  'LOT8 R1: une ligne retiree par la plateforme n est pas modifiable par le tenant'
+);
+
+-- 6. CORRECTION (section 4 de la migration): `is_active` est une colonne de
+--    PRIVILEGE, retiree de la liste blanche cliente. Sans ce revoke, un serveur
+--    desactivait le PROPRIETAIRE de son restaurant - ou reactivait un collegue
+--    que le patron venait de desactiver. On l eprouve sur SA PROPRE ligne, le
+--    cas le plus favorable a l appelant: meme la, c est refuse.
+select throws_ok(
+  $$update public.admin_users set is_active = false
+      where id = 'cccccccc-0000-0000-0000-000000000002'$$,
+  '42501',
+  null,
+  'LOT8: UPDATE de is_active refuse au role authenticated, meme sur sa propre ligne (42501)'
+);
+
+-- 7. CORRECTION (section 4): la policy UPDATE est passee de "mon tenant" a "MA
+--    ligne". Un membre n a aucune raison d ecrire dans la fiche d un collegue;
+--    la gestion d equipe passe par service_role. Une policy ne leve pas
+--    d erreur: elle ne fait correspondre aucune ligne, on mesure donc l etat.
+update public.admin_users
+  set full_name = 'Renomme par un collegue'
+  where id = 'cccccccc-0000-0000-0000-000000000001';
+select is(
+  (select full_name from public.admin_users where id = 'cccccccc-0000-0000-0000-000000000001'),
+  null,
+  'LOT8: un membre ne peut pas modifier la ligne d un collegue de son tenant'
 );
 
 select * from finish();

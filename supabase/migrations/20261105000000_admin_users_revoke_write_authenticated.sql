@@ -156,3 +156,43 @@ create policy "Platform-removed admin rows are frozen for tenants"
   for update
   using (deleted_at is null or public.is_super_admin())
   with check (deleted_at is null or public.is_super_admin());
+
+-- ----------------------------- 4. `is_active` n'est plus une colonne cliente
+--
+-- Constat d'une revue de securite posterieure a la redaction des sections
+-- ci-dessus, et il tient: la section 3 ne gele que les lignes RETIREES. Sur une
+-- ligne VIVANTE, `GRANT UPDATE("is_active")` + la policy UPDATE scopee au seul
+-- tenant laissaient tout membre actif ecrire `is_active` sur N'IMPORTE QUELLE
+-- ligne de son restaurant. Deux consequences concretes:
+--
+--   - un serveur desactive le PROPRIETAIRE: verrouillage du compte, et c'est le
+--     meme geste qui, a l'envers, reactive un employe que le patron vient de
+--     desactiver (un licencie remis en service par un complice reste en poste);
+--   - c'est exactement le controle "un employe desactive perd l'acces" que
+--     l'audit d'origine reprochait deja a une quinzaine de tables.
+--
+-- `is_active` est une colonne de PRIVILEGE, pas une preference personnelle: elle
+-- n'a rien a faire dans la liste blanche cliente. Toutes ses ecritures
+-- legitimes passent deja par des Server Actions en `service_role`
+-- (`actionUpdateAdminUser`, `banAdminUser`, `softDeleteAdminUser`,
+-- `restoreAdminUser`), qui ignorent le RLS: ce revoke est donc SANS EFFET sur
+-- le produit. Verifie avant de l'ecrire: aucune ecriture de `admin_users`
+-- depuis le navigateur dans tout `src/` (les seules occurrences client sont des
+-- SELECT en jointure pour afficher le nom d'un serveur).
+revoke update (is_active) on table public.admin_users from authenticated;
+revoke update (is_active) on table public.admin_users from anon;
+
+-- Et la policy UPDATE est resserree de "mon tenant" a "MA ligne". Les colonnes
+-- qui restent inscriptibles (full_name, phone, last_login, last_login_at,
+-- login_count) sont toutes des champs de self-service: un membre met a jour SON
+-- profil et SA derniere connexion, il n'a aucune raison d'ecrire dans la ligne
+-- d'un collegue. La gestion d'equipe, elle, passe par service_role.
+--
+-- `WITH CHECK` identique au `USING`: on ne peut ni partir de la ligne d'autrui,
+-- ni y arriver.
+drop policy if exists "Tenant admins update own tenant admin rows" on public.admin_users;
+create policy "Members update their own admin row"
+  on public.admin_users
+  for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
