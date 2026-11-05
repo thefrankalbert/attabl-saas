@@ -21,6 +21,12 @@
 -- 42 policies. Il ne decrivait plus la base depuis des mois, ce qui faussait
 -- tout audit s'appuyant dessus.
 --
+-- MARQUEUR LU PAR scripts/run-pgtap.sh. Derniere migration DEJA comprise dans
+-- cet instantane. L'executant charge ce fichier puis applique uniquement les
+-- migrations POSTERIEURES - beaucoup des anciennes ne sont pas idempotentes et
+-- les rejouer casserait la base de test. A mettre a jour a chaque regeneration.
+-- SCHEMA_SNAPSHOT_MIGRATION=20261105120000
+--
 -- A NE PAS CONFONDRE avec tests/journeys/fixtures/schema.sql, qui est FIGE au
 -- marqueur FIXTURE_MARKER=20260628000000 et sert de base aux tests de parcours :
 -- celui-la ne doit pas etre regenere sans adapter les tests.
