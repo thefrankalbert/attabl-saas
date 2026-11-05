@@ -153,16 +153,26 @@ select isnt(
 
 -- 5. PISTE D AUDIT NON FALSIFIABLE. Le patron attribue son remboursement au
 --    SERVEUR. `created_by` doit rester le sien, derive de auth.uid().
+--
+--    L APPEL EST DANS SON PROPRE STATEMENT, et ce n est pas un detail de style.
+--    Ecrit en une seule requete - la fonction appelee dans le `where` d un
+--    parcours de `payments` - le test renvoyait NULL et echouait: l instantane
+--    du parcours est pris AVANT l appel, donc la ligne que la fonction insere
+--    n y est pas visible. Le code etait correct, le test non. C est l executant
+--    CI qui l a trouve, des sa premiere execution reelle.
+create temporary table _refund_audit as
+  select public.record_refund(
+    '11111111-0000-0000-0000-0000000000a2',
+    'eeeeeeee-0000-0000-0000-00000000000a',
+    1000, 'cash',
+    'ffffffff-0000-0000-0000-00000000000c',  -- l id du SERVEUR
+    null) as id;
+
 select is(
   (select p.created_by
      from public.payments p
     where p.tenant_id = 'eeeeeeee-0000-0000-0000-00000000000a'
-      and p.id = public.record_refund(
-            '11111111-0000-0000-0000-0000000000a2',
-            'eeeeeeee-0000-0000-0000-00000000000a',
-            1000, 'cash',
-            'ffffffff-0000-0000-0000-00000000000c',  -- l id du SERVEUR
-            null)),
+      and p.id = (select id from _refund_audit)),
   'ffffffff-0000-0000-0000-00000000000a'::uuid,       -- celui du PATRON
   'record_refund: created_by est derive de l appelant, pas du parametre'
 );
