@@ -25,7 +25,6 @@
 -- marqueur FIXTURE_MARKER=20260628000000 et sert de base aux tests de parcours :
 -- celui-la ne doit pas etre regenere sans adapter les tests.
 -- ============================================================================
-
 --
 -- PostgreSQL database dump
 --
@@ -2081,11 +2080,86 @@ CREATE FUNCTION "public"."record_refund"("p_order_id" "uuid", "p_tenant_id" "uui
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_total    numeric;
-  v_tip      numeric;
-  v_net      numeric;
+  v_total      numeric;
+  v_tip        numeric;
+  v_net        numeric;
   v_payment_id uuid;
+  v_actor      uuid;
+  v_role       text;
+  v_custom     jsonb;
+  v_tenant_ovr jsonb;
+  v_allowed    boolean;
 BEGIN
+  -- (1) APPARTENANCE, avant toute autre chose. Leve 42501 si l'appelant n'est
+  -- pas membre du restaurant. Laisse passer service_role et les super-admins.
+  PERFORM public.assert_tenant_member(p_tenant_id);
+
+  -- (2) HABILITATION. service_role (webhooks, cron) et super-admin agissent
+  -- sans ligne de membre: pour eux `created_by` reste celui fourni, car ils
+  -- agissent au nom de quelqu'un d'autre et n'ont pas d'id de membre propre.
+  IF auth.role() = 'service_role' OR public.is_super_admin() THEN
+    v_actor := p_created_by;
+  ELSE
+    -- La ligne de membre de l'APPELANT, jamais un parametre. `is_active` et
+    -- `deleted_at` sont verifies ici: un compte suspendu ou retire ne doit pas
+    -- pouvoir sortir de l'argent de la caisse.
+    SELECT a.id, a.role, a.custom_permissions
+      INTO v_actor, v_role, v_custom
+    FROM admin_users a
+    WHERE a.user_id = auth.uid()
+      AND a.tenant_id = p_tenant_id
+      AND a.is_active = true
+      AND a.deleted_at IS NULL;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'access denied: no active membership for tenant %', p_tenant_id
+        USING ERRCODE = '42501';
+    END IF;
+
+    -- Le role doit figurer dans la MEME liste que celle de l'action serveur
+    -- `actionRefundOrder`: ['owner','admin','manager']. Elle est plus stricte
+    -- que la permission seule - par defaut `orders.manage` est aussi vrai pour
+    -- `cashier` et `chef` (src/types/permission.types.ts) - et c'est la regle
+    -- reellement appliquee en production aujourd'hui. On la reproduit telle
+    -- quelle: une migration de securite n'est pas le lieu pour ELARGIR un
+    -- acces.
+    IF v_role NOT IN ('owner', 'admin', 'manager') THEN
+      RAISE EXCEPTION 'access denied: role % cannot record refunds', v_role
+        USING ERRCODE = '42501';
+    END IF;
+
+    -- Resolution de `orders.manage` dans l'ordre de src/lib/permissions.ts
+    -- (hasPermission): owner toujours autorise, puis la derogation
+    -- individuelle, puis la derogation du restaurant, puis le defaut du role.
+    IF v_role = 'owner' THEN
+      v_allowed := true;
+    ELSIF v_custom ? 'orders.manage' THEN
+      v_allowed := coalesce((v_custom -> 'orders.manage')::boolean, false);
+    ELSE
+      SELECT rp.permissions
+        INTO v_tenant_ovr
+      FROM role_permissions rp
+      WHERE rp.tenant_id = p_tenant_id
+        AND rp.role = v_role;
+
+      IF v_tenant_ovr ? 'orders.manage' THEN
+        v_allowed := coalesce((v_tenant_ovr -> 'orders.manage')::boolean, false);
+      ELSE
+        -- Defaut du role. Seul `waiter` a false, et il est de toute facon
+        -- deja ecarte par la liste de roles ci-dessus.
+        v_allowed := v_role IN ('owner', 'admin', 'manager', 'cashier', 'chef');
+      END IF;
+    END IF;
+
+    IF NOT v_allowed THEN
+      RAISE EXCEPTION 'access denied: orders.manage denied for role %', v_role
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  -- ------------------------------------------------------------------------
+  -- A partir d'ici, logique de caisse INCHANGEE (recopiee a l'identique).
+  -- ------------------------------------------------------------------------
   IF p_amount IS NULL OR p_amount <= 0 THEN
     RAISE EXCEPTION 'Le montant doit etre superieur a zero'
       USING ERRCODE = 'check_violation';
@@ -2128,7 +2202,7 @@ BEGIN
   END IF;
 
   INSERT INTO payments (tenant_id, order_id, amount, method, status, created_by, client_request_id)
-  VALUES (p_tenant_id, p_order_id, p_amount, p_method, 'refunded', p_created_by, p_client_request_id)
+  VALUES (p_tenant_id, p_order_id, p_amount, p_method, 'refunded', v_actor, p_client_request_id)
   RETURNING id INTO v_payment_id;
 
   RETURN v_payment_id;
@@ -2137,6 +2211,13 @@ $$;
 
 
 ALTER FUNCTION "public"."record_refund"("p_order_id" "uuid", "p_tenant_id" "uuid", "p_amount" numeric, "p_method" "text", "p_created_by" "uuid", "p_client_request_id" "uuid") OWNER TO "postgres";
+
+--
+-- Name: FUNCTION "record_refund"("p_order_id" "uuid", "p_tenant_id" "uuid", "p_amount" numeric, "p_method" "text", "p_created_by" "uuid", "p_client_request_id" "uuid"); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION "public"."record_refund"("p_order_id" "uuid", "p_tenant_id" "uuid", "p_amount" numeric, "p_method" "text", "p_created_by" "uuid", "p_client_request_id" "uuid") IS 'Enregistre un remboursement. Verifie l''appartenance au restaurant, le role et orders.manage, et derive created_by de auth.uid(): les parametres p_tenant_id et p_created_by ne sont plus crus sur parole. Voir 20261105120000_record_refund_tenant_guard.sql.';
+
 
 --
 -- Name: reset_tenant_data("uuid", "text"); Type: FUNCTION; Schema: public; Owner: postgres
