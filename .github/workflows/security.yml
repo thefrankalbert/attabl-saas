@@ -44,7 +44,7 @@ jobs:
           # Deux jobs sur deux majeures de Node peuvent resoudre des arbres de
           # dependances differents: l'audit ne portait alors pas sur ce qui est
           # reellement builde et deploye.
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
       # --ignore-scripts: this job only audits the dependency graph; it does not
       # need native build steps. Newer pnpm (version: latest) hard-errors on

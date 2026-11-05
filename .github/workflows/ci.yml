@@ -34,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Setup pnpm
         # Pas de `version:` ici. La version vient de `packageManager` dans
@@ -186,7 +186,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Setup pnpm
         # Pas de `version:` ici. La version vient de `packageManager` dans
@@ -253,7 +253,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Setup pnpm
         # Pas de `version:` ici, meme raison que le job e2e: la version vient de
