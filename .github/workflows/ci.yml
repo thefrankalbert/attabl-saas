@@ -1,7 +1,18 @@
 name: CI
 
 on:
+  # `push:` sans restriction declenchait CI DEUX FOIS par commit d'une PR: une
+  # fois sur le push de la branche, une fois sur la pull_request. Mesure sur la
+  # PR #327: `Quality Gates`, `E2E Smoke` et `Journeys` apparaissaient en double.
+  # Double consommation de minutes, et double pression sur l'API GitHub - c'est
+  # ce qui a fait tomber `supabase/setup-cli` sur "rate limit exceeded".
+  # Tous les autres workflows de ce depot restreignent deja leur push a `main`.
+  #
+  # Consequence assumee: un push sur une branche SANS pull_request ouverte ne
+  # declenche plus CI. Le flux de ce depot passe toujours par une PR, et les
+  # cinq portes restent donc jouees avant tout merge.
   push:
+    branches: [main]
   pull_request:
     branches: [main]
 
