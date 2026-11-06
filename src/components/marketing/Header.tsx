@@ -188,8 +188,20 @@ export default function Header() {
             {t('login')}
           </Link>
 
-          {/* Search */}
-          <div className="static hidden lg:block" onMouseLeave={() => setOpen(null)}>
+          {/* Recherche. PAS de `onMouseLeave` ici, contrairement aux menus
+              voisins: ce panneau s'ouvre au CLIC, et son champ de saisie
+              s'affiche dans une barre pleine largeur SOUS l'en-tete. Le bloc
+              qui porterait l'evenement, lui, ne fait que 34x34 - l'icone. La
+              souris qui descend vers le champ traverse forcement l'en-tete,
+              donc elle "sort" du bloc et tout se refermait avant qu'on puisse
+              taper. Mesure du 2026-11-06: ferme 40px apres l'icone, bien avant
+              d'atteindre le champ.
+
+              La fermeture reste assuree par le code plus haut dans ce fichier:
+              touche Echap, clic en dehors de l'en-tete, ou second clic sur
+              l'icone. Les menus voisins gardent leur survol: ils s'ouvrent AU
+              survol et leur panneau tombe juste sous leur bouton. */}
+          <div className="static hidden lg:block">
             <Button
               type="button"
               variant="ghost"
