@@ -282,8 +282,6 @@
       },
       "billing": {
         "monthly": "Mensuel",
-        "semiannual": "Semestriel",
-        "semiannualDiscount": "-15%",
         "yearly": "Annuel",
         "yearlyDiscount": "-20%",
         "noCommitment": "Sans carte bancaire. Sans engagement."
@@ -4871,7 +4869,6 @@
     "cancel": "Annuler"
   },
   "authShell": {
-    "secure": "Connexion securisee",
-    "panelImageAlt": "Interface ATTABL"
+    "secure": "Connexion securisee"
   }
 }

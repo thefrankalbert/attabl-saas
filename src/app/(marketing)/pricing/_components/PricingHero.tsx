@@ -17,11 +17,9 @@ const PILL_OFF = 'bg-transparent text-zinc-500 dark:text-zinc-400';
 
 export function PricingHero({
   effectivePeriod,
-  showSemiannual,
   setPeriod,
 }: {
   effectivePeriod: BillingPeriod;
-  showSemiannual: boolean;
   setPeriod: (period: BillingPeriod) => void;
 }) {
   const t = useTranslations('marketing.pricing');
@@ -39,7 +37,11 @@ export function PricingHero({
           {t('hero.subtitle')}
         </p>
 
-        {/* Billing toggle - preserves the 3 real Stripe periods + AB (semiannual) */}
+        {/* Selecteur de periode: Mensuel et Annuel seulement. Le semestriel a
+            ete retire de la page publique le 2026-11-06 (decision produit), en
+            meme temps que l'experimentation A/B qui l'affichait a un visiteur
+            sur deux. La periode reste supportee par la facturation et par
+            Stripe pour les abonnes qui l'ont deja. */}
         {/* `flex-wrap` + `max-w-full`: filet de securite sous 360px, ou meme
             des onglets resserres ne tiennent pas sur une ligne. Mieux vaut
             deux lignes qu'un libelle coupe. */}
@@ -52,19 +54,6 @@ export function PricingHero({
           >
             {t('billing.monthly')}
           </Button>
-          {showSemiannual && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setPeriod('semiannual')}
-              className={cn(PILL, effectivePeriod === 'semiannual' ? PILL_ON : PILL_OFF)}
-            >
-              {t('billing.semiannual')}
-              <span className="ml-1.5 text-xs font-semibold text-green-600 dark:text-green-500">
-                {t('billing.semiannualDiscount')}
-              </span>
-            </Button>
-          )}
           <Button
             type="button"
             variant="ghost"

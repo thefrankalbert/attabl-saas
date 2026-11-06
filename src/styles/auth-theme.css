@@ -64,16 +64,6 @@
   color: var(--muted);
 }
 
-/* Product panel image: full-bleed in light, dimmed + desaturated in dark
- * (panelFilter from the prototype). */
-.auth-shell .auth-panel-img {
-  filter: none;
-}
-
-.dark .auth-shell .auth-panel-img {
-  filter: brightness(0.5) grayscale(0.2);
-}
-
 @keyframes auth-fade-up {
   from {
     opacity: 0;
