@@ -109,7 +109,12 @@ export function CardAddControl({
           onOpen();
         }
       }}
-      className={`absolute ${pos} flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white p-0 hover:bg-white ${PLUS_SHADOW}`}
+      // ZONE TACTILE. Le cercle reste a 34px, comme la maquette. Mais 34px est
+      // sous le minimum de 44px de la regle du depot (.claude/rules/03), et
+      // c'est le geste PRINCIPAL du produit: ajouter un plat au panier, au
+      // doigt, sur un telephone. On elargit donc la zone sensible a 44x44 avec
+      // un pseudo-element transparent, sans toucher au rendu.
+      className={`absolute ${pos} flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white p-0 hover:bg-white ${PLUS_SHADOW} before:absolute before:-inset-[5px] before:rounded-full before:content-['']`}
     >
       <Plus className="h-[18px] w-[18px] text-[var(--color-ink)]" strokeWidth={2.6} />
     </Button>

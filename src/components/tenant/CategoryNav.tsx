@@ -220,7 +220,11 @@ export default function CategoryNav({
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
-              className="h-auto px-[15px] py-2 active:scale-[0.98]"
+              // ZONE TACTILE. La pastille mesure 36px de haut; la regle du
+              // depot demande 44px au doigt. La rangee collante en fait 48, on
+              // elargit donc la zone sensible de 4px en haut et en bas sans
+              // changer le rendu de la pastille.
+              className="relative h-auto px-[15px] py-2 before:absolute before:-inset-y-[4px] before:inset-x-0 before:content-[''] active:scale-[0.98]"
               style={{
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
