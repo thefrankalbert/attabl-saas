@@ -16,14 +16,20 @@ import { test, expect, type Page } from '@playwright/test';
  *     element mais sur la largeur de defilement de la page. C'est desormais
  *     l'assertion principale.
  *  3. Le slug du restaurant etait ecrit en dur. Il est pris dans
- *     E2E_TENANT_SLUG pour que la garde suive la base de test utilisee.
+ *     E2E_TENANT_SLUG, avec pour defaut `blutable` - le meme restaurant de
+ *     test que `admin-dashboard.spec.ts` et `pos-offline.spec.ts`, pour que
+ *     les trois gardes visent la meme base.
+ *
+ * Si ce restaurant n'existe pas dans la base visee, les tests sont IGNORES
+ * avec un message explicite plutot que mis en echec: un 404 lu comme une
+ * regression responsive ferait chercher au mauvais endroit.
  *
  * La zone tactile est verifiee ici aussi: la regle du depot
  * (.claude/rules/03) demande 44px au doigt, et l'audit a trouve le bouton
  * "ajouter au panier" a 34px - le geste principal du produit.
  */
 
-const SLUG = process.env.E2E_TENANT_SLUG ?? 'demo';
+const SLUG = process.env.E2E_TENANT_SLUG ?? 'blutable';
 
 const VIEWPORTS = [
   { name: 'mobile-375', width: 375, height: 812 },
@@ -88,7 +94,15 @@ for (const vp of VIEWPORTS) {
   for (const p of PAGES) {
     test(`${p.nom} ne deborde pas en ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto(p.chemin, { waitUntil: 'networkidle' });
+      const reponse = await page.goto(p.chemin, { waitUntil: 'networkidle' });
+
+      // Donnee manquante, pas regression: on le dit et on passe.
+      test.skip(
+        reponse?.status() === 404,
+        `Le restaurant de test "${SLUG}" n'existe pas dans cette base. ` +
+          'Definir E2E_TENANT_SLUG sur un restaurant existant.',
+      );
+
       await expect(page.locator('body')).toBeVisible();
 
       const debordement = await mesurerDebordementHorizontal(page);
@@ -102,7 +116,12 @@ for (const vp of VIEWPORTS) {
 
 test('les zones tactiles de la carte font au moins 44px au doigt', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto(`/sites/${SLUG}/menu`, { waitUntil: 'networkidle' });
+  const reponse = await page.goto(`/sites/${SLUG}/menu`, { waitUntil: 'networkidle' });
+  test.skip(
+    reponse?.status() === 404,
+    `Le restaurant de test "${SLUG}" n'existe pas dans cette base. ` +
+      'Definir E2E_TENANT_SLUG sur un restaurant existant.',
+  );
 
   const tropPetits = await page.evaluate(() => {
     // La zone sensible peut etre elargie par un pseudo-element transparent
