@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { Loader2, X, ArrowLeft, Delete, Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
 import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
+import { amountToCollectMajor } from '@/components/admin/payment/order-amount';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
@@ -95,7 +97,10 @@ export default function PaymentModal({
   const toMajor = (v: number | null | undefined) =>
     isOrderMode ? fromMinorUnits(Number(v ?? 0), orderCurrency) : Number(v ?? 0);
 
-  const finalTotal = total ?? toMajor(order?.total_price) ?? 0;
+  // Montant reclame au client: regle isolee et testee dans `order-amount.ts`
+  // (elle ne lisait que `total_price`, un champ derive que la liste des
+  // commandes ne remplit pas, d'ou des encaissements a 0).
+  const finalTotal = amountToCollectMajor({ totalProp: total, order, currency: orderCurrency });
   // Display-only: tableless orders (takeaway, delivery, counter sales) are
   // legitimate - a table is never required to take a payment.
   const finalTable = tableNumber ?? order?.table_number ?? undefined;
@@ -105,6 +110,13 @@ export default function PaymentModal({
     orderNumber ?? order?.order_number ?? undefined;
   // In ORDER mode amounts come from the order's currency, not the prop default.
   const displayCurrency = isOrderMode ? orderCurrency : currency;
+
+  // Cible du portail (voir le commentaire au rendu). `null` tant que le
+  // composant n'est pas monte cote navigateur.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   const method: PaymentMethod = 'cash';
   const [amountReceived, setAmountReceived] = useState<string>('');
@@ -273,7 +285,21 @@ export default function PaymentModal({
     (taxAmount ?? 0) > 0 || (serviceChargeAmount ?? 0) > 0 || (discountAmount ?? 0) > 0;
   const hasBreakdown = hasExtras || (!showItemsReceipt && subtotal !== undefined);
 
-  return (
+  // PORTAIL VERS LE CORPS DU DOCUMENT. Ce calque se declare plein ecran
+  // (`fixed inset-0`), mais depuis le detail d'une commande il est rendu DANS
+  // une boite de dialogue Radix, dont le centrage applique `translate(-50%,
+  // -50%)`. Une transformation fait de l'ancetre le bloc conteneur de ses
+  // descendants `fixed`: le calque se retrouvait enferme dans la fenetre de
+  // commande. Mesure du 2026-11-06 en 1280x800: calque annonce plein ecran,
+  // rendu en 894x533 a la position (193,134), bouton "Valider l'encaissement"
+  // debordant de 18px hors de la zone visible. En telephone la fenetre occupe
+  // presque l'ecran, d'ou un defaut qui ne se voyait que sur ordinateur.
+  //
+  // Le portail n'est monte qu'apres le premier rendu: `document` n'existe pas
+  // pendant le rendu serveur.
+  if (!portalTarget) return null;
+
+  return createPortal(
     <div className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden animate-in fade-in duration-200">
       {/* --- HEADER --- */}
       <header className="h-12 border-b border-app-border flex items-center justify-between px-3 sm:px-5 shrink-0">
@@ -676,6 +702,7 @@ export default function PaymentModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget,
   );
 }
