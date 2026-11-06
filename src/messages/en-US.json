@@ -1272,35 +1272,59 @@
       "pages": {
         "solutions": {
           "title": "Solutions",
-          "description": "Restaurant, hotel, quick service, bar and cafe: Attabl fits your room."
+          "description": "Restaurant, hotel, quick service, bar and cafe: Attabl fits your venue."
         },
         "features": {
           "title": "Features",
-          "description": "Menu, register, kitchen, stock, reports and team. Everything Attabl does."
+          "description": "QR code menu, checkout, kitchen display, stock, reports and team. Orders, tickets and payments."
         },
         "pricing": {
           "title": "Pricing",
-          "description": "Clear prices in FCFA. Starter, Pro, Business and Enterprise."
+          "description": "Clear prices in FCFA. Starter, Pro, Business and Enterprise. Free 14-day trial, no card required."
         },
         "materiel": {
           "title": "Hardware",
-          "description": "Attabl runs on the devices you already own. Add hardware at your own pace."
+          "description": "Attabl runs on the devices you already own: phone, tablet, receipt printer."
         },
         "nouveautes": {
           "title": "What's new",
-          "description": "The latest updates and release notes for Attabl."
+          "description": "The latest updates and release notes from Attabl."
         },
         "blog": {
           "title": "Blog",
-          "description": "Tips and stories for restaurant and hotel owners."
+          "description": "Advice and field reports for restaurant and hotel owners in Africa."
         },
         "about": {
           "title": "About",
-          "description": "Who we are and why we build Attabl."
+          "description": "Who we are and why we are building Attabl."
         },
         "contact": {
           "title": "Contact",
-          "description": "A question? Write to us, we answer fast."
+          "description": "A question? Write to us, we answer fast. Request a demo."
+        },
+        "support": {
+          "title": "Support",
+          "description": "Help, assistance and answers to frequent questions. Something wrong? We are here."
+        },
+        "legal": {
+          "title": "Terms of use",
+          "description": "Attabl terms of use and legal notice."
+        },
+        "privacy": {
+          "title": "Privacy",
+          "description": "Personal data protection, cookies and your rights over your data."
+        },
+        "blogStock": {
+          "title": "Gestion de stock en Afrique : le guide complet",
+          "description": "Digitaliser la gestion de vos stocks pour eviter les ruptures et optimiser vos commandes fournisseurs. Inventaire et pertes."
+        },
+        "blogQrCode": {
+          "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
+          "description": "Du papier au digital : le menu QR transforme l'experience client et simplifie la gestion de la carte."
+        },
+        "blogMobileMoney": {
+          "title": "POS et Mobile Money : encaisser sans friction en Afrique",
+          "description": "Cash, carte, mobile money : proposer tous les moyens de paiement a vos clients avec un seul outil."
         }
       }
     },
