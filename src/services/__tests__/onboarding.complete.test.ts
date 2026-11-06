@@ -329,10 +329,14 @@ describe('creation de la carte', () => {
     expect(cats).toEqual(['Plats', 'Boissons']);
   });
 
-  it('donne aux plats des ordres d affichage qui ne se chevauchent PAS', async () => {
-    // Le point delicat du fichier. Les categories sont inserees en parallele;
-    // un compteur mutable partage produirait des display_order dupliques et une
-    // carte dont l'ordre change a chaque rechargement.
+  it('n ecrit PAS de display_order sur les plats: la colonne n existe pas', async () => {
+    // Ce test en remplace un qui verifiait que les `display_order` des plats ne
+    // se chevauchaient pas. Il passait, et il verrouillait un bug: la table
+    // `menu_items` n'a pas cette colonne. PostgREST rejetait tout le lot
+    // (PGRST204) et l'onboarding creait les categories en PERDANT tous les
+    // plats saisis - constate lors d'un parcours complet le 2026-11-06. Le
+    // faux client Supabase des tests accepte n'importe quel champ, d'ou un
+    // test vert sur une ecriture impossible.
     avecVenue();
     resultats['categories.insert'] = [
       { data: { id: 'c1' }, error: null },
@@ -351,13 +355,17 @@ describe('creation de la carte', () => {
       } as Partial<OnboardingCompleteData>),
     );
 
-    const ordres = appels
+    const platsInseres = appels
       .filter((a) => a.table === 'menu_items' && a.op === 'insert')
-      .flatMap((a) => (a.payload as Array<{ display_order: number }>).map((i) => i.display_order))
-      .sort((a, b) => a - b);
+      .flatMap((a) => a.payload as Array<Record<string, unknown>>);
 
-    expect(ordres).toEqual([1, 2, 3]);
-    expect(new Set(ordres).size).toBe(ordres.length);
+    expect(platsInseres).toHaveLength(3);
+    for (const plat of platsInseres) {
+      expect(plat).not.toHaveProperty('display_order');
+      // Les colonnes qui existent vraiment, elles, sont bien ecrites.
+      expect(plat).toHaveProperty('category_id');
+      expect(plat).toHaveProperty('tenant_id');
+    }
   });
 
   it('journalise et n insere aucun plat quand la categorie echoue', async () => {
