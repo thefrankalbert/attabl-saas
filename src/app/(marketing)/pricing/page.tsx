@@ -1,12 +1,7 @@
 'use client';
 
-import { useState, useEffect, useSyncExternalStore } from 'react';
-import {
-  initAbVariants,
-  subscribeAbVariants,
-  getAbVariantsSnapshot,
-  getAbVariantsServerSnapshot,
-} from '@/lib/ab-testing';
+import { useState, useEffect } from 'react';
+import { initAbVariants } from '@/lib/ab-testing';
 import type { BillingPeriod } from './pricing-data';
 import { PricingHero } from './_components/PricingHero';
 import { PlanCards } from './_components/PlanCards';
@@ -20,32 +15,24 @@ import { FaqSection } from './_components/FaqSection';
 export default function PricingPage() {
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
-  const abVariants = useSyncExternalStore(
-    subscribeAbVariants,
-    getAbVariantsSnapshot,
-    getAbVariantsServerSnapshot,
-  );
-  const showSemiannual = abVariants.toggle === '3';
-  const effectivePeriod: BillingPeriod =
-    !showSemiannual && period === 'semiannual' ? 'monthly' : period;
+  // Le semestriel n'est plus propose sur la page publique (decision produit du
+  // 2026-11-06): le selecteur n'offre que Mensuel et Annuel. La periode reste
+  // supportee par la facturation et par Stripe pour les abonnes qui l'ont
+  // deja - on ne retire que le CHOIX offert aux visiteurs.
+  //
+  // La page ne lit plus de variante A/B: l'experimentation sur ce selecteur est
+  // arretee. L'appel ci-dessous reste necessaire pour poser le cookie de la
+  // duree d'essai, que l'inscription lit ensuite.
+  const effectivePeriod: BillingPeriod = period;
 
-  // Initialise AB cookies once on mount; notifies the store, which triggers
-  // useSyncExternalStore to re-read. No setState called here.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    initAbVariants({
-      trial: params.get('ab_trial'),
-      toggle: params.get('ab_toggle'),
-    });
+    initAbVariants({ trial: params.get('ab_trial') });
   }, []);
 
   return (
     <>
-      <PricingHero
-        effectivePeriod={effectivePeriod}
-        showSemiannual={showSemiannual}
-        setPeriod={setPeriod}
-      />
+      <PricingHero effectivePeriod={effectivePeriod} setPeriod={setPeriod} />
       <PlanCards effectivePeriod={effectivePeriod} />
       <TrialBand />
       <FeatureComparison />

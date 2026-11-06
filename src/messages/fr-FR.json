@@ -282,8 +282,6 @@
       },
       "billing": {
         "monthly": "Mensuel",
-        "semiannual": "Semestriel",
-        "semiannualDiscount": "-15%",
         "yearly": "Annuel",
         "yearlyDiscount": "-20%",
         "noCommitment": "Sans carte bancaire. Sans engagement."
@@ -4359,6 +4357,25 @@
     "deleteCategory": "Supprimer la catégorie",
     "deleteArticle": "Supprimer",
     "menuTip": "Vous pourrez ajouter descriptions, photos et options depuis le tableau de bord",
+    "categorySuggestionsLabel": "Rubriques courantes - touchez pour ajouter",
+    "categorySuggestions": {
+      "starters": "Entrées",
+      "mains": "Plats",
+      "sides": "Accompagnements",
+      "desserts": "Desserts",
+      "drinks": "Boissons",
+      "combos": "Formules",
+      "hotDrinks": "Boissons chaudes",
+      "breakfast": "Petit-déjeuner",
+      "pastries": "Pâtisseries",
+      "snacks": "Snacks",
+      "lightMeals": "Plats légers",
+      "cocktails": "Cocktails",
+      "beers": "Bières",
+      "wines": "Vins",
+      "burgers": "Burgers et sandwichs",
+      "roomService": "Room service"
+    },
     "maxCategories": "Maximum 5 catégories",
     "maxArticles": "Maximum 10 articles par catégorie",
     "articlesCount": "{count, plural, one {# article} other {# articles}}",
@@ -4852,7 +4869,6 @@
     "cancel": "Annuler"
   },
   "authShell": {
-    "secure": "Connexion securisee",
-    "panelImageAlt": "Interface ATTABL"
+    "secure": "Connexion securisee"
   }
 }

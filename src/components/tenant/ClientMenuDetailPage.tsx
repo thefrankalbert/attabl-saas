@@ -13,6 +13,7 @@ import MenuSearchResults from '@/components/tenant/client-menu-detail/MenuSearch
 import SubMenuTabs from '@/components/tenant/client-menu-detail/SubMenuTabs';
 import MenuItemsList from '@/components/tenant/client-menu-detail/MenuItemsList';
 import MenuSelectionSheet from '@/components/tenant/client-menu-detail/MenuSelectionSheet';
+import { STICKY_TITLE_ID } from '@/components/tenant/category-scroll-spy';
 
 // - Component -
 
@@ -126,15 +127,16 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
       {/* Single sticky category title bar - reflects the active category (synced
           with the chips). Replaces per-section sticky headers, which overlapped
           and flashed the next title on short adjacent categories. */}
-      {menuFilteredByCategory.length > 0 && (
-        <div className="sticky top-[111px] z-20 border-b border-[#EEEEEE] bg-white px-4 pt-4 pb-[14px]">
+      {navCategories.length > 0 && (
+        <div
+          id={STICKY_TITLE_ID}
+          className="sticky top-[111px] z-20 border-b border-[#EEEEEE] bg-white px-4 pt-4 pb-[14px]"
+        >
           <h2 className="text-[20px] font-bold leading-[1.4] tracking-[-0.6px] text-[#1A1A1A]">
-            {
-              (
-                menuFilteredByCategory.find((c) => c.id === activeCategoryId) ??
-                menuFilteredByCategory[0]
-              )?.name
-            }
+            {/* navCategories, pas menuFilteredByCategory: une categorie vide ne
+                rend aucune section, donc l'annoncer ici afficherait un titre
+                au-dessus des plats d'une AUTRE categorie. */}
+            {(navCategories.find((c) => c.id === activeCategoryId) ?? navCategories[0]).name}
           </h2>
         </div>
       )}

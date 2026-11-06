@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Lock } from 'lucide-react';
@@ -6,8 +5,9 @@ import { Lock } from 'lucide-react';
 /**
  * Split-screen shell for every auth surface (login / signup / forgot / reset).
  *
- * Left: brand, the centered auth card (children), a secure-connection footer.
- * Right (>= lg / 1024px): a dashboard preview, dimmed in dark mode.
+ * Une seule colonne: marque, carte d'authentification centree, pied de page
+ * de connexion securisee. L'apercu du tableau de bord qui occupait la moitie
+ * droite a partir de 1024px a ete retire le 2026-11-06 (decision produit).
  * Ported from the "Attabl Connexion" prototype; palette lives in auth-theme.css
  * (.auth-shell), dark mode follows the app's next-themes `.dark` class.
  *
@@ -15,10 +15,8 @@ import { Lock } from 'lucide-react';
  * - `overflow-x-clip` on the root clips any horizontal spill WITHOUT creating a
  *   scroll container (unlike overflow-hidden), so the auth layout's
  *   `overflow-y-auto` never turns into a horizontal scrollbar.
- * - The left column is `flex-1 min-w-0` (can always shrink); the panel is
- *   `shrink-0` and only exists from lg up. Below lg there is a single centered
- *   column, so phones and tablet portrait get the full-width card - never a
- *   squeezed split; tablet landscape and desktop keep the split.
+ * - La colonne est `flex-1 min-w-0` (elle peut toujours retrecir), et elle est
+ *   seule: plus de panneau lateral, donc plus aucun risque de carte ecrasee.
  * - The card is fluid (`w-full max-w-sm`) inside padded gutters, so it never
  *   touches the screen edges or overflows, down to 320px.
  * - Safe-area insets keep the header/footer clear of notches and home bars.
@@ -55,19 +53,12 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         </footer>
       </div>
 
-      {/* -- Right: product panel. Shown from lg (1024px): tablet landscape +
-       * desktop keep the split; phones and tablet portrait (< lg) get the
-       * single centered card so the panel never squeezes the form. */}
-      <aside className="relative hidden shrink-0 basis-[46%] overflow-hidden border-l border-[var(--border)] bg-[var(--surface-hover)] lg:block">
-        <Image
-          src="/auth/dashboard-preview.png"
-          alt={t('panelImageAlt')}
-          fill
-          priority
-          sizes="46vw"
-          className="auth-panel-img object-cover object-left-top"
-        />
-      </aside>
+      {/* PLUS DE PANNEAU A DROITE. L'apercu du tableau de bord qui occupait
+       * 46% de l'ecran a partir de 1024px a ete retire le 2026-11-06 (decision
+       * produit): la carte de connexion est desormais centree sur toute la
+       * largeur, a toutes les tailles. Son historique: introduit par la PR
+       * #270, restreint au desktop par la #275, retabli sur tablette paysage
+       * par la #276 - c'est pour cela qu'il etait encore visible. */}
     </div>
   );
 }

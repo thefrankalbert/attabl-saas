@@ -54,7 +54,7 @@ export default function MenuDetailHeader({
           variant="ghost"
           size="icon"
           onClick={onBack}
-          className="w-[38px] h-[38px] rounded-full bg-app-elevated flex-shrink-0"
+          className="w-[38px] h-[38px] rounded-full bg-app-elevated flex-shrink-0 relative before:absolute before:-inset-[3px] before:rounded-full before:content-['']"
           aria-label={t('ariaGoBack')}
         >
           <ChevronLeft className="w-5 h-5 text-[#1A1A1A]" />
@@ -76,7 +76,7 @@ export default function MenuDetailHeader({
           variant="ghost"
           size="icon"
           onClick={onToggleSearch}
-          className="w-[38px] h-[38px] rounded-full flex-shrink-0"
+          className="w-[38px] h-[38px] rounded-full flex-shrink-0 relative before:absolute before:-inset-[3px] before:rounded-full before:content-['']"
           aria-label={t('searchMenu')}
         >
           {showSearch ? (
