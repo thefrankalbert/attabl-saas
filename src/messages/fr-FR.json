@@ -478,7 +478,7 @@
           },
           "q4": {
             "question": "Y a-t-il un engagement ?",
-            "answer": "Mensuel = sans engagement. Semestriel = -15%. Annuel = -20%."
+            "answer": "Mensuel = sans engagement. Annuel = -20%."
           },
           "q5": {
             "question": "Comment je paie ?",
