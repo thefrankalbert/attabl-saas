@@ -28,7 +28,13 @@ export interface PostLoginMembership {
   isActive: boolean;
   deletedAt: string | null;
   tenantSlug: string | null;
-  onboardingCompleted: boolean;
+  /**
+   * `null` quand l'appelant n'a pas selectionne la colonne. A distinguer de
+   * `false`: seul un onboarding EXPLICITEMENT inacheve renvoie au parcours.
+   * Sans cette distinction, un appelant qui oublie la colonne enverrait tous
+   * ses proprietaires refaire leur installation.
+   */
+  onboardingCompleted: boolean | null;
   tenantCreatedAt: string | null;
 }
 
@@ -66,7 +72,7 @@ export function mapMembershipRows(
       isActive: row.is_active !== false,
       deletedAt: row.deleted_at ?? null,
       tenantSlug: tenant?.slug ?? null,
-      onboardingCompleted: tenant?.onboarding_completed === true,
+      onboardingCompleted: tenant?.onboarding_completed ?? null,
       tenantCreatedAt: tenant?.created_at ?? null,
     };
   });
@@ -117,13 +123,21 @@ export function postLoginDestination(rows: readonly PostLoginMembership[]): stri
   // Les super-admins plateforme n'appartiennent qu'au tenant technique
   // `__platform`, laisse volontairement non onboarde: la verification
   // d'onboarding ci-dessous les renverrait creer un restaurant.
-  if (live.some((row) => row.isSuperAdmin)) return '/admin/platform';
+  //
+  // `role === 'super_admin'` est reconnu en plus du drapeau, comme le fait
+  // deja la garde de `/admin/tenants`: des comptes historiques portent la
+  // qualite dans le role seul, et les deux endroits doivent en juger pareil.
+  if (live.some((row) => row.isSuperAdmin || row.role === ('super_admin' as AdminRole))) {
+    return '/admin/platform';
+  }
 
   const isOwner = live.some((row) => row.role === 'owner');
 
   if (isOwner) {
     // Un etablissement inacheve se reprend; `/onboarding` ouvre le plus recent.
-    const needsOnboarding = live.some((row) => !row.onboardingCompleted);
+    // `=== false` et non `!...`: une colonne non selectionnee vaut `null` et ne
+    // doit PAS etre lue comme un onboarding a refaire.
+    const needsOnboarding = live.some((row) => row.onboardingCompleted === false);
     return needsOnboarding ? '/onboarding' : '/admin/tenants';
   }
 

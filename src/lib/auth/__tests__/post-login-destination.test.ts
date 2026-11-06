@@ -165,7 +165,8 @@ describe('mapMembershipRows', () => {
   it('considere vivante une ligne dont is_active n est pas selectionne', () => {
     const rows = mapMembershipRows([{ role: 'waiter', tenants: { slug: 'a' } }]);
     expect(rows[0].isActive).toBe(true);
-    expect(rows[0].onboardingCompleted).toBe(false);
+    // Colonne non selectionnee: inconnu, et non "onboarding a refaire".
+    expect(rows[0].onboardingCompleted).toBeNull();
   });
 });
 
@@ -191,5 +192,31 @@ describe('pickHomeTenantSlug', () => {
         member({ tenantSlug: 'date-connue', tenantCreatedAt: '2026-05-01T00:00:00Z' }),
       ]),
     ).toBe('date-connue');
+  });
+});
+
+describe('robustesse du mappage (relecture du 2026-11-06)', () => {
+  it('ne renvoie PAS a l onboarding quand la colonne n a pas ete selectionnee', () => {
+    // Un appelant qui omet `onboarding_completed` renverrait sinon tous ses
+    // proprietaires refaire leur installation.
+    const rows = mapMembershipRows([{ role: 'owner', tenants: { slug: 'le-mien' } }]);
+    expect(rows[0].onboardingCompleted).toBeNull();
+    expect(postLoginDestination(rows)).toBe('/admin/tenants');
+  });
+
+  it('renvoie a l onboarding seulement sur un onboarding EXPLICITEMENT inacheve', () => {
+    const rows = mapMembershipRows([
+      { role: 'owner', tenants: { slug: 'le-mien', onboarding_completed: false } },
+    ]);
+    expect(postLoginDestination(rows)).toBe('/onboarding');
+  });
+
+  it('reconnait un super admin historique porte par le role seul', () => {
+    // La garde de /admin/tenants accepte `role === 'super_admin'`; les deux
+    // endroits doivent en juger pareil.
+    const rows = mapMembershipRows([
+      { role: 'super_admin', is_super_admin: false, tenants: { slug: '__platform' } },
+    ]);
+    expect(postLoginDestination(rows)).toBe('/admin/platform');
   });
 });
