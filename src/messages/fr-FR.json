@@ -244,6 +244,7 @@
     "kitchenTicketPrinted": "Impression ticket cuisine lancée",
     "clientReceiptPrinted": "Impression reçu client lancée",
     "invoicePrinted": "Impression facture lancée",
+    "printWindowBlocked": "La fenetre d'impression a ete bloquee par le navigateur. Autorisez les fenetres surgissantes pour ce site, puis reessayez.",
     "statusUpdated": "Statut mis à jour",
     "checkoutWarning": "Attention: La commande doit être 'Prête' avant l'encaissement.",
     "roomNumber": "Ch.{number}",

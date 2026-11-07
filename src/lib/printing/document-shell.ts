@@ -35,6 +35,36 @@ const TOKENS = `
   --neg: #dc2626;
 `;
 
+/**
+ * La police vient du MEME serveur, pas de Google Fonts.
+ *
+ * POURQUOI CE N'EST PAS UN DETAIL. Ces documents etaient servis avec
+ * `<link href="https://fonts.googleapis.com/...Inter...">`. Un restaurant dont
+ * le reseau est lent ou coupe - le cas courant du marche vise, et l'app est
+ * justement une PWA qui fonctionne hors ligne - n'a jamais la police au moment
+ * d'imprimer. Le document sort alors dans la police de remplacement du systeme,
+ * avec d'autres metriques: les chiffres tabulaires, l'interlettrage et les
+ * largeurs de colonnes s'effondrent. C'est exactement ce qui faisait dire que
+ * les impressions "ne se presentent pas bien".
+ *
+ * Inter etait DEJA dans le depot (`src/app/fonts/inter-variable.woff2`, 48 Ko),
+ * chargee en local par l'application elle-meme. Seuls les documents imprimables
+ * allaient la chercher dehors. Le fichier est copie dans `public/fonts/` pour
+ * avoir une URL stable: `next/font` renomme la sienne a chaque build.
+ *
+ * `font-display: block` et non `swap`: pour un document qu'on imprime, mieux
+ * vaut attendre brievement la bonne police que figer la mauvaise sur le papier.
+ */
+const POLICE_CSS = `
+  @font-face {
+    font-family: 'Inter';
+    src: url('/fonts/inter-variable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: block;
+  }
+`;
+
 const BASE_CSS = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root { ${TOKENS} }
@@ -92,6 +122,21 @@ const BASE_CSS = `
     color: var(--faint); font-size: 9px; letter-spacing: 0.04em;
     text-transform: uppercase;
   }
+
+  /*
+   * Les navigateurs SUPPRIMENT les fonds et attenuent les couleurs a
+   * l'impression, pour economiser l'encre. Sur ces documents, ce sont
+   * justement les fonds qui portent la mise en page: le badge du mode de
+   * paiement, les filets de separation, la note surlignee du ticket cuisine.
+   * Sans cette regle, le papier sort avec des cadres vides et des traits
+   * absents - une page qui ne ressemble plus a ce qui etait affiche.
+   */
+  @media print {
+    html, body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
 `;
 
 const FORMAT_CSS: Record<DocumentFormat, string> = {
@@ -132,10 +177,7 @@ export function renderDocumentShell({ format, title, body, css = '' }: DocumentS
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(title)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <style>${BASE_CSS}${FORMAT_CSS[format]}${css}</style>
+  <style>${POLICE_CSS}${BASE_CSS}${FORMAT_CSS[format]}${css}</style>
 </head>
 <body>
   <div class="doc-page">${body}</div>
