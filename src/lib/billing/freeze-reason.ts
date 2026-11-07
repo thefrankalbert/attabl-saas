@@ -38,6 +38,17 @@ export const FREEZE_REASONS = {
   TRIAL_EXPIRED: 'trial_expired',
   /** Impaye au-dela du delai de relance (cron). */
   PAST_DUE_OVERDUE: 'past_due_overdue',
+  /**
+   * Paiement d'abonnement REMBOURSE EN ENTIER (`charge.refunded`). Le client a
+   * recupere tout son argent: le servir gratuitement est une fuite de revenu.
+   * Un remboursement PARTIEL ne gele rien (voir stripe-webhook/refund.ts).
+   *
+   * Reversible: souscrire a nouveau remet le statut, l'acces et efface la
+   * cause (`checkout.session.completed`). `charge.dispute.closed` ne leve que
+   * la cause `dispute`, donc il ne peut pas lever celui-ci - un remboursement
+   * n'est pas un litige gagne.
+   */
+  REFUND: 'refund',
 } as const;
 
 export type FreezeReason = (typeof FREEZE_REASONS)[keyof typeof FREEZE_REASONS];
