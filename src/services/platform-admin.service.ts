@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { isSubscriptionUsable } from '@/lib/plans/features';
+import type { SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
 
 /**
@@ -105,28 +107,56 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
   }
 
   /**
-   * Un restaurant GELE ne se remet pas en service par un geste de suspension.
+   * Un restaurant dont l'abonnement n'est pas utilisable ne se remet pas en
+   * service par un geste de suspension.
    *
-   * Le gel (`subscription_status = 'frozen'`) est une decision de facturation:
-   * essai expire, abonnement supprime, impaye, litige. La suspension est une
-   * decision de plateforme, independante. `unsuspendTenant` et `restoreTenant`
-   * ecrivaient `is_active: true` SANS regarder le statut d'abonnement: lever une
-   * suspension sur un restaurant gele le remettait donc en service, et le gel ne
-   * gelait plus rien. C'est une fuite de revenu, pas un detail d'ergonomie.
+   * Le statut d'abonnement est une decision de facturation: essai expire,
+   * abonnement supprime, impaye, litige, resiliation, pause. La suspension est
+   * une decision de plateforme, independante. `unsuspendTenant` et
+   * `restoreTenant` ecrivaient `is_active: true` SANS regarder le statut: lever
+   * une suspension sur un restaurant qui ne paie plus le remettait donc en
+   * service. C'est une fuite de revenu, pas un detail d'ergonomie.
    *
-   * La contrainte `tenants_gel_implique_inactif` (migration 20261105200000) bloque
-   * desormais l'ecriture en base. Mais une contrainte rend une erreur brute: cette
-   * garde existe pour que l'operateur lise une phrase qui lui dit quoi faire,
-   * plutot qu'une violation de contrainte.
+   * ELARGI LE 2026-11-07. La premiere version de cette garde ne refusait que
+   * `frozen`, exactement comme la contrainte `tenants_gel_implique_inactif`
+   * qu'elle accompagnait. Or `isSubscriptionUsable` n'autorise que `trial`,
+   * `active` et `past_due`: un restaurant `cancelled` ou `paused` passait la
+   * garde ET la contrainte, et repassait en service depuis la console. La
+   * contrainte `tenants_abonnement_inutilisable_implique_inactif` (migration
+   * 20261107140000) couvre desormais les trois statuts; cette garde existe pour
+   * que l'operateur lise une phrase qui lui dit quoi faire, plutot qu'une
+   * violation de contrainte brute.
+   *
+   * La liste des statuts entitlants n'est PAS recopiee ici: elle vit dans
+   * `isSubscriptionUsable`. Une seconde table de verite divergerait au premier
+   * statut ajoute.
    */
-  function assertNonGele(
+  function assertAbonnementUtilisable(
     tenant: { subscription_status: string; freeze_reason: string | null },
     geste: string,
   ): void {
-    if (tenant.subscription_status !== 'frozen') return;
-    const cause = tenant.freeze_reason ? ` (cause: ${tenant.freeze_reason})` : '';
+    if (isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus)) return;
+    if (tenant.subscription_status === 'frozen') {
+      const cause = tenant.freeze_reason ? ` (cause: ${tenant.freeze_reason})` : '';
+      throw new ServiceError(
+        `Ce restaurant est gele${cause}. Levez d'abord le gel d'abonnement avant de ${geste}.`,
+        'VALIDATION',
+      );
+    }
+    // Un statut inconnu ou absent doit refuser SANS mentir sur la cause. La
+    // premiere version annoncait "resilie" pour tout ce qui n'etait pas en
+    // pause, y compris un statut vide: l'operateur serait parti chercher une
+    // resiliation qui n'existe pas.
+    const etat =
+      tenant.subscription_status === 'paused'
+        ? 'en pause'
+        : tenant.subscription_status === 'cancelled'
+          ? 'resilie'
+          : null;
     throw new ServiceError(
-      `Ce restaurant est gele${cause}. Levez d'abord le gel d'abonnement avant de ${geste}.`,
+      etat
+        ? `L'abonnement de ce restaurant est ${etat}. Remettez d'abord son abonnement en service avant de ${geste}.`
+        : `L'abonnement de ce restaurant n'est pas en service (statut: ${tenant.subscription_status || 'inconnu'}). Verifiez son abonnement avant de ${geste}.`,
       'VALIDATION',
     );
   }
@@ -170,7 +200,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async unsuspendTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
-      assertNonGele(label, 'reactiver ce restaurant');
+      assertAbonnementUtilisable(label, 'reactiver ce restaurant');
       const { error } = await admin
         .from('tenants')
         .update({
@@ -215,7 +245,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
     async restoreTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
-      assertNonGele(label, 'restaurer ce restaurant');
+      assertAbonnementUtilisable(label, 'restaurer ce restaurant');
       const { error } = await admin
         .from('tenants')
         .update({

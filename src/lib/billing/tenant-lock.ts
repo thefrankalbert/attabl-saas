@@ -30,12 +30,17 @@ import type { SubscriptionStatus } from '@/types/billing';
  * `deleted_at` reste un FILTRE DE REQUETE (`.is('deleted_at', null)`), pas une
  * raison rendue ici: un restaurant supprime doit repondre 404, pas 403.
  *
- * DIVERGENCE CONNUE, NON CORRIGEE ICI: `isTenantAccessLocked` dans
- * `src/proxy.ts` ne refuse que le statut `frozen`, la ou cette definition
- * refuse tout statut non utilisable (`cancelled`, `pending`, `paused`,
- * `unpaid`). Le proxy est donc plus permissif pour les PAGES du tableau de
- * bord, et `src/proxy.ts` est un fichier protege: l'aligner demande une
- * decision explicite.
+ * LA DIVERGENCE AVEC LE PROXY EST FERMEE, et par la base plutot que par une
+ * seconde liste de statuts. `isTenantAccessLocked` dans `src/proxy.ts` ne lit
+ * litteralement que `frozen`, `is_active = false` et `suspended_at` - mais
+ * `is_active` suit desormais le statut A CHAQUE ECRITURE
+ * (`isActiveUnlessLocked`, qui delegue a `isSubscriptionUsable`), et la
+ * contrainte `tenants_abonnement_inutilisable_implique_inactif` (migration
+ * 20261107140000) l'impose en base pour TOUS les statuts non entitlants. Un
+ * restaurant `cancelled` ou `paused` porte donc `is_active = false`, et le
+ * proxy le refuse par ce verrou-la. Mesure en production le 2026-11-07: zero
+ * ligne ouvrable sans abonnement utilisable. `src/proxy.ts` n'a pas eu besoin
+ * d'etre touche, ce qui est preferable: c'est un fichier protege.
  *
  * CETTE DIVERGENCE A COUTE CHER A SOUS-ESTIMER. Une premiere version de ce
  * commentaire affirmait "ce n'est pas une fuite d'argent, tous les chemins
