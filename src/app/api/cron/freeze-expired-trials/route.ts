@@ -7,6 +7,7 @@ import {
   updateTolerantToMissingFreezeReason,
   type FreezeReason,
 } from '@/lib/billing/freeze-reason';
+import { createRetentionService } from '@/services/retention.service';
 
 /**
  * Freeze trials that expired without ever subscribing.
@@ -169,6 +170,19 @@ export async function GET(request: Request) {
     const frozenPastDue = pastDue?.length ?? 0;
     logger.info('Expired unpaid trials frozen', { frozen, frozenPastDue });
 
-    return NextResponse.json({ success: true, frozen, frozenPastDue });
+    // LA PURGE DES DONNEES PERSONNELLES PARTAGE CE PASSAGE QUOTIDIEN, et ce
+    // n'est pas de la paresse: le plan Vercel du projet est limite a DEUX taches
+    // planifiees, et les deux sont prises (ce cron et `reconcile-payments`). Une
+    // troisieme entree dans vercel.json ferait echouer le deploiement. Plutot
+    // qu'un fichier de plus qui ne tournerait jamais, la purge s'accroche au
+    // passage de 02h00. Quand le projet passera en Pro, lui donner sa propre
+    // ligne dans vercel.json et retirer cet appel.
+    //
+    // Elle ne doit JAMAIS faire echouer le gel: ce sont deux obligations
+    // distinctes, et un restaurant qui ne paie plus doit etre gele meme si la
+    // purge tombe. `executer()` avale donc ses propres erreurs et les journalise.
+    const purge = await createRetentionService(supabase).executer();
+
+    return NextResponse.json({ success: true, frozen, frozenPastDue, purge });
   });
 }
