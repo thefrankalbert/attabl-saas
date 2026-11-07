@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
-import { createClient } from '@/lib/supabase/server';
+import { resolveCheckoutTenant } from '@/lib/billing/checkout-tenant';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { logger } from '@/lib/logger';
+import { classifyExistingSubscription } from '@/lib/billing/existing-subscription';
+import {
+  clearStaleSubscriptionId,
+  retrieveStripeSubscriptionStatus,
+} from '@/lib/billing/stale-subscription';
 import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -22,61 +28,46 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    // ✅ SECURITY: Get user from server-side auth
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    // ✅ SECURITY: Derive tenantId from authenticated user
-    // Use maybeSingle() instead of single() to handle super_admin users
-    // who may have multiple admin_users entries across tenants
-    const { data: adminUser, error: adminUserError } = await supabase
-      .from('admin_users')
-      .select(
-        'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status)',
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (adminUserError || !adminUser?.tenant_id) {
-      logger.error('Checkout: tenant not found for user', adminUserError, { userId: user.id });
+    // La resolution du restaurant a facturer est partagee avec
+    // create-embedded-checkout: elle prenait ici la PLUS ANCIENNE ligne
+    // admin_users, donc un proprietaire de plusieurs etablissements se faisait
+    // facturer le mauvais. La cible vient du slug injecte par le middleware
+    // (verifie ensuite par appartenance + role). Voir checkout-tenant.ts.
+    const resolved = await resolveCheckoutTenant({
+      tenantSlug: readTenantSlug(request.headers).slug,
+    });
+    if (!resolved.ok) {
       return NextResponse.json(
-        { error: 'Tenant non trouve pour cet utilisateur' },
-        { status: 404 },
+        resolved.code ? { error: resolved.error, code: resolved.code } : { error: resolved.error },
+        { status: resolved.status },
       );
     }
 
-    const tenantId = adminUser.tenant_id;
+    const tenantId = resolved.tenant.tenant_id;
 
-    if (!user.email) {
-      logger.error('Checkout: user has no email', undefined, { userId: user.id });
+    const email = resolved.email;
+    const tenantData = resolved.tenant.tenants;
+
+    // B1: un abonnement VIVANT interdit une seconde caisse. Un abonnement MORT,
+    // lui, laissait son identifiant en base et bloquait le retour du client
+    // (409 ici, 400 dans update-subscription). Meme regle que
+    // create-embedded-checkout: src/lib/billing/existing-subscription.ts.
+    let verdictAbonnement;
+    try {
+      verdictAbonnement = await classifyExistingSubscription({
+        subscriptionId: tenantData?.stripe_subscription_id,
+        status: tenantData?.subscription_status,
+        retrieveStripeStatus: retrieveStripeSubscriptionStatus,
+      });
+    } catch (err) {
+      logger.error('Checkout: statut d abonnement Stripe illisible', err, { tenantId });
       return NextResponse.json(
-        { error: 'Aucune adresse email associee a ce compte' },
-        { status: 400 },
+        { error: 'Verification de l abonnement impossible. Reessayez dans un instant.' },
+        { status: 503 },
       );
     }
 
-    const email = user.email;
-    // Supabase join type gap
-    const tenantData = adminUser.tenants as unknown as {
-      name: string;
-      stripe_customer_id: string | null;
-      stripe_subscription_id: string | null;
-      trial_ends_at: string | null;
-      subscription_status: string | null;
-    } | null;
-
-    // B1: If tenant already has an active subscription, reject and direct to update endpoint
-    if (tenantData?.stripe_subscription_id) {
+    if (verdictAbonnement.kind === 'live') {
       return NextResponse.json(
         {
           error: 'Ce tenant a deja un abonnement actif. Utilisez le changement de plan.',
@@ -84,6 +75,10 @@ export async function POST(request: Request) {
         },
         { status: 409 },
       );
+    }
+
+    if (verdictAbonnement.kind === 'stale') {
+      await clearStaleSubscriptionId(tenantId, verdictAbonnement.subscriptionId);
     }
 
     // NOTE: Rate limiting (line 12-19) prevents rapid concurrent checkout attempts.

@@ -27,9 +27,12 @@ function isValidInterval(value: string | null): value is BillingInterval {
 function CheckoutWithPlan({
   plan,
   interval,
+  tenantSlug,
 }: {
   plan: SelfServicePlan;
   interval: BillingInterval;
+  /** Restaurant a abonner. L'API verifie l'appartenance et le role. */
+  tenantSlug: string | null;
 }) {
   const router = useRouter();
   const t = useTranslations('checkout');
@@ -46,7 +49,11 @@ function CheckoutWithPlan({
         const res = await fetch('/api/create-embedded-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan, billingInterval: interval }),
+          body: JSON.stringify({
+            plan,
+            billingInterval: interval,
+            ...(tenantSlug ? { tenantSlug } : {}),
+          }),
         });
 
         if (cancelled) return;
@@ -54,7 +61,9 @@ function CheckoutWithPlan({
         const data = await res.json();
 
         if (res.status === 401) {
-          const returnUrl = `/checkout?plan=${plan}&interval=${interval}`;
+          const returnUrl = `/checkout?plan=${plan}&interval=${interval}${
+            tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ''
+          }`;
           router.replace(`/login?redirect=${encodeURIComponent(returnUrl)}`);
           return;
         }
@@ -82,7 +91,7 @@ function CheckoutWithPlan({
     return () => {
       cancelled = true;
     };
-  }, [plan, interval, router, t]);
+  }, [plan, interval, tenantSlug, router, t]);
 
   if (loading) {
     return (
@@ -127,6 +136,7 @@ function CheckoutContent() {
 
   const planParam = searchParams.get('plan');
   const intervalParam = searchParams.get('interval');
+  const tenantParam = searchParams.get('tenant');
 
   const plan = isValidPlan(planParam) ? planParam : null;
   const interval = isValidInterval(intervalParam) ? intervalParam : 'monthly';
@@ -150,7 +160,7 @@ function CheckoutContent() {
     );
   }
 
-  return <CheckoutWithPlan plan={plan} interval={interval} />;
+  return <CheckoutWithPlan plan={plan} interval={interval} tenantSlug={tenantParam} />;
 }
 
 export default function CheckoutPage() {
