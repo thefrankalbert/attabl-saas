@@ -62,6 +62,17 @@ const UNDEFINED_COLUMN = '42703';
 /** PostgREST: colonne absente du cache de schema. Meme cause, autre couche. */
 const SCHEMA_CACHE_MISS = 'PGRST204';
 
+/**
+ * Exportee pour les chemins qui FILTRENT sur `freeze_reason` et non seulement
+ * l'ecrivent. La tolerance par rejeu ne les sauve pas: retirer la colonne du
+ * payload ne retire pas le filtre, l'erreur revient, et un webhook durablement
+ * en erreur finit DESACTIVE par Stripe. Ces chemins doivent donc pouvoir dire
+ * "colonne absente: il n'y a rien a faire ici" et continuer.
+ */
+export function isMissingFreezeReasonColumnError(error: unknown): boolean {
+  return isMissingColumnError(error);
+}
+
 function isMissingColumnError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const code = (error as { code?: unknown }).code;

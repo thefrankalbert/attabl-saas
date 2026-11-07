@@ -461,6 +461,11 @@ describe('invoice.paid', () => {
     const response = await fire('invoice.paid', { customer: 'cus_1' });
 
     expect(response.status).toBe(200);
+    // DEUX ecritures, et leurs perimetres sont deux gardes distinctes:
+    // la premiere ne leve qu'un impaye, la seconde ne leve qu'un gel pour
+    // remboursement (une facture payee = argent neuf). Elles sont separees
+    // expres: elargir le filtre de la premiere aurait permis a la facture du
+    // mois suivant de lever un gel pour litige.
     expect(chain.updatePayloads).toEqual([
       {
         subscription_status: 'active',
@@ -468,12 +473,24 @@ describe('invoice.paid', () => {
         is_active: true,
         freeze_reason: null,
       },
+      {
+        subscription_status: 'active',
+        past_due_since: null,
+        is_active: true,
+        freeze_reason: null,
+      },
     ]);
-    // Le scope EST la garde: 'frozen' est exclu (un litige ne se leve pas par la
-    // facture du mois suivant), et les deux verrous humains aussi.
+    // Le scope EST la garde: 'frozen' est exclu de la PREMIERE (un litige ne se
+    // leve pas par la facture du mois suivant), et les deux verrous humains
+    // aussi. La seconde cible explicitement la cause `refund`, elle seule.
     expect(chain.updateFilters).toEqual([
       ['stripe_customer_id', 'cus_1'],
       ['subscription_status', 'past_due'],
+      ['suspended_at', null],
+      ['deleted_at', null],
+      ['stripe_customer_id', 'cus_1'],
+      ['subscription_status', 'frozen'],
+      ['freeze_reason', 'refund'],
       ['suspended_at', null],
       ['deleted_at', null],
     ]);

@@ -158,3 +158,36 @@ describe('handleChargeRefunded', () => {
     await expect(handleChargeRefunded(deps(), charge())).rejects.toBeInstanceOf(ServiceError);
   });
 });
+
+/**
+ * Le gel pour remboursement doit TENIR, et pouvoir se LEVER.
+ *
+ * Trouve par la revue de securite sur ma premiere version: un remboursement ne
+ * change pas le statut de l'abonnement chez Stripe (il reste `active`), et
+ * `active` est un statut sain. Le prochain `customer.subscription.updated` -
+ * Stripe en envoie a chaque roulement de periode - levait donc le gel SANS
+ * qu'un franc soit rentre. Le gel etait cosmetique.
+ *
+ * Ces deux tests figent les deux moities de la correction, sur les helpers qui
+ * la portent.
+ */
+describe('un gel pour remboursement tient face a Stripe', () => {
+  it('bloque le degel tant qu aucun paiement neuf n est arrive', async () => {
+    const { refundFreezeBlocksUnfreeze } = await import('../status');
+
+    expect(
+      refundFreezeBlocksUnfreeze({ subscription_status: 'frozen', freeze_reason: 'refund' }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['gel pour litige', { subscription_status: 'frozen', freeze_reason: 'dispute' }],
+    ['gel pour impaye', { subscription_status: 'frozen', freeze_reason: 'past_due_overdue' }],
+    ['gel sans cause', { subscription_status: 'frozen', freeze_reason: null }],
+    ['tenant actif', { subscription_status: 'active', freeze_reason: null }],
+    ['ligne absente', null],
+  ])('ne bloque PAS le degel pour %s', async (_nom, ligne) => {
+    const { refundFreezeBlocksUnfreeze } = await import('../status');
+    expect(refundFreezeBlocksUnfreeze(ligne)).toBe(false);
+  });
+});
