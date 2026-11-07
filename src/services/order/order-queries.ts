@@ -1,8 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '../errors';
 import type { TenantValidationResult } from './order-types';
-import { isSubscriptionUsable } from '@/lib/plans/features';
-import type { SubscriptionStatus } from '@/types/billing';
+import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 
 export function createQueryMethods(supabase: SupabaseClient) {
   return {
@@ -15,7 +14,7 @@ export function createQueryMethods(supabase: SupabaseClient) {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select(
-          'id, is_active, suspended_at, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
+          `id, ${TENANT_LOCK_COLUMNS}, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, trial_ends_at`,
         )
         .eq('slug', slug)
         // Soft-deleted tenants accept no orders, independently of is_active.
@@ -26,28 +25,17 @@ export function createQueryMethods(supabase: SupabaseClient) {
         throw new ServiceError('Restaurant non trouvé', 'NOT_FOUND');
       }
 
-      if (!tenant.is_active) {
-        throw new ServiceError('Ce restaurant est temporairement indisponible', 'VALIDATION');
-      }
-
-      // CTR7-1: une suspension decidee par le super-admin n'etait portee QUE
-      // par is_active. `suspended_at` etait ecrit et affiche dans la console
-      // plateforme, mais applique nulle part - alors que le webhook Stripe
-      // reecrit is_active a chaque evenement d'abonnement. Une suspension
-      // devient un verrou a part entiere, comme deleted_at l'est deja
-      // ci-dessus: deux colonnes doivent etre fausses pour encaisser.
-      if (tenant.suspended_at) {
-        throw new ServiceError('Ce restaurant est temporairement indisponible', 'UNAUTHORIZED');
-      }
-
-      // F6: ne pas dependre du SEUL is_active. Le cron de gel laissait
-      // is_active=true, contrairement au webhook subscription.deleted; comme le
-      // middleware ne protege que /sites/<slug>/admin, la vitrine et POST
-      // /api/orders restaient ouverts et un tenant gele continuait d'encaisser.
-      // Le statut est desormais verifie ici aussi: deux verrous independants
-      // valent mieux qu'un seul qu'un chemin d'ecriture peut oublier de poser.
-      if (!isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus | null)) {
-        throw new ServiceError('Ce restaurant est temporairement indisponible', 'UNAUTHORIZED');
+      // La regle de coupure vit dans lib/billing/tenant-lock: elle etait ecrite
+      // quatre fois, et la caisse n'en portait aucune. Les commentaires qui
+      // expliquent CHAQUE verrou (CTR7-1, F6) y ont demenage avec elle.
+      const lockReason = tenantLockReason(tenant);
+      if (lockReason) {
+        throw new ServiceError(
+          'Ce restaurant est temporairement indisponible',
+          // Codes HTTP preserves a l'identique: is_active -> 400, les deux
+          // autres -> 403. Les changer casserait des appelants.
+          lockReason === 'inactive' ? 'VALIDATION' : 'UNAUTHORIZED',
+        );
       }
 
       return {

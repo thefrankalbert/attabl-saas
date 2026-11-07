@@ -4,9 +4,8 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { menuSearchLimiter, getClientIp } from '@/lib/rate-limit';
-import { isSubscriptionUsable } from '@/lib/plans/features';
+import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import type { MenuItem } from '@/types/admin.types';
-import type { SubscriptionStatus } from '@/types/billing';
 
 const FALLBACK_ERRORS = {
   rateLimited: 'Trop de requetes. Reessayez plus tard.',
@@ -47,18 +46,12 @@ export async function GET(request: Request) {
     // produit).
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id, is_active, suspended_at, subscription_status')
+      .select(`id, ${TENANT_LOCK_COLUMNS}`)
       .eq('slug', tenantSlug)
       .is('deleted_at', null)
       .single();
 
-    if (
-      tenantError ||
-      !tenant ||
-      !tenant.is_active ||
-      tenant.suspended_at ||
-      !isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus | null)
-    ) {
+    if (tenantError || !tenant || tenantLockReason(tenant)) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }
 
