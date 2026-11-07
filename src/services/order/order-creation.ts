@@ -8,11 +8,20 @@ import { verifiedPriceKey } from './verified-price-key';
 export function createCreationMethods(supabase: SupabaseClient) {
   return {
     /**
-     * Generates a unique, sequential order number per tenant per day.
-     * Uses PostgreSQL advisory locks to prevent race conditions.
-     * Format: CMD-YYYYMMDD-001
+     * Rend un numero de commande sequentiel, unique par restaurant et par jour.
+     * Format: CMD-YYYYMMDD-001.
      *
-     * Falls back to timestamp-based if RPC unavailable.
+     * La sequence vit dans `order_number_counters` et est incrementee
+     * atomiquement par la RPC `next_order_number` (migration 20261107160000).
+     * Elle ne redescend jamais: supprimer une commande ne libere pas son numero.
+     *
+     * LE SECOURS EST VISIBLE, ET C'EST VOLONTAIRE. Si la RPC echoue, on ne
+     * refuse pas la commande - un service en salle ne s'arrete pas pour un
+     * numero. Mais le numero rendu alors n'appartient PAS a la sequence, et il
+     * le dit: le prefixe `CMD-HS-` (hors sequence) le rend visible en
+     * comptabilite au lieu de se faire passer pour un numero normal. Mesure du
+     * 2026-11-07: ce secours a deja servi 7 fois (le 2026-05-02), et ces sept
+     * numeros etaient indiscernables d'un numero legitime.
      */
     async generateOrderNumber(tenantId: string): Promise<string> {
       try {
@@ -21,14 +30,17 @@ export function createCreationMethods(supabase: SupabaseClient) {
         });
 
         if (error || !data) {
-          logger.warn('Order number RPC failed, using fallback', { rpcError: error?.message });
-          return `CMD-${Date.now().toString(36).toUpperCase()}`;
+          logger.error('Numerotation hors sequence: la RPC next_order_number a echoue', {
+            rpcError: error?.message,
+            tenantId,
+          });
+          return `CMD-HS-${Date.now().toString(36).toUpperCase()}`;
         }
 
         return data as string;
-      } catch {
-        // Fallback to timestamp-based
-        return `CMD-${Date.now().toString(36).toUpperCase()}`;
+      } catch (erreur) {
+        logger.error('Numerotation hors sequence: appel RPC impossible', { erreur, tenantId });
+        return `CMD-HS-${Date.now().toString(36).toUpperCase()}`;
       }
     },
 

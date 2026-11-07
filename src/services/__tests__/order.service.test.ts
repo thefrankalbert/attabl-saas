@@ -518,17 +518,48 @@ describe('OrderService', () => {
       expect(orderNumber).toMatch(/^CMD-/);
     });
 
-    it('should fallback to timestamp-based when RPC fails', async () => {
+    // Le secours ne refuse pas la commande - un service en salle ne s'arrete pas
+    // pour un numero - mais le numero rendu n'appartient PAS a la sequence, et
+    // il doit le DIRE. Sept commandes du 2026-05-02 portaient un numero de
+    // secours indiscernable d'un numero legitime; le prefixe `CMD-HS-` le rend
+    // visible en comptabilite.
+    it.each([
+      ['la RPC rend une erreur', { data: null, error: { message: 'RPC not available' } }],
+      ['la RPC rend un resultat vide', { data: null, error: null }],
+    ])('marque le numero HORS SEQUENCE quand %s', async (_nom, reponse) => {
       const supabase = createMockSupabase();
-      // Mock the rpc call to fail
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi
+        .fn()
+        .mockResolvedValue(reponse);
+      const service = createOrderService(asSupabase(supabase));
+
+      const orderNumber = await service.generateOrderNumber('tenant-123');
+      expect(orderNumber).toMatch(/^CMD-HS-[A-Z0-9]+$/);
+    });
+
+    it('marque aussi HORS SEQUENCE quand l appel RPC jette', async () => {
+      const supabase = createMockSupabase();
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi
+        .fn()
+        .mockRejectedValue(new Error('reseau coupe'));
+      const service = createOrderService(asSupabase(supabase));
+
+      await expect(service.generateOrderNumber('tenant-123')).resolves.toMatch(/^CMD-HS-/);
+    });
+
+    // Un numero de la sequence ne doit JAMAIS porter la marque du secours: sans
+    // ce cas, prefixer tous les numeros passerait les tests ci-dessus.
+    it('un numero rendu par la sequence ne porte PAS la marque HS', async () => {
+      const supabase = createMockSupabase();
       (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi.fn().mockResolvedValue({
-        data: null,
-        error: { message: 'RPC not available' },
+        data: 'CMD-20261107-004',
+        error: null,
       });
       const service = createOrderService(asSupabase(supabase));
 
       const orderNumber = await service.generateOrderNumber('tenant-123');
-      expect(orderNumber).toMatch(/^CMD-[A-Z0-9]+$/);
+      expect(orderNumber).toBe('CMD-20261107-004');
+      expect(orderNumber).not.toContain('CMD-HS-');
     });
 
     it('should generate unique numbers on successive calls', async () => {
