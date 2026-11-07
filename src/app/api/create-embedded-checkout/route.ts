@@ -8,6 +8,11 @@ import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { resolveCheckoutTenant } from '@/lib/billing/checkout-tenant';
+import { classifyExistingSubscription } from '@/lib/billing/existing-subscription';
+import {
+  clearStaleSubscriptionId,
+  retrieveStripeSubscriptionStatus,
+} from '@/lib/billing/stale-subscription';
 import { toCheckoutApiError } from '@/lib/stripe/checkout-errors';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
@@ -110,22 +115,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const resolved = await resolveCheckoutTenant();
-    if (!resolved.ok) {
-      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
-    }
-
-    const tenantData = resolved.tenant.tenants;
-    if (tenantData?.stripe_subscription_id) {
-      return NextResponse.json(
-        {
-          error: 'Ce tenant a deja un abonnement actif. Utilisez le changement de plan.',
-          code: 'EXISTING_SUBSCRIPTION',
-        },
-        { status: 409 },
-      );
-    }
-
+    // Le corps est lu AVANT la resolution: c'est lui qui nomme le restaurant a
+    // abonner. Sans cette cible, un proprietaire de plusieurs etablissements se
+    // faisait facturer le plus ancien (voir checkout-tenant.ts).
     let body: unknown;
     try {
       body = await request.json();
@@ -140,6 +132,54 @@ export async function POST(request: Request) {
     }
 
     const { plan, billingInterval } = parseResult.data;
+
+    const resolved = await resolveCheckoutTenant({ tenantSlug: parseResult.data.tenantSlug });
+    if (!resolved.ok) {
+      return NextResponse.json(
+        resolved.code ? { error: resolved.error, code: resolved.code } : { error: resolved.error },
+        { status: resolved.status },
+      );
+    }
+
+    const tenantData = resolved.tenant.tenants;
+    // Un abonnement MORT laissait son identifiant en base, et cette route
+    // repondait 409 "utilisez le changement de plan" tandis que
+    // update-subscription repondait 400 "creez un abonnement via le checkout":
+    // un client resilie n'avait aucun chemin pour revenir payer. Voir
+    // src/lib/billing/existing-subscription.ts.
+    let verdictAbonnement;
+    try {
+      verdictAbonnement = await classifyExistingSubscription({
+        subscriptionId: tenantData?.stripe_subscription_id,
+        status: tenantData?.subscription_status,
+        retrieveStripeStatus: retrieveStripeSubscriptionStatus,
+      });
+    } catch (err) {
+      // Stripe injoignable: on ne sait pas si l'abonnement vit. On refuse,
+      // jamais l'inverse - ouvrir la caisse ici facturerait peut-etre deux fois.
+      logger.error('Checkout: statut d abonnement Stripe illisible', err, {
+        tenantId: resolved.tenant.tenant_id,
+      });
+      return NextResponse.json(
+        { error: 'Verification de l abonnement impossible. Reessayez dans un instant.' },
+        { status: 503 },
+      );
+    }
+
+    if (verdictAbonnement.kind === 'live') {
+      return NextResponse.json(
+        {
+          error: 'Ce tenant a deja un abonnement actif. Utilisez le changement de plan.',
+          code: 'EXISTING_SUBSCRIPTION',
+        },
+        { status: 409 },
+      );
+    }
+
+    if (verdictAbonnement.kind === 'stale') {
+      await clearStaleSubscriptionId(resolved.tenant.tenant_id, verdictAbonnement.subscriptionId);
+    }
+
     const priceId = resolvePriceId(plan, billingInterval);
     const trialDays = tenantData ? buildTrialDays(tenantData) : undefined;
     const existingCustomerId = tenantData?.stripe_customer_id ?? null;

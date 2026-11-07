@@ -94,7 +94,11 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
         setIsLoading(null);
       }
     } else {
-      router.push(`/checkout?plan=${plan}&interval=${billingInterval}`);
+      // `tenant` nomme le restaurant a abonner: sans lui, un proprietaire de
+      // plusieurs etablissements se faisait facturer le plus ancien.
+      router.push(
+        `/checkout?plan=${plan}&interval=${billingInterval}&tenant=${encodeURIComponent(siteSlug)}`,
+      );
     }
   };
 

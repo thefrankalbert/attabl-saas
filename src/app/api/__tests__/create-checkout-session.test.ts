@@ -26,6 +26,24 @@ vi.mock('@/lib/stripe/server', () => ({
   getStripePriceId: vi.fn().mockReturnValue('price_test_123'),
 }));
 
+// `stale-subscription` importe le client service_role, marque `server-only`:
+// importable en route, pas dans cet environnement de test. On le remplace, et
+// la regle qu'il sert est testee a part (existing-subscription.test.ts).
+const mockRetrieveStripeStatus = vi.fn((): Promise<string | null> => Promise.resolve(null));
+const mockClearStaleSubscriptionId = vi.fn((): Promise<void> => Promise.resolve());
+vi.mock('@/lib/billing/stale-subscription', () => ({
+  retrieveStripeSubscriptionStatus: () => mockRetrieveStripeStatus(),
+  clearStaleSubscriptionId: () => mockClearStaleSubscriptionId(),
+}));
+
+// `checkout-tenant` importe aussi le client service_role: meme raison. La
+// resolution du restaurant a facturer est testee a part
+// (checkout-tenant.test.ts); ici on pilote son verdict.
+const mockResolveCheckoutTenant = vi.fn();
+vi.mock('@/lib/billing/checkout-tenant', () => ({
+  resolveCheckoutTenant: (...args: unknown[]) => mockResolveCheckoutTenant(...(args as [unknown])),
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -136,12 +154,47 @@ function createMockSupabase(overrides?: {
   };
 }
 
+const TENANT_RESOLU = {
+  ok: true as const,
+  userId: 'user-1',
+  email: 'owner@restaurant.com',
+  tenant: {
+    tenant_id: 'tenant-abc',
+    tenants: {
+      name: 'Mon Restaurant',
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      trial_ends_at: null,
+      subscription_status: 'trial',
+    },
+  },
+};
+
 function setupAuthenticatedMocks(
   supabaseOverrides?: Parameters<typeof createMockSupabase>[0],
 ): void {
   mockRateLimitAllowed();
   const mockSupabase = createMockSupabase(supabaseOverrides);
   vi.mocked(createClient).mockResolvedValue(mockSupabase as never);
+
+  // Le resolveur rend le restaurant a facturer, ou le refus (401/403/404).
+  if (supabaseOverrides?.authUser === null) {
+    mockResolveCheckoutTenant.mockResolvedValue({
+      ok: false,
+      status: 401,
+      error: 'Non authentifie',
+    });
+    return;
+  }
+  if (supabaseOverrides?.adminUser && supabaseOverrides.adminUser.data === null) {
+    mockResolveCheckoutTenant.mockResolvedValue({
+      ok: false,
+      status: 404,
+      error: 'Tenant non trouve pour cet utilisateur',
+    });
+    return;
+  }
+  mockResolveCheckoutTenant.mockResolvedValue(TENANT_RESOLU);
 }
 
 // ---------------------------------------------------------------------------
@@ -166,12 +219,7 @@ describe('POST /api/create-checkout-session', () => {
 
   // 2. Unauthenticated -> 401
   it('returns 401 when user is not authenticated', async () => {
-    mockRateLimitAllowed();
-    const mockSupabase = createMockSupabase({
-      authUser: null,
-      authError: { message: 'Invalid token' },
-    });
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as never);
+    setupAuthenticatedMocks({ authUser: null, authError: { message: 'Invalid token' } });
 
     const response = await POST(buildRequest({ plan: 'starter' }));
     const json = (await response.json()) as { error: string };
