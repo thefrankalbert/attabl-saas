@@ -18,6 +18,7 @@ import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 /**
@@ -161,6 +162,45 @@ export async function POST(request: Request) {
 
     if (!adminUser) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // COUPURE DU RESTAURANT - avant tout effet de bord, rejeu compris.
+    //
+    // Cette route n'a longtemps porte AUCUNE coupure. Elle lisait bien
+    // `subscription_status` plus bas, mais seulement pour choisir les
+    // fonctionnalites du plan: or un restaurant gele retombe sur `starter`,
+    // dont `canAccessPOS` vaut `true`. Un restaurant gele, suspendu ou
+    // desactive encaissait donc normalement (commande creee, `payment_status`
+    // a `paid`, ligne dans `payments`, session de table soldee), alors que le
+    // canal convive etait coupe depuis F6/CTR7-1. Le verrou du middleware ne
+    // pouvait pas rattraper ca: il ne garde que les PAGES, jamais `/api/*`.
+    //
+    // LE PLACEMENT EST LA MOITIE DU CORRECTIF: le rejeu hors ligne
+    // (`client_request_id`) rappelle `applyPosFinalState` AVANT la lecture de
+    // configuration ci-dessous. Une coupure posee la-bas laisserait donc une
+    // file d'attente hors ligne continuer a encaisser apres le gel. Le verrou
+    // doit rester ici, en amont de l'idempotence.
+    const { data: lockRow, error: lockError } = await adminSupabase
+      .from('tenants')
+      .select(TENANT_LOCK_COLUMNS)
+      .eq('id', tenant_id)
+      .is('deleted_at', null)
+      .single();
+
+    if (lockError || !lockRow) {
+      return NextResponse.json({ error: 'Restaurant non trouve' }, { status: 404 });
+    }
+
+    const lockReason = tenantLockReason(lockRow);
+    if (lockReason) {
+      logger.warn('POS order refused: tenant access locked', {
+        tenantId: tenant_id,
+        reason: lockReason,
+      });
+      return NextResponse.json(
+        { error: 'Ce restaurant est temporairement indisponible' },
+        { status: 403 },
+      );
     }
 
     // 5. Validate items and verify prices server-side

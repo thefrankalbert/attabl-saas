@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { orderMutationSchema } from '@/lib/validations/order-mutation.schema';
 
 vi.mock('@/lib/logger', () => ({
@@ -56,15 +56,35 @@ const mockUpdateEq = vi.fn(() => {
   });
 });
 
+/**
+ * La ligne `tenants` servie aux DEUX lectures de ce chemin. Mutable: les tests
+ * de coupure la remplacent par un restaurant gele, suspendu ou desactive.
+ */
+const LIGNE_SERVANTE = {
+  id: 't1',
+  is_active: true,
+  suspended_at: null,
+  subscription_status: 'active' as string | null,
+};
+let tenantRow: Record<string, unknown> | null = { ...LIGNE_SERVANTE };
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
     Promise.resolve({
       auth: { getUser: () => Promise.resolve({ data: { user: { id: 'u1' } } }) },
       from: (table: string) => {
         if (table === 'tenants') {
+          // Deux lectures distinctes de `tenants` sur ce chemin: la resolution
+          // par slug (qui ne veut que l'id) et la COUPURE du restaurant, posee
+          // avant la reservation d'idempotence. Une ligne qui omet les verrous
+          // decrit un restaurant coupe: toute la suite repondrait 403.
           return {
             select: () => ({
-              eq: () => ({ is: () => ({ single: () => Promise.resolve({ data: { id: 't1' } }) }) }),
+              eq: () => ({
+                is: () => ({
+                  single: () => Promise.resolve({ data: tenantRow }),
+                }),
+              }),
             }),
           };
         }
@@ -144,6 +164,7 @@ describe('POST /api/orders/mutations (idempotency)', () => {
     insertResult = { error: null };
     existingProcessedAt = null;
     staleTakeoverRow = null;
+    tenantRow = { ...LIGNE_SERVANTE };
   });
 
   it('runs the action once on a fresh request', async () => {
@@ -268,5 +289,91 @@ describe('POST /api/orders/mutations (idempotency)', () => {
 
     expect(mockSettlementLimitCheck).toHaveBeenCalled();
     expect(mockRateLimitCheck).not.toHaveBeenCalled();
+  });
+});
+
+// --- Coupure du restaurant ------------------------------------
+/**
+ * Cette route delegue a `actionMarkOrderPaid`, `actionRefundOrder`,
+ * `actionCompOrder`, `actionUpdateOrderStatus`: aucun de ces chemins ne
+ * consultait l'etat de l'abonnement. Un restaurant gele encaissait,
+ * remboursait et soldait ses tables. Meme cause que sur `/api/orders/pos`: le
+ * verrou du middleware ne garde que les PAGES, jamais `/api/*`.
+ */
+describe('POST /api/orders/mutations - coupure du restaurant', () => {
+  const rid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+  const oid = 'c9bf9e57-1685-4c89-bafb-ff5af830be8a';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockSettlementLimitCheck.mockResolvedValue({ success: true });
+    insertResult = { error: null };
+    existingProcessedAt = null;
+    staleTakeoverRow = null;
+    tenantRow = { ...LIGNE_SERVANTE };
+  });
+
+  afterEach(() => {
+    tenantRow = { ...LIGNE_SERVANTE };
+  });
+
+  it.each([
+    ['gele', { subscription_status: 'frozen' }],
+    ['resilie', { subscription_status: 'cancelled' }],
+    ['suspendu par le super-admin', { suspended_at: '2026-11-01T00:00:00Z' }],
+    ['desactive', { is_active: false }],
+  ])('pay: refuse en 403 quand le restaurant est %s', async (_cas, etat) => {
+    tenantRow = { ...LIGNE_SERVANTE, ...etat };
+    mockActionMarkPaid.mockResolvedValue({ success: true, paid: true });
+
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockActionMarkPaid).not.toHaveBeenCalled();
+    // La cle d'idempotence ne doit PAS etre consommee: sinon le rejeu d'apres
+    // degel repondrait "deja traite" et l'encaissement serait perdu.
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('status: refuse aussi un simple changement de statut', async () => {
+    tenantRow = { ...LIGNE_SERVANTE, subscription_status: 'frozen' };
+    mockActionStatus.mockResolvedValue({ success: true });
+
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'status', client_request_id: rid, orderId: oid, status: 'delivered' }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockActionStatus).not.toHaveBeenCalled();
+  });
+
+  it('laisse passer un restaurant en retard de paiement', async () => {
+    tenantRow = { ...LIGNE_SERVANTE, subscription_status: 'past_due' };
+    mockActionMarkPaid.mockResolvedValue({ success: true, paid: true });
+
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockActionMarkPaid).toHaveBeenCalled();
+  });
+
+  it('repond 404 quand le restaurant est introuvable ou supprime', async () => {
+    tenantRow = null;
+
+    const { POST } = await import('@/app/api/orders/mutations/route');
+    const res = await POST(
+      post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+    );
+
+    expect(res.status).toBe(404);
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 });

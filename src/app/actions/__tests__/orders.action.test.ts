@@ -10,7 +10,7 @@ vi.mock('@/lib/logger', () => ({
 // Authenticated supabase client used for the tenant plan lookup.
 function makeChain(resolved: unknown) {
   const chain: Record<string, unknown> = {};
-  for (const m of ['select', 'eq']) chain[m] = vi.fn(() => chain);
+  for (const m of ['select', 'eq', 'is']) chain[m] = vi.fn(() => chain);
   chain.maybeSingle = vi.fn().mockResolvedValue(resolved);
   return chain;
 }
@@ -21,6 +21,10 @@ const mockAuthedSupabase = {
         subscription_plan: 'business',
         subscription_status: 'active',
         trial_ends_at: null,
+        // Colonnes de coupure: une fixture qui les omet decrit un restaurant
+        // COUPE (assertTenantServing echoue ferme), pas un restaurant normal.
+        is_active: true,
+        suspended_at: null,
       },
     }),
   ),
@@ -64,7 +68,13 @@ vi.mock('@/services/order-annotation.service', () => ({
   createOrderAnnotationService: vi.fn(() => ({})),
 }));
 
-vi.mock('@/lib/plans/features', () => ({ canAccessFeature: vi.fn(() => false) }));
+// `tenantLockReason` (coupure du restaurant) lit `isSubscriptionUsable` dans ce
+// meme module: un mock qui ne rend que `canAccessFeature` le fait echouer en
+// "Erreur interne". On garde donc la vraie implementation du reste du module.
+vi.mock('@/lib/plans/features', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/plans/features')>()),
+  canAccessFeature: vi.fn(() => false),
+}));
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
 const TENANT_ID = '22222222-2222-4222-a222-222222222222';
@@ -83,6 +93,8 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
           subscription_plan: 'business',
           subscription_status: 'active',
           trial_ends_at: null,
+          is_active: true,
+          suspended_at: null,
         },
       }),
     );
@@ -201,4 +213,74 @@ describe('actionCompOrder - manager gating + audit', () => {
     expect(result.success).toBe(true);
     expect(mockAuditLog).not.toHaveBeenCalled();
   });
+});
+
+/**
+ * Coupure du restaurant sur les Server Actions.
+ *
+ * `OrderPaymentPanel` et `CompOrderDialog` appellent ces actions EN DIRECT,
+ * sans passer par `/api/orders/mutations`: la coupure posee sur la route ne
+ * les couvrait pas. Et le middleware ne refuse que `frozen`, `is_active =
+ * false` et `suspended_at` - pour `cancelled`, la page admin se chargeait et
+ * l'argent bougeait encore. Ces tests figent le refus et, surtout, que le
+ * service d'encaissement n'est JAMAIS atteint.
+ */
+describe('actions d argent - coupure du restaurant', () => {
+  const COUPES = ['frozen', 'cancelled', 'paused', 'unpaid', 'incomplete'] as const;
+
+  function brancherTenant(statut: string) {
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: mockAuthedSupabase,
+      user: { id: 'user-9', email: 'boss@resto.test' },
+      adminUserId: 'admin-9',
+    });
+    mockAuthedSupabase.from.mockReturnValue(
+      makeChain({
+        data: {
+          subscription_plan: 'business',
+          subscription_status: statut,
+          trial_ends_at: null,
+          is_active: true,
+          suspended_at: null,
+        },
+        error: null,
+      }),
+    );
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each(COUPES)('refuse d offrir une commande quand le restaurant est %s', async (statut) => {
+    brancherTenant(statut);
+    const { actionCompOrder } = await import('@/app/actions/orders');
+    const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
+
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(result.success).toBeUndefined();
+    // Le point qui compte: l'argent n'a pas bouge.
+    expect(mockCompOrder).not.toHaveBeenCalled();
+    expect(mockAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('refuse de changer le statut d une commande quand le restaurant est coupe', async () => {
+    brancherTenant('cancelled');
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(['trial', 'past_due'] as const)(
+    'laisse offrir une commande quand le restaurant est %s',
+    async (statut) => {
+      brancherTenant(statut);
+      mockCompOrder.mockResolvedValue({ summary: { paymentStatus: 'comp' }, comped: true });
+      const { actionCompOrder } = await import('@/app/actions/orders');
+      const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
+
+      expect(result.success).toBe(true);
+      expect(mockCompOrder).toHaveBeenCalled();
+    },
+  );
 });

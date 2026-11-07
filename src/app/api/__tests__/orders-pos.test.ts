@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NextResponse } from 'next/server';
 import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
@@ -105,8 +105,26 @@ vi.mock('@/lib/menu-items-query', () => ({
 // --- Admin Supabase client mock (chainable) --------------------
 // admin_users -> single(); tenants -> single(); notifications -> insert() thenable.
 const mockAdminUserRow = { data: { id: 'server-1', tenant_id: 'tenant-abc', role: 'cashier' } };
-const mockTenantRow = {
+interface MockTenantRow {
+  is_active: boolean;
+  suspended_at: string | null;
+  currency: string;
+  tax_rate: number;
+  service_charge_rate: number;
+  enable_tax: boolean;
+  enable_service_charge: boolean;
+  subscription_plan: string;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+}
+
+const mockTenantRow: { data: MockTenantRow | null; error: null } = {
   data: {
+    // Verrous de coupure: la caisse les lit maintenant AVANT tout effet de bord.
+    // Une fixture qui les omet decrit un restaurant coupe, pas un restaurant qui
+    // sert - et ferait echouer toute cette suite en 403.
+    is_active: true,
+    suspended_at: null,
     currency: 'XAF',
     tax_rate: 0,
     service_charge_rate: 0,
@@ -259,5 +277,148 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
         expect.objectContaining({ tags: { area: 'inventory-destock' } }),
       );
     });
+  });
+});
+
+// --- Test Suite - coupure du restaurant -----------------------
+/**
+ * Cette route n'a longtemps porte AUCUNE coupure. Elle lisait bien
+ * `subscription_status`, mais seulement pour choisir les fonctionnalites du
+ * plan - et un restaurant gele retombe sur `starter`, dont `canAccessPOS` vaut
+ * `true`. Un restaurant gele, suspendu ou desactive encaissait donc
+ * normalement, alors que le canal convive etait coupe depuis F6/CTR7-1. Le
+ * verrou du middleware ne pouvait pas rattraper ca: il ne garde que les PAGES.
+ */
+describe('POST /api/orders/pos - coupure du restaurant', () => {
+  const ligneServante = { ...(mockTenantRow.data as MockTenantRow) };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockTenantRow.data = { ...ligneServante };
+    mockRateLimitCheck.mockResolvedValue({ success: true });
+    mockGetAuthUser.mockResolvedValue({
+      tenantId: 'tenant-abc',
+      user: { id: 'user-1' },
+      role: 'cashier',
+    });
+    mockFindByClientRequestId.mockResolvedValue(null);
+    mockFetchMenuItems.mockResolvedValue({
+      data: [
+        {
+          id: MENU_ITEM_ID,
+          name: 'Pizza',
+          name_en: null,
+          price: 5000,
+          is_available: true,
+          category_id: 'cat-1',
+        },
+      ],
+      error: null,
+    });
+    mockValidateOrderItems.mockResolvedValue({
+      validatedTotal: 10000,
+      verifiedPrices: new Map(),
+      itemCategoryMap: new Map(),
+    });
+    mockDeterminePreparationZone.mockResolvedValue({
+      orderZone: 'kitchen',
+      categoryZoneMap: new Map(),
+    });
+    mockCalculateOrderTotal.mockReturnValue({
+      subtotal: 10000,
+      taxAmount: 0,
+      serviceChargeAmount: 0,
+      discountAmount: 0,
+      total: 10000,
+    });
+    mockCreateOrderWithItems.mockResolvedValue({
+      orderId: 'order-pos-1',
+      orderNumber: 'POS-001',
+      total: 10000,
+      deduplicated: false,
+    });
+  });
+
+  afterEach(() => {
+    mockTenantRow.data = { ...ligneServante };
+  });
+
+  const casCoupes: [string, Partial<typeof ligneServante>][] = [
+    ['gele', { subscription_status: 'frozen' }],
+    ['resilie', { subscription_status: 'cancelled' }],
+    ['suspendu par le super-admin', { suspended_at: '2026-11-01T00:00:00Z' }],
+    ['desactive', { is_active: false }],
+  ];
+
+  it.each(casCoupes)(
+    'refuse en 403 et ne cree AUCUNE commande quand le restaurant est %s',
+    async (_cas, etat) => {
+      mockTenantRow.data = { ...ligneServante, ...etat };
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest(validPosBody()));
+      const { status } = await parseResponse(response);
+
+      expect(status).toBe(403);
+      // Le coeur du constat: pas de commande, donc pas de `payment_status: paid`,
+      // pas de ligne dans `payments`, pas de session de table soldee.
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+      expect(mockDestockOrder).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refuse AVANT le rejeu hors ligne: une file d'attente ne peut pas encaisser apres le gel", async () => {
+    // LE PLACEMENT EST LA MOITIE DU CORRECTIF. Le chemin `client_request_id`
+    // rappelle `applyPosFinalState` (donc le passage a `paid`) AVANT la lecture
+    // de configuration du restaurant. Une coupure posee la-bas laisserait une
+    // tablette hors ligne encaisser toute sa file apres le gel.
+    mockTenantRow.data = { ...ligneServante, subscription_status: 'frozen' };
+    mockFindByClientRequestId.mockResolvedValue({
+      orderId: 'order-deja-la',
+      orderNumber: 'POS-000',
+      total: 10000,
+    });
+
+    const { POST } = await import('@/app/api/orders/pos/route');
+    const response = await POST(
+      createMockRequest({
+        ...validPosBody(),
+        payment_method: 'cash',
+        client_request_id: '22222222-2222-4222-a222-222222222222',
+      }),
+    );
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(403);
+    // La preuve que la coupure est en amont: le chemin d'idempotence n'est
+    // meme pas consulte.
+    expect(mockFindByClientRequestId).not.toHaveBeenCalled();
+  });
+
+  it.each([['trial'], ['past_due']])(
+    'laisse encaisser un restaurant en statut %s',
+    async (statut) => {
+      // `past_due` doit rester servant: la relance Stripe est en cours et le
+      // cron de gel le borne. Couper ici couperait un client qui va payer.
+      mockTenantRow.data = { ...ligneServante, subscription_status: statut };
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest(validPosBody()));
+      const { status } = await parseResponse(response);
+
+      expect(status).toBe(200);
+      expect(mockCreateOrderWithItems).toHaveBeenCalled();
+    },
+  );
+
+  it('repond 404 quand le restaurant est introuvable ou supprime', async () => {
+    mockTenantRow.data = null;
+
+    const { POST } = await import('@/app/api/orders/pos/route');
+    const response = await POST(createMockRequest(validPosBody()));
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(404);
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
   });
 });
