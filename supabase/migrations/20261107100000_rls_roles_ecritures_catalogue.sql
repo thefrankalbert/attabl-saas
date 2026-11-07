@@ -51,6 +51,73 @@
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
+-- 0. La regle d'ecriture, ecrite UNE fois
+-- ---------------------------------------------------------------------------
+-- Une premiere version repetait le meme bloc EXISTS dans douze policies, et ne
+-- verifiait QUE le role. L'application, elle, resout une permission sur TROIS
+-- niveaux (`hasPermission`): permissions individuelles de l'employe, puis
+-- override du role pour ce tenant, puis matrice par defaut. Consequence du
+-- role seul: un gerant a qui le proprietaire a RETIRE `menu.edit` restait
+-- refuse par l'application mais ACCEPTE par la base - le trou subsistait pour
+-- lui.
+--
+-- Les deux premiers niveaux vivent en base (`admin_users.custom_permissions`,
+-- `role_permissions.permissions`): cette fonction les lit. Le TROISIEME, la
+-- matrice par defaut, vit en TypeScript (`src/lib/permissions.ts`). Le
+-- recopier en SQL creerait une deuxieme source de verite qui divergerait -
+-- exactement le defaut que cette migration repare. La fonction s'arrete donc
+-- a la garde de role (owner/admin/manager, celle que les Server Actions
+-- imposent), et ne fait que REFUSER DAVANTAGE quand un refus explicite est
+-- inscrit en base. Elle n'autorise jamais plus que le role.
+--
+-- `owner` court-circuite, comme dans `hasPermission`.
+--
+-- SECURITY DEFINER: la fonction lit `admin_users` et `role_permissions`, dont
+-- le RLS masquerait les lignes a l'appelant. `search_path` est fige. EXECUTE
+-- est accorde a `anon` ET `authenticated`: une policy d'ecriture est evaluee
+-- pour le role qui tente l'ecriture, et un refus d'EXECUTE casserait le RLS au
+-- lieu de le durcir (lecon des helpers SECDEF du depot).
+--
+-- Comparaison a la chaine `<> 'false'` et non cast en booleen: un cast sur une
+-- valeur inattendue leverait une erreur au milieu d'une policy. Un booleen
+-- JSON se rend 'true' ou 'false', donc la lecture est fidele, et toute autre
+-- valeur est traitee comme "non refuse".
+CREATE OR REPLACE FUNCTION public.has_tenant_write_permission(p_tenant uuid, p_perm text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.admin_users au
+    LEFT JOIN public.role_permissions rp
+      ON rp.tenant_id = au.tenant_id AND rp.role = au.role
+    WHERE au.user_id = (SELECT auth.uid())
+      AND au.tenant_id = p_tenant
+      AND (au.is_active IS NULL OR au.is_active = true)
+      AND au.deleted_at IS NULL
+      AND (
+        au.role = 'owner'
+        OR (
+          au.role = ANY (ARRAY['admin', 'manager'])
+          AND CASE
+                WHEN au.custom_permissions ? p_perm
+                  THEN (au.custom_permissions ->> p_perm) <> 'false'
+                WHEN rp.permissions ? p_perm
+                  THEN (rp.permissions ->> p_perm) <> 'false'
+                ELSE true
+              END
+        )
+      )
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.has_tenant_write_permission(uuid, text)
+  TO anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- 1. menu_items
 -- ---------------------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can manage own tenant menu items" ON public.menu_items;
@@ -64,37 +131,13 @@ CREATE POLICY "Members can read own tenant menu items"
 CREATE POLICY "Menu managers can update own tenant menu items"
   ON public.menu_items
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menu_items.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menu_items.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(menu_items.tenant_id, 'menu.edit'))
+  WITH CHECK (public.has_tenant_write_permission(menu_items.tenant_id, 'menu.edit'));
 
 CREATE POLICY "Menu managers can delete own tenant menu items"
   ON public.menu_items
   FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menu_items.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(menu_items.tenant_id, 'menu.edit'));
 
 -- ---------------------------------------------------------------------------
 -- 2. categories
@@ -110,37 +153,13 @@ CREATE POLICY "Members can read own tenant categories"
 CREATE POLICY "Menu managers can update own tenant categories"
   ON public.categories
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = categories.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = categories.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(categories.tenant_id, 'menu.edit'))
+  WITH CHECK (public.has_tenant_write_permission(categories.tenant_id, 'menu.edit'));
 
 CREATE POLICY "Menu managers can delete own tenant categories"
   ON public.categories
   FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = categories.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(categories.tenant_id, 'menu.edit'));
 
 -- ---------------------------------------------------------------------------
 -- 3. menus
@@ -155,50 +174,18 @@ CREATE POLICY "Members can read own tenant menus"
 CREATE POLICY "Menu managers can insert own tenant menus"
   ON public.menus
   FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menus.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  WITH CHECK (public.has_tenant_write_permission(menus.tenant_id, 'menu.edit'));
 
 CREATE POLICY "Menu managers can update own tenant menus"
   ON public.menus
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menus.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menus.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(menus.tenant_id, 'menu.edit'))
+  WITH CHECK (public.has_tenant_write_permission(menus.tenant_id, 'menu.edit'));
 
 CREATE POLICY "Menu managers can delete own tenant menus"
   ON public.menus
   FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = menus.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(menus.tenant_id, 'menu.edit'));
 
 -- ---------------------------------------------------------------------------
 -- 4. tables (configuration de salle)
@@ -216,50 +203,18 @@ CREATE POLICY "Members can read own tenant tables"
 CREATE POLICY "Table managers can insert own tenant tables"
   ON public.tables
   FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = tables.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  WITH CHECK (public.has_tenant_write_permission(tables.tenant_id, 'orders.manage'));
 
 CREATE POLICY "Table managers can update own tenant tables"
   ON public.tables
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = tables.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = tables.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(tables.tenant_id, 'orders.manage'))
+  WITH CHECK (public.has_tenant_write_permission(tables.tenant_id, 'orders.manage'));
 
 CREATE POLICY "Table managers can delete own tenant tables"
   ON public.tables
   FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users au
-      WHERE au.user_id = (SELECT auth.uid())
-        AND au.tenant_id = tables.tenant_id
-        AND au.role = ANY (ARRAY['owner', 'admin', 'manager'])
-        AND (au.is_active IS NULL OR au.is_active = true)
-    )
-  );
+  USING (public.has_tenant_write_permission(tables.tenant_id, 'orders.manage'));
 
 -- ============================================================================
 -- ROLLBACK (si une ecriture legitime se revelait cassee)
@@ -272,3 +227,4 @@ CREATE POLICY "Table managers can delete own tenant tables"
 --   WITH CHECK (tenant_id = ANY (get_my_tenant_ids_array()));
 -- (idem categories et menus; pour tables, condition
 --  `tenant_id IN (SELECT get_my_tenant_ids())`.)
+-- DROP FUNCTION IF EXISTS public.has_tenant_write_permission(uuid, text);

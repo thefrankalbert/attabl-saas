@@ -21,7 +21,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(11);
+select plan(14);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -163,6 +163,63 @@ select lives_ok(
   $$insert into public.menus (tenant_id, name, slug, is_active)
     values ('a3333333-3333-3333-3333-333333333333', 'Nouveau menu', 'nouveau-menu', true)$$,
   'catalogue non-regression: un manager cree un menu'
+);
+
+-- ===========================================================================
+-- PARITE AVEC L'APPLICATION: une permission RETIREE doit mordre en base aussi
+-- ===========================================================================
+-- L'application resout une permission sur trois niveaux. Verifier le seul role
+-- laissait un gerant a qui `menu.edit` a ete RETIRE ecrire en base, alors que
+-- l'application le refuse. Les deux niveaux presents en base sont donc lus.
+reset role;
+
+-- Niveau 1: permission individuelle retiree a CE gerant.
+update public.admin_users
+   set custom_permissions = '{"menu.edit": false}'::jsonb
+ where user_id = 'a1111111-1111-1111-1111-111111111111';
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a1111111-1111-1111-1111-111111111111"}';
+
+update public.menu_items set price = 777 where id = 'a5555555-5555-5555-5555-555555555555';
+select is(
+  (select price::int from public.menu_items where id = 'a5555555-5555-5555-5555-555555555555'),
+  12000,
+  'parite: un manager dont menu.edit est RETIRE ne peut plus modifier un prix'
+);
+
+-- Niveau 2: permission rendue a l'individu, mais retiree au ROLE pour ce
+-- tenant. Le niveau 1 gagne, exactement comme dans hasPermission.
+reset role;
+update public.admin_users
+   set custom_permissions = '{"menu.edit": true}'::jsonb
+ where user_id = 'a1111111-1111-1111-1111-111111111111';
+insert into public.role_permissions (tenant_id, role, permissions)
+values ('a3333333-3333-3333-3333-333333333333', 'manager', '{"menu.edit": false}'::jsonb);
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a1111111-1111-1111-1111-111111111111"}';
+
+update public.menu_items set price = 888 where id = 'a5555555-5555-5555-5555-555555555555';
+select is(
+  (select price::int from public.menu_items where id = 'a5555555-5555-5555-5555-555555555555'),
+  888,
+  'parite: la permission individuelle (true) bat le refus pose sur le role'
+);
+
+-- Et l'inverse: sans permission individuelle, le refus du ROLE mord.
+reset role;
+update public.admin_users set custom_permissions = null
+ where user_id = 'a1111111-1111-1111-1111-111111111111';
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a1111111-1111-1111-1111-111111111111"}';
+
+update public.menu_items set price = 999 where id = 'a5555555-5555-5555-5555-555555555555';
+select is(
+  (select price::int from public.menu_items where id = 'a5555555-5555-5555-5555-555555555555'),
+  888,
+  'parite: un refus pose sur le ROLE du tenant mord sans permission individuelle'
 );
 
 select * from finish();
