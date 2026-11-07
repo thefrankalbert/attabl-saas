@@ -30,11 +30,14 @@ export class TenantLockedError extends AuthError {
  * gate donc pas ces chemins, exactement comme gater la page ne gate pas la
  * mutation (meme lecon que `isFeatureEntitled`).
  *
- * La garde du middleware ne rattrape pas le trou: `isTenantAccessLocked` dans
- * `src/proxy.ts` ne refuse que `frozen`, `is_active = false` et
- * `suspended_at`. Pour `cancelled`, `paused`, `unpaid`, `incomplete` et
- * `pending`, la page admin se charge normalement, l'action part, et l'argent
- * bouge. C'est ce trou que cette fonction ferme.
+ * CETTE GARDE RESTE NECESSAIRE MEME DEPUIS QUE LE PROXY COUVRE TOUS LES
+ * STATUTS. Le middleware refuse desormais aussi `cancelled` et `paused`, parce
+ * que `is_active` suit le statut a chaque ecriture et que la contrainte
+ * `tenants_abonnement_inutilisable_implique_inactif` l'impose en base. Mais un
+ * middleware garde des REQUETES DE PAGE: il ne voit pas un POST d'Action ID
+ * emis par un onglet deja ouvert, ni un appel reconstruit a la main. La regle
+ * ne change pas: gater la route ne gate pas l'action, gater la page ne gate pas
+ * la mutation. C'est cette fonction qui garde la mutation.
  *
  * ELLE ECHOUE FERMEE. Ligne absente, tenant supprime, erreur de lecture: on
  * refuse. Une coupure qui s'ouvre sur une panne de lecture ne coupe rien.

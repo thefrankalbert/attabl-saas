@@ -91,8 +91,10 @@ describe('createPlatformAdminService', () => {
   });
 
   it('restoreTenant clears the lifecycle fields and audits restore_tenant', async () => {
+    // `subscription_status` est NOT NULL en base: un decor sans statut testait
+    // un etat impossible, et masquait le fait que la garde doit le lire.
     const { client, updates, inserts } = makeAdmin({
-      tenants: { row: { name: 'Resto', slug: 'resto' } },
+      tenants: { row: { name: 'Resto', slug: 'resto', subscription_status: 'active' } },
     });
 
     await createPlatformAdminService(client).restoreTenant('t-1', actor);
@@ -162,6 +164,80 @@ describe('createPlatformAdminService', () => {
     expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
   });
 
+  // ELARGISSEMENT DU 2026-11-07. La garde ne refusait que `frozen`, alors que
+  // `isSubscriptionUsable` n'autorise que `trial`, `active` et `past_due`. Un
+  // restaurant RESILIE ou EN PAUSE passait donc la garde, et "reactiver" depuis
+  // la console le remettait en service sans qu'il paie.
+  it.each([
+    ['resilie', 'cancelled', /resilie/],
+    ['en pause', 'paused', /en pause/],
+  ])(
+    'unsuspendTenant REFUSE de reactiver un restaurant %s, et le dit en clair',
+    async (_nom, statut, messageAttendu) => {
+      const { client, updates } = makeAdmin({
+        tenants: {
+          row: { name: 'Resto', slug: 'resto', subscription_status: statut, freeze_reason: null },
+        },
+      });
+
+      await expect(
+        createPlatformAdminService(client).unsuspendTenant('t-1', actor),
+      ).rejects.toThrow(messageAttendu);
+      // Un refus qui ecrit quand meme ne protege rien.
+      expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+    },
+  );
+
+  it.each([
+    ['resilie', 'cancelled'],
+    ['en pause', 'paused'],
+  ])('restoreTenant REFUSE aussi de restaurer un restaurant %s', async (_nom, statut) => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: statut, freeze_reason: null },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).restoreTenant('t-1', actor)).rejects.toThrow(
+      ServiceError,
+    );
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
+  // Le message du GEL ne doit pas etre remplace par celui de la resiliation: il
+  // nomme la cause, et c'est elle qui dit a l'operateur quoi faire.
+  it('un restaurant gele garde son message de gel, pas celui de la resiliation', async () => {
+    const { client } = makeAdmin({
+      tenants: {
+        row: {
+          name: 'Resto',
+          slug: 'resto',
+          subscription_status: 'frozen',
+          freeze_reason: 'dispute',
+        },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).unsuspendTenant('t-1', actor)).rejects.toThrow(
+      /gele \(cause: dispute\)/,
+    );
+  });
+
+  // Fail-closed, sans inventer de cause: un statut absent ou inconnu refuse,
+  // mais ne s'annonce pas comme une resiliation.
+  it('un statut inconnu refuse sans pretendre que le restaurant est resilie', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: 'wat', freeze_reason: null },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).unsuspendTenant('t-1', actor)).rejects.toThrow(
+      /statut: wat/,
+    );
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
   // NON-REGRESSION: les restaurants NON geles doivent toujours pouvoir etre
   // reactives. Sans ce cas, on aurait pu "proteger" en bloquant tout le monde.
   it('unsuspendTenant reactive normalement un restaurant non gele', async () => {
@@ -178,6 +254,22 @@ describe('createPlatformAdminService', () => {
       'unsuspend_tenant',
     );
   });
+
+  // La liste entitlante vit dans `isSubscriptionUsable`. Ces trois cas la
+  // figent du cote de la garde: si elle se resserre, un client qui paie se
+  // retrouve coupe depuis la console.
+  it.each(['trial', 'active', 'past_due'])(
+    'non-regression: un restaurant en %s se reactive toujours',
+    async (statut) => {
+      const { client, updates } = makeAdmin({
+        tenants: { row: { name: 'Resto', slug: 'resto', subscription_status: statut } },
+      });
+
+      await createPlatformAdminService(client).unsuspendTenant('t-1', actor);
+
+      expect(updates.find((u) => u.table === 'tenants')!.payload.is_active).toBe(true);
+    },
+  );
 
   it('banAdminUser blocks login and audits ban_user with the tenant scope', async () => {
     const { client, updates, inserts } = makeAdmin({
