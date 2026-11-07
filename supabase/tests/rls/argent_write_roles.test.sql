@@ -22,7 +22,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -44,6 +44,20 @@ values
 insert into public.orders (id, tenant_id, order_number, status, payment_status, subtotal, total)
 values ('c4444444-4444-4444-4444-444444444444', 'c3333333-3333-3333-3333-333333333333',
         'CMD-TEST-1', 'pending', 'pending', 29000, 29000);
+
+insert into public.categories (id, tenant_id, name)
+values ('c8888888-8888-8888-8888-888888888888', 'c3333333-3333-3333-3333-333333333333', 'Cat');
+insert into public.menu_items (id, tenant_id, category_id, name, price)
+values ('c7777777-7777-7777-7777-777777777777', 'c3333333-3333-3333-3333-333333333333',
+        'c8888888-8888-8888-8888-888888888888', 'Plat', 29000);
+
+-- Un SECOND restaurant, dont notre gerant n'est pas membre: c'est lui qui
+-- prouve que le lien a la commande parente tient.
+insert into public.tenants (id, slug, name, is_active)
+values ('c5555555-5555-5555-5555-555555555555', 'tenant-argent-voisin', 'Voisin', true);
+insert into public.orders (id, tenant_id, order_number, status, payment_status, subtotal, total)
+values ('c6666666-6666-6666-6666-666666666666', 'c5555555-5555-5555-5555-555555555555',
+        'CMD-VOISIN', 'pending', 'pending', 50000, 50000);
 
 -- ===========================================================================
 -- Le WAITER: il lit, il ne touche plus a l argent
@@ -138,6 +152,34 @@ select lives_ok(
   $$insert into public.orders (tenant_id, order_number, subtotal, total)
     values ('c3333333-3333-3333-3333-333333333333', 'CMD-TEST-2', 5000, 5000)$$,
   'argent non-regression: un manager cree une commande'
+);
+
+-- ===========================================================================
+-- ISOLATION: on ne greffe pas une ligne sur la commande d un AUTRE restaurant
+-- ===========================================================================
+-- Les policies d'origine liaient la ligne a sa commande parente. Une premiere
+-- version de la migration ne regardait que `order_items.tenant_id`, une colonne
+-- que le CLIENT fournit: le declencheur ne la remplit que si elle est NULL
+-- (BEFORE INSERT seulement), et aucune contrainte composite n'existe. Un gerant
+-- pouvait donc declarer SON tenant en pointant la commande d'un autre.
+select throws_ok(
+  $$insert into public.order_items
+      (tenant_id, order_id, menu_item_id, price_at_order, item_name)
+    values ('c3333333-3333-3333-3333-333333333333',
+            'c6666666-6666-6666-6666-666666666666',
+            'c7777777-7777-7777-7777-777777777777', 1, 'Pirate')$$,
+  '42501',
+  null,
+  'isolation: un manager ne greffe PAS une ligne sur la commande d un autre restaurant'
+);
+
+select lives_ok(
+  $$insert into public.order_items
+      (tenant_id, order_id, menu_item_id, price_at_order, item_name)
+    values ('c3333333-3333-3333-3333-333333333333',
+            'c4444444-4444-4444-4444-444444444444',
+            'c7777777-7777-7777-7777-777777777777', 29000, 'Plat')$$,
+  'isolation non-regression: un manager ajoute une ligne a SA commande'
 );
 
 -- Parite avec l application: la permission RETIREE mord aussi en base.

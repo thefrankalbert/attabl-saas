@@ -122,21 +122,61 @@ DROP POLICY IF EXISTS "Admins can insert own tenant order items" ON public.order
 DROP POLICY IF EXISTS "Admins can update own tenant order items" ON public.order_items;
 DROP POLICY IF EXISTS "Admins can delete own tenant order items" ON public.order_items;
 
+-- LE LIEN A LA COMMANDE PARENTE EST CONSERVE, et ce n'est pas decoratif. Les
+-- policies d'origine ne regardaient QUE la commande parente
+-- (`EXISTS (... o.id = order_items.order_id AND o.tenant_id = ANY (...))`).
+-- Une premiere version de ce fichier l'avait remplace par le seul
+-- `order_items.tenant_id` - une colonne que le CLIENT fournit a l'insertion.
+-- Mesure: le declencheur `trg_order_items_tenant_id` est BEFORE INSERT
+-- SEULEMENT, et ne remplit la colonne que si elle est NULL; aucune contrainte
+-- composite (order_id, tenant_id) n'existe. Un gerant pouvait donc declarer
+-- SON tenant tout en pointant la commande d'un AUTRE restaurant, et y ajouter
+-- des lignes. Ma version etait donc PLUS FAIBLE que celle qu'elle remplacait.
+-- Les deux conditions sont desormais exigees: la permission sur le tenant de
+-- la ligne, ET la coherence avec la commande parente.
 CREATE POLICY "Order managers can insert own tenant order items"
   ON public.order_items
   FOR INSERT
-  WITH CHECK (public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage'));
+  WITH CHECK (
+    public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage')
+    AND EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_items.order_id
+        AND o.tenant_id = order_items.tenant_id
+    )
+  );
 
 CREATE POLICY "Order managers can update own tenant order items"
   ON public.order_items
   FOR UPDATE
-  USING (public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage'))
-  WITH CHECK (public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage'));
+  USING (
+    public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage')
+    AND EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_items.order_id
+        AND o.tenant_id = order_items.tenant_id
+    )
+  )
+  WITH CHECK (
+    public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage')
+    AND EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_items.order_id
+        AND o.tenant_id = order_items.tenant_id
+    )
+  );
 
 CREATE POLICY "Order managers can delete own tenant order items"
   ON public.order_items
   FOR DELETE
-  USING (public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage'));
+  USING (
+    public.has_tenant_write_permission(order_items.tenant_id, 'orders.manage')
+    AND EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_items.order_id
+        AND o.tenant_id = order_items.tenant_id
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- 3. payments (ledger append-only: INSERT seulement, par construction)
