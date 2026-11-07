@@ -592,11 +592,13 @@
       "section3Title": "3. Purposes",
       "section3Body": "Data is used for: managing your account, providing the service, billing, customer support, and improving the platform.",
       "section4Title": "4. Hosting and security",
-      "section4Body": "Data is hosted by Supabase (secure cloud infrastructure). The application is deployed on Vercel. All communications are encrypted (HTTPS/TLS).",
+      "section4Body": "Data is hosted in the European Union: the database with Supabase in Ireland (eu-west-1 region), the application with Vercel in Paris (cdg1 region). All communications are encrypted (HTTPS).",
       "section5Title": "5. Your rights",
       "section5Body": "Under the GDPR, you have a right of access, rectification, deletion and portability of your data. Contact us at",
       "section6Title": "6. Cookies",
-      "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used."
+      "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used.",
+      "section7Title": "7. Retention period",
+      "section7Body": "Your account and venue data is kept for as long as your subscription lasts. A diner's personal details on an order (name, phone, delivery address) are erased automatically 90 days after the order: the order itself is kept without those details, because commercial law requires accounting records to be retained. Login logs are deleted after 90 days. After your subscription ends, you may request deletion of your account at any time."
     },
     "features": {
       "metaTitle": "Features - Attabl",

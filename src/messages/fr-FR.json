@@ -592,11 +592,13 @@
       "section3Title": "3. Finalités",
       "section3Body": "Les données sont utilisées pour : la gestion de votre compte, la fourniture du service, la facturation, le support client, et l'amélioration de la plateforme.",
       "section4Title": "4. Hébergement et sécurité",
-      "section4Body": "Les données sont hébergées par Supabase (infrastructure cloud sécurisée). L'application est déployée sur Vercel. Toutes les communications sont chiffrées (HTTPS/TLS).",
+      "section4Body": "Les donnees sont hebergees dans l'Union europeenne : la base de donnees chez Supabase en Irlande (region eu-west-1), l'application chez Vercel a Paris (region cdg1). Toutes les communications sont chiffrees (HTTPS).",
       "section5Title": "5. Vos droits",
       "section5Body": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données. Contactez-nous à",
       "section6Title": "6. Cookies",
-      "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé."
+      "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé.",
+      "section7Title": "7. Duree de conservation",
+      "section7Body": "Les donnees de votre compte et de votre etablissement sont conservees pendant toute la duree de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, telephone, adresse de livraison) sont effacees automatiquement 90 jours apres la commande : la commande, elle, est conservee sans ces informations, car le droit commercial impose de garder les pieces comptables. Les journaux de connexion sont supprimes au bout de 90 jours. Apres la resiliation de votre abonnement, vous pouvez demander la suppression de votre compte a tout moment."
     },
     "features": {
       "metaTitle": "Fonctionnalités - Attabl",
