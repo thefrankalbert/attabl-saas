@@ -34,9 +34,22 @@ import type { SubscriptionStatus } from '@/types/billing';
  * `src/proxy.ts` ne refuse que le statut `frozen`, la ou cette definition
  * refuse tout statut non utilisable (`cancelled`, `pending`, `paused`,
  * `unpaid`). Le proxy est donc plus permissif pour les PAGES du tableau de
- * bord. Ce n'est pas une fuite d'argent - tous les chemins d'ecriture passent
- * par ce fichier - mais `src/proxy.ts` est un fichier protege: l'aligner
- * demande une decision explicite.
+ * bord, et `src/proxy.ts` est un fichier protege: l'aligner demande une
+ * decision explicite.
+ *
+ * CETTE DIVERGENCE A COUTE CHER A SOUS-ESTIMER. Une premiere version de ce
+ * commentaire affirmait "ce n'est pas une fuite d'argent, tous les chemins
+ * d'ecriture passent par ce fichier". C'ETAIT FAUX: trois composants de
+ * l'interface admin appellent les Server Actions d'argent EN DIRECT, sans
+ * passer par `/api/orders/mutations` (OrderPaymentPanel -> actionRecordTender
+ * et actionRefundOrder, CompOrderDialog -> actionCompOrder). Pour les cinq
+ * statuts que le proxy laisse passer, l'argent bougeait donc encore. Ferme par
+ * `assertTenantServing` (voir `assert-tenant-serving.ts`), appele dans les
+ * ecritures de service des Server Actions.
+ *
+ * LA LECON, pour la prochaine garde: gater la route ne gate pas l'action, et
+ * gater la page ne gate pas la mutation. Avant d'ecrire qu'un chemin est
+ * couvert, chercher qui appelle la fonction, pas qui appelle la route.
  */
 
 /** Les colonnes a lire pour pouvoir juger. A coller dans le `.select()`. */
