@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError } from '@/services/errors';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { createClient } from '@/lib/supabase/server';
 import type { TableAssignment } from '@/types/admin.types';
 
@@ -17,9 +18,20 @@ const tenantIdSchema = z.string().uuid();
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'orders.manage');
+    const { supabase } = await getAuthenticatedUserForTenant(
+      tenantId,
+      ['owner', 'admin', 'manager'],
+      'orders.manage',
+    );
+    // Coupure du restaurant: assigner un serveur est une ecriture de service.
+    await assertTenantServing(supabase, tenantId);
     return { error: null };
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) {
+      return { error: err.message };
+    }
     if (err instanceof AuthError) {
       return { error: err.status === 401 ? 'Non authentifie' : 'Permissions insuffisantes' };
     }

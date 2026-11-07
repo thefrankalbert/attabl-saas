@@ -8,6 +8,15 @@ import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { MenuItem } from '@/types/admin.types';
 
+// ZONE TACTILE des deux boutons du compteur de quantite. Ils mesurent 26px,
+// la regle du depot (.claude/rules/03) en demande 44 au doigt. Les tailles
+// visibles viennent de la maquette et ne bougent pas: on elargit la zone
+// sensible avec un pseudo-element transparent. 26 + 9 + 9 = 44, et les deux
+// zones ne se chevauchent pas puisque le nombre qui les separe fait au moins
+// 22px de large.
+const ZONE_TACTILE =
+  " relative before:absolute before:-inset-[9px] before:rounded-full before:content-['']";
+
 const PLUS_SHADOW =
   'shadow-[0_4px_6px_-1px_rgba(26,26,26,0.06),0_2px_4px_-2px_rgba(26,26,26,0.04)]';
 
@@ -55,7 +64,7 @@ export function CardAddControl({
             if (qty === 1) removeFromCart(item.id);
             else updateQuantity(item.id, qty - 1);
           }}
-          className="h-[26px] w-[26px] rounded-full bg-[var(--color-surface-alt)] p-0 hover:bg-[var(--color-surface-alt)]"
+          className={`h-[26px] w-[26px] rounded-full bg-[var(--color-surface-alt)] p-0 hover:bg-[var(--color-surface-alt)]${ZONE_TACTILE}`}
         >
           {qty === 1 ? (
             <Tag className="h-[13px] w-[13px] text-[var(--color-promo)]" strokeWidth={2.4} />
@@ -76,7 +85,7 @@ export function CardAddControl({
             e.stopPropagation();
             if (qty < MAX_ITEM_QTY) updateQuantity(item.id, qty + 1);
           }}
-          className="h-[26px] w-[26px] rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] disabled:opacity-40"
+          className={`h-[26px] w-[26px] rounded-full bg-[var(--color-ink)] p-0 hover:bg-[var(--color-ink)] disabled:opacity-40${ZONE_TACTILE}`}
         >
           <Plus className="h-[13px] w-[13px] text-white" strokeWidth={2.6} />
         </Button>
@@ -109,7 +118,12 @@ export function CardAddControl({
           onOpen();
         }
       }}
-      className={`absolute ${pos} flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white p-0 hover:bg-white ${PLUS_SHADOW}`}
+      // ZONE TACTILE. Le cercle reste a 34px, comme la maquette. Mais 34px est
+      // sous le minimum de 44px de la regle du depot (.claude/rules/03), et
+      // c'est le geste PRINCIPAL du produit: ajouter un plat au panier, au
+      // doigt, sur un telephone. On elargit donc la zone sensible a 44x44 avec
+      // un pseudo-element transparent, sans toucher au rendu.
+      className={`absolute ${pos} flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white p-0 hover:bg-white ${PLUS_SHADOW} before:absolute before:-inset-[5px] before:rounded-full before:content-['']`}
     >
       <Plus className="h-[18px] w-[18px] text-[var(--color-ink)]" strokeWidth={2.6} />
     </Button>

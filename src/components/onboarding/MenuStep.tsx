@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { MenuItemRow } from './menu/MenuItemRow';
 import { type Category, buildCategoriesFromData } from './menu/menu-data';
+import { sameCategoryName, suggestedCategoryKeys } from './menu/category-suggestions';
 
 interface MenuStepProps {
   data: OnboardingData;
@@ -25,6 +26,21 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
   const [categories, setCategories] = useState<Category[]>(() =>
     buildCategoriesFromData(data.menuItems),
   );
+
+  // Rubriques encore proposables: ni deja presentes dans la carte, ni au-dela
+  // du plafond de 5 categories. Le plafond ne s'applique pas tant que la
+  // premiere categorie est vide, puisqu'un appui la nomme au lieu d'en creer.
+  const premiereCategorieVide =
+    categories.length === 1 &&
+    categories[0].name.trim() === '' &&
+    categories[0].items.every((item) => !item.name.trim() && !item.price.trim());
+
+  const suggestionsDisponibles =
+    categories.length >= 5 && !premiereCategorieVide
+      ? []
+      : suggestedCategoryKeys(data.establishmentType)
+          .map((key) => ({ key, name: t(`categorySuggestions.${key}`) }))
+          .filter(({ name }) => !categories.some((c) => sameCategoryName(c.name, name)));
 
   const syncToParent = useCallback(
     (cats: Category[]) => {
@@ -56,6 +72,42 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       {
         id: crypto.randomUUID(),
         name: '',
+        expanded: true,
+        items: [{ id: crypto.randomUUID(), name: '', price: '' }],
+      },
+    ];
+    setCategories(updated);
+    syncToParent(updated);
+  };
+
+  /**
+   * Ajoute une rubrique proposee. Devant une case vide, un restaurateur
+   * recopie sa carte papier et cree des sous-categories ("Grillades", "Jus
+   * naturels") la ou on attend des rubriques generales.
+   *
+   * La premiere categorie est pre-creee vide: la nommer plutot qu'en ajouter
+   * une deuxieme, sinon le premier appui laisse une rubrique sans nom en tete
+   * de carte.
+   */
+  const addSuggestedCategory = (name: string) => {
+    const premiereVide =
+      categories.length === 1 &&
+      categories[0].name.trim() === '' &&
+      categories[0].items.every((item) => !item.name.trim() && !item.price.trim());
+
+    if (premiereVide) {
+      const updated = categories.map((c, index) => (index === 0 ? { ...c, name } : c));
+      setCategories(updated);
+      syncToParent(updated);
+      return;
+    }
+
+    if (categories.length >= 5) return;
+    const updated = [
+      ...categories,
+      {
+        id: crypto.randomUUID(),
+        name,
         expanded: true,
         items: [{ id: crypto.randomUUID(), name: '', price: '' }],
       },
@@ -187,6 +239,30 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-app-text-muted">
                 {tSeg(`${family}.catalog`)}
               </p>
+
+              {/* Rubriques proposees. Une suggestion deja utilisee disparait,
+                  et toutes disparaissent une fois le plafond atteint. */}
+              {suggestionsDisponibles.length > 0 && (
+                <div className="mb-5">
+                  <p className="mb-2 text-xs text-app-text-secondary">
+                    {t('categorySuggestionsLabel')}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestionsDisponibles.map(({ key, name }) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant="outline"
+                        onClick={() => addSuggestedCategory(name)}
+                        className="h-auto min-h-[44px] rounded-full border-app-border bg-app-elevated px-3.5 py-2 text-sm font-medium text-app-text-secondary transition-colors hover:bg-app-hover hover:text-app-text"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        {name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {categories.map((category) => {

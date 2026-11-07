@@ -6,6 +6,7 @@ import { createSignupService } from '@/services/signup.service';
 import { ServiceError } from '@/services/errors';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
+import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
       const { data: existingAdminRows, error: adminRowsError } = await supabase
         .from('admin_users')
         .select(
-          'id, tenant_id, is_super_admin, role, tenants(slug, onboarding_completed, created_at)',
+          'id, tenant_id, is_super_admin, role, is_active, deleted_at, tenants(slug, onboarding_completed, created_at)',
         )
         .eq('user_id', session.user.id);
 
@@ -118,26 +119,14 @@ export async function GET(request: Request) {
           logger.warn('Failed to track login', { error: String(loginTrackError) });
         }
 
-        // Platform super-admins only belong to the synthetic __platform tenant
-        // (onboarding_completed=false by design), which would otherwise trip the
-        // needsOnboarding check below. Send them to the platform console instead.
-        const isSuperAdmin = existingAdminRows.some((row) => row.is_super_admin === true);
-        if (isSuperAdmin) {
-          return NextResponse.redirect(`${requestUrl.origin}/admin/platform`);
-        }
-
-        // Resume onboarding if ANY tenant is still unfinished; the /onboarding page
-        // (getState) then opens the most recent unfinished one. Otherwise go to the hub.
-        const needsOnboarding = existingAdminRows.some((row) => {
-          const t = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
-          return (t as { onboarding_completed?: boolean } | null)?.onboarding_completed === false;
-        });
-        if (needsOnboarding) {
-          return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
-        }
-
-        // All authenticated users land on the tenant hub
-        return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
+        // Meme regle de destination que la connexion par mot de passe (voir
+        // `postLoginDestination`): super-admin plateforme -> console, owner ->
+        // annuaire de ses etablissements (ou reprise d'onboarding), tout autre
+        // role -> l'espace de son etablissement. Avant, cette branche envoyait
+        // TOUT LE MONDE sur `/admin/tenants`, qui refuse les non-proprietaires.
+        return NextResponse.redirect(
+          `${requestUrl.origin}${postLoginDestination(mapMembershipRows(existingAdminRows))}`,
+        );
       }
 
       // User has no tenant - create one directly in-process.

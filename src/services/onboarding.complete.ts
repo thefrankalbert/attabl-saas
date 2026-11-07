@@ -173,17 +173,7 @@ export async function completeOnboarding(
     }
 
     // Create all categories in parallel, then their items.
-    // Pre-compute each category's display_order start offset BEFORE the
-    // parallel inserts. A shared mutable counter incremented inside the
-    // Promise.all callbacks would race, producing duplicate or
-    // non-deterministic display_order values across categories.
     const categoryEntries = Array.from(itemsByCategory.entries());
-    let nextItemOrder = 1;
-    const itemOrderStartByIndex = categoryEntries.map(([, items]) => {
-      const start = nextItemOrder;
-      nextItemOrder += items.length;
-      return start;
-    });
     await Promise.all(
       categoryEntries.map(async ([categoryName, items], categoryIndex) => {
         const { data: category, error: catError } = await supabase
@@ -208,15 +198,22 @@ export async function completeOnboarding(
           return;
         }
 
+        // PAS de `display_order` ici: la table `menu_items` n'a pas cette
+        // colonne. PostgREST rejetait TOUT le lot (PGRST204, "Could not find
+        // the 'display_order' column"), si bien que l'onboarding creait les
+        // categories et perdait TOUS les plats saisis. Mesure du 2026-11-06,
+        // parcours complet sur base locale: deux rubriques creees, zero plat.
+        // Les plats sont ordonnes par `created_at` partout ailleurs (voir la
+        // requete de `getCachedMenuData`), l'insertion sequentielle du lot
+        // conserve donc l'ordre de saisie.
         const { error: itemsError } = await supabase.from('menu_items').insert(
-          items.map((item, itemIndex) => ({
+          items.map((item) => ({
             tenant_id: tenantId,
             category_id: category.id,
             name: item.name,
             price: item.price || 0,
             image_url: item.imageUrl || null,
             is_available: true,
-            display_order: itemOrderStartByIndex[categoryIndex] + itemIndex,
           })),
         );
 

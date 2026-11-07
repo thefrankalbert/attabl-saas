@@ -10,6 +10,7 @@ import {
   getClientIp,
 } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
+import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import {
   orderMutationSchema,
   type OrderMutationInput,
@@ -152,6 +153,42 @@ export async function POST(request: Request) {
       }
     }
     if (!tenantId) return NextResponse.json({ error: 'Tenant non identifie' }, { status: 400 });
+
+    // COUPURE DU RESTAURANT - avant la reservation d'idempotence.
+    //
+    // Cette route delegue a `actionMarkOrderPaid`, `actionRefundOrder`,
+    // `actionCompOrder`, `actionUpdateOrderStatus`: aucun de ces chemins ne
+    // consultait l'etat de l'abonnement. Un restaurant gele encaissait,
+    // remboursait et soldait ses tables. Meme cause que sur `/api/orders/pos`:
+    // le verrou du middleware ne garde que les PAGES, jamais `/api/*`.
+    //
+    // Place AVANT la reservation d'idempotence pour deux raisons: une mutation
+    // refusee ne doit pas consommer la cle (sinon le rejeu d'apres degel
+    // repondrait "deja traite" et la mutation serait perdue), et une file
+    // d'attente hors ligne ne doit pas pouvoir encaisser apres le gel.
+    const { data: lockRow, error: lockError } = await supabase
+      .from('tenants')
+      .select(TENANT_LOCK_COLUMNS)
+      .eq('id', tenantId)
+      .is('deleted_at', null)
+      .single();
+
+    if (lockError || !lockRow) {
+      return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
+    }
+
+    const lockReason = tenantLockReason(lockRow);
+    if (lockReason) {
+      logger.warn('Order mutation refused: tenant access locked', {
+        tenantId,
+        reason: lockReason,
+        type: input.type,
+      });
+      return NextResponse.json(
+        { error: 'Ce restaurant est temporairement indisponible' },
+        { status: 403 },
+      );
+    }
 
     // Idempotency: claim the key first. A duplicate (replayed) request must not
     // re-run the action - but "duplicate" only dedupes as SUCCESS if the first

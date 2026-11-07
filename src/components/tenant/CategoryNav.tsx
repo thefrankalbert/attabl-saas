@@ -2,16 +2,12 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { activeCategoryAt, stickyAnchorBottom } from '@/components/tenant/category-scroll-spy';
 
 interface Category {
   id: string;
   name: string;
 }
-
-const OBSERVER_OPTIONS: IntersectionObserverInit = {
-  rootMargin: '-170px 0px -55% 0px',
-  threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
-};
 
 interface CategoryNavProps {
   categories: Category[];
@@ -90,35 +86,64 @@ export default function CategoryNav({
     }
   }, [activeCategory]);
 
-  // Scroll-spy: observe section headers to highlight active category
+  // Identite stable de la liste des categories: le parent reconstruit son
+  // tableau a chaque rendu, ce qui relancerait l'effet du scroll-spy sans fin.
+  const categoryIds = categories.map((category) => category.id).join('|');
+
+  // Scroll-spy positionnel: la categorie active est celle qui occupe le haut de
+  // la zone de lecture (voir `activeCategoryAt`). L'ancien observer choisissait
+  // la section dont la plus grande part tombait dans une bande, ce qui laissait
+  // le titre en retard d'une categorie entiere, et ne se redeclenchait qu'au
+  // franchissement d'un seuil de ratio, ce qui le figeait entre deux.
   React.useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      // Don't fight a chip-click scroll; the click already set the active chip.
+    const scroller = document.getElementById('main-content');
+    if (!scroller) return;
+
+    const ids = categoryIds.split('|');
+
+    // Recalcul direct, sans report a l'image suivante: un recalcul reporte peut
+    // etre annule par le demontage de l'effet (il se relance a chaque rendu du
+    // parent), et l'evenement de defilement qui l'avait demande ne revient pas.
+    // Mesure du 2026-11-05: le titre accusait alors jusqu'a 200px de retard. Le
+    // calcul se resume a une lecture de position par categorie.
+    const recompute = () => {
+      // Ne pas contrarier un defilement declenche par une pastille: le clic a
+      // deja fixe la categorie, et les re-alignements successifs passeraient
+      // par les sections intermediaires.
       if (programmaticScrollRef.current) return;
 
-      let bestEntry: IntersectionObserverEntry | null = null;
-      let bestRatio = 0;
+      const tops = ids
+        .map((id) => {
+          const element = document.getElementById(`cat-${id}`);
+          return element ? { id, top: element.getBoundingClientRect().top } : null;
+        })
+        .filter((entry): entry is { id: string; top: number } => entry !== null);
 
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
-          bestRatio = entry.intersectionRatio;
-          bestEntry = entry;
-        }
-      });
+      // Ligne mesuree, pas supposee: la pile collante gagne une rangee
+      // d'onglets quand la carte a des sous-cartes (169 -> 223px).
+      const next = activeCategoryAt(tops, stickyAnchorBottom());
+      if (next) setActiveCategory((current) => (current === next ? current : next));
+    };
 
-      if (bestEntry) {
-        const id = (bestEntry as IntersectionObserverEntry).target.id.replace('cat-', '');
-        setActiveCategory(id);
-      }
-    }, OBSERVER_OPTIONS);
+    recompute();
+    scroller.addEventListener('scroll', recompute, { passive: true });
 
-    categories.forEach((category) => {
-      const element = document.getElementById(`cat-${category.id}`);
-      if (element) observer.observe(element);
+    // Les images des plats se chargent apres coup et decalent les sections sans
+    // qu'un seul evenement de defilement ne soit emis: sans cela, le titre
+    // resterait sur une position perimee.
+    const resizeObserver = new ResizeObserver(recompute);
+    ids.forEach((id) => {
+      const element = document.getElementById(`cat-${id}`);
+      if (element) resizeObserver.observe(element);
     });
 
-    return () => observer.disconnect();
-  }, [categories]);
+    return () => {
+      scroller.removeEventListener('scroll', recompute);
+      resizeObserver.disconnect();
+    };
+    // `categoryIds` plutot que `categories`: le parent recree ce tableau a
+    // chaque rendu, donc dependre de son identite relancait l'effet en boucle.
+  }, [categoryIds]);
 
   const scrollToCategory = (id: string) => {
     setActiveCategory(id);
@@ -126,10 +151,11 @@ export default function CategoryNav({
     // The scroll container is <main id="main-content"> (html/body are
     // overflow:hidden). Native `scrollIntoView`/`scrollTo` with `behavior:
     // 'smooth'` is unreliable here (a silent no-op in some engines), so we set
-    // scrollTop directly. STICKY_OFFSET = header 63 + CategoryNav 48 + sticky
-    // title bar (~58) so the section top lands just under the sticky stack,
-    // matching the section's scroll-mt-[170px].
-    const STICKY_OFFSET = 169;
+    // scrollTop directly. La cible est le bas MESURE de la pile collante
+    // (`stickyAnchorBottom`), la meme ligne que le scroll-spy: sinon un clic
+    // sur une pastille atterrirait juste au-dessus et reactiverait la categorie
+    // precedente. La pile n'a pas de hauteur fixe - une carte a sous-cartes
+    // ajoute une rangee d'onglets.
     clearScrollTimers();
 
     // Align the section top with the sticky band by nudging scrollTop by the
@@ -142,7 +168,7 @@ export default function CategoryNav({
       const scroller = document.getElementById('main-content');
       const element = document.getElementById(`cat-${id}`);
       if (!scroller || !element) return;
-      const delta = element.getBoundingClientRect().top - STICKY_OFFSET;
+      const delta = element.getBoundingClientRect().top - stickyAnchorBottom();
       const maxTop = scroller.scrollHeight - scroller.clientHeight;
       scroller.scrollTop = Math.max(0, Math.min(scroller.scrollTop + delta, maxTop));
     };
@@ -194,7 +220,11 @@ export default function CategoryNav({
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
-              className="h-auto px-[15px] py-2 active:scale-[0.98]"
+              // ZONE TACTILE. La pastille mesure 36px de haut; la regle du
+              // depot demande 44px au doigt. La rangee collante en fait 48, on
+              // elargit donc la zone sensible de 4px en haut et en bas sans
+              // changer le rendu de la pastille.
+              className="relative h-auto px-[15px] py-2 before:absolute before:-inset-y-[4px] before:inset-x-0 before:content-[''] active:scale-[0.98]"
               style={{
                 flexShrink: 0,
                 whiteSpace: 'nowrap',

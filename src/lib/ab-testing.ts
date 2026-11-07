@@ -1,25 +1,27 @@
 // A/B test framework - cookie-based, deterministic hash assignment
 // Experiments:
 //   trial:  7d vs 14d trial length (controls trial_ends_at at signup)
-//   toggle: 2-positions vs 3-positions on pricing page billing toggle
+//
+// L'experimentation `toggle` (2 ou 3 positions sur le selecteur de periode de
+// la page des tarifs) a ete ARRETEE le 2026-11-06: le semestriel ne figure
+// plus sur la page publique, decision produit. Son cookie n'est plus ni lu ni
+// ecrit, donc un visiteur qui en porte encore un ne voit plus rien de
+// different - le cookie expire tout seul au bout de 60 jours.
 //
 // Components subscribe via useSyncExternalStore; initAbVariants() sets cookies
 // and notifies subscribers. No setState-in-effect pattern.
 
 const AB_COOKIE_ID = 'attabl_ab_id';
 const AB_COOKIE_TRIAL = 'attabl_ab_trial';
-const AB_COOKIE_TOGGLE = 'attabl_ab_toggle';
 const AB_COOKIE_DAYS = 60;
 
 export type TrialVariant = '7d' | '14d';
-export type ToggleVariant = '2' | '3';
 
 export interface AbVariants {
   trial: TrialVariant;
-  toggle: ToggleVariant;
 }
 
-const SERVER_DEFAULT: AbVariants = { trial: '14d', toggle: '3' };
+const SERVER_DEFAULT: AbVariants = { trial: '14d' };
 
 // djb2-based hash using Math.imul to keep arithmetic in 32-bit signed space
 function hashToIndex(str: string, modulo: number): number {
@@ -32,10 +34,6 @@ function hashToIndex(str: string, modulo: number): number {
 
 export function assignTrialVariant(id: string): TrialVariant {
   return hashToIndex(id + ':trial', 2) === 0 ? '7d' : '14d';
-}
-
-export function assignToggleVariant(id: string): ToggleVariant {
-  return hashToIndex(id + ':toggle', 2) === 0 ? '2' : '3';
 }
 
 // --- Client-side cookie helpers (browser only) ---
@@ -74,12 +72,9 @@ export function getAbVariantsSnapshot(): AbVariants {
   const id = getClientCookie(AB_COOKIE_ID);
   if (!id) return SERVER_DEFAULT;
   const rawTrial = getClientCookie(AB_COOKIE_TRIAL);
-  const rawToggle = getClientCookie(AB_COOKIE_TOGGLE);
   const trial: TrialVariant =
     rawTrial === '7d' || rawTrial === '14d' ? rawTrial : assignTrialVariant(id);
-  const toggle: ToggleVariant =
-    rawToggle === '2' || rawToggle === '3' ? rawToggle : assignToggleVariant(id);
-  _variants = { trial, toggle };
+  _variants = { trial };
   return _variants;
 }
 
@@ -89,10 +84,7 @@ export function getAbVariantsServerSnapshot(): AbVariants {
 
 // Sets AB cookies and notifies subscribers (triggers useSyncExternalStore re-reads).
 // Call this once on client mount from a useEffect - no setState needed.
-export function initAbVariants(qaOverrides?: {
-  trial?: string | null;
-  toggle?: string | null;
-}): AbVariants {
+export function initAbVariants(qaOverrides?: { trial?: string | null }): AbVariants {
   let id = getClientCookie(AB_COOKIE_ID);
   if (!id) {
     id = crypto.randomUUID();
@@ -104,12 +96,7 @@ export function initAbVariants(qaOverrides?: {
     rawTrial === '7d' || rawTrial === '14d' ? rawTrial : assignTrialVariant(id);
   setClientCookie(AB_COOKIE_TRIAL, trial, AB_COOKIE_DAYS);
 
-  const rawToggle = qaOverrides?.toggle ?? getClientCookie(AB_COOKIE_TOGGLE);
-  const toggle: ToggleVariant =
-    rawToggle === '2' || rawToggle === '3' ? rawToggle : assignToggleVariant(id);
-  setClientCookie(AB_COOKIE_TOGGLE, toggle, AB_COOKIE_DAYS);
-
-  _variants = { trial, toggle };
+  _variants = { trial };
   notifyListeners();
   return _variants;
 }

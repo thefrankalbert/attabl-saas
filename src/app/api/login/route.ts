@@ -7,6 +7,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { getTranslations } from 'next-intl/server';
 import { isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
+import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
 
 export async function POST(request: Request) {
   try {
@@ -78,40 +79,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t('loginError') }, { status: 401 });
     }
 
-    // 3. Query admin_users for routing info
+    // 3. Query admin_users for routing info.
+    //
+    // `is_active` / `deleted_at` / `created_at` sont selectionnes parce que la
+    // destination en depend: un membre banni ne doit pas etre route comme un
+    // membre vivant, et l'etablissement d'arrivee d'un membre de plusieurs
+    // restaurants est le plus ancien (regle fixe).
     const { data: adminUsers } = await supabase
       .from('admin_users')
-      .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
+      .select(
+        'tenant_id, is_super_admin, role, is_active, deleted_at, tenants(slug, onboarding_completed, created_at)',
+      )
       .eq('user_id', authData.user.id);
 
-    // Anti-enumeration: don't expose that the email is valid but has no tenant.
-    // A successful signInWithPassword on an email with no admin_users row is a
-    // recoverable state (user dropped out mid-onboarding). Route them to the
-    // onboarding flow so the front end can re-seed the tenant instead of
-    // leaking "ce compte existe mais n'a pas d'etablissement".
-    if (!adminUsers || adminUsers.length === 0) {
-      return NextResponse.json({ success: true, redirect: '/onboarding' });
-    }
-
-    // Platform super-admins are not restaurant owners: their only membership is
-    // the synthetic __platform tenant, seeded onboarding_completed=false by
-    // design. That would trip the needsOnboarding check below and bounce them
-    // into the new-restaurant flow. Route them straight to the platform console.
-    const isSuperAdmin = adminUsers.some((au) => au.is_super_admin === true);
-    if (isSuperAdmin) {
-      return NextResponse.json({ success: true, redirect: '/admin/platform' });
-    }
-
-    // 4. Determine redirect
-    const needsOnboarding = adminUsers.some((au) => {
-      // Supabase join type gap
-      const tenant = au.tenants as unknown as { onboarding_completed: boolean } | null;
-      return tenant?.onboarding_completed === false;
-    });
-
+    // 4. Determine redirect.
+    //
+    // La regle vit dans `postLoginDestination`, partagee avec le retour OAuth:
+    // elle y etait ecrite deux fois, et les deux copies envoyaient TOUT role
+    // vers `/admin/tenants`, qui refuse quiconque n'est pas proprietaire.
+    //
+    // Anti-enumeration: un compte sans aucune ligne `admin_users` est un
+    // abandon d'onboarding, pas une erreur. La regle le renvoie au parcours
+    // plutot que de laisser filtrer "ce compte existe mais n'a pas
+    // d'etablissement".
     return NextResponse.json({
       success: true,
-      redirect: needsOnboarding ? '/onboarding' : '/admin/tenants',
+      redirect: postLoginDestination(mapMembershipRows(adminUsers)),
     });
   } catch (error) {
     logger.error('Login route error', error);

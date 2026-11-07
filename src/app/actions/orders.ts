@@ -16,6 +16,7 @@ import { ServiceError } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
 import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -221,6 +222,11 @@ export async function actionUpdateOrderStatus(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     const service = createOrderService(supabase);
     if (parsed.data.status === 'cancelled') {
       // Cancellation reverses side-effects (audit C7), in two halves by design:
@@ -293,6 +299,11 @@ export async function actionUpdateItemStatus(
       'orders.manage',
     );
 
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
+
     // Verify the order belongs to the verified tenant before touching its items.
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -353,6 +364,11 @@ export async function actionSetCourseHeld(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     await createOrderService(supabase).setCourseHeld(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -393,6 +409,11 @@ export async function actionMarkOrderPaid(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
 
     // Plan gate: tips are Pro+ (canAccessTips, see pricing-data.ts). Enforce here
     // because payment-time tips reach the DB via markPaid, not the order route.
@@ -459,6 +480,11 @@ export async function actionRecordTender(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     const summary = await createPaymentService(supabase).recordTender(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -516,6 +542,11 @@ export async function actionRefundOrder(
       ['owner', 'admin', 'manager'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     const summary = await createPaymentService(supabase).refund(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -599,6 +630,11 @@ export async function actionCompOrder(
       ['owner', 'admin', 'manager'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     const result = await createPaymentService(supabase).compOrder(
       parsed.data.orderId,
       parsed.data.tenantId,
@@ -652,6 +688,11 @@ export async function actionAddOrderNote(
       ['owner', 'admin', 'manager', 'server'],
       'orders.manage',
     );
+
+    // Coupure du restaurant: ces actions sont appelees EN DIRECT par
+    // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
+    // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
+    await assertTenantServing(supabase, parsed.data.tenantId);
     const created = await createOrderAnnotationService(supabase).addOrderNote(
       parsed.data.orderId,
       parsed.data.tenantId,

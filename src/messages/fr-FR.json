@@ -282,8 +282,6 @@
       },
       "billing": {
         "monthly": "Mensuel",
-        "semiannual": "Semestriel",
-        "semiannualDiscount": "-15%",
         "yearly": "Annuel",
         "yearlyDiscount": "-20%",
         "noCommitment": "Sans carte bancaire. Sans engagement."
@@ -480,7 +478,7 @@
           },
           "q4": {
             "question": "Y a-t-il un engagement ?",
-            "answer": "Mensuel = sans engagement. Semestriel = -15%. Annuel = -20%."
+            "answer": "Mensuel = sans engagement. Annuel = -20%."
           },
           "q5": {
             "question": "Comment je paie ?",
@@ -1274,19 +1272,19 @@
       "pages": {
         "solutions": {
           "title": "Solutions",
-          "description": "Restaurant, hotel, restauration rapide, bar et cafe : Attabl s'adapte a votre salle."
+          "description": "Restaurant, hotel, restauration rapide, bar et cafe : Attabl s'adapte a votre etablissement."
         },
         "features": {
           "title": "Fonctionnalites",
-          "description": "Menu, caisse, cuisine, stock, rapports et equipe. Tout ce qu'Attabl sait faire."
+          "description": "Menu QR code, caisse, ecran cuisine, stock, rapports et equipe. Commandes, tickets et encaissement."
         },
         "pricing": {
           "title": "Tarifs",
-          "description": "Des prix clairs en FCFA. Starter, Pro, Business et Enterprise."
+          "description": "Des prix clairs en FCFA. Starter, Pro, Business et Enterprise. Essai gratuit 14 jours, sans carte bancaire."
         },
         "materiel": {
           "title": "Materiel",
-          "description": "Attabl tourne sur les appareils que vous avez deja. Ajoutez du materiel a votre rythme."
+          "description": "Attabl tourne sur les appareils que vous avez deja : telephone, tablette, imprimante de tickets."
         },
         "nouveautes": {
           "title": "Nouveautes",
@@ -1294,7 +1292,7 @@
         },
         "blog": {
           "title": "Blog",
-          "description": "Conseils et retours d'experience pour les restaurateurs et hoteliers."
+          "description": "Conseils et retours d'experience pour les restaurateurs et hoteliers d'Afrique."
         },
         "about": {
           "title": "A propos",
@@ -1302,7 +1300,31 @@
         },
         "contact": {
           "title": "Contact",
-          "description": "Une question ? Ecrivez-nous, on repond vite."
+          "description": "Une question ? Ecrivez-nous, on repond vite. Demander une demo."
+        },
+        "support": {
+          "title": "Support",
+          "description": "Aide, assistance et reponses aux questions frequentes. Un probleme ? On vous accompagne."
+        },
+        "legal": {
+          "title": "Conditions generales",
+          "description": "Conditions generales d'utilisation et mentions legales d'Attabl."
+        },
+        "privacy": {
+          "title": "Confidentialite",
+          "description": "Protection des donnees personnelles, cookies et vos droits sur vos donnees."
+        },
+        "blogStock": {
+          "title": "Gestion de stock en Afrique : le guide complet",
+          "description": "Digitaliser la gestion de vos stocks pour eviter les ruptures et optimiser vos commandes fournisseurs. Inventaire et pertes."
+        },
+        "blogQrCode": {
+          "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
+          "description": "Du papier au digital : le menu QR transforme l'experience client et simplifie la gestion de la carte."
+        },
+        "blogMobileMoney": {
+          "title": "POS et Mobile Money : encaisser sans friction en Afrique",
+          "description": "Cash, carte, mobile money : proposer tous les moyens de paiement a vos clients avec un seul outil."
         }
       }
     },
@@ -4359,6 +4381,25 @@
     "deleteCategory": "Supprimer la catégorie",
     "deleteArticle": "Supprimer",
     "menuTip": "Vous pourrez ajouter descriptions, photos et options depuis le tableau de bord",
+    "categorySuggestionsLabel": "Rubriques courantes - touchez pour ajouter",
+    "categorySuggestions": {
+      "starters": "Entrées",
+      "mains": "Plats",
+      "sides": "Accompagnements",
+      "desserts": "Desserts",
+      "drinks": "Boissons",
+      "combos": "Formules",
+      "hotDrinks": "Boissons chaudes",
+      "breakfast": "Petit-déjeuner",
+      "pastries": "Pâtisseries",
+      "snacks": "Snacks",
+      "lightMeals": "Plats légers",
+      "cocktails": "Cocktails",
+      "beers": "Bières",
+      "wines": "Vins",
+      "burgers": "Burgers et sandwichs",
+      "roomService": "Room service"
+    },
     "maxCategories": "Maximum 5 catégories",
     "maxArticles": "Maximum 10 articles par catégorie",
     "articlesCount": "{count, plural, one {# article} other {# articles}}",
@@ -4852,7 +4893,6 @@
     "cancel": "Annuler"
   },
   "authShell": {
-    "secure": "Connexion securisee",
-    "panelImageAlt": "Interface ATTABL"
+    "secure": "Connexion securisee"
   }
 }

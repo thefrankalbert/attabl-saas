@@ -33,6 +33,13 @@ export default function MenuItemsList({
     if (c.items.length > 0) lastRenderedIndex = i;
   });
 
+  // Premiere section rendue: elle seule n'affiche pas son titre. En haut de
+  // page la barre collante annonce deja cette categorie, et le titre de section
+  // juste en dessous ferait lire deux fois le meme mot. Pour toutes les
+  // suivantes il n'y a pas de doublon: quand leur titre apparait, la barre
+  // annonce encore la categorie precedente.
+  const firstRenderedIndex = categories.findIndex((c) => c.items.length > 0);
+
   if (categories.length === 0) {
     return (
       <div className="text-center py-20">
@@ -57,6 +64,19 @@ export default function MenuItemsList({
                   : 'scroll-mt-[170px]'
               }
             >
+              {/* Titre de section. Sans lui, les categories se suivaient sans
+                  aucune rupture visible: seul un titre collant les annoncait,
+                  et le client lisait les plats, les desserts et les boissons
+                  sous le nom de la premiere categorie. Il defile avec la liste
+                  et passe sous la barre collante, qui prend le relais.
+                  `category.name` comme les pastilles et la barre collante: les
+                  trois doivent dire la meme chose. */}
+              {catIndex !== firstRenderedIndex && (
+                <h3 className="bg-white px-4 pt-5 text-[17px] font-bold leading-[1.4] tracking-[-0.4px] text-[#1A1A1A]">
+                  {category.name}
+                </h3>
+              )}
+
               {/* Items list */}
               <div className="bg-white pt-3 px-4">
                 <div>
