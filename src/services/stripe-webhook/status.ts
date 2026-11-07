@@ -1,7 +1,11 @@
 import type Stripe from 'stripe';
 import { logger } from '@/lib/logger';
 import { isSubscriptionUsable } from '@/lib/plans/features';
-import { type FreezeReason, freezeReasonForStatus } from '@/lib/billing/freeze-reason';
+import {
+  FREEZE_REASONS,
+  type FreezeReason,
+  freezeReasonForStatus,
+} from '@/lib/billing/freeze-reason';
 import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 /**
@@ -208,6 +212,29 @@ export interface CurrentFreeze {
  * roulement de periode. Un gel sans cause n'est pas un gel a preserver: c'est
  * un gel dont la cause est encore a ecrire.
  */
+/**
+ * Un gel pour REMBOURSEMENT bloque-t-il le degel ?
+ *
+ * Pourquoi ce garde-fou existe. Un remboursement ne change PAS le statut de
+ * l'abonnement chez Stripe: il reste `active`. Or `active` est un statut sain,
+ * donc `isEntitlingWithoutPayment` ne le refuse pas, et le garde-fou des
+ * litiges ne regarde que la cause `dispute`. Resultat mesure sur le code:
+ * le PROCHAIN `customer.subscription.updated` - Stripe en envoie a chaque
+ * roulement de periode ou modification - levait le gel pour remboursement
+ * SANS QU'UN SEUL FRANC SOIT RENTRE. Le gel etait cosmetique.
+ *
+ * Meme forme que `unsettledDisputeBlocksUnfreeze`: la cause dit quel gel on a
+ * le droit de lever. Un gel pour remboursement ne se leve que sur une PREUVE
+ * D'ARGENT NEUF - une facture payee (`invoice.paid`) ou une nouvelle
+ * souscription (`checkout.session.completed`) - jamais sur le simple mot de
+ * Stripe disant que l'abonnement existe toujours.
+ */
+export function refundFreezeBlocksUnfreeze(current: CurrentFreeze | null | undefined): boolean {
+  return (
+    current?.subscription_status === 'frozen' && current.freeze_reason === FREEZE_REASONS.REFUND
+  );
+}
+
 export function keepsExistingFreezeCause(current: CurrentFreeze | null | undefined): boolean {
   return current?.subscription_status === 'frozen' && !!current.freeze_reason;
 }

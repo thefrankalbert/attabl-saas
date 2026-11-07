@@ -14,6 +14,7 @@ import {
   handleInvoicePaymentFailed,
 } from './stripe-webhook/invoice';
 import { handleDisputeClosed, handleDisputeCreated } from './stripe-webhook/dispute';
+import { handleChargeRefunded } from './stripe-webhook/refund';
 
 /**
  * L'AIGUILLAGE des evenements Stripe, et rien d'autre.
@@ -57,6 +58,9 @@ export function createStripeWebhookService(supabase: SupabaseClient, stripe: Str
 
         case 'charge.dispute.closed':
           return handleDisputeClosed(deps, event.data.object as Stripe.Dispute);
+
+        case 'charge.refunded':
+          return handleChargeRefunded(deps, event.data.object as Stripe.Charge);
 
         case 'invoice.paid':
           return handleInvoicePaid(deps, event.data.object as Stripe.Invoice);
