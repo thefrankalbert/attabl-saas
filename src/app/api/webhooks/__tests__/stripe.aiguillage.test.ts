@@ -264,7 +264,7 @@ describe('idempotence', () => {
       idempotencyError: { code: '42501', message: 'permission denied' },
     });
 
-    const response = await fire('invoice.paid', { customer: 'cus_1' });
+    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Internal server error' });
@@ -455,10 +455,34 @@ describe('customer.subscription.deleted', () => {
 // ---------------------------------------------------------------------------
 
 describe('invoice.paid', () => {
+  /**
+   * Une facture peut etre marquee payee sans qu'un franc soit rentre: facture
+   * a 0 (coupon 100 %, essai). Lever un gel pour remboursement la-dessus
+   * rendrait l'acces gratuitement. La levee d'IMPAYE, elle, n'est pas
+   * concernee: elle reste bornee a `past_due` par son filtre.
+   */
+  it.each([0, undefined])(
+    'amount_paid=%s: ne leve PAS un gel pour remboursement',
+    async (amountPaid) => {
+      const chain = setupMock();
+
+      const response = await fire('invoice.paid', {
+        customer: 'cus_1',
+        ...(amountPaid === undefined ? {} : { amount_paid: amountPaid }),
+      });
+
+      expect(response.status).toBe(200);
+      // Une seule ecriture: celle de l'impaye. Pas de seconde passe sur la
+      // cause `refund`.
+      expect(chain.updateFilters.filter(([c]) => c === 'freeze_reason')).toEqual([]);
+      expect(chain.updatePayloads).toHaveLength(1);
+    },
+  );
+
   it('ecrit le bloc de retour a la normale, scope aux seuls impayes non coupes', async () => {
     const chain = setupMock();
 
-    const response = await fire('invoice.paid', { customer: 'cus_1' });
+    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
 
     expect(response.status).toBe(200);
     // DEUX ecritures, et leurs perimetres sont deux gardes distinctes:
@@ -502,7 +526,7 @@ describe('invoice.paid', () => {
   it('retire la ligne d idempotence quand l ecriture echoue', async () => {
     const chain = setupMock({ updateErrors: [{ message: 'db down' }] });
 
-    const response = await fire('invoice.paid', { customer: 'cus_1' });
+    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'DB update failed' });

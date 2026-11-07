@@ -301,7 +301,7 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
     // est exclusivement un bloc d'acces, donc rien n'est perdu a le filtrer.
     const chain = setupMock({ tenant: { id: 'tenant-1', subscription_status: 'past_due' } });
     mockConstructEvent.mockReturnValue(
-      makeStripeEvent('invoice.paid', { customer: 'cus_1', id: 'in_2' }),
+      makeStripeEvent('invoice.paid', { customer: 'cus_1', id: 'in_2', amount_paid: 29000 }),
     );
 
     const response = await POST(makeRequest());
