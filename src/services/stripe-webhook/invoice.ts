@@ -1,6 +1,11 @@
 import type Stripe from 'stripe';
 import { logger } from '@/lib/logger';
-import { updateTolerantToMissingFreezeReason } from '@/lib/billing/freeze-reason';
+import {
+  FREEZE_REASONS,
+  FREEZE_REASON_COLUMN,
+  isMissingFreezeReasonColumnError,
+  updateTolerantToMissingFreezeReason,
+} from '@/lib/billing/freeze-reason';
 import { ServiceError } from '../errors';
 import type { StripeWebhookDeps } from './deps';
 import { isActiveUnlessLocked, isHealthySubscriptionStatus } from './status';
@@ -134,6 +139,72 @@ export async function handleInvoicePaid(
     logger.error('invoice.paid recovery failed', paidError);
     // La route retire la ligne d'idempotence pour que Stripe retraite.
     throw new ServiceError('DB update failed', 'INTERNAL');
+  }
+
+  // PREUVE D'ARGENT NEUF. Une facture peut etre marquee payee sans qu'un franc
+  // soit rentre: facture a 0 (coupon 100 %, essai). Lever le gel pour
+  // remboursement la-dessus rendrait l'acces gratuitement.
+  //
+  // Le rejeu d'un ANCIEN `invoice.paid` est deja bloque en amont par
+  // l'idempotence (`INSERT ON CONFLICT DO NOTHING` sur `stripe_events`,
+  // verifie dans la route): pas besoin d'horodater le gel pour s'en proteger.
+  //
+  // RESIDU ASSUME, ecrit pour ne pas etre decouvert plus tard: une facture
+  // reglee depuis le SOLDE du client porte un `amount_paid` positif. Ce cas
+  // suppose qu'ATTABL ait elle-meme accorde ce credit - une decision humaine -
+  // et il n'est pas ferme ici.
+  const argentNeuf = (invoice.amount_paid ?? 0) > 0;
+
+  // CHEMIN DE SORTIE DU GEL POUR REMBOURSEMENT. Une facture payee est une
+  // preuve d'ARGENT NEUF, et c'est la seule chose qui doit lever ce gel:
+  // `customer.subscription.updated` ne le leve pas (un remboursement ne change
+  // pas le statut Stripe, donc son mot ne prouve rien). Sans cette sortie, un
+  // client rembourse puis revenu payer restait gele jusqu'a une nouvelle
+  // souscription complete.
+  //
+  // Ecriture SEPAREE, et volontairement: l'ecriture ci-dessus est bornee a
+  // `past_due` pour qu'une facture du mois suivant ne leve pas un gel pour
+  // litige. Elargir son filtre aurait relache cette garde. Celle-ci ne cible
+  // QUE la cause `refund`.
+  const { error: refundError } = !argentNeuf
+    ? { error: null }
+    : await updateTolerantToMissingFreezeReason(
+        {
+          subscription_status: 'active',
+          past_due_since: null,
+          is_active: true,
+          freeze_reason: null,
+        },
+        (payload) =>
+          supabase
+            .from('tenants')
+            .update(payload)
+            .eq('stripe_customer_id', customerId)
+            .eq('subscription_status', 'frozen')
+            .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND)
+            // Un paiement ne leve pas une suspension plateforme (CTR7-1).
+            .is('suspended_at', null)
+            .is('deleted_at', null),
+        { customerId, handler: 'invoice.paid', cause: FREEZE_REASONS.REFUND },
+      );
+
+  if (!argentNeuf) {
+    logger.info('invoice.paid sans argent neuf: un gel pour remboursement n est pas leve', {
+      customerId,
+      amountPaid: invoice.amount_paid ?? 0,
+    });
+  }
+
+  if (refundError) {
+    if (isMissingFreezeReasonColumnError(refundError)) {
+      // Colonne absente (fenetre avant migration): aucun gel pour
+      // remboursement ne peut exister, il n'y a donc rien a lever. Lever une
+      // erreur ici desactiverait le webhook pour TOUS les clients.
+      logger.warn('invoice.paid: colonne freeze_reason absente, levee ignoree', { customerId });
+    } else {
+      logger.error('invoice.paid: levee du gel pour remboursement echouee', refundError);
+      throw new ServiceError('DB update failed', 'INTERNAL');
+    }
   }
 
   logger.info('Invoice paid, subscription state reconciled', { customerId });

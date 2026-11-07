@@ -301,18 +301,76 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
     // est exclusivement un bloc d'acces, donc rien n'est perdu a le filtrer.
     const chain = setupMock({ tenant: { id: 'tenant-1', subscription_status: 'past_due' } });
     mockConstructEvent.mockReturnValue(
-      makeStripeEvent('invoice.paid', { customer: 'cus_1', id: 'in_2' }),
+      makeStripeEvent('invoice.paid', { customer: 'cus_1', id: 'in_2', amount_paid: 29000 }),
     );
 
     const response = await POST(makeRequest());
     expect(response.status).toBe(200);
 
+    // Les DEUX ecritures portent les verrous humains: la levee d'impaye, et la
+    // levee du gel pour remboursement ajoutee ensuite. Une facture payee ne
+    // leve jamais une suspension plateforme, quelle que soit la cause visee.
     expect(chain.updateFilters).toEqual([
       ['stripe_customer_id', 'cus_1'],
       ['subscription_status', 'past_due'],
       ['suspended_at', null],
       ['deleted_at', null],
+      ['stripe_customer_id', 'cus_1'],
+      ['subscription_status', 'frozen'],
+      ['freeze_reason', 'refund'],
+      ['suspended_at', null],
+      ['deleted_at', null],
     ]);
+  });
+
+  /**
+   * Un remboursement ne change PAS le statut de l'abonnement chez Stripe: il
+   * reste `active`, et `active` est un statut sain. Sans garde, ce seul
+   * evenement - que Stripe envoie a chaque roulement de periode - rendait
+   * l'acces a un client integralement rembourse, sans qu'un franc soit rentre.
+   * Trouve par la revue de securite sur la premiere version du correctif.
+   */
+  it('customer.subscription.updated ne leve pas un gel pour remboursement', async () => {
+    const chain = setupMock({
+      tenant: {
+        id: 'tenant-1',
+        subscription_status: 'frozen',
+        freeze_reason: 'refund',
+      },
+    });
+    mockConstructEvent.mockReturnValue(subscriptionUpdatedEvent('active'));
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+
+    // Le statut n'est PAS reecrit, et l'acces n'est pas rallume.
+    for (const payload of chain.updatePayloads) {
+      expect(payload.subscription_status).toBeUndefined();
+      expect(payload.is_active).not.toBe(true);
+      expect(payload.freeze_reason).toBeUndefined();
+    }
+  });
+
+  /** Et il leve toujours les gels dont la cause l'autorise. */
+  it('customer.subscription.updated leve bien un gel pour impaye', async () => {
+    const chain = setupMock({
+      tenant: {
+        id: 'tenant-1',
+        subscription_status: 'frozen',
+        freeze_reason: 'stripe_unpaid',
+      },
+    });
+    mockDisputesList.mockResolvedValue({ data: [] });
+    mockChargesList.mockResolvedValue({ data: [] });
+    mockConstructEvent.mockReturnValue(subscriptionUpdatedEvent('active'));
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+
+    const rallumage = chain.updatePayloads.some(
+      (p) => p.subscription_status === 'active' && p.is_active === true,
+    );
+    expect(rallumage).toBe(true);
   });
 
   it('charge.dispute.closed gagne ne rallume pas un tenant suspendu', async () => {

@@ -38,6 +38,17 @@ export const FREEZE_REASONS = {
   TRIAL_EXPIRED: 'trial_expired',
   /** Impaye au-dela du delai de relance (cron). */
   PAST_DUE_OVERDUE: 'past_due_overdue',
+  /**
+   * Paiement d'abonnement REMBOURSE EN ENTIER (`charge.refunded`). Le client a
+   * recupere tout son argent: le servir gratuitement est une fuite de revenu.
+   * Un remboursement PARTIEL ne gele rien (voir stripe-webhook/refund.ts).
+   *
+   * Reversible: souscrire a nouveau remet le statut, l'acces et efface la
+   * cause (`checkout.session.completed`). `charge.dispute.closed` ne leve que
+   * la cause `dispute`, donc il ne peut pas lever celui-ci - un remboursement
+   * n'est pas un litige gagne.
+   */
+  REFUND: 'refund',
 } as const;
 
 export type FreezeReason = (typeof FREEZE_REASONS)[keyof typeof FREEZE_REASONS];
@@ -50,6 +61,17 @@ const UNDEFINED_COLUMN = '42703';
 
 /** PostgREST: colonne absente du cache de schema. Meme cause, autre couche. */
 const SCHEMA_CACHE_MISS = 'PGRST204';
+
+/**
+ * Exportee pour les chemins qui FILTRENT sur `freeze_reason` et non seulement
+ * l'ecrivent. La tolerance par rejeu ne les sauve pas: retirer la colonne du
+ * payload ne retire pas le filtre, l'erreur revient, et un webhook durablement
+ * en erreur finit DESACTIVE par Stripe. Ces chemins doivent donc pouvoir dire
+ * "colonne absente: il n'y a rien a faire ici" et continuer.
+ */
+export function isMissingFreezeReasonColumnError(error: unknown): boolean {
+  return isMissingColumnError(error);
+}
 
 function isMissingColumnError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;

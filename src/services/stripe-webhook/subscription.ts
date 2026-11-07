@@ -17,6 +17,7 @@ import {
   isEntitlingWithoutPayment,
   isHealthySubscriptionStatus,
   mapStripeStatus,
+  refundFreezeBlocksUnfreeze,
 } from './status';
 
 /**
@@ -74,8 +75,14 @@ export async function handleSubscriptionUpdated(
   // CTR7-4: ce gestionnaire pouvait lever un gel pour litige sur le seul
   // mot de Stripe, alors que `charge.dispute.closed` verifiait les autres
   // litiges. Meme acces, deux regles differentes selon l'evenement recu.
+  // Un gel pour remboursement ne se leve pas sur le simple mot de Stripe: un
+  // remboursement ne change pas le statut de l'abonnement, donc sans ce refus
+  // le prochain evenement d'abonnement rendait l'acces sans aucun paiement.
+  const refusedByRefund = !refusedByRule && refundFreezeBlocksUnfreeze(tenant);
+
   const refusedByDispute =
     !refusedByRule &&
+    !refusedByRefund &&
     (await unsettledDisputeBlocksUnfreeze(
       stripe,
       customerId,
@@ -84,12 +91,16 @@ export async function handleSubscriptionUpdated(
       null,
     ));
 
-  if (refusedByRule || refusedByDispute) {
+  if (refusedByRule || refusedByRefund || refusedByDispute) {
     logger.info('subscription.updated: acces inchange', {
       tenantId: tenant.id,
       currentStatus: tenant.subscription_status,
       mappedStatus,
-      reason: refusedByRule ? 'statut non sain' : 'litige non regle',
+      reason: refusedByRule
+        ? 'statut non sain'
+        : refusedByRefund
+          ? 'gel pour remboursement: pas de paiement neuf'
+          : 'litige non regle',
     });
     // CTR-2: refuser le statut entrant ne doit pas faire PERDRE la
     // re-affirmation de `is_active`. L'ancien code l'ecrivait toujours;
