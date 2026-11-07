@@ -16,9 +16,11 @@
 --      comptable, c'est redhibitoire. L'index unique (tenant_id, order_number)
 --      ne l'empeche pas: la ligne d'origine a disparu.
 --   2. LA FONCTION EST EN DROITS APPELANT (`SECURITY INVOKER`) et executable par
---      `anon`. Son MAX passe donc par RLS: un appelant qui ne voit qu'une partie
---      des commandes calcule un MAX trop bas. Le numero rendu entre alors en
---      collision avec l'index unique.
+--      `anon` ET `authenticated`. Son MAX passe donc par RLS: un appelant qui ne
+--      voit qu'une partie des commandes calcule un MAX trop bas, et le numero
+--      rendu entre en collision avec l'index unique. Les droits sont resserres
+--      a `service_role` seul (voir la section 4), apres verification que c'est
+--      le seul role qui cree des commandes.
 --   3. Cout qui grandit avec la journee: un scan par commande creee.
 --
 -- MESURE EN PRODUCTION AVANT CORRECTION (2026-11-07): aucun trou et aucun
@@ -90,13 +92,10 @@ declare
   v_jour date := (now() at time zone 'UTC')::date;
   v_seq integer;
 begin
-  -- Un restaurant inexistant ou supprime n'obtient pas de numero. La fonction
-  -- est executable par `anon` (la commande d'un client passe par la), donc sans
-  -- ce controle n'importe qui pourrait faire monter le compteur d'un
-  -- identifiant invente et creer des trous dans la sequence d'autrui.
-  -- RESIDU ASSUME: un appelant qui connait un identifiant de restaurant VALIDE
-  -- peut toujours consommer des numeros. Cela cree des trous, jamais des
-  -- doublons, et les points d'entree publics sont derriere le rate limiting.
+  -- Un restaurant inexistant ou supprime n'obtient pas de numero. Deuxieme
+  -- barriere seulement: depuis le resserrage des droits ci-dessous, seul
+  -- `service_role` peut appeler cette fonction. Ce controle reste parce qu'un
+  -- futur chemin pourrait lui rendre des droits sans y penser.
   if not exists (
     select 1 from public.tenants t
      where t.id = p_tenant_id and t.deleted_at is null
@@ -114,8 +113,32 @@ begin
 end;
 $$;
 
--- Les memes droits qu'avant: la commande d'un client est passee par `anon`.
-grant execute on function public.next_order_number(uuid) to anon, authenticated, service_role;
+-- ---------------------------------------------------------------------------
+-- 4. Les droits: service_role SEULEMENT
+-- ---------------------------------------------------------------------------
+-- L'ancienne fonction etait executable par `anon` et `authenticated`. Une
+-- premiere version de cette migration gardait ces droits en documentant le
+-- risque comme un residu assume. La relecture de securite a eu raison de le
+-- refuser: un residu qu'on peut fermer n'est pas un residu.
+--
+-- VERIFIE, CHEMIN PAR CHEMIN, avant de retirer quoi que ce soit:
+--   - les TROIS routes qui creent une commande (`/api/orders` pour la commande
+--     d'un client, `/api/orders/pos` pour la caisse, `/api/orders/preview`)
+--     construisent toutes `createOrderService(createAdminClient())`, donc
+--     service_role;
+--   - les deux composants navigateur qui construisent le service
+--     (`POSClient`, `ServiceManager`) n'appellent QUE des methodes de lecture
+--     (`getCurrentOrderForTable`, `listReadyOrdersToday`), jamais la
+--     numerotation;
+--   - aucun composant de la vitrine ne construit ce service;
+--   - un seul endroit appelle la RPC: `generateOrderNumber` dans
+--     `src/services/order/order-creation.ts`, atteint uniquement par ces routes.
+--
+-- Donc ni `anon` ni `authenticated` n'en ont besoin. Si un futur chemin en
+-- manquait, il n'ecrirait PAS un mauvais numero: il tomberait sur le secours
+-- `CMD-HS-`, visible en comptabilite et journalise en erreur.
+revoke execute on function public.next_order_number(uuid) from public, anon, authenticated;
+grant execute on function public.next_order_number(uuid) to service_role;
 
 -- ============================================================================
 -- ROLLBACK

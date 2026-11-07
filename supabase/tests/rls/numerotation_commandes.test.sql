@@ -21,7 +21,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(7);
+select plan(10);
 
 insert into public.tenants (id, slug, name, is_active, currency, subscription_status)
 values ('bbbb1111-0000-0000-0000-00000000000a', 'numerotation', 'Resto Numero', true, 'XOF', 'active');
@@ -95,5 +95,32 @@ select throws_ok(
   'un utilisateur connecte ne peut pas ECRIRE dans le compteur');
 
 reset role;
+
+-- ===========================================================================
+-- LES DROITS: service_role SEULEMENT
+-- ===========================================================================
+-- L'ancienne fonction etait executable par `anon` et `authenticated`. Ces trois
+-- assertions figent le resserrage: une PR qui rendrait les droits a un role
+-- client les ferait tomber. Verifie chemin par chemin avant de resserrer: les
+-- trois routes qui creent une commande passent toutes par service_role, et les
+-- deux composants navigateur n'appellent que des lectures.
+select is(
+  has_function_privilege('anon', 'public.next_order_number(uuid)', 'execute'),
+  false,
+  'droits: anon ne peut PLUS appeler la numerotation');
+
+select is(
+  has_function_privilege('authenticated', 'public.next_order_number(uuid)', 'execute'),
+  false,
+  'droits: authenticated ne peut PLUS appeler la numerotation');
+
+-- NON-REGRESSION, et elle compte autant: c'est le role par lequel passent les
+-- trois routes de creation de commande. Sans elle, revoquer tout le monde
+-- passerait le test.
+select is(
+  has_function_privilege('service_role', 'public.next_order_number(uuid)', 'execute'),
+  true,
+  'droits non-regression: service_role appelle toujours la numerotation');
+
 select * from finish();
 rollback;
