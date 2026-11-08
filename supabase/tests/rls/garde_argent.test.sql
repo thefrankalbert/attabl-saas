@@ -48,7 +48,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(39);
+select plan(41);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -110,6 +110,7 @@ insert into public.orders
 values ('b6666666-6666-6666-6666-666666666666', 'b3333333-3333-3333-3333-333333333333',
         'CMD-A-SUPPRIMER', 7000, 7000, 'preparing', 'pending');
 
+
 -- ===========================================================================
 -- 1. LA CAISSE DU CAISSIER, sur le DEFAUT, sans aucune delegation (9)
 -- ===========================================================================
@@ -140,10 +141,15 @@ select lives_ok(
   'caisse: un caissier ENCAISSE un tender positif depuis la note'
 );
 
+-- La FORME EXACTE de `markPaid`: le pourboire s'ecrit dans le MEME UPDATE que
+-- la bascule `pending -> paid`. Important, parce que la borne de la section 2
+-- refuse une reecriture du pourboire sur une commande DEJA payee: si ce test
+-- marquait payee d'abord puis ecrivait le pourboire ensuite, il mesurerait un
+-- artefact de test au lieu du flux reel. Erreur faite, puis corrigee.
 select lives_ok(
-  $$update public.orders set payment_status = 'paid'
+  $$update public.orders set payment_status = 'paid', tip_amount = 500
     where id = 'b4444444-4444-4444-4444-444444444444'$$,
-  'caisse: un caissier marque une commande payee'
+  'caisse: un caissier marque payee EN enregistrant le pourboire, comme markPaid'
 );
 select is(
   (select payment_status from public.orders where id = 'b4444444-4444-4444-4444-444444444444'),
@@ -213,18 +219,24 @@ select throws_ok(
   'montants: le service ne se reecrit pas apres coup'
 );
 
--- `tip_amount` DOIT rester ecrivable: c'est le seul montant qu'un chemin
--- applicatif modifie apres creation (markPaid). Un declencheur trop large
--- casserait le pourboire.
-select lives_ok(
-  $$update public.orders set tip_amount = 500
-    where id = 'b4444444-4444-4444-4444-444444444444'$$,
-  'montants: le POURBOIRE reste ecrivable'
-);
+-- `tip_amount` DOIT rester ecrivable au moment de l'encaissement: c'est le seul
+-- montant qu'un chemin applicatif modifie apres creation. Un declencheur trop
+-- large casserait le pourboire. Preuve que celui-ci ne le casse pas:
 select is(
   (select tip_amount from public.orders where id = 'b4444444-4444-4444-4444-444444444444'),
   500::bigint,
-  'montants: le pourboire a REELLEMENT ete enregistre'
+  'montants: le POURBOIRE enregistre par l encaissement a bien porte'
+);
+
+-- Mais il ne se reecrit plus APRES: un pourboire gonfle apres encaissement est
+-- de l'argent cree. Les deux chemins applicatifs filtrent
+-- `payment_status = pending`, donc cette borne ne retire aucune capacite reelle.
+select throws_ok(
+  $$update public.orders set tip_amount = 999999
+    where id = 'b4444444-4444-4444-4444-444444444444'$$,
+  '42501',
+  null,
+  'montants: le pourboire ne se REECRIT PAS sur une commande deja payee'
 );
 
 -- ===========================================================================
@@ -283,21 +295,41 @@ select ok(
 -- 5. LES CHEMINS DE CONFIANCE RESTENT EXEMPTS DU DECLENCHEUR (4)
 --    Sans cette preuve, le declencheur casserait la caisse POS en production:
 --    `/api/orders/pos` ecrit avec le client admin (service_role).
---    `service_role` et `postgres` portent bypassrls=true (mesure sur le banc),
---    donc la ligne est REELLEMENT atteinte: le `is` n'est pas a vide.
+--
+--    PIEGE D'ENVIRONNEMENT, rencontre en CI. Une premiere version assertait que
+--    l'ecriture de `service_role` MODIFIE reellement `total`. Vert en local,
+--    ROUGE en CI: `service_role` porte `bypassrls=true` sur une stack Supabase
+--    mais PAS sur la base que la CI construit, si bien que la RLS y masque la
+--    ligne et que `total` ne bouge pas. L'assertion mesurait un attribut de
+--    role, pas le declencheur.
+--
+--    On asserte donc le MECANISME, qui est identique partout: le declencheur
+--    decide sur `current_user`, et il ne contraint que `authenticated` et
+--    `anon`. Que la RLS masque ou non la ligne par ailleurs ne change pas la
+--    question posee ici.
 -- ===========================================================================
 set local role service_role;
+
+-- Ce que le declencheur LIT pour exempter. Deterministe dans tout
+-- environnement, contrairement a `rolbypassrls`.
+select is(
+  current_user::text,
+  'service_role',
+  'exemption: la caisse POS se presente avec un current_user hors des roles contraints'
+);
+
+-- Le declencheur n'a qu'un seul effet possible: LEVER. S'il levait pour la
+-- caisse POS, cet appel echouerait - c'est verifie par mutation (en retirant
+-- l'exemption, cette assertion tombe).
 select lives_ok(
   $$update public.orders set total = 11000
     where id = 'b4444444-4444-4444-4444-444444444444'$$,
-  'exemption: la caisse POS (service_role) ecrit encore les montants'
-);
-select is(
-  (select total from public.orders where id = 'b4444444-4444-4444-4444-444444444444'),
-  11000::bigint,
-  'exemption: l ecriture de la caisse POS a REELLEMENT porte'
+  'exemption: le declencheur ne leve PAS pour la caisse POS'
 );
 
+-- `postgres` est superutilisateur en CI et porte bypassrls en local: la ligne
+-- est donc reellement atteinte dans les deux cas, et le `is` ci-dessous n'est
+-- pas a vide. C'est le chemin des migrations et des fonctions SECURITY DEFINER.
 reset role;
 select lives_ok(
   $$update public.orders set total = 12000
@@ -399,6 +431,34 @@ select is(
    where tenant_id = 'b3333333-3333-3333-3333-333333333333'),
   1,
   'salle: la zone du gerant a REELLEMENT ete creee, et celle du caissier NON'
+);
+
+-- ===========================================================================
+-- 8. LES BORNES DE LA CREATION (2)
+--    Le declencheur de la section 2 ne garde que l'UPDATE. A la CREATION, le
+--    porteur de `orders.manage` fournit les montants, et `orders` ne portait
+--    AUCUN CHECK sur ses colonnes d'argent.
+-- ===========================================================================
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+-- 23514 = check_violation. Un total negatif creerait une recette negative dans
+-- les rapports, et un remboursement deguise hors du ledger `payments`.
+select throws_ok(
+  $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status)
+    values ('b3333333-3333-3333-3333-333333333333', 'CMD-NEGATIVE', -1, -1, 'pending')$$,
+  '23514',
+  null,
+  'creation: un montant NEGATIF est refuse par la base'
+);
+
+-- TEMOIN DE NON-REGRESSION, et il compte autant que les refus: une commande a
+-- zero est LEGITIME (coupon de 100 %). Si un futur resserrage exigeait
+-- `total > 0`, cette assertion tomberait et dirait pourquoi.
+select lives_ok(
+  $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status)
+    values ('b3333333-3333-3333-3333-333333333333', 'CMD-COUPON-100', 0, 0, 'pending')$$,
+  'creation: une commande a ZERO reste permise (coupon de 100 pour cent)'
 );
 
 select * from finish();

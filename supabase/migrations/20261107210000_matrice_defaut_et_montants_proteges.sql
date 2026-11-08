@@ -226,6 +226,19 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  -- Le pourboire RESTE ecrivable, mais pas sur une commande DEJA payee.
+  -- Mesure: les deux seuls chemins qui l'ecrivent (`markPaid` et
+  -- `applyPosFinalState`) filtrent `payment_status = 'pending'`, donc ils ne
+  -- touchent jamais une commande payee. Sans cette borne, un employe pouvait
+  -- gonfler un pourboire APRES l'encaissement, par un appel direct a l'API.
+  IF NEW.tip_amount IS DISTINCT FROM OLD.tip_amount
+     AND coalesce(OLD.payment_status, '') = 'paid'
+  THEN
+    RAISE EXCEPTION
+      'Le pourboire ne se reecrit pas sur une commande deja payee'
+      USING ERRCODE = '42501';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -292,9 +305,15 @@ GRANT EXECUTE ON FUNCTION public.has_tenant_floor_permission(uuid)
   TO anon, authenticated, service_role;
 
 -- zones
+-- Les anciens noms ET les nouveaux sont retires: sans le second jeu, rejouer
+-- cette migration echoue ("policy already exists"), l'ancien nom n'existant
+-- plus. Mesure faite - le script d'application en production peut rejouer.
 DROP POLICY IF EXISTS "Order managers can insert own tenant zones" ON public.zones;
 DROP POLICY IF EXISTS "Order managers can update own tenant zones" ON public.zones;
 DROP POLICY IF EXISTS "Order managers can delete own tenant zones" ON public.zones;
+DROP POLICY IF EXISTS "Floor managers can insert own tenant zones" ON public.zones;
+DROP POLICY IF EXISTS "Floor managers can update own tenant zones" ON public.zones;
+DROP POLICY IF EXISTS "Floor managers can delete own tenant zones" ON public.zones;
 
 CREATE POLICY "Floor managers can insert own tenant zones"
   ON public.zones
@@ -316,6 +335,9 @@ CREATE POLICY "Floor managers can delete own tenant zones"
 DROP POLICY IF EXISTS "Table managers can insert own tenant tables" ON public.tables;
 DROP POLICY IF EXISTS "Table managers can update own tenant tables" ON public.tables;
 DROP POLICY IF EXISTS "Table managers can delete own tenant tables" ON public.tables;
+DROP POLICY IF EXISTS "Floor managers can insert own tenant tables" ON public.tables;
+DROP POLICY IF EXISTS "Floor managers can update own tenant tables" ON public.tables;
+DROP POLICY IF EXISTS "Floor managers can delete own tenant tables" ON public.tables;
 
 CREATE POLICY "Floor managers can insert own tenant tables"
   ON public.tables
@@ -337,6 +359,9 @@ CREATE POLICY "Floor managers can delete own tenant tables"
 DROP POLICY IF EXISTS "Order managers can insert own tenant assignments" ON public.table_assignments;
 DROP POLICY IF EXISTS "Order managers can update own tenant assignments" ON public.table_assignments;
 DROP POLICY IF EXISTS "Order managers can delete own tenant assignments" ON public.table_assignments;
+DROP POLICY IF EXISTS "Floor managers can insert own tenant assignments" ON public.table_assignments;
+DROP POLICY IF EXISTS "Floor managers can update own tenant assignments" ON public.table_assignments;
+DROP POLICY IF EXISTS "Floor managers can delete own tenant assignments" ON public.table_assignments;
 
 CREATE POLICY "Floor managers can insert own tenant assignments"
   ON public.table_assignments
@@ -353,3 +378,57 @@ CREATE POLICY "Floor managers can delete own tenant assignments"
   ON public.table_assignments
   FOR DELETE
   USING (public.has_tenant_floor_permission(table_assignments.tenant_id));
+
+-- ----------------------------------------------------------------------------
+-- 4. Un montant de commande n'est jamais negatif
+-- ----------------------------------------------------------------------------
+--
+-- POURQUOI. Le declencheur de la section 2 ne garde que l'UPDATE. A la
+-- CREATION, un porteur de `orders.manage` fournit les montants, et aucune
+-- contrainte ne les bornait: `orders` ne portait AUCUN CHECK sur ses colonnes
+-- d'argent (mesure: seuls `payment_method`, `payment_status`,
+-- `preparation_zone`, `service_type` et `status` en avaient un). Un montant
+-- negatif cree une recette negative dans les rapports, et un remboursement
+-- deguise sans passer par le ledger `payments`.
+--
+-- Un montant negatif n'est jamais legitime: un remboursement s'inscrit comme
+-- une ligne NEGATIVE dans `payments`, jamais comme un total negatif sur la
+-- commande. Ces contraintes ne retirent donc aucune capacite reelle.
+--
+-- `NOT VALID` EST DELIBERE, PAS UN RACCOURCI. Une contrainte validee echoue si
+-- une seule ligne existante la viole, et la migration entiere tomberait - sur
+-- une base de production dont je ne peux pas inspecter les donnees d'ici. En
+-- `NOT VALID`, la contrainte s'applique a toute ligne inseree ou modifiee
+-- desormais, et les anciennes lignes sont laissees telles quelles. Pour les
+-- valider ensuite, apres avoir constate qu'aucune ne viole la regle:
+--
+--   select count(*) from public.orders
+--    where total < 0 or subtotal < 0 or coalesce(discount_amount, 0) < 0
+--       or coalesce(service_charge_amount, 0) < 0 or coalesce(tip_amount, 0) < 0;
+--   -- si 0: alter table public.orders validate constraint <nom>;
+--
+-- CE QUI RESTE NON GARDE, ET C'EST ASSUME ICI. L'egalite entre `total` et la
+-- somme reelle des lignes de commande n'est PAS verifiee en base. Elle ne peut
+-- pas l'etre a l'insertion (les `order_items` arrivent APRES la commande, par
+-- clause etrangere), et une contrainte differee devrait reproduire tout le
+-- calcul de prix - taxes, service, remises, modificateurs, variantes. Une
+-- formule approchee empecherait un restaurant de servir. La verification des
+-- prix reste donc cote serveur (`order.service.ts`, `calculateOrderTotal`), et
+-- un employe appelant l'API directement la contourne. Cette surface existait
+-- deja pour `admin` et `manager`; elle s'etend au caissier avec la section 1.
+-- La fermer demande de deriver l'invariant exact du code de prix: c'est un
+-- chantier a part, pas une ligne de migration.
+
+ALTER TABLE public.orders
+  DROP CONSTRAINT IF EXISTS orders_montants_non_negatifs_check;
+
+ALTER TABLE public.orders
+  ADD CONSTRAINT orders_montants_non_negatifs_check
+  CHECK (
+    total >= 0
+    AND subtotal >= 0
+    AND coalesce(discount_amount, 0) >= 0
+    AND coalesce(service_charge_amount, 0) >= 0
+    AND coalesce(tip_amount, 0) >= 0
+  )
+  NOT VALID;
