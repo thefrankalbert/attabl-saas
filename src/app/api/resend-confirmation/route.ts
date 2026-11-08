@@ -6,6 +6,8 @@ import {
   resendConfirmationLimiter,
   resendConfirmationAdresseLimiter,
   getClientIp,
+  grouperAdresse,
+  envoiAutorisePourCompte,
   cleCompte,
   minutesAvantLiberation,
 } from '@/lib/rate-limit';
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
     // (plus bas): comptee par adresse, elle punissait le Wi-Fi d'un restaurant
     // alors que l'abus vise une boite mail precise.
     const ip = getClientIp(request);
+    const adresse = grouperAdresse(ip);
     const refus = (reset: number) =>
       NextResponse.json(
         { error: `Trop de tentatives. Reessayez dans ${minutesAvantLiberation(reset)} minutes.` },
@@ -69,7 +72,7 @@ export async function POST(request: Request) {
     // connexion (email non confirme) et ne peut plus se le faire renvoyer -
     // enferme dehors pour de bon. On s'arrete donc en silence, avec la MEME
     // reponse que d'habitude.
-    const etatCompte = await resendConfirmationLimiter.check(cleCompte(email));
+    const etatCompte = await resendConfirmationLimiter.check(`${cleCompte(email)}:${adresse}`);
     if (!etatCompte.success) {
       logger.info('Resend confirmation: plafond par compte atteint, aucun envoi', {
         emailHash: hashEmail(email),
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
     }
 
     // Garde de COUT par adresse, consommee seulement maintenant.
-    const etatAdresse = await resendConfirmationAdresseLimiter.check(ip);
+    const etatAdresse = await resendConfirmationAdresseLimiter.check(adresse);
     if (!etatAdresse.success) return refus(etatAdresse.reset);
     const supabase = createAdminClient();
 
@@ -124,6 +127,17 @@ export async function POST(request: Request) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
     const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
+
+    // INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues. Le compteur
+    // serre porte sur le couple (compte, adresse) et ne borne donc pas un
+    // attaquant reparti sur plusieurs adresses. Ce verrou le fait sans pouvoir
+    // etre tenu plein: il ne retarde que d'une minute.
+    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
+      logger.info('Resend confirmation: envoi trop rapproche, ignore', {
+        emailHash: hashEmail(email),
+      });
+      return NextResponse.json({ success: true, message: SAFE_MSG });
+    }
 
     await sendWelcomeConfirmationEmail(email, { confirmationUrl });
 

@@ -121,6 +121,62 @@ export function cleCompte(email: string): string {
 }
 
 /**
+ * Regroupe une adresse pour en faire une cle de comptage utile.
+ *
+ * POURQUOI: en IPv6, un abonne ordinaire recoit un bloc /64, soit plus de
+ * 18 milliards de milliards d adresses. Compter "par adresse" lui donne donc un
+ * budget neuf a chaque requete, et la limite ne vaut rien contre lui - alors
+ * qu elle s applique pleinement a un abonne IPv4. On compte donc par /64 en
+ * IPv6, l unite reellement attribuee a un client.
+ *
+ * L IPv4 est rendue telle quelle: la grouper par /24 punirait des voisins qui
+ * n ont rien en commun.
+ */
+export function grouperAdresse(ip: string): string {
+  if (!ip.includes(':')) return ip;
+  // Forme abregee (::): on ne deplie pas. Les adresses d un meme /64 arrivent
+  // sous la meme forme dans les en-tetes de la plateforme, donc le
+  // regroupement reste correct en pratique.
+  if (ip.includes('::')) return ip;
+  const blocs = ip.split(':');
+  return blocs.length >= 4 ? `${blocs.slice(0, 4).join(':')}::/64` : ip;
+}
+
+/**
+ * Intervalle minimum entre deux envois de mail pour un meme compte, en
+ * secondes.
+ *
+ * POURQUOI PAS UN BUDGET PAR FENETRE: un budget "3 par 10 minutes" par compte
+ * peut etre tenu PLEIN indefiniment par qui connait l email - 18 requetes par
+ * heure suffisent - et le proprietaire n obtient alors plus jamais son lien. Un
+ * intervalle ne retarde que d une minute: la fonctionnalite ne peut pas etre
+ * confisquee.
+ */
+const INTERVALLE_ENVOI_S = 60;
+
+/**
+ * Pose un verrou d envoi pour ce compte, et dit s il etait libre.
+ *
+ * Une seule operation atomique (`SET ... NX EX`): deux requetes simultanees ne
+ * peuvent pas declencher deux mails.
+ */
+export async function envoiAutorisePourCompte(cle: string): Promise<boolean> {
+  if (!redis) return process.env.NODE_ENV !== 'production';
+  try {
+    const pose = await redis.set(`attabl:envoi:${cle}`, '1', {
+      nx: true,
+      ex: INTERVALLE_ENVOI_S,
+    });
+    return pose === 'OK';
+  } catch (err) {
+    // Un envoi de mail n est pas une operation de securite: en cas de panne du
+    // verrou, on laisse passer plutot que de priver quelqu un de son lien.
+    logger.error('Verrou d envoi indisponible, envoi autorise', err, { cle });
+    return true;
+  }
+}
+
+/**
  * Minutes a annoncer avant liberation.
  *
  * UNE MINUTE DE MARGE, et elle n'est pas decorative. `slidingWindow` rend un

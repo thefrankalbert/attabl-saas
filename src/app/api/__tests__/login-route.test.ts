@@ -27,6 +27,10 @@ vi.mock('@/lib/rate-limit', () => ({
     }),
   },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  // Regroupement IPv6 /64: l identite en test, le comportement est teste a part.
+  grouperAdresse: (ip: string) => ip,
+  // Intervalle minimum entre deux envois: libre par defaut.
+  envoiAutorisePourCompte: vi.fn().mockResolvedValue(true),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
 }));

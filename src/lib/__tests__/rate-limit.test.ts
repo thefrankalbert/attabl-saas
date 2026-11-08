@@ -323,3 +323,32 @@ describe('minutesAvantLiberation', () => {
     expect(minutesAvantLiberation(Date.now() - 60_000)).toBeGreaterThanOrEqual(1);
   });
 });
+
+// --- Regrouper les adresses ------------------------------------------------
+/**
+ * POURQUOI CE REGROUPEMENT EXISTE. En IPv6, un abonne ordinaire recoit un bloc
+ * /64, soit plus de 18 milliards de milliards d adresses. Compter "par
+ * adresse" lui donne un budget neuf a chaque requete: la limite ne vaut rien
+ * contre lui, alors qu elle s applique pleinement a un abonne IPv4. Constat
+ * d un audit du 2026-11-08.
+ */
+describe('grouperAdresse', () => {
+  it('laisse une adresse IPv4 intacte', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    expect(grouperAdresse('102.180.71.143')).toBe('102.180.71.143');
+  });
+
+  it('regroupe deux adresses IPv6 du meme /64 sur la MEME cle', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const a = grouperAdresse('2001:0db8:85a3:0000:1111:2222:3333:4444');
+    const b = grouperAdresse('2001:0db8:85a3:0000:9999:8888:7777:6666');
+    expect(a).toBe(b);
+  });
+
+  it('garde deux /64 differents sur des cles differentes', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const a = grouperAdresse('2001:0db8:85a3:0001:1111:2222:3333:4444');
+    const b = grouperAdresse('2001:0db8:85a3:0002:1111:2222:3333:4444');
+    expect(a).not.toBe(b);
+  });
+});

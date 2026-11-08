@@ -6,6 +6,7 @@ import {
   loginPaireLimiter,
   loginAdresseLimiter,
   getClientIp,
+  grouperAdresse,
   cleCompte,
   minutesAvantLiberation,
 } from '@/lib/rate-limit';
@@ -30,6 +31,11 @@ export async function POST(request: Request) {
     // un cinquieme qui se trompe une fois, et toute l'equipe etait dehors pour
     // 15 minutes. Une connexion reussie n'est pas une attaque.
     const ip = getClientIp(request);
+    // CLE DE COMPTAGE regroupee: en IPv6, un abonne ordinaire dispose d un /64,
+    // soit des milliards d adresses - compter par adresse exacte ne le limite
+    // en rien. `ip` brute reste utilisee pour Turnstile, qui attend une vraie
+    // adresse.
+    const adresse = grouperAdresse(ip);
     const refus = (etat: { reset: number }) =>
       NextResponse.json(
         { error: t('rateLimitedMinutes', { minutes: minutesAvantLiberation(etat.reset) }) },
@@ -46,7 +52,7 @@ export async function POST(request: Request) {
     // l'echec plus tard; cent requetes simultanees passaient alors toutes la
     // lecture avant que la premiere n'ait compte, et la limite devenait "200
     // par aller-retour reseau" au lieu de "200 par 15 minutes".
-    const etatAdresse = await loginAdresseLimiter.check(ip);
+    const etatAdresse = await loginAdresseLimiter.check(adresse);
     if (!etatAdresse.success) return refus(etatAdresse);
 
     // 1. Parse and validate body
@@ -93,7 +99,7 @@ export async function POST(request: Request) {
     // adresse. La cle du compte est une empreinte de l'email - un compteur n'a
     // pas a devenir un annuaire des comptes du service.
     const compte = cleCompte(email);
-    const etatPaire = await loginPaireLimiter.check(`${compte}:${ip}`);
+    const etatPaire = await loginPaireLimiter.check(`${compte}:${adresse}`);
     if (!etatPaire.success) return refus(etatPaire);
 
     // 2. Authenticate with Supabase
