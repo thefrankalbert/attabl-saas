@@ -21,7 +21,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(13);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -54,6 +54,16 @@ values ('b4444444-4444-4444-4444-444444444444', 'b3333333-3333-3333-3333-3333333
 insert into public.house_accounts (id, tenant_id, name)
 values ('b5555555-5555-5555-5555-555555555555', 'b3333333-3333-3333-3333-333333333333',
         'Compte temoin');
+
+-- Commande dediee a l'assertion de SUPPRESSION. Elle a sa propre ligne expres:
+-- si la garde DELETE regresse, la suppression reussit, et une assertion qui
+-- aurait partage la commande principale la ferait disparaitre - toutes les
+-- assertions suivantes tomberaient alors en cascade, pour une cause qui n'est
+-- pas la leur. Mesure faite: c'est exactement ce qui s'est produit a la
+-- premiere ecriture de ce test.
+insert into public.orders (id, tenant_id, order_number, subtotal, total, status, payment_status)
+values ('b6666666-6666-6666-6666-666666666666', 'b3333333-3333-3333-3333-333333333333',
+        'CMD-A-SUPPRIMER', 7000, 7000, 'preparing', 'pending');
 
 -- ===========================================================================
 -- Le CAISSIER DELEGUE fait TOUJOURS son metier
@@ -94,6 +104,49 @@ select throws_ok(
   '42501',
   null,
   'argent: un caissier delegue ne peut PAS inserer un montant NEGATIF'
+);
+
+-- LE CAS QUI AVAIT ECHAPPE A LA PREMIERE VERSION DE LA GARDE. Celle-ci ne
+-- bornait que le SIGNE. Or le ledger (payment.calc.ts) ne regarde pas le
+-- signe, il SOUSTRAIT toute ligne `status = 'refunded'`, quel que soit son
+-- signe. Un montant POSITIF avec ce statut est donc un remboursement, et il
+-- passait.
+select throws_ok(
+  $$insert into public.payments (tenant_id, order_id, amount, method, status)
+    values ('b3333333-3333-3333-3333-333333333333',
+            'b4444444-4444-4444-4444-444444444444', 5000, 'cash', 'refunded')$$,
+  '42501',
+  null,
+  'argent: un caissier delegue ne peut PAS inserer un POSITIF en statut refunded'
+);
+
+-- Parite d'insertion: une commande ne doit pas pouvoir NAITRE offerte.
+-- create_order_with_items n est pas SECURITY DEFINER, donc l insertion passe
+-- par la RLS avec le jeton de l utilisateur.
+select throws_ok(
+  $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status, is_comp)
+    values ('b3333333-3333-3333-3333-333333333333', 'CMD-PIRATE', 9000, 9000, 'comp', true)$$,
+  '42501',
+  null,
+  'argent: un caissier delegue ne peut PAS creer une commande DEJA offerte'
+);
+
+-- Mais il cree toujours une commande ordinaire.
+select lives_ok(
+  $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status)
+    values ('b3333333-3333-3333-3333-333333333333', 'CMD-ORDINAIRE', 9000, 9000, 'pending')$$,
+  'argent: un caissier DELEGUE cree toujours une commande ordinaire'
+);
+
+-- Supprimer une note detruit une recette: autorite argent. Ce refus MASQUE la
+-- ligne au lieu de lever: un DELETE n'a qu'un USING, et un USING qui ne
+-- correspond pas rend zero ligne sans erreur. On assert donc sur l'etat
+-- observe, pas sur une exception.
+delete from public.orders where id = 'b6666666-6666-6666-6666-666666666666';
+select is(
+  (select count(*)::int from public.orders where id = 'b6666666-6666-6666-6666-666666666666'),
+  1,
+  'argent: un caissier delegue ne peut PAS supprimer une commande'
 );
 
 -- Ces deux refus LEVENT une erreur, ils ne masquent pas la ligne. La garde
