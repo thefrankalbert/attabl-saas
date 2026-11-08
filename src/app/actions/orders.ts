@@ -17,6 +17,7 @@ import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-accoun
 import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
+import { ORDER_STAFF_ROLES, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -219,7 +220,7 @@ export async function actionUpdateOrderStatus(
   try {
     const { supabase, user } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -295,7 +296,7 @@ export async function actionUpdateItemStatus(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -361,7 +362,7 @@ export async function actionSetCourseHeld(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -406,7 +407,7 @@ export async function actionMarkOrderPaid(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -477,7 +478,7 @@ export async function actionRecordTender(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -516,7 +517,8 @@ export async function actionRecordTender(
 /**
  * Refund part or all of an order's net settled amount. Inserts an offsetting
  * ledger row and recomputes payment_status (-> partial or refunded). Refunds are
- * a manager action, so plain 'server' is excluded.
+ * a manager action: the gate is ORDER_MONEY_ROLES, deliberately narrower than
+ * `orders.manage`, which cashier and chef also hold.
  */
 export async function actionRefundOrder(
   tenantId: string,
@@ -539,7 +541,7 @@ export async function actionRefundOrder(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager'],
+      ORDER_MONEY_ROLES,
       'orders.manage',
     );
 
@@ -587,7 +589,7 @@ export async function actionGetPaymentSummary(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
     const summary = await createPaymentService(supabase).getSummary(
@@ -609,8 +611,9 @@ export async function actionGetPaymentSummary(
 
 /**
  * Comp / offer an order (close it for FREE). This is a MANAGER privilege - the
- * fraud surface of letting a plain 'server' zero out checks is why the role gate
- * excludes 'server'. Comp is columns-only on the order (never a payments row) and
+ * fraud surface of letting a waiter or a cashier zero out checks is why the gate
+ * is ORDER_MONEY_ROLES, deliberately narrower than `orders.manage`, which
+ * cashier and chef also hold. Comp is columns-only on the order (never a payments row) and
  * is auto-excluded from revenue (payment_status='comp' is not 'paid'). A comped
  * transition is snapshotted into the audit log; an idempotent replay is not.
  */
@@ -627,7 +630,7 @@ export async function actionCompOrder(
   try {
     const { supabase, user, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager'],
+      ORDER_MONEY_ROLES,
       'orders.manage',
     );
 
@@ -685,7 +688,7 @@ export async function actionAddOrderNote(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
 
@@ -726,7 +729,7 @@ export async function actionListOrderNotes(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
     const notes = await createOrderAnnotationService(supabase).listOrderNotes(

@@ -214,16 +214,22 @@ export function createPaymentService(supabase: SupabaseClient) {
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .eq('payment_status', 'pending')
+        // Une commande annulee est 'pending' elle aussi: sans ce filtre on
+        // pouvait "offrir" une commande annulee, ce qui la faisait reapparaitre
+        // comme offerte dans les rapports.
+        .neq('status', 'cancelled')
         .select('id');
 
       if (error) {
         throw new ServiceError('Erreur lors de l offre de la commande', 'INTERNAL', error);
       }
       if (!updated || updated.length === 0) {
-        // Not 'pending' at write time (partial/refunded, or a concurrent change):
-        // a partially-settled order must be refunded before it can be offered.
+        // Zero ligne touchee: soit l'etat n'est plus 'pending' au moment de
+        // l'ecriture (partial/refunded, ou un changement concurrent) - une
+        // commande deja encaissee en partie doit etre remboursee avant d'etre
+        // offerte - soit la commande est annulee.
         throw new ServiceError(
-          'Impossible d offrir une commande deja encaissee en partie',
+          'Impossible d offrir une commande annulee ou deja encaissee en partie',
           'CONFLICT',
         );
       }

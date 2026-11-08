@@ -45,7 +45,6 @@ export interface RolePermissions {
   canViewStocks: boolean;
 
   // Orders
-  canManageOrders: boolean;
   canTakeOrders: boolean;
   canViewAllOrders: boolean;
   canViewOwnOrders: boolean;
@@ -78,7 +77,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'all',
     canManageStocks: true,
     canViewStocks: true,
-    canManageOrders: true,
     canTakeOrders: true,
     canViewAllOrders: true,
     canViewOwnOrders: true,
@@ -104,7 +102,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'restaurant',
     canManageStocks: true,
     canViewStocks: true,
-    canManageOrders: true,
     canTakeOrders: true,
     canViewAllOrders: true,
     canViewOwnOrders: true,
@@ -130,7 +127,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'restaurant',
     canManageStocks: true,
     canViewStocks: true,
-    canManageOrders: true,
     canTakeOrders: true,
     canViewAllOrders: true,
     canViewOwnOrders: true,
@@ -156,7 +152,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'restaurant',
     canManageStocks: false,
     canViewStocks: true,
-    canManageOrders: true,
     canTakeOrders: true,
     canViewAllOrders: true,
     canViewOwnOrders: true,
@@ -182,7 +177,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'own',
     canManageStocks: false,
     canViewStocks: false,
-    canManageOrders: false,
     canTakeOrders: true,
     canViewAllOrders: false,
     canViewOwnOrders: true,
@@ -208,7 +202,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     statsScope: 'own',
     canManageStocks: false,
     canViewStocks: false,
-    canManageOrders: false,
     canTakeOrders: true,
     canViewAllOrders: false,
     canViewOwnOrders: true,

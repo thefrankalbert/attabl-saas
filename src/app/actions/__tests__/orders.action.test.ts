@@ -171,13 +171,13 @@ describe('actionCompOrder - manager gating + audit', () => {
     });
   });
 
-  it('is gated to owner/admin/manager (NOT server) and derives compedBy = adminUserId', async () => {
+  it('is gated to ORDER_MONEY_ROLES (NOT cashier/chef/waiter) and derives compedBy = adminUserId', async () => {
     const { actionCompOrder } = await import('@/app/actions/orders');
     const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
 
     expect(result.success).toBe(true);
     expect(result.paymentStatus).toBe('comp');
-    // The role gate excludes plain 'server'.
+    // Deliberately narrower than `orders.manage`, which cashier and chef hold too.
     expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
       TENANT_ID,
       ['owner', 'admin', 'manager'],

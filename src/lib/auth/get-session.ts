@@ -248,7 +248,14 @@ export async function getAuthenticatedUserWithTenant(
  * verify the user actually has access to that tenant (IDOR prevention).
  *
  * @param clientTenantId - The tenant ID provided by the client
- * @param allowedRoles - Roles that are allowed to perform the action (coarse gate)
+ * @param allowedRoles - Roles that are allowed to perform the action (coarse gate).
+ *   Typed `AdminRole[]`, not `string[]`: this parameter used to accept any string,
+ *   so eleven order actions shipped the list `['owner','admin','manager','server']`
+ *   with a role that does not exist ('server'; the enum says `waiter`) and the
+ *   compiler said nothing. A non-existent role here matches nobody, and because
+ *   this gate runs BEFORE `requiredPermission`, a too-narrow list silently
+ *   overrides the fine permission - which is the real authorization rule.
+ *   Prefer a named group from `@/lib/admin-roles` over a list written inline.
  * @param requiredPermission - Optional fine-grained permission code. When set, the
  *   action ALSO requires this permission via the 3-level resolution
  *   (individual custom_permissions -> tenant role_permissions override -> default
@@ -261,7 +268,7 @@ export async function getAuthenticatedUserWithTenant(
  */
 export async function getAuthenticatedUserForTenant(
   clientTenantId: string,
-  allowedRoles: string[] = ['owner', 'admin'],
+  allowedRoles: AdminRole[] = ['owner', 'admin'],
   requiredPermission?: PermissionCode,
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();

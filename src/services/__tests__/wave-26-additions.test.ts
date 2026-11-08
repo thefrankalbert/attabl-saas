@@ -43,6 +43,7 @@ interface ChainProxy {
   _calls: { method: string; args: unknown[] }[];
   select: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
+  neq: ReturnType<typeof vi.fn>;
   in: ReturnType<typeof vi.fn>;
   order: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
@@ -67,6 +68,8 @@ function buildChain(finalResult: SupaResult = { data: [], error: null }): ChainP
   for (const method of [
     'select',
     'eq',
+    // `neq` est le maillon de la garde "ne pas encaisser une commande annulee".
+    'neq',
     'in',
     'order',
     'is',

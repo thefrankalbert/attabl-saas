@@ -378,14 +378,17 @@ describe('createPaymentService', () => {
 
 /**
  * Dedicated in-memory double for compOrder: it exercises the optimistic
- * update().eq('id').eq('tenant_id').eq('payment_status','pending').select('id')
+ * update().eq('id').eq('tenant_id').eq('payment_status','pending')
+ *   .neq('status','cancelled').select('id')
  * chain (the shared createMockSupabase only models a 2-eq update). Records the
- * update patch and the eq filters so tenant-scoping can be asserted.
+ * update patch and the eq/neq filters so tenant-scoping and the cancelled guard
+ * can be asserted.
  */
 function createCompMock(order: OrderRow) {
   const calls = {
     updatePatch: null as Record<string, unknown> | null,
     updateEqs: [] as Array<[string, unknown]>,
+    updateNeqs: [] as Array<[string, unknown]>,
     updateCount: 0,
   };
 
@@ -406,9 +409,14 @@ function createCompMock(order: OrderRow) {
             calls.updateEqs.push([col, val]);
             return b;
           });
+          b.neq = vi.fn((col: string, val: unknown) => {
+            calls.updateNeqs.push([col, val]);
+            return b;
+          });
           b.select = vi.fn(async () => {
-            // Optimistic guard: only a 'pending' row matches.
-            if (order.payment_status === 'pending') {
+            // Optimistic guard: only a 'pending' row that is not cancelled matches.
+            const statut = (order as { status?: string }).status;
+            if (order.payment_status === 'pending' && statut !== 'cancelled') {
               Object.assign(order, patch);
               return { data: [{ id: order.id }], error: null };
             }
@@ -464,6 +472,19 @@ describe('createPaymentService - compOrder', () => {
       ['tenant_id', TENANT],
       ['payment_status', 'pending'],
     ]);
+    // Une commande annulee est 'pending' elle aussi: sans ce filtre on pouvait
+    // "offrir" une commande annulee, qui reapparaissait offerte dans les rapports.
+    expect(mock._calls.updateNeqs).toEqual([['status', 'cancelled']]);
+  });
+
+  it('refuse d offrir une commande ANNULEE', async () => {
+    const mock = createCompMock(baseOrder({ status: 'cancelled' }));
+    const service = createPaymentService(mock as unknown as SupabaseClient);
+
+    await expect(
+      service.compOrder(ORDER_ID, TENANT, { reason: 'x', compedBy: 'admin-7' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(mock._order.payment_status).toBe('pending');
   });
 
   it('throws CONFLICT on a paid order (use refund)', async () => {

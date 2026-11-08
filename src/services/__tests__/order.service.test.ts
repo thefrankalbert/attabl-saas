@@ -776,11 +776,12 @@ describe('OrderService', () => {
   });
 
   describe('markPaid (idempotency guard)', () => {
-    // Bespoke mock for the update().eq().eq().eq().select() chain.
+    // Bespoke mock for the update().eq().eq().eq().neq().select() chain.
     function makeSupabase(selectResult: { data?: unknown; error?: unknown }) {
       const update = vi.fn();
       const select = vi.fn().mockResolvedValue(selectResult);
-      const eq3 = vi.fn().mockReturnValue({ select });
+      const neq = vi.fn().mockReturnValue({ select });
+      const eq3 = vi.fn().mockReturnValue({ neq });
       const eq2 = vi.fn().mockReturnValue({ eq: eq3 });
       const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
       update.mockReturnValue({ eq: eq1 });
@@ -795,6 +796,7 @@ describe('OrderService', () => {
         eq1,
         eq2,
         eq3,
+        neq,
         select,
         paymentsInsert,
       };
@@ -817,6 +819,9 @@ describe('OrderService', () => {
       expect(m.update.mock.calls[0][0]).not.toHaveProperty('status');
       // payment_status='pending' guard present (third .eq)
       expect(m.eq3).toHaveBeenCalledWith('payment_status', 'pending');
+      // Une commande annulee reste 'pending': sans ce filtre on pouvait
+      // l'encaisser et inscrire un tender au ledger.
+      expect(m.neq).toHaveBeenCalledWith('status', 'cancelled');
       // tip recorded when > 0
       expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 500 }));
       // a tender is appended to the ledger (audit H2/H8) with amount = total + tip
@@ -861,9 +866,10 @@ describe('OrderService', () => {
   });
 
   describe('markPaid - table session closing (C1)', () => {
-    // Multi-table mock: orders.update().eq().eq().eq().select() returns a paid row
-    // with a session; orders.select(count).eq().eq().eq().neq() returns the number
-    // of still-unpaid orders on the session; table_sessions.update().eq().eq().eq().
+    // Multi-table mock: orders.update().eq().eq().eq().neq().select() returns a paid
+    // row with a session; orders.select(count).eq().eq().in().neq() returns the
+    // number of orders still owing money on the session (pending OR partial);
+    // table_sessions.update().eq().eq().eq().
     function makeSupabase(remainingUnpaid: number) {
       const tsUpdateEq3 = vi.fn().mockResolvedValue({ error: null });
       const tsUpdate = vi.fn().mockReturnValue({
@@ -871,9 +877,10 @@ describe('OrderService', () => {
       });
 
       const countNeq = vi.fn().mockResolvedValue({ count: remainingUnpaid, error: null });
+      const countIn = vi.fn().mockReturnValue({ neq: countNeq });
       const ordersSelectCount = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ neq: countNeq }) }),
+          eq: vi.fn().mockReturnValue({ in: countIn }),
         }),
       });
 
@@ -882,7 +889,11 @@ describe('OrderService', () => {
         .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
       const ordersUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: updateSelect }) }),
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              neq: vi.fn().mockReturnValue({ select: updateSelect }),
+            }),
+          }),
         }),
       });
 
@@ -892,7 +903,7 @@ describe('OrderService', () => {
         if (table === 'payments') return { insert: vi.fn().mockResolvedValue({ error: null }) };
         return {};
       });
-      return { client: { from } as unknown as SupabaseClient, tsUpdate };
+      return { client: { from } as unknown as SupabaseClient, tsUpdate, countIn };
     }
 
     it('closes the session when no unpaid orders remain', async () => {
@@ -913,14 +924,41 @@ describe('OrderService', () => {
 
       expect(m.tsUpdate).not.toHaveBeenCalled();
     });
+
+    it("compte aussi les notes PARTIELLEMENT payees comme de l'argent du", async () => {
+      const m = makeSupabase(0);
+      const service = createOrderService(m.client);
+
+      await service.markPaid('o1', 't1', { method: 'cash' });
+
+      // Ce filtre ne regardait que 'pending': une note 'partial' (il reste un
+      // solde) ne comptait pas, la table se fermait comme entierement reglee et
+      // le reliquat etait perdu.
+      expect(m.countIn).toHaveBeenCalledWith('payment_status', ['pending', 'partial']);
+    });
   });
 
   describe('updateStatus (forward-only state machine + optimistic concurrency, H13)', () => {
-    function makeSupabase(currentStatus: string | null, updateRows: unknown[] = [{ id: 'o1' }]) {
-      const maybeSingle = vi.fn().mockResolvedValue({
+    // `statusApres` est le statut que rend la RELECTURE faite quand l'UPDATE
+    // n'a touche aucune ligne. C'est elle qui distingue les deux causes
+    // possibles: statut different = un autre poste a double (CONFLICT), statut
+    // inchange = la RLS a masque la ligne, donc un refus (UNAUTHORIZED). Par
+    // defaut la relecture rend le meme statut.
+    function makeSupabase(
+      currentStatus: string | null,
+      updateRows: unknown[] = [{ id: 'o1' }],
+      statusApres?: string,
+    ) {
+      const premiereLecture = {
         data: currentStatus === null ? null : { status: currentStatus },
         error: null,
-      });
+      };
+      const maybeSingle = vi.fn().mockResolvedValue(premiereLecture);
+      if (statusApres !== undefined) {
+        maybeSingle
+          .mockResolvedValueOnce(premiereLecture)
+          .mockResolvedValue({ data: { status: statusApres }, error: null });
+      }
       const select = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }),
       });
@@ -975,10 +1013,23 @@ describe('OrderService', () => {
     });
 
     it('throws CONFLICT when another device advanced it first (0 rows)', async () => {
-      const m = makeSupabase('preparing', []); // read preparing, but conditional update matched nothing
+      // La relecture montre un statut DIFFERENT: quelqu un a bien double.
+      const m = makeSupabase('preparing', [], 'delivered');
       const service = createOrderService(m.client);
       await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
         code: 'CONFLICT',
+      });
+    });
+
+    it('throws UNAUTHORIZED when RLS masked the row (0 rows, statut inchange)', async () => {
+      // Zero ligne touchee ET statut inchange a la relecture: personne n a
+      // double, c est la RLS qui a refuse l ecriture. Annoncer "la commande a
+      // deja ete mise a jour" serait faux - cas atteignable par un caissier ou
+      // un chef, que la garde en base refuse sans delegation explicite.
+      const m = makeSupabase('preparing', []);
+      const service = createOrderService(m.client);
+      await expect(service.updateStatus('o1', 't1', 'ready')).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
       });
     });
 

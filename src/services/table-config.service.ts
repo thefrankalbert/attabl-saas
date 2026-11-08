@@ -286,7 +286,12 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         throw new ServiceError('Zone introuvable pour ce tenant', 'NOT_FOUND');
       }
 
-      const { error } = await supabase.from('tables').insert(tables);
+      // tenant_id is NOT NULL in the tables schema and is never sent by the
+      // caller: it is stamped here from the verified tenant, so the batch
+      // cannot be attributed to another tenant.
+      const { error } = await supabase
+        .from('tables')
+        .insert(tables.map((t) => ({ ...t, tenant_id: tenantId })));
 
       if (error) {
         throw new ServiceError(`Erreur creation tables: ${error.message}`, 'INTERNAL', error);
