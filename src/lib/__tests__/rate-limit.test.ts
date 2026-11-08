@@ -15,7 +15,14 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 /** Pilote le resultat de `limit()` pour tous les limiteurs d'un test. */
-const upstash = { shouldThrow: false, success: true };
+const upstash = {
+  shouldThrow: false,
+  success: true,
+  /** Jetons restants rendus par `getRemaining` (consultation sans consommation). */
+  remaining: 9,
+  /** Journal des appels, pour prouver qu'une consultation NE CONSOMME PAS. */
+  appels: [] as string[],
+};
 
 vi.mock('@upstash/redis', () => ({
   Redis: class {},
@@ -24,8 +31,18 @@ vi.mock('@upstash/redis', () => ({
 vi.mock('@upstash/ratelimit', () => {
   class FakeRatelimit {
     async limit() {
+      upstash.appels.push('limit');
       if (upstash.shouldThrow) throw new Error('upstash injoignable');
       return { success: upstash.success, limit: 10, remaining: 9, reset: 0 };
+    }
+    async getRemaining() {
+      upstash.appels.push('getRemaining');
+      if (upstash.shouldThrow) throw new Error('upstash injoignable');
+      return { remaining: upstash.remaining, reset: Date.now() + 600_000, limit: 20 };
+    }
+    async resetUsedTokens() {
+      upstash.appels.push('resetUsedTokens');
+      if (upstash.shouldThrow) throw new Error('upstash injoignable');
     }
     static slidingWindow() {
       return { kind: 'slidingWindow' };
@@ -150,10 +167,13 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
   it('la connexion et l inscription BLOQUENT (fail-closed)', async () => {
     // Laisser passer ici, c'est offrir le brute-force pendant la panne.
     upstash.shouldThrow = true;
-    const { signupLimiter, loginLimiter } = await loadWithRedis();
+    const { signupLimiter, loginCompteLimiter, loginAdresseLimiter } = await loadWithRedis();
 
     expect((await signupLimiter.check('1.2.3.4')).success).toBe(false);
-    expect((await loginLimiter.check('1.2.3.4')).success).toBe(false);
+    // Les deux compartiments de connexion refusent, y compris en CONSULTATION:
+    // une panne de Redis ne doit pas ouvrir la page de connexion.
+    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(false);
+    expect((await loginAdresseLimiter.consulter('1.2.3.4')).success).toBe(false);
   });
 
   it('la reclamation d un code promo BLOQUE (fail-closed)', async () => {
@@ -182,5 +202,125 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
     const { untrustedOrderLimiter } = await loadWithRedis();
 
     expect((await untrustedOrderLimiter.check('1.2.3.4:resto')).success).toBe(false);
+  });
+});
+
+// --- Ne compter que les echecs ----------------------------------------------
+/**
+ * CE QUE CES TESTS VERROUILLENT. Le compteur de connexion etait consomme AVANT
+ * la verification du mot de passe: entrer son mot de passe CORRECTEMENT coutait
+ * un essai. Quatre employes qui se connectent le matin depuis le meme Wi-Fi, un
+ * cinquieme qui se trompe une fois, et toute l'equipe etait dehors 15 minutes.
+ * Une connexion reussie n'est pas une attaque.
+ */
+describe('consulter / compterEchec / effacer', () => {
+  beforeEach(() => {
+    upstash.shouldThrow = false;
+    upstash.success = true;
+    upstash.remaining = 9;
+    upstash.appels = [];
+  });
+
+  it('consulter NE consomme PAS de jeton', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+
+    await loginCompteLimiter.consulter('empreinte');
+
+    expect(upstash.appels).toEqual(['getRemaining']);
+    expect(upstash.appels).not.toContain('limit');
+  });
+
+  it('consulter refuse quand il ne reste aucun jeton', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+    upstash.remaining = 0;
+
+    const etat = await loginCompteLimiter.consulter('empreinte');
+
+    expect(etat.success).toBe(false);
+    expect(etat.reset).toBeGreaterThan(Date.now());
+  });
+
+  it('consulter autorise tant qu il reste un jeton', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+    upstash.remaining = 1;
+
+    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(true);
+  });
+
+  it('compterEchec consomme un jeton', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+
+    await loginCompteLimiter.compterEchec('empreinte');
+
+    expect(upstash.appels).toEqual(['limit']);
+  });
+
+  /** Un echec ne doit jamais faire echouer la REPONSE: la comptabilite est secondaire. */
+  it('compterEchec ne leve pas quand Redis tombe', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+    upstash.shouldThrow = true;
+
+    await expect(loginCompteLimiter.compterEchec('empreinte')).resolves.toBeUndefined();
+  });
+
+  it('effacer remet le compteur a zero', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+
+    await loginCompteLimiter.effacer('empreinte');
+
+    expect(upstash.appels).toEqual(['resetUsedTokens']);
+  });
+
+  it('effacer ne leve pas quand Redis tombe', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+    upstash.shouldThrow = true;
+
+    await expect(loginCompteLimiter.effacer('empreinte')).resolves.toBeUndefined();
+  });
+
+  it('sans Redis en production, consulter REFUSE', async () => {
+    const { loginCompteLimiter } = await loadWithoutRedis('production');
+    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(false);
+  });
+});
+
+// --- La cle de compteur d'un compte ----------------------------------------
+describe('cleCompte', () => {
+  it('ne contient pas l email: un compteur n est pas un annuaire', async () => {
+    const { cleCompte } = await loadWithRedis();
+    const cle = cleCompte('Patron@Exemple.TEST');
+
+    expect(cle).not.toContain('Patron');
+    expect(cle).not.toContain('exemple');
+    expect(cle).not.toContain('@');
+    expect(cle).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  /** Sinon "Patron@x" et "patron@x " seraient deux comptes differents a compter. */
+  it('ignore la casse et les espaces', async () => {
+    const { cleCompte } = await loadWithRedis();
+    expect(cleCompte('  Patron@Exemple.test ')).toBe(cleCompte('patron@exemple.test'));
+  });
+
+  it('deux comptes distincts ont deux cles distinctes', async () => {
+    const { cleCompte } = await loadWithRedis();
+    expect(cleCompte('a@exemple.test')).not.toBe(cleCompte('b@exemple.test'));
+  });
+});
+
+describe('minutesAvantLiberation', () => {
+  it('rend le nombre de minutes, arrondi au-dessus', async () => {
+    const { minutesAvantLiberation } = await loadWithRedis();
+    expect(minutesAvantLiberation(Date.now() + 61_000)).toBe(2);
+  });
+
+  it('ne rend jamais zero quand le compteur est encore pris', async () => {
+    const { minutesAvantLiberation } = await loadWithRedis();
+    expect(minutesAvantLiberation(Date.now() + 1_000)).toBe(1);
+  });
+
+  it('rend zero quand le delai est inconnu', async () => {
+    const { minutesAvantLiberation } = await loadWithRedis();
+    expect(minutesAvantLiberation(0)).toBe(0);
   });
 });

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { logger } from '@/lib/logger';
@@ -48,10 +50,11 @@ if (!isConfigured) {
 
 // --- Rate limit result type ---
 
-interface RateLimitResult {
+export interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
+  /** Horodatage (ms) ou le compteur se libere. 0 quand inconnu. */
   reset: number;
 }
 
@@ -70,6 +73,17 @@ function createLimiter(
         prefix: `attabl:${prefix}`,
       })
     : null;
+
+  /**
+   * Ce que rend la limitation quand Redis est absent ou en panne.
+   * `failClosed` decide du sens: refuser (securite) ou laisser passer.
+   */
+  const secours = (): RateLimitResult => ({
+    success: !failClosed && process.env.NODE_ENV !== 'production',
+    limit: 0,
+    remaining: 0,
+    reset: 0,
+  });
 
   return {
     async check(identifier: string): Promise<RateLimitResult> {
@@ -104,13 +118,95 @@ function createLimiter(
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
     },
+
+    /**
+     * Consulte le compteur SANS le consommer.
+     *
+     * POURQUOI CETTE METHODE EXISTE. `check()` compte la tentative, quelle
+     * qu'elle soit. Sur une page de connexion, cela signifie qu'entrer son mot
+     * de passe CORRECTEMENT consomme un essai: quatre employes qui se
+     * connectent le matin, un cinquieme qui se trompe une fois, et toute
+     * l'equipe est dehors. Une connexion reussie n'est pas une attaque.
+     *
+     * Les endpoints d'authentification consultent donc d'abord, puis ne
+     * comptent QUE l'echec (`compterEchec`), et effacent le compteur du compte
+     * sur une reussite (`effacer`).
+     */
+    async consulter(identifier: string): Promise<RateLimitResult> {
+      if (!rl) {
+        if (process.env.NODE_ENV === 'production') {
+          logger.error('Rate limiting DESACTIVE en production - Redis absent. Requete refusee.', {
+            prefix,
+          });
+        }
+        return secours();
+      }
+      try {
+        const { remaining, reset, limit } = await rl.getRemaining(identifier);
+        return { success: remaining > 0, limit, remaining, reset };
+      } catch (err) {
+        logger.error('Lecture du compteur impossible', err, { prefix, failClosed });
+        return secours();
+      }
+    },
+
+    /** Compte une tentative ratee. Ne rend pas de verdict: la decision est deja prise. */
+    async compterEchec(identifier: string): Promise<void> {
+      if (!rl) return;
+      try {
+        await rl.limit(identifier);
+      } catch (err) {
+        // Ne jamais faire echouer la reponse a cause de la comptabilite.
+        logger.error('Comptage d un echec impossible', err, { prefix });
+      }
+    },
+
+    /**
+     * Efface le compteur d'un identifiant. Utilise apres une authentification
+     * REUSSIE, sur le compteur DU COMPTE uniquement - jamais sur celui de
+     * l'adresse: sinon un attaquant possedant un seul compte valide remettrait
+     * a zero le compteur de son adresse entre deux rafales.
+     */
+    async effacer(identifier: string): Promise<void> {
+      if (!rl) return;
+      try {
+        await rl.resetUsedTokens(identifier);
+      } catch (err) {
+        logger.error('Remise a zero du compteur impossible', err, { prefix });
+      }
+    },
   };
+}
+
+/**
+ * Cle de compteur pour une adresse email.
+ *
+ * On ne met pas l'email en clair dans Redis: une cle de compteur n'a pas a
+ * devenir un annuaire des comptes du service. L'empreinte suffit a compter.
+ */
+export function cleCompte(email: string): string {
+  return createHash('sha256').update(email.trim().toLowerCase()).digest('hex').slice(0, 32);
+}
+
+/** Minutes restantes avant liberation, pour l'afficher a l'utilisateur. */
+export function minutesAvantLiberation(reset: number): number {
+  if (!reset) return 0;
+  return Math.max(1, Math.ceil((reset - Date.now()) / 60_000));
 }
 
 // --- Limiters per endpoint ---
 
-/** Signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
-export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(5, '10 m'), true);
+/**
+ * Inscription: 15 par 10 minutes et par adresse.
+ *
+ * Une inscription cree un compte qui n'existe pas encore: impossible de
+ * compter par compte. Le compteur reste donc par adresse, mais 5 etait trop
+ * bas pour un usage REEL: une formation ou six restaurateurs s'inscrivent
+ * depuis le meme Wi-Fi refusait le sixieme, et chez un operateur mobile des
+ * inconnus se partagent l'adresse. Ce qui arrete reellement les inscriptions
+ * automatisees est Turnstile et le honeypot, qui s'executent avant.
+ */
+export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(15, '10 m'), true);
 
 /** OAuth signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
 export const oauthSignupLimiter = createLimiter(
@@ -373,10 +469,28 @@ export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingW
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));
 
-/** Forgot password: 3 requests / 10 minutes per IP (fail-closed: brute-force protection) */
+/**
+ * Mot de passe oublie: par COMPTE, 3 par 10 minutes.
+ *
+ * Ici le compteur par compte est le BON reglage, et il est serre exprès: le
+ * dommage d'un abus n'est pas une intrusion, c'est de noyer la boite mail d'un
+ * tiers. Trois messages par 10 minutes pour une adresse donnee suffisent a
+ * l'en empecher.
+ *
+ * Il etait compte par ADRESSE IP, ce qui se trompait de cible: deux employes
+ * distraits le meme matin, sur le meme Wi-Fi, et plus personne du restaurant
+ * ne pouvait demander un lien.
+ */
 export const forgotPasswordLimiter = createLimiter(
   'forgot-password',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
+);
+
+/** Mot de passe oublie, garde-fou par adresse: large, pour ne pas punir un Wi-Fi partage. */
+export const forgotPasswordAdresseLimiter = createLimiter(
+  'forgot-password-adresse',
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -384,6 +498,17 @@ export const forgotPasswordLimiter = createLimiter(
 export const resendConfirmationLimiter = createLimiter(
   'resend-confirmation',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
+);
+
+/**
+ * Renvoi de confirmation, garde-fou par adresse: large.
+ * Meme raison que pour le mot de passe oublie - la garde serree appartient au
+ * COMPTE, parce que l'abus consiste a noyer une boite mail, pas a entrer.
+ */
+export const resendConfirmationAdresseLimiter = createLimiter(
+  'resend-confirmation-adresse',
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -459,8 +584,50 @@ export const adminPasswordResetLinkIpLimiter = createLimiter(
   true,
 );
 
-/** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
-export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
+/**
+ * Connexion: DEUX compteurs, et on ne compte que les ECHECS.
+ *
+ * CE QUI NE MARCHAIT PAS. Un seul compteur, 5 par 15 minutes, par ADRESSE IP,
+ * consomme AVANT la verification du mot de passe. Trois consequences mesurees
+ * le 2026-11-08:
+ *
+ *   1. une connexion REUSSIE consommait un essai - or ce n'est pas une attaque;
+ *   2. l'adresse IP est partagee: les quatre employes d'un restaurant sur le
+ *      meme Wi-Fi avaient cinq connexions A EUX QUATRE par quart d'heure, et
+ *      chez un operateur mobile des centaines d'abonnes partagent une adresse,
+ *      donc des inconnus pouvaient se verrouiller entre eux;
+ *   3. l'ancien commentaire invoquait "NIST SP 800-63B" pour justifier ce 5,
+ *      ce qui etait faux: le NIST plafonne a 100 echecs consecutifs PAR COMPTE
+ *      et recommande le ralentissement progressif, pas le blocage sec par
+ *      adresse. Une justification fausse est pire qu'aucune: elle dissuade de
+ *      verifier.
+ *
+ * CE QUI PROTEGE VRAIMENT CETTE PAGE, ce ne sont pas ces compteurs: c'est
+ * Turnstile et le honeypot, qui s'executent avant eux. Les compteurs sont la
+ * defense en profondeur - d'ou des chiffres qui ne touchent jamais un humain
+ * honnete.
+ *
+ * Par COMPTE (empreinte de l'email, jamais l'email en clair): 20 echecs par
+ * 15 minutes. Genereux pour qui cherche son mot de passe, serre pour qui
+ * attaque un compte precis.
+ */
+export const loginCompteLimiter = createLimiter(
+  'login-compte',
+  Ratelimit.slidingWindow(20, '15 m'),
+  true,
+);
+
+/**
+ * Par ADRESSE: 100 echecs par 15 minutes. Large, parce qu'une adresse est
+ * partagee. Assez bas pour arreter une rafale depuis une seule machine.
+ * Ce compteur n'est JAMAIS remis a zero par une connexion reussie: sinon un
+ * attaquant possedant un compte valide le reinitialiserait entre deux rafales.
+ */
+export const loginAdresseLimiter = createLimiter(
+  'login-adresse',
+  Ratelimit.slidingWindow(100, '15 m'),
+  true,
+);
 
 /** Billing portal: 10 requests / minute per IP */
 export const billingPortalLimiter = createLimiter(

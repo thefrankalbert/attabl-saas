@@ -2,7 +2,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger, hashEmail } from '@/lib/logger';
 import { resendConfirmationSchema } from '@/lib/validations/auth.schema';
-import { resendConfirmationLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  resendConfirmationLimiter,
+  resendConfirmationAdresseLimiter,
+  getClientIp,
+  cleCompte,
+  minutesAvantLiberation,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { sendWelcomeConfirmationEmail } from '@/services/email.service';
 
@@ -20,15 +26,21 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    // 1. Rate limiting
+    // 1. Garde par ADRESSE, large. La garde serree est passee sur le COMPTE
+    // (plus bas): comptee par adresse, elle punissait le Wi-Fi d'un restaurant
+    // alors que l'abus vise une boite mail precise.
     const ip = getClientIp(request);
-    const { success: allowed } = await resendConfirmationLimiter.check(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez dans quelques minutes.' },
-        { status: 429, headers: { 'Retry-After': '120' } },
+    const refus = (reset: number) =>
+      NextResponse.json(
+        { error: `Trop de tentatives. Reessayez dans ${minutesAvantLiberation(reset)} minutes.` },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(60, minutesAvantLiberation(reset) * 60)) },
+        },
       );
-    }
+
+    const etatAdresse = await resendConfirmationAdresseLimiter.check(ip);
+    if (!etatAdresse.success) return refus(etatAdresse.reset);
 
     // 2. Parse and validate
     let body: unknown;
@@ -44,6 +56,10 @@ export async function POST(request: Request) {
     }
 
     const { email } = parseResult.data;
+
+    // 2.5 Garde serree par COMPTE.
+    const etatCompte = await resendConfirmationLimiter.check(cleCompte(email));
+    if (!etatCompte.success) return refus(etatCompte.reset);
     const supabase = createAdminClient();
 
     const SAFE_MSG =

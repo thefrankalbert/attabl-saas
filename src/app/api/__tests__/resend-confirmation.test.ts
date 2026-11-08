@@ -5,8 +5,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/rate-limit', () => ({
+  // La garde serree est passee sur le COMPTE, et une garde large reste par
+  // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
+  // restaurant alors que l'abus vise une boite mail precise.
   resendConfirmationLimiter: { check: vi.fn() },
+  resendConfirmationAdresseLimiter: {
+    check: vi.fn().mockResolvedValue({ success: true, reset: 0 }),
+  },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
+  minutesAvantLiberation: () => 7,
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -91,7 +99,11 @@ describe('POST /api/resend-confirmation', () => {
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
-    expect(json.error).toContain('Trop de requ');
+    // Le message doit DIRE combien de temps attendre. L'ancien se contentait de
+    // "Reessayez dans quelques minutes", donc l'utilisateur reessayait aussitot
+    // et reprenait la fenetre entiere.
+    expect(json.error).toMatch(/\d+ minutes/);
+    expect(res.headers.get('Retry-After')).toBeTruthy();
   });
 
   it('returns 400 when body is malformed JSON', async () => {

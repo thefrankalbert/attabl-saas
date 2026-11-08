@@ -2,7 +2,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger, hashEmail } from '@/lib/logger';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
-import { forgotPasswordLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  forgotPasswordLimiter,
+  forgotPasswordAdresseLimiter,
+  getClientIp,
+  cleCompte,
+  minutesAvantLiberation,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { sendPasswordResetEmail } from '@/services/email.service';
 
@@ -20,15 +26,28 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    // 1. Rate limiting
+    // 1. Garde par ADRESSE, large.
+    //
+    // CE COMPTEUR SE TROMPAIT DE CIBLE. Il etait a 3 par 10 minutes et par
+    // ADRESSE IP, alors que le dommage d'un abus n'est pas une intrusion: c'est
+    // de noyer la boite mail d'un tiers. Compte par adresse, il punissait le
+    // Wi-Fi: deux employes distraits le meme matin et plus personne du
+    // restaurant ne pouvait demander un lien. La garde serree est passee sur le
+    // COMPTE (plus bas), celle-ci ne sert plus qu'a freiner une rafale.
     const ip = getClientIp(request);
-    const { success: allowed } = await forgotPasswordLimiter.check(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Trop de requetes. Reessayez dans quelques minutes.' },
-        { status: 429, headers: { 'Retry-After': '120' } },
+    const refus = (reset: number) =>
+      NextResponse.json(
+        {
+          error: `Trop de tentatives. Reessayez dans ${minutesAvantLiberation(reset)} minutes.`,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(60, minutesAvantLiberation(reset) * 60)) },
+        },
       );
-    }
+
+    const etatAdresse = await forgotPasswordAdresseLimiter.check(ip);
+    if (!etatAdresse.success) return refus(etatAdresse.reset);
 
     // 2. Parse and validate
     let body: unknown;
@@ -44,6 +63,12 @@ export async function POST(request: Request) {
     }
 
     const { email } = parseResult.data;
+
+    // 2.5 Garde serree par COMPTE: trois liens par 10 minutes pour une adresse
+    // email donnee. C'est ce qui empeche de noyer la boite de quelqu'un, et ca
+    // ne genere jamais un restaurant entier.
+    const etatCompte = await forgotPasswordLimiter.check(cleCompte(email));
+    if (!etatCompte.success) return refus(etatCompte.reset);
 
     // Design decision: Always return 200 to prevent email enumeration.
     // Email sending failures are logged (see logger.warn calls below) and

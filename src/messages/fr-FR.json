@@ -4736,6 +4736,7 @@
     "userNotFound": "Utilisateur introuvable",
     "invalidEmail": "Email invalide",
     "rateLimited": "Trop de requêtes. Réessayez plus tard.",
+    "rateLimitedMinutes": "Trop de tentatives. Reessayez dans {minutes} minutes.",
     "contactSuccessHoneypot": "Votre demande de rendez-vous a été envoyée !",
     "validationError": "Erreur de validation. Vérifiez les champs.",
     "contactSuccess": "Votre demande a été enregistrée. Notre équipe vous contactera bientôt.",
