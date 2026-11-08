@@ -214,8 +214,11 @@ export async function proxy(request: NextRequest) {
       const { response: sessionResponse } = await createMiddlewareClient(request);
       const url = request.nextUrl.clone();
 
-      // Set x-tenant-slug on REQUEST headers so server components can read it
-      request.headers.set('x-tenant-slug', tenantSlug);
+      // Set x-tenant-slug on REQUEST headers so server components can read it.
+      // Ici le slug est DEJA prouve: il sort de `getCachedTenantByDomain`, qui
+      // ne rend un slug que pour un domaine reellement enregistre. Pas besoin
+      // de `poserEnteteTenant`.
+      request.headers.set(TENANT_SLUG_HEADER, tenantSlug);
 
       // B-1: cette branche RETOURNE avant la garde d'etat du tenant plus bas,
       // donc le tableau de bord d'un tenant coupe restait ouvert sur son
@@ -410,12 +413,47 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  /**
+   * Pose l'en-tete de tenant, et ne le declare DE CONFIANCE que si le restaurant
+   * EXISTE vraiment.
+   *
+   * POURQUOI. Trois endroits posaient `x-tenant-slug` a partir du sous-domaine ou
+   * du chemin, SANS rien verifier. Or le domaine accepte un sous-domaine joker:
+   * `nimportequoi.attabl.com` recevait donc un en-tete presente comme injecte par
+   * le proxy, donc "de confiance", pour un restaurant qui n'existe pas. Tout code
+   * qui fonderait une decision sur cet en-tete - un compteur de debit, un cache,
+   * une regle d'acces - se serait trompe, et le defaut aurait ete invisible
+   * puisque l'en-tete porte justement le nom de ce qui est verifie.
+   *
+   * Mesure du 2026-11-08: aucun code ne lisait encore le drapeau `trusted`. La
+   * faille n'etait donc pas exploitable - c'est exactement le moment de la
+   * fermer, avant qu'un appelant ne s'y fie.
+   *
+   * UN SLUG INCONNU N'EST PAS REFUSE, il est RETROGRADE en indice
+   * (`x-tenant-slug-hint`). Refuser creerait une panne la ou il n'y avait qu'une
+   * imprecision: toutes les routes relisent le restaurant en base ensuite, et
+   * `readTenantSlug` rend la valeur dans les deux cas. On ne perd donc aucun
+   * comportement, et `trusted` signifie enfin ce qu'il dit.
+   *
+   * Cout assume: une lecture de restaurant par slug inconnu. `getCachedTenant`
+   * met le resultat en cache, y compris l'absence, et le proxy fait deja cette
+   * verification pour les chemins admin.
+   */
+  async function poserEnteteTenant(request: NextRequest, slug: string): Promise<void> {
+    const tenant = await getCachedTenant(slug);
+    if (tenant) {
+      request.headers.set(TENANT_SLUG_HEADER, slug);
+      return;
+    }
+    request.headers.set(TENANT_SLUG_HINT_HEADER, slug);
+  }
+
   // 6b. Direct /sites/{slug}/... access on main domain - set x-tenant-slug header
   //     Must be set on REQUEST headers (not response) so headers() in server components can read it
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
-    request.headers.set('x-tenant-slug', tenantSlug);
+    await poserEnteteTenant(request, tenantSlug);
     const response = NextResponse.next({
       request: { headers: request.headers },
     });
@@ -433,7 +471,7 @@ export async function proxy(request: NextRequest) {
     // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
     // Don't rewrite - just set the x-tenant-slug header so the API can identify the tenant
     if (pathname.startsWith('/api/')) {
-      request.headers.set('x-tenant-slug', subdomain);
+      await poserEnteteTenant(request, subdomain);
       const response = NextResponse.next({
         request: { headers: request.headers },
       });
@@ -460,7 +498,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = `/sites/${subdomain}${pathname}`;
 
     // Set x-tenant-slug on REQUEST headers so server components can read it via headers()
-    request.headers.set('x-tenant-slug', subdomain);
+    await poserEnteteTenant(request, subdomain);
 
     // Créer la réponse de rewrite avec les cookies de session
     const response = NextResponse.rewrite(url, {
