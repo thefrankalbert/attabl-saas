@@ -109,6 +109,21 @@
 -- BEFORE UPDATE qui retournerait NULL annulerait l'ecriture en silence, et un
 -- encaissement silencieusement perdu est pire qu'un refus visible.
 --
+-- LIMITE ASSUMEE DE LA FORME CHOISIE, et son chemin de sortie. Ce declencheur
+-- est une LISTE NOIRE: il nomme les colonnes a proteger, donc toute colonne
+-- ajoutee demain a `orders` est libre par defaut. Une liste BLANCHE - n'autoriser
+-- que les colonnes que l'application ecrit reellement, et refuser le reste -
+-- serait fail-closed, donc structurellement meilleure. Elle n'est pas posee ici
+-- parce qu'elle exige d'enumerer EXACTEMENT toutes les colonnes que les chemins
+-- applicatifs ecrivent: en oublier une empecherait un restaurant de servir, ce
+-- qui est un risque plus grand que celui qu'elle retire. A faire quand cet
+-- inventaire sera mesure, pas devine.
+--
+-- Les colonnes couvertes aujourd'hui sont celles qui portent de l'argent ou qui
+-- decident de la journee comptable: les quatre montants, le pourboire, l'etat
+-- de reglement, l'horodatage du paiement, le moyen de paiement, la date de
+-- creation, et le restaurant proprietaire.
+--
 -- ----------------------------------------------------------------------------
 -- 3. LA CONFIGURATION DE SALLE DOIT SUIVRE, SINON LA SECTION 1 ELEVE UN
 --    PRIVILEGE
@@ -223,6 +238,28 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- --------------------------------------------------------------------------
+  -- UNE COMMANDE NE CHANGE PAS DE RESTAURANT.
+  -- --------------------------------------------------------------------------
+  -- Sans cette borne, les gardes ci-dessous se contournaient par un deuxieme
+  -- compte. Elles jugeaient l'autorite sur `NEW.tenant_id`, soit le restaurant
+  -- que l'ECRITURE propose. Quelqu'un membre de deux restaurants - gerant dans
+  -- B, caissier dans A - pouvait donc viser une commande de A (le USING de la
+  -- policy passe: il y detient `orders.manage`), poser `tenant_id = B` (le
+  -- WITH CHECK passe: il y detient aussi `orders.manage`), et toutes les
+  -- gardes interrogeaient alors son autorite argent dans B, ou il l'a.
+  -- Les groupes de restaurants existent dans ce produit: ce cas n'est pas
+  -- theorique.
+  --
+  -- Deplacer une commande d'un restaurant a l'autre est en outre une violation
+  -- d'isolation en soi. Mesure faite: AUCUN chemin applicatif ne reecrit
+  -- `orders.tenant_id`. La borne ne retire donc aucune capacite reelle.
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id THEN
+    RAISE EXCEPTION
+      'Une commande ne change pas de restaurant'
+      USING ERRCODE = '42501';
+  END IF;
+
   IF NEW.total IS DISTINCT FROM OLD.total
      OR NEW.subtotal IS DISTINCT FROM OLD.subtotal
      OR NEW.discount_amount IS DISTINCT FROM OLD.discount_amount
@@ -256,21 +293,36 @@ BEGIN
   -- non-`completed` exige `has_tenant_money_permission` cote base): exempter
   -- cette autorite preserve donc exactement ce flux. Un encaissement ordinaire,
   -- lui, ne fait JAMAIS reculer le statut - il ajoute un tender positif.
-  rang_ancien := CASE coalesce(OLD.payment_status, '')
-                   WHEN 'pending' THEN 0
-                   WHEN 'partial' THEN 1
-                   WHEN 'paid'    THEN 2
+  -- NULL est classe PLUS BAS que tout, et ce n'est pas un detail. Une premiere
+  -- version le faisait tomber dans le `ELSE 3`, donc au-DESSUS de `paid`:
+  -- passer une commande payee a NULL comptait comme un progres et etait
+  -- autorise. Or `payment_status` EST nullable, et un NULL echappe au CHECK de
+  -- la colonne (une contrainte est satisfaite quand elle vaut "inconnu", pas
+  -- seulement quand elle est vraie). Mesure faite: une commande au statut NULL
+  -- est invisible A LA FOIS des lectures de revenu (`= 'paid'`) et des impayes
+  -- (`in ('pending','partial')`). Un employe pouvait donc faire DISPARAITRE
+  -- une commande encaissee des deux cotes a la fois.
+  rang_ancien := CASE
+                   WHEN OLD.payment_status IS NULL          THEN -1
+                   WHEN OLD.payment_status = 'pending'      THEN 0
+                   WHEN OLD.payment_status = 'partial'      THEN 1
+                   WHEN OLD.payment_status = 'paid'         THEN 2
                    ELSE 3
                  END;
-  rang_nouveau := CASE coalesce(NEW.payment_status, '')
-                    WHEN 'pending' THEN 0
-                    WHEN 'partial' THEN 1
-                    WHEN 'paid'    THEN 2
+  rang_nouveau := CASE
+                    WHEN NEW.payment_status IS NULL         THEN -1
+                    WHEN NEW.payment_status = 'pending'     THEN 0
+                    WHEN NEW.payment_status = 'partial'     THEN 1
+                    WHEN NEW.payment_status = 'paid'        THEN 2
                     ELSE 3
                   END;
 
+  -- L'autorite est jugee sur le tenant PROPRIETAIRE (`OLD`), jamais sur celui
+  -- que l'ecriture propose. La borne de tenant ci-dessus rend les deux egaux,
+  -- mais les deux verrous valent mieux qu'un: si cette borne sautait un jour,
+  -- les gardes resteraient jugees au bon endroit.
   IF rang_nouveau < rang_ancien
-     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
   THEN
     RAISE EXCEPTION
       'Une commande reglee ne se deregle pas sans l''autorite argent'
@@ -287,7 +339,7 @@ BEGIN
   -- `= 'paid'`: sans cela, `partial`, `comp` et `refunded` passaient au travers.
   IF NEW.tip_amount IS DISTINCT FROM OLD.tip_amount
      AND coalesce(OLD.payment_status, '') <> 'pending'
-     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
   THEN
     RAISE EXCEPTION
       'Le pourboire ne se reecrit pas sur une commande deja reglee'
@@ -309,10 +361,69 @@ BEGIN
   -- son PREMIER paiement, ici comme dans le code.
   IF NEW.paid_at IS DISTINCT FROM OLD.paid_at
      AND OLD.paid_at IS NOT NULL
-     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
   THEN
     RAISE EXCEPTION
       'L''horodatage du paiement ne se reecrit pas'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- Et il ne s'ANTIDATE pas au PREMIER reglement non plus. La borne ci-dessus
+  -- ne gardait que la reecriture d'un horodatage DEJA pose: tant qu'il etait
+  -- absent, l'appelant fournissait la date de son choix dans le meme UPDATE
+  -- que la bascule, et deplacait la recette d'une journee a l'autre.
+  --
+  -- Ici on NORMALISE plutot que de refuser, et c'est voulu: les deux chemins
+  -- applicatifs envoient deja `new Date()`, donc forcer `now()` ne change rien
+  -- pour eux et retire la marge de manoeuvre a un appel direct. Un refus
+  -- ferait echouer un encaissement legitime pour un ecart d'horloge de
+  -- quelques secondes - un prix trop eleve pour la meme protection.
+  --
+  -- La normalisation n'est possible que parce que ce declencheur est BEFORE:
+  -- en AFTER, `NEW` n'est plus modifiable.
+  IF OLD.paid_at IS NULL
+     AND NEW.paid_at IS NOT NULL
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
+  THEN
+    NEW.paid_at := now();
+  END IF;
+
+  -- --------------------------------------------------------------------------
+  -- LE MOYEN DE PAIEMENT NE SE REECRIT PAS APRES LE REGLEMENT.
+  -- --------------------------------------------------------------------------
+  -- C'est le vecteur de vol le plus classique en caisse: encaisser en ESPECES,
+  -- puis reetiqueter la commande en CARTE. Plus aucune espece n'est attendue
+  -- dans le tiroir, donc le comptage ne signale aucun manque, et l'argent
+  -- part.
+  --
+  -- Le registre `payments` porte lui aussi `method` et il est IMMUABLE (aucune
+  -- policy UPDATE ni DELETE, par decision de 20261107190000), donc un
+  -- rapprochement fait sur le registre voit la verite. Mais la colonne de la
+  -- commande est ce que lisent les ecrans et les rapports: la laisser libre,
+  -- c'est laisser mentir l'affichage.
+  --
+  -- Mesure: `markPaid` et `applyPosFinalState` n'ecrivent la methode qu'en
+  -- basculant une commande `pending`, et aucun chemin ne la reecrit ensuite.
+  IF NEW.payment_method IS DISTINCT FROM OLD.payment_method
+     AND coalesce(OLD.payment_status, '') <> 'pending'
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
+  THEN
+    RAISE EXCEPTION
+      'Le moyen de paiement ne se reecrit pas apres le reglement'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- --------------------------------------------------------------------------
+  -- LA DATE DE CREATION NE SE DEPLACE PAS.
+  -- --------------------------------------------------------------------------
+  -- Les tableaux de bord et les rapports regroupent par `created_at`: le
+  -- reecrire deplace une commande d'une journee de service a l'autre. Mesure:
+  -- aucun chemin applicatif ne reecrit `orders.created_at` apres l'insertion.
+  IF NEW.created_at IS DISTINCT FROM OLD.created_at
+     AND NOT public.has_tenant_money_permission(OLD.tenant_id)
+  THEN
+    RAISE EXCEPTION
+      'La date de creation d''une commande ne se deplace pas'
       USING ERRCODE = '42501';
   END IF;
 
@@ -495,6 +606,21 @@ CREATE POLICY "Floor managers can delete own tenant assignments"
 -- deja pour `admin` et `manager`; elle s'etend au caissier avec la section 1.
 -- La fermer demande de deriver l'invariant exact du code de prix: c'est un
 -- chantier a part, pas une ligne de migration.
+
+-- POURQUOI PAS DE CONTRAINTE `payment_status IS NOT NULL` ICI, alors que le
+-- NULL est bien un trou (une commande au statut NULL est invisible a la fois
+-- des lectures de revenu et des impayes). Une contrainte `NOT VALID` tolere
+-- les lignes EXISTANTES, mais elle s'applique a toute ligne INSEREE OU
+-- MODIFIEE - y compris une vieille ligne qu'on met a jour. Si la production
+-- porte ne serait-ce qu'une commande au statut NULL, elle deviendrait non
+-- modifiable, et je ne peux pas inspecter ces donnees d'ici.
+--
+-- Le declencheur ci-dessus couvre la menace reelle (les roles clients), et les
+-- chemins de confiance n'ecrivent jamais NULL - verifie: `deriveStatus`
+-- (payment.calc.ts) ne rend que 'refunded', 'pending', 'partial' ou 'paid', et
+-- la colonne a `'pending'` pour defaut. Le script d'application compte les
+-- lignes NULL pour que la decision se prenne sur une mesure, pas sur une
+-- supposition.
 
 ALTER TABLE public.orders
   DROP CONSTRAINT IF EXISTS orders_montants_non_negatifs_check;

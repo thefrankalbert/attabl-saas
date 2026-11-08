@@ -48,7 +48,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(49);
+select plan(55);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -65,6 +65,13 @@ values
 
 insert into public.tenants (id, slug, name, is_active)
 values ('b3333333-3333-3333-3333-333333333333', 'tenant-argent', 'Tenant Argent', true);
+
+-- Second restaurant, pour la borne de tenant (section 11). Il existe pour que
+-- l'echec eventuel soit LISIBLE: avec un identifiant inexistant, une
+-- regression donnerait une violation de cle etrangere (23503) au lieu du refus
+-- attendu (42501), et le message egarerait la lecture.
+insert into public.tenants (id, slug, name, is_active)
+values ('b3999999-9999-4999-8999-999999999999', 'tenant-voisin', 'Tenant Voisin', true);
 
 -- Lieu de reference: `zones.venue_id` est NOT NULL. Insere ici, hors de tout
 -- `set role`, pour que la creation du lieu ne soit pas elle-meme un sujet de
@@ -92,7 +99,15 @@ values
   -- repasser par la branche de role.
   (gen_random_uuid(), 'b3333333-3333-3333-3333-333333333333',
    'b8888888-8888-8888-8888-888888888888', 'gerant-limite@test.local', 'manager', true,
-   '{"orders.manage": false}'::jsonb);
+   '{"orders.manage": false}'::jsonb),
+  -- LE MEME caissier, membre AUSSI du restaurant voisin. C'est ce qui rend la
+  -- section 11 honnete: sans cette ligne, la policy refuse deja le changement
+  -- de tenant parce qu'il n'y est pas membre, et l'assertion passerait pour une
+  -- raison qui n'est PAS la garde testee. Mesure faite: elle passait au vert
+  -- sans la garde. Les groupes de restaurants existent dans ce produit, donc
+  -- une double appartenance n'est pas un cas theorique.
+  (gen_random_uuid(), 'b3999999-9999-4999-8999-999999999999',
+   'b1111111-1111-1111-1111-111111111111', 'caissier@test.local', 'cashier', true, null);
 
 insert into public.orders
   (id, tenant_id, order_number, subtotal, total, status, payment_status)
@@ -120,6 +135,13 @@ values
    'CMD-REGLEE', 4000, 4000, 'served', 'paid', 200, '2026-11-01 12:00:00+00'),
   ('b7100000-0000-4000-8000-000000000002', 'b3333333-3333-3333-3333-333333333333',
    'CMD-PARTIELLE', 4000, 4000, 'served', 'partial', 0, null);
+
+-- Commande ENCORE EN ATTENTE et sans horodatage, pour la normalisation de
+-- `paid_at` au PREMIER reglement (section 11).
+insert into public.orders
+  (id, tenant_id, order_number, subtotal, total, status, payment_status, paid_at)
+values ('b7200000-0000-4000-8000-000000000003', 'b3333333-3333-3333-3333-333333333333',
+        'CMD-A-REGLER', 3000, 3000, 'served', 'pending', null);
 
 
 -- ===========================================================================
@@ -559,6 +581,90 @@ select lives_ok(
   $$update public.orders set paid_at = '2026-01-01 08:00:00+00'
     where id = 'b7000000-0000-4000-8000-000000000001'$$,
   'horodatage: un gerant PEUT le corriger'
+);
+
+-- ===========================================================================
+-- 11. LES TROIS CONTOURNEMENTS DES BORNES ELLES-MEMES (4)
+--     Les gardes ci-dessus se contournaient de trois facons, toutes signalees
+--     par la revue puis REPRODUITES avant correction.
+-- ===========================================================================
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+-- 1. Par un DEUXIEME COMPTE. Les gardes jugeaient l'autorite sur
+--    `NEW.tenant_id`, soit le restaurant que l'ECRITURE propose. Un membre de
+--    deux restaurants - gerant dans l'un, caissier dans l'autre - deplacait
+--    donc la commande et faisait juger son autorite au bon endroit pour lui.
+select throws_ok(
+  $$update public.orders set tenant_id = 'b3999999-9999-4999-8999-999999999999'
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  null,
+  'tenant: une commande ne CHANGE PAS de restaurant'
+);
+
+-- 2. Par le STATUT NULL. `payment_status` est nullable et un NULL echappe au
+--    CHECK de la colonne. Une commande au statut NULL est invisible A LA FOIS
+--    du revenu et des impayes: l'encaissement disparaissait des deux cotes.
+select throws_ok(
+  $$update public.orders set payment_status = null
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  null,
+  'statut: un caissier ne fait PAS DISPARAITRE une commande par un statut NULL'
+);
+
+-- 3. Par l'ANTIDATAGE DU PREMIER reglement. La borne precedente ne gardait
+--    qu'un horodatage DEJA pose. Ici la garde NORMALISE au lieu de refuser:
+--    les chemins applicatifs envoient deja `new Date()`, donc forcer `now()`
+--    ne leur change rien, et un refus ferait echouer un encaissement legitime
+--    pour un ecart d'horloge de quelques secondes.
+-- La forme exacte de `markPaid`, moyen de paiement compris: ce qui prouve du
+-- meme coup que la borne sur `payment_method` ne bloque pas le reglement.
+select lives_ok(
+  $$update public.orders
+       set payment_status = 'paid', payment_method = 'cash',
+           paid_at = '2020-01-01 08:00:00+00'
+    where id = 'b7200000-0000-4000-8000-000000000003'$$,
+  'antidatage: l encaissement passe (la garde normalise, elle ne refuse pas)'
+);
+select is(
+  (select paid_at::date = current_date from public.orders
+   where id = 'b7200000-0000-4000-8000-000000000003'),
+  true,
+  'antidatage: la date fournie a ete REMPLACEE par maintenant'
+);
+
+-- ===========================================================================
+-- 12. LES DEUX COLONNES QUI FONT MENTIR LA COMPTABILITE (2)
+--     Trouvees en relisant la garde en adversaire, pas signalees.
+-- ===========================================================================
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+-- On cible la commande que l'assertion 52 vient de REGLER en especes, et pas
+-- `CMD-REGLEE`: le gerant l'a repassee en `pending` a l'assertion 46, donc la
+-- borne ne s'y applique plus. Mesure faite - l'assertion passait au rouge pour
+-- cette raison, et pas parce que la garde manquait.
+--
+-- Le vol le plus classique en caisse: encaisser en ESPECES, puis reetiqueter la
+-- commande en CARTE. Plus aucune espece n'est attendue dans le tiroir, donc le
+-- comptage ne signale aucun manque.
+select throws_ok(
+  $$update public.orders set payment_method = 'card'
+    where id = 'b7200000-0000-4000-8000-000000000003'$$,
+  '42501',
+  null,
+  'methode: un caissier ne REETIQUETTE PAS des especes en carte apres coup'
+);
+
+-- Les tableaux de bord regroupent par `created_at`: le reecrire deplace une
+-- commande d'une journee de service a l'autre. Cette borne ne depend d'aucun
+-- etat de reglement.
+select throws_ok(
+  $$update public.orders set created_at = '2020-01-01 08:00:00+00'
+    where id = 'b7200000-0000-4000-8000-000000000003'$$,
+  '42501',
+  null,
+  'creation: la date de creation ne se DEPLACE PAS'
 );
 
 select * from finish();

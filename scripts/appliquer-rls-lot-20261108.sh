@@ -301,6 +301,22 @@ if [ "$D_SALLE" = "1" ] && [ "$D_ARGENT" = "1" ] && [ "$D_TRIG" = "1" ] \
   echo "           or coalesce(service_charge_amount,0) < 0 or coalesce(tip_amount,0) < 0;"
   echo "       -- si 0: alter table public.orders"
   echo "       --        validate constraint orders_montants_non_negatifs_check;"
+  echo
+  echo "--- Mesures a connaitre (lues a l'instant, rien n'est modifie) ---"
+  # Une commande au statut NULL est invisible A LA FOIS des lectures de revenu
+  # (`= 'paid'`) et des impayes (`in ('pending','partial')`). Le declencheur
+  # empeche d'en CREER par un role client, mais il n'en supprime aucune. Si ce
+  # compte n'est pas zero, ces commandes sont a trancher a la main - et c'est
+  # aussi ce qui dira s'il est sur de poser une contrainte NOT NULL plus tard.
+  "$PSQL" "$CONN" -X -q -v ON_ERROR_STOP=1 -c "
+    select
+      (select count(*) from public.orders where payment_status is null)
+        as commandes_statut_null,
+      (select count(*) from public.orders
+        where total < 0 or subtotal < 0 or coalesce(discount_amount, 0) < 0
+           or coalesce(service_charge_amount, 0) < 0 or coalesce(tip_amount, 0) < 0)
+        as commandes_montant_negatif;" \
+    || echo "  (lecture des mesures impossible - sans consequence sur l'application)"
   exit 0
 fi
 
