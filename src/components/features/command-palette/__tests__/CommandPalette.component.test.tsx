@@ -28,7 +28,6 @@ const mockPermissions = {
   canUsePOS: true,
   canConfigureKitchen: true,
   canViewAllStats: true,
-  canManageOrders: true,
 };
 
 vi.mock('@/hooks/usePermissions', () => ({

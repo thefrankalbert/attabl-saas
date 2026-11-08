@@ -149,11 +149,18 @@ function makeChain(resolved: unknown) {
   return chain;
 }
 
+// Chaine STABLE pour `orders`: le defaut en creait une neuve a chaque appel, si
+// bien que les maillons de l'UPDATE d'encaissement n'etaient observables par
+// aucun test. `vi.clearAllMocks()` vide l'historique entre deux tests mais
+// conserve l'implementation, donc une chaine de portee module est sure ici.
+const ordersChain = makeChain({ data: null, error: null });
+
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
     from: vi.fn((table: string) => {
       if (table === 'admin_users') return makeChain(mockAdminUserRow);
       if (table === 'tenants') return makeChain(mockTenantRow);
+      if (table === 'orders') return ordersChain;
       if (table === 'notifications') {
         return { insert: vi.fn(() => Promise.resolve({ error: null })) };
       }
@@ -279,6 +286,43 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
         expect.objectContaining({ tags: { area: 'inventory-destock' } }),
       );
     });
+  });
+
+  /**
+   * L'UPDATE d'encaissement de `applyPosFinalState` porte DEUX filtres qui ne
+   * sont pas decoratifs, et aucun test ne les observait:
+   *
+   *   - `payment_status = 'pending'` rend l'appel idempotent: un double-clic ou
+   *     un rejeu reseau sur une commande deja payee ne doit pas re-tamponner
+   *     `paid_at` ni ecraser le pourboire enregistre;
+   *   - `status <> 'cancelled'` empeche d'encaisser une commande ANNULEE. Une
+   *     commande annulee garde `payment_status = 'pending'`, donc le premier
+   *     filtre ne la couvre PAS. Sans le second, la caisse reglait une commande
+   *     annulee, inscrivait un tender dans `payments` et comptait le montant en
+   *     recette.
+   *
+   * Ce test les epingle par les ARGUMENTS passes a la chaine, et non par le
+   * resultat: la chaine simulee n'est pas une promesse, si bien qu'un test
+   * ecrit sur la valeur de retour passerait a vide - c'est exactement pour ca
+   * que cette garde etait restee sans couverture.
+   */
+  it('encaisse en portant les deux gardes: idempotence ET commande non annulee', async () => {
+    vi.mocked(canAccessFeature).mockReturnValue(true);
+    mockDestockOrder.mockResolvedValue(0);
+
+    const { POST } = await import('@/app/api/orders/pos/route');
+    const response = await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' }));
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(200);
+
+    // Temoin: sans ce premier `expect`, un UPDATE qui ne partirait plus du tout
+    // ferait passer les deux suivants pour de bonnes raisons apparentes.
+    expect(ordersChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'cash', payment_status: 'paid' }),
+    );
+    expect(ordersChain.eq).toHaveBeenCalledWith('payment_status', 'pending');
+    expect(ordersChain.neq).toHaveBeenCalledWith('status', 'cancelled');
   });
 });
 
