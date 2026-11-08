@@ -3,6 +3,25 @@ import { canAccessFeature } from '@/lib/plans/features';
 import * as Sentry from '@sentry/nextjs';
 
 // --- Mocks -----------------------------------------------------
+// after() callbacks are COLLECTED, not run inline: that is the only way to tell
+// scheduled work apart from a bare fire-and-forget promise (which the serverless
+// freeze after the response can swallow whole).
+const afterCallbacks: (() => unknown)[] = [];
+vi.mock('next/server', async (importActual) => {
+  const actual = await importActual<typeof import('next/server')>();
+  return {
+    ...actual,
+    after: (cb: () => unknown) => {
+      afterCallbacks.push(cb);
+    },
+  };
+});
+
+async function runScheduled() {
+  const pending = afterCallbacks.splice(0, afterCallbacks.length);
+  for (const cb of pending) await cb();
+}
+
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
@@ -100,9 +119,10 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     );
     mockCancelOrder.mockResolvedValue(undefined);
     mockUpdateStatus.mockResolvedValue(undefined);
+    afterCallbacks.length = 0;
   });
 
-  it('restocks after cancel when the plan grants inventory', async () => {
+  it('restocks after cancel when the plan grants inventory, via after()', async () => {
     vi.mocked(canAccessFeature).mockReturnValue(true);
     mockRestockOrder.mockResolvedValue(1);
 
@@ -111,9 +131,13 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
 
     expect(result.success).toBe(true);
     expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
-    await vi.waitFor(() => {
-      expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
-    });
+    // Queued, not raced: nothing has run when the action returns.
+    expect(mockRestockOrder).not.toHaveBeenCalled();
+    expect(afterCallbacks).toHaveLength(1);
+
+    await runScheduled();
+
+    expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
   });
 
   it('does NOT restock when the plan lacks inventory', async () => {
@@ -148,12 +172,13 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
 
     // Non-blocking: cancel still succeeds even if restock throws.
     expect(result.success).toBe(true);
-    await vi.waitFor(() => {
-      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(
-        expect.any(Error),
-        expect.objectContaining({ tags: { area: 'inventory-restock' } }),
-      );
-    });
+
+    await runScheduled();
+
+    expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ tags: { area: 'inventory-restock' } }),
+    );
   });
 });
 

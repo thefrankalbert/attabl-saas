@@ -224,3 +224,91 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     });
   }
 }
+
+/**
+ * Tell the restaurant that an order was served WITHOUT its ingredients being
+ * deducted.
+ *
+ * Why this exists: the destock is deliberately non-blocking (an order must never
+ * be refused because the stock engine stumbled), and `destock_order` aborts the
+ * WHOLE call as soon as one recipe line is short. Until this function existed,
+ * that outcome was written to the logs and to Sentry only - nobody in the
+ * restaurant was told. The dish went out, the stock screen kept showing the old
+ * figure, and the gap was discovered at the next physical count, with no way to
+ * tell which order caused it. Written with `user_id: null`, so it reaches every
+ * staff member of the restaurant, like the low-stock alert - the person holding
+ * the phone during service is not always the owner.
+ *
+ * Never throws: it is itself the error path.
+ */
+/** Title prefix used BOTH to write and to de-duplicate the warning. */
+const DESTOCK_FAILED_TITLE_PREFIX = 'Stock non deduit - commande';
+
+export async function notifyDestockFailed(params: {
+  tenantId: string;
+  orderId: string;
+  /** True when the deduction was refused for lack of stock (the usual cause). */
+  outOfStock: boolean;
+}): Promise<void> {
+  const { tenantId, orderId, outOfStock } = params;
+  try {
+    const supabase = createAdminClient();
+    const { data: order } = await supabase
+      .from('orders')
+      .select('order_number')
+      .eq('id', orderId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+    const label = (order?.order_number as string | undefined) ?? orderId.slice(0, 8);
+
+    // In a rush with one ingredient at zero, EVERY order fails to deduct: a row
+    // per order would bury the notification centre and teach the staff to ignore
+    // it. So: at most one UNREAD warning per restaurant per 15 minutes. Keyed on
+    // `read` so that acknowledging it re-arms the alert - otherwise a second,
+    // unrelated failure two minutes later would have been swallowed in silence.
+    const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    // Matched on the title prefix, not a new `type`: NotificationCenter maps
+    // icons and colours over a CLOSED union of types, so an unknown one would
+    // render blank. 'stock_alert' is already the right bucket.
+    const { data: recent } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('type', 'stock_alert')
+      .eq('read', false)
+      .like('title', `${DESTOCK_FAILED_TITLE_PREFIX}%`)
+      .gte('created_at', since)
+      .limit(1);
+    if (recent && recent.length > 0) {
+      logger.warn('notifyDestockFailed: deja signale recemment, pas de doublon', {
+        tenantId,
+        orderId,
+      });
+      return;
+    }
+
+    const { error } = await supabase.from('notifications').insert({
+      tenant_id: tenantId,
+      user_id: null,
+      type: 'stock_alert',
+      title: `${DESTOCK_FAILED_TITLE_PREFIX} ${label}`,
+      body: outOfStock
+        ? "Le stock d'un ingredient de cette commande etait insuffisant: aucun ingredient n'a ete deduit. Reapprovisionnez, puis corrigez le stock a la main."
+        : "Les ingredients de cette commande n'ont pas pu etre deduits. Verifiez le stock a la main.",
+      // /inventory, NOT /stock-history: a deduction that FAILED has, by
+      // definition, no line in the history - sending the owner there would show
+      // them nothing. The actionable screen is the stock itself.
+      link: '/inventory',
+      read: false,
+    });
+    if (error) {
+      logger.error('notifyDestockFailed: insert notification impossible', {
+        tenantId,
+        orderId,
+        error,
+      });
+    }
+  } catch (err) {
+    logger.error('notifyDestockFailed: echec', { tenantId, orderId, err });
+  }
+}

@@ -46,6 +46,7 @@ export function mapStockMovementRow(row: Record<string, unknown>): StockMovement
     supplier_id: (row.supplier_id as string | null) ?? null,
     created_at: row.created_at as string,
     author_name: (row.author_name as string | null) ?? null,
+    order_number: (row.order_number as string | null) ?? null,
     ingredient:
       row.ingredient_name != null
         ? {
@@ -112,6 +113,38 @@ export interface InventoryService {
   cancelStockCount(tenantId: string, countId: string): Promise<void>;
 }
 
+/**
+ * Set an ingredient's quantity through the canonical ledger path: the RPC writes
+ * the 'opening' movement for the DELTA, so current_stock never moves without a
+ * matching row in stock_movements. Shared by creation and the opening-stock
+ * screen (no `this`, so the service object can safely be destructured).
+ */
+async function applyOpeningStock(
+  supabase: SupabaseClient,
+  tenantId: string,
+  ingredientId: string,
+  quantity: number,
+): Promise<void> {
+  // Stamp the acting user on the ledger movement (anti-vol traceability).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.rpc('set_opening_stock', {
+    p_tenant_id: tenantId,
+    p_ingredient_id: ingredientId,
+    p_quantity: quantity,
+    p_created_by: user?.id || undefined,
+  });
+
+  if (error) {
+    if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
+      throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
+    }
+    throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
+  }
+}
+
 export function createInventoryService(supabase: SupabaseClient): InventoryService {
   return {
     // --- Ingredients --------------------------------------
@@ -131,13 +164,26 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
     },
 
     async createIngredient(tenantId: string, input: CreateIngredientInput): Promise<Ingredient> {
+      // The row is ALWAYS born at 0: an opening quantity goes through the
+      // canonical ledger path below.
+      //
+      // Writing input.current_stock straight into the column broke the ledger
+      // invariant (current_stock == SUM(stock_movements.quantity)) for the whole
+      // life of the ingredient: the opening quantity existed as stock but as no
+      // movement. Measured on prod 2026-11-08: 13 ingredients adrift, each by
+      // exactly its opening quantity (Riz 60 / ledger 0, Boeuf hache 7.850 /
+      // ledger -0.150). The stock screen was right, the history could not
+      // explain it, and "reconcile" would have booked a fake adjustment to hide
+      // the gap. updateIngredient already excluded current_stock for this very
+      // reason - creation was the hole.
+      const openingStock = input.current_stock ?? 0;
       const { data, error } = await supabase
         .from('ingredients')
         .insert({
           tenant_id: tenantId,
           name: input.name,
           unit: input.unit,
-          current_stock: input.current_stock ?? 0,
+          current_stock: 0,
           min_stock_alert: input.min_stock_alert ?? 0,
           cost_per_unit: input.cost_per_unit ?? 0,
           category: input.category || null,
@@ -150,7 +196,36 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         .single();
 
       if (error) throw new ServiceError('Erreur création ingrédient', 'INTERNAL', error);
-      return data as Ingredient;
+      const created = data as Ingredient;
+
+      if (openingStock > 0) {
+        // Same RPC as the "Stock d'ouverture" screen: sets the quantity AND
+        // records the matching 'opening' movement.
+        try {
+          await applyOpeningStock(supabase, tenantId, created.id, openingStock);
+        } catch (openingError) {
+          // Two statements instead of one insert means a half-done creation is
+          // now possible. Left alone, the ingredient would sit at 0 while the
+          // screen showed an error, the owner would retype it, and - there is NO
+          // unique constraint on (tenant_id, name) - they would end up with two
+          // "Riz", one empty, both pickable in a recipe. So the row is removed
+          // and the caller sees a clean failure.
+          // ponytail: compensating delete, because it needs no migration. The
+          // airtight version is a single RPC that creates the row AND opens its
+          // stock in one transaction.
+          await supabase
+            .from('ingredients')
+            .delete()
+            .eq('id', created.id)
+            .eq('tenant_id', tenantId);
+          throw openingError;
+        }
+        // current_stock is numeric(10,3) in base: report what the column now
+        // holds, not the raw input, so the caller never shows a 4th decimal the
+        // database has already rounded away.
+        return { ...created, current_stock: Math.round(openingStock * 1000) / 1000 };
+      }
+      return created;
     },
 
     async updateIngredient(
@@ -464,24 +539,7 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
     },
 
     async setOpeningStock(tenantId: string, ingredientId: string, quantity: number): Promise<void> {
-      // Stamp the acting user on the ledger movement (anti-vol traceability).
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      const { error } = await supabase.rpc('set_opening_stock', {
-        p_tenant_id: tenantId,
-        p_ingredient_id: ingredientId,
-        p_quantity: quantity,
-        p_created_by: user?.id || undefined,
-      });
-
-      if (error) {
-        if (error.message?.includes('INGREDIENT_NOT_FOUND')) {
-          throw new ServiceError('Ingredient introuvable', 'NOT_FOUND', error);
-        }
-        throw new ServiceError("Erreur stock d'ouverture", 'INTERNAL', error);
-      }
+      await applyOpeningStock(supabase, tenantId, ingredientId, quantity);
     },
 
     async verifyLedger(tenantId: string): Promise<LedgerDriftRow[]> {

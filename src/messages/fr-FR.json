@@ -2233,7 +2233,9 @@
     "lossNotes": "Notes (facultatif)",
     "lossRecorded": "Perte enregistrée",
     "lossError": "Erreur lors de l'enregistrement de la perte",
-    "importTechnicalSheets": "Importer fiches techniques"
+    "importTechnicalSheets": "Importer fiches techniques",
+    "unitChangeWarning": "Attention: changer l'unite ne convertit rien. Le stock enregistre et toutes les recettes qui utilisent cet ingredient gardent leurs nombres tels quels: 2 en {from} devient 2 en {to}. Corrigez le stock et les recettes apres l'enregistrement.",
+    "unitChangeAcknowledge": "Je comprends: je corrigerai moi-meme le stock et les recettes"
   },
   "losses": {
     "title": "Pertes par motif",
@@ -3829,7 +3831,8 @@
     "staffReportColAdjustment": "Ajust. negatifs",
     "staffReportColOrderDestock": "Sorties commande",
     "staffReportError": "Impossible de charger le rapport.",
-    "staffReportEmpty": "Aucun mouvement attribue sur cette periode."
+    "staffReportEmpty": "Aucun mouvement attribue sur cette periode.",
+    "fromOrder": "Commande {n}"
   },
   "screenLock": {
     "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",

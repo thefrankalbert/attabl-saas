@@ -17,6 +17,12 @@ export default function StockHistoryMobileCard({
   const style = MOVEMENT_STYLES[movement.movement_type];
   const isPositive = movement.quantity > 0;
   const Icon = style?.icon || Package;
+  // A cancellation carries BOTH a note and an order number: show the two rather
+  // than letting the note hide which order it was.
+  const movementDetail =
+    [movement.order_number ? t('fromOrder', { n: movement.order_number }) : null, movement.notes]
+      .filter(Boolean)
+      .join(' - ') || null;
   return (
     <div className="bg-app-card border border-app-border/60 rounded-xl p-3.5 space-y-2.5">
       {/* Top: ingredient + quantity */}
@@ -87,8 +93,13 @@ export default function StockHistoryMobileCard({
         </div>
       </div>
 
-      {movement.notes && (
-        <p className="text-[11px] text-app-text-muted italic truncate">{movement.notes}</p>
+      {(movement.notes || movement.order_number) && (
+        <p
+          className="text-[11px] text-app-text-muted italic truncate"
+          title={movementDetail ?? undefined}
+        >
+          {movementDetail}
+        </p>
       )}
     </div>
   );

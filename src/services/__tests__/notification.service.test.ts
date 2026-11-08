@@ -327,3 +327,85 @@ describe('checkAndNotifyLowStock', () => {
     ]);
   });
 });
+
+describe('notifyDestockFailed', () => {
+  /**
+   * The dish goes out whether or not the deduction worked. If nobody is told,
+   * the gap is only found at the next physical count - with no way to know which
+   * order caused it. And in a rush with one ingredient at zero EVERY order fails,
+   * so the warning has to be told once, not fifty times.
+   */
+  const insertSpy = vi.fn().mockResolvedValue({ error: null });
+
+  function wire(opts: { orderNumber?: string | null; recent?: unknown[] }) {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'orders') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi
+            .fn()
+            .mockResolvedValue({ data: { order_number: opts.orderNumber ?? 'CMD-7' } }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        like: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: opts.recent ?? [], error: null }),
+        insert: insertSpy,
+      };
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    insertSpy.mockClear();
+  });
+
+  it('warns the restaurant, naming the order and pointing at the history', async () => {
+    const { notifyDestockFailed } = await import('../notification.service');
+    wire({ orderNumber: 'CMD-7' });
+
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-1', outOfStock: true });
+
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(row.tenant_id).toBe('tenant-1');
+    expect(row.title).toContain('CMD-7');
+    expect(row.body).toContain('insuffisant');
+    expect(row.link).toBe('/inventory');
+  });
+
+  it('says it plainly when the cause is not a stock shortage', async () => {
+    const { notifyDestockFailed } = await import('../notification.service');
+    wire({});
+
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-2', outOfStock: false });
+
+    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(row.body).not.toContain('insuffisant');
+  });
+
+  it('stays silent when the same warning was already raised recently', async () => {
+    const { notifyDestockFailed } = await import('../notification.service');
+    wire({ recent: [{ id: 'notif-existing' }] });
+
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-3', outOfStock: true });
+
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  it('never throws, even when the database is unreachable', async () => {
+    const { notifyDestockFailed } = await import('../notification.service');
+    mockFrom.mockImplementation(() => {
+      throw new Error('connection refused');
+    });
+
+    await expect(
+      notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-4', outOfStock: false }),
+    ).resolves.toBeUndefined();
+  });
+});

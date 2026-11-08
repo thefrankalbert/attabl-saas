@@ -85,6 +85,7 @@ vi.mock('@/services/inventory.service', () => ({
 
 vi.mock('@/services/notification.service', () => ({
   checkAndNotifyLowStock: vi.fn().mockResolvedValue(undefined),
+  notifyDestockFailed: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@sentry/nextjs', () => ({
@@ -283,7 +284,8 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     await vi.waitFor(() => {
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(
         expect.any(Error),
-        expect.objectContaining({ tags: { area: 'inventory-destock' } }),
+        // `channel` tells the two order channels apart when triaging in Sentry.
+        expect.objectContaining({ tags: { area: 'inventory-destock', channel: 'pos' } }),
       );
     });
   });

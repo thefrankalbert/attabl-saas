@@ -1,6 +1,6 @@
 'use client';
 
-import type { Dispatch, SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useTranslations } from 'next-intl';
 import { Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import AdminModal from '@/components/admin/AdminModal';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { IngredientUnit, INGREDIENT_UNITS as UNITS_TYPE } from '@/types/inventory.types';
@@ -44,6 +45,12 @@ interface InventoryFormModalProps {
   isSubmitting: boolean;
   handleSave: () => void;
   handleDeactivate: () => void;
+  /**
+   * Unit the ingredient is stored with today (edit mode only). Recipe lines and
+   * current_stock are plain numbers in THAT unit - nothing is converted when it
+   * changes - so the owner has to be warned before saving.
+   */
+  originalUnit?: IngredientUnit;
 }
 
 export default function InventoryFormModal({
@@ -71,6 +78,7 @@ export default function InventoryFormModal({
   isSubmitting,
   handleSave,
   handleDeactivate,
+  originalUnit,
 }: InventoryFormModalProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
@@ -79,6 +87,15 @@ export default function InventoryFormModal({
   const hasPurchaseUnit = formPurchaseUnit.trim() !== '';
   const showPurchaseHint = hasPurchaseUnit && parsedUpp > 0;
   const showFactorError = hasPurchaseUnit && !(parsedUpp > 0);
+  // Recipe lines and current_stock are bare numbers in the ingredient's unit:
+  // switching the unit reinterprets every one of them without converting any.
+  const unitChanged = mode === 'edit' && !!originalUnit && originalUnit !== formUnit;
+  // A notice the owner can scroll past is not enough here: the change silently
+  // reinterprets the recorded stock AND every recipe line that uses the
+  // ingredient, and nothing - not even verify_stock_ledger - would flag it
+  // afterwards. So saving is blocked until it is acknowledged out loud.
+  const [unitChangeAcknowledged, setUnitChangeAcknowledged] = useState(false);
+  const blockedByUnitChange = unitChanged && !unitChangeAcknowledged;
   return (
     <AdminModal
       isOpen={isOpen}
@@ -116,6 +133,24 @@ export default function InventoryFormModal({
                 ))}
               </SelectContent>
             </Select>
+            {unitChanged && originalUnit && (
+              <div className="mt-1 space-y-2">
+                <p role="alert" className="text-xs text-status-warning">
+                  {t('unitChangeWarning', {
+                    from: INGREDIENT_UNITS[originalUnit]?.labelShort ?? originalUnit,
+                    to: baseUnitShort,
+                  })}
+                </p>
+                <Label className="flex items-start gap-2 text-xs text-app-text-secondary">
+                  <Checkbox
+                    checked={unitChangeAcknowledged}
+                    onCheckedChange={(checked) => setUnitChangeAcknowledged(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <span>{t('unitChangeAcknowledge')}</span>
+                </Label>
+              </div>
+            )}
           </div>
           {mode === 'add' && (
             <div>
@@ -238,7 +273,11 @@ export default function InventoryFormModal({
           <Button variant="ghost" onClick={onClose}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={isSubmitting} variant="default">
+          <Button
+            onClick={handleSave}
+            disabled={isSubmitting || blockedByUnitChange}
+            variant="default"
+          >
             {tc('save')}
           </Button>
         </div>
