@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
-import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
+import { onboardingDataToQRConfig } from '@/lib/qr/onboarding-qr-config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 /** Renders a real template at mini scale for the template picker */

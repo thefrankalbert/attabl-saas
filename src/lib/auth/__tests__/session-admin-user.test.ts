@@ -55,7 +55,7 @@ function tenantRow(tenantId: string, role = 'owner', onboardingCompleted = true,
   return {
     tenant_id: tenantId,
     role,
-    tenants: { onboarding_completed: onboardingCompleted, created_at: createdAt },
+    tenants: { slug: tenantId, onboarding_completed: onboardingCompleted, created_at: createdAt },
   };
 }
 
@@ -84,7 +84,12 @@ describe('resolveSessionAdminUser', () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.userId).toBe('u1');
-      expect(r.adminUser).toEqual({ tenant_id: 't1', role: 'manager' });
+      expect(r.adminUser).toEqual({
+        tenant_id: 't1',
+        role: 'manager',
+        tenant_slug: 't1',
+        onboarding_completed: true,
+      });
     }
   });
 
@@ -195,6 +200,52 @@ describe('recuperation apres inscription partielle', () => {
 
     await resolveSessionAdminUser();
 
+    expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
+  });
+});
+
+describe('choix explicite de l etablissement (?site=) et proprietaire seul', () => {
+  it('rend l etablissement demande par son slug, meme s il n est pas le plus recent', async () => {
+    // La fenetre "Reprendre" de B doit reprendre B, pas C (plus recent).
+    query.rows = [
+      tenantRow('b', 'owner', false, '2026-01-01'),
+      tenantRow('c', 'owner', false, '2026-02-01'),
+    ];
+    const r = await resolveSessionAdminUser({ siteSlug: 'b' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.adminUser.tenant_id).toBe('b');
+  });
+
+  it('refuse un slug dont l utilisateur n est pas membre, SANS retomber sur un autre', async () => {
+    query.rows = [tenantRow('a', 'owner', false)];
+    const r = await resolveSessionAdminUser({ siteSlug: 'pas-a-moi', provisionIfMissing: true });
+    expect(r).toEqual({ ok: false, status: 403, error: 'Compte etablissement introuvable' });
+    // Un mauvais lien ne cree pas de restaurant.
+    expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('ownerOnly ignore les appartenances non proprietaire', async () => {
+    // Proprietaire de "a" (inacheve) ET serveur dans "b" (plus recent, inacheve).
+    query.rows = [
+      tenantRow('a', 'owner', false, '2026-01-01'),
+      tenantRow('b', 'waiter', false, '2026-02-01'),
+    ];
+    const r = await resolveSessionAdminUser({ ownerOnly: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.adminUser.tenant_id).toBe('a');
+  });
+
+  it('ownerOnly ne cree PAS de restaurant pour un compte qui n est que serveur', async () => {
+    query.rows = [tenantRow('b', 'waiter', false)];
+    const r = await resolveSessionAdminUser({ ownerOnly: true, provisionIfMissing: true });
+    expect(r.ok).toBe(false);
+    expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('ne cree PAS de restaurant sur une erreur de lecture (erreur passagere != aucun restaurant)', async () => {
+    query.error = new Error('base injoignable');
+    const r = await resolveSessionAdminUser({ provisionIfMissing: true });
+    expect(r.ok).toBe(false);
     expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
   });
 });

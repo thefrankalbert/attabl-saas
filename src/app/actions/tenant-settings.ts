@@ -5,6 +5,7 @@ import { CACHE_TAG_TENANT_CONFIG, tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
+import { detailsForType } from '@/lib/validations/establishment-details.schema';
 import { createTenantService } from '@/services/tenant.service';
 import { createAuditService } from '@/services/audit.service';
 import { getTranslations } from 'next-intl/server';
@@ -51,6 +52,18 @@ export async function actionUpdateTenantSettings(formData: FormData) {
         : undefined,
       establishmentType: formData.has('establishmentType') ? str('establishmentType') : undefined,
       tableCount: formData.has('tableCount') ? Number(str('tableCount')) : undefined,
+      // Type-specific details - absent = untouched (a partial save must not wipe them).
+      // An unparsable value becomes a non-object so Zod REJECTS it, instead of
+      // being read as "absent" and silently skipped.
+      establishmentDetails: (() => {
+        const raw = formData.get('establishmentDetails') as string | null;
+        if (raw === null) return undefined;
+        try {
+          return JSON.parse(raw) as unknown;
+        } catch {
+          return 'invalid';
+        }
+      })(),
       // Billing fields
       currency: formData.has('currency') ? str('currency') : undefined,
       supportedCurrencies: (() => {
@@ -102,9 +115,19 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       return { success: false, error: firstError };
     }
 
+    // Details of another type than the saved one are dropped (they would stay
+    // stored, invisible, after a type change). Settings always sends both.
+    const settings = parseResult.data;
+    if (settings.establishmentDetails !== undefined && settings.establishmentType !== undefined) {
+      settings.establishmentDetails = detailsForType(
+        settings.establishmentType,
+        settings.establishmentDetails,
+      );
+    }
+
     // 3. Update via service
     const tenantService = createTenantService(supabase);
-    await tenantService.updateSettings(tenantId, parseResult.data);
+    await tenantService.updateSettings(tenantId, settings);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {
@@ -116,7 +139,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     audit.log({
       action: 'update',
       entityType: 'setting',
-      newData: parseResult.data as Record<string, unknown>,
+      newData: settings as Record<string, unknown>,
     });
 
     // 4. Revalidate cached tenant config (scoped to this tenant)

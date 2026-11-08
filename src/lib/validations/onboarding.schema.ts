@@ -1,9 +1,31 @@
 import { z } from 'zod';
+import { QR_MESSAGE_MAX_LENGTH } from '@/types/qr-design.types';
+import { coerceTemplateId } from '@/lib/qr/onboarding-qr-config';
+import { establishmentDetailsSchema } from './establishment-details.schema';
 
 /**
  * Zod schemas for onboarding validation.
  * Used in /api/onboarding/save and /api/onboarding/complete routes.
  */
+
+/**
+ * Optional `?site=<slug>` of the onboarding routes: which of the user's
+ * establishments is being set up. Absent = the default pick (most recent
+ * unfinished). It only selects among the user's own memberships (see
+ * resolveSessionAdminUser), so a slug shape check is all it needs here.
+ */
+export const onboardingSiteParamSchema = z
+  .string()
+  .max(100)
+  .regex(/^[a-z0-9-]+$/)
+  .nullable();
+
+/** Reads and validates `?site=` from a request URL. `undefined` = invalid. */
+export function readOnboardingSiteParam(requestUrl: string): string | null | undefined {
+  const raw = new URL(requestUrl).searchParams.get('site');
+  const parsed = onboardingSiteParamSchema.safeParse(raw === '' ? null : raw);
+  return parsed.success ? parsed.data : undefined;
+}
 
 export const onboardingSaveSchema = z.object({
   step: z
@@ -35,7 +57,12 @@ const tableZoneSchema = z.object({
 export const onboardingCompleteSchema = z.object({
   data: z.object({
     tenantName: z.string().max(200).optional(),
-    establishmentType: z.enum(['restaurant', 'hotel', 'bar', 'cafe', 'fastfood']).optional(),
+    // 'other' est propose par l'ecran de choix du type (IdentitySection). Il
+    // manquait ici: choisir "Autre" faisait echouer le lancement en
+    // "Validation failed", au tout dernier bouton du parcours.
+    establishmentType: z
+      .enum(['restaurant', 'hotel', 'bar', 'cafe', 'fastfood', 'other'])
+      .optional(),
     address: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     country: z.string().max(100).optional(),
@@ -62,5 +89,30 @@ export const onboardingCompleteSchema = z.object({
     language: z.string().max(10).optional(),
     tenantSlug: z.string().max(100).optional(),
     menuItems: z.array(menuItemSchema).max(50).optional(),
+    // Details propres au type (etoiles, terrasse, wifi...). Ils etaient retires
+    // en silence par ce schema: memes bornes que la colonne qui les recoit.
+    ...establishmentDetailsSchema.shape,
+    // Choix du QR, enregistre comme design QR par defaut du restaurant.
+    // A draft saved by an older version can hold a retired template id
+    // ('elegant') or style: refusing it blocked the very last button. It is
+    // mapped exactly like the preview maps it (coerceTemplateId), so what is
+    // saved is what was shown.
+    qrTemplate: z
+      .preprocess(
+        (v) => (typeof v === 'string' ? coerceTemplateId(v) : v),
+        z.enum(['minimal', 'carte', 'chevalet']),
+      )
+      .optional(),
+    qrStyle: z
+      .preprocess(
+        (v) =>
+          typeof v === 'string' && !['classic', 'branded', 'inverted', 'dark'].includes(v)
+            ? 'branded'
+            : v,
+        z.enum(['classic', 'branded', 'inverted', 'dark']),
+      )
+      .optional(),
+    qrCta: z.string().max(120).optional(),
+    qrDescription: z.string().max(QR_MESSAGE_MAX_LENGTH).optional(),
   }),
 });

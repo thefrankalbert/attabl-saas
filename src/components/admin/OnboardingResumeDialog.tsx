@@ -17,7 +17,12 @@ import { getMainAppPath } from '@/lib/app-url';
 
 const DISMISS_KEY = 'attabl_onboarding_dismissed';
 
-export function OnboardingResumeDialog() {
+/**
+ * `tenantSlug` makes "Reprendre" resume THIS establishment. Without it the
+ * onboarding opened the most recent unfinished one, which for an owner with
+ * two unfinished establishments was the other restaurant.
+ */
+export function OnboardingResumeDialog({ tenantSlug }: { tenantSlug: string }) {
   const t = useTranslations('admin');
   const router = useRouter();
   const [open, setOpen] = useState(() => {
@@ -26,12 +31,13 @@ export function OnboardingResumeDialog() {
   });
 
   const handleResume = () => {
-    const onboardingUrl = getMainAppPath('/onboarding');
+    const path = `/onboarding?site=${encodeURIComponent(tenantSlug)}`;
+    const onboardingUrl = getMainAppPath(path);
     if (typeof window !== 'undefined' && window.location.origin !== new URL(onboardingUrl).origin) {
       window.location.assign(onboardingUrl);
       return;
     }
-    router.push('/onboarding');
+    router.push(path);
   };
 
   const handleSkip = () => {

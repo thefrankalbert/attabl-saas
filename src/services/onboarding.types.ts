@@ -46,6 +46,19 @@ export interface OnboardingCompleteData {
   language?: string;
   tenantSlug?: string;
   menuItems?: MenuItem[];
+  // Type-specific details (stored in tenants.establishment_details)
+  starRating?: number;
+  hasRestaurant?: boolean;
+  hasTerrace?: boolean;
+  hasWifi?: boolean;
+  registerCount?: number;
+  hasDelivery?: boolean;
+  totalCapacity?: number;
+  // QR choice (stored as the tenant's default qr_designs row)
+  qrTemplate?: 'minimal' | 'carte' | 'chevalet';
+  qrStyle?: 'classic' | 'branded' | 'inverted' | 'dark';
+  qrCta?: string;
+  qrDescription?: string;
 }
 
 /**
@@ -107,5 +120,5 @@ export interface OnboardingService {
     fullDraft?: OnboardingDraft,
   ): Promise<void>;
   completeOnboarding(tenantId: string, data: OnboardingCompleteData): Promise<{ slug?: string }>;
-  getState(userId: string): Promise<OnboardingState>;
+  getState(tenantId: string): Promise<OnboardingState>;
 }

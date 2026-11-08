@@ -4,6 +4,8 @@ import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
+import { readTenantSlug } from '@/lib/auth/tenant-header';
+import { readOnboardingSiteParam } from '@/lib/validations/onboarding.schema';
 
 /** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
 function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
@@ -49,10 +51,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await resolveSessionAdminUser({
+    // Which of the user's establishments this file belongs to. Without it the
+    // file was stored under the DEFAULT one (most recent unfinished): a logo
+    // uploaded while setting up B, or from B's admin, landed in C's folder.
+    // - `?site=` (sent by the onboarding): explicit, never replaced by another;
+    // - otherwise the tenant of the page (proxy header, or the Referer hint):
+    //   only orients the choice, and falls back to the default if it is not
+    //   one of the user's memberships (e.g. a super admin), as before.
+    // Either way the resolver only picks among the user's OWN memberships.
+    const explicitSite = readOnboardingSiteParam(request.url);
+    if (explicitSite === undefined) {
+      return NextResponse.json({ error: 'Parametre site invalide' }, { status: 400 });
+    }
+    const pageSite = explicitSite ? null : readTenantSlug(request.headers).slug;
+
+    let session = await resolveSessionAdminUser({
       requireActive: true,
       provisionIfMissing: true,
+      siteSlug: explicitSite ?? pageSite,
     });
+    if (!session.ok && pageSite) {
+      session = await resolveSessionAdminUser({ requireActive: true, provisionIfMissing: true });
+    }
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: session.status });
     }

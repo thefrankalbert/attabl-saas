@@ -45,8 +45,8 @@ export function createOnboardingService(supabase: SupabaseClient): OnboardingSer
       return runCompleteOnboarding(supabase, tenantId, data);
     },
 
-    getState(userId: string): Promise<OnboardingState> {
-      return getOnboardingState(supabase, userId);
+    getState(tenantId: string): Promise<OnboardingState> {
+      return getOnboardingState(supabase, tenantId);
     },
   };
 }

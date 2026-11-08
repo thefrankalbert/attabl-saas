@@ -66,7 +66,11 @@ export async function saveOnboardingStep(
     .upsert(progressData, { onConflict: 'tenant_id' });
 
   if (progressError) {
-    // Non-blocking: log but don't throw. The tenant update already succeeded.
-    logger.error('Failed to save onboarding draft', progressError);
+    // The draft IS the resume point: everything the user typed that has no
+    // tenant column (menu, tables, QR, details) lives only here. Swallowing
+    // this error made the screen show "saved" while nothing was kept, and the
+    // user found an empty form after logging back in.
+    logger.error('Failed to save onboarding draft', progressError, { tenantId });
+    throw new ServiceError('Failed to save onboarding draft', 'INTERNAL', progressError);
   }
 }

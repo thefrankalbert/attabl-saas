@@ -4,7 +4,10 @@ import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
-import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
+import {
+  onboardingCompleteSchema,
+  readOnboardingSiteParam,
+} from '@/lib/validations/onboarding.schema';
 import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
@@ -45,10 +48,17 @@ export async function POST(request: Request) {
 
     const { data } = parseResult.data;
 
+    const siteSlug = readOnboardingSiteParam(request.url);
+    if (siteSlug === undefined) {
+      return NextResponse.json({ error: 'Parametre site invalide' }, { status: 400 });
+    }
+
     // 3. Authenticate and resolve tenant (service role lookup scoped to session user)
     const session = await resolveSessionAdminUser({
       requireActive: true,
       provisionIfMissing: true,
+      siteSlug,
+      ownerOnly: true,
     });
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: session.status });

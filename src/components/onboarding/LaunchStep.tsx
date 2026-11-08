@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Paintbrush, Type, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LaunchQR } from '@/components/qr/LaunchQR';
-import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
+import { onboardingDataToQRConfig } from '@/lib/qr/onboarding-qr-config';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
 import type { OnboardingData } from '@/app/onboarding/page';

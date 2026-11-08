@@ -239,7 +239,12 @@ export default async function AdminLayout({
 
   return (
     <div>
-      {showOnboardingResume && <OnboardingResumeDialog />}
+      {/* Owner only: the onboarding (and its save/complete routes) is the
+          owner's job; a waiter or a cook was offered a button leading to a
+          screen they could not finish. */}
+      {showOnboardingResume && userRole === 'owner' && (
+        <OnboardingResumeDialog tenantSlug={tenant.slug} />
+      )}
       <QueryProvider>
         <SoundProvider
           tenantId={tenant.id}

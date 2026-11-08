@@ -2,11 +2,12 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { resolveSessionAdminUser } from '@/lib/auth/session-admin-user';
 import { logger } from '@/lib/logger';
-import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
+import { onboardingSaveSchema, readOnboardingSiteParam } from '@/lib/validations/onboarding.schema';
 import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 
 export async function POST(request: Request) {
   try {
@@ -41,12 +42,35 @@ export async function POST(request: Request) {
 
     const { step, data } = parseResult.data;
 
+    const siteSlug = readOnboardingSiteParam(request.url);
+    if (siteSlug === undefined) {
+      return NextResponse.json({ error: 'Parametre site invalide' }, { status: 400 });
+    }
+
     const session = await resolveSessionAdminUser({
       requireActive: true,
       provisionIfMissing: true,
+      siteSlug,
+      ownerOnly: true,
     });
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: session.status });
+    }
+
+    // Same roles as the completion: the save writes the tenant's name, address
+    // and colors, which only the owner may set up here.
+    if (!isRoleAllowed(session.adminUser.role, ONBOARDING_COMPLETE_ROLES)) {
+      return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
+    // A finished establishment is edited from its Settings, never from a draft.
+    // Without this, an onboarding tab left open (or the save-on-leave beacon)
+    // rewrote the name, address and colors with the values of that old tab.
+    if (session.adminUser.onboarding_completed) {
+      return NextResponse.json(
+        { error: 'ONBOARDING_ALREADY_COMPLETED', slug: session.adminUser.tenant_slug },
+        { status: 409 },
+      );
     }
 
     // 4. Save step via service (pass full data as draft for complete restoration)

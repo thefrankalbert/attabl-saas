@@ -5,6 +5,8 @@ import {
   pickHomeTenantSlug,
   postLoginDestination,
   type PostLoginMembership,
+  onboardingGateDestination,
+  loginPageDestination,
 } from '../post-login-destination';
 import { permissionForAdminSubPath } from '../admin-route-permissions';
 import { hasPermission } from '@/lib/permissions';
@@ -30,13 +32,51 @@ function member(overrides: Partial<PostLoginMembership> = {}): PostLoginMembersh
     tenantSlug: 'chez-nous',
     onboardingCompleted: true,
     tenantCreatedAt: '2026-01-01T00:00:00Z',
+    tenantDeletedAt: null,
     ...overrides,
   };
 }
 
 describe('postLoginDestination', () => {
-  it('envoie le proprietaire a l annuaire de ses etablissements', () => {
-    expect(postLoginDestination([member({ role: 'owner' })])).toBe('/admin/tenants');
+  // Decision produit du 2026-11-08: un seul etablissement -> son espace,
+  // plusieurs -> l'annuaire pour choisir.
+  it('fait entrer le proprietaire d UN seul etablissement directement dans son espace', () => {
+    expect(postLoginDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+  });
+
+  it('envoie le proprietaire de PLUSIEURS etablissements choisir dans l annuaire', () => {
+    expect(
+      postLoginDestination([
+        member({ role: 'owner', tenantSlug: 'a' }),
+        member({ role: 'owner', tenantSlug: 'b' }),
+      ]),
+    ).toBe('/admin/tenants');
+  });
+
+  it('reprend l onboarding du proprietaire dont l UNIQUE etablissement est inacheve', () => {
+    expect(postLoginDestination([member({ role: 'owner', onboardingCompleted: false })])).toBe(
+      '/onboarding',
+    );
+  });
+
+  it('ne force PLUS l onboarding quand un etablissement parmi plusieurs est inacheve', () => {
+    // Avant: renvoye dans l'onboarding a CHAQUE connexion, sans acces direct a
+    // ses restaurants qui tournent.
+    expect(
+      postLoginDestination([
+        member({ role: 'owner', tenantSlug: 'tourne', onboardingCompleted: true }),
+        member({ role: 'owner', tenantSlug: 'nouveau', onboardingCompleted: false }),
+      ]),
+    ).toBe('/admin/tenants');
+  });
+
+  it('compte un etablissement banni comme absent (un seul vivant -> son espace)', () => {
+    expect(
+      postLoginDestination([
+        member({ role: 'owner', tenantSlug: 'vivant' }),
+        member({ role: 'owner', tenantSlug: 'retire', isActive: false }),
+      ]),
+    ).toBe('/sites/vivant/admin');
   });
 
   it('envoie tout role non proprietaire a l espace de son etablissement', () => {
@@ -201,7 +241,7 @@ describe('robustesse du mappage (relecture du 2026-11-06)', () => {
     // proprietaires refaire leur installation.
     const rows = mapMembershipRows([{ role: 'owner', tenants: { slug: 'le-mien' } }]);
     expect(rows[0].onboardingCompleted).toBeNull();
-    expect(postLoginDestination(rows)).toBe('/admin/tenants');
+    expect(postLoginDestination(rows)).toBe('/sites/le-mien/admin');
   });
 
   it('renvoie a l onboarding seulement sur un onboarding EXPLICITEMENT inacheve', () => {
@@ -218,5 +258,77 @@ describe('robustesse du mappage (relecture du 2026-11-06)', () => {
       { role: 'super_admin', is_super_admin: false, tenants: { slug: '__platform' } },
     ]);
     expect(postLoginDestination(rows)).toBe('/admin/platform');
+  });
+});
+
+describe('etablissement supprime en douceur (audit 2026-11-08)', () => {
+  it('ne l envoie PAS dans un espace supprime (boucle /login <-> espace)', () => {
+    // Ses lignes admin_users restent vivantes; l'espace le renvoyait a /login,
+    // qui le renvoyait dans l'espace.
+    const rows = mapMembershipRows([
+      {
+        role: 'owner',
+        is_active: true,
+        tenants: { slug: 'ferme', onboarding_completed: true, deleted_at: '2026-11-01T00:00:00Z' },
+      },
+    ]);
+    expect(postLoginDestination(rows)).toBe('/unauthorized');
+  });
+
+  it('garde l etablissement vivant quand un autre est supprime', () => {
+    const rows = mapMembershipRows([
+      { role: 'owner', tenants: { slug: 'vivant', onboarding_completed: true } },
+      {
+        role: 'owner',
+        tenants: { slug: 'ferme', onboarding_completed: true, deleted_at: '2026-11-01T00:00:00Z' },
+      },
+    ]);
+    expect(postLoginDestination(rows)).toBe('/sites/vivant/admin');
+  });
+});
+
+describe('onboardingGateDestination (onboarding une seule fois)', () => {
+  it('laisse passer une inscription interrompue (aucune ligne)', () => {
+    expect(onboardingGateDestination([])).toBeNull();
+  });
+
+  it('laisse passer le proprietaire d un etablissement inacheve', () => {
+    expect(
+      onboardingGateDestination([member({ role: 'owner', onboardingCompleted: false })]),
+    ).toBeNull();
+  });
+
+  it('renvoie le proprietaire d un etablissement FINI dans son espace', () => {
+    expect(onboardingGateDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+  });
+
+  it('renvoie un serveur, meme si l etablissement est inacheve', () => {
+    expect(
+      onboardingGateDestination([member({ role: 'waiter', onboardingCompleted: false })]),
+    ).toBe('/sites/chez-nous/admin');
+  });
+
+  it('ignore un etablissement inacheve mais supprime', () => {
+    expect(
+      onboardingGateDestination([
+        member({ role: 'owner', tenantSlug: 'vivant' }),
+        member({
+          role: 'owner',
+          tenantSlug: 'ferme',
+          onboardingCompleted: false,
+          tenantDeletedAt: '2026-11-01T00:00:00Z',
+        }),
+      ]),
+    ).toBe('/sites/vivant/admin');
+  });
+});
+
+describe('loginPageDestination (/login deja connecte)', () => {
+  it('fait entrer directement dans l espace', () => {
+    expect(loginPageDestination([member({ role: 'owner' })])).toBe('/sites/chez-nous/admin');
+  });
+
+  it('garde le formulaire pour un compte sans acces (sinon impasse /unauthorized)', () => {
+    expect(loginPageDestination([member({ isActive: false })])).toBeNull();
   });
 });

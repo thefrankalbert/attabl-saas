@@ -2461,6 +2461,7 @@ export type Database = {
           enable_service_charge: boolean | null;
           enable_tax: boolean | null;
           enabled_payment_methods: string[];
+          establishment_details: Json;
           establishment_type: string | null;
           freeze_reason: string | null;
           group_id: string | null;
@@ -2519,6 +2520,7 @@ export type Database = {
           enable_service_charge?: boolean | null;
           enable_tax?: boolean | null;
           enabled_payment_methods?: string[];
+          establishment_details?: Json;
           establishment_type?: string | null;
           freeze_reason?: string | null;
           group_id?: string | null;
@@ -2577,6 +2579,7 @@ export type Database = {
           enable_service_charge?: boolean | null;
           enable_tax?: boolean | null;
           enabled_payment_methods?: string[];
+          establishment_details?: Json;
           establishment_type?: string | null;
           freeze_reason?: string | null;
           group_id?: string | null;

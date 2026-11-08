@@ -1,101 +1,78 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ServiceError } from './errors';
-import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
+import { ONBOARDING_LAUNCH_DEFAULTS } from '@/lib/onboarding/launch-defaults';
+import { parseEstablishmentDetails } from '@/lib/validations/establishment-details.schema';
 import type { OnboardingDraft, OnboardingState } from './onboarding.types';
 
 /**
- * Retrieves the current onboarding state for a user.
- * Merges tenant fields with the saved draft for maximum data recovery.
+ * Retrieves the onboarding state of ONE tenant.
+ *
+ * The tenant is chosen by the caller (`resolveSessionAdminUser`, scoped to the
+ * session user). This function used to re-pick the tenant on its own from the
+ * user id: two copies of the same choice that could disagree, so the screen
+ * could show restaurant B while the saves went to restaurant C.
+ *
+ * Merges tenant columns with the saved draft (draft wins: it is the complete
+ * snapshot of what the user typed).
  */
 export async function getOnboardingState(
   supabase: SupabaseClient,
-  userId: string,
+  tenantId: string,
 ): Promise<OnboardingState> {
-  // Lookup via service role (RLS can block admin_users during onboarding)
+  // Service role for the tenant row: RLS can block the read during onboarding.
+  // Safe because tenantId comes from the session membership, never the client.
   const lookupClient = createAdminClient();
-  const { data: adminRows } = await lookupClient
-    .from('admin_users')
+  const { data: tenant, error: tenantError } = await lookupClient
+    .from('tenants')
     .select(
-      `
-      tenant_id,
-      tenants (
-        id,
-        slug,
-        name,
-        establishment_type,
-        address,
-        city,
-        country,
-        phone,
-        table_count,
-        logo_url,
-        primary_color,
-        secondary_color,
-        description,
-        currency,
-        onboarding_completed,
-        created_at
-      )
-    `,
+      'id, slug, name, establishment_type, address, city, country, phone, table_count, logo_url, primary_color, secondary_color, description, currency, default_locale, establishment_details, onboarding_completed',
     )
-    .eq('user_id', userId)
-    .eq('is_active', true);
+    .eq('id', tenantId)
+    .maybeSingle();
 
-  // Normalize the tenant join (Supabase returns it as object or array) and pick
-  // deterministically: most recently created tenant whose onboarding is unfinished.
-  // NEVER order by the uuid primary key - that selection is non-deterministic and
-  // made multi-tenant owners resume an arbitrary establishment.
-  type TenantRow = {
-    id: string;
-    slug: string;
-    name: string;
-    establishment_type: string | null;
-    address: string | null;
-    city: string | null;
-    country: string | null;
-    phone: string | null;
-    table_count: number | null;
-    logo_url: string | null;
-    primary_color: string | null;
-    secondary_color: string | null;
-    description: string | null;
-    currency: string | null;
-    onboarding_completed: boolean | null;
-    created_at: string | null;
-  };
-  const tenants: TenantRow[] = (adminRows ?? [])
-    .map((row) => (Array.isArray(row.tenants) ? row.tenants[0] : row.tenants))
-    .filter((candidate): candidate is TenantRow => !!candidate);
-
-  if (tenants.length === 0) {
+  if (tenantError) {
+    throw new ServiceError('Lecture du restaurant impossible', 'INTERNAL', tenantError);
+  }
+  if (!tenant) {
     throw new ServiceError('Tenant non trouvé', 'NOT_FOUND');
   }
 
-  const pickIndex = pickOnboardingTenantIndex(
-    tenants.map((candidate) => ({
-      onboardingCompleted: !!candidate.onboarding_completed,
-      createdAt: candidate.created_at,
-    })),
-  );
-  const tenant = tenants[pickIndex];
-
-  // Get onboarding progress INCLUDING the draft
-  const { data: progress } = await supabase
+  const { data: progress, error: progressError } = await supabase
     .from('onboarding_progress')
     .select('step, completed, draft')
     .eq('tenant_id', tenant.id)
-    .single();
+    .maybeSingle();
 
-  // Base data from tenant table columns
+  // A failed read must not look like "no progress": that would send the user
+  // back to the welcome screen with empty fields, and the next auto-save would
+  // overwrite the real draft with them.
+  if (progressError) {
+    throw new ServiceError('Lecture de la progression impossible', 'INTERNAL', progressError);
+  }
+
+  const completed = !!tenant.onboarding_completed;
+
+  // Before the onboarding is finished, `currency` and `country` still hold the
+  // DATABASE defaults (XAF / Cameroun), not a choice of the user: anything the
+  // user typed lives in the draft. Proposing them would preselect the wrong
+  // currency for the launch market, so the launch defaults are used instead.
+  // Once finished, the columns ARE the user's choice and are returned as is.
+  const details = parseEstablishmentDetails(tenant.establishment_details);
   const baseData: OnboardingDraft = {
     establishmentType: tenant.establishment_type || 'restaurant',
     address: tenant.address || '',
     city: tenant.city || '',
-    country: tenant.country || 'Tchad',
+    country: completed
+      ? tenant.country || ONBOARDING_LAUNCH_DEFAULTS.country
+      : ONBOARDING_LAUNCH_DEFAULTS.country,
     phone: tenant.phone || '',
     tableCount: tenant.table_count || 10,
-    currency: tenant.currency || 'XAF',
+    currency: completed
+      ? tenant.currency || ONBOARDING_LAUNCH_DEFAULTS.currency
+      : ONBOARDING_LAUNCH_DEFAULTS.currency,
+    ...(tenant.default_locale ? { language: tenant.default_locale } : {}),
+    ...details,
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: tenant.logo_url || '',
@@ -104,27 +81,20 @@ export async function getOnboardingState(
     description: tenant.description || '',
   };
 
-  // Merge with draft data (draft takes priority for fields it contains)
+  // Draft takes priority for every field it contains.
   const draft = (progress?.draft as OnboardingDraft | null) || {};
-  const mergedData: OnboardingDraft = {
-    ...baseData,
-    ...draft,
-    // Ensure tenant table values win for fields that are written there directly,
-    // unless the draft has a newer/different value
-    logoUrl: draft.logoUrl ?? baseData.logoUrl,
-    primaryColor: draft.primaryColor ?? baseData.primaryColor,
-    secondaryColor: draft.secondaryColor ?? baseData.secondaryColor,
-  };
+  const mergedData: OnboardingDraft = { ...baseData, ...draft };
 
   return {
     tenantId: tenant.id,
     tenantSlug: tenant.slug,
     tenantName: draft.tenantName || tenant.name,
-    // No progress row => brand-new tenant => start at the welcome screen (step 0),
-    // NOT step 1 (which dropped new users straight into the establishment form and
-    // felt like a session "already started"). A saved row keeps its step (>= 1).
+    // No progress row => brand-new tenant => start at the welcome screen (step 0).
     step: progress?.step ?? 0,
-    completed: progress?.completed || false,
+    // The tenant flag alone, like the save/complete routes and the admin
+    // layout: two sources could disagree and bounce the user between the
+    // onboarding and the "resume" dialog.
+    completed,
     data: mergedData,
   };
 }

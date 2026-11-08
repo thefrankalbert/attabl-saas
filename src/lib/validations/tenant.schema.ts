@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { establishmentDetailsSchema } from './establishment-details.schema';
 
 /**
  * Zod schemas for tenant validation.
@@ -62,6 +63,8 @@ export const updateTenantSettingsSchema = z.object({
   notificationSoundId: z.string().max(500).optional(),
   establishmentType: z.string().max(50).optional(),
   tableCount: z.number().int().min(0).max(500).optional(),
+  // Details propres au type (etoiles, terrasse, wifi...), saisis a l'onboarding
+  establishmentDetails: establishmentDetailsSchema.optional(),
   // --- Production upgrade: business config -----------------
   currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   supportedCurrencies: z
