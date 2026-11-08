@@ -168,7 +168,12 @@ beforeEach(() => {
   getCachedTenantByDomainMock.mockClear();
   getCachedTenantMock.mockClear();
   getCachedTenantByDomainMock.mockResolvedValue(null);
-  getCachedTenantMock.mockResolvedValue(null);
+  // Par defaut le restaurant EXISTE et va bien. C'etait `null` auparavant,
+  // c'est-a-dire "ce restaurant n'existe pas": depuis que le proxy verifie
+  // l'existence avant de declarer l'en-tete de confiance, ce defaut faisait
+  // echouer les cas normaux. Les tests qui ont besoin d'un autre etat le
+  // posent explicitement.
+  getCachedTenantMock.mockResolvedValue({ subscription_status: 'active', is_active: true });
 });
 
 afterEach(() => {
@@ -276,6 +281,54 @@ describe('proxy - x-tenant-slug anti-spoofing', () => {
     // The injected slug must come from the subdomain, NEVER from the client header.
     expect(injectedTenantSlug(res)).toBe('radisson');
     expect(injectedTenantSlug(res)).not.toBe('attacker-tenant');
+  });
+
+  /**
+   * UN EN-TETE "DE CONFIANCE" DOIT PROUVER CE QU IL AFFIRME.
+   *
+   * Le proxy posait `x-tenant-slug` a partir du sous-domaine SANS verifier que
+   * ce restaurant existe. Or le domaine accepte un sous-domaine joker:
+   * `nimportequoi.attabl.com` recevait donc un en-tete presente comme injecte
+   * par le serveur, pour un restaurant inexistant. Tout code qui fonderait une
+   * decision dessus - un compteur de debit, un cache, une regle d acces - se
+   * serait trompe, et le defaut aurait ete invisible puisque l en-tete porte
+   * justement le nom de ce qui est verifie.
+   *
+   * Mesure du 2026-11-08: aucun code ne lisait encore le drapeau. La faille
+   * n etait donc pas exploitable, et c etait le moment de la fermer.
+   */
+  it('un sous-domaine inconnu N OBTIENT PAS l en-tete de confiance, seulement l indice', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+
+    const res = await proxy(makeRequest('restaurant-invente.attabl.com', '/menu'));
+
+    expect(injectedTenantSlug(res)).toBeNull();
+    expect(injectedTenantSlugHint(res)).toBe('restaurant-invente');
+  });
+
+  it('un chemin /sites/<slug> inconnu non plus', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+
+    const res = await proxy(makeRequest('attabl.com', '/sites/restaurant-invente/menu'));
+
+    expect(injectedTenantSlug(res)).toBeNull();
+    expect(injectedTenantSlugHint(res)).toBe('restaurant-invente');
+  });
+
+  it('une route /api/ sur un sous-domaine inconnu non plus', async () => {
+    getCachedTenantMock.mockResolvedValue(null);
+
+    const res = await proxy(makeRequest('restaurant-invente.attabl.com', '/api/menu-search'));
+
+    expect(injectedTenantSlug(res)).toBeNull();
+    expect(injectedTenantSlugHint(res)).toBe('restaurant-invente');
+  });
+
+  it('un restaurant qui EXISTE obtient bien l en-tete de confiance', async () => {
+    const res = await proxy(makeRequest('radisson.attabl.com', '/api/menu-search'));
+
+    expect(injectedTenantSlug(res)).toBe('radisson');
+    expect(injectedTenantSlugHint(res)).toBeNull();
   });
 
   it('strips a client-supplied x-tenant-slug on a /sites/<slug> path served from main domain', async () => {
