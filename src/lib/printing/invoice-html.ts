@@ -2,6 +2,7 @@ import type { Order, Tenant } from '@/types/admin.types';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 import { formatAmountMinor } from '@/lib/utils/money';
 import { renderDocumentShell, renderBrandHeader, escapeHtml } from './document-shell';
+import { ouvrirEtImprimer } from './ouvrir-et-imprimer';
 
 const SERVICE_LABELS: Record<string, string> = {
   dine_in: 'Sur place',
@@ -204,15 +205,10 @@ export function generateInvoiceHTML(order: Order, tenant: Tenant): string {
   });
 }
 
-/** Ouvre une nouvelle fenetre et lance l'impression / export PDF de la facture. */
-export function printInvoice(order: Order, tenant: Tenant): void {
-  const html = generateInvoiceHTML(order, tenant);
-  const printWindow = window.open('', '_blank', 'width=900,height=1000');
-  if (!printWindow) return;
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
-  };
+/**
+ * Ouvre la facture et lance l'impression (ou l'export PDF) une fois la police
+ * chargee. Voir `ouvrir-et-imprimer.ts` pour les deux defauts que cela ferme.
+ */
+export function printInvoice(order: Order, tenant: Tenant): boolean {
+  return ouvrirEtImprimer(generateInvoiceHTML(order, tenant), { width: 900, height: 1000 });
 }

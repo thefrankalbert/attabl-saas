@@ -63,9 +63,21 @@ export function useOrderDetails({
     }
   };
 
+  /**
+   * Le toast ne doit pas MENTIR. Les trois gestes annoncaient "impression
+   * lancee" sans regarder le resultat: quand le navigateur bloque la fenetre
+   * surgissante - le cas le plus courant - l'utilisateur lit que c'est parti et
+   * va chercher le probleme du cote de l'imprimante.
+   */
+  const annoncerImpression = (lancee: boolean, titreSucces: string) =>
+    toast(
+      lancee
+        ? { title: titreSucces }
+        : { title: t('printWindowBlocked'), variant: 'destructive' as const },
+    );
+
   const handlePrintKitchen = () => {
-    printKitchenTicket(order);
-    toast({ title: seg.productionTicketPrinted });
+    annoncerImpression(printKitchenTicket(order), seg.productionTicketPrinted);
   };
 
   const buildTenantForPrint = (): Tenant =>
@@ -80,13 +92,11 @@ export function useOrderDetails({
     }) as Tenant;
 
   const handlePrintReceipt = () => {
-    printReceipt(order, buildTenantForPrint());
-    toast({ title: t('clientReceiptPrinted') });
+    annoncerImpression(printReceipt(order, buildTenantForPrint()), t('clientReceiptPrinted'));
   };
 
   const handlePrintInvoice = () => {
-    printInvoice(order, buildTenantForPrint());
-    toast({ title: t('invoicePrinted') });
+    annoncerImpression(printInvoice(order, buildTenantForPrint()), t('invoicePrinted'));
   };
 
   const displayTotal = order.total || order.total_price || 0;

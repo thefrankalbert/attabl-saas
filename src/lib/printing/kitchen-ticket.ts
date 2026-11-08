@@ -1,5 +1,6 @@
 import type { Order, KDSZoneFilter } from '@/types/admin.types';
 import { renderDocumentShell, escapeHtml } from './document-shell';
+import { ouvrirEtImprimer } from './ouvrir-et-imprimer';
 
 interface PrintOptions {
   zoneFilter?: KDSZoneFilter;
@@ -134,16 +135,8 @@ export function printKitchenTicket(order: Order, options: PrintOptions = {}): bo
   const relevantItems = filterItemsByZone(order.items, barDisplayEnabled, zoneFilter);
   if (relevantItems.length === 0) return false;
 
-  const html = generateKitchenTicketHTML(order, options);
-  const printWindow = window.open('', '_blank', 'width=350,height=600');
-  if (!printWindow) return false;
-
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
-  };
-
-  return true;
+  return ouvrirEtImprimer(generateKitchenTicketHTML(order, options), {
+    width: 350,
+    height: 600,
+  });
 }

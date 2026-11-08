@@ -244,6 +244,7 @@
     "kitchenTicketPrinted": "Kitchen ticket printing started",
     "clientReceiptPrinted": "Client receipt printing started",
     "invoicePrinted": "Invoice printing started",
+    "printWindowBlocked": "The print window was blocked by the browser. Allow pop-ups for this site, then try again.",
     "statusUpdated": "Status updated",
     "checkoutWarning": "Warning: Order must be 'Ready' before checkout.",
     "roomNumber": "Rm.{number}",
