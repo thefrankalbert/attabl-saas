@@ -9,6 +9,7 @@ import {
 } from '@/services/order-annotation.service';
 import { ServiceError } from '@/services/errors';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
+import { ORDER_STAFF_ROLES, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
 import {
   houseAccountSchema,
   attachHouseAccountSchema,
@@ -39,7 +40,7 @@ export async function actionCreateHouseAccount(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ['owner', 'admin', 'manager'],
+      ORDER_MONEY_ROLES,
       'orders.manage',
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
@@ -72,7 +73,7 @@ export async function actionListHouseAccounts(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
     const accounts = await createOrderAnnotationService(supabase).listHouseAccountsWithBalances(
@@ -99,7 +100,7 @@ export async function actionAttachOrderToHouseAccount(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
@@ -131,7 +132,7 @@ export async function actionDetachOrder(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ['owner', 'admin', 'manager', 'server'],
+      ORDER_STAFF_ROLES,
       'orders.manage',
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
@@ -162,7 +163,7 @@ export async function actionSettleHouseAccount(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ['owner', 'admin', 'manager'],
+      ORDER_MONEY_ROLES,
       'orders.manage',
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces

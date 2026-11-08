@@ -69,6 +69,30 @@ interface TrackedDetailRow {
   }> | null;
 }
 
+/**
+ * Libelle i18n par statut REEL de la commande.
+ *
+ * POURQUOI CETTE TABLE EXISTE. Cette page n'avait que DEUX etats: annulee, ou
+ * tout le reste. Une commande qui venait d'etre passee ('pending') affichait
+ * donc "Commande servie" avec une coche verte et le badge "Terminee". Le
+ * convive lisait que son plat etait deja servi alors que la cuisine ne l'avait
+ * pas encore vu, et il n'avait aucun moyen de savoir ou en etait sa commande.
+ * Les sept statuts de `orders_status_check` sont couverts ici, et les cles
+ * i18n existaient deja toutes (fr-FR et en-US).
+ */
+const CLES_LIBELLE_STATUT: Record<string, string> = {
+  pending: 'statusPending',
+  confirmed: 'statusConfirmed',
+  preparing: 'statusPreparing',
+  ready: 'statusReady',
+  delivered: 'statusDelivered',
+  served: 'statusServed',
+  cancelled: 'statusCancelled',
+};
+
+/** Statuts terminaux ou la commande a bien ete remise au convive. */
+const STATUTS_SERVIS = new Set(['served', 'delivered']);
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = typeof params.orderId === 'string' ? params.orderId : null;
@@ -132,6 +156,12 @@ export default function OrderDetailPage() {
     : 0;
   const grandTotal = order ? order.total + order.tip_amount : 0;
   const isCancelled = order?.status === 'cancelled';
+  const isServed = !!order && STATUTS_SERVIS.has(order.status);
+  // Cle dynamique: un statut inconnu (schema qui evolue) retombe sur "en
+  // attente" plutot que d'annoncer a tort une commande servie.
+  const statusLabel = order
+    ? t(CLES_LIBELLE_STATUT[order.status] ?? 'statusPending')
+    : t('statusPending');
 
   const handleReorder = useCallback(() => {
     if (!order || !tenantId) return;
@@ -281,13 +311,19 @@ export default function OrderDetailPage() {
           >
             {isCancelled ? (
               <XCircle className="h-5 w-5 text-[var(--color-promo)]" />
-            ) : (
+            ) : isServed ? (
               <CheckCircle2 className="h-5 w-5 text-[var(--color-brand-dark)]" />
+            ) : (
+              <Utensils className="h-5 w-5 text-[var(--color-brand-dark)]" />
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px] font-semibold text-[var(--color-ink)]">
-              {isCancelled ? t('orderCancelledTitle') : t('orderServedTitle')}
+              {isCancelled
+                ? t('orderCancelledTitle')
+                : isServed
+                  ? t('orderServedTitle')
+                  : t('orderSent')}
             </div>
             {order.table_number && (
               <div className="mt-px text-[11.5px] text-[var(--color-ink-muted)]">
@@ -298,7 +334,7 @@ export default function OrderDetailPage() {
           <span
             className={`inline-flex items-center rounded-[var(--radius-tag)] px-2 py-[3px] text-[10.5px] font-semibold ${isCancelled ? 'bg-[var(--color-promo)]/10 text-[var(--color-promo)]' : 'bg-[var(--color-brand-light)] text-[var(--color-brand-dark)]'}`}
           >
-            {isCancelled ? t('statusCancelled') : t('orderFinished')}
+            {statusLabel}
           </span>
         </section>
 

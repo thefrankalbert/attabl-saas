@@ -139,7 +139,9 @@ const mockTenantRow: { data: MockTenantRow | null; error: null } = {
 
 function makeChain(resolved: unknown) {
   const chain: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'is', 'order', 'limit', 'update']) {
+  // `neq` et `in` sont les maillons des gardes d'encaissement (ne pas regler une
+  // commande annulee; compter 'pending' ET 'partial' comme de l'argent du).
+  for (const m of ['select', 'eq', 'neq', 'in', 'is', 'order', 'limit', 'update']) {
     chain[m] = vi.fn(() => chain);
   }
   chain.single = vi.fn().mockResolvedValue(resolved);

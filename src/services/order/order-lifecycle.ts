@@ -27,7 +27,13 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
       .eq('session_id', sessionId)
-      .eq('payment_status', 'pending')
+      // "Reste-t-il de l'argent du sur cette table ?" se compte sur DEUX etats,
+      // pas un seul. Ce filtre ne regardait que 'pending', donc une note
+      // PARTIELLEMENT payee (payment_status='partial', il reste un solde) ne
+      // comptait pas: la table se fermait comme "entierement reglee" et le
+      // reliquat etait perdu en silence. 'paid', 'refunded' et 'comp' sont bien
+      // des etats soldes, eux.
+      .in('payment_status', ['pending', 'partial'])
       .neq('status', 'cancelled');
 
     if (error) {
@@ -109,7 +115,27 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la mise a jour du statut', 'INTERNAL', error);
       }
       if (!Array.isArray(data) || data.length === 0) {
-        // Another device advanced this order between our read and write.
+        // Zero ligne touchee a DEUX causes possibles, et les confondre produit
+        // un message faux. Soit un autre poste a fait avancer la commande
+        // entre notre lecture et notre ecriture (conflit reel), soit la RLS a
+        // masque la ligne parce que l'employe n'a pas le droit d'ecrire - et la
+        // RLS ne leve AUCUNE erreur dans ce cas, elle masque. On distingue en
+        // relisant: si le statut n'a pas bouge, personne n'a double, c'est un
+        // refus. La lecture reste permise a tout membre du restaurant, donc ce
+        // diagnostic fonctionne pour celui-la meme qui vient d'etre refuse.
+        const { data: apres } = await supabase
+          .from('orders')
+          .select('status')
+          .eq('id', orderId)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+
+        if (apres && (apres.status as string) === from) {
+          throw new ServiceError(
+            'Vous n avez pas la permission de modifier cette commande',
+            'UNAUTHORIZED',
+          );
+        }
         throw new ServiceError('La commande a deja ete mise a jour', 'CONFLICT');
       }
     },
@@ -244,6 +270,11 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
         .eq('payment_status', 'pending')
+        // Une commande annulee garde payment_status='pending': le filtre
+        // ci-dessus ne la couvre donc PAS. Sans celui-ci, encaisser une commande
+        // annulee reussissait et inscrivait un tender au ledger. Filtre pose
+        // dans le meme UPDATE, donc atomique face a une annulation concurrente.
+        .neq('status', 'cancelled')
         .select('id, session_id, total, tip_amount');
 
       if (error) {

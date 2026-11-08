@@ -53,6 +53,13 @@ async function applyPosFinalState(
       .eq('tenant_id', tenantId)
       // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
       .eq('payment_status', 'pending')
+      // A cancelled order keeps payment_status='pending', so the guard above does
+      // NOT cover it: without this filter the POS could settle a cancelled order,
+      // insert a tender row into `payments`, and book the amount as revenue.
+      // Filtering inside the same UPDATE makes it atomic - a cancellation racing
+      // this call either lands first (zero rows matched, nothing recorded) or
+      // after (it sees an order already paid, which is the pre-existing path).
+      .neq('status', 'cancelled')
       .select('id, total, tip_amount, session_id');
     if (error) {
       logger.error('POS order: failed to apply payment/status', error, { orderId });
@@ -92,7 +99,10 @@ async function applyPosFinalState(
         ...(status === 'delivered' ? { served_at: new Date().toISOString() } : {}),
       })
       .eq('id', orderId)
-      .eq('tenant_id', tenantId);
+      .eq('tenant_id', tenantId)
+      // Same reason as the paid branch: never move a cancelled order forward
+      // (it would reappear in the kitchen, or be stamped served_at).
+      .neq('status', 'cancelled');
     if (error) {
       logger.error('POS order: failed to apply status', error, { orderId });
     }
