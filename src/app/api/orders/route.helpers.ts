@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { createInventoryService } from '@/services/inventory.service';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
+import { createPushService } from '@/services/push.service';
 
 // Fallback translations for API routes where locale may not be resolved
 export const FALLBACK_ERRORS: Record<string, string> = {
@@ -28,6 +29,44 @@ export async function getT(): Promise<(key: string) => string> {
   }
 }
 
+/**
+ * Chemin de la page des commandes DANS l'espace admin, sans prefixe.
+ *
+ * Le centre de notifications le prefixe lui-meme (`basePath` dans
+ * `NotificationCenter.tsx`), et le service worker fait de meme a partir du slug:
+ * selon que le personnel s'est connecte sur `attabl.com` ou sur
+ * `<slug>.attabl.com`, la meme page n'a pas le meme chemin. Un chemin ecrit en
+ * dur comme `/admin/orders` ouvrait une 404 pour le personnel connecte par le
+ * domaine principal - `src/app/admin/orders` n'existe pas.
+ */
+const CHEMIN_COMMANDES = '/orders';
+
+/** Longueur gardee pour une etiquette de table. */
+const MAX_ETIQUETTE_TABLE = 12;
+
+/**
+ * Assainit le numero de table avant de le mettre dans une alerte du personnel.
+ *
+ * `tableNumber` est une chaine LIBRE de 50 caracteres, envoyee dans le corps de
+ * la requete par un convive qui n'est pas authentifie. Elle atterrissait telle
+ * quelle dans le titre. Promue en notification systeme qui reveille l'appareil,
+ * elle devient un message que n'importe qui peut afficher sur la tablette du
+ * comptoir ("urgence: appelez le 70..."), devant du personnel qui fait
+ * confiance a cet ecran.
+ *
+ * On ne resout pas l'etiquette contre la table `tables`: les commandes a
+ * emporter, en chambre et au comptoir n'ont pas de ligne, et le titre
+ * deviendrait generique pour elles - une perte d'information.
+ */
+export function titreNouvelleCommande(tableNumber: string | undefined): string {
+  const propre = (tableNumber ?? '')
+    .replace(/[^\p{L}\p{N} .-]/gu, '')
+    .trim()
+    .slice(0, MAX_ETIQUETTE_TABLE)
+    .trim();
+  return propre.length > 0 ? `Nouvelle commande - Table ${propre}` : 'Nouvelle commande';
+}
+
 // Tenant shape accepted by getMonthlyOrderUsage (subset of the validated tenant).
 type QuotaTenant = {
   id: string;
@@ -36,12 +75,22 @@ type QuotaTenant = {
   trial_ends_at?: string | null;
 };
 
-// 9. Create in-app notification for admins (scheduled via after() so Vercel
-// serverless runs it after the response instead of racing a fire-and-forget promise).
+// 9. Notification aux equipes du restaurant: ligne dans l'application ET push.
+// Programmees via after() pour que Vercel les execute apres la reponse au lieu
+// de courir contre une promesse abandonnee.
+//
+// LA NOTIFICATION DANS L'APPLICATION NE SUFFIT PAS. La ligne `notifications`
+// n'est vue que si quelqu'un regarde l'ecran, application ouverte. Une tablette
+// en veille au comptoir ne montre rien. Le push, lui, reveille l'appareil.
+//
+// Les deux partent du meme endroit et portent le meme texte: deux sources
+// divergentes finiraient par annoncer deux choses differentes pour une seule
+// commande.
 export function scheduleOrderNotification(
   adminSupabase: SupabaseClient,
   params: {
     tenantId: string;
+    tenantSlug: string;
     tableNumber: string | undefined;
     itemsCount: number;
     total: number;
@@ -49,18 +98,42 @@ export function scheduleOrderNotification(
     orderId: string;
   },
 ): void {
-  const { tenantId, tableNumber, itemsCount, total, currency, orderId } = params;
+  const { tenantId, tenantSlug, tableNumber, itemsCount, total, currency, orderId } = params;
+  const titre = titreNouvelleCommande(tableNumber);
+  const corps = `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${total.toLocaleString('fr-FR')} ${currency || 'XAF'}`;
+
   after(async () => {
     const { error: notifError } = await adminSupabase.from('notifications').insert({
       tenant_id: tenantId,
       user_id: null, // broadcast to all tenant admins
       type: 'info',
-      title: `Nouvelle commande - Table ${tableNumber}`,
-      body: `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${total.toLocaleString('fr-FR')} ${currency || 'XAF'}`,
-      link: `/orders`,
+      title: titre,
+      body: corps,
+      link: CHEMIN_COMMANDES,
     });
     if (notifError) {
       logger.error('Failed to create order notification', notifError, {
+        tenantId,
+        orderId,
+      });
+    }
+
+    try {
+      await createPushService(adminSupabase).envoyerAuxAppareilsDuTenant(tenantId, {
+        titre,
+        corps,
+        // UN TAG PAR COMMANDE, et c'est essentiel. Deux notifications de meme
+        // tag se REMPLACENT, et sans `renotify` la seconde ne fait aucun bruit:
+        // avec un tag commun, la table 7 effacait silencieusement la table 4, et
+        // le personnel ne preparait qu'une commande sur deux en coup de feu -
+        // exactement le defaut que ce push est cense corriger.
+        tag: `commande-${orderId}`,
+        url: CHEMIN_COMMANDES,
+        slug: tenantSlug,
+      });
+    } catch (erreurPush) {
+      // Une commande ne doit jamais dependre d'une notification.
+      logger.error('Envoi push de nouvelle commande impossible', erreurPush, {
         tenantId,
         orderId,
       });

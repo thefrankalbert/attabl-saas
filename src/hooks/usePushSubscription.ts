@@ -8,11 +8,42 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 /** next-pwa does not emit public/sw.js in development (see next.config.mjs). */
 const PUSH_SW_ENABLED = process.env.NODE_ENV === 'production';
 
-function isPushCapableBrowser(): boolean {
-  if (typeof window === 'undefined') return false;
+/**
+ * Pourquoi le push n'est pas disponible sur cet appareil.
+ *
+ * Le composant d'activation se contentait de disparaitre: un restaurateur sur
+ * iPhone qui n'a pas installe l'application sur son ecran d'accueil ne voyait
+ * aucun bouton et aucune explication - "pourquoi je n'ai pas les notifications"
+ * restait sans reponse. Chaque cas a maintenant son message.
+ */
+export type MotifPushIndisponible =
+  | 'developpement'
+  | 'cle-absente'
+  | 'ios-a-installer'
+  | 'navigateur'
+  | 'service-worker'
+  | null;
+
+function estAppareilApple(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  // iPadOS recent se declare en Macintosh: le point tactile le distingue.
   return (
-    PUSH_SW_ENABLED && 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   );
+}
+
+function motifIndisponibilite(): MotifPushIndisponible {
+  if (typeof window === 'undefined') return 'navigateur';
+  // next-pwa n'emet pas public/sw.js en developpement (voir next.config.mjs).
+  if (!PUSH_SW_ENABLED) return 'developpement';
+  if (!VAPID_PUBLIC_KEY) return 'cle-absente';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    // Sur iOS, PushManager n'existe QUE dans une application installee sur
+    // l'ecran d'accueil - jamais dans un onglet Safari.
+    return estAppareilApple() ? 'ios-a-installer' : 'navigateur';
+  }
+  return null;
 }
 
 interface UsePushSubscriptionOptions {
@@ -35,12 +66,16 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // Valeur serveur par defaut: on ne lit navigator qu'apres le montage, sinon
+  // le rendu serveur et le rendu client divergent.
+  const [motifIndisponible, setMotifIndisponible] = useState<MotifPushIndisponible>(null);
 
   // Register SW and read push subscription (production only - sw.js is build-generated)
   useEffect(() => {
-    if (!enabled || !isPushCapableBrowser()) {
-      return;
-    }
+    if (!enabled) return;
+    const motif = motifIndisponibilite();
+    setMotifIndisponible(motif);
+    if (motif !== null) return;
 
     let cancelled = false;
 
@@ -58,6 +93,7 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
         });
         if (!cancelled) {
           setIsSupported(false);
+          setMotifIndisponible('service-worker');
         }
       }
     })();
@@ -139,6 +175,7 @@ export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptio
     isSubscribed,
     isSupported,
     isLoading,
+    motifIndisponible,
     subscribe,
     unsubscribe,
   };

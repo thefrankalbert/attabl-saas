@@ -2513,7 +2513,14 @@
     "disabledDesc": "Enable to receive real-time alerts on this device.",
     "enable": "Enable",
     "disable": "Disable",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "unavailable": {
+      "developpement": "Push notifications do not work in development mode. Run a production build to test them.",
+      "cle-absente": "Push notifications are not configured on the server yet. Contact support.",
+      "ios-a-installer": "On iPhone and iPad, first add ATTABL to your home screen (Share button, then Add to Home Screen). Notifications will then be available.",
+      "navigateur": "This browser does not support push notifications. Try Chrome, Edge or Firefox.",
+      "service-worker": "Notifications could not start on this device. Reload the page, and contact support if it persists."
+    }
   },
   "sidebar": {
     "groupMain": "Main",

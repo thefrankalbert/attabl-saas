@@ -6,6 +6,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createPushService } from '@/services/push.service';
 import { sendStockAlertEmail } from '@/services/email.service';
 import { logger } from '@/lib/logger';
 
@@ -165,6 +166,42 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
       tenantId,
       error: notifInsertError,
     });
+  }
+
+  // 6bis. Push: reveiller les appareils.
+  //
+  // C'EST LE CAS QUI COMPTE LE PLUS. Un ingredient en rupture en plein service
+  // est l'urgence type: la ligne dans l'application ne se voit que si quelqu'un
+  // regarde l'ecran, et l'email arrive dans une boite que personne ne consulte
+  // pendant un coup de feu. Sans push, l'alerte existait sans alerter.
+  try {
+    const premier = itemsToNotify[0];
+    const titre =
+      itemsToNotify.length === 1
+        ? `Stock bas: ${premier.name}`
+        : `Stock bas: ${itemsToNotify.length} ingredients`;
+    const corps =
+      itemsToNotify.length === 1
+        ? `${premier.current_stock} ${premier.unit} restant(s)`
+        : itemsToNotify
+            .slice(0, 3)
+            .map((i) => i.name)
+            .join(', ') + (itemsToNotify.length > 3 ? '...' : '');
+
+    await createPushService(supabase).envoyerAuxAppareilsDuTenant(tenantId, {
+      titre,
+      corps,
+      // Un tag par alerte: deux notifications de meme tag se remplacent, et
+      // sans `renotify` la seconde ne fait aucun bruit. La verification est
+      // limitee a une fois par heure et par ingredient, mais deux ingredients
+      // differents ne doivent pas s'effacer l'un l'autre.
+      tag: `stock-${Date.now()}`,
+      url: '/inventory',
+      slug: tenant.slug as string,
+    });
+  } catch (erreurPush) {
+    // Une alerte de stock ne doit pas tomber parce qu'un push a echoue.
+    logger.error('checkAndNotifyLowStock: envoi push impossible', { tenantId, erreurPush });
   }
 
   // 7. Record notifications for rate-limiting

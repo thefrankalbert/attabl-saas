@@ -101,9 +101,36 @@ const serwist = new Serwist({
 serwist.addEventListeners();
 
 // --- Web Push ---------------------------------------------------------------
+/**
+ * Ou ouvrir la page admin visee par une notification.
+ *
+ * LE CHEMIN NE PEUT PAS ETRE ECRIT EN DUR PAR L'ENVOYEUR. Selon l'origine ou le
+ * personnel s'est connecte, la meme page admin n'a pas le meme chemin:
+ *
+ *   - sur `<slug>.attabl.com`, le proxy reecrit `/admin/orders` vers la route
+ *     interne, donc le chemin court marche;
+ *   - sur `attabl.com` (ou atterrit la connexion par defaut, voir
+ *     `post-login-destination.ts`), `/admin/orders` N'EXISTE PAS -
+ *     `src/app/admin/` ne contient que `platform/` et `tenants/`. Un clic
+ *     ouvrait donc une 404.
+ *
+ * L'envoyeur transmet le chemin DANS l'espace admin (`/orders`) et le slug du
+ * restaurant; le service worker, qui seul connait son origine, prefixe.
+ */
+function cheminAdmin(data: { url?: string; slug?: string }): string {
+  const dansAdmin = data.url || '/';
+  if (!data.slug) return dansAdmin;
+  const premierLabel = self.location.hostname.toLowerCase().split('.')[0];
+  // Sous-domaine du restaurant: le proxy fait la reecriture lui-meme.
+  if (premierLabel === data.slug.toLowerCase()) return `/admin${dansAdmin}`;
+  // Domaine principal: chemin interne complet. (Aucun domaine personnalise
+  // n'est configure a ce jour; pour l'un d'eux cette route reste la vraie.)
+  return `/sites/${data.slug}/admin${dansAdmin}`;
+}
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  let data: { title?: string; body?: string; tag?: string; url?: string };
+  let data: { title?: string; body?: string; tag?: string; url?: string; slug?: string };
   try {
     data = event.data.json();
   } catch {
@@ -116,13 +143,14 @@ self.addEventListener('push', (event) => {
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: data.tag || 'default',
-    data: { url: data.url || '/' },
+    data: { url: cheminAdmin(data) },
   };
   event.waitUntil(self.registration.showNotification(data.title || 'ATTABL', options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  // Deja prefixe a la reception du push (voir cheminAdmin).
   const url = (event.notification.data as { url?: string } | undefined)?.url || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {

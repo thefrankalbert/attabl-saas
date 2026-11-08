@@ -2513,7 +2513,14 @@
     "disabledDesc": "Activez pour recevoir des alertes en temps réel sur cet appareil.",
     "enable": "Activer",
     "disable": "Désactiver",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "unavailable": {
+      "developpement": "Les notifications push ne fonctionnent pas en mode developpement. Lancez un build de production pour les tester.",
+      "cle-absente": "Les notifications push ne sont pas encore configurees sur le serveur. Contactez le support.",
+      "ios-a-installer": "Sur iPhone et iPad, ajoutez d'abord ATTABL a votre ecran d'accueil (bouton Partager, puis Sur l'ecran d'accueil). Les notifications seront alors disponibles.",
+      "navigateur": "Ce navigateur ne gere pas les notifications push. Essayez Chrome, Edge ou Firefox.",
+      "service-worker": "Les notifications n'ont pas pu demarrer sur cet appareil. Rechargez la page, et si cela persiste contactez le support."
+    }
   },
   "sidebar": {
     "groupMain": "Principal",
