@@ -170,10 +170,10 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
     const { signupLimiter, loginCompteLimiter, loginAdresseLimiter } = await loadWithRedis();
 
     expect((await signupLimiter.check('1.2.3.4')).success).toBe(false);
-    // Les deux compartiments de connexion refusent, y compris en CONSULTATION:
-    // une panne de Redis ne doit pas ouvrir la page de connexion.
-    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(false);
-    expect((await loginAdresseLimiter.consulter('1.2.3.4')).success).toBe(false);
+    // Les deux compartiments de connexion refusent: une panne de Redis ne doit
+    // pas ouvrir la page de connexion.
+    expect((await loginCompteLimiter.compterEchec('empreinte')).success).toBe(false);
+    expect((await loginAdresseLimiter.check('1.2.3.4')).success).toBe(false);
   });
 
   it('la reclamation d un code promo BLOQUE (fail-closed)', async () => {
@@ -205,15 +205,27 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
   });
 });
 
-// --- Ne compter que les echecs ----------------------------------------------
+// --- Reserver, puis rembourser ----------------------------------------------
 /**
- * CE QUE CES TESTS VERROUILLENT. Le compteur de connexion etait consomme AVANT
- * la verification du mot de passe: entrer son mot de passe CORRECTEMENT coutait
- * un essai. Quatre employes qui se connectent le matin depuis le meme Wi-Fi, un
- * cinquieme qui se trompe une fois, et toute l'equipe etait dehors 15 minutes.
- * Une connexion reussie n'est pas une attaque.
+ * CE QUE CES TESTS VERROUILLENT, et chaque point vient d'un defaut reel.
+ *
+ * 1. Le compteur de connexion etait consomme AVANT la verification du mot de
+ *    passe: entrer correctement coutait un essai, et comme le comptage se
+ *    faisait par ADRESSE IP, les quatre employes d'un restaurant sur le meme
+ *    Wi-Fi se partageaient cinq connexions par quart d'heure.
+ * 2. Une premiere correction LISAIT le compteur avant d'authentifier, puis
+ *    comptait l'echec apres. Lire puis ecrire n'est pas atomique: cent requetes
+ *    simultanees passaient toutes la lecture avant que la premiere n'ait
+ *    compte. La limite devenait "20 par aller-retour reseau".
+ * 3. Cette meme correction refusait AVANT l'authentification sur le compteur du
+ *    compte, ce qui permettait a quiconque connaissant un email de verrouiller
+ *    ce compte en boucle.
+ *
+ * D'ou la forme actuelle: `check` compte et tranche en UNE operation,
+ * `compterEchec` compte apres coup et Rend l'etat (c'est lui qui decide du
+ * 429), `effacer` rembourse une reussite.
  */
-describe('consulter / compterEchec / effacer', () => {
+describe('check / compterEchec / effacer', () => {
   beforeEach(() => {
     upstash.shouldThrow = false;
     upstash.success = true;
@@ -221,46 +233,37 @@ describe('consulter / compterEchec / effacer', () => {
     upstash.appels = [];
   });
 
-  it('consulter NE consomme PAS de jeton', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
+  it('check compte et tranche en UNE seule operation', async () => {
+    const { loginAdresseLimiter } = await loadWithRedis();
 
-    await loginCompteLimiter.consulter('empreinte');
+    const etat = await loginAdresseLimiter.check('1.2.3.4');
 
-    expect(upstash.appels).toEqual(['getRemaining']);
-    expect(upstash.appels).not.toContain('limit');
-  });
-
-  it('consulter refuse quand il ne reste aucun jeton', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-    upstash.remaining = 0;
-
-    const etat = await loginCompteLimiter.consulter('empreinte');
-
-    expect(etat.success).toBe(false);
-    expect(etat.reset).toBeGreaterThan(Date.now());
-  });
-
-  it('consulter autorise tant qu il reste un jeton', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-    upstash.remaining = 1;
-
-    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(true);
-  });
-
-  it('compterEchec consomme un jeton', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-
-    await loginCompteLimiter.compterEchec('empreinte');
-
+    expect(etat.success).toBe(true);
     expect(upstash.appels).toEqual(['limit']);
   });
 
-  /** Un echec ne doit jamais faire echouer la REPONSE: la comptabilite est secondaire. */
-  it('compterEchec ne leve pas quand Redis tombe', async () => {
+  /**
+   * Sans cette propriete, la route ne peut pas savoir s'il faut rendre 401
+   * (mot de passe faux) ou 429 (trop d'echecs) - et elle rendrait 401
+   * indefiniment, sans jamais appliquer la limite.
+   */
+  it('compterEchec rend l etat APRES comptage', async () => {
+    const { loginCompteLimiter } = await loadWithRedis();
+    upstash.success = false;
+
+    const etat = await loginCompteLimiter.compterEchec('empreinte');
+
+    expect(upstash.appels).toEqual(['limit']);
+    expect(etat.success).toBe(false);
+  });
+
+  it('compterEchec ne leve pas quand Redis tombe, et refuse par defaut', async () => {
     const { loginCompteLimiter } = await loadWithRedis();
     upstash.shouldThrow = true;
 
-    await expect(loginCompteLimiter.compterEchec('empreinte')).resolves.toBeUndefined();
+    const etat = await loginCompteLimiter.compterEchec('empreinte');
+
+    expect(etat.success).toBe(false);
   });
 
   it('effacer remet le compteur a zero', async () => {
@@ -278,9 +281,9 @@ describe('consulter / compterEchec / effacer', () => {
     await expect(loginCompteLimiter.effacer('empreinte')).resolves.toBeUndefined();
   });
 
-  it('sans Redis en production, consulter REFUSE', async () => {
+  it('sans Redis en production, compterEchec REFUSE', async () => {
     const { loginCompteLimiter } = await loadWithoutRedis('production');
-    expect((await loginCompteLimiter.consulter('empreinte')).success).toBe(false);
+    expect((await loginCompteLimiter.compterEchec('empreinte')).success).toBe(false);
   });
 });
 

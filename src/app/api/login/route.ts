@@ -41,7 +41,12 @@ export async function POST(request: Request) {
         },
       );
 
-    const etatAdresse = await loginAdresseLimiter.consulter(ip);
+    // ATOMIQUE, et c'est le point: `check` compte et tranche en une seule
+    // operation. Une version precedente lisait le compteur puis comptait
+    // l'echec plus tard; cent requetes simultanees passaient alors toutes la
+    // lecture avant que la premiere n'ait compte, et la limite devenait "200
+    // par aller-retour reseau" au lieu de "200 par 15 minutes".
+    const etatAdresse = await loginAdresseLimiter.check(ip);
     if (!etatAdresse.success) return refus(etatAdresse);
 
     // 1. Parse and validate body
@@ -74,13 +79,14 @@ export async function POST(request: Request) {
 
     const { email, password } = parseResult.data;
 
-    // 1.7 Garde par COMPTE. L'email n'est connu qu'ici, apres validation: c'est
-    // pour cela que le controle par compte vient apres celui par adresse.
-    // La cle est une EMPREINTE de l'email: un compteur n'a pas a devenir un
-    // annuaire des comptes du service.
+    // La cle du compte est une EMPREINTE de l'email: un compteur n'a pas a
+    // devenir un annuaire des comptes du service.
+    //
+    // ON NE REFUSE RIEN ICI, VOLONTAIREMENT. Barrer la route sur le compteur du
+    // compte avant d'authentifier permettait a quiconque connaissant un email
+    // de verrouiller ce compte 15 minutes, en boucle - le proprietaire d'un
+    // restaurant inclus. Un mot de passe correct doit toujours passer.
     const compte = cleCompte(email);
-    const etatCompte = await loginCompteLimiter.consulter(compte);
-    if (!etatCompte.success) return refus(etatCompte);
 
     // 2. Authenticate with Supabase
     const supabase = await createClient();
@@ -102,11 +108,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
       }
 
-      // Echec reel: on le compte, sur les DEUX compteurs.
-      await Promise.all([
-        loginCompteLimiter.compterEchec(compte),
-        loginAdresseLimiter.compterEchec(ip),
-      ]);
+      // Echec reel: on le compte sur le compte. Le compteur d'adresse a deja
+      // ete consomme en amont - le compter une seconde fois punirait deux fois
+      // la meme tentative.
+      const etatCompte = await loginCompteLimiter.compterEchec(compte);
+
+      // C'est APRES l'echec que le compteur du compte peut refuser. Le mot de
+      // passe etait faux de toute facon: on ne verrouille personne qui aurait
+      // pu entrer.
+      if (!etatCompte.success) return refus(etatCompte);
 
       if (authCode === 'invalid_credentials') {
         return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });

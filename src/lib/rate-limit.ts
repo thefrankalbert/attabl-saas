@@ -120,44 +120,37 @@ function createLimiter(
     },
 
     /**
-     * Consulte le compteur SANS le consommer.
+     * Compte une tentative ratee, et rend l'etat APRES comptage.
      *
-     * POURQUOI CETTE METHODE EXISTE. `check()` compte la tentative, quelle
-     * qu'elle soit. Sur une page de connexion, cela signifie qu'entrer son mot
-     * de passe CORRECTEMENT consomme un essai: quatre employes qui se
-     * connectent le matin, un cinquieme qui se trompe une fois, et toute
-     * l'equipe est dehors. Une connexion reussie n'est pas une attaque.
+     * POURQUOI CETTE METHODE RENVOIE L'ETAT. Une premiere version lisait le
+     * compteur avant d'authentifier (`consulter`) puis comptait l'echec apres.
+     * Deux defauts, tous deux confirmes:
      *
-     * Les endpoints d'authentification consultent donc d'abord, puis ne
-     * comptent QUE l'echec (`compterEchec`), et effacent le compteur du compte
-     * sur une reussite (`effacer`).
+     *   - lire puis ecrire n'est pas atomique: cent requetes simultanees
+     *     passaient toutes la lecture avant que la premiere n'ait compte, donc
+     *     la limite devenait "20 par aller-retour reseau" au lieu de "20 par
+     *     15 minutes";
+     *   - refuser AVANT de verifier le mot de passe permettait a quiconque
+     *     connaissant un email de verrouiller ce compte en boucle.
+     *
+     * Le compteur du compte ne barre donc plus la route: il se consulte APRES
+     * un echec reel, et c'est le resultat de ce comptage qui decide de la
+     * reponse. Un mot de passe CORRECT passe toujours, meme compteur plein.
      */
-    async consulter(identifier: string): Promise<RateLimitResult> {
-      if (!rl) {
-        if (process.env.NODE_ENV === 'production') {
-          logger.error('Rate limiting DESACTIVE en production - Redis absent. Requete refusee.', {
-            prefix,
-          });
-        }
-        return secours();
-      }
+    async compterEchec(identifier: string): Promise<RateLimitResult> {
+      if (!rl) return secours();
       try {
-        const { remaining, reset, limit } = await rl.getRemaining(identifier);
-        return { success: remaining > 0, limit, remaining, reset };
-      } catch (err) {
-        logger.error('Lecture du compteur impossible', err, { prefix, failClosed });
-        return secours();
-      }
-    },
-
-    /** Compte une tentative ratee. Ne rend pas de verdict: la decision est deja prise. */
-    async compterEchec(identifier: string): Promise<void> {
-      if (!rl) return;
-      try {
-        await rl.limit(identifier);
+        const result = await rl.limit(identifier);
+        return {
+          success: result.success,
+          limit: result.limit,
+          remaining: result.remaining,
+          reset: result.reset,
+        };
       } catch (err) {
         // Ne jamais faire echouer la reponse a cause de la comptabilite.
         logger.error('Comptage d un echec impossible', err, { prefix });
+        return secours();
       }
     },
 
@@ -610,6 +603,12 @@ export const adminPasswordResetLinkIpLimiter = createLimiter(
  * Par COMPTE (empreinte de l'email, jamais l'email en clair): 20 echecs par
  * 15 minutes. Genereux pour qui cherche son mot de passe, serre pour qui
  * attaque un compte precis.
+ *
+ * CE COMPTEUR NE BARRE PAS LA ROUTE AVANT L'AUTHENTIFICATION, et c'est
+ * essentiel: le faire permettait a quiconque connaissant un email de
+ * verrouiller ce compte 15 minutes, en boucle. Un mot de passe CORRECT passe
+ * donc toujours, meme compteur plein. Le compteur se consomme APRES un echec
+ * reel, et c'est ce comptage qui decide de rendre 429 au lieu de 401.
  */
 export const loginCompteLimiter = createLimiter(
   'login-compte',
@@ -618,14 +617,22 @@ export const loginCompteLimiter = createLimiter(
 );
 
 /**
- * Par ADRESSE: 100 echecs par 15 minutes. Large, parce qu'une adresse est
- * partagee. Assez bas pour arreter une rafale depuis une seule machine.
- * Ce compteur n'est JAMAIS remis a zero par une connexion reussie: sinon un
- * attaquant possedant un compte valide le reinitialiserait entre deux rafales.
+ * Par ADRESSE: 200 tentatives par 15 minutes, consommees ATOMIQUEMENT avant
+ * tout travail.
+ *
+ * C'est le seul garde-fou qui barre la route en amont, et il compte TOUTES les
+ * tentatives, reussies comprises - c'est son role: borner le cout qu'une seule
+ * machine peut nous imposer (chaque tentative declenche un appel
+ * d'authentification). 200 est haut exprès, parce qu'une adresse est partagee:
+ * un restaurant entier, ou des centaines d'abonnes derriere le reseau d'un
+ * operateur mobile, ne doivent jamais l'atteindre en usage normal.
+ *
+ * Il n'est JAMAIS remis a zero par une connexion reussie: sinon un attaquant
+ * possedant un compte valide le reinitialiserait entre deux rafales.
  */
 export const loginAdresseLimiter = createLimiter(
   'login-adresse',
-  Ratelimit.slidingWindow(100, '15 m'),
+  Ratelimit.slidingWindow(200, '15 m'),
   true,
 );
 

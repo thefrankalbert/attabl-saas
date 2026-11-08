@@ -6,26 +6,29 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/csrf', () => ({ verifyOrigin: vi.fn().mockReturnValue(null) }));
 const compteur = vi.hoisted(() => ({
-  compteConsulte: { success: true, reset: 0 },
-  adresseConsultee: { success: true, reset: 0 },
+  /** Verdict rendu par le compteur d'ADRESSE, consomme atomiquement en amont. */
+  adresse: { success: true, reset: 0 },
+  /** Verdict rendu APRES comptage d'un echec sur le compteur du COMPTE. */
+  apresEchecCompte: { success: true, reset: 0 },
   echecsComptes: [] as string[],
   effacements: [] as string[],
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
   loginCompteLimiter: {
-    consulter: vi.fn(async () => compteur.compteConsulte),
-    compterEchec: vi.fn(async () => {
-      compteur.echecsComptes.push('compte');
+    compterEchec: vi.fn(async (cle: string) => {
+      compteur.echecsComptes.push(`compte:${cle}`);
+      return compteur.apresEchecCompte;
     }),
     effacer: vi.fn(async (cle: string) => {
       compteur.effacements.push(cle);
     }),
   },
   loginAdresseLimiter: {
-    consulter: vi.fn(async () => compteur.adresseConsultee),
+    check: vi.fn(async () => compteur.adresse),
     compterEchec: vi.fn(async () => {
       compteur.echecsComptes.push('adresse');
+      return { success: true, reset: 0 };
     }),
     effacer: vi.fn(async () => {
       compteur.effacements.push('adresse');
@@ -129,19 +132,25 @@ describe('POST /api/login redirect routing', () => {
   });
 });
 
-// --- Ne compter que les echecs ---------------------------------------------
+// --- Ce qui est compte, et quand -------------------------------------------
 /**
- * CE QUE CES TESTS VERROUILLENT, et le defaut etait mesure en production le
- * 2026-11-08: le compteur etait consomme AVANT la verification du mot de passe.
- * Entrer son mot de passe CORRECTEMENT coutait donc un essai, et comme le
- * comptage se faisait par ADRESSE IP, les quatre employes d'un restaurant sur
- * le meme Wi-Fi se partageaient cinq connexions par quart d'heure.
+ * TROIS DEFAUTS REELS SONT VERROUILLES ICI.
+ *
+ * 1. Le compteur etait consomme AVANT la verification du mot de passe: entrer
+ *    correctement coutait un essai. Comme il comptait par ADRESSE IP, les
+ *    quatre employes d'un restaurant sur le meme Wi-Fi se partageaient cinq
+ *    connexions par quart d'heure (mesure en production le 2026-11-08).
+ * 2. Une premiere correction refusait AVANT l'authentification sur le compteur
+ *    du COMPTE: quiconque connaissant un email pouvait verrouiller ce compte
+ *    15 minutes, en boucle. Un mot de passe correct doit toujours passer.
+ * 3. Elle lisait aussi le compteur avant de compter l'echec, ce qui n'est pas
+ *    atomique: cent requetes simultanees passaient toutes la lecture.
  */
 describe('POST /api/login - comptage des tentatives', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    compteur.compteConsulte = { success: true, reset: 0 };
-    compteur.adresseConsultee = { success: true, reset: 0 };
+    compteur.adresse = { success: true, reset: 0 };
+    compteur.apresEchecCompte = { success: true, reset: 0 };
     compteur.echecsComptes = [];
     compteur.effacements = [];
   });
@@ -152,6 +161,14 @@ describe('POST /api/login - comptage des tentatives', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: 'motdepasse123' }),
     });
+  }
+
+  function supabaseQuiRefuse(code: string) {
+    return {
+      auth: {
+        signInWithPassword: vi.fn().mockResolvedValue({ data: null, error: { code } }),
+      },
+    };
   }
 
   it('une connexion REUSSIE ne compte aucun echec', async () => {
@@ -173,19 +190,39 @@ describe('POST /api/login - comptage des tentatives', () => {
     expect(compteur.effacements).toEqual(['empreinte:patron@exemple.test']);
   });
 
-  it('un mauvais mot de passe compte un echec sur les DEUX compteurs', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        signInWithPassword: vi
-          .fn()
-          .mockResolvedValue({ data: null, error: { code: 'invalid_credentials' } }),
-      },
-    } as never);
+  /**
+   * LE VERROUILLAGE CIBLE. C'est la propriete la plus importante du fichier:
+   * meme compteur de compte plein - donc meme apres qu'un tiers ait use les 20
+   * echecs sur cet email - le proprietaire entre avec son mot de passe.
+   */
+  it('un mot de passe CORRECT passe meme quand le compteur du compte est plein', async () => {
+    compteur.apresEchecCompte = { success: false, reset: Date.now() + 420_000 };
+    vi.mocked(createClient).mockResolvedValue(mockSupabase([]) as never);
+
+    const res = await POST(requete());
+
+    expect(res.status).toBe(200);
+  });
+
+  it('un mauvais mot de passe compte un echec sur le compte, une seule fois', async () => {
+    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('invalid_credentials') as never);
 
     const res = await POST(requete());
 
     expect(res.status).toBe(401);
-    expect(compteur.echecsComptes.sort()).toEqual(['adresse', 'compte']);
+    // Le compteur d'adresse a deja ete consomme en amont: le recompter
+    // punirait deux fois la meme tentative.
+    expect(compteur.echecsComptes).toEqual(['compte:empreinte:patron@exemple.test']);
+  });
+
+  it('au-dela de la limite d echecs, le refus passe de 401 a 429 avec le delai', async () => {
+    compteur.apresEchecCompte = { success: false, reset: Date.now() + 420_000 };
+    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('invalid_credentials') as never);
+
+    const res = await POST(requete());
+
+    expect(res.status).toBe(429);
+    expect((await res.json()).error).toContain('rateLimitedMinutes');
   });
 
   /**
@@ -194,13 +231,7 @@ describe('POST /api/login - comptage des tentatives', () => {
    * bienvenue - et qui ne peut rien y faire en reessayant.
    */
   it('un email non confirme ne compte PAS comme un echec', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        signInWithPassword: vi
-          .fn()
-          .mockResolvedValue({ data: null, error: { code: 'email_not_confirmed' } }),
-      },
-    } as never);
+    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('email_not_confirmed') as never);
 
     const res = await POST(requete());
 
@@ -208,24 +239,15 @@ describe('POST /api/login - comptage des tentatives', () => {
     expect(compteur.echecsComptes).toEqual([]);
   });
 
-  it('compteur de compte plein: refus 429 avec le delai, sans toucher a Supabase', async () => {
-    compteur.compteConsulte = { success: false, reset: Date.now() + 420_000 };
+  it('compteur d adresse plein: refus 429 sans jamais appeler Supabase', async () => {
+    compteur.adresse = { success: false, reset: Date.now() + 420_000 };
     const supabase = mockSupabase([]);
     vi.mocked(createClient).mockResolvedValue(supabase as never);
 
     const res = await POST(requete());
 
     expect(res.status).toBe(429);
-    expect((await res.json()).error).toContain('rateLimitedMinutes');
-    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
-  });
-
-  it('compteur d adresse plein: refus 429 avant meme de lire le corps', async () => {
-    compteur.adresseConsultee = { success: false, reset: Date.now() + 420_000 };
-
-    const res = await POST(requete());
-
-    expect(res.status).toBe(429);
     expect(res.headers.get('Retry-After')).toBeTruthy();
+    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
   });
 });
