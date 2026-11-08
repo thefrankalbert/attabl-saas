@@ -104,6 +104,29 @@ export async function POST(request: Request) {
     const etatAdresse = await forgotPasswordAdresseLimiter.check(adresse);
     if (!etatAdresse.success) return refus(etatAdresse.reset);
 
+    // 2.8 INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues - ET AVANT
+    // DE GENERER LE LIEN.
+    //
+    // L ORDRE EST LE POINT. Ce verrou etait pose APRES `generateLink`. Or
+    // generer un lien de recuperation PERIME le precedent: un attaquant
+    // pouvait donc invalider le lien que le proprietaire venait de recevoir,
+    // sans qu aucun mail ne parte - une recuperation de compte refusee sans
+    // trace. Pose avant, une requete etouffee ne fabrique aucun jeton et ne
+    // casse rien.
+    //
+    // POURQUOI UN INTERVALLE ET PAS UN BUDGET PAR FENETRE: un budget "5 par
+    // heure" par compte peut etre tenu PLEIN par qui connait l email, et le
+    // proprietaire n obtient alors plus jamais son lien - en silence, donc sans
+    // pouvoir le diagnostiquer. L intervalle ne retarde que d une minute, et
+    // chaque requete qui prend le verrou envoie VRAIMENT le mail: le
+    // proprietaire recoit toujours un lien utilisable.
+    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
+      logger.info('Forgot password: envoi trop rapproche, ignore', {
+        emailHash: hashEmail(email),
+      });
+      return successResponse;
+    }
+
     // 3. Generate recovery link via admin API (O(1) lookup, no listUsers pagination issues)
     //    Security note: generateLink('recovery') will fail for unconfirmed emails,
     //    which is handled below by sending a confirmation link instead.
@@ -131,20 +154,6 @@ export async function POST(request: Request) {
 
     // 4. Build the recovery URL
     const resetUrl = `${appUrl}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=recovery`;
-
-    // 4bis. INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues.
-    //
-    // Le compteur serre porte sur le couple (compte, adresse): il empeche qu'un
-    // attaquant confisque la recuperation du proprietaire, mais il ne borne pas
-    // un attaquant reparti sur plusieurs adresses. Ce verrou le fait, SANS
-    // pouvoir etre tenu plein: il ne retarde que d'une minute, donc la
-    // fonctionnalite reste toujours accessible a son titulaire.
-    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
-      logger.info('Forgot password: envoi trop rapproche, ignore', {
-        emailHash: hashEmail(email),
-      });
-      return successResponse;
-    }
 
     // 5. Send custom branded email via Resend
     const emailSent = await sendPasswordResetEmail(email, { resetUrl });

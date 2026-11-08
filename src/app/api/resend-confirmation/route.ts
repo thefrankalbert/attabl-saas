@@ -85,6 +85,20 @@ export async function POST(request: Request) {
     if (!etatAdresse.success) return refus(etatAdresse.reset);
     const supabase = createAdminClient();
 
+    // INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues - ET AVANT DE
+    // GENERER LE LIEN.
+    //
+    // L ORDRE EST LE POINT. Pose apres `generateLink`, ce verrou laissait un
+    // attaquant PERIMER le lien de confirmation que le nouveau client venait de
+    // recevoir, sans qu aucun mail ne parte: enferme dehors sans trace. Pose
+    // avant, une requete etouffee ne fabrique aucun jeton.
+    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
+      logger.info('Resend confirmation: envoi trop rapproche, ignore', {
+        emailHash: hashEmail(email),
+      });
+      return NextResponse.json({ success: true, message: SAFE_MSG });
+    }
+
     // 3. Generate a fresh confirmation link directly (O(1), no listUsers pagination issues).
     //    generateLink({ type: 'signup' }) will fail if the user doesn't exist or is
     //    already confirmed, which we handle as a silent success (anti-enumeration).
@@ -127,17 +141,6 @@ export async function POST(request: Request) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
     const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
-
-    // INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues. Le compteur
-    // serre porte sur le couple (compte, adresse) et ne borne donc pas un
-    // attaquant reparti sur plusieurs adresses. Ce verrou le fait sans pouvoir
-    // etre tenu plein: il ne retarde que d'une minute.
-    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
-      logger.info('Resend confirmation: envoi trop rapproche, ignore', {
-        emailHash: hashEmail(email),
-      });
-      return NextResponse.json({ success: true, message: SAFE_MSG });
-    }
 
     await sendWelcomeConfirmationEmail(email, { confirmationUrl });
 

@@ -37,7 +37,11 @@ vi.mock('@/services/email.service', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from '../resend-confirmation/route';
-import { resendConfirmationLimiter, resendConfirmationAdresseLimiter } from '@/lib/rate-limit';
+import {
+  resendConfirmationLimiter,
+  resendConfirmationAdresseLimiter,
+  envoiAutorisePourCompte,
+} from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // ---------------------------------------------------------------------------
@@ -60,6 +64,7 @@ function buildRequest(body?: unknown, options?: { malformed?: boolean }): Reques
 }
 
 function mockRateLimit(allowed: boolean) {
+  vi.mocked(envoiAutorisePourCompte).mockResolvedValue(true);
   vi.mocked(resendConfirmationAdresseLimiter.check).mockResolvedValue({
     success: true,
     limit: 30,
@@ -115,6 +120,23 @@ describe('POST /api/resend-confirmation', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.error).toBeUndefined();
+  });
+
+  /**
+   * Generer un lien de confirmation PERIME le precedent. Verrou consulte APRES
+   * la generation, un attaquant invalidait le lien que le nouveau client venait
+   * de recevoir, sans qu aucun mail ne parte: enferme dehors sans trace.
+   */
+  it('envoi trop rapproche: AUCUN lien genere', async () => {
+    mockRateLimit(true);
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
   });
 
   it('garde de cout par adresse: 429 avec le delai annonce', async () => {

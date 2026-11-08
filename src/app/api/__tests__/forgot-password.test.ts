@@ -41,6 +41,7 @@ import { POST } from '../forgot-password/route';
 import { forgotPasswordLimiter, forgotPasswordAdresseLimiter } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPasswordResetEmail } from '@/services/email.service';
+import { envoiAutorisePourCompte } from '@/lib/rate-limit';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -105,6 +106,7 @@ describe('POST /api/forgot-password', () => {
       remaining: 29,
       reset: Date.now() + 600_000,
     });
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(true);
   });
 
   /**
@@ -128,6 +130,26 @@ describe('POST /api/forgot-password', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.error).toBeUndefined();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  /**
+   * L ORDRE EST LA PROPRIETE. Generer un lien de recuperation PERIME le
+   * precedent. Si le verrou d envoi est consulte APRES `generateLink`, un
+   * attaquant peut invalider le lien que le proprietaire vient de recevoir sans
+   * qu aucun mail ne parte: recuperation refusee, et sans trace. Constat
+   * d audit du 2026-11-08.
+   */
+  it('envoi trop rapproche: AUCUN lien genere, donc aucun lien existant perime', async () => {
+    mockRateLimit(true);
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
     expect(sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 
