@@ -56,17 +56,30 @@ cd "$(dirname "$0")/.." || exit 1
 
 MODE=""
 VERIF_DEPLOIEMENT="oui"
-for arg in "$@"; do
-  case "$arg" in
+FICHIER_ENV=".env.local"
+# Commit attendu sur le domaine. Par defaut `origin/main`, mais il DOIT pouvoir
+# etre fige: si une autre PR est fusionnee juste apres la notre, `origin/main`
+# bouge et la verification echouerait alors que notre code EST bien deploye.
+SHA_ATTENDU=""
+while [ $# -gt 0 ]; do
+  case "$1" in
     --verifier)  MODE="verifier" ;;
     --confirmer) MODE="appliquer" ;;
     --sans-verification-deploiement) VERIF_DEPLOIEMENT="non" ;;
-    *) echo "Argument inconnu: $arg" >&2; MODE=""; break ;;
+    --env-file) shift; FICHIER_ENV="${1:-}" ;;
+    --commit)   shift; SHA_ATTENDU="${1:-}" ;;
+    *) echo "Argument inconnu: $1" >&2; MODE=""; break ;;
   esac
+  shift || true
 done
 if [ -z "$MODE" ]; then
   echo "Usage: bash scripts/appliquer-rls-lot-20261108.sh --verifier | --confirmer" >&2
   echo "       [--sans-verification-deploiement]" >&2
+  echo "       [--env-file <chemin>]  fichier d'environnement (defaut: .env.local)" >&2
+  echo "       [--commit <sha>]      commit attendu sur le domaine (defaut: origin/main)" >&2
+  echo >&2
+  echo "La connexion peut aussi venir de \$DATABASE_URL deja exporte, ce qui" >&2
+  echo "evite de dependre d'un .env.local - absent d'un worktree, par exemple." >&2
   exit 2
 fi
 
@@ -82,19 +95,29 @@ for f in "${MIGRATIONS[@]}"; do
   [ -s "$f" ] || { echo "ERREUR: migration introuvable ou vide: $f" >&2; exit 2; }
 done
 
-# On NE source PAS .env.local: il contient des valeurs non quotees (un `<` dans
-# une adresse e-mail suffit a casser le shell). On extrait la seule ligne utile.
+# On NE source PAS le fichier d'environnement: il contient des valeurs non
+# quotees (un `<` dans une adresse e-mail suffit a casser le shell). On extrait
+# la seule ligne utile.
 extract_env() {
-  sed -n "s/^$1=//p" .env.local | head -1 | sed -e 's/^["'"'"']//' -e 's/["'"'"']$//'
+  [ -f "$FICHIER_ENV" ] || return 0
+  sed -n "s/^$1=//p" "$FICHIER_ENV" | head -1 | sed -e 's/^["'"'"']//' -e 's/["'"'"']$//'
 }
-[ -f .env.local ] || { echo "ERREUR: .env.local introuvable a la racine." >&2; exit 2; }
+
+# Un worktree n'a PAS de `.env.local` (il est gitignore et ne vit que dans le
+# checkout principal). On accepte donc aussi une connexion deja exportee, ce qui
+# evite de recopier un secret sur disque ou de le faire transiter autrement.
+if [ ! -f "$FICHIER_ENV" ] && [ -z "${DATABASE_URL:-}" ]; then
+  echo "ERREUR: ni fichier d'environnement ($FICHIER_ENV) ni \$DATABASE_URL." >&2
+  echo "Fournissez l'un des deux: --env-file <chemin>, ou exportez DATABASE_URL." >&2
+  exit 2
+fi
 
 PSQL="psql"
 command -v "$PSQL" >/dev/null 2>&1 || { echo "ERREUR: psql introuvable." >&2; exit 2; }
 
 CONN=""
 ERRLOG="$(mktemp)"
-for candidate in "$(extract_env DATABASE_URL)" "$(extract_env DATABASE_URL_POOLED)"; do
+for candidate in "${DATABASE_URL:-}" "$(extract_env DATABASE_URL)" "$(extract_env DATABASE_URL_POOLED)"; do
   [ -z "$candidate" ] && continue
   if "$PSQL" "$candidate" -t -c "select 1;" >/dev/null 2>>"$ERRLOG"; then CONN="$candidate"; break; fi
 done
@@ -205,11 +228,15 @@ if [ "$VERIF_DEPLOIEMENT" = "oui" ]; then
   echo "===== Verification du deploiement ====="
   SERVI="$(curl -fsS "https://attabl.com/api/version?cb=$(date +%s)" 2>/dev/null \
             | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
-  ATTENDU_SHA="$(git rev-parse origin/main 2>/dev/null)"
+  if [ -n "$SHA_ATTENDU" ]; then
+    ATTENDU_SHA="$SHA_ATTENDU"
+  else
+    ATTENDU_SHA="$(git rev-parse origin/main 2>/dev/null)"
+  fi
 
   if [ -z "$SERVI" ] || [ -z "$ATTENDU_SHA" ]; then
-    echo "ERREUR: impossible de comparer le commit servi et origin/main." >&2
-    echo "  servi='$SERVI'  origin/main='$ATTENDU_SHA'" >&2
+    echo "ERREUR: impossible de comparer le commit servi et celui attendu." >&2
+    echo "  servi='$SERVI'  attendu='$ATTENDU_SHA'" >&2
     echo "Relancez avec --sans-verification-deploiement SEULEMENT si vous avez" >&2
     echo "verifie autrement que le code est deploye." >&2
     exit 5
@@ -218,9 +245,9 @@ if [ "$VERIF_DEPLOIEMENT" = "oui" ]; then
   # Egalite STRICTE, jamais un motif: une comparaison avec un motif sur une
   # extraction vide repondrait "a jour" a tort.
   if [ "$SERVI" != "$ATTENDU_SHA" ]; then
-    echo "REFUS: le domaine ne sert pas encore origin/main." >&2
-    echo "  servi      = $SERVI" >&2
-    echo "  origin/main= $ATTENDU_SHA" >&2
+    echo "REFUS: le domaine ne sert pas encore le commit attendu." >&2
+    echo "  servi   = $SERVI" >&2
+    echo "  attendu = $ATTENDU_SHA" >&2
     echo >&2
     echo "Ce lot RETIRE des acces. L'appliquer maintenant couperait des" >&2
     echo "ecritures que le code en production fait encore." >&2
