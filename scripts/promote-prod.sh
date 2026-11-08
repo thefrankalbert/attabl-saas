@@ -161,19 +161,47 @@ echo "deploiement cible     : ${DEPLOY_URL} (substate ${SUBSTATE})"
 PROMOTE_API="https://api.vercel.com/v10/projects/${PROJECT_ID}/promote/${DEPLOY_ID}"
 [[ -n "$TEAM_ID" ]] && PROMOTE_API="${PROMOTE_API}?teamId=${TEAM_ID}"
 HTTP_CODE="$(curl -s -o /tmp/promote-resp.json -w '%{http_code}' -X POST "$PROMOTE_API" -H "Authorization: Bearer ${TOKEN}")"
-if [[ "$HTTP_CODE" != 2* ]]; then
+
+# UN 409 N'EST PAS UNE PANNE, c'est l'etat recherche deja atteint.
+#
+# Vercel repond 409 "The provided deploymentId is already the current production
+# deployment". C'est exactement ce qu'on voulait. Et ca arrive tout le temps: le
+# workflow `promote-prod` tourne apres chaque push sur main, donc une execution
+# lancee a la main en parallele trouve le travail deja fait.
+#
+# Le script sortait alors en ERROR (mesure le 2026-11-08 sur 555697d4, promu et
+# servi correctement). Un faux rouge sur cet outil-la coute cher: le depot
+# documente justement comme piege le fait de conclure "la promotion est
+# bloquee". On ne croit pas pour autant le message de l'API: c'est le domaine
+# qui tranche, plus bas.
+if [[ "$HTTP_CODE" == 409 ]]; then
+  echo "promotion deja faite par ailleurs (HTTP 409) - verification du domaine"
+elif [[ "$HTTP_CODE" != 2* ]]; then
   echo "prod: ERROR - l'API de promotion a repondu HTTP ${HTTP_CODE}"
   head -c 300 /tmp/promote-resp.json; echo
   exit 1
-fi
-echo "promotion demandee (HTTP ${HTTP_CODE})"
-
-sleep 15
-SERVED="$(served_sha || true)"
-if [[ "$SERVED" == "$EXPECTED" ]]; then
-  echo "prod: PROMOTED - ${DOMAIN} sert maintenant ${SERVED:0:8}"
-  exit 0
+else
+  echo "promotion demandee (HTTP ${HTTP_CODE})"
 fi
 
-echo "prod: ERROR - apres promotion, ${DOMAIN} sert toujours ${SERVED:0:8}"
+# L'assignation du domaine n'est pas instantanee. Un seul controle apres 15 s
+# declarait en erreur un domaine qui n'avait besoin que de quelques secondes de
+# plus - le meme faux rouge, a l'autre bout du script. On laisse donc jusqu'a
+# 90 s, en s'arretant des que c'est bon. Le delai est reglable pour que les
+# tests du script n'attendent pas pour rien.
+DELAI_VERIFICATION_S="${PROMOTE_DELAI_VERIFICATION_S:-15}"
+for _ in 1 2 3 4 5 6; do
+  sleep "$DELAI_VERIFICATION_S"
+  SERVED="$(served_sha || true)"
+  if [[ "$SERVED" == "$EXPECTED" ]]; then
+    if [[ "$HTTP_CODE" == 409 ]]; then
+      echo "prod: IN-SYNC - ${DOMAIN} servait deja ${SERVED:0:8}"
+    else
+      echo "prod: PROMOTED - ${DOMAIN} sert maintenant ${SERVED:0:8}"
+    fi
+    exit 0
+  fi
+done
+
+echo "prod: ERROR - 90 s apres la promotion, ${DOMAIN} sert toujours ${SERVED:0:8}"
 exit 1
