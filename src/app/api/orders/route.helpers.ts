@@ -38,6 +38,16 @@ type QuotaTenant = {
 
 // 9. Create in-app notification for admins (scheduled via after() so Vercel
 // serverless runs it after the response instead of racing a fire-and-forget promise).
+//
+// LA NOTIFICATION DANS L'APPLICATION NE SUFFIT PAS. La ligne `notifications`
+// n'est vue que si quelqu'un regarde l'ecran, application ouverte. Une tablette
+// en veille au comptoir ne montre rien. On envoie donc AUSSI un push, qui
+// reveille l'appareil - c'est la difference entre une commande vue tout de
+// suite et une commande vue au prochain passage en cuisine.
+//
+// Les deux partent du meme endroit et portent le meme texte: deux sources
+// divergentes finiraient par annoncer deux choses differentes pour une seule
+// commande.
 export function scheduleOrderNotification(
   adminSupabase: SupabaseClient,
   params: {
@@ -50,17 +60,40 @@ export function scheduleOrderNotification(
   },
 ): void {
   const { tenantId, tableNumber, itemsCount, total, currency, orderId } = params;
+  const titre = `Nouvelle commande - Table ${tableNumber}`;
+  const corps = `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${total.toLocaleString('fr-FR')} ${currency || 'XAF'}`;
+
   after(async () => {
     const { error: notifError } = await adminSupabase.from('notifications').insert({
       tenant_id: tenantId,
       user_id: null, // broadcast to all tenant admins
       type: 'info',
-      title: `Nouvelle commande - Table ${tableNumber}`,
-      body: `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${total.toLocaleString('fr-FR')} ${currency || 'XAF'}`,
+      title: titre,
+      body: corps,
       link: `/orders`,
     });
     if (notifError) {
       logger.error('Failed to create order notification', notifError, {
+        tenantId,
+        orderId,
+      });
+    }
+
+    try {
+      const { createPushService } = await import('@/services/push.service');
+      await createPushService(adminSupabase).envoyerAuxAppareilsDuTenant(tenantId, {
+        titre,
+        corps,
+        // Meme `tag` pour toutes les commandes: un service de midi ne doit pas
+        // laisser quarante notifications empilees dans la barre de l'appareil.
+        tag: 'nouvelle-commande',
+        // Chemin dans l'origine du restaurant (slug.attabl.com), ou le service
+        // worker est enregistre - pas le chemin interne /sites/<slug>/...
+        url: '/admin/orders',
+      });
+    } catch (erreurPush) {
+      // Une commande ne doit jamais dependre d'une notification.
+      logger.error('Envoi push de nouvelle commande impossible', erreurPush, {
         tenantId,
         orderId,
       });
