@@ -4735,6 +4735,7 @@
     "userNotFound": "User not found",
     "invalidEmail": "Invalid email",
     "rateLimited": "Too many requests. Please try again later.",
+    "rateLimitedMinutes": "Too many attempts. Try again in {minutes} minutes.",
     "contactSuccessHoneypot": "Your appointment request has been sent!",
     "validationError": "Validation error. Please check the fields.",
     "contactSuccess": "Your request has been recorded. Our team will contact you soon.",

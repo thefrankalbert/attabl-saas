@@ -15,7 +15,14 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 /** Pilote le resultat de `limit()` pour tous les limiteurs d'un test. */
-const upstash = { shouldThrow: false, success: true };
+const upstash = {
+  shouldThrow: false,
+  success: true,
+  /** Jetons restants rendus par `getRemaining` (consultation sans consommation). */
+  remaining: 9,
+  /** Journal des appels, pour prouver qu'une consultation NE CONSOMME PAS. */
+  appels: [] as string[],
+};
 
 vi.mock('@upstash/redis', () => ({
   Redis: class {},
@@ -24,8 +31,26 @@ vi.mock('@upstash/redis', () => ({
 vi.mock('@upstash/ratelimit', () => {
   class FakeRatelimit {
     async limit() {
+      upstash.appels.push('limit');
       if (upstash.shouldThrow) throw new Error('upstash injoignable');
-      return { success: upstash.success, limit: 10, remaining: 9, reset: 0 };
+      // La vraie bibliotheque rend un horodatage EPOCH EN MILLISECONDES
+      // (`(currentWindow + 1) * windowSize`). Une doublure qui rendrait 0
+      // laisserait passer un calcul de delai faux sans que rien ne le voie.
+      return {
+        success: upstash.success,
+        limit: 10,
+        remaining: 9,
+        reset: Date.now() + 9 * 60_000,
+      };
+    }
+    async getRemaining() {
+      upstash.appels.push('getRemaining');
+      if (upstash.shouldThrow) throw new Error('upstash injoignable');
+      return { remaining: upstash.remaining, reset: Date.now() + 600_000, limit: 20 };
+    }
+    async resetUsedTokens() {
+      upstash.appels.push('resetUsedTokens');
+      if (upstash.shouldThrow) throw new Error('upstash injoignable');
     }
     static slidingWindow() {
       return { kind: 'slidingWindow' };
@@ -150,10 +175,10 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
   it('la connexion et l inscription BLOQUENT (fail-closed)', async () => {
     // Laisser passer ici, c'est offrir le brute-force pendant la panne.
     upstash.shouldThrow = true;
-    const { signupLimiter, loginLimiter } = await loadWithRedis();
+    const { signupLimiter, loginPaireLimiter } = await loadWithRedis();
 
     expect((await signupLimiter.check('1.2.3.4')).success).toBe(false);
-    expect((await loginLimiter.check('1.2.3.4')).success).toBe(false);
+    expect((await loginPaireLimiter.check('empreinte:1.2.3.4')).success).toBe(false);
   });
 
   it('la reclamation d un code promo BLOQUE (fail-closed)', async () => {
@@ -182,5 +207,148 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
     const { untrustedOrderLimiter } = await loadWithRedis();
 
     expect((await untrustedOrderLimiter.check('1.2.3.4:resto')).success).toBe(false);
+  });
+});
+
+// --- Une seule operation atomique ------------------------------------------
+/**
+ * QUATRE CONCEPTIONS ONT ETE ESSAYEES. Chaque test ci-dessous verrouille une
+ * lecon payee:
+ *
+ *   v1: 5 par 15 min par ADRESSE, consomme avant la verification du mot de
+ *       passe. Une connexion REUSSIE coutait un essai, et l'adresse etant
+ *       partagee, quatre employes se partageaient cinq connexions par quart
+ *       d'heure. Mesure en production: un utilisateur enferme 22 minutes.
+ *   v2: lecture (`consulter`) puis comptage apres coup. Non atomique: une
+ *       rafale simultanee passait entiere. Et le refus par compte avant
+ *       authentification permettait de verrouiller autrui en boucle.
+ *   v3: comptage APRES l'echec, sans barrer la route. Un audit a montre que le
+ *       plafond devenait decoratif: 800 essais par heure sur un compte.
+ *   v4 (ici): une seule operation atomique, `check`, sur le COUPLE
+ *       (compte, adresse).
+ *
+ * D'ou l'invariant teste: il ne reste QU'UNE methode qui compte, et elle
+ * compte et tranche d'un seul coup.
+ */
+describe('check, et rien d autre', () => {
+  beforeEach(() => {
+    upstash.shouldThrow = false;
+    upstash.success = true;
+    upstash.appels = [];
+  });
+
+  it('compte et tranche en UNE seule operation', async () => {
+    const { loginPaireLimiter } = await loadWithRedis();
+
+    const etat = await loginPaireLimiter.check('empreinte:1.2.3.4');
+
+    expect(etat.success).toBe(true);
+    expect(upstash.appels).toEqual(['limit']);
+  });
+
+  /**
+   * Les methodes de la v2 et de la v3 ne doivent pas revenir: une lecture
+   * separee de l'ecriture ne peut pas tenir la garantie, et `effacer`
+   * declenchait un balayage de tout l'espace de cles Redis a chaque connexion
+   * reussie (`resetUsedTokens` fait un SCAN complet, verifie dans la
+   * bibliotheque).
+   */
+  it('n expose plus de lecture sans consommation, ni de remise a zero', async () => {
+    const { loginPaireLimiter } = await loadWithRedis();
+
+    expect('consulter' in loginPaireLimiter).toBe(false);
+    expect('compterEchec' in loginPaireLimiter).toBe(false);
+    expect('effacer' in loginPaireLimiter).toBe(false);
+  });
+
+  it('rend un instant de liberation exploitable, pas zero', async () => {
+    const { loginPaireLimiter, minutesAvantLiberation } = await loadWithRedis();
+
+    const etat = await loginPaireLimiter.check('empreinte:1.2.3.4');
+
+    expect(etat.reset).toBeGreaterThan(Date.now());
+    expect(minutesAvantLiberation(etat.reset)).toBeGreaterThan(1);
+  });
+
+  it('les deux compartiments de connexion refusent en panne Redis', async () => {
+    const { loginPaireLimiter, loginAdresseLimiter } = await loadWithRedis();
+    upstash.shouldThrow = true;
+
+    expect((await loginPaireLimiter.check('empreinte:1.2.3.4')).success).toBe(false);
+    expect((await loginAdresseLimiter.check('1.2.3.4')).success).toBe(false);
+  });
+});
+
+// --- La cle de compteur d'un compte ----------------------------------------
+describe('cleCompte', () => {
+  it('ne contient pas l email: un compteur n est pas un annuaire', async () => {
+    const { cleCompte } = await loadWithRedis();
+    const cle = cleCompte('Patron@Exemple.TEST');
+
+    expect(cle).not.toContain('Patron');
+    expect(cle).not.toContain('exemple');
+    expect(cle).not.toContain('@');
+    expect(cle).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  /** Sinon "Patron@x" et "patron@x " seraient deux comptes differents a compter. */
+  it('ignore la casse et les espaces', async () => {
+    const { cleCompte } = await loadWithRedis();
+    expect(cleCompte('  Patron@Exemple.test ')).toBe(cleCompte('patron@exemple.test'));
+  });
+
+  it('deux comptes distincts ont deux cles distinctes', async () => {
+    const { cleCompte } = await loadWithRedis();
+    expect(cleCompte('a@exemple.test')).not.toBe(cleCompte('b@exemple.test'));
+  });
+});
+
+describe('minutesAvantLiberation', () => {
+  it('arrondit au-dessus et ajoute une minute de marge', async () => {
+    const { minutesAvantLiberation } = await loadWithRedis();
+    expect(minutesAvantLiberation(Date.now() + 61_000)).toBe(3);
+  });
+
+  /**
+   * NE JAMAIS ANNONCER "0 minutes". En panne Redis, l'instant de liberation
+   * est inconnu (`reset: 0`) et tous les compartiments d'authentification
+   * refusent: le message aurait dit "Reessayez dans 0 minutes", ce qui est
+   * absurde et renvoie l'utilisateur essayer aussitot. Constat d'un audit,
+   * prouve par execution.
+   */
+  it('ne rend JAMAIS zero, meme quand l instant est inconnu', async () => {
+    const { minutesAvantLiberation } = await loadWithRedis();
+    expect(minutesAvantLiberation(0)).toBe(1);
+    expect(minutesAvantLiberation(Date.now() + 1_000)).toBeGreaterThanOrEqual(1);
+    expect(minutesAvantLiberation(Date.now() - 60_000)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// --- Regrouper les adresses ------------------------------------------------
+/**
+ * POURQUOI CE REGROUPEMENT EXISTE. En IPv6, un abonne ordinaire recoit un bloc
+ * /64, soit plus de 18 milliards de milliards d adresses. Compter "par
+ * adresse" lui donne un budget neuf a chaque requete: la limite ne vaut rien
+ * contre lui, alors qu elle s applique pleinement a un abonne IPv4. Constat
+ * d un audit du 2026-11-08.
+ */
+describe('grouperAdresse', () => {
+  it('laisse une adresse IPv4 intacte', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    expect(grouperAdresse('102.180.71.143')).toBe('102.180.71.143');
+  });
+
+  it('regroupe deux adresses IPv6 du meme /64 sur la MEME cle', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const a = grouperAdresse('2001:0db8:85a3:0000:1111:2222:3333:4444');
+    const b = grouperAdresse('2001:0db8:85a3:0000:9999:8888:7777:6666');
+    expect(a).toBe(b);
+  });
+
+  it('garde deux /64 differents sur des cles differentes', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const a = grouperAdresse('2001:0db8:85a3:0001:1111:2222:3333:4444');
+    const b = grouperAdresse('2001:0db8:85a3:0002:1111:2222:3333:4444');
+    expect(a).not.toBe(b);
   });
 });

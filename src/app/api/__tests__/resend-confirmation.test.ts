@@ -5,8 +5,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/rate-limit', () => ({
+  // La garde serree est passee sur le COMPTE, et une garde large reste par
+  // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
+  // restaurant alors que l'abus vise une boite mail precise.
   resendConfirmationLimiter: { check: vi.fn() },
+  resendConfirmationAdresseLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  // Regroupement IPv6 /64: l identite en test, le comportement est teste a part.
+  grouperAdresse: (ip: string) => ip,
+  // Intervalle minimum entre deux envois: libre par defaut.
+  envoiAutorisePourCompte: vi.fn().mockResolvedValue(true),
+  libererEnvoi: vi.fn().mockResolvedValue(undefined),
+  cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
+  minutesAvantLiberation: () => 7,
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -27,7 +38,12 @@ vi.mock('@/services/email.service', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from '../resend-confirmation/route';
-import { resendConfirmationLimiter } from '@/lib/rate-limit';
+import {
+  resendConfirmationLimiter,
+  resendConfirmationAdresseLimiter,
+  envoiAutorisePourCompte,
+  libererEnvoi,
+} from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // ---------------------------------------------------------------------------
@@ -50,6 +66,13 @@ function buildRequest(body?: unknown, options?: { malformed?: boolean }): Reques
 }
 
 function mockRateLimit(allowed: boolean) {
+  vi.mocked(envoiAutorisePourCompte).mockResolvedValue(true);
+  vi.mocked(resendConfirmationAdresseLimiter.check).mockResolvedValue({
+    success: true,
+    limit: 30,
+    remaining: 29,
+    reset: Date.now() + 600_000,
+  });
   vi.mocked(resendConfirmationLimiter.check).mockResolvedValue({
     success: allowed,
     limit: 3,
@@ -84,14 +107,79 @@ describe('POST /api/resend-confirmation', () => {
     vi.clearAllMocks();
   });
 
-  it('returns 429 when rate limited', async () => {
+  /**
+   * LE PLAFOND PAR COMPTE S ARRETE EN SILENCE. Rendre 429 ici permettait a
+   * quiconque connaissant l'email d'un nouveau client de le priver de son mail
+   * de bienvenue: il recoit 403 a la connexion (email non confirme) et ne peut
+   * plus se le faire renvoyer - enferme dehors pour de bon. Constat d'audit.
+   */
+  it('plafond par compte atteint: reponse normale, aucune erreur visible', async () => {
     mockRateLimit(false);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+    const json = (await res.json()) as { success?: boolean; error?: string };
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.error).toBeUndefined();
+  });
+
+  /**
+   * Generer un lien de confirmation PERIME le precedent. Verrou consulte APRES
+   * la generation, un attaquant invalidait le lien que le nouveau client venait
+   * de recevoir, sans qu aucun mail ne parte: enferme dehors sans trace.
+   */
+  it('envoi trop rapproche: AUCUN lien genere', async () => {
+    mockRateLimit(true);
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
+  });
+
+  it('prend un verrou nomme pour la confirmation, pas un verrou global', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    const cle = vi.mocked(envoiAutorisePourCompte).mock.calls[0][0];
+    expect(cle).toMatch(/^confirmation:/);
+  });
+
+  it('rend le verrou quand aucun lien ne peut etre genere', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'already confirmed' } },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'deja@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(libererEnvoi).toHaveBeenCalledWith(expect.stringMatching(/^confirmation:/));
+  });
+
+  it('garde de cout par adresse: 429 avec le delai annonce', async () => {
+    mockRateLimit(true);
+    vi.mocked(resendConfirmationAdresseLimiter.check).mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 600_000,
+    });
 
     const res = await POST(buildRequest({ email: 'test@test.com' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
-    expect(json.error).toContain('Trop de requ');
+    expect(json.error).toMatch(/dans [1-9]\d* minutes/);
+    expect(res.headers.get('Retry-After')).toBeTruthy();
   });
 
   it('returns 400 when body is malformed JSON', async () => {

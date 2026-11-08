@@ -5,8 +5,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/rate-limit', () => ({
+  // La garde serree est passee sur le COMPTE, et une garde large reste par
+  // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
+  // restaurant alors que l'abus vise une boite mail precise.
   forgotPasswordLimiter: { check: vi.fn() },
+  forgotPasswordAdresseLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  // Regroupement IPv6 /64: l identite en test, le comportement est teste a part.
+  grouperAdresse: (ip: string) => ip,
+  // Intervalle minimum entre deux envois: libre par defaut.
+  envoiAutorisePourCompte: vi.fn().mockResolvedValue(true),
+  libererEnvoi: vi.fn().mockResolvedValue(undefined),
+  cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
+  minutesAvantLiberation: () => 7,
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -28,8 +39,10 @@ vi.mock('@/services/email.service', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from '../forgot-password/route';
-import { forgotPasswordLimiter } from '@/lib/rate-limit';
+import { forgotPasswordLimiter, forgotPasswordAdresseLimiter } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendPasswordResetEmail } from '@/services/email.service';
+import { envoiAutorisePourCompte, libererEnvoi } from '@/lib/rate-limit';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,16 +101,109 @@ function createMockAdminClient(overrides?: {
 describe('POST /api/forgot-password', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(forgotPasswordAdresseLimiter.check).mockResolvedValue({
+      success: true,
+      limit: 30,
+      remaining: 29,
+      reset: Date.now() + 600_000,
+    });
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(true);
   });
 
-  it('returns 429 when rate limited', async () => {
+  /**
+   * LE PLAFOND PAR COMPTE S ARRETE EN SILENCE, et c'est la propriete a tenir.
+   *
+   * Une version precedente rendait 429 ici. Constat d'audit: n'importe qui
+   * connaissant l'email du proprietaire d'un restaurant pouvait alors epuiser
+   * son budget - 18 requetes par heure depuis une seule machine - et le priver
+   * DEFINITIVEMENT de toute reinitialisation. La reponse doit donc rester
+   * identique a celle d'un envoi normal (elle ne dit deja rien sur l'existence
+   * du compte), et AUCUN mail ne doit partir.
+   */
+  it('plafond par compte atteint: reponse normale, et aucun mail envoye', async () => {
     mockRateLimit(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+    const json = (await res.json()) as { success?: boolean; error?: string };
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.error).toBeUndefined();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  /**
+   * L ORDRE EST LA PROPRIETE. Generer un lien de recuperation PERIME le
+   * precedent. Si le verrou d envoi est consulte APRES `generateLink`, un
+   * attaquant peut invalider le lien que le proprietaire vient de recevoir sans
+   * qu aucun mail ne parte: recuperation refusee, et sans trace. Constat
+   * d audit du 2026-11-08.
+   */
+  it('envoi trop rapproche: AUCUN lien genere, donc aucun lien existant perime', async () => {
+    mockRateLimit(true);
+    vi.mocked(envoiAutorisePourCompte).mockResolvedValue(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  /**
+   * UNE CLE PAR USAGE. Avec une cle partagee, demander son mot de passe
+   * bloquait une minute le renvoi du mail de confirmation, et inversement:
+   * deux fonctionnalites sans rapport se genaient.
+   */
+  it('prend un verrou nomme pour la recuperation, pas un verrou global', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    const cle = vi.mocked(envoiAutorisePourCompte).mock.calls[0][0];
+    expect(cle).toMatch(/^recuperation:/);
+  });
+
+  /**
+   * UNE REQUETE QUI NE PRODUIT RIEN NE DOIT PAS CONFISQUER LA SUIVANTE. Si le
+   * lien ne peut pas etre genere, aucun mail ne part: garder le verrou
+   * bloquerait une minute une requete qui, elle, aurait abouti.
+   */
+  it('rend le verrou quand aucun lien ne peut etre genere', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'user not found' } },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'inconnu@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(libererEnvoi).toHaveBeenCalledWith(expect.stringMatching(/^recuperation:/));
+  });
+
+  it('garde de cout par adresse: 429 avec le delai annonce', async () => {
+    mockRateLimit(true);
+    vi.mocked(forgotPasswordAdresseLimiter.check).mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 600_000,
+    });
 
     const res = await POST(buildRequest({ email: 'test@test.com' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
-    expect(json.error).toContain('Trop de requ');
+    // Le message doit DIRE combien de temps attendre, et jamais "0 minutes".
+    expect(json.error).toMatch(/dans [1-9]\d* minutes/);
+    expect(res.headers.get('Retry-After')).toBeTruthy();
   });
 
   it('returns 400 when body is malformed JSON', async () => {

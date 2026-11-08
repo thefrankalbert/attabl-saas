@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { loginSchema } from '@/lib/validations/auth.schema';
-import { loginLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  loginPaireLimiter,
+  loginAdresseLimiter,
+  getClientIp,
+  grouperAdresse,
+  cleCompte,
+  minutesAvantLiberation,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { getTranslations } from 'next-intl/server';
 import { isHoneypotTriggered } from '@/lib/honeypot';
@@ -16,15 +23,37 @@ export async function POST(request: Request) {
 
     const t = await getTranslations('errors');
 
-    // 0. Rate limiting
+    // 0. Garde par ADRESSE, consultee sans etre consommee.
+    //
+    // ON NE COMPTE QUE LES ECHECS, et c'est le coeur de la correction. Avant,
+    // le compteur etait consomme ici, donc une connexion REUSSIE coutait un
+    // essai: quatre employes qui se connectent le matin depuis le meme Wi-Fi,
+    // un cinquieme qui se trompe une fois, et toute l'equipe etait dehors pour
+    // 15 minutes. Une connexion reussie n'est pas une attaque.
     const ip = getClientIp(request);
-    const { success: allowed } = await loginLimiter.check(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: t('rateLimited') },
-        { status: 429, headers: { 'Retry-After': '300' } },
+    // CLE DE COMPTAGE regroupee: en IPv6, un abonne ordinaire dispose d un /64,
+    // soit des milliards d adresses - compter par adresse exacte ne le limite
+    // en rien. `ip` brute reste utilisee pour Turnstile, qui attend une vraie
+    // adresse.
+    const adresse = grouperAdresse(ip);
+    const refus = (etat: { reset: number }) =>
+      NextResponse.json(
+        { error: t('rateLimitedMinutes', { minutes: minutesAvantLiberation(etat.reset) }) },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(60, minutesAvantLiberation(etat.reset) * 60)),
+          },
+        },
       );
-    }
+
+    // ATOMIQUE, et c'est le point: `check` compte et tranche en une seule
+    // operation. Une version precedente lisait le compteur puis comptait
+    // l'echec plus tard; cent requetes simultanees passaient alors toutes la
+    // lecture avant que la premiere n'ait compte, et la limite devenait "200
+    // par aller-retour reseau" au lieu de "200 par 15 minutes".
+    const etatAdresse = await loginAdresseLimiter.check(adresse);
+    if (!etatAdresse.success) return refus(etatAdresse);
 
     // 1. Parse and validate body
     let body: unknown;
@@ -56,6 +85,23 @@ export async function POST(request: Request) {
 
     const { email, password } = parseResult.data;
 
+    // 1.7 LA GARDE QUI BORNE REELLEMENT LES ESSAIS, sur le couple
+    // (compte, adresse), consommee ATOMIQUEMENT avant d'authentifier.
+    //
+    // Deux conceptions precedentes ont echoue ici, et pour des raisons
+    // opposees: refuser sur le compte SEUL permettait a quiconque connaissant
+    // un email de verrouiller ce compte en boucle; ne compter qu'apres
+    // l'authentification rendait le plafond decoratif, puisque chaque requete
+    // testait quand meme un mot de passe (800 essais par heure au lieu de 20).
+    //
+    // Le couple resout les deux: un attaquant n'epuise que SON propre budget
+    // sur ce compte, et le proprietaire garde le sien intact depuis son
+    // adresse. La cle du compte est une empreinte de l'email - un compteur n'a
+    // pas a devenir un annuaire des comptes du service.
+    const compte = cleCompte(email);
+    const etatPaire = await loginPaireLimiter.check(`${compte}:${adresse}`);
+    if (!etatPaire.success) return refus(etatPaire);
+
     // 2. Authenticate with Supabase
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -69,11 +115,17 @@ export async function POST(request: Request) {
       // authError is AuthApiError which exposes a code property.
       const authCode = (authError as { code?: string }).code;
 
-      if (authCode === 'invalid_credentials') {
-        return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });
-      }
+      // Les deux compteurs ont deja ete consommes en amont: rien a compter
+      // ici. Une version precedente exemptait `email_not_confirmed` du
+      // comptage, au motif que le mot de passe etait alors correct - une
+      // affirmation sur l'ordre interne de Supabase que ce depot ne peut pas
+      // verifier, et qui offrait des essais gratuits si elle etait fausse.
       if (authCode === 'email_not_confirmed') {
         return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
+      }
+
+      if (authCode === 'invalid_credentials') {
+        return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });
       }
       logger.error('Login failed', authError);
       return NextResponse.json({ error: t('loginError') }, { status: 401 });

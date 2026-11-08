@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { logger } from '@/lib/logger';
@@ -12,7 +14,7 @@ import { logger } from '@/lib/logger';
  *   import { signupLimiter, getClientIp } from '@/lib/rate-limit';
  *   const ip = getClientIp(request);
  *   const { success } = await signupLimiter.check(ip);
- *   if (!success) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+ *   if (!success) return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
  *
  * Usage in Server Actions:
  *   import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
@@ -48,10 +50,11 @@ if (!isConfigured) {
 
 // --- Rate limit result type ---
 
-interface RateLimitResult {
+export interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
+  /** Horodatage (ms) ou le compteur se libere. 0 quand inconnu. */
   reset: number;
 }
 
@@ -107,10 +110,116 @@ function createLimiter(
   };
 }
 
+/**
+ * Cle de compteur pour une adresse email.
+ *
+ * On ne met pas l'email en clair dans Redis: une cle de compteur n'a pas a
+ * devenir un annuaire des comptes du service. L'empreinte suffit a compter.
+ */
+export function cleCompte(email: string): string {
+  return createHash('sha256').update(email.trim().toLowerCase()).digest('hex').slice(0, 32);
+}
+
+/**
+ * Regroupe une adresse pour en faire une cle de comptage utile.
+ *
+ * POURQUOI: en IPv6, un abonne ordinaire recoit un bloc /64, soit plus de
+ * 18 milliards de milliards d adresses. Compter "par adresse" lui donne donc un
+ * budget neuf a chaque requete, et la limite ne vaut rien contre lui - alors
+ * qu elle s applique pleinement a un abonne IPv4. On compte donc par /64 en
+ * IPv6, l unite reellement attribuee a un client.
+ *
+ * L IPv4 est rendue telle quelle: la grouper par /24 punirait des voisins qui
+ * n ont rien en commun.
+ */
+export function grouperAdresse(ip: string): string {
+  if (!ip.includes(':')) return ip;
+  // Forme abregee (::): on ne deplie pas. Les adresses d un meme /64 arrivent
+  // sous la meme forme dans les en-tetes de la plateforme, donc le
+  // regroupement reste correct en pratique.
+  if (ip.includes('::')) return ip;
+  const blocs = ip.split(':');
+  return blocs.length >= 4 ? `${blocs.slice(0, 4).join(':')}::/64` : ip;
+}
+
+/**
+ * Intervalle minimum entre deux envois de mail pour un meme compte, en
+ * secondes.
+ *
+ * POURQUOI PAS UN BUDGET PAR FENETRE: un budget "3 par 10 minutes" par compte
+ * peut etre tenu PLEIN indefiniment par qui connait l email - 18 requetes par
+ * heure suffisent - et le proprietaire n obtient alors plus jamais son lien. Un
+ * intervalle ne retarde que d une minute: la fonctionnalite ne peut pas etre
+ * confisquee.
+ */
+const INTERVALLE_ENVOI_S = 60;
+
+/**
+ * Pose un verrou d envoi pour ce compte, et dit s il etait libre.
+ *
+ * Une seule operation atomique (`SET ... NX EX`): deux requetes simultanees ne
+ * peuvent pas declencher deux mails.
+ */
+export async function envoiAutorisePourCompte(cle: string): Promise<boolean> {
+  if (!redis) return process.env.NODE_ENV !== 'production';
+  try {
+    const pose = await redis.set(`attabl:envoi:${cle}`, '1', {
+      nx: true,
+      ex: INTERVALLE_ENVOI_S,
+    });
+    return pose === 'OK';
+  } catch (err) {
+    // Un envoi de mail n est pas une operation de securite: en cas de panne du
+    // verrou, on laisse passer plutot que de priver quelqu un de son lien.
+    logger.error('Verrou d envoi indisponible, envoi autorise', err, { cle });
+    return true;
+  }
+}
+
+/**
+ * Rend un verrou d envoi.
+ *
+ * A appeler des qu on sait qu AUCUN mail ne partira: compte inexistant, lien
+ * impossible a generer, envoi refuse par le fournisseur. Sans cela, une requete
+ * sterile confisque la minute suivante a une requete legitime.
+ */
+export async function libererEnvoi(cle: string): Promise<void> {
+  if (!redis) return;
+  try {
+    await redis.del(`attabl:envoi:${cle}`);
+  } catch (err) {
+    // Au pire le verrou expire de lui-meme au bout d une minute.
+    logger.error('Liberation du verrou d envoi impossible', err, { cle });
+  }
+}
+
+/**
+ * Minutes a annoncer avant liberation.
+ *
+ * UNE MINUTE DE MARGE, et elle n'est pas decorative. `slidingWindow` rend un
+ * instant aligne sur l'horloge, et la fenetre glissante reporte une part de la
+ * sous-fenetre precedente: a l'instant annonce, l'utilisateur peut encore etre
+ * refuse. Annoncer un delai trop court le fait revenir pour rien - exactement
+ * ce que ce message est cense eviter.
+ */
+export function minutesAvantLiberation(reset: number): number {
+  if (!reset) return 1;
+  return Math.max(1, Math.ceil((reset - Date.now()) / 60_000) + 1);
+}
+
 // --- Limiters per endpoint ---
 
-/** Signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
-export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(5, '10 m'), true);
+/**
+ * Inscription: 15 par 10 minutes et par adresse.
+ *
+ * Une inscription cree un compte qui n'existe pas encore: impossible de
+ * compter par compte. Le compteur reste donc par adresse, mais 5 etait trop
+ * bas pour un usage REEL: une formation ou six restaurateurs s'inscrivent
+ * depuis le meme Wi-Fi refusait le sixieme, et chez un operateur mobile des
+ * inconnus se partagent l'adresse. Ce qui arrete reellement les inscriptions
+ * automatisees est Turnstile et le honeypot, qui s'executent avant.
+ */
+export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(15, '10 m'), true);
 
 /** OAuth signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
 export const oauthSignupLimiter = createLimiter(
@@ -373,10 +482,28 @@ export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingW
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));
 
-/** Forgot password: 3 requests / 10 minutes per IP (fail-closed: brute-force protection) */
+/**
+ * Mot de passe oublie: par COMPTE, 3 par 10 minutes.
+ *
+ * Ici le compteur par compte est le BON reglage, et il est serre volontairement: le
+ * dommage d'un abus n'est pas une intrusion, c'est de noyer la boite mail d'un
+ * tiers. Trois messages par 10 minutes pour une adresse donnee suffisent a
+ * l'en empecher.
+ *
+ * Il etait compte par ADRESSE IP, ce qui se trompait de cible: deux employes
+ * distraits le meme matin, sur le meme Wi-Fi, et plus personne du restaurant
+ * ne pouvait demander un lien.
+ */
 export const forgotPasswordLimiter = createLimiter(
   'forgot-password',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
+);
+
+/** Mot de passe oublie, garde-fou par adresse: large, pour ne pas punir un Wi-Fi partage. */
+export const forgotPasswordAdresseLimiter = createLimiter(
+  'forgot-password-adresse',
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -384,6 +511,17 @@ export const forgotPasswordLimiter = createLimiter(
 export const resendConfirmationLimiter = createLimiter(
   'resend-confirmation',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
+);
+
+/**
+ * Renvoi de confirmation, garde-fou par adresse: large.
+ * Meme raison que pour le mot de passe oublie - la garde serree appartient au
+ * COMPTE, parce que l'abus consiste a noyer une boite mail, pas a entrer.
+ */
+export const resendConfirmationAdresseLimiter = createLimiter(
+  'resend-confirmation-adresse',
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -459,8 +597,62 @@ export const adminPasswordResetLinkIpLimiter = createLimiter(
   true,
 );
 
-/** Login: 5 requests / 15 minutes per IP (fail-closed: brute-force protection) - NIST SP 800-63B */
-export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(5, '15 m'), true);
+/**
+ * Connexion: deux compteurs, tous deux consommes ATOMIQUEMENT avant
+ * l'authentification.
+ *
+ * TROIS CONCEPTIONS ONT ETE ESSAYEES AVANT CELLE-CI, et les deux premieres
+ * etaient fausses. L'historique est garde parce que chaque erreur est un piege
+ * dans lequel il est naturel de retomber.
+ *
+ *   v1 (l'origine): 5 tentatives par 15 minutes, par ADRESSE IP, consommees
+ *      avant la verification du mot de passe. Entrer CORRECTEMENT coutait un
+ *      essai, et l'adresse etant partagee, les quatre employes d'un restaurant
+ *      se partageaient cinq connexions par quart d'heure. Mesure en production
+ *      le 2026-11-08: un utilisateur enferme 22 minutes hors de son produit.
+ *
+ *   v2: compteur par COMPTE, consulte avant l'authentification, echec compte
+ *      apres. Deux defauts: lire puis ecrire n'est pas atomique (cent requetes
+ *      simultanees passaient toutes la lecture), et refuser avant
+ *      l'authentification permettait a quiconque connaissant un email de
+ *      verrouiller ce compte en boucle.
+ *
+ *   v3: compteur par compte consomme APRES l'echec, sans jamais barrer la
+ *      route. Un audit adversarial a montre que ce plafond etait DECORATIF: le
+ *      mot de passe etant verifie avant tout comptage, un attaquant testait
+ *      800 mots de passe par heure sur un compte au lieu de 20. La limite
+ *      affichee ne bornait rien.
+ *
+ * LA FORME RETENUE porte la garde serree sur le COUPLE (compte, adresse). Elle
+ * resout les trois problemes a la fois:
+ *
+ *   - elle est atomique, donc une rafale simultanee ne la contourne pas;
+ *   - elle borne REELLEMENT les essais sur un compte depuis une source donnee;
+ *   - elle ne permet PAS le verrouillage a distance: un attaquant n'epuise que
+ *     SON couple, le proprietaire garde le sien intact depuis son adresse.
+ *
+ * Ce qui reste assume: un attaquant qui change d'adresse retrouve un budget
+ * neuf. C'est la rancon de ne pas verrouiller un compte globalement, et c'est
+ * le compromis que l'OWASP recommande - un verrou global se retourne en arme
+ * contre le proprietaire. Turnstile et le honeypot restent la premiere ligne.
+ */
+export const loginPaireLimiter = createLimiter(
+  'login-paire',
+  Ratelimit.slidingWindow(10, '15 m'),
+  true,
+);
+
+/**
+ * Par ADRESSE: 200 tentatives par 15 minutes. C'est un garde-fou de COUT, pas
+ * d'authentification: il borne ce qu'une seule machine peut nous faire
+ * consommer. Haut volontairement - une adresse est partagee par un restaurant entier,
+ * ou par des centaines d'abonnes derriere le reseau d'un operateur mobile.
+ */
+export const loginAdresseLimiter = createLimiter(
+  'login-adresse',
+  Ratelimit.slidingWindow(200, '15 m'),
+  true,
+);
 
 /** Billing portal: 10 requests / minute per IP */
 export const billingPortalLimiter = createLimiter(
@@ -496,6 +688,24 @@ export const revalidateMenuLimiter = createLimiter(
  * fonction devient une passoire et doit etre reecrite pour lire l'element a
  * DROITE (le dernier ajoute par l'infrastructure de confiance), ou pour se fier
  * a un en-tete signe par le proxy.
+ */
+/**
+ * Adresse du client, telle que la plateforme la donne.
+ *
+ * POURQUOI L'ELEMENT LE PLUS A GAUCHE EST LE BON ICI, et pourquoi ce n'est pas
+ * une faille: un audit a soupconne une falsification possible (un attaquant
+ * qui envoie son propre `X-Forwarded-For` se fabriquerait un compteur neuf a
+ * chaque requete, et toutes les limites tomberaient). Verifie dans la
+ * documentation Vercel plutot que deduit: la plateforme **reecrit** cet en-tete
+ * et ne transmet PAS les adresses externes, precisement pour empecher
+ * l'usurpation (vercel.com/docs/headers/request-headers). L'element de gauche
+ * est donc l'adresse constatee par Vercel, pas une valeur fournie par le
+ * client.
+ *
+ * CE QUI INVALIDERAIT CE RAISONNEMENT: interposer un autre proxy devant Vercel
+ * (Cloudflare, par exemple), ou quitter Vercel. Dans ce cas il faudrait lire
+ * `x-vercel-forwarded-for`, ou l'en-tete du nouveau proxy, et surtout le
+ * reverifier - pas le supposer.
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');

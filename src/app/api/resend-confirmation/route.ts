@@ -2,7 +2,16 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger, hashEmail } from '@/lib/logger';
 import { resendConfirmationSchema } from '@/lib/validations/auth.schema';
-import { resendConfirmationLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  resendConfirmationLimiter,
+  resendConfirmationAdresseLimiter,
+  getClientIp,
+  grouperAdresse,
+  envoiAutorisePourCompte,
+  libererEnvoi,
+  cleCompte,
+  minutesAvantLiberation,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { sendWelcomeConfirmationEmail } from '@/services/email.service';
 
@@ -20,15 +29,24 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    // 1. Rate limiting
+    // 1. Garde par ADRESSE, large. La garde serree est passee sur le COMPTE
+    // (plus bas): comptee par adresse, elle punissait le Wi-Fi d'un restaurant
+    // alors que l'abus vise une boite mail precise.
     const ip = getClientIp(request);
-    const { success: allowed } = await resendConfirmationLimiter.check(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez dans quelques minutes.' },
-        { status: 429, headers: { 'Retry-After': '120' } },
+    const adresse = grouperAdresse(ip);
+    const refus = (reset: number) =>
+      NextResponse.json(
+        { error: `Trop de tentatives. Reessayez dans ${minutesAvantLiberation(reset)} minutes.` },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(60, minutesAvantLiberation(reset) * 60)) },
+        },
       );
-    }
+
+    // La garde d'adresse est consommee PLUS BAS, apres le controle par compte:
+    // consommee ici, un seul utilisateur qui reclame son mail dix fois epuisait
+    // le budget de toute l'adresse, alors que la regle par compte l'arrete des
+    // le 4e essai.
 
     // 2. Parse and validate
     let body: unknown;
@@ -44,10 +62,46 @@ export async function POST(request: Request) {
     }
 
     const { email } = parseResult.data;
-    const supabase = createAdminClient();
 
+    // 2.5 Garde serree par COMPTE.
     const SAFE_MSG =
       'Si un compte existe avec cet email, un nouveau lien de confirmation a ete envoye.';
+
+    // LE PLAFOND PAR COMPTE NE REFUSE RIEN, VOLONTAIREMENT. Rendre 429 ici
+    // permettait a quiconque connaissant l'email d'un nouveau client de le
+    // priver DEFINITIVEMENT de son mail de bienvenue: il recoit 403 a la
+    // connexion (email non confirme) et ne peut plus se le faire renvoyer -
+    // enferme dehors pour de bon. On s'arrete donc en silence, avec la MEME
+    // reponse que d'habitude.
+    const etatCompte = await resendConfirmationLimiter.check(`${cleCompte(email)}:${adresse}`);
+    if (!etatCompte.success) {
+      logger.info('Resend confirmation: plafond par compte atteint, aucun envoi', {
+        emailHash: hashEmail(email),
+      });
+      return NextResponse.json({ success: true, message: SAFE_MSG });
+    }
+
+    // Garde de COUT par adresse, consommee seulement maintenant.
+    const etatAdresse = await resendConfirmationAdresseLimiter.check(adresse);
+    if (!etatAdresse.success) return refus(etatAdresse.reset);
+    const supabase = createAdminClient();
+
+    // INTERVALLE MINIMUM PAR COMPTE, toutes adresses confondues - ET AVANT DE
+    // GENERER LE LIEN.
+    //
+    // L ORDRE EST LE POINT. Pose apres `generateLink`, ce verrou laissait un
+    // attaquant PERIMER le lien de confirmation que le nouveau client venait de
+    // recevoir, sans qu aucun mail ne parte: enferme dehors sans trace. Pose
+    // avant, une requete etouffee ne fabrique aucun jeton.
+    // CLE NOMMEE PAR USAGE, pour ne pas bloquer la demande de mot de passe
+    // oublie - et inversement.
+    const cleEnvoi = `confirmation:${cleCompte(email)}`;
+    if (!(await envoiAutorisePourCompte(cleEnvoi))) {
+      logger.info('Resend confirmation: envoi trop rapproche, ignore', {
+        emailHash: hashEmail(email),
+      });
+      return NextResponse.json({ success: true, message: SAFE_MSG });
+    }
 
     // 3. Generate a fresh confirmation link directly (O(1), no listUsers pagination issues).
     //    generateLink({ type: 'signup' }) will fail if the user doesn't exist or is
@@ -69,6 +123,12 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
+      // AUCUN mail ne partira: on rend le verrou. Le garder confisquerait la
+      // minute suivante a une requete qui, elle, aurait abouti - un compte deja
+      // confirme bloquerait ainsi le renvoi d un autre compte homonyme, et
+      // surtout une erreur serveur passagere bloquerait la nouvelle tentative.
+      await libererEnvoi(cleEnvoi);
+
       // User doesn't exist or is already confirmed -- return success to prevent enumeration.
       // Only log at error level if it looks like a genuine server error (not a "user not found" case).
       const errorMsg = linkError?.message ?? '';
