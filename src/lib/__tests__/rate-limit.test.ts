@@ -30,6 +30,12 @@ vi.mock('@upstash/redis', () => ({
 
 vi.mock('@upstash/ratelimit', () => {
   class FakeRatelimit {
+    // Le reglage reel du compartiment, pour pouvoir l'affirmer dans un test:
+    // sans cela, rien n'empeche de ramener un plafond a sa valeur d'avant.
+    reglage: { jetons: number; fenetre: string };
+    constructor(opts: { limiter: { jetons: number; fenetre: string } }) {
+      this.reglage = opts.limiter;
+    }
     async limit() {
       upstash.appels.push('limit');
       if (upstash.shouldThrow) throw new Error('upstash injoignable');
@@ -38,7 +44,7 @@ vi.mock('@upstash/ratelimit', () => {
       // laisserait passer un calcul de delai faux sans que rien ne le voie.
       return {
         success: upstash.success,
-        limit: 10,
+        limit: this.reglage.jetons,
         remaining: 9,
         reset: Date.now() + 9 * 60_000,
       };
@@ -52,8 +58,8 @@ vi.mock('@upstash/ratelimit', () => {
       upstash.appels.push('resetUsedTokens');
       if (upstash.shouldThrow) throw new Error('upstash injoignable');
     }
-    static slidingWindow() {
-      return { kind: 'slidingWindow' };
+    static slidingWindow(jetons: number, fenetre: string) {
+      return { kind: 'slidingWindow', jetons, fenetre };
     }
     static fixedWindow() {
       return { kind: 'fixedWindow' };
@@ -145,7 +151,10 @@ describe('check() avec Redis joignable', () => {
     const { orderLimiter } = await loadWithRedis();
     const r = await orderLimiter.check('1.2.3.4:resto');
     expect(r.success).toBe(true);
-    expect(r.limit).toBe(10);
+    // Le plafond rendu est celui REELLEMENT configure pour ce compartiment.
+    // Cette assertion valait `10` auparavant - la valeur en dur de la
+    // doublure, donc un test qui ne verifiait que son propre mock.
+    expect(r.limit).toBe(20);
   });
 
   it('refuse au dela de la limite', async () => {
@@ -350,5 +359,52 @@ describe('grouperAdresse', () => {
     const a = grouperAdresse('2001:0db8:85a3:0001:1111:2222:3333:4444');
     const b = grouperAdresse('2001:0db8:85a3:0002:1111:2222:3333:4444');
     expect(a).not.toBe(b);
+  });
+});
+
+// --- Les plafonds, choisis sur mesure --------------------------------------
+/**
+ * CES CHIFFRES VIENNENT DE LA PRODUCTION, pas du jugement. Mesure du
+ * 2026-11-08: le plus gros menu compte 284 plats (moyenne 68), le plus grand
+ * restaurant a 2 membres actifs, et le maximum de commandes jamais observe
+ * dans une meme minute est 7.
+ *
+ * Ce test existe pour qu'un retour en arriere se voie. Ramener le
+ * televersement a 20 par minute, c'est reimposer 15 minutes d'attente
+ * entrecoupees d'erreurs a qui met les photos d'un menu complet.
+ */
+describe('plafonds justifies par la mesure', () => {
+  beforeEach(() => {
+    upstash.shouldThrow = false;
+    upstash.success = true;
+  });
+
+  it.each([
+    ['uploadLimiter', 120, 'un menu de 284 plats a photographier'],
+    ['excelImportLimiter', 30, 'importer un menu est iteratif'],
+    ['pdfImportLimiter', 30, 'importer un menu est iteratif'],
+    ['menuSearchLimiter', 300, 'tous les convives d un lieu derriere une adresse'],
+  ])('%s autorise %i (%s)', async (nom, attendu) => {
+    const mod = (await loadWithRedis()) as unknown as Record<
+      string,
+      { check: (id: string) => Promise<{ limit: number }> }
+    >;
+    expect((await mod[nom].check('cle')).limit).toBe(attendu);
+  });
+
+  /**
+   * NON-REGRESSION SUR CE QUI A ETE MESURE PUIS LAISSE TEL QUEL. Desserrer un
+   * compartiment suffisant, c'est perdre une protection pour rien.
+   */
+  it.each([
+    ['orderLimiter', 20, 'maximum observe: 7 commandes dans la meme minute'],
+    ['permissionLimiter', 20, 'le plus grand restaurant a 2 membres'],
+    ['assignmentLimiter', 30, 'le plus grand restaurant a 2 membres'],
+  ])('%s reste a %i (%s)', async (nom, attendu) => {
+    const mod = (await loadWithRedis()) as unknown as Record<
+      string,
+      { check: (id: string) => Promise<{ limit: number }> }
+    >;
+    expect((await mod[nom].check('cle')).limit).toBe(attendu);
   });
 });

@@ -3,7 +3,7 @@ import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
-import { menuSearchLimiter, getClientIp } from '@/lib/rate-limit';
+import { menuSearchLimiter, getClientIp, grouperAdresse } from '@/lib/rate-limit';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import type { MenuItem } from '@/types/admin.types';
 
@@ -18,7 +18,27 @@ const FALLBACK_ERRORS = {
 // x-tenant-slug header injected by the middleware, never from a client param.
 export async function GET(request: Request) {
   try {
-    const ip = getClientIp(request);
+    // COMPTEUR PAR ADRESSE SEULE, et le plafond est releve a 300 par minute.
+    //
+    // POURQUOI PAS UNE CLE PAR RESTAURANT. J'avais compose la cle avec le slug
+    // du restaurant, pour qu'un service charge n'epuise pas le compartiment des
+    // autres. Deux revues successives ont montre que c'etait contournable, et la
+    // seconde avait raison sur le fond: `src/proxy.ts` injecte `x-tenant-slug` a
+    // partir du SOUS-DOMAINE sans verifier que le restaurant existe (ligne 436),
+    // et le domaine accepte un sous-domaine joker. Un en-tete "de confiance" ne
+    // prouve donc PAS l'existence du restaurant: il suffisait de changer de
+    // sous-domaine pour obtenir un compartiment neuf a volonte, et echapper
+    // entierement a la limite.
+    //
+    // Le benefice reel venait du CHIFFRE, pas de la composition: les convives
+    // d'un lieu sont tous derriere le Wi-Fi du restaurant, donc une seule
+    // adresse, et 60 par minute suffisait a ce qu'un service charge se refuse
+    // lui-meme - le message tombant sur le client en train de commander. 300 par
+    // minute et par adresse corrige cela sans ouvrir aucune porte.
+    const headersList = await headers();
+    // Regroupement par /64 en IPv6: un abonne ordinaire dispose de milliards
+    // d'adresses, donc compter par adresse exacte ne le limiterait en rien.
+    const ip = grouperAdresse(getClientIp(request));
     const { success: allowed } = await menuSearchLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
@@ -27,8 +47,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const headersList = await headers();
-    const tenantSlug = readTenantSlug(headersList).slug;
+    const slugDepuisEntete = readTenantSlug(headersList);
+    const tenantSlug = slugDepuisEntete.slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }

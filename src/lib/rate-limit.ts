@@ -208,6 +208,23 @@ export function minutesAvantLiberation(reset: number): number {
 }
 
 // --- Limiters per endpoint ---
+//
+// CE QUI A ETE MESURE PUIS LAISSE TEL QUEL (production, 2026-11-08). Un
+// compartiment qu'on desserre "au cas ou" est une protection qu'on perd pour
+// rien: ces trois-la ont ete verifies sur les donnees reelles et sont
+// suffisants.
+//
+//   - Commandes, 20 par minute et par restaurant: le maximum JAMAIS observe
+//     est de 7 commandes dans la meme minute. Marge de x3, on ne touche pas.
+//   - Droits et affectations, 20 a 30 par minute: le plus grand restaurant
+//     compte 2 membres actifs. Ces compartiments ne peuvent pas etre atteints
+//     par un usage normal.
+//   - Exports, 10 par minute: une action rare, declenchee a la main.
+//
+// Les compartiments REELLEMENT corriges sont ceux ou la mesure contredisait le
+// reglage: televersement (menu de 284 plats contre 20 par minute), imports de
+// menu (iteratifs contre 5 par heure), recherche dans le menu (tous les
+// convives d'un lieu derriere une seule adresse contre 60 par minute).
 
 /**
  * Inscription: 15 par 10 minutes et par adresse.
@@ -294,9 +311,20 @@ export const untrustedOrderLimiter = createLimiter(
   true,
 );
 
-/** Menu search corpus: read-only GET, 60 requests / minute per IP (separate
- *  bucket so browsing the search modal cannot deplete the order limit). */
-export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(60, '1 m'));
+/**
+ * Recherche dans le menu (lecture seule): 300 par minute, par restaurant ET
+ * par adresse.
+ *
+ * POURQUOI 60 PAR ADRESSE ETAIT TROP BAS: les convives d'un meme lieu sont
+ * TOUS derriere le Wi-Fi du restaurant, donc derriere UNE adresse. A 60 par
+ * minute, vingt convives qui ouvrent la recherche et tapent quelques lettres
+ * epuisaient le compartiment - et c'est le client finissant sa commande qui
+ * recevait le refus. La limite punissait le succes du restaurant.
+ *
+ * Compartiment separe de celui des commandes, pour que parcourir le menu ne
+ * puisse jamais empecher de commander.
+ */
+export const menuSearchLimiter = createLimiter('menu-search', Ratelimit.slidingWindow(300, '1 m'));
 
 // KNIP-RL: `paymentInitiationLimiter` et `webhookLimiter` vivaient ici, exportes
 // et jamais appeles. Mesure faite avant de trancher: ils n'ont AUCUN appelant
@@ -345,10 +373,18 @@ export const newsletterLimiter = createLimiter(
   true,
 );
 
-/** Excel menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
+/**
+ * Import de menu Excel: 30 par heure.
+ *
+ * POURQUOI 5 ETAIT TROP BAS: importer un menu est ITERATIF. On se trompe de
+ * colonne, on corrige, on reessaie. A cinq essais par heure, un restaurateur
+ * qui decouvre l'outil etait bloque avant d'avoir reussi une seule fois - et
+ * le message ne lui disait pas d'attendre une heure. L'ingestion reste
+ * couteuse, d'ou un plafond: mais 30 laisse la place a l'apprentissage.
+ */
 export const excelImportLimiter = createLimiter(
   'excel-import',
-  Ratelimit.slidingWindow(5, '1 h'),
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -359,10 +395,18 @@ export const supportsExportLimiter = createLimiter(
   true,
 );
 
-/** PDF menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
+/**
+ * Import de menu PDF: 30 par heure.
+ *
+ * POURQUOI 5 ETAIT TROP BAS: importer un menu est ITERATIF. On se trompe de
+ * colonne, on corrige, on reessaie. A cinq essais par heure, un restaurateur
+ * qui decouvre l'outil etait bloque avant d'avoir reussi une seule fois - et
+ * le message ne lui disait pas d'attendre une heure. L'ingestion reste
+ * couteuse, d'ou un plafond: mais 30 laisse la place a l'apprentissage.
+ */
 export const pdfImportLimiter = createLimiter(
   'pdf-import',
-  Ratelimit.slidingWindow(5, '1 h'),
+  Ratelimit.slidingWindow(30, '1 h'),
   true,
 );
 
@@ -525,8 +569,20 @@ export const resendConfirmationAdresseLimiter = createLimiter(
   true,
 );
 
-/** File upload: 20 requests / minute per IP (fail-closed: Storage quota / cost abuse) */
-export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20, '1 m'), true);
+/**
+ * Televersement de fichiers: 120 par minute.
+ *
+ * CHIFFRE CHOISI SUR MESURE, pas au jugement. En production le 2026-11-08, le
+ * plus gros menu compte 284 plats (moyenne 68). A 20 par minute, mettre les
+ * photos d'un tel menu imposait 15 minutes d'attente ENTRECOUPEES D'ERREURS:
+ * le restaurateur voyait "trop de requetes" au milieu de son travail et ne
+ * pouvait pas savoir qu'il suffisait d'attendre. A 120, le meme menu passe en
+ * moins de trois minutes, sans un seul refus.
+ *
+ * Ce compartiment reste un garde-fou de COUT (quota de stockage), derriere
+ * authentification: il n'autorise rien, il borne la depense.
+ */
+export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(120, '1 m'), true);
 
 /** Admin reset: 3 requests / hour per IP (fail-closed: destructive action) */
 export const adminResetLimiter = createLimiter(

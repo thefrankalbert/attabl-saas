@@ -20,6 +20,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 vi.mock('@/lib/rate-limit', () => ({
   menuSearchLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  // Regroupement IPv6 /64: l'identite suffit ici, son comportement est teste
+  // dans src/lib/__tests__/rate-limit.test.ts.
+  grouperAdresse: (ip: string) => ip,
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -189,5 +192,63 @@ describe('GET /api/menu-search - etat du tenant', () => {
     setupSupabase(null);
     const response = await GET(request());
     expect(response.status).toBe(400);
+  });
+});
+
+describe('GET /api/menu-search - cle du compteur de debit', () => {
+  function tenantSain() {
+    setupSupabase({
+      id: 'tenant-1',
+      is_active: true,
+      suspended_at: null,
+      subscription_status: 'active',
+      trial_ends_at: null,
+      frozen_reason: null,
+    });
+  }
+
+  /**
+   * CE QUE CE TEST VERROUILLE, et deux versions fausses l ont precede.
+   *
+   * Le defaut d origine: 60 par minute et par adresse. Les convives d un lieu
+   * sont TOUS derriere le Wi-Fi du restaurant, donc derriere une seule
+   * adresse: un service charge epuisait le compartiment, et le refus tombait
+   * sur le client en train de finir sa commande.
+   *
+   * Ma premiere correction composait la cle avec le slug du restaurant. Deux
+   * revues ont montre qu elle etait contournable, et la seconde avait raison
+   * sur le fond: `src/proxy.ts` injecte `x-tenant-slug` depuis le SOUS-DOMAINE
+   * sans verifier que le restaurant existe, et le domaine accepte un
+   * sous-domaine joker. Changer de sous-domaine donnait donc un compartiment
+   * neuf a volonte - la limite ne valait plus rien.
+   *
+   * La cle ne doit donc porter QUE l adresse, qui est la seule valeur que
+   * l appelant ne choisit pas (la plateforme reecrit l en-tete). Le benefice
+   * pour les convives vient du CHIFFRE, pas de la composition.
+   */
+  it('ne compte que sur l adresse, jamais sur une valeur choisie par l appelant', async () => {
+    tenantSain();
+
+    await GET(request());
+
+    expect(vi.mocked(menuSearchLimiter.check).mock.calls[0][0]).toBe('127.0.0.1');
+  });
+
+  it('un slug fourni par le client ne change pas le compartiment', async () => {
+    tenantSain();
+    vi.mocked(headers).mockResolvedValue({
+      get: (cle: string) =>
+        cle === 'x-tenant-slug-hint'
+          ? 'restaurant-invente'
+          : cle === 'x-tenant-slug'
+            ? 'radisson'
+            : null,
+    } as unknown as Awaited<ReturnType<typeof headers>>);
+
+    await GET(request());
+
+    const cle = vi.mocked(menuSearchLimiter.check).mock.calls[0][0];
+    expect(cle).not.toContain('restaurant-invente');
+    expect(cle).not.toContain('radisson');
   });
 });
