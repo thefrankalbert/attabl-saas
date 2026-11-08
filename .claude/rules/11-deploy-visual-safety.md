@@ -142,6 +142,20 @@ Le deploiement est choisi **par son commit**, jamais "le plus recent" : le plus
 recent est souvent une preview de branche, et la promouvoir enverrait du code non
 merge en production.
 
+### Piege du 409 (corrige le 2026-11-08)
+
+`promote-prod.sh` sortait en `prod: ERROR` quand l'API Vercel repondait **409
+"already the current production deployment"** - c'est-a-dire quand la promotion
+etait DEJA faite, l'etat recherche. Ca arrive systematiquement si on lance le
+script a la main pendant que le workflow fait le meme travail. Mesure sur
+`555697d4`: `ERROR` affiche alors que le domaine servait deja le bon commit.
+
+Desormais: un 409 n'est pas une panne, et le script ne croit pas le message de
+l'API - c'est le domaine qui tranche (jusqu'a 90 s, car l'assignation n'est pas
+instantanee). Les vrais refus (401, 403, ...) restent des erreurs. Verrouille
+par `scripts/__tests__/promote-prod-409.test.sh`, lance par la CI (porte "Tests
+des scripts"), avec un cas de non-regression par code d'erreur.
+
 ### Pieges verifies
 
 - Le discriminant FIABLE est `curl https://attabl.com/api/version?cb=$(date +%s)` :

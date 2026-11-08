@@ -126,6 +126,19 @@ jobs:
       - name: Test (with coverage gate)
         run: pnpm test:coverage
 
+      # Tests des scripts shell. Vitest ne les voit pas, et un test sans
+      # executant ne protege rien (lecon des tests pgTAP, qui sont restes sans
+      # executant pendant des mois). La sortie est grep-friendly, comme les
+      # autres portes: ^promote-prod: N/N passed
+      - name: Tests des scripts
+        run: |
+          set -euo pipefail
+          for essai in scripts/__tests__/*.test.sh; do
+            echo "::group::$essai"
+            bash "$essai"
+            echo "::endgroup::"
+          done
+
       # Gate 5: Next.js build
       - name: Build
         run: pnpm build
