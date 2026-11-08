@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 /**
  * GET /api/invoices
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
 
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('role, tenants(stripe_customer_id)')
+      .select('role')
       .eq('user_id', user.id)
       .eq('tenant_id', tenantCtx.id)
       .maybeSingle();
@@ -65,9 +66,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Supabase join type gap
-    const tenant = adminUser.tenants as unknown as { stripe_customer_id: string | null };
-    const customerId = tenant?.stripe_customer_id;
+    // Membership + role verified above with the session client: the Stripe id
+    // is now read with the service role (column not readable by `authenticated`).
+    const customerId = (await getTenantBillingIds(tenantCtx.id))?.stripe_customer_id;
 
     if (!customerId) {
       // No Stripe customer yet - return empty list

@@ -7,6 +7,7 @@ import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { updateSubscriptionSchema } from '@/lib/validations/checkout.schema';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 export async function POST(request: Request) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
 
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id, stripe_subscription_id')
+      .select('id')
       .eq('slug', tenantSlug)
       .maybeSingle();
 
@@ -72,7 +73,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!tenant.stripe_subscription_id) {
+    // Membership + role verified above with the session client: the Stripe id
+    // is now read with the service role (column not readable by `authenticated`).
+    const subscriptionId = (await getTenantBillingIds(tenant.id))?.stripe_subscription_id;
+    if (!subscriptionId) {
       return NextResponse.json(
         { error: 'Aucun abonnement actif. Creez un abonnement via le checkout.' },
         { status: 400 },
@@ -111,7 +115,6 @@ export async function POST(request: Request) {
     }
 
     // 5. Retrieve current subscription and update with proration
-    const subscriptionId = tenant.stripe_subscription_id;
     const subscription = await withStripeBreaker(() =>
       stripe.subscriptions.retrieve(subscriptionId),
     );
