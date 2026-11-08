@@ -28,6 +28,16 @@ insert into public.tenants (id, slug, name, is_active, currency, subscription_st
   ('cccc1111-0000-0000-0000-00000000000a', 'push-victime', 'Resto Victime', true, 'XOF', 'active'),
   ('cccc2222-0000-0000-0000-00000000000b', 'push-attaquant', 'Resto Attaquant', true, 'XOF', 'active');
 
+-- `admin_users.user_id` porte une cle etrangere vers `auth.users`: sans ces
+-- lignes, l'insertion suivante echoue et le fichier s'arrete avant sa premiere
+-- assertion (plan annonce, 0 assertion vue).
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+values
+  ('eeee1111-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'membre@exemple.test', 'x', now(), now()),
+  ('eeee2222-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'attaquant@exemple.test', 'x', now(), now());
+
 insert into public.admin_users (id, user_id, tenant_id, email, role, is_active) values
   ('dddd1111-0000-0000-0000-00000000000a', 'eeee1111-0000-0000-0000-00000000000a',
    'cccc1111-0000-0000-0000-00000000000a', 'membre@exemple.test', 'owner', true),

@@ -7,6 +7,9 @@ const mockSupabase = {
   from: mockFrom,
 };
 
+// `push.service` (desormais dans ce graphe d imports) declare `server-only`.
+vi.mock('server-only', () => ({}));
+
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => mockSupabase,
 }));
