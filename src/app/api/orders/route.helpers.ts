@@ -1,9 +1,7 @@
 import { after } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { getTranslations } from 'next-intl/server';
-import { createInventoryService } from '@/services/inventory.service';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
 import { createPushService } from '@/services/push.service';
@@ -192,29 +190,8 @@ export function scheduleTriggerEmails(
   });
 }
 
-// 11. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
-// Scheduled via after() so destock + low-stock check survive serverless
-// freeze after the response (was a raced fire-and-forget chain).
-export function scheduleDestock(
-  adminSupabase: SupabaseClient,
-  params: { orderId: string; tenantId: string },
-): void {
-  const { orderId, tenantId } = params;
-  after(async () => {
-    try {
-      const inventoryService = createInventoryService(adminSupabase);
-      await inventoryService.destockOrder(orderId, tenantId);
-      const { checkAndNotifyLowStock } = await import('@/services/notification.service');
-      await checkAndNotifyLowStock(tenantId);
-    } catch (err) {
-      logger.error('Auto-destock failed (non-blocking)', err);
-      Sentry.captureException(err, {
-        tags: { area: 'inventory-destock' },
-        extra: { orderId, tenantId },
-      });
-    }
-  });
-}
+// 11. Auto-destock inventory: see ./schedule-destock.ts (shared with the POS
+// channel, so the scheduling fix lands once for both).
 
 // 12. Monthly order quota check (NON-blocking - never rejects an order).
 // Scheduled via after() so it survives serverless freeze, like the blocks above.

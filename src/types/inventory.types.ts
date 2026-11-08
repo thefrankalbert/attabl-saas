@@ -91,6 +91,10 @@ export interface StockMovement {
   // Resolved from admin_users by get_stock_movements_page (anti-vol trail).
   // NULL for system / unattributed movements (created_by not set or unresolvable).
   author_name?: string | null;
+  // Order the movement came from, resolved from reference_id by
+  // get_stock_movements_page for order_destock / order_restock rows only
+  // (reference_id has no FK: it also points at a physical count).
+  order_number?: string | null;
 }
 
 export interface StockStatus {

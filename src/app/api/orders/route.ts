@@ -23,9 +23,9 @@ import {
   getT,
   scheduleOrderNotification,
   scheduleTriggerEmails,
-  scheduleDestock,
   scheduleMonthlyQuotaCheck,
 } from './route.helpers';
+import { scheduleDestock } from './schedule-destock';
 
 export async function POST(request: Request) {
   let t: (key: string) => string;
@@ -344,7 +344,11 @@ export async function POST(request: Request) {
       tenant?.trial_ends_at as string | null,
     );
     if (hasInventory) {
-      scheduleDestock(adminSupabase, { orderId: result.orderId, tenantId });
+      scheduleDestock(adminSupabase, {
+        orderId: result.orderId,
+        tenantId,
+        channel: 'convive',
+      });
     }
 
     // 12. Monthly order quota check (NON-blocking - never rejects an order).

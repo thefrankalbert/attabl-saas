@@ -1,5 +1,6 @@
 'use server';
 
+import { after } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -245,19 +246,29 @@ export async function actionUpdateOrderStatus(
       );
 
       if (hasInventory) {
-        const adminSupabase = createAdminClient();
-        createInventoryService(adminSupabase)
-          .restockOrder(parsed.data.orderId, parsed.data.tenantId, user.id)
-          .catch((err) => {
+        const { orderId: cancelledOrderId, tenantId: cancelledTenantId } = parsed.data;
+        // Scheduled via after(), like the destock on order creation: a bare
+        // fire-and-forget promise is raced by the serverless freeze that follows
+        // the response, so the stock could silently never come back.
+        after(async () => {
+          try {
+            const adminSupabase = createAdminClient();
+            await createInventoryService(adminSupabase).restockOrder(
+              cancelledOrderId,
+              cancelledTenantId,
+              user.id,
+            );
+          } catch (err) {
             logger.error('Order cancel: auto-restock failed (non-blocking)', {
               err,
-              orderId: parsed.data.orderId,
+              orderId: cancelledOrderId,
             });
             Sentry.captureException(err, {
               tags: { area: 'inventory-restock' },
-              extra: { orderId: parsed.data.orderId, tenantId: parsed.data.tenantId },
+              extra: { orderId: cancelledOrderId, tenantId: cancelledTenantId },
             });
-          });
+          }
+        });
       }
     } else {
       await service.updateStatus(parsed.data.orderId, parsed.data.tenantId, parsed.data.status);

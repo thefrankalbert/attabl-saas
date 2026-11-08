@@ -191,6 +191,68 @@ describe('InventoryService', () => {
       );
     });
 
+    it('routes an opening quantity through the ledger RPC, never into the insert', async () => {
+      // The whole stock screen rests on current_stock == SUM(movements).
+      // Writing the opening quantity into the column left stock with no movement
+      // behind it: 13 ingredients were adrift in prod on 2026-11-08.
+      const singleFn = vi.fn().mockResolvedValue({ data: { id: 'ing-open' }, error: null });
+      const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+      const insertFn = vi.fn().mockReturnValue({ select: selectFn });
+      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      const result = await service.createIngredient('t1', {
+        name: 'Riz',
+        unit: 'kg',
+        current_stock: 60,
+      });
+
+      expect(insertFn).toHaveBeenCalledWith(expect.objectContaining({ current_stock: 0 }));
+      expect(supabase.rpc).toHaveBeenCalledWith('set_opening_stock', {
+        p_tenant_id: 't1',
+        p_ingredient_id: 'ing-open',
+        p_quantity: 60,
+        p_created_by: 'user-1',
+      });
+      expect(result.current_stock).toBe(60);
+    });
+
+    it('removes the ingredient when the opening movement cannot be written', async () => {
+      // Two statements instead of one insert: a failure in the second must not
+      // leave an empty ingredient behind. There is NO unique constraint on
+      // (tenant_id, name), so the owner retyping it would end up with two
+      // "Riz", one at zero, both pickable in a recipe.
+      const deleteEq = vi.fn().mockReturnThis();
+      const deleteChain = { delete: vi.fn().mockReturnThis(), eq: deleteEq };
+      const singleFn = vi.fn().mockResolvedValue({ data: { id: 'ing-orphan' }, error: null });
+      const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+      const insertFn = vi.fn().mockReturnValue({ select: selectFn });
+      supabase.from = vi.fn().mockReturnValue({ insert: insertFn, ...deleteChain });
+      supabase.rpc = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: 'INGREDIENT_NOT_FOUND' } });
+
+      await expect(
+        service.createIngredient('t1', { name: 'Riz', unit: 'kg', current_stock: 60 }),
+      ).rejects.toThrow(ServiceError);
+
+      expect(deleteChain.delete).toHaveBeenCalled();
+      expect(deleteEq).toHaveBeenCalledWith('id', 'ing-orphan');
+      expect(deleteEq).toHaveBeenCalledWith('tenant_id', 't1');
+    });
+
+    it('writes no opening movement when no stock is given', async () => {
+      const singleFn = vi.fn().mockResolvedValue({ data: { id: 'ing-zero' }, error: null });
+      const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+      const insertFn = vi.fn().mockReturnValue({ select: selectFn });
+      supabase.from = vi.fn().mockReturnValue({ insert: insertFn });
+      supabase.rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      await service.createIngredient('t1', { name: 'Sel', unit: 'kg' });
+
+      expect(supabase.rpc).not.toHaveBeenCalled();
+    });
+
     it('should throw INTERNAL ServiceError on insert error', async () => {
       const singleFn = vi
         .fn()

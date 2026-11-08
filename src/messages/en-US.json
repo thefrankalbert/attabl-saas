@@ -2233,7 +2233,9 @@
     "lossNotes": "Notes (optional)",
     "lossRecorded": "Loss recorded",
     "lossError": "Failed to record the loss",
-    "importTechnicalSheets": "Import technical sheets"
+    "importTechnicalSheets": "Import technical sheets",
+    "unitChangeWarning": "Careful: changing the unit converts nothing. The recorded stock and every recipe using this ingredient keep their numbers as they are: 2 in {from} becomes 2 in {to}. Fix the stock and the recipes after saving.",
+    "unitChangeAcknowledge": "I understand: I will fix the stock and the recipes myself"
   },
   "losses": {
     "title": "Losses by reason",
@@ -3829,7 +3831,8 @@
     "staffReportColAdjustment": "Neg. adjustments",
     "staffReportColOrderDestock": "Order withdrawals",
     "staffReportError": "Could not load the report.",
-    "staffReportEmpty": "No attributed movements for this period."
+    "staffReportEmpty": "No attributed movements for this period.",
+    "fromOrder": "Order {n}"
   },
   "screenLock": {
     "lockingIn": "Locking in {time} - move your mouse to stay connected",

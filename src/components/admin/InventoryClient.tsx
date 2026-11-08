@@ -265,6 +265,7 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
               isSubmitting={isSubmitting}
               handleSave={handleSave}
               handleDeactivate={handleDeactivate}
+              originalUnit={selectedIngredient?.unit}
             />
 
             {/* Modal - Adjust Stock */}

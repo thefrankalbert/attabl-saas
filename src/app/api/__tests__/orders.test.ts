@@ -127,6 +127,7 @@ vi.mock('@/services/inventory.service', () => ({
 // --- Notification service mock ---------------------------------
 vi.mock('@/services/notification.service', () => ({
   checkAndNotifyLowStock: vi.fn().mockResolvedValue(undefined),
+  notifyDestockFailed: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Sentry mock (route.ts captures destock failures) ----------
@@ -658,7 +659,9 @@ describe('POST /api/orders - auto-destock wiring', () => {
     // destock + low-stock check run in a non-awaited after() callback, so wait
     // for the microtasks (destock resolve + dynamic import) to flush.
     await vi.waitFor(() => {
-      expect(mockDestockOrder).toHaveBeenCalledWith('order-123', 'tenant-abc');
+      // Third argument is the acting operator: NULL/undefined on the anon
+      // storefront channel (no operator), the POS user on the POS channel.
+      expect(mockDestockOrder).toHaveBeenCalledWith('order-123', 'tenant-abc', undefined);
       expect(vi.mocked(checkAndNotifyLowStock)).toHaveBeenCalledWith('tenant-abc');
     });
   });
@@ -688,7 +691,8 @@ describe('POST /api/orders - auto-destock wiring', () => {
     await vi.waitFor(() => {
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(
         expect.any(Error),
-        expect.objectContaining({ tags: { area: 'inventory-destock' } }),
+        // `channel` tells the two order channels apart when triaging in Sentry.
+        expect.objectContaining({ tags: { area: 'inventory-destock', channel: 'convive' } }),
       );
     });
   });

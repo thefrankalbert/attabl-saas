@@ -1,6 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse, after } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
@@ -9,12 +8,12 @@ import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { createInventoryService } from '@/services/inventory.service';
 import {
   createPlanEnforcementService,
   assertOrderFeaturesAllowed,
 } from '@/services/plan-enforcement.service';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
+import { scheduleDestock } from '../schedule-destock';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
@@ -540,23 +539,16 @@ export async function POST(request: Request) {
       tenant.trial_ends_at as string | null,
     );
     if (hasInventory) {
-      const inventoryService = createInventoryService(adminSupabase);
-      inventoryService
-        .destockOrder(result.orderId, tenant_id, user.id)
-        .then(() => {
-          import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
-            checkAndNotifyLowStock(tenant_id).catch((err) => {
-              logger.error('POS order: stock alert check failed (non-blocking)', err);
-            }),
-          );
-        })
-        .catch((err) => {
-          logger.error('POS order: auto-destock failed (non-blocking)', err);
-          Sentry.captureException(err, {
-            tags: { area: 'inventory-destock' },
-            extra: { orderId: result.orderId, tenantId: tenant_id },
-          });
-        });
+      // Same scheduler as the convive channel: a bare fire-and-forget promise is
+      // raced by the serverless freeze that follows the response, so the destock
+      // could simply never run - and an offline replay of this order returns
+      // early, so it would never get a second chance either.
+      scheduleDestock(adminSupabase, {
+        orderId: result.orderId,
+        tenantId: tenant_id,
+        createdBy: user.id,
+        channel: 'pos',
+      });
     }
 
     // 13. Monthly order quota check (NON-blocking - never rejects an order).

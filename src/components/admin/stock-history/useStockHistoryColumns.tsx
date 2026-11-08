@@ -131,11 +131,26 @@ export function useStockHistoryColumns({
       {
         accessorKey: 'notes',
         header: () => t('columnNotes'),
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-48 truncate block">
-            {row.original.notes || '-'}
-          </span>
-        ),
+        cell: ({ row }) => {
+          // An order destock carries no note: without the order number, the
+          // owner cannot tell WHICH order took the ingredients out. A
+          // cancellation carries both, so both are shown.
+          const label =
+            [
+              row.original.order_number ? t('fromOrder', { n: row.original.order_number }) : null,
+              row.original.notes,
+            ]
+              .filter(Boolean)
+              .join(' - ') || null;
+          return (
+            <span
+              className="text-app-text-secondary max-w-48 truncate block"
+              title={label ?? undefined}
+            >
+              {label || '-'}
+            </span>
+          );
+        },
         enableSorting: false,
       },
     ],
