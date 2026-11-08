@@ -23,20 +23,24 @@ export async function GET(request: Request) {
     // faisait qu'un service charge epuisait le compartiment, et le refus
     // tombait sur le client suivant.
     //
-    // LE SLUG PASSE PAR `readTenantSlug`, jamais par une lecture directe de
-    // l'en-tete: un garde anti-regression du depot l'interdit, et il a raison -
-    // seul le helper distingue l'en-tete injecte par le middleware de l'indice
-    // fourni par le client.
+    // LE SLUG N'ENTRE DANS LA CLE QUE S'IL EST DE CONFIANCE, et c'est le point
+    // le plus important de ce bloc. `readTenantSlug` rend aussi un INDICE
+    // fourni par le client quand le middleware n'a rien injecte. Une premiere
+    // version l'utilisait sans distinction - et mon commentaire affirmait a
+    // tort qu'un slug falsifie ne donnerait "qu'un compartiment neuf, comme
+    // avant". C'etait faux: avant, la cle etait l'adresse SEULE, donc UN
+    // compartiment. Avec l'indice dans la cle, un attaquant s'en fabriquait
+    // autant qu'il voulait en changeant d'en-tete, et echappait entierement a
+    // la limite. Constat d'une revue automatique, verifie.
     //
-    // Le regroupement IPv6 (`grouperAdresse`) arrive par une branche deja
-    // fusionnee; il sera applique ici dans la foulee. L'essentiel de la
-    // correction est la cle composee, qui ne depend pas de lui.
+    // Donc: en-tete injecte par le middleware -> compartiment par restaurant;
+    // sinon -> un compartiment unique par adresse, qui plafonne l'attaquant
+    // exactement comme l'ancienne cle le faisait.
     const headersList = await headers();
     const ip = getClientIp(request);
     const slugDepuisEntete = readTenantSlug(headersList);
-    const { success: allowed } = await menuSearchLimiter.check(
-      `${slugDepuisEntete.slug ?? 'inconnu'}:${ip}`,
-    );
+    const cleRestaurant = slugDepuisEntete.trusted ? slugDepuisEntete.slug : '-';
+    const { success: allowed } = await menuSearchLimiter.check(`${cleRestaurant}:${ip}`);
     if (!allowed) {
       return NextResponse.json(
         { error: FALLBACK_ERRORS.rateLimited },
