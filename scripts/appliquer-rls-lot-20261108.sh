@@ -61,13 +61,18 @@ FICHIER_ENV=".env.local"
 # etre fige: si une autre PR est fusionnee juste apres la notre, `origin/main`
 # bouge et la verification echouerait alors que notre code EST bien deploye.
 SHA_ATTENDU=""
+# Chemin de la sauvegarde. Un worktree n'a pas `supabase/backups/`, et le script
+# de sauvegarde du depot ecrit dans le dossier personnel: on ne devine donc pas,
+# on fait pointer.
+CHEMIN_SAUVEGARDE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --verifier)  MODE="verifier" ;;
     --confirmer) MODE="appliquer" ;;
     --sans-verification-deploiement) VERIF_DEPLOIEMENT="non" ;;
-    --env-file) shift; FICHIER_ENV="${1:-}" ;;
-    --commit)   shift; SHA_ATTENDU="${1:-}" ;;
+    --env-file)   shift; FICHIER_ENV="${1:-}" ;;
+    --commit)     shift; SHA_ATTENDU="${1:-}" ;;
+    --sauvegarde) shift; CHEMIN_SAUVEGARDE="${1:-}" ;;
     *) echo "Argument inconnu: $1" >&2; MODE=""; break ;;
   esac
   shift || true
@@ -77,6 +82,7 @@ if [ -z "$MODE" ]; then
   echo "       [--sans-verification-deploiement]" >&2
   echo "       [--env-file <chemin>]  fichier d'environnement (defaut: .env.local)" >&2
   echo "       [--commit <sha>]      commit attendu sur le domaine (defaut: origin/main)" >&2
+  echo "       [--sauvegarde <chemin>] fichier de sauvegarde a exiger" >&2
   echo >&2
   echo "La connexion peut aussi venir de \$DATABASE_URL deja exporte, ce qui" >&2
   echo "evite de dependre d'un .env.local - absent d'un worktree, par exemple." >&2
@@ -262,15 +268,28 @@ fi
 # GARDE-FOU 2: une sauvegarde doit exister.
 # ------------------------------------------------------------------------------
 echo "===== Verification de la sauvegarde ====="
-DERNIERE_SAUVEGARDE="$(ls -t supabase/backups/*.sql 2>/dev/null | head -1)"
-if [ -z "$DERNIERE_SAUVEGARDE" ]; then
-  echo "REFUS: aucune sauvegarde dans supabase/backups/." >&2
-  echo "Prenez-en une avant d'appliquer un resserrage d'acces." >&2
+if [ -n "$CHEMIN_SAUVEGARDE" ]; then
+  DERNIERE_SAUVEGARDE="$CHEMIN_SAUVEGARDE"
+else
+  DERNIERE_SAUVEGARDE="$(ls -t supabase/backups/*.sql 2>/dev/null | head -1)"
+fi
+if [ -z "$DERNIERE_SAUVEGARDE" ] || [ ! -s "$DERNIERE_SAUVEGARDE" ]; then
+  echo "REFUS: aucune sauvegarde utilisable." >&2
+  echo "  cherchee: ${CHEMIN_SAUVEGARDE:-supabase/backups/*.sql}" >&2
+  echo >&2
+  echo "Un worktree n'a pas supabase/backups/, et le script de sauvegarde du" >&2
+  echo "depot ecrit dans le dossier personnel: pointez le fichier explicitement" >&2
+  echo "avec --sauvegarde <chemin>." >&2
   exit 6
 fi
-echo "Derniere sauvegarde: $DERNIERE_SAUVEGARDE"
-echo "  (verifiez sa date: une sauvegarde perimee ne protege de rien)"
-ls -l "$DERNIERE_SAUVEGARDE" | awk '{print "  taille/date: "$5" octets, "$6" "$7" "$8}'
+echo "Sauvegarde: $DERNIERE_SAUVEGARDE"
+ls -l "$DERNIERE_SAUVEGARDE" | awk '{print "  taille: "$5" octets, date: "$6" "$7" "$8}'
+# Une sauvegarde perimee ne protege de rien: on le DIT plutot que de l'esperer.
+AGE_JOURS=$(( ( $(date +%s) - $(stat -f %m "$DERNIERE_SAUVEGARDE" 2>/dev/null || echo 0) ) / 86400 ))
+if [ "$AGE_JOURS" -gt 0 ]; then
+  echo "  ATTENTION: cette sauvegarde a $AGE_JOURS jour(s). Pour un resserrage"
+  echo "  d'acces, prenez-en une FRAICHE avant d'appliquer."
+fi
 echo
 
 # ------------------------------------------------------------------------------
