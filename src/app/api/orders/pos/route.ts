@@ -493,6 +493,15 @@ export async function POST(request: Request) {
     }
 
     // 11. Create in-app notification (fire-and-forget, non-blocking)
+    //
+    // PAS DE PUSH ICI, ET C'EST UNE DECISION, PAS UN OUBLI. Une commande de
+    // caisse est saisie par un membre du personnel qui est devant l'ecran: il
+    // la connait deja. L'ecran de cuisine la recoit en temps reel
+    // (`useKitchenData` -> `useRealtimeSubscription`). Un push reveillerait
+    // donc des appareils pour une information que personne n'attend, en
+    // commencant par celui qui vient de la saisir. Le push est reserve aux
+    // evenements que PERSONNE ne regarde au moment ou ils arrivent: une
+    // commande passee par un convive, et une rupture de stock.
     void Promise.resolve(
       adminSupabase.from('notifications').insert({
         tenant_id,

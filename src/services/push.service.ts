@@ -1,95 +1,153 @@
+import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { verifierEndpointPush } from '@/lib/push/endpoints-autorises';
 
 /**
  * Envoi des notifications push aux appareils d'un restaurant.
  *
  * POURQUOI CE SERVICE EXISTE. Tout le circuit des notifications push etait
- * deja la - et il ne servait a rien. Mesure du 2026-11-08:
+ * deja la - et il ne servait a rien. Mesure du 2026-11-08: le navigateur
+ * s'abonnait, la route ecrivait l'abonnement en base, le service worker savait
+ * afficher la notification, et PERSONNE, nulle part, n'envoyait jamais ce
+ * `push`. Un restaurateur pouvait activer les notifications, voir le bouton
+ * passer a "activees", et ne jamais en recevoir une seule.
  *
- *   - `usePushSubscription` demande la permission et enregistre l'appareil;
- *   - `POST /api/push-subscriptions` ecrit l'abonnement en base;
- *   - le service worker (`src/app/sw.ts`) ecoute l'evenement `push` et affiche
- *     la notification;
- *   - et PERSONNE, nulle part, n'envoyait jamais ce `push`. Aucun appel a un
- *     service d'envoi, aucune dependance Web Push, aucune lecture de la table
- *     `push_subscriptions` en dehors de la route qui l'ecrit.
+ * CE QUE CA CHANGE EN SALLE. La notification dans l'application n'est visible
+ * que si quelqu'un regarde l'ecran, application ouverte. Une tablette en veille
+ * au comptoir ne montre rien. Le push reveille l'appareil.
  *
- * Donc un restaurateur pouvait activer les notifications dans ses reglages,
- * voir le bouton passer a "activees", et ne jamais recevoir une seule alerte.
- * Pire que pas de fonctionnalite: une promesse qui ment.
+ * TROIS GARDES QUI NE SONT PAS DECORATIVES. Ce service est le premier code qui
+ * LIT `push_subscriptions` et qui appelle les URL qui y sont stockees. Il arme
+ * donc des defauts qui, tant que rien n'envoyait, ne produisaient rien:
  *
- * CE QUE CA CHANGE EN SALLE. La notification dans l'application existait deja
- * (table `notifications`, lue en temps reel par le centre de notifications),
- * mais elle n'est visible que si quelqu'un regarde l'ecran, application
- * ouverte. Une tablette en veille au comptoir ne montre rien. Le push, lui,
- * reveille l'appareil: c'est la difference entre une commande vue tout de
- * suite et une commande vue au prochain passage en cuisine.
+ *   1. APPARTENANCE. La policy RLS d'ecriture ne contraint que `user_id`, pas
+ *      `tenant_id` (mesure en production le 2026-11-08). N'importe quel
+ *      titulaire de compte pouvait donc inscrire son telephone sous le
+ *      `tenant_id` d'un autre restaurant et recevoir ses commandes - table,
+ *      articles, montant, soit son chiffre d'affaires en direct. On ne contacte
+ *      donc QUE les membres vivants du restaurant, avec les criteres de la
+ *      garde unifiee (`is_active`, pas de `deleted_at`). Cela ferme aussi le
+ *      cas de l'employe retire: rien ne supprime ses abonnements, et son
+ *      telephone personnel continuerait sinon de recevoir chaque commande.
+ *   2. DESTINATION. L'`endpoint` est une URL que nous appelons nous-memes.
+ *      Liste fermee de services de push (voir `endpoints-autorises.ts`).
+ *   3. PLAFOND. Une commande declenche une requete sortante par appareil. Sans
+ *      plafond ni concurrence bornee, un compte pouvait inscrire des centaines
+ *      de lignes et faire payer autant de requetes a chaque commande.
  *
- * SANS CLES VAPID, CE SERVICE NE FAIT RIEN ET NE CASSE RIEN. Le protocole Web
- * Push exige une paire de cles (VAPID) qui identifie le serveur aupres de
- * Google, Apple et Mozilla. Si elles sont absentes de l'environnement, les
- * methodes rendent un compte rendu a zero au lieu de lever: une commande ne
- * doit jamais echouer parce qu'une notification n'a pas pu partir.
- *
- * CE SERVICE EXIGE LE CLIENT service_role. La RLS de `push_subscriptions`
- * n'autorise un utilisateur qu'a lire SES propres abonnements (migration
- * 20260731000300, qui a ferme une fuite ou n'importe qui pouvait lire les
- * identifiants Web Push de tous les restaurants). Un envoi doit lire ceux de
- * TOUS les appareils d'un restaurant, et il part depuis un contexte client
- * (une commande passee par un convive), donc hors session admin.
+ * CE SERVICE EXIGE LE CLIENT service_role. La RLS n'autorise un utilisateur
+ * qu'a lire SES propres abonnements; un envoi doit lire ceux de tous les
+ * appareils du restaurant, et il part d'un contexte client (une commande
+ * passee par un convive), donc hors session admin.
  */
 
 /** Ce que le service worker sait afficher (voir `src/app/sw.ts`). */
 export interface ChargePush {
-  /** Titre de la notification. Jamais de donnee personnelle d'un convive. */
+  /** Titre. Jamais une donnee personnelle d'un convive, jamais son texte brut. */
   titre: string;
-  /** Corps du message. Jamais de donnee personnelle d'un convive. */
+  /** Corps. Meme regle. */
   corps: string;
   /**
-   * Regroupement. Deux notifications de meme `tag` se remplacent au lieu de
-   * s'empiler - sans lui, un service de midi laisse quarante notifications
-   * dans la barre.
+   * Regroupement. Deux notifications de meme `tag` se REMPLACENT, et sans
+   * `renotify` la seconde ne fait aucun bruit: un tag commun a toutes les
+   * commandes ferait disparaitre la premiere en silence. Donner un tag PAR
+   * evenement (par commande, par ingredient).
    */
-  tag?: string;
-  /** Chemin a ouvrir au clic, dans l'origine du restaurant (ex: /admin/orders). */
-  url?: string;
+  tag: string;
+  /** Chemin dans l'espace admin, ex: /admin/orders. */
+  url: string;
+  /**
+   * Identifiant du restaurant dans l'URL. Le service worker en a besoin: selon
+   * que le personnel s'est connecte sur `attabl.com` ou sur
+   * `<slug>.attabl.com`, la meme page admin n'a pas le meme chemin.
+   */
+  slug: string;
 }
 
 export interface ResultatEnvoiPush {
   envoyees: number;
-  /** Abonnements supprimes parce que l'appareil ne les reconnait plus. */
+  /** Abonnements REELLEMENT supprimes parce que l'appareil ne les reconnait plus. */
   expirees: number;
   echecs: number;
+  /** Abonnements ignores: destination hors de la liste des services de push. */
+  refuses: number;
 }
 
-const RESULTAT_VIDE: ResultatEnvoiPush = { envoyees: 0, expirees: 0, echecs: 0 };
+export interface ServicePush {
+  envoyerAuxAppareilsDuTenant(tenantId: string, charge: ChargePush): Promise<ResultatEnvoiPush>;
+}
 
-/**
- * Le "sujet" VAPID: un contact que le service de push (Google, Apple, Mozilla)
- * peut joindre si nos envois posent probleme. C'est une exigence du protocole.
- */
+const RESULTAT_VIDE: ResultatEnvoiPush = { envoyees: 0, expirees: 0, echecs: 0, refuses: 0 };
+
+/** Contact joignable si nos envois posent probleme: exigence du protocole VAPID. */
 const SUJET_VAPID = 'mailto:contact@attabl.com';
 
 /**
  * Codes qui signifient "cet abonnement n'existe plus": appareil reinitialise,
- * navigateur desinstalle, permission revoquee. Il faut SUPPRIMER la ligne, pas
- * la reessayer: sinon la table ne fait que grossir et chaque commande paie une
- * requete reseau pour un appareil mort.
+ * navigateur desinstalle, permission revoquee. Il faut SUPPRIMER la ligne.
+ * Un 401/403 (cles changees) ou un 500 n'en fait PAS partie: supprimer
+ * desabonnerait tout le monde a cause d'une rotation de cles ou d'un incident
+ * chez Google, et personne ne s'en apercevrait.
  */
 const CODES_ABONNEMENT_MORT = [404, 410];
+
+/** Au-dela, on n'envoie pas: une commande ne doit pas declencher 500 requetes. */
+const MAX_APPAREILS = 100;
+/** Requetes sortantes simultanees. */
+const TAILLE_LOT = 10;
+/** web-push n'arme aucun delai de garde: une socket qui pend tiendrait la fonction. */
+const DELAI_RESEAU_MS = 10_000;
+/** Une alerte de service ne vaut plus rien le lendemain. */
+const DUREE_DE_VIE_S = 1_800;
 
 interface ClesVapid {
   publique: string;
   privee: string;
 }
 
+/** Longueurs imposees par le protocole, une fois decodees. */
+const OCTETS_CLE_PUBLIQUE = 65;
+const OCTETS_CLE_PRIVEE = 32;
+
+function longueurDecodee(valeur: string): number {
+  try {
+    return Buffer.from(valeur, 'base64url').length;
+  } catch {
+    return -1;
+  }
+}
+
+/**
+ * Lit et VALIDE les cles. La validation compte: `setVapidDetails` leve
+ * synchroniquement si une cle est mal formee (base64 avec `=`, cles inversees,
+ * valeur tronquee au copier-coller). Sans ce controle, le service levait -
+ * alors que sa documentation promettait le contraire - et le message d'erreur
+ * ne disait nulle part que le FORMAT des cles etait en cause.
+ */
 function lireClesVapid(): ClesVapid | null {
-  // La cle publique est la meme que celle du navigateur: elle est publique par
-  // construction (le navigateur l'envoie au service de push). La privee, non.
+  // La cle publique est publique par construction: le navigateur l'envoie au
+  // service de push. La privee, non.
   const publique = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privee = process.env.VAPID_PRIVATE_KEY;
   if (!publique || !privee) return null;
+
+  if (publique.includes('=') || privee.includes('=')) {
+    logger.error('Cles VAPID invalides: elles doivent etre en base64 URL-safe, sans caractere "="');
+    return null;
+  }
+  const lPub = longueurDecodee(publique);
+  const lPriv = longueurDecodee(privee);
+  if (lPub !== OCTETS_CLE_PUBLIQUE || lPriv !== OCTETS_CLE_PRIVEE) {
+    logger.error('Cles VAPID invalides: longueur inattendue une fois decodees', {
+      octetsPublique: lPub,
+      octetsPubliqueAttendus: OCTETS_CLE_PUBLIQUE,
+      octetsPrivee: lPriv,
+      octetsPriveeAttendus: OCTETS_CLE_PRIVEE,
+      indice: 'cles inversees, valeur tronquee, ou mauvais format',
+    });
+    return null;
+  }
   return { publique, privee };
 }
 
@@ -100,56 +158,117 @@ interface LigneAbonnement {
   auth: string;
 }
 
-export function createPushService(supabase: SupabaseClient) {
+async function parLots<T>(elements: T[], taille: number, travail: (e: T) => Promise<void>) {
+  for (let i = 0; i < elements.length; i += taille) {
+    await Promise.all(elements.slice(i, i + taille).map(travail));
+  }
+}
+
+export function createPushService(supabase: SupabaseClient): ServicePush {
   return {
     /**
-     * Envoie une notification a tous les appareils enregistres d'un restaurant.
+     * Envoie une notification aux appareils des membres vivants d'un restaurant.
      *
-     * Ne leve jamais: l'appelant est toujours un effet de bord d'une action
-     * metier (une commande, une alerte de stock) qui doit reussir sans lui.
+     * Ne leve jamais - garantie tenue par le code, pas seulement annoncee:
+     * l'appelant est toujours un effet de bord d'une action metier (une
+     * commande, une alerte de stock) qui doit reussir sans lui.
      */
     async envoyerAuxAppareilsDuTenant(
       tenantId: string,
       charge: ChargePush,
     ): Promise<ResultatEnvoiPush> {
-      const cles = lireClesVapid();
-      if (!cles) {
-        logger.warn('Push non configure: VAPID_PRIVATE_KEY ou cle publique absente', { tenantId });
-        return RESULTAT_VIDE;
-      }
+      try {
+        const cles = lireClesVapid();
+        if (!cles) {
+          logger.warn('Push non configure ou cles invalides: aucun envoi', { tenantId });
+          return RESULTAT_VIDE;
+        }
 
-      const { data, error } = await supabase
-        .from('push_subscriptions')
-        .select('id, endpoint, p256dh, auth')
-        .eq('tenant_id', tenantId);
+        // 1. Les membres VIVANTS du restaurant. Memes criteres que la garde
+        //    unifiee des pages admin (`resolve-admin-permission.ts`): un membre
+        //    desactive ou supprime en douceur n'est plus destinataire.
+        const { data: membres, error: erreurMembres } = await supabase
+          .from('admin_users')
+          .select('user_id')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .is('deleted_at', null);
 
-      if (error) {
-        logger.error('Lecture des abonnements push impossible', error, { tenantId });
-        return RESULTAT_VIDE;
-      }
+        if (erreurMembres) {
+          logger.error('Lecture des membres du restaurant impossible', erreurMembres, { tenantId });
+          return RESULTAT_VIDE;
+        }
+        const idsMembres = [...new Set((membres ?? []).map((m) => m.user_id as string))];
+        if (idsMembres.length === 0) return RESULTAT_VIDE;
 
-      const abonnements = (data ?? []) as LigneAbonnement[];
-      if (abonnements.length === 0) return RESULTAT_VIDE;
+        // 2. Leurs appareils, et seulement ceux de CE restaurant.
+        const { data, error } = await supabase
+          .from('push_subscriptions')
+          .select('id, endpoint, p256dh, auth')
+          .eq('tenant_id', tenantId)
+          .in('user_id', idsMembres)
+          .limit(MAX_APPAREILS);
 
-      // Charge en differe: inutile de monter la bibliotheque de chiffrement
-      // quand personne n'est abonne ou que les cles manquent.
-      const webpush = await import('web-push');
-      webpush.setVapidDetails(SUJET_VAPID, cles.publique, cles.privee);
+        if (error) {
+          logger.error('Lecture des abonnements push impossible', error, { tenantId });
+          return RESULTAT_VIDE;
+        }
 
-      // Le service worker lit ces noms-la, en anglais. Ne pas les traduire ici.
-      const corpsChiffre = JSON.stringify({
-        title: charge.titre,
-        body: charge.corps,
-        tag: charge.tag,
-        url: charge.url,
-      });
+        const toutes = (data ?? []) as LigneAbonnement[];
+        if (toutes.length === 0) return RESULTAT_VIDE;
+        if (toutes.length === MAX_APPAREILS) {
+          logger.warn('Plafond d appareils push atteint: certains n ont pas ete contactes', {
+            tenantId,
+            plafond: MAX_APPAREILS,
+          });
+        }
 
-      const expirees: string[] = [];
-      let envoyees = 0;
-      let echecs = 0;
+        // 3. Destinations: seuls les services de push connus sont appeles.
+        const abonnements: LigneAbonnement[] = [];
+        let refuses = 0;
+        for (const abonnement of toutes) {
+          const verdict = verifierEndpointPush(abonnement.endpoint);
+          if (verdict.autorise) {
+            abonnements.push(abonnement);
+            continue;
+          }
+          refuses += 1;
+          // On ne supprime PAS: c'est notre regle, pas un refus du service de
+          // push. L'hote est journalise, seul moyen de reperer un hote
+          // legitime qui manquerait a la liste.
+          logger.warn('Abonnement push ignore: destination non autorisee', {
+            tenantId,
+            raison: verdict.raison,
+            hote: verdict.hote,
+          });
+        }
+        if (abonnements.length === 0) return { ...RESULTAT_VIDE, refuses };
 
-      await Promise.all(
-        abonnements.map(async (abonnement) => {
+        const webpush = await import('web-push');
+        webpush.setVapidDetails(SUJET_VAPID, cles.publique, cles.privee);
+
+        // Le service worker lit ces noms-la, en anglais. Ne pas les traduire.
+        const corpsChiffre = JSON.stringify({
+          title: charge.titre,
+          body: charge.corps,
+          tag: charge.tag,
+          url: charge.url,
+          slug: charge.slug,
+        });
+
+        // @types/web-push est en retard sur la bibliotheque: `timeout`, `TTL` et
+        // `urgency` sont bien geres (web-push-lib.js), mais absents des types.
+        const options = {
+          timeout: DELAI_RESEAU_MS,
+          TTL: DUREE_DE_VIE_S,
+          urgency: 'high',
+        } as unknown as Parameters<typeof webpush.sendNotification>[2];
+
+        const expirees: string[] = [];
+        let envoyees = 0;
+        let echecs = 0;
+
+        await parLots(abonnements, TAILLE_LOT, async (abonnement) => {
           try {
             await webpush.sendNotification(
               {
@@ -157,6 +276,7 @@ export function createPushService(supabase: SupabaseClient) {
                 keys: { p256dh: abonnement.p256dh, auth: abonnement.auth },
               },
               corpsChiffre,
+              options,
             );
             envoyees += 1;
           } catch (erreur) {
@@ -169,40 +289,45 @@ export function createPushService(supabase: SupabaseClient) {
             // Pas l'endpoint dans le journal: c'est un identifiant d'appareil.
             logger.warn('Envoi push refuse par le service de push', { tenantId, code });
           }
-        }),
-      );
+        });
 
-      if (expirees.length > 0) {
-        // `count: 'exact'`: PostgREST ne leve aucune erreur quand un DELETE ne
-        // touche rien, donc sans le compte on enregistrerait des suppressions
-        // fantomes. Le filtre tenant reste pose malgre les identifiants.
-        const { count, error: erreurSuppression } = await supabase
-          .from('push_subscriptions')
-          .delete({ count: 'exact' })
-          .eq('tenant_id', tenantId)
-          .in('id', expirees);
+        // 4. Nettoyage. On ne compte comme "expiree" que ce qui a VRAIMENT ete
+        //    supprime: annoncer des suppressions qui n'ont pas eu lieu rendrait
+        //    le compte rendu faux, et PostgREST ne leve rien sur un DELETE qui
+        //    ne touche aucune ligne.
+        let supprimees = 0;
+        if (expirees.length > 0) {
+          const { count, error: erreurSuppression } = await supabase
+            .from('push_subscriptions')
+            .delete({ count: 'exact' })
+            .eq('tenant_id', tenantId)
+            .in('id', expirees);
 
-        if (erreurSuppression) {
-          logger.error('Nettoyage des abonnements push expires impossible', erreurSuppression, {
-            tenantId,
-          });
-        } else if ((count ?? 0) !== expirees.length) {
-          logger.warn('Abonnements push expires partiellement nettoyes', {
-            tenantId,
-            attendus: expirees.length,
-            supprimes: count ?? 0,
-          });
+          if (erreurSuppression) {
+            logger.error('Nettoyage des abonnements push expires impossible', erreurSuppression, {
+              tenantId,
+              aSupprimer: expirees.length,
+            });
+          } else {
+            supprimees = count ?? 0;
+            if (supprimees !== expirees.length) {
+              logger.warn('Abonnements push expires partiellement nettoyes', {
+                tenantId,
+                attendus: expirees.length,
+                supprimes: supprimees,
+              });
+            }
+          }
         }
+
+        logger.info('Envoi push', { tenantId, envoyees, expirees: supprimees, echecs, refuses });
+        return { envoyees, expirees: supprimees, echecs, refuses };
+      } catch (erreur) {
+        // Filet de securite: aucune action metier ne doit tomber a cause d'une
+        // notification, meme sur une panne imprevue de la bibliotheque.
+        logger.error('Envoi push interrompu par une erreur inattendue', erreur, { tenantId });
+        return RESULTAT_VIDE;
       }
-
-      logger.info('Envoi push', {
-        tenantId,
-        envoyees,
-        expirees: expirees.length,
-        echecs,
-      });
-
-      return { envoyees, expirees: expirees.length, echecs };
     },
   };
 }

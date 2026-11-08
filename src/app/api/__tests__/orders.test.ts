@@ -12,6 +12,9 @@ import * as Sentry from '@sentry/nextjs';
 // Keep the real NextResponse but make after() run its callback inline.
 // after() requires a request scope at runtime; in unit tests we execute the
 // scheduled work immediately (mirrors the old fire-and-forget behavior).
+// `push.service` (desormais dans ce graphe d imports) declare `server-only`.
+vi.mock('server-only', () => ({}));
+
 vi.mock('next/server', async (importActual) => {
   const actual = await importActual<typeof import('next/server')>();
   return {

@@ -325,6 +325,7 @@ export async function POST(request: Request) {
     // 9. Create in-app notification for admins.
     scheduleOrderNotification(adminSupabase, {
       tenantId,
+      tenantSlug,
       tableNumber,
       itemsCount: items.length,
       total: pricing.total,
