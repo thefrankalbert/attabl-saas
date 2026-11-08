@@ -209,6 +209,13 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+  -- Ordre de REGLEMENT, pour distinguer un progres d'un retour en arriere.
+  -- `comp` et `refunded` sont au-dela: ce sont des etats terminaux, et la
+  -- policy UPDATE de 20261107190000 exige deja l'autorite argent pour produire
+  -- une ligne qui les porte.
+  rang_ancien integer;
+  rang_nouveau integer;
 BEGIN
   -- Seuls les deux roles joignables par un client sont contraints. Voir
   -- l'en-tete pour la mesure de `current_user` dans chaque contexte.
@@ -226,16 +233,86 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  -- Le pourboire RESTE ecrivable, mais pas sur une commande DEJA payee.
-  -- Mesure: les deux seuls chemins qui l'ecrivent (`markPaid` et
-  -- `applyPosFinalState`) filtrent `payment_status = 'pending'`, donc ils ne
-  -- touchent jamais une commande payee. Sans cette borne, un employe pouvait
-  -- gonfler un pourboire APRES l'encaissement, par un appel direct a l'API.
-  IF NEW.tip_amount IS DISTINCT FROM OLD.tip_amount
-     AND coalesce(OLD.payment_status, '') = 'paid'
+  -- --------------------------------------------------------------------------
+  -- Une commande REGLEE ne se deregle pas.
+  -- --------------------------------------------------------------------------
+  -- POURQUOI CECI PASSE AVANT LE POURBOIRE. Une premiere version ne gardait que
+  -- le pourboire, et seulement quand `OLD.payment_status = 'paid'`. Elle se
+  -- contournait en trois coups: repasser la commande payee en `pending`, ecrire
+  -- le pourboire (OLD vaut alors `pending`, la garde ne voit rien), puis
+  -- remettre `paid`. Elle ratait aussi `partial` entierement.
+  --
+  -- Et le dereglement ouvre bien pire que le pourboire: `markPaid` ne reagit
+  -- qu'a `payment_status = 'pending'`. Un employe qui repasse une commande
+  -- payee en attente peut donc la REENCAISSER, et le ledger `payments`
+  -- compterait deux fois la meme recette.
+  --
+  -- UN RETOUR EN ARRIERE EST POURTANT LEGITIME - mesure, pas supposition.
+  -- `recompute` (src/services/payment.queries.ts) rederive le statut depuis le
+  -- ledger apres chaque ecriture, et peut donc repasser `paid` a `partial` ou
+  -- `pending` APRES UN REMBOURSEMENT. Il tourne avec le jeton de l'employe,
+  -- donc sous RLS. Mais un remboursement exige l'autorite argent
+  -- (ORDER_MONEY_ROLES cote application, et un montant negatif ou un statut
+  -- non-`completed` exige `has_tenant_money_permission` cote base): exempter
+  -- cette autorite preserve donc exactement ce flux. Un encaissement ordinaire,
+  -- lui, ne fait JAMAIS reculer le statut - il ajoute un tender positif.
+  rang_ancien := CASE coalesce(OLD.payment_status, '')
+                   WHEN 'pending' THEN 0
+                   WHEN 'partial' THEN 1
+                   WHEN 'paid'    THEN 2
+                   ELSE 3
+                 END;
+  rang_nouveau := CASE coalesce(NEW.payment_status, '')
+                    WHEN 'pending' THEN 0
+                    WHEN 'partial' THEN 1
+                    WHEN 'paid'    THEN 2
+                    ELSE 3
+                  END;
+
+  IF rang_nouveau < rang_ancien
+     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
   THEN
     RAISE EXCEPTION
-      'Le pourboire ne se reecrit pas sur une commande deja payee'
+      'Une commande reglee ne se deregle pas sans l''autorite argent'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- --------------------------------------------------------------------------
+  -- Le pourboire reste ecrivable A L'ENCAISSEMENT, pas apres.
+  -- --------------------------------------------------------------------------
+  -- Mesure: les deux seuls chemins qui l'ecrivent (`markPaid` et
+  -- `applyPosFinalState`) filtrent `payment_status = 'pending'`. Un pourboire
+  -- ne s'ecrit donc legitimement que sur une commande ENCORE EN ATTENTE, dans
+  -- le meme UPDATE que la bascule. La borne porte sur `<> 'pending'` et non sur
+  -- `= 'paid'`: sans cela, `partial`, `comp` et `refunded` passaient au travers.
+  IF NEW.tip_amount IS DISTINCT FROM OLD.tip_amount
+     AND coalesce(OLD.payment_status, '') <> 'pending'
+     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
+  THEN
+    RAISE EXCEPTION
+      'Le pourboire ne se reecrit pas sur une commande deja reglee'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- --------------------------------------------------------------------------
+  -- L'HORODATAGE DU PAIEMENT NE SE DEPLACE PAS.
+  -- --------------------------------------------------------------------------
+  -- Trouve en relisant cette garde en adversaire, pas signale. `paid_at`
+  -- decide du JOUR auquel une recette est comptee: le reecrire deplace de
+  -- l'argent d'une journee a l'autre dans les rapports et fait echouer un
+  -- rapprochement de caisse, sans qu'aucun montant ne change.
+  --
+  -- Figer un `paid_at` deja pose est EXACTEMENT l'invariant que l'application
+  -- s'impose: `recompute` ne l'ecrit que s'il est absent
+  -- (`becomesPaid && !order.paid_at`), et `markPaid` ne touche qu'une commande
+  -- `pending`. Une commande deregle puis re-reglee garde donc l'horodatage de
+  -- son PREMIER paiement, ici comme dans le code.
+  IF NEW.paid_at IS DISTINCT FROM OLD.paid_at
+     AND OLD.paid_at IS NOT NULL
+     AND NOT public.has_tenant_money_permission(NEW.tenant_id)
+  THEN
+    RAISE EXCEPTION
+      'L''horodatage du paiement ne se reecrit pas'
       USING ERRCODE = '42501';
   END IF;
 

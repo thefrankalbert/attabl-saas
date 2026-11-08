@@ -48,7 +48,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(41);
+select plan(49);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -109,6 +109,17 @@ insert into public.orders
   (id, tenant_id, order_number, subtotal, total, status, payment_status)
 values ('b6666666-6666-6666-6666-666666666666', 'b3333333-3333-3333-3333-333333333333',
         'CMD-A-SUPPRIMER', 7000, 7000, 'preparing', 'pending');
+
+-- Deux commandes DEJA REGLEES, pour la garde de dereglement (section 9). Elles
+-- sont posees hors de tout `set role`: le sujet du test est le RETOUR EN
+-- ARRIERE, pas la facon dont elles ont ete reglees.
+insert into public.orders
+  (id, tenant_id, order_number, subtotal, total, status, payment_status, tip_amount, paid_at)
+values
+  ('b7000000-0000-4000-8000-000000000001', 'b3333333-3333-3333-3333-333333333333',
+   'CMD-REGLEE', 4000, 4000, 'served', 'paid', 200, '2026-11-01 12:00:00+00'),
+  ('b7100000-0000-4000-8000-000000000002', 'b3333333-3333-3333-3333-333333333333',
+   'CMD-PARTIELLE', 4000, 4000, 'served', 'partial', 0, null);
 
 
 -- ===========================================================================
@@ -459,6 +470,95 @@ select lives_ok(
   $$insert into public.orders (tenant_id, order_number, subtotal, total, payment_status)
     values ('b3333333-3333-3333-3333-333333333333', 'CMD-COUPON-100', 0, 0, 'pending')$$,
   'creation: une commande a ZERO reste permise (coupon de 100 pour cent)'
+);
+
+-- ===========================================================================
+-- 9. UNE COMMANDE REGLEE NE SE DEREGLE PAS (6)
+--    La borne du pourboire ne suffisait pas: elle se contournait en trois
+--    coups - repasser la commande payee en `pending`, ecrire le pourboire
+--    (OLD valait alors `pending`, la garde ne voyait rien), puis remettre
+--    `paid`. Elle ratait aussi `partial` entierement.
+--
+--    Et le dereglement ouvre pire que le pourboire: `markPaid` ne reagit qu'a
+--    `payment_status = 'pending'`, donc une commande deregle peut etre
+--    REENCAISSEE, et le ledger compterait deux fois la meme recette.
+-- ===========================================================================
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+select throws_ok(
+  $$update public.orders set payment_status = 'pending'
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  null,
+  'dereglement: un caissier ne repasse PAS une commande payee en attente'
+);
+
+-- Le trou que la premiere version laissait: `partial` n'etait pas couvert.
+select throws_ok(
+  $$update public.orders set tip_amount = 999999
+    where id = 'b7100000-0000-4000-8000-000000000002'$$,
+  '42501',
+  null,
+  'dereglement: le pourboire est protege aussi sur une commande PARTIELLE'
+);
+
+-- Le sens AVANT reste ouvert: completer un reglement partiel est le flux normal
+-- d'une seconde ligne de paiement.
+select lives_ok(
+  $$update public.orders set payment_status = 'paid'
+    where id = 'b7100000-0000-4000-8000-000000000002'$$,
+  'dereglement: completer un reglement PARTIEL en paye reste permis'
+);
+select is(
+  (select payment_status from public.orders
+   where id = 'b7100000-0000-4000-8000-000000000002'),
+  'paid',
+  'dereglement: le reglement a REELLEMENT ete complete'
+);
+
+-- TEMOIN DU FLUX DE REMBOURSEMENT, et il est indispensable: `recompute`
+-- (payment.queries.ts) rederive le statut depuis le ledger et repasse `paid` a
+-- `partial` ou `pending` apres un remboursement. Il tourne avec le jeton de
+-- l'employe. Si la garde n'exemptait pas l'autorite argent, elle casserait le
+-- remboursement en production.
+set local request.jwt.claims = '{"sub":"b2222222-2222-2222-2222-222222222222"}';
+select lives_ok(
+  $$update public.orders set payment_status = 'pending'
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  'remboursement: un gerant PEUT deregler (recompute apres remboursement)'
+);
+select is(
+  (select payment_status from public.orders
+   where id = 'b7000000-0000-4000-8000-000000000001'),
+  'pending',
+  'remboursement: le dereglement du gerant a REELLEMENT porte'
+);
+
+-- ===========================================================================
+-- 10. L'HORODATAGE DU PAIEMENT NE SE DEPLACE PAS (2)
+--     Trouve en relisant la garde en adversaire, pas signale. `paid_at` decide
+--     du JOUR auquel une recette est comptee: le reecrire deplace de l'argent
+--     d'une journee a l'autre et fait echouer un rapprochement de caisse, sans
+--     qu'aucun montant ne change.
+-- ===========================================================================
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+select throws_ok(
+  $$update public.orders set paid_at = '2026-01-01 08:00:00+00'
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  null,
+  'horodatage: un caissier ne DEPLACE PAS la date de paiement'
+);
+
+-- L'autorite argent reste exemptee, comme pour les autres bornes: c'est elle
+-- qui corrige une erreur de caisse.
+set local request.jwt.claims = '{"sub":"b2222222-2222-2222-2222-222222222222"}';
+select lives_ok(
+  $$update public.orders set paid_at = '2026-01-01 08:00:00+00'
+    where id = 'b7000000-0000-4000-8000-000000000001'$$,
+  'horodatage: un gerant PEUT le corriger'
 );
 
 select * from finish();
