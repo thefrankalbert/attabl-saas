@@ -8,6 +8,7 @@ import {
   getClientIp,
   grouperAdresse,
   envoiAutorisePourCompte,
+  libererEnvoi,
   cleCompte,
   minutesAvantLiberation,
 } from '@/lib/rate-limit';
@@ -120,7 +121,12 @@ export async function POST(request: Request) {
     // pouvoir le diagnostiquer. L intervalle ne retarde que d une minute, et
     // chaque requete qui prend le verrou envoie VRAIMENT le mail: le
     // proprietaire recoit toujours un lien utilisable.
-    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
+    // CLE NOMMEE PAR USAGE: une cle partagee avec le renvoi de confirmation
+    // faisait que demander son mot de passe bloquait une minute le renvoi du
+    // mail de bienvenue, et inversement - deux fonctionnalites sans rapport se
+    // genaient.
+    const cleEnvoi = `recuperation:${cleCompte(email)}`;
+    if (!(await envoiAutorisePourCompte(cleEnvoi))) {
       logger.info('Forgot password: envoi trop rapproche, ignore', {
         emailHash: hashEmail(email),
       });
@@ -149,6 +155,9 @@ export async function POST(request: Request) {
         emailHash: hashEmail(email),
         error: linkError?.message,
       });
+      // AUCUN mail ne partira: on rend le verrou. Le garder confisquerait la
+      // minute suivante a une requete qui, elle, aurait abouti.
+      await libererEnvoi(cleEnvoi);
       return successResponse;
     }
 
@@ -159,6 +168,8 @@ export async function POST(request: Request) {
     const emailSent = await sendPasswordResetEmail(email, { resetUrl });
     if (!emailSent) {
       logger.warn('Password reset email failed to send', { emailHash: hashEmail(email) });
+      // Rien n est parti: le proprietaire doit pouvoir reessayer tout de suite.
+      await libererEnvoi(cleEnvoi);
     }
 
     return successResponse;

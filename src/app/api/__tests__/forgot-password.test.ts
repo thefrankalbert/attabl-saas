@@ -15,6 +15,7 @@ vi.mock('@/lib/rate-limit', () => ({
   grouperAdresse: (ip: string) => ip,
   // Intervalle minimum entre deux envois: libre par defaut.
   envoiAutorisePourCompte: vi.fn().mockResolvedValue(true),
+  libererEnvoi: vi.fn().mockResolvedValue(undefined),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
 }));
@@ -41,7 +42,7 @@ import { POST } from '../forgot-password/route';
 import { forgotPasswordLimiter, forgotPasswordAdresseLimiter } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPasswordResetEmail } from '@/services/email.service';
-import { envoiAutorisePourCompte } from '@/lib/rate-limit';
+import { envoiAutorisePourCompte, libererEnvoi } from '@/lib/rate-limit';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -151,6 +152,40 @@ describe('POST /api/forgot-password', () => {
     expect(res.status).toBe(200);
     expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
     expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  /**
+   * UNE CLE PAR USAGE. Avec une cle partagee, demander son mot de passe
+   * bloquait une minute le renvoi du mail de confirmation, et inversement:
+   * deux fonctionnalites sans rapport se genaient.
+   */
+  it('prend un verrou nomme pour la recuperation, pas un verrou global', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    const cle = vi.mocked(envoiAutorisePourCompte).mock.calls[0][0];
+    expect(cle).toMatch(/^recuperation:/);
+  });
+
+  /**
+   * UNE REQUETE QUI NE PRODUIT RIEN NE DOIT PAS CONFISQUER LA SUIVANTE. Si le
+   * lien ne peut pas etre genere, aucun mail ne part: garder le verrou
+   * bloquerait une minute une requete qui, elle, aurait abouti.
+   */
+  it('rend le verrou quand aucun lien ne peut etre genere', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'user not found' } },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'inconnu@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(libererEnvoi).toHaveBeenCalledWith(expect.stringMatching(/^recuperation:/));
   });
 
   it('garde de cout par adresse: 429 avec le delai annonce', async () => {

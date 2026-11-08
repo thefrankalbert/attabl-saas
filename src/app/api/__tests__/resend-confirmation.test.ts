@@ -15,6 +15,7 @@ vi.mock('@/lib/rate-limit', () => ({
   grouperAdresse: (ip: string) => ip,
   // Intervalle minimum entre deux envois: libre par defaut.
   envoiAutorisePourCompte: vi.fn().mockResolvedValue(true),
+  libererEnvoi: vi.fn().mockResolvedValue(undefined),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
 }));
@@ -41,6 +42,7 @@ import {
   resendConfirmationLimiter,
   resendConfirmationAdresseLimiter,
   envoiAutorisePourCompte,
+  libererEnvoi,
 } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -137,6 +139,30 @@ describe('POST /api/resend-confirmation', () => {
 
     expect(res.status).toBe(200);
     expect(mock.auth.admin.generateLink).not.toHaveBeenCalled();
+  });
+
+  it('prend un verrou nomme pour la confirmation, pas un verrou global', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    const cle = vi.mocked(envoiAutorisePourCompte).mock.calls[0][0];
+    expect(cle).toMatch(/^confirmation:/);
+  });
+
+  it('rend le verrou quand aucun lien ne peut etre genere', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'already confirmed' } },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'deja@test.com' }));
+
+    expect(res.status).toBe(200);
+    expect(libererEnvoi).toHaveBeenCalledWith(expect.stringMatching(/^confirmation:/));
   });
 
   it('garde de cout par adresse: 429 avec le delai annonce', async () => {

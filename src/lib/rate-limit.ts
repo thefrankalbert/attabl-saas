@@ -177,6 +177,23 @@ export async function envoiAutorisePourCompte(cle: string): Promise<boolean> {
 }
 
 /**
+ * Rend un verrou d envoi.
+ *
+ * A appeler des qu on sait qu AUCUN mail ne partira: compte inexistant, lien
+ * impossible a generer, envoi refuse par le fournisseur. Sans cela, une requete
+ * sterile confisque la minute suivante a une requete legitime.
+ */
+export async function libererEnvoi(cle: string): Promise<void> {
+  if (!redis) return;
+  try {
+    await redis.del(`attabl:envoi:${cle}`);
+  } catch (err) {
+    // Au pire le verrou expire de lui-meme au bout d une minute.
+    logger.error('Liberation du verrou d envoi impossible', err, { cle });
+  }
+}
+
+/**
  * Minutes a annoncer avant liberation.
  *
  * UNE MINUTE DE MARGE, et elle n'est pas decorative. `slidingWindow` rend un

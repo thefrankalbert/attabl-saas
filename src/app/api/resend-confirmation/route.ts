@@ -8,6 +8,7 @@ import {
   getClientIp,
   grouperAdresse,
   envoiAutorisePourCompte,
+  libererEnvoi,
   cleCompte,
   minutesAvantLiberation,
 } from '@/lib/rate-limit';
@@ -92,7 +93,10 @@ export async function POST(request: Request) {
     // attaquant PERIMER le lien de confirmation que le nouveau client venait de
     // recevoir, sans qu aucun mail ne parte: enferme dehors sans trace. Pose
     // avant, une requete etouffee ne fabrique aucun jeton.
-    if (!(await envoiAutorisePourCompte(cleCompte(email)))) {
+    // CLE NOMMEE PAR USAGE, pour ne pas bloquer la demande de mot de passe
+    // oublie - et inversement.
+    const cleEnvoi = `confirmation:${cleCompte(email)}`;
+    if (!(await envoiAutorisePourCompte(cleEnvoi))) {
       logger.info('Resend confirmation: envoi trop rapproche, ignore', {
         emailHash: hashEmail(email),
       });
@@ -119,6 +123,12 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
+      // AUCUN mail ne partira: on rend le verrou. Le garder confisquerait la
+      // minute suivante a une requete qui, elle, aurait abouti - un compte deja
+      // confirme bloquerait ainsi le renvoi d un autre compte homonyme, et
+      // surtout une erreur serveur passagere bloquerait la nouvelle tentative.
+      await libererEnvoi(cleEnvoi);
+
       // User doesn't exist or is already confirmed -- return success to prevent enumeration.
       // Only log at error level if it looks like a genuine server error (not a "user not found" case).
       const errorMsg = linkError?.message ?? '';
