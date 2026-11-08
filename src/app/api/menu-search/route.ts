@@ -18,29 +18,26 @@ const FALLBACK_ERRORS = {
 // x-tenant-slug header injected by the middleware, never from a client param.
 export async function GET(request: Request) {
   try {
-    // CLE PAR RESTAURANT ET PAR ADRESSE. Les convives d'un lieu partagent le
-    // Wi-Fi du restaurant, donc une seule adresse: compter par adresse seule
-    // faisait qu'un service charge epuisait le compartiment, et le refus
-    // tombait sur le client suivant.
+    // COMPTEUR PAR ADRESSE SEULE, et le plafond est releve a 300 par minute.
     //
-    // LE SLUG N'ENTRE DANS LA CLE QUE S'IL EST DE CONFIANCE, et c'est le point
-    // le plus important de ce bloc. `readTenantSlug` rend aussi un INDICE
-    // fourni par le client quand le middleware n'a rien injecte. Une premiere
-    // version l'utilisait sans distinction - et mon commentaire affirmait a
-    // tort qu'un slug falsifie ne donnerait "qu'un compartiment neuf, comme
-    // avant". C'etait faux: avant, la cle etait l'adresse SEULE, donc UN
-    // compartiment. Avec l'indice dans la cle, un attaquant s'en fabriquait
-    // autant qu'il voulait en changeant d'en-tete, et echappait entierement a
-    // la limite. Constat d'une revue automatique, verifie.
+    // POURQUOI PAS UNE CLE PAR RESTAURANT. J'avais compose la cle avec le slug
+    // du restaurant, pour qu'un service charge n'epuise pas le compartiment des
+    // autres. Deux revues successives ont montre que c'etait contournable, et la
+    // seconde avait raison sur le fond: `src/proxy.ts` injecte `x-tenant-slug` a
+    // partir du SOUS-DOMAINE sans verifier que le restaurant existe (ligne 436),
+    // et le domaine accepte un sous-domaine joker. Un en-tete "de confiance" ne
+    // prouve donc PAS l'existence du restaurant: il suffisait de changer de
+    // sous-domaine pour obtenir un compartiment neuf a volonte, et echapper
+    // entierement a la limite.
     //
-    // Donc: en-tete injecte par le middleware -> compartiment par restaurant;
-    // sinon -> un compartiment unique par adresse, qui plafonne l'attaquant
-    // exactement comme l'ancienne cle le faisait.
+    // Le benefice reel venait du CHIFFRE, pas de la composition: les convives
+    // d'un lieu sont tous derriere le Wi-Fi du restaurant, donc une seule
+    // adresse, et 60 par minute suffisait a ce qu'un service charge se refuse
+    // lui-meme - le message tombant sur le client en train de commander. 300 par
+    // minute et par adresse corrige cela sans ouvrir aucune porte.
     const headersList = await headers();
     const ip = getClientIp(request);
-    const slugDepuisEntete = readTenantSlug(headersList);
-    const cleRestaurant = slugDepuisEntete.trusted ? slugDepuisEntete.slug : '-';
-    const { success: allowed } = await menuSearchLimiter.check(`${cleRestaurant}:${ip}`);
+    const { success: allowed } = await menuSearchLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
         { error: FALLBACK_ERRORS.rateLimited },
@@ -48,6 +45,7 @@ export async function GET(request: Request) {
       );
     }
 
+    const slugDepuisEntete = readTenantSlug(headersList);
     const tenantSlug = slugDepuisEntete.slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });

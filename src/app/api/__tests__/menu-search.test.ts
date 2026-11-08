@@ -193,13 +193,7 @@ describe('GET /api/menu-search - etat du tenant', () => {
 });
 
 describe('GET /api/menu-search - cle du compteur de debit', () => {
-  /**
-   * CE QUE CE TEST VERROUILLE. Les convives d un lieu partagent le Wi-Fi du
-   * restaurant, donc une seule adresse: compter par adresse seule faisait qu un
-   * service charge epuisait le compartiment, et le refus tombait sur le client
-   * en train de finir sa commande. La cle porte donc le restaurant.
-   */
-  it('compose la cle avec le restaurant quand l en-tete vient du middleware', async () => {
+  function tenantSain() {
     setupSupabase({
       id: 'tenant-1',
       is_active: true,
@@ -208,39 +202,50 @@ describe('GET /api/menu-search - cle du compteur de debit', () => {
       trial_ends_at: null,
       frozen_reason: null,
     });
+  }
+
+  /**
+   * CE QUE CE TEST VERROUILLE, et deux versions fausses l ont precede.
+   *
+   * Le defaut d origine: 60 par minute et par adresse. Les convives d un lieu
+   * sont TOUS derriere le Wi-Fi du restaurant, donc derriere une seule
+   * adresse: un service charge epuisait le compartiment, et le refus tombait
+   * sur le client en train de finir sa commande.
+   *
+   * Ma premiere correction composait la cle avec le slug du restaurant. Deux
+   * revues ont montre qu elle etait contournable, et la seconde avait raison
+   * sur le fond: `src/proxy.ts` injecte `x-tenant-slug` depuis le SOUS-DOMAINE
+   * sans verifier que le restaurant existe, et le domaine accepte un
+   * sous-domaine joker. Changer de sous-domaine donnait donc un compartiment
+   * neuf a volonte - la limite ne valait plus rien.
+   *
+   * La cle ne doit donc porter QUE l adresse, qui est la seule valeur que
+   * l appelant ne choisit pas (la plateforme reecrit l en-tete). Le benefice
+   * pour les convives vient du CHIFFRE, pas de la composition.
+   */
+  it('ne compte que sur l adresse, jamais sur une valeur choisie par l appelant', async () => {
+    tenantSain();
 
     await GET(request());
 
-    const cle = vi.mocked(menuSearchLimiter.check).mock.calls[0][0];
-    expect(cle.startsWith('radisson:')).toBe(true);
+    expect(vi.mocked(menuSearchLimiter.check).mock.calls[0][0]).toBe('127.0.0.1');
   });
 
-  /**
-   * LA PROPRIETE DE SECURITE. `readTenantSlug` rend aussi un INDICE fourni par
-   * le CLIENT quand le middleware n a rien injecte. Le mettre dans la cle
-   * laissait un attaquant se fabriquer autant de compartiments qu il voulait en
-   * changeant d en-tete - donc echapper entierement a la limite. Avant ce
-   * changement la cle etait l adresse SEULE, soit UN compartiment: utiliser
-   * l indice etait donc une REGRESSION, pas un statu quo.
-   */
-  it('ignore un slug fourni par le client: un seul compartiment par adresse', async () => {
-    setupSupabase({
-      id: 'tenant-1',
-      is_active: true,
-      suspended_at: null,
-      subscription_status: 'active',
-      trial_ends_at: null,
-      frozen_reason: null,
-    });
-    // Aucun en-tete de confiance: seulement l indice, choisi par l appelant.
+  it('un slug fourni par le client ne change pas le compartiment', async () => {
+    tenantSain();
     vi.mocked(headers).mockResolvedValue({
-      get: (cle: string) => (cle === 'x-tenant-slug-hint' ? 'restaurant-invente' : null),
+      get: (cle: string) =>
+        cle === 'x-tenant-slug-hint'
+          ? 'restaurant-invente'
+          : cle === 'x-tenant-slug'
+            ? 'radisson'
+            : null,
     } as unknown as Awaited<ReturnType<typeof headers>>);
 
     await GET(request());
 
     const cle = vi.mocked(menuSearchLimiter.check).mock.calls[0][0];
     expect(cle).not.toContain('restaurant-invente');
-    expect(cle.startsWith('-:')).toBe(true);
+    expect(cle).not.toContain('radisson');
   });
 });
