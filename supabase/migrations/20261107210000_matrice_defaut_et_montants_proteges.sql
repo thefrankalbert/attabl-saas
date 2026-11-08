@@ -145,6 +145,10 @@
 -- ROLLBACK (dans cet ordre):
 --   DROP TRIGGER IF EXISTS trg_montants_commande_non_reecrits ON public.orders;
 --   DROP FUNCTION IF EXISTS public.refuser_reecriture_montants_commande();
+--   DROP TRIGGER IF EXISTS trg_creation_commande_non_reglee ON public.orders;
+--   DROP FUNCTION IF EXISTS public.normaliser_creation_commande();
+--   ALTER TABLE public.orders
+--     DROP CONSTRAINT IF EXISTS orders_montants_non_negatifs_check;
 --   -- reposer les 9 policies de salle sur
 --   --   has_tenant_write_permission(tenant_id, 'orders.manage')
 --   -- avec leurs anciens noms ("Order managers can ..." / "Table managers
@@ -436,6 +440,74 @@ CREATE TRIGGER trg_montants_commande_non_reecrits
   BEFORE UPDATE ON public.orders
   FOR EACH ROW
   EXECUTE FUNCTION public.refuser_reecriture_montants_commande();
+
+-- ----------------------------------------------------------------------------
+-- 2bis. Une commande ne NAIT pas deja reglee
+-- ----------------------------------------------------------------------------
+--
+-- PARITE AVEC L'UPDATE. Le declencheur ci-dessus ne garde que l'UPDATE, si bien
+-- que tout ce qu'il protege etait librement fourni A LA CREATION: un role
+-- client pouvait inserer une commande deja `paid`, horodatee la veille, avec le
+-- moyen de paiement de son choix. L'effet economique est celui d'un
+-- encaissement fabrique, et il echappait a toutes les bornes.
+--
+-- POURQUOI CE N'EST PAS DANGEREUX A POSER, et c'est une mesure qui le dit, pas
+-- une intuition. AUCUN code applicatif n'insere directement dans `orders`: la
+-- creation passe par la RPC `create_order_with_items`, qui est SECURITY
+-- INVOKER - donc l'insertion a bien lieu en tant qu'`authenticated` et ce
+-- declencheur s'y applique. Or cette RPC:
+--
+--   - code EN DUR `payment_status = 'pending'` (et `status = 'pending'`);
+--   - ne mentionne NI `paid_at` NI `created_at` (verifie sur le corps STOCKE
+--     de la fonction, pas sur une migration);
+--   - n'a pas `payment_method` dans sa liste de colonnes.
+--
+-- Forcer exactement ces valeurs est donc IDENTIQUE a ce que l'application fait
+-- deja: zero changement de comportement pour le vrai flux, et plus aucune marge
+-- pour un appel direct a l'API.
+--
+-- ON NORMALISE AU LIEU DE REFUSER, pour la meme raison que l'horodatage: un
+-- refus ferait echouer une creation legitime si un parametre inattendu
+-- arrivait, alors que la normalisation donne toujours l'etat SUR - une commande
+-- qui naît non reglee, donc dont l'argent reste DU. L'autorite argent reste
+-- exemptee: c'est elle qui saisit une correction.
+--
+-- CE QUI N'EST TOUJOURS PAS GARDE A LA CREATION: l'egalite entre `total` et la
+-- somme des lignes. Voir la section 4 - elle ne peut pas etre verifiee ici, les
+-- `order_items` arrivant APRES la commande.
+
+CREATE OR REPLACE FUNCTION public.normaliser_creation_commande()
+RETURNS trigger
+LANGUAGE plpgsql
+-- SECURITY INVOKER, pour la meme raison que le declencheur d'UPDATE: en
+-- DEFINER, `current_user` vaudrait toujours le proprietaire et la garde ne se
+-- declencherait jamais.
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN NEW;
+  END IF;
+
+  IF public.has_tenant_money_permission(NEW.tenant_id) THEN
+    RETURN NEW;
+  END IF;
+
+  NEW.created_at     := now();
+  NEW.payment_status := 'pending';
+  NEW.paid_at        := NULL;
+  NEW.payment_method := NULL;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_creation_commande_non_reglee ON public.orders;
+CREATE TRIGGER trg_creation_commande_non_reglee
+  BEFORE INSERT ON public.orders
+  FOR EACH ROW
+  EXECUTE FUNCTION public.normaliser_creation_commande();
 
 -- ----------------------------------------------------------------------------
 -- 3. La configuration de salle reste au gerant

@@ -48,7 +48,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(55);
+select plan(60);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -665,6 +665,59 @@ select throws_ok(
   '42501',
   null,
   'creation: la date de creation ne se DEPLACE PAS'
+);
+
+-- ===========================================================================
+-- 13. UNE COMMANDE NE NAIT PAS DEJA REGLEE (5)
+--     PARITE AVEC L'UPDATE: le declencheur des sections 2 a 12 ne garde que
+--     l'UPDATE, si bien que tout ce qu'il protege etait librement fourni A LA
+--     CREATION. Un role client pouvait inserer une commande deja `paid`,
+--     horodatee la veille, avec le moyen de paiement de son choix: un
+--     encaissement fabrique, qui echappait a toutes les bornes.
+--
+--     La garde NORMALISE au lieu de refuser. C'est sans risque parce que la
+--     RPC `create_order_with_items` - seul chemin de creation du depot, et
+--     SECURITY INVOKER donc soumise a ce declencheur - code EN DUR
+--     `payment_status = 'pending'` et ne touche ni `paid_at`, ni `created_at`,
+--     ni `payment_method`. Forcer ces valeurs est donc identique a ce que
+--     l'application fait deja.
+-- ===========================================================================
+set local request.jwt.claims = '{"sub":"b1111111-1111-1111-1111-111111111111"}';
+
+select lives_ok(
+  $$insert into public.orders
+      (id, tenant_id, order_number, subtotal, total, status,
+       payment_status, paid_at, payment_method, created_at)
+    values ('b7300000-0000-4000-8000-000000000004',
+            'b3333333-3333-3333-3333-333333333333',
+            'CMD-FABRIQUEE', 9000, 9000, 'served',
+            'paid', '2020-01-01 08:00:00+00', 'card', '2020-01-01 08:00:00+00')$$,
+  'creation: l insertion passe (la garde normalise, elle ne refuse pas)'
+);
+
+select is(
+  (select payment_status from public.orders
+   where id = 'b7300000-0000-4000-8000-000000000004'),
+  'pending',
+  'creation: la commande NAIT NON REGLEE - l argent reste DU'
+);
+select is(
+  (select paid_at is null from public.orders
+   where id = 'b7300000-0000-4000-8000-000000000004'),
+  true,
+  'creation: l horodatage de paiement fourni a ete EFFACE'
+);
+select is(
+  (select payment_method is null from public.orders
+   where id = 'b7300000-0000-4000-8000-000000000004'),
+  true,
+  'creation: le moyen de paiement fourni a ete EFFACE'
+);
+select is(
+  (select created_at::date = current_date from public.orders
+   where id = 'b7300000-0000-4000-8000-000000000004'),
+  true,
+  'creation: la date de creation antidatee a ete REMPLACEE par maintenant'
 );
 
 select * from finish();
