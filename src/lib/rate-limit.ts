@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger';
  *   import { signupLimiter, getClientIp } from '@/lib/rate-limit';
  *   const ip = getClientIp(request);
  *   const { success } = await signupLimiter.check(ip);
- *   if (!success) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+ *   if (!success) return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
  *
  * Usage in Server Actions:
  *   import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
@@ -74,17 +74,6 @@ function createLimiter(
       })
     : null;
 
-  /**
-   * Ce que rend la limitation quand Redis est absent ou en panne.
-   * `failClosed` decide du sens: refuser (securite) ou laisser passer.
-   */
-  const secours = (): RateLimitResult => ({
-    success: !failClosed && process.env.NODE_ENV !== 'production',
-    limit: 0,
-    remaining: 0,
-    reset: 0,
-  });
-
   return {
     async check(identifier: string): Promise<RateLimitResult> {
       if (!rl) {
@@ -118,56 +107,6 @@ function createLimiter(
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
     },
-
-    /**
-     * Compte une tentative ratee, et rend l'etat APRES comptage.
-     *
-     * POURQUOI CETTE METHODE RENVOIE L'ETAT. Une premiere version lisait le
-     * compteur avant d'authentifier (`consulter`) puis comptait l'echec apres.
-     * Deux defauts, tous deux confirmes:
-     *
-     *   - lire puis ecrire n'est pas atomique: cent requetes simultanees
-     *     passaient toutes la lecture avant que la premiere n'ait compte, donc
-     *     la limite devenait "20 par aller-retour reseau" au lieu de "20 par
-     *     15 minutes";
-     *   - refuser AVANT de verifier le mot de passe permettait a quiconque
-     *     connaissant un email de verrouiller ce compte en boucle.
-     *
-     * Le compteur du compte ne barre donc plus la route: il se consulte APRES
-     * un echec reel, et c'est le resultat de ce comptage qui decide de la
-     * reponse. Un mot de passe CORRECT passe toujours, meme compteur plein.
-     */
-    async compterEchec(identifier: string): Promise<RateLimitResult> {
-      if (!rl) return secours();
-      try {
-        const result = await rl.limit(identifier);
-        return {
-          success: result.success,
-          limit: result.limit,
-          remaining: result.remaining,
-          reset: result.reset,
-        };
-      } catch (err) {
-        // Ne jamais faire echouer la reponse a cause de la comptabilite.
-        logger.error('Comptage d un echec impossible', err, { prefix });
-        return secours();
-      }
-    },
-
-    /**
-     * Efface le compteur d'un identifiant. Utilise apres une authentification
-     * REUSSIE, sur le compteur DU COMPTE uniquement - jamais sur celui de
-     * l'adresse: sinon un attaquant possedant un seul compte valide remettrait
-     * a zero le compteur de son adresse entre deux rafales.
-     */
-    async effacer(identifier: string): Promise<void> {
-      if (!rl) return;
-      try {
-        await rl.resetUsedTokens(identifier);
-      } catch (err) {
-        logger.error('Remise a zero du compteur impossible', err, { prefix });
-      }
-    },
   };
 }
 
@@ -181,10 +120,18 @@ export function cleCompte(email: string): string {
   return createHash('sha256').update(email.trim().toLowerCase()).digest('hex').slice(0, 32);
 }
 
-/** Minutes restantes avant liberation, pour l'afficher a l'utilisateur. */
+/**
+ * Minutes a annoncer avant liberation.
+ *
+ * UNE MINUTE DE MARGE, et elle n'est pas decorative. `slidingWindow` rend un
+ * instant aligne sur l'horloge, et la fenetre glissante reporte une part de la
+ * sous-fenetre precedente: a l'instant annonce, l'utilisateur peut encore etre
+ * refuse. Annoncer un delai trop court le fait revenir pour rien - exactement
+ * ce que ce message est cense eviter.
+ */
 export function minutesAvantLiberation(reset: number): number {
-  if (!reset) return 0;
-  return Math.max(1, Math.ceil((reset - Date.now()) / 60_000));
+  if (!reset) return 1;
+  return Math.max(1, Math.ceil((reset - Date.now()) / 60_000) + 1);
 }
 
 // --- Limiters per endpoint ---
@@ -465,7 +412,7 @@ export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(1
 /**
  * Mot de passe oublie: par COMPTE, 3 par 10 minutes.
  *
- * Ici le compteur par compte est le BON reglage, et il est serre exprès: le
+ * Ici le compteur par compte est le BON reglage, et il est serre volontairement: le
  * dommage d'un abus n'est pas une intrusion, c'est de noyer la boite mail d'un
  * tiers. Trois messages par 10 minutes pour une adresse donnee suffisent a
  * l'en empecher.
@@ -578,57 +525,55 @@ export const adminPasswordResetLinkIpLimiter = createLimiter(
 );
 
 /**
- * Connexion: DEUX compteurs, et on ne compte que les ECHECS.
+ * Connexion: deux compteurs, tous deux consommes ATOMIQUEMENT avant
+ * l'authentification.
  *
- * CE QUI NE MARCHAIT PAS. Un seul compteur, 5 par 15 minutes, par ADRESSE IP,
- * consomme AVANT la verification du mot de passe. Trois consequences mesurees
- * le 2026-11-08:
+ * TROIS CONCEPTIONS ONT ETE ESSAYEES AVANT CELLE-CI, et les deux premieres
+ * etaient fausses. L'historique est garde parce que chaque erreur est un piege
+ * dans lequel il est naturel de retomber.
  *
- *   1. une connexion REUSSIE consommait un essai - or ce n'est pas une attaque;
- *   2. l'adresse IP est partagee: les quatre employes d'un restaurant sur le
- *      meme Wi-Fi avaient cinq connexions A EUX QUATRE par quart d'heure, et
- *      chez un operateur mobile des centaines d'abonnes partagent une adresse,
- *      donc des inconnus pouvaient se verrouiller entre eux;
- *   3. l'ancien commentaire invoquait "NIST SP 800-63B" pour justifier ce 5,
- *      ce qui etait faux: le NIST plafonne a 100 echecs consecutifs PAR COMPTE
- *      et recommande le ralentissement progressif, pas le blocage sec par
- *      adresse. Une justification fausse est pire qu'aucune: elle dissuade de
- *      verifier.
+ *   v1 (l'origine): 5 tentatives par 15 minutes, par ADRESSE IP, consommees
+ *      avant la verification du mot de passe. Entrer CORRECTEMENT coutait un
+ *      essai, et l'adresse etant partagee, les quatre employes d'un restaurant
+ *      se partageaient cinq connexions par quart d'heure. Mesure en production
+ *      le 2026-11-08: un utilisateur enferme 22 minutes hors de son produit.
  *
- * CE QUI PROTEGE VRAIMENT CETTE PAGE, ce ne sont pas ces compteurs: c'est
- * Turnstile et le honeypot, qui s'executent avant eux. Les compteurs sont la
- * defense en profondeur - d'ou des chiffres qui ne touchent jamais un humain
- * honnete.
+ *   v2: compteur par COMPTE, consulte avant l'authentification, echec compte
+ *      apres. Deux defauts: lire puis ecrire n'est pas atomique (cent requetes
+ *      simultanees passaient toutes la lecture), et refuser avant
+ *      l'authentification permettait a quiconque connaissant un email de
+ *      verrouiller ce compte en boucle.
  *
- * Par COMPTE (empreinte de l'email, jamais l'email en clair): 20 echecs par
- * 15 minutes. Genereux pour qui cherche son mot de passe, serre pour qui
- * attaque un compte precis.
+ *   v3: compteur par compte consomme APRES l'echec, sans jamais barrer la
+ *      route. Un audit adversarial a montre que ce plafond etait DECORATIF: le
+ *      mot de passe etant verifie avant tout comptage, un attaquant testait
+ *      800 mots de passe par heure sur un compte au lieu de 20. La limite
+ *      affichee ne bornait rien.
  *
- * CE COMPTEUR NE BARRE PAS LA ROUTE AVANT L'AUTHENTIFICATION, et c'est
- * essentiel: le faire permettait a quiconque connaissant un email de
- * verrouiller ce compte 15 minutes, en boucle. Un mot de passe CORRECT passe
- * donc toujours, meme compteur plein. Le compteur se consomme APRES un echec
- * reel, et c'est ce comptage qui decide de rendre 429 au lieu de 401.
+ * LA FORME RETENUE porte la garde serree sur le COUPLE (compte, adresse). Elle
+ * resout les trois problemes a la fois:
+ *
+ *   - elle est atomique, donc une rafale simultanee ne la contourne pas;
+ *   - elle borne REELLEMENT les essais sur un compte depuis une source donnee;
+ *   - elle ne permet PAS le verrouillage a distance: un attaquant n'epuise que
+ *     SON couple, le proprietaire garde le sien intact depuis son adresse.
+ *
+ * Ce qui reste assume: un attaquant qui change d'adresse retrouve un budget
+ * neuf. C'est la rancon de ne pas verrouiller un compte globalement, et c'est
+ * le compromis que l'OWASP recommande - un verrou global se retourne en arme
+ * contre le proprietaire. Turnstile et le honeypot restent la premiere ligne.
  */
-export const loginCompteLimiter = createLimiter(
-  'login-compte',
-  Ratelimit.slidingWindow(20, '15 m'),
+export const loginPaireLimiter = createLimiter(
+  'login-paire',
+  Ratelimit.slidingWindow(10, '15 m'),
   true,
 );
 
 /**
- * Par ADRESSE: 200 tentatives par 15 minutes, consommees ATOMIQUEMENT avant
- * tout travail.
- *
- * C'est le seul garde-fou qui barre la route en amont, et il compte TOUTES les
- * tentatives, reussies comprises - c'est son role: borner le cout qu'une seule
- * machine peut nous imposer (chaque tentative declenche un appel
- * d'authentification). 200 est haut exprès, parce qu'une adresse est partagee:
- * un restaurant entier, ou des centaines d'abonnes derriere le reseau d'un
- * operateur mobile, ne doivent jamais l'atteindre en usage normal.
- *
- * Il n'est JAMAIS remis a zero par une connexion reussie: sinon un attaquant
- * possedant un compte valide le reinitialiserait entre deux rafales.
+ * Par ADRESSE: 200 tentatives par 15 minutes. C'est un garde-fou de COUT, pas
+ * d'authentification: il borne ce qu'une seule machine peut nous faire
+ * consommer. Haut volontairement - une adresse est partagee par un restaurant entier,
+ * ou par des centaines d'abonnes derriere le reseau d'un operateur mobile.
  */
 export const loginAdresseLimiter = createLimiter(
   'login-adresse',
@@ -670,6 +615,24 @@ export const revalidateMenuLimiter = createLimiter(
  * fonction devient une passoire et doit etre reecrite pour lire l'element a
  * DROITE (le dernier ajoute par l'infrastructure de confiance), ou pour se fier
  * a un en-tete signe par le proxy.
+ */
+/**
+ * Adresse du client, telle que la plateforme la donne.
+ *
+ * POURQUOI L'ELEMENT LE PLUS A GAUCHE EST LE BON ICI, et pourquoi ce n'est pas
+ * une faille: un audit a soupconne une falsification possible (un attaquant
+ * qui envoie son propre `X-Forwarded-For` se fabriquerait un compteur neuf a
+ * chaque requete, et toutes les limites tomberaient). Verifie dans la
+ * documentation Vercel plutot que deduit: la plateforme **reecrit** cet en-tete
+ * et ne transmet PAS les adresses externes, precisement pour empecher
+ * l'usurpation (vercel.com/docs/headers/request-headers). L'element de gauche
+ * est donc l'adresse constatee par Vercel, pas une valeur fournie par le
+ * client.
+ *
+ * CE QUI INVALIDERAIT CE RAISONNEMENT: interposer un autre proxy devant Vercel
+ * (Cloudflare, par exemple), ou quitter Vercel. Dans ce cas il faudrait lire
+ * `x-vercel-forwarded-for`, ou l'en-tete du nouveau proxy, et surtout le
+ * reverifier - pas le supposer.
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');

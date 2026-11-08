@@ -9,9 +9,7 @@ vi.mock('@/lib/rate-limit', () => ({
   // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
   // restaurant alors que l'abus vise une boite mail precise.
   resendConfirmationLimiter: { check: vi.fn() },
-  resendConfirmationAdresseLimiter: {
-    check: vi.fn().mockResolvedValue({ success: true, reset: 0 }),
-  },
+  resendConfirmationAdresseLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
@@ -35,7 +33,7 @@ vi.mock('@/services/email.service', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from '../resend-confirmation/route';
-import { resendConfirmationLimiter } from '@/lib/rate-limit';
+import { resendConfirmationLimiter, resendConfirmationAdresseLimiter } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +56,12 @@ function buildRequest(body?: unknown, options?: { malformed?: boolean }): Reques
 }
 
 function mockRateLimit(allowed: boolean) {
+  vi.mocked(resendConfirmationAdresseLimiter.check).mockResolvedValue({
+    success: true,
+    limit: 30,
+    remaining: 29,
+    reset: Date.now() + 600_000,
+  });
   vi.mocked(resendConfirmationLimiter.check).mockResolvedValue({
     success: allowed,
     limit: 3,
@@ -92,17 +96,37 @@ describe('POST /api/resend-confirmation', () => {
     vi.clearAllMocks();
   });
 
-  it('returns 429 when rate limited', async () => {
+  /**
+   * LE PLAFOND PAR COMPTE S ARRETE EN SILENCE. Rendre 429 ici permettait a
+   * quiconque connaissant l'email d'un nouveau client de le priver de son mail
+   * de bienvenue: il recoit 403 a la connexion (email non confirme) et ne peut
+   * plus se le faire renvoyer - enferme dehors pour de bon. Constat d'audit.
+   */
+  it('plafond par compte atteint: reponse normale, aucune erreur visible', async () => {
     mockRateLimit(false);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+    const json = (await res.json()) as { success?: boolean; error?: string };
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.error).toBeUndefined();
+  });
+
+  it('garde de cout par adresse: 429 avec le delai annonce', async () => {
+    mockRateLimit(true);
+    vi.mocked(resendConfirmationAdresseLimiter.check).mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 600_000,
+    });
 
     const res = await POST(buildRequest({ email: 'test@test.com' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
-    // Le message doit DIRE combien de temps attendre. L'ancien se contentait de
-    // "Reessayez dans quelques minutes", donc l'utilisateur reessayait aussitot
-    // et reprenait la fenetre entiere.
-    expect(json.error).toMatch(/\d+ minutes/);
+    expect(json.error).toMatch(/dans [1-9]\d* minutes/);
     expect(res.headers.get('Retry-After')).toBeTruthy();
   });
 

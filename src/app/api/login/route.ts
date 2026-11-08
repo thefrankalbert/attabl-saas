@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { loginSchema } from '@/lib/validations/auth.schema';
 import {
-  loginCompteLimiter,
+  loginPaireLimiter,
   loginAdresseLimiter,
   getClientIp,
   cleCompte,
@@ -79,14 +79,22 @@ export async function POST(request: Request) {
 
     const { email, password } = parseResult.data;
 
-    // La cle du compte est une EMPREINTE de l'email: un compteur n'a pas a
-    // devenir un annuaire des comptes du service.
+    // 1.7 LA GARDE QUI BORNE REELLEMENT LES ESSAIS, sur le couple
+    // (compte, adresse), consommee ATOMIQUEMENT avant d'authentifier.
     //
-    // ON NE REFUSE RIEN ICI, VOLONTAIREMENT. Barrer la route sur le compteur du
-    // compte avant d'authentifier permettait a quiconque connaissant un email
-    // de verrouiller ce compte 15 minutes, en boucle - le proprietaire d'un
-    // restaurant inclus. Un mot de passe correct doit toujours passer.
+    // Deux conceptions precedentes ont echoue ici, et pour des raisons
+    // opposees: refuser sur le compte SEUL permettait a quiconque connaissant
+    // un email de verrouiller ce compte en boucle; ne compter qu'apres
+    // l'authentification rendait le plafond decoratif, puisque chaque requete
+    // testait quand meme un mot de passe (800 essais par heure au lieu de 20).
+    //
+    // Le couple resout les deux: un attaquant n'epuise que SON propre budget
+    // sur ce compte, et le proprietaire garde le sien intact depuis son
+    // adresse. La cle du compte est une empreinte de l'email - un compteur n'a
+    // pas a devenir un annuaire des comptes du service.
     const compte = cleCompte(email);
+    const etatPaire = await loginPaireLimiter.check(`${compte}:${ip}`);
+    if (!etatPaire.success) return refus(etatPaire);
 
     // 2. Authenticate with Supabase
     const supabase = await createClient();
@@ -101,22 +109,14 @@ export async function POST(request: Request) {
       // authError is AuthApiError which exposes a code property.
       const authCode = (authError as { code?: string }).code;
 
-      // `email_not_confirmed` signifie que le mot de passe etait BON: ce n'est
-      // pas une tentative ratee, et la compter punirait quelqu'un qui n'a
-      // simplement pas encore clique dans son mail de bienvenue.
+      // Les deux compteurs ont deja ete consommes en amont: rien a compter
+      // ici. Une version precedente exemptait `email_not_confirmed` du
+      // comptage, au motif que le mot de passe etait alors correct - une
+      // affirmation sur l'ordre interne de Supabase que ce depot ne peut pas
+      // verifier, et qui offrait des essais gratuits si elle etait fausse.
       if (authCode === 'email_not_confirmed') {
         return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
       }
-
-      // Echec reel: on le compte sur le compte. Le compteur d'adresse a deja
-      // ete consomme en amont - le compter une seconde fois punirait deux fois
-      // la meme tentative.
-      const etatCompte = await loginCompteLimiter.compterEchec(compte);
-
-      // C'est APRES l'echec que le compteur du compte peut refuser. Le mot de
-      // passe etait faux de toute facon: on ne verrouille personne qui aurait
-      // pu entrer.
-      if (!etatCompte.success) return refus(etatCompte);
 
       if (authCode === 'invalid_credentials') {
         return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });
@@ -124,11 +124,6 @@ export async function POST(request: Request) {
       logger.error('Login failed', authError);
       return NextResponse.json({ error: t('loginError') }, { status: 401 });
     }
-
-    // 2.5 Reussite: on efface le compteur DU COMPTE, et seulement lui. Pas
-    // celui de l'adresse - sinon un attaquant possedant un compte valide
-    // remettrait le sien a zero entre deux rafales.
-    await loginCompteLimiter.effacer(compte);
 
     // 3. Query admin_users for routing info.
     //

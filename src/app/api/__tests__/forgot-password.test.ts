@@ -9,7 +9,7 @@ vi.mock('@/lib/rate-limit', () => ({
   // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
   // restaurant alors que l'abus vise une boite mail precise.
   forgotPasswordLimiter: { check: vi.fn() },
-  forgotPasswordAdresseLimiter: { check: vi.fn().mockResolvedValue({ success: true, reset: 0 }) },
+  forgotPasswordAdresseLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
@@ -34,8 +34,9 @@ vi.mock('@/services/email.service', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from '../forgot-password/route';
-import { forgotPasswordLimiter } from '@/lib/rate-limit';
+import { forgotPasswordLimiter, forgotPasswordAdresseLimiter } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendPasswordResetEmail } from '@/services/email.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -94,19 +95,53 @@ function createMockAdminClient(overrides?: {
 describe('POST /api/forgot-password', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(forgotPasswordAdresseLimiter.check).mockResolvedValue({
+      success: true,
+      limit: 30,
+      remaining: 29,
+      reset: Date.now() + 600_000,
+    });
   });
 
-  it('returns 429 when rate limited', async () => {
+  /**
+   * LE PLAFOND PAR COMPTE S ARRETE EN SILENCE, et c'est la propriete a tenir.
+   *
+   * Une version precedente rendait 429 ici. Constat d'audit: n'importe qui
+   * connaissant l'email du proprietaire d'un restaurant pouvait alors epuiser
+   * son budget - 18 requetes par heure depuis une seule machine - et le priver
+   * DEFINITIVEMENT de toute reinitialisation. La reponse doit donc rester
+   * identique a celle d'un envoi normal (elle ne dit deja rien sur l'existence
+   * du compte), et AUCUN mail ne doit partir.
+   */
+  it('plafond par compte atteint: reponse normale, et aucun mail envoye', async () => {
     mockRateLimit(false);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    const res = await POST(buildRequest({ email: 'test@test.com' }));
+    const json = (await res.json()) as { success?: boolean; error?: string };
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.error).toBeUndefined();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it('garde de cout par adresse: 429 avec le delai annonce', async () => {
+    mockRateLimit(true);
+    vi.mocked(forgotPasswordAdresseLimiter.check).mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 600_000,
+    });
 
     const res = await POST(buildRequest({ email: 'test@test.com' }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
-    // Le message doit DIRE combien de temps attendre. L'ancien se contentait de
-    // "Reessayez dans quelques minutes", donc l'utilisateur reessayait aussitot
-    // et reprenait la fenetre entiere.
-    expect(json.error).toMatch(/\d+ minutes/);
+    // Le message doit DIRE combien de temps attendre, et jamais "0 minutes".
+    expect(json.error).toMatch(/dans [1-9]\d* minutes/);
     expect(res.headers.get('Retry-After')).toBeTruthy();
   });
 

@@ -33,7 +33,15 @@ vi.mock('@upstash/ratelimit', () => {
     async limit() {
       upstash.appels.push('limit');
       if (upstash.shouldThrow) throw new Error('upstash injoignable');
-      return { success: upstash.success, limit: 10, remaining: 9, reset: 0 };
+      // La vraie bibliotheque rend un horodatage EPOCH EN MILLISECONDES
+      // (`(currentWindow + 1) * windowSize`). Une doublure qui rendrait 0
+      // laisserait passer un calcul de delai faux sans que rien ne le voie.
+      return {
+        success: upstash.success,
+        limit: 10,
+        remaining: 9,
+        reset: Date.now() + 9 * 60_000,
+      };
     }
     async getRemaining() {
       upstash.appels.push('getRemaining');
@@ -167,13 +175,10 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
   it('la connexion et l inscription BLOQUENT (fail-closed)', async () => {
     // Laisser passer ici, c'est offrir le brute-force pendant la panne.
     upstash.shouldThrow = true;
-    const { signupLimiter, loginCompteLimiter, loginAdresseLimiter } = await loadWithRedis();
+    const { signupLimiter, loginPaireLimiter } = await loadWithRedis();
 
     expect((await signupLimiter.check('1.2.3.4')).success).toBe(false);
-    // Les deux compartiments de connexion refusent: une panne de Redis ne doit
-    // pas ouvrir la page de connexion.
-    expect((await loginCompteLimiter.compterEchec('empreinte')).success).toBe(false);
-    expect((await loginAdresseLimiter.check('1.2.3.4')).success).toBe(false);
+    expect((await loginPaireLimiter.check('empreinte:1.2.3.4')).success).toBe(false);
   });
 
   it('la reclamation d un code promo BLOQUE (fail-closed)', async () => {
@@ -205,85 +210,72 @@ describe('comportement en PANNE Redis, compartiment par compartiment', () => {
   });
 });
 
-// --- Reserver, puis rembourser ----------------------------------------------
+// --- Une seule operation atomique ------------------------------------------
 /**
- * CE QUE CES TESTS VERROUILLENT, et chaque point vient d'un defaut reel.
+ * QUATRE CONCEPTIONS ONT ETE ESSAYEES. Chaque test ci-dessous verrouille une
+ * lecon payee:
  *
- * 1. Le compteur de connexion etait consomme AVANT la verification du mot de
- *    passe: entrer correctement coutait un essai, et comme le comptage se
- *    faisait par ADRESSE IP, les quatre employes d'un restaurant sur le meme
- *    Wi-Fi se partageaient cinq connexions par quart d'heure.
- * 2. Une premiere correction LISAIT le compteur avant d'authentifier, puis
- *    comptait l'echec apres. Lire puis ecrire n'est pas atomique: cent requetes
- *    simultanees passaient toutes la lecture avant que la premiere n'ait
- *    compte. La limite devenait "20 par aller-retour reseau".
- * 3. Cette meme correction refusait AVANT l'authentification sur le compteur du
- *    compte, ce qui permettait a quiconque connaissant un email de verrouiller
- *    ce compte en boucle.
+ *   v1: 5 par 15 min par ADRESSE, consomme avant la verification du mot de
+ *       passe. Une connexion REUSSIE coutait un essai, et l'adresse etant
+ *       partagee, quatre employes se partageaient cinq connexions par quart
+ *       d'heure. Mesure en production: un utilisateur enferme 22 minutes.
+ *   v2: lecture (`consulter`) puis comptage apres coup. Non atomique: une
+ *       rafale simultanee passait entiere. Et le refus par compte avant
+ *       authentification permettait de verrouiller autrui en boucle.
+ *   v3: comptage APRES l'echec, sans barrer la route. Un audit a montre que le
+ *       plafond devenait decoratif: 800 essais par heure sur un compte.
+ *   v4 (ici): une seule operation atomique, `check`, sur le COUPLE
+ *       (compte, adresse).
  *
- * D'ou la forme actuelle: `check` compte et tranche en UNE operation,
- * `compterEchec` compte apres coup et Rend l'etat (c'est lui qui decide du
- * 429), `effacer` rembourse une reussite.
+ * D'ou l'invariant teste: il ne reste QU'UNE methode qui compte, et elle
+ * compte et tranche d'un seul coup.
  */
-describe('check / compterEchec / effacer', () => {
+describe('check, et rien d autre', () => {
   beforeEach(() => {
     upstash.shouldThrow = false;
     upstash.success = true;
-    upstash.remaining = 9;
     upstash.appels = [];
   });
 
-  it('check compte et tranche en UNE seule operation', async () => {
-    const { loginAdresseLimiter } = await loadWithRedis();
+  it('compte et tranche en UNE seule operation', async () => {
+    const { loginPaireLimiter } = await loadWithRedis();
 
-    const etat = await loginAdresseLimiter.check('1.2.3.4');
+    const etat = await loginPaireLimiter.check('empreinte:1.2.3.4');
 
     expect(etat.success).toBe(true);
     expect(upstash.appels).toEqual(['limit']);
   });
 
   /**
-   * Sans cette propriete, la route ne peut pas savoir s'il faut rendre 401
-   * (mot de passe faux) ou 429 (trop d'echecs) - et elle rendrait 401
-   * indefiniment, sans jamais appliquer la limite.
+   * Les methodes de la v2 et de la v3 ne doivent pas revenir: une lecture
+   * separee de l'ecriture ne peut pas tenir la garantie, et `effacer`
+   * declenchait un balayage de tout l'espace de cles Redis a chaque connexion
+   * reussie (`resetUsedTokens` fait un SCAN complet, verifie dans la
+   * bibliotheque).
    */
-  it('compterEchec rend l etat APRES comptage', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-    upstash.success = false;
+  it('n expose plus de lecture sans consommation, ni de remise a zero', async () => {
+    const { loginPaireLimiter } = await loadWithRedis();
 
-    const etat = await loginCompteLimiter.compterEchec('empreinte');
-
-    expect(upstash.appels).toEqual(['limit']);
-    expect(etat.success).toBe(false);
+    expect('consulter' in loginPaireLimiter).toBe(false);
+    expect('compterEchec' in loginPaireLimiter).toBe(false);
+    expect('effacer' in loginPaireLimiter).toBe(false);
   });
 
-  it('compterEchec ne leve pas quand Redis tombe, et refuse par defaut', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
+  it('rend un instant de liberation exploitable, pas zero', async () => {
+    const { loginPaireLimiter, minutesAvantLiberation } = await loadWithRedis();
+
+    const etat = await loginPaireLimiter.check('empreinte:1.2.3.4');
+
+    expect(etat.reset).toBeGreaterThan(Date.now());
+    expect(minutesAvantLiberation(etat.reset)).toBeGreaterThan(1);
+  });
+
+  it('les deux compartiments de connexion refusent en panne Redis', async () => {
+    const { loginPaireLimiter, loginAdresseLimiter } = await loadWithRedis();
     upstash.shouldThrow = true;
 
-    const etat = await loginCompteLimiter.compterEchec('empreinte');
-
-    expect(etat.success).toBe(false);
-  });
-
-  it('effacer remet le compteur a zero', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-
-    await loginCompteLimiter.effacer('empreinte');
-
-    expect(upstash.appels).toEqual(['resetUsedTokens']);
-  });
-
-  it('effacer ne leve pas quand Redis tombe', async () => {
-    const { loginCompteLimiter } = await loadWithRedis();
-    upstash.shouldThrow = true;
-
-    await expect(loginCompteLimiter.effacer('empreinte')).resolves.toBeUndefined();
-  });
-
-  it('sans Redis en production, compterEchec REFUSE', async () => {
-    const { loginCompteLimiter } = await loadWithoutRedis('production');
-    expect((await loginCompteLimiter.compterEchec('empreinte')).success).toBe(false);
+    expect((await loginPaireLimiter.check('empreinte:1.2.3.4')).success).toBe(false);
+    expect((await loginAdresseLimiter.check('1.2.3.4')).success).toBe(false);
   });
 });
 
@@ -312,18 +304,22 @@ describe('cleCompte', () => {
 });
 
 describe('minutesAvantLiberation', () => {
-  it('rend le nombre de minutes, arrondi au-dessus', async () => {
+  it('arrondit au-dessus et ajoute une minute de marge', async () => {
     const { minutesAvantLiberation } = await loadWithRedis();
-    expect(minutesAvantLiberation(Date.now() + 61_000)).toBe(2);
+    expect(minutesAvantLiberation(Date.now() + 61_000)).toBe(3);
   });
 
-  it('ne rend jamais zero quand le compteur est encore pris', async () => {
+  /**
+   * NE JAMAIS ANNONCER "0 minutes". En panne Redis, l'instant de liberation
+   * est inconnu (`reset: 0`) et tous les compartiments d'authentification
+   * refusent: le message aurait dit "Reessayez dans 0 minutes", ce qui est
+   * absurde et renvoie l'utilisateur essayer aussitot. Constat d'un audit,
+   * prouve par execution.
+   */
+  it('ne rend JAMAIS zero, meme quand l instant est inconnu', async () => {
     const { minutesAvantLiberation } = await loadWithRedis();
-    expect(minutesAvantLiberation(Date.now() + 1_000)).toBe(1);
-  });
-
-  it('rend zero quand le delai est inconnu', async () => {
-    const { minutesAvantLiberation } = await loadWithRedis();
-    expect(minutesAvantLiberation(0)).toBe(0);
+    expect(minutesAvantLiberation(0)).toBe(1);
+    expect(minutesAvantLiberation(Date.now() + 1_000)).toBeGreaterThanOrEqual(1);
+    expect(minutesAvantLiberation(Date.now() - 60_000)).toBeGreaterThanOrEqual(1);
   });
 });

@@ -39,8 +39,10 @@ export async function POST(request: Request) {
         },
       );
 
-    const etatAdresse = await resendConfirmationAdresseLimiter.check(ip);
-    if (!etatAdresse.success) return refus(etatAdresse.reset);
+    // La garde d'adresse est consommee PLUS BAS, apres le controle par compte:
+    // consommee ici, un seul utilisateur qui reclame son mail dix fois epuisait
+    // le budget de toute l'adresse, alors que la regle par compte l'arrete des
+    // le 4e essai.
 
     // 2. Parse and validate
     let body: unknown;
@@ -58,12 +60,27 @@ export async function POST(request: Request) {
     const { email } = parseResult.data;
 
     // 2.5 Garde serree par COMPTE.
-    const etatCompte = await resendConfirmationLimiter.check(cleCompte(email));
-    if (!etatCompte.success) return refus(etatCompte.reset);
-    const supabase = createAdminClient();
-
     const SAFE_MSG =
       'Si un compte existe avec cet email, un nouveau lien de confirmation a ete envoye.';
+
+    // LE PLAFOND PAR COMPTE NE REFUSE RIEN, VOLONTAIREMENT. Rendre 429 ici
+    // permettait a quiconque connaissant l'email d'un nouveau client de le
+    // priver DEFINITIVEMENT de son mail de bienvenue: il recoit 403 a la
+    // connexion (email non confirme) et ne peut plus se le faire renvoyer -
+    // enferme dehors pour de bon. On s'arrete donc en silence, avec la MEME
+    // reponse que d'habitude.
+    const etatCompte = await resendConfirmationLimiter.check(cleCompte(email));
+    if (!etatCompte.success) {
+      logger.info('Resend confirmation: plafond par compte atteint, aucun envoi', {
+        emailHash: hashEmail(email),
+      });
+      return NextResponse.json({ success: true, message: SAFE_MSG });
+    }
+
+    // Garde de COUT par adresse, consommee seulement maintenant.
+    const etatAdresse = await resendConfirmationAdresseLimiter.check(ip);
+    if (!etatAdresse.success) return refus(etatAdresse.reset);
+    const supabase = createAdminClient();
 
     // 3. Generate a fresh confirmation link directly (O(1), no listUsers pagination issues).
     //    generateLink({ type: 'signup' }) will fail if the user doesn't exist or is

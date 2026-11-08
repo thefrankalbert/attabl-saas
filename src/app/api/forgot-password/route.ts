@@ -46,8 +46,12 @@ export async function POST(request: Request) {
         },
       );
 
-    const etatAdresse = await forgotPasswordAdresseLimiter.check(ip);
-    if (!etatAdresse.success) return refus(etatAdresse.reset);
+    // La garde d'adresse est consommee PLUS BAS, apres le controle par compte.
+    // Mesure d'un auditeur: consommee ici, un seul utilisateur qui clique 30
+    // fois "mot de passe oublie" epuisait le budget horaire de toute l'adresse,
+    // alors que la regle par compte l'arretait des le 4e clic. Le Wi-Fi du
+    // restaurant payait pour un seul distrait - exactement le dommage que ce
+    // changement est cense supprimer.
 
     // 2. Parse and validate
     let body: unknown;
@@ -68,7 +72,6 @@ export async function POST(request: Request) {
     // email donnee. C'est ce qui empeche de noyer la boite de quelqu'un, et ca
     // ne genere jamais un restaurant entier.
     const etatCompte = await forgotPasswordLimiter.check(cleCompte(email));
-    if (!etatCompte.success) return refus(etatCompte.reset);
 
     // Design decision: Always return 200 to prevent email enumeration.
     // Email sending failures are logged (see logger.warn calls below) and
@@ -77,6 +80,26 @@ export async function POST(request: Request) {
       success: true,
       message: 'Si un compte existe avec cet email, vous recevrez un lien de reinitialisation.',
     });
+
+    // 2.6 LE PLAFOND PAR COMPTE NE REFUSE RIEN, VOLONTAIREMENT.
+    //
+    // Une version precedente rendait 429 ici. Mesure d'un auditeur: n'importe
+    // qui connaissant l'email du proprietaire d'un restaurant pouvait alors
+    // epuiser son budget - 18 requetes par heure depuis une seule machine - et
+    // le priver DEFINITIVEMENT de toute reinitialisation. On s'arrete donc en
+    // silence, avec la MEME reponse que d'habitude: la boite n'est pas noyee,
+    // le proprietaire n'est jamais bloque visiblement, et la reponse continue
+    // de ne rien dire sur l'existence du compte.
+    if (!etatCompte.success) {
+      logger.info('Forgot password: plafond par compte atteint, aucun envoi', {
+        emailHash: hashEmail(email),
+      });
+      return successResponse;
+    }
+
+    // 2.7 Garde de COUT par adresse, consommee seulement maintenant.
+    const etatAdresse = await forgotPasswordAdresseLimiter.check(ip);
+    if (!etatAdresse.success) return refus(etatAdresse.reset);
 
     // 3. Generate recovery link via admin API (O(1) lookup, no listUsers pagination issues)
     //    Security note: generateLink('recovery') will fail for unconfirmed emails,

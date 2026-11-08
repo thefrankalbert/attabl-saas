@@ -6,38 +6,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/csrf', () => ({ verifyOrigin: vi.fn().mockReturnValue(null) }));
 const compteur = vi.hoisted(() => ({
-  /** Verdict rendu par le compteur d'ADRESSE, consomme atomiquement en amont. */
+  /** Verdict du compteur de COUT par adresse, consomme en tete de route. */
   adresse: { success: true, reset: 0 },
-  /** Verdict rendu APRES comptage d'un echec sur le compteur du COMPTE. */
-  apresEchecCompte: { success: true, reset: 0 },
-  echecsComptes: [] as string[],
-  effacements: [] as string[],
+  /** Verdict du compteur (compte, adresse), consomme AVANT d authentifier. */
+  paire: { success: true, reset: 0 },
+  cles: [] as string[],
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
-  loginCompteLimiter: {
-    compterEchec: vi.fn(async (cle: string) => {
-      compteur.echecsComptes.push(`compte:${cle}`);
-      return compteur.apresEchecCompte;
-    }),
-    effacer: vi.fn(async (cle: string) => {
-      compteur.effacements.push(cle);
+  loginPaireLimiter: {
+    check: vi.fn(async (cle: string) => {
+      compteur.cles.push(cle);
+      return compteur.paire;
     }),
   },
   loginAdresseLimiter: {
-    check: vi.fn(async () => compteur.adresse),
-    compterEchec: vi.fn(async () => {
-      compteur.echecsComptes.push('adresse');
-      return { success: true, reset: 0 };
-    }),
-    effacer: vi.fn(async () => {
-      compteur.effacements.push('adresse');
+    check: vi.fn(async (cle: string) => {
+      compteur.cles.push(cle);
+      return compteur.adresse;
     }),
   },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
   cleCompte: (email: string) => `empreinte:${email.toLowerCase()}`,
   minutesAvantLiberation: () => 7,
 }));
+
 vi.mock('next-intl/server', () => ({
   getTranslations: vi.fn().mockResolvedValue((k: string) => k),
 }));
@@ -132,27 +125,29 @@ describe('POST /api/login redirect routing', () => {
   });
 });
 
-// --- Ce qui est compte, et quand -------------------------------------------
+// --- Ce qui borne reellement les essais ------------------------------------
 /**
- * TROIS DEFAUTS REELS SONT VERROUILLES ICI.
+ * QUATRE CONCEPTIONS, QUATRE LECONS. Chaque test ci-dessous verrouille un
+ * defaut qui a reellement existe dans ce fichier:
  *
- * 1. Le compteur etait consomme AVANT la verification du mot de passe: entrer
- *    correctement coutait un essai. Comme il comptait par ADRESSE IP, les
- *    quatre employes d'un restaurant sur le meme Wi-Fi se partageaient cinq
- *    connexions par quart d'heure (mesure en production le 2026-11-08).
- * 2. Une premiere correction refusait AVANT l'authentification sur le compteur
- *    du COMPTE: quiconque connaissant un email pouvait verrouiller ce compte
- *    15 minutes, en boucle. Un mot de passe correct doit toujours passer.
- * 3. Elle lisait aussi le compteur avant de compter l'echec, ce qui n'est pas
- *    atomique: cent requetes simultanees passaient toutes la lecture.
+ *   v1: compteur par ADRESSE consomme avant la verification du mot de passe.
+ *       Une connexion REUSSIE coutait un essai, et l'adresse etant partagee,
+ *       quatre employes d'un restaurant se partageaient cinq connexions par
+ *       quart d'heure. Mesure en production le 2026-11-08.
+ *   v2: refus par COMPTE avant authentification -> quiconque connaissant un
+ *       email verrouillait ce compte en boucle.
+ *   v3: comptage apres l'echec seulement -> plafond decoratif, 800 essais par
+ *       heure sur un compte (constat d'audit).
+ *   v4: garde atomique sur le COUPLE (compte, adresse), consommee avant
+ *       d'authentifier. Elle borne vraiment, et elle ne permet pas de
+ *       verrouiller autrui depuis une autre adresse.
  */
-describe('POST /api/login - comptage des tentatives', () => {
+describe('POST /api/login - ce qui borne les essais', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     compteur.adresse = { success: true, reset: 0 };
-    compteur.apresEchecCompte = { success: true, reset: 0 };
-    compteur.echecsComptes = [];
-    compteur.effacements = [];
+    compteur.paire = { success: true, reset: 0 };
+    compteur.cles = [];
   });
 
   function requete(email = 'patron@exemple.test') {
@@ -171,75 +166,37 @@ describe('POST /api/login - comptage des tentatives', () => {
     };
   }
 
-  it('une connexion REUSSIE ne compte aucun echec', async () => {
-    vi.mocked(createClient).mockResolvedValue(mockSupabase([]) as never);
-
-    const res = await POST(requete());
-
-    expect(res.status).toBe(200);
-    expect(compteur.echecsComptes).toEqual([]);
-  });
-
-  it('une connexion REUSSIE efface le compteur du compte, et pas celui de l adresse', async () => {
+  /**
+   * LA PROPRIETE CENTRALE: la garde porte sur le couple, pas sur le compte
+   * seul. Un attaquant depuis une autre adresse epuise SON budget, jamais
+   * celui du proprietaire.
+   */
+  it('compte la tentative sur le couple (compte, adresse)', async () => {
     vi.mocked(createClient).mockResolvedValue(mockSupabase([]) as never);
 
     await POST(requete());
 
-    // Effacer le compteur de l'adresse laisserait un attaquant possedant un
-    // compte valide remettre le sien a zero entre deux rafales.
-    expect(compteur.effacements).toEqual(['empreinte:patron@exemple.test']);
+    expect(compteur.cles).toEqual(['127.0.0.1', 'empreinte:patron@exemple.test:127.0.0.1']);
   });
 
   /**
-   * LE VERROUILLAGE CIBLE. C'est la propriete la plus importante du fichier:
-   * meme compteur de compte plein - donc meme apres qu'un tiers ait use les 20
-   * echecs sur cet email - le proprietaire entre avec son mot de passe.
+   * Le plafond doit etre atteint AVANT que Supabase ne verifie le mot de
+   * passe. Sinon chaque requete teste quand meme un mot de passe et le plafond
+   * ne borne rien - c'etait le defaut de la v3, mesure a 800 essais par heure.
    */
-  it('un mot de passe CORRECT passe meme quand le compteur du compte est plein', async () => {
-    compteur.apresEchecCompte = { success: false, reset: Date.now() + 420_000 };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase([]) as never);
-
-    const res = await POST(requete());
-
-    expect(res.status).toBe(200);
-  });
-
-  it('un mauvais mot de passe compte un echec sur le compte, une seule fois', async () => {
-    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('invalid_credentials') as never);
-
-    const res = await POST(requete());
-
-    expect(res.status).toBe(401);
-    // Le compteur d'adresse a deja ete consomme en amont: le recompter
-    // punirait deux fois la meme tentative.
-    expect(compteur.echecsComptes).toEqual(['compte:empreinte:patron@exemple.test']);
-  });
-
-  it('au-dela de la limite d echecs, le refus passe de 401 a 429 avec le delai', async () => {
-    compteur.apresEchecCompte = { success: false, reset: Date.now() + 420_000 };
-    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('invalid_credentials') as never);
+  it('couple plein: refus 429 SANS jamais appeler Supabase', async () => {
+    compteur.paire = { success: false, reset: Date.now() + 420_000 };
+    const supabase = mockSupabase([]);
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
 
     const res = await POST(requete());
 
     expect(res.status).toBe(429);
     expect((await res.json()).error).toContain('rateLimitedMinutes');
+    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
   });
 
-  /**
-   * `email_not_confirmed` signifie que le mot de passe etait BON. Compter cet
-   * echec punirait quelqu'un qui n'a pas encore clique dans son mail de
-   * bienvenue - et qui ne peut rien y faire en reessayant.
-   */
-  it('un email non confirme ne compte PAS comme un echec', async () => {
-    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('email_not_confirmed') as never);
-
-    const res = await POST(requete());
-
-    expect(res.status).toBe(403);
-    expect(compteur.echecsComptes).toEqual([]);
-  });
-
-  it('compteur d adresse plein: refus 429 sans jamais appeler Supabase', async () => {
+  it('garde de cout par adresse: refus avant meme de lire le corps', async () => {
     compteur.adresse = { success: false, reset: Date.now() + 420_000 };
     const supabase = mockSupabase([]);
     vi.mocked(createClient).mockResolvedValue(supabase as never);
@@ -248,6 +205,37 @@ describe('POST /api/login - comptage des tentatives', () => {
 
     expect(res.status).toBe(429);
     expect(res.headers.get('Retry-After')).toBeTruthy();
-    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+    // La garde du couple n'est meme pas consultee: inutile de lire le corps.
+    expect(compteur.cles).toEqual(['127.0.0.1']);
+  });
+
+  it('un mauvais mot de passe rend 401, pas 429, tant que le plafond tient', async () => {
+    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('invalid_credentials') as never);
+
+    const res = await POST(requete());
+
+    expect(res.status).toBe(401);
+  });
+
+  it('un email non confirme rend 403', async () => {
+    vi.mocked(createClient).mockResolvedValue(supabaseQuiRefuse('email_not_confirmed') as never);
+
+    const res = await POST(requete());
+
+    expect(res.status).toBe(403);
+  });
+
+  /**
+   * Deux comptes differents depuis la meme adresse ne se partagent PAS le
+   * budget serre: c'est tout l'objet du changement, et ce que la v1 violait.
+   */
+  it('deux comptes distincts ont deux budgets distincts', async () => {
+    vi.mocked(createClient).mockResolvedValue(mockSupabase([]) as never);
+
+    await POST(requete('patron@exemple.test'));
+    await POST(requete('serveur@exemple.test'));
+
+    const clesDeCouple = compteur.cles.filter((c) => c.startsWith('empreinte:'));
+    expect(new Set(clesDeCouple).size).toBe(2);
   });
 });
