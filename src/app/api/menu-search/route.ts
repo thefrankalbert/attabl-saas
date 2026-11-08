@@ -18,8 +18,25 @@ const FALLBACK_ERRORS = {
 // x-tenant-slug header injected by the middleware, never from a client param.
 export async function GET(request: Request) {
   try {
+    // CLE PAR RESTAURANT ET PAR ADRESSE. Les convives d'un lieu partagent le
+    // Wi-Fi du restaurant, donc une seule adresse: compter par adresse seule
+    // faisait qu'un service charge epuisait le compartiment, et le refus
+    // tombait sur le client suivant.
+    //
+    // LE SLUG PASSE PAR `readTenantSlug`, jamais par une lecture directe de
+    // l'en-tete: un garde anti-regression du depot l'interdit, et il a raison -
+    // seul le helper distingue l'en-tete injecte par le middleware de l'indice
+    // fourni par le client.
+    //
+    // Le regroupement IPv6 (`grouperAdresse`) arrive par une branche deja
+    // fusionnee; il sera applique ici dans la foulee. L'essentiel de la
+    // correction est la cle composee, qui ne depend pas de lui.
+    const headersList = await headers();
     const ip = getClientIp(request);
-    const { success: allowed } = await menuSearchLimiter.check(ip);
+    const slugDepuisEntete = readTenantSlug(headersList);
+    const { success: allowed } = await menuSearchLimiter.check(
+      `${slugDepuisEntete.slug ?? 'inconnu'}:${ip}`,
+    );
     if (!allowed) {
       return NextResponse.json(
         { error: FALLBACK_ERRORS.rateLimited },
@@ -27,8 +44,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const headersList = await headers();
-    const tenantSlug = readTenantSlug(headersList).slug;
+    const tenantSlug = slugDepuisEntete.slug;
     if (!tenantSlug) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }
