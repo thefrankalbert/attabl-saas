@@ -1,4 +1,4 @@
--- NOT YET APPLIED. Self-service account deletion for the Atfood iOS app (App Store guideline 5.1.1(v)).
+-- Self-service account deletion for the Atfood iOS app (App Store guideline 5.1.1(v)).
 -- Returns a status code instead of raising, so the app can explain every refusal.
 CREATE OR REPLACE FUNCTION public.delete_my_account()
 RETURNS text
