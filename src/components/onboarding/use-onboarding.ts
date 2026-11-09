@@ -43,7 +43,15 @@ export function useOnboarding() {
    */
   const [saveFailures, setSaveFailures] = useState(0);
   const touchStartXRef = useRef(0);
+  /** Last payload sent or given up on: dedupes saves and stops a hopeless retry. */
   const lastSavedPayload = useRef<string>('');
+  /**
+   * The draft data the server REALLY holds (restored on load, or saved since),
+   * without the navigation position. The leave warning compares against it:
+   * moving between screens loses nothing, and a refused save (401/403) does
+   * not count as saved.
+   */
+  const persistedDataRef = useRef<string | null>(null);
   const autoSaveErrorShown = useRef(false);
   /**
    * Whether the last failed save can succeed by itself (network, 5xx, 429).
@@ -201,6 +209,14 @@ export function useOnboarding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load saved onboarding state once on mount; re-running on toast/t changes would refetch and clobber in-progress edits (2026-06-18)
   }, []);
 
+  // The restored draft is what the server holds: leaving right after the load
+  // loses nothing. Set once, on the first render with the restored data.
+  useEffect(() => {
+    if (!loading && persistedDataRef.current === null) {
+      persistedDataRef.current = JSON.stringify(data);
+    }
+  }, [loading, data]);
+
   // --- Auto-save debounced ---------------------------------------------------
 
   useEffect(() => {
@@ -224,6 +240,7 @@ export function useOnboarding() {
         });
         if (res.ok) {
           lastSavedPayload.current = payloadJson;
+          persistedDataRef.current = JSON.stringify(data);
           autoSaveErrorShown.current = false;
           setAutoSaveStatus('saved');
           return;
@@ -258,6 +275,7 @@ export function useOnboarding() {
         }
         if (res.status === 401 || res.status === 403) {
           // Retrying cannot succeed (session gone / no access): stop the loop.
+          // Nothing was saved, so persistedDataRef stays: leaving still warns.
           lastSavedPayload.current = payloadJson;
           setAutoSaveStatus('idle');
           return;
@@ -302,12 +320,14 @@ export function useOnboarding() {
   useEffect(() => {
     if (loading || loadError || phase === 0) return;
 
+    const body = JSON.stringify({
+      step: apiStep,
+      data: { ...data, _phase: phase, _subScreen: subScreen },
+    });
+    const dataJson = JSON.stringify(data);
+
     const flushDraft = () => {
       if (skipUnloadWarningRef.current) return; // leaving after a completed launch
-      const body = JSON.stringify({
-        step: apiStep,
-        data: { ...data, _phase: phase, _subScreen: subScreen },
-      });
       // Nothing new to keep, or the same body already on its way.
       if (body === lastSavedPayload.current || body === flushInFlightRef.current) return;
       flushInFlightRef.current = body;
@@ -320,6 +340,7 @@ export function useOnboarding() {
         .then((res) => {
           if (res.ok) {
             lastSavedPayload.current = body;
+            persistedDataRef.current = dataJson;
             return;
           }
           // Page still open (tab hidden then shown): show it and retry.
@@ -340,8 +361,12 @@ export function useOnboarding() {
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Warn when leaving mid-flow, but not after "Lancer mon etablissement" (redirect)
-      if (!skipUnloadWarningRef.current) {
+      // Warn only when entered data would be lost: not after "Lancer mon
+      // etablissement" (redirect), and not when the server already holds this
+      // data. A pending, in-flight or refused save still warns. Neither the
+      // visual status ("saved" fades back to idle after 2 s) nor the screen
+      // position (the recap screen does not auto-save) decides this.
+      if (!skipUnloadWarningRef.current && dataJson !== persistedDataRef.current) {
         e.preventDefault();
       }
       flushDraft();

@@ -14,7 +14,7 @@ export function createQueryMethods(supabase: SupabaseClient) {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select(
-          `id, ${TENANT_LOCK_COLUMNS}, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, trial_ends_at`,
+          `id, ${TENANT_LOCK_COLUMNS}, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan`,
         )
         .eq('slug', slug)
         // Soft-deleted tenants accept no orders, independently of is_active.

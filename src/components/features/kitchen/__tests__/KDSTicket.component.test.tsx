@@ -8,6 +8,7 @@ import type { Order, OrderItem } from '@/types/admin.types';
 // --- Mocks ----------------------------------------------
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'fr-FR',
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     if (values) {
       let result = key;
@@ -215,5 +216,16 @@ describe('KDSTicket', () => {
     // Should contain "due" text
     const dueElements = screen.getAllByText(/due/i);
     expect(dueElements.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows the due time in the tenant locale, 24 h clock (no AM/PM)', () => {
+    const createdAt = new Date(2026, 10, 9, 13, 32);
+    render(
+      <KDSTicket order={makeOrder({ created_at: createdAt.toISOString() })} {...mockCallbacks} />,
+    );
+
+    // created_at + 20 min = 13:52 local time.
+    expect(screen.getByText(/due 13:52/)).toBeInTheDocument();
+    expect(screen.queryByText(/AM|PM/)).not.toBeInTheDocument();
   });
 });

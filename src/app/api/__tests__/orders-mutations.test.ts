@@ -78,11 +78,19 @@ vi.mock('@/lib/supabase/server', () => ({
           // par slug (qui ne veut que l'id) et la COUPURE du restaurant, posee
           // avant la reservation d'idempotence. Une ligne qui omet les verrous
           // decrit un restaurant coupe: toute la suite repondrait 403.
+          //
+          // Droits par colonne (PR #362): `authenticated` ne lit pas
+          // `stripe_subscription_id`. Le demander ici rend 42501, comme en base.
           return {
-            select: () => ({
+            select: (colonnes: string) => ({
               eq: () => ({
                 is: () => ({
-                  single: () => Promise.resolve({ data: tenantRow }),
+                  single: () =>
+                    Promise.resolve(
+                      colonnes.includes('stripe_subscription_id')
+                        ? { data: null, error: { code: '42501' } }
+                        : { data: tenantRow, error: null },
+                    ),
                 }),
               }),
             }),
@@ -112,6 +120,21 @@ vi.mock('@/lib/supabase/server', () => ({
         };
       },
     }),
+}));
+
+/** Client service_role: la COUPURE du restaurant y lit ses colonnes de verrou. */
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          is: () => ({
+            single: () => Promise.resolve({ data: tenantRow, error: null }),
+          }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 function post(body: unknown): Request {
@@ -323,6 +346,15 @@ describe('POST /api/orders/mutations - coupure du restaurant', () => {
     ['resilie', { subscription_status: 'cancelled' }],
     ['suspendu par le super-admin', { suspended_at: '2026-11-01T00:00:00Z' }],
     ['desactive', { is_active: false }],
+    // Le cron ne gele qu'a 02:00: sans ce verrou, jusqu'a 24 h d'encaissement.
+    [
+      'en essai expire, pas encore gele',
+      {
+        subscription_status: 'trial',
+        trial_ends_at: '2020-01-01T00:00:00Z',
+        stripe_subscription_id: null,
+      },
+    ],
   ])('pay: refuse en 403 quand le restaurant est %s', async (_cas, etat) => {
     tenantRow = { ...LIGNE_SERVANTE, ...etat };
     mockActionMarkPaid.mockResolvedValue({ success: true, paid: true });

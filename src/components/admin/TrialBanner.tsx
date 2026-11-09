@@ -41,7 +41,7 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
           href={upgradeUrl}
           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-90 ${styleConfig.ctaClass}`}
         >
-          {t('upgradeToPremium')}
+          {t('choosePlan')}
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
         <Button

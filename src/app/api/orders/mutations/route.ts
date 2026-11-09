@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -166,7 +167,12 @@ export async function POST(request: Request) {
     // refusee ne doit pas consommer la cle (sinon le rejeu d'apres degel
     // repondrait "deja traite" et la mutation serait perdue), et une file
     // d'attente hors ligne ne doit pas pouvoir encaisser apres le gel.
-    const { data: lockRow, error: lockError } = await supabase
+    //
+    // Lecture en service_role: la regle de l'essai expire lit
+    // `stripe_subscription_id`, illisible pour `authenticated` (42501, donc
+    // 404 pour tout le monde). L'appartenance au restaurant est prouvee
+    // juste au-dessus; seule la ligne de `tenantId` est lue.
+    const { data: lockRow, error: lockError } = await createAdminClient()
       .from('tenants')
       .select(TENANT_LOCK_COLUMNS)
       .eq('id', tenantId)

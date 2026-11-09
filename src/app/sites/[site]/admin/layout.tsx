@@ -21,6 +21,8 @@ import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialo
 import { SoundProvider } from '@/contexts/SoundContext';
 import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
 import { getPlanLimits } from '@/lib/plans/features';
+import { resolveDisplayedSubscriptionStatus } from '@/lib/billing/lapsed-trial';
+import { LockedSubscriptionRedirect } from '@/components/admin/LockedSubscriptionRedirect';
 import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
@@ -215,6 +217,24 @@ export default async function AdminLayout({
     }
   })();
 
+  // Essai expire, pas encore gele: le cron `freeze-expired-trials` ne passe
+  // qu'a 02:00, et le proxy (fichier protege) ne coupe que `frozen`. Entre les
+  // deux, le restaurateur ne voyait aucune banniere alors que ses ecritures
+  // sont deja refusees (tenantLockReason). On montre donc a l'interface l'etat
+  // que le cron ecrira: `frozen` (regle et tests dans lib/billing/lapsed-trial).
+  // `stripe_subscription_id` n'y est lu, en service_role, que dans ce cas rare.
+  // Son contrat d'appartenance est rempli plus haut: membre actif de
+  // `tenant.id`, ou super-admin, sinon redirectToUnauthorized().
+  //
+  // Une lecture en echec donne `frozen`, comme la garde serveur qui refuse un
+  // restaurant illisible. Le restaurateur est alors envoye sur la page
+  // d'abonnement - qui relit elle-meme les identifiants et ne propose donc pas
+  // un second abonnement sur la foi de cette panne.
+  const displayedStatus = await resolveDisplayedSubscriptionStatus(tenant.id, {
+    subscription_status: tenant.subscription_status,
+    trial_ends_at: tenant.trial_ends_at,
+  });
+
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   // Effective permissions for sidebar nav filtering. Reflects the full 3-level
@@ -285,13 +305,15 @@ export default async function AdminLayout({
                       tenant
                         ? {
                             subscription_plan: tenant.subscription_plan,
-                            subscription_status: tenant.subscription_status,
+                            subscription_status: displayedStatus,
                             trial_ends_at: tenant.trial_ends_at,
                           }
                         : null
                     }
                     tenantSlug={tenantSlug}
                   >
+                    {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
+                    <LockedSubscriptionRedirect tenantSlug={tenantSlug} />
                     <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
                       {children}
                     </AdminContentWrapper>

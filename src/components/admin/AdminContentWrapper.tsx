@@ -21,14 +21,23 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   // (service floor plan, chevalet/supports editor - both are edge-to-edge canvases).
   const isFullBleed = pathname?.includes('/admin/service') || pathname?.includes('/admin/supports');
 
-  // Immersive pages (KDS/POS) - no padding, no animation
+  // Immersive pages (KDS/POS) - no padding, no animation, and no `chrome`:
+  // these full-screen staff surfaces own their whole height. The frozen /
+  // expired-trial redirect is NOT part of `chrome` (LockedSubscriptionRedirect,
+  // mounted by the admin layout), so it still runs here.
   if (isImmersive) {
     return <div className="flex-1 min-h-0">{children}</div>;
   }
 
-  // Home page - minimal wrapper, dark bg handled by DashboardClient
+  // Home page - minimal wrapper, dark bg handled by DashboardClient. It is the
+  // post-login landing page: the subscription banners must show here too.
   if (isHome) {
-    return <div className="flex-1 min-h-0 w-full flex flex-col">{children}</div>;
+    return (
+      <div className="flex-1 min-h-0 w-full flex flex-col">
+        {chrome}
+        {children}
+      </div>
+    );
   }
 
   const duration = prefersReduced ? 0 : 0.2;

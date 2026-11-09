@@ -5,6 +5,7 @@ import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant, getCachedMenuData, getTableOccupied, toPublicTenant } from '@/lib/cache';
+import { resolveTableParam } from '@/lib/qr/table-param';
 
 export const revalidate = 30;
 
@@ -50,7 +51,7 @@ export default async function MenuDetailPage({
 }) {
   const { site } = await params;
   const resolvedSearchParams = await searchParams;
-  const initialTable = resolvedSearchParams.table || resolvedSearchParams.t || undefined;
+  const initialTable = resolveTableParam(resolvedSearchParams);
   const initialMenuSlug = resolvedSearchParams.menu || undefined;
   const initialVenueSlug = resolvedSearchParams.v || undefined;
   const initialSection = resolvedSearchParams.section || undefined;

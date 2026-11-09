@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
 import type { MenuItem } from '@/types/admin.types';
 import type { ClientMenuItem } from '@/components/tenant/client/MenuItemCard';
 import { sanitizeTypography } from '@/lib/utils/sanitize-typography';
-import { noopSubscribe } from '@/lib/utils/noop-subscribe';
+import { saveScannedTable, useScannedTable } from '@/hooks/useScannedTable';
 
 const MAX_RECENT = 4;
 
@@ -22,9 +22,16 @@ interface UseHomeHeaderArgs {
   site: string;
   popularFull: MenuItem[];
   featuredLabel?: string;
+  /** Table carried by the scanned QR url (root `/?table=`), persisted on arrival. */
+  initialTable?: string;
 }
 
-export function useHomeHeader({ site, popularFull, featuredLabel }: UseHomeHeaderArgs) {
+export function useHomeHeader({
+  site,
+  popularFull,
+  featuredLabel,
+  initialTable,
+}: UseHomeHeaderArgs) {
   const router = useRouter();
   const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
   // Search corpus is lazy-loaded on first search open (keeps it off the home LCP).
@@ -38,17 +45,7 @@ export function useHomeHeader({ site, popularFull, featuredLabel }: UseHomeHeade
 
   const recentKey = `attabl_${site}_recent_searches`;
 
-  const tableNum = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      try {
-        return localStorage.getItem(`attabl_${site}_table`);
-      } catch {
-        return null;
-      }
-    },
-    () => null,
-  );
+  const tableNum = useScannedTable(site, initialTable);
 
   const closeSearch = useCallback(() => {
     setIsSearchOpen(false);
@@ -164,7 +161,7 @@ export function useHomeHeader({ site, popularFull, featuredLabel }: UseHomeHeade
 
   function handleQRScan(result: QRScanResult) {
     if (result.tableNumber) {
-      localStorage.setItem(`attabl_${site}_table`, result.tableNumber);
+      saveScannedTable(site, result.tableNumber);
     }
     setIsQROpen(false);
     const target = result.menuSlug

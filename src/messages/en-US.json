@@ -1799,7 +1799,7 @@
     "kpiAvgFlat": "No trend yet",
     "kpiVsYesterdayValue": "vs {value} yesterday",
     "kpiOrdersYesterday": "{value} at the same time yesterday",
-    "kpiAvgFoot": "Daily revenue / orders",
+    "kpiAvgFoot": "Daily revenue / paid orders",
     "kpiAvgUp": "Average ticket up",
     "kpiAvgDown": "Average ticket down",
     "kpiTablesActive": "Service in progress",
@@ -3177,10 +3177,12 @@
     "endDateBeforeStartDate": "End date must be after start date"
   },
   "trial": {
-    "expiresToday": "Your free trial expires today!",
-    "daysRemaining": "You have {count} day(s) left in your free trial.",
-    "upgradeToPremium": "Upgrade to Premium",
-    "closeAriaLabel": "Close"
+    "expiresToday": "Your free trial ends in less than 24 hours. Without a plan, orders stop.",
+    "daysRemaining": "Your free trial ends in {count, plural, one {# day} other {# days}}.",
+    "closeAriaLabel": "Close",
+    "choosePlan": "Choose my plan",
+    "expired": "Your trial has ended. Choose a plan to continue.",
+    "seePlans": "See plans"
   },
   "ads": {
     "title": "Ads & Banners",
@@ -4322,12 +4324,12 @@
     "typeOther": "Other",
     "typeOtherDesc": "Other type of business",
     "addressLabel": "Address",
-    "addressPlaceholder": "123 Main Street",
+    "addressPlaceholder": "Avenue Kwame Nkrumah, sector 4",
     "cityLabel": "City",
-    "cityPlaceholder": "London",
+    "cityPlaceholder": "Ouagadougou",
     "countryLabel": "Country",
     "phoneLabel": "Phone",
-    "phonePlaceholder": "+44 20 1234 5678",
+    "phonePlaceholder": "+226 70 12 34 56",
     "tableCountLabel": "Number of tables",
     "roomCountLabel": "Number of rooms",
     "locationTab": "Location",

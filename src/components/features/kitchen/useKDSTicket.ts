@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Order, OrderItem, OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 import { getUrgency, STATUS_BADGE, CTA_CONFIG, formatTime } from './kds-ticket.config';
 
@@ -23,6 +23,7 @@ export function useKDSTicket({
   const [elapsed, setElapsed] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const t = useTranslations('kitchen');
+  const locale = useLocale();
 
   // Extract short order number: "CMD-20260403-001" -> "001"
   const shortOrderNumber = useMemo(() => {
@@ -75,12 +76,9 @@ export function useKDSTicket({
   const dueTimeStr = useMemo(() => {
     const d = new Date(order.created_at);
     d.setMinutes(d.getMinutes() + 20);
-    const h = d.getHours();
-    const m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
-  }, [order.created_at]);
+    // Same locale and 24 h clock as the KDS header clock (KitchenFilters).
+    return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  }, [order.created_at, locale]);
 
   // --- Status badge ----------------------------------------
   const badge = STATUS_BADGE[order.status] || STATUS_BADGE.pending;

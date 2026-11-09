@@ -47,7 +47,7 @@ export function HomeHero({
         )}
         <div className="relative flex h-full flex-col justify-between p-[18px]">
           <div className="flex items-start justify-between">
-            <Badge className="rounded-[var(--radius-tag)] bg-[var(--color-brand)] px-2.5 py-1 text-[11px] font-bold tracking-[0.2px] text-white hover:bg-[var(--color-brand)]">
+            <Badge className="rounded-[var(--radius-tag)] bg-[var(--brand-cta)] px-2.5 py-1 text-[11px] font-bold tracking-[0.2px] text-[var(--brand-cta-fg)] hover:bg-[var(--brand-cta)]">
               {t('platDuJour')}
             </Badge>
             <span className="flex items-center gap-[5px] rounded-[var(--radius-tag)] bg-white/15 px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.2px] text-white backdrop-blur-[10px]">
@@ -69,7 +69,7 @@ export function HomeHero({
                   {currencyUnit}
                 </span>
               </span>
-              <span className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[var(--color-brand)] px-4 text-[12.5px] font-semibold leading-none tracking-[-0.2px] text-white">
+              <span className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[var(--brand-cta)] px-4 text-[12.5px] font-semibold leading-none tracking-[-0.2px] text-[var(--brand-cta-fg)]">
                 {t('commander')}
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
               </span>

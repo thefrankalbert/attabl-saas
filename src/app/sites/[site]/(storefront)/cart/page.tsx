@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useCallback, useRef, useMemo, useEffect, useSyncExternalStore } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { submitOrder } from '@/lib/offline/submit-order';
@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCartSuggestions, type UpsellItem } from '@/hooks/useCartSuggestions';
 import { CartItemsList, getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
-import { noopSubscribe } from '@/lib/utils/noop-subscribe';
+import { readScannedTable, useScannedTable } from '@/hooks/useScannedTable';
 import { UpsellSection } from '@/components/tenant/cart/UpsellSection';
 import { PromoSection } from '@/components/tenant/cart/PromoSection';
 import { TipSection, type TipPreset } from '@/components/tenant/cart/TipSection';
@@ -77,17 +77,7 @@ export default function CartPage() {
   } = useCart();
   const { slug: tenantSlug, tenant } = useTenant();
 
-  const tableNum = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      try {
-        return localStorage.getItem(`attabl_${tenantSlug}_table`);
-      } catch {
-        return null;
-      }
-    },
-    () => null,
-  );
+  const tableNum = useScannedTable(tenantSlug);
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
   const t = useTranslations('tenant');
   const locale = useLocale();
@@ -259,7 +249,7 @@ export default function CartPage() {
     setPreviewErrors([]);
 
     try {
-      const tableNumber = localStorage.getItem(`attabl_${tenantSlug}_table`) || undefined;
+      const tableNumber = readScannedTable(tenantSlug) || undefined;
       const orderItems = mapCartItemsForOrderApi(items);
 
       // Server-side pre-validation. Skipped when the browser is offline (or on a

@@ -13,7 +13,7 @@ import type {
 import type { ServiceType } from '@/types/admin.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
-import { isPaidOrder, orderGross, sumPaidRevenue } from '@/lib/orders/revenue';
+import { averagePaidTicket, isPaidOrder, orderGross, sumPaidRevenue } from '@/lib/orders/revenue';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,6 +109,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   let initialStats: DashboardStats = {
     ordersToday: 0,
     revenueToday: 0,
+    avgTicketToday: 0,
     activeItems: 0,
     activeCards: 0,
   };
@@ -258,6 +259,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       ordersToday: ordersData.length,
       // Revenue = paid orders only (single definition shared with the charts and RPCs).
       revenueToday: sumPaidRevenue(ordersData),
+      avgTicketToday: averagePaidTicket(ordersData),
       activeItems: itemsCountRes.count || 0,
       activeCards: venuesCountRes.count || 0,
     };
@@ -274,6 +276,12 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     if (yesterdayRevenue > 0) {
       initialStats.revenueTrend = Math.round(
         ((initialStats.revenueToday - yesterdayRevenue) / yesterdayRevenue) * 100,
+      );
+    }
+    const yesterdayTicket = averagePaidTicket(yesterdayOrders);
+    if (yesterdayTicket > 0) {
+      initialStats.avgTicketTrend = Math.round(
+        ((initialStats.avgTicketToday - yesterdayTicket) / yesterdayTicket) * 100,
       );
     }
 
@@ -401,7 +409,13 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   // server-side (never ship the data in props/HTML).
   const canSeeRevenue = await getAdminPermission(site, 'reports.view');
   if (!canSeeRevenue) {
-    initialStats = { ...initialStats, revenueToday: 0, revenueTrend: undefined };
+    initialStats = {
+      ...initialStats,
+      revenueToday: 0,
+      revenueTrend: undefined,
+      avgTicketToday: 0,
+      avgTicketTrend: undefined,
+    };
     initialRevenueSparkline = [];
     initialBuckets = { week: [], month: [], quarter: [] };
     initialChannelBuckets = { week: [], month: [], quarter: [] };

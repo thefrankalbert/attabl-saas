@@ -3,6 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { assertTenantServing, TenantLockedError } from '../assert-tenant-serving';
 import { AuthError } from '@/lib/auth/get-session';
 
+// Le client par defaut (service_role) importe 'server-only'. Chaque test injecte
+// sa doublure; ce mock prouve aussi qu'aucun ne retombe sur le client reel.
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => {
+    throw new Error('client service_role reel appele dans un test');
+  },
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
@@ -23,6 +31,8 @@ interface LigneTenant {
   is_active?: boolean | null;
   suspended_at?: string | null;
   subscription_status?: string | null;
+  trial_ends_at?: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 /** Client Supabase minimal: enregistre les filtres pour pouvoir les verifier. */
@@ -63,15 +73,17 @@ describe('assertTenantServing', () => {
 
   it('laisse passer un restaurant qui sert', async () => {
     const { client } = clientAvec({ data: SERVANT, error: null });
-    await expect(assertTenantServing(client as never, 't-1')).resolves.toBeUndefined();
+    await expect(assertTenantServing('t-1', client as never)).resolves.toBeUndefined();
   });
 
   it('lit la bonne table, les colonnes de coupure, et exclut les supprimes', async () => {
     const { client, appels } = clientAvec({ data: SERVANT, error: null });
-    await assertTenantServing(client as never, 't-42');
+    await assertTenantServing('t-42', client as never);
 
     expect(appels.table).toBe('tenants');
-    expect(appels.colonnes).toBe('is_active, suspended_at, subscription_status');
+    expect(appels.colonnes).toBe(
+      'is_active, suspended_at, subscription_status, trial_ends_at, stripe_subscription_id',
+    );
     expect(appels.filtreId).toBe('t-42');
     // Sans ce filtre, un restaurant supprime serait juge sur des colonnes
     // devenues sans objet.
@@ -89,17 +101,30 @@ describe('assertTenantServing', () => {
     ['impaye', { ...SERVANT, subscription_status: 'unpaid' }],
     ['incomplet', { ...SERVANT, subscription_status: 'incomplete' }],
     ['en attente', { ...SERVANT, subscription_status: 'pending' }],
+    // Le cron ne gele qu'a 02:00: jusqu'a 24 h d'encaissement gratuit sinon.
+    [
+      'en essai expire, pas encore gele',
+      {
+        ...SERVANT,
+        subscription_status: 'trial',
+        trial_ends_at: '2020-01-01T00:00:00Z',
+        stripe_subscription_id: null,
+      },
+    ],
   ];
 
   it.each(casCoupes)('refuse un restaurant %s', async (_nom, ligne) => {
     const { client } = clientAvec({ data: ligne, error: null });
-    await expect(assertTenantServing(client as never, 't-1')).rejects.toBeInstanceOf(
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(
       TenantLockedError,
     );
   });
 
   const casServants: [string, LigneTenant][] = [
-    ['en essai', { ...SERVANT, subscription_status: 'trial' }],
+    [
+      'en essai',
+      { ...SERVANT, subscription_status: 'trial', trial_ends_at: '2999-01-01T00:00:00Z' },
+    ],
     ['en retard de paiement', { ...SERVANT, subscription_status: 'past_due' }],
   ];
 
@@ -107,26 +132,26 @@ describe('assertTenantServing', () => {
   // le temps. Couper ici, c'est couper un client qui va payer.
   it.each(casServants)('laisse servir un restaurant %s', async (_nom, ligne) => {
     const { client } = clientAvec({ data: ligne, error: null });
-    await expect(assertTenantServing(client as never, 't-1')).resolves.toBeUndefined();
+    await expect(assertTenantServing('t-1', client as never)).resolves.toBeUndefined();
   });
 
   it('refuse quand la ligne est absente', async () => {
     const { client } = clientAvec({ data: null, error: null });
-    await expect(assertTenantServing(client as never, 't-1')).rejects.toBeInstanceOf(
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(
       TenantLockedError,
     );
   });
 
   it('refuse quand la lecture echoue (echec ferme)', async () => {
     const { client } = clientAvec({ data: null, error: { message: 'boom' } });
-    await expect(assertTenantServing(client as never, 't-1')).rejects.toBeInstanceOf(
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(
       TenantLockedError,
     );
   });
 
   it('refuse une ligne vide: une colonne oubliee ne doit jamais ouvrir', async () => {
     const { client } = clientAvec({ data: {}, error: null });
-    await expect(assertTenantServing(client as never, 't-1')).rejects.toBeInstanceOf(
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(
       TenantLockedError,
     );
   });
@@ -139,8 +164,8 @@ describe('assertTenantServing', () => {
     // Les actions font `if (err instanceof AuthError) return { error: err.message }`.
     // Si TenantLockedError cessait d'en heriter, elles repondraient "Erreur
     // interne" au lieu du vrai motif.
-    await expect(assertTenantServing(client as never, 't-1')).rejects.toBeInstanceOf(AuthError);
-    await assertTenantServing(client as never, 't-1').catch((err) => {
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(AuthError);
+    await assertTenantServing('t-1', client as never).catch((err) => {
       expect(err).toBeInstanceOf(TenantLockedError);
       expect((err as TenantLockedError).status).toBe(403);
       expect((err as TenantLockedError).message).toBe(

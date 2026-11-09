@@ -108,9 +108,9 @@ export default function AttachToHouseAccount({
         {t('title')}
       </p>
 
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         <Select value={selected} onValueChange={setSelected}>
-          <SelectTrigger className="h-9 text-sm">
+          <SelectTrigger className="h-9 min-w-0 flex-1 basis-24 text-sm">
             <SelectValue placeholder={t('attach')} />
           </SelectTrigger>
           <SelectContent>
@@ -125,7 +125,7 @@ export default function AttachToHouseAccount({
           size="sm"
           onClick={handleAttach}
           disabled={loading || !selected}
-          className="h-9 text-xs shrink-0"
+          className="h-9 flex-1 text-xs"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('attach')}
         </Button>

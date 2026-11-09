@@ -18,13 +18,9 @@ const tenantIdSchema = z.string().uuid();
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    const { supabase } = await getAuthenticatedUserForTenant(
-      tenantId,
-      ['owner', 'admin', 'manager'],
-      'orders.manage',
-    );
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'orders.manage');
     // Coupure du restaurant: assigner un serveur est une ecriture de service.
-    await assertTenantServing(supabase, tenantId);
+    await assertTenantServing(tenantId);
     return { error: null };
   } catch (err) {
     // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
