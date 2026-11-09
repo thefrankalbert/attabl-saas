@@ -73,7 +73,10 @@ export default async function MenuDetailPage({ params, searchParams }: MenuDetai
       .eq('tenant_id', tenant.id)
       .is('deleted_at', null)
       .in('category_id', categoryIds)
-      .order('display_order', { ascending: true });
+      // menu_items n'a PAS de colonne display_order (seules categories/menus en
+      // ont une) : trier dessus faisait echouer la requete et la carte
+      // s'affichait sans aucun plat. Meme ordre que la carte cote convive.
+      .order('created_at', { ascending: true });
     items = (itemsData || []) as MenuItem[];
   }
 
