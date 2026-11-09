@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger';
 import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyContext';
 import { noopSubscribe } from '@/lib/utils/noop-subscribe';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
+import { saveScannedTable } from '@/hooks/useScannedTable';
 
 // Persisted notification preference (per device). '1' = on, '0' = off.
 const NOTIF_PREF_KEY = 'attabl_notif_pref';
@@ -111,13 +112,7 @@ export function useClientSettings(tenantSlug: string) {
 
   const handleQRScan = useCallback(
     (result: QRScanResult) => {
-      if (result.tableNumber) {
-        try {
-          localStorage.setItem(`attabl_${tenantSlug}_table`, result.tableNumber);
-        } catch {
-          // localStorage unavailable - the table still flows through the URL below
-        }
-      }
+      if (result.tableNumber) saveScannedTable(tenantSlug, result.tableNumber);
       setIsScannerOpen(false);
       const target = result.menuSlug
         ? `/sites/${tenantSlug}/menu?menu=${result.menuSlug}${result.tableNumber ? `&table=${result.tableNumber}` : ''}`

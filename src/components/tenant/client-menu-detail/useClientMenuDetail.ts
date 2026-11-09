@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useToast } from '@/components/ui/use-toast';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
-import { noopSubscribe } from '@/lib/utils/noop-subscribe';
+import { saveScannedTable, useScannedTable } from '@/hooks/useScannedTable';
 
 // - Types -
 
@@ -55,18 +55,8 @@ export function useClientMenuDetail({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
-  // Table number (localStorage, hydration-safe) for the header subtitle.
-  const tableNum = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      try {
-        return localStorage.getItem(`attabl_${tenant.slug}_table`);
-      } catch {
-        return null;
-      }
-    },
-    () => null,
-  );
+  // Table from the scanned URL, persisted for the cart; shown in the header.
+  const tableNum = useScannedTable(tenant.slug, initialTable);
 
   // Menu navigation state - auto-select menu containing the target section
   const [activeMenuSlug, setActiveMenuSlug] = useState<string | null>(() => {
@@ -124,13 +114,6 @@ export function useClientMenuDetail({
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
 
   const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
-
-  // - Persist table from URL param to localStorage -
-  useEffect(() => {
-    if (initialTable) {
-      localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
-    }
-  }, [initialTable, tenant.slug]);
 
   // - Scroll to section on mount -
   useEffect(() => {
@@ -334,7 +317,7 @@ export function useClientMenuDetail({
   // - Handlers -
 
   const handleTableSelect = (table: Table) => {
-    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
+    saveScannedTable(tenant.slug, table.table_number);
     toast({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),

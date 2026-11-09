@@ -57,7 +57,10 @@ vi.mock('@/lib/auth/get-session', () => ({
 }));
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
-vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => ({})) }));
+// La coupure du restaurant (assertTenantServing) lit en service_role, parce que
+// `stripe_subscription_id` est illisible pour `authenticated`: le client admin
+// rend donc la meme ligne de restaurant que le client authentifie.
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => mockAuthedSupabase) }));
 
 const mockCancelOrder = vi.fn();
 const mockUpdateStatus = vi.fn();

@@ -5,8 +5,10 @@ import { TenantBrandProvider } from '@/components/theme/TenantBrandProvider';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { getCachedTenant, toPublicTenant } from '@/lib/cache';
 import { canAccessFeature } from '@/lib/plans/features';
+import { isTrialLapsedForTenant } from '@/lib/billing/lapsed-trial';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { DEFAULT_FONT } from '@/lib/config/fonts';
+import { resolveStorefrontPrimary, storefrontBrandStyle } from '@/lib/utils/storefront-brand';
 import { ClientBottomNav } from '@/components/tenant/client/BottomNav';
 import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
 import { StorefrontOfflineIndicator } from '@/components/tenant/client/StorefrontOfflineIndicator';
@@ -48,6 +50,16 @@ export default async function StorefrontLayout({
     return <StorefrontUnavailable />;
   }
 
+  // Essai expire, pas encore gele par le cron de 02:00: la prise de commande
+  // (`validateTenant` -> tenantLockReason) le refuse deja en 403. Sans ce
+  // verrou, le convive voyait toute la carte, remplissait son panier, puis
+  // echouait a l'envoi. Meme predicat que la commande (`isTrialLapsed`), avec
+  // `stripe_subscription_id` lu en service_role: la colonne est illisible pour
+  // anon/authenticated. `tenant.id` vient du slug injecte par le proxy.
+  if (tenant && (await isTrialLapsedForTenant(tenant.id, tenant))) {
+    return <StorefrontUnavailable />;
+  }
+
   const tenantId = tenant?.id || null;
   // Per-request CSP nonce (set on the request headers by the proxy) so
   // next-themes' inline anti-flash script is not blocked by the enforced CSP.
@@ -81,7 +93,7 @@ export default async function StorefrontLayout({
       >
         <TenantBrandProvider
           initialColors={{
-            primaryColor: tenant?.primary_color || '#1A1A1A',
+            primaryColor: resolveStorefrontPrimary(tenant?.primary_color),
           }}
         >
           <CartProvider>
@@ -91,7 +103,10 @@ export default async function StorefrontLayout({
             >
               <div
                 className="tenant-client flex h-dvh flex-col overflow-hidden bg-white antialiased"
-                style={{ fontFamily: tenantFontFamily }}
+                style={{
+                  fontFamily: tenantFontFamily,
+                  ...storefrontBrandStyle(tenant?.primary_color),
+                }}
               >
                 <StorefrontOfflineIndicator />
                 <main

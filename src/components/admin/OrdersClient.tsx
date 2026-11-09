@@ -33,17 +33,21 @@ import OrdersToolbar from '@/components/admin/orders/OrdersToolbar';
 import OrdersBulkActionBar from '@/components/admin/orders/OrdersBulkActionBar';
 import OrdersBulkDeleteDialog from '@/components/admin/orders/OrdersBulkDeleteDialog';
 import OrderMobileCard from '@/components/admin/orders/OrderMobileCard';
+import { orderDisplayLabel } from '@/components/admin/orders/order-display-label';
 
 interface OrdersClientProps {
   tenantId: string;
   initialOrders: Order[];
   serverListPagination?: ServerListPagination;
+  /** IANA zone of the restaurant (resolveTenantTimezone), used for order times. */
+  timeZone: string;
 }
 
 export default function OrdersClient({
   tenantId,
   initialOrders,
   serverListPagination,
+  timeZone,
 }: OrdersClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -195,6 +199,7 @@ export default function OrdersClient({
     getStatusConfig,
     formatNumber,
     handleStatusChange,
+    timeZone,
   });
 
   const { handleBulkDelete, isDeleting } = useBulkDeleteOrders({
@@ -207,10 +212,7 @@ export default function OrdersClient({
   // Hide less important columns on tablet portrait to prevent horizontal scroll
   const { isTablet } = useDevice();
   const columnVisibility = useMemo<VisibilityState>(
-    () =>
-      isTablet
-        ? { select: false, server: false, items_count: false }
-        : { select: true, server: true, items_count: true },
+    () => (isTablet ? { select: false } : { select: true }),
     [isTablet],
   );
 
@@ -269,6 +271,7 @@ export default function OrdersClient({
                     getStatusConfig={getStatusConfig}
                     formatNumber={formatNumber}
                     handleStatusChange={handleStatusChange}
+                    timeZone={timeZone}
                   />
                 ),
               }}
@@ -311,7 +314,7 @@ export default function OrdersClient({
         <AdminModal
           isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          title={`${tk('ticketOrder')} #${selectedOrder?.id.slice(0, 8)}`}
+          title={selectedOrder ? `${tk('ticketOrder')} ${orderDisplayLabel(selectedOrder)}` : ''}
           size="lg"
         >
           {selectedOrder && (

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import {
   paginationQuerySchema,
   toSupabaseRange,
@@ -94,6 +95,7 @@ export default async function OrdersPage({
         tenantId={tenant.id}
         initialOrders={transformedOrders}
         serverListPagination={serverListPagination}
+        timeZone={resolveTenantTimezone(tenant)}
       />
     </div>
   );

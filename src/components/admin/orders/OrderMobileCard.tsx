@@ -1,18 +1,21 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useFormatter } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Order } from '@/types/admin.types';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { GetOrderStatusConfig } from './use-order-status-config';
+import { orderDisplayLabel } from './order-display-label';
 
 interface OrderMobileCardProps {
   order: Order;
   getStatusConfig: GetOrderStatusConfig;
   formatNumber: (n: number) => string;
   handleStatusChange: (orderId: string, newStatus: OrderStatus) => void;
+  /** IANA zone of the restaurant, same as the desktop column (use-orders-columns). */
+  timeZone: string;
 }
 
 /** Mobile card renderer for an order row (ResponsiveDataTable mobileConfig). */
@@ -21,8 +24,10 @@ export default function OrderMobileCard({
   getStatusConfig,
   formatNumber,
   handleStatusChange,
+  timeZone,
 }: OrderMobileCardProps) {
   const tc = useTranslations('common');
+  const format = useFormatter();
   const ta = useTranslations('admin');
 
   const config = getStatusConfig(order.status);
@@ -31,18 +36,22 @@ export default function OrderMobileCard({
   const items = order.items || [];
   return (
     <div className="border-b border-app-border py-4 space-y-3 active:bg-app-hover transition-colors">
-      {/* Row 1: Table + Status + Time */}
-      <div className="flex items-center justify-between">
+      {/* Row 1: Table + number + Status + Time (wraps on narrow phones) */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-flex min-w-[2rem] h-8 px-2 items-center justify-center font-bold text-app-text text-xs bg-app-bg rounded-lg">
             {order.table_number?.trim() || '-'}
           </span>
+          <span className="font-mono text-xs font-medium text-app-text">
+            {orderDisplayLabel(order)}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-app-text-muted">
-            {new Date(order.created_at).toLocaleTimeString([], {
+            {format.dateTime(new Date(order.created_at), {
               hour: '2-digit',
               minute: '2-digit',
+              timeZone,
             })}
           </span>
           <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg, config.text)}>

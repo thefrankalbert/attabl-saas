@@ -4,7 +4,9 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
-import { getCachedTenant } from '@/lib/cache';
+import { getCachedTenant, getTableOccupied } from '@/lib/cache';
+import { resolveTableParam } from '@/lib/qr/table-param';
+import { TableOccupiedNotice } from '@/components/tenant/TableOccupiedNotice';
 import { computeOpeningState } from '@/lib/opening-hours';
 import Link from 'next/link';
 import type { MenuItem, Category, Menu, Table } from '@/types/admin.types';
@@ -76,8 +78,17 @@ function toClientMenuItem(item: MenuItem, featuredLabel: string): ClientMenuItem
   };
 }
 
-export default async function HomePage({ params }: { params: Promise<{ site: string }> }) {
+export default async function HomePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ table?: string | string[]; t?: string | string[] }>;
+}) {
   const { site } = await params;
+  // A table QR without a menu slug points at this root page (buildQRUrl), and
+  // codes are already printed that way: honor ?table here exactly like /menu.
+  const initialTable = resolveTableParam(await searchParams);
   const [messages, t] = await Promise.all([getMessages(), getTranslations('homePage')]);
 
   const headersList = await headers();
@@ -159,6 +170,9 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
         .eq('is_active', true),
     ]);
 
+  // Soft warning when the scanned table already holds an open session, as on /menu.
+  const tableOccupied = initialTable ? await getTableOccupied(tenant.id, initialTable) : false;
+
   const allCategories = (categoriesResult.data || []) as unknown as Category[];
   const featuredItems = (featuredResult.data || []) as unknown as MenuItem[];
   const recentItems = (recentResult.data || []) as unknown as MenuItem[];
@@ -216,6 +230,13 @@ export default async function HomePage({ params }: { params: Promise<{ site: str
           isOpen={openingState.isOpen}
           restaurantId={tenant.id}
           currency={tenant.currency}
+          initialTable={initialTable}
+        />
+
+        <TableOccupiedNotice
+          occupied={tableOccupied}
+          tenantSlug={site}
+          tableNumber={initialTable}
         />
 
         {/* - HERO - */}

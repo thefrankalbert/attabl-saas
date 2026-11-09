@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   TENANT_LOCK_COLUMNS,
   isTenantServing,
+  isTrialLapsed,
   tenantLockReason,
   type TenantLockRow,
 } from '../tenant-lock';
@@ -80,8 +81,75 @@ describe('tenantLockReason', () => {
   });
 
   it('expose les colonnes que tout appelant doit selectionner', () => {
-    for (const column of ['is_active', 'suspended_at', 'subscription_status']) {
+    for (const column of [
+      'is_active',
+      'suspended_at',
+      'subscription_status',
+      'trial_ends_at',
+      'stripe_subscription_id',
+    ]) {
       expect(TENANT_LOCK_COLUMNS).toContain(column);
     }
+  });
+});
+
+/**
+ * L'essai expire. Le cron `freeze-expired-trials` ne passe qu'a 02:00: entre
+ * `trial_ends_at` et son passage, une commande convive etait acceptee et
+ * l'admin ne voyait rien. La regle est maintenant celle du cron, jugee a
+ * l'instant: statut `trial` + `trial_ends_at` passe + aucun abonnement Stripe.
+ */
+describe("tenantLockReason - fin d'essai", () => {
+  const MAINTENANT = Date.parse('2026-11-09T12:00:00Z');
+  const essai: TenantLockRow = {
+    ...servant,
+    subscription_status: 'trial',
+    stripe_subscription_id: null,
+  };
+
+  it('coupe un essai expire sans attendre le gel du cron', () => {
+    const expire = { ...essai, trial_ends_at: '2026-11-09T11:59:00Z' };
+    expect(tenantLockReason(expire, MAINTENANT)).toBe('subscription');
+    expect(isTenantServing(expire, MAINTENANT)).toBe(false);
+  });
+
+  it('laisse servir un essai qui court encore', () => {
+    const enCours = { ...essai, trial_ends_at: '2026-11-09T12:01:00Z' };
+    expect(tenantLockReason(enCours, MAINTENANT)).toBeNull();
+  });
+
+  it('laisse servir un essai expire couvert par un abonnement Stripe', () => {
+    // Le checkout ouvre un essai Stripe de ceil(jours restants): il finit
+    // jusqu'a 24 h APRES trial_ends_at. Le cron ne touche pas ces lignes.
+    const souscrit = {
+      ...essai,
+      trial_ends_at: '2026-11-09T11:59:00Z',
+      stripe_subscription_id: 'sub_123',
+    };
+    expect(tenantLockReason(souscrit, MAINTENANT)).toBeNull();
+  });
+
+  it("n'applique la regle qu'au statut trial", () => {
+    // Un abonne actif garde un vieux trial_ends_at d'inscription.
+    const actif = {
+      ...servant,
+      trial_ends_at: '2020-01-01T00:00:00Z',
+      stripe_subscription_id: null,
+    };
+    expect(tenantLockReason(actif, MAINTENANT)).toBeNull();
+  });
+
+  it('laisse servir un essai sans date de fin (le cron ne le gele pas non plus)', () => {
+    expect(tenantLockReason({ ...essai, trial_ends_at: null }, MAINTENANT)).toBeNull();
+  });
+
+  it("traite une colonne d'abonnement absente comme une absence d'abonnement", () => {
+    // Un `.select()` qui oublie stripe_subscription_id doit refuser, pas ouvrir.
+    const sansColonne: TenantLockRow = {
+      ...servant,
+      subscription_status: 'trial',
+      trial_ends_at: '2026-11-09T11:59:00Z',
+    };
+    expect(isTrialLapsed(sansColonne, MAINTENANT)).toBe(true);
   });
 });

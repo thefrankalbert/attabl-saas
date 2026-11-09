@@ -55,15 +55,48 @@ import type { SubscriptionStatus } from '@/types/billing';
  * LA LECON, pour la prochaine garde: gater la route ne gate pas l'action, et
  * gater la page ne gate pas la mutation. Avant d'ecrire qu'un chemin est
  * couvert, chercher qui appelle la fonction, pas qui appelle la route.
+ *
+ * L'ESSAI EXPIRE EST UN QUATRIEME VERROU (audit du 2026-11-09). Seul le cron
+ * `freeze-expired-trials` le posait, une fois par jour (02:00): entre
+ * `trial_ends_at` et son passage, jusqu'a 24 h de service gratuit - commande
+ * convive acceptee, aucune banniere. La regle est maintenant jugee ICI, au
+ * moment ou l'essai expire, avec EXACTEMENT la condition du cron: statut
+ * `trial`, `trial_ends_at` passe, et aucun `stripe_subscription_id`. Cette
+ * derniere clause n'est pas decorative: le checkout ouvre un essai Stripe de
+ * `ceil(jours restants)`, qui finit donc jusqu'a 24 h APRES `trial_ends_at`.
+ * Sans elle, on couperait un client qui vient de souscrire.
+ *
+ * `stripe_subscription_id` n'est PAS lisible par `authenticated` (droits par
+ * colonne, voir supabase/tests/rls/tenants_column_grants.test.sql): toute
+ * lecture de `TENANT_LOCK_COLUMNS` passe donc par le client service_role. Un
+ * client `authenticated` recevrait 42501, et la garde, qui echoue fermee,
+ * couperait tout le monde.
  */
 
 /** Les colonnes a lire pour pouvoir juger. A coller dans le `.select()`. */
-export const TENANT_LOCK_COLUMNS = 'is_active, suspended_at, subscription_status' as const;
+export const TENANT_LOCK_COLUMNS =
+  'is_active, suspended_at, subscription_status, trial_ends_at, stripe_subscription_id' as const;
 
 export interface TenantLockRow {
   is_active?: boolean | null;
   suspended_at?: string | null;
   subscription_status?: string | null;
+  trial_ends_at?: string | null;
+  stripe_subscription_id?: string | null;
+}
+
+/**
+ * L'essai est-il expire sans abonnement ? La condition du cron
+ * `freeze-expired-trials`, mot pour mot: ce que le cron gelera a 02:00 est
+ * coupe des maintenant.
+ *
+ * Une colonne `stripe_subscription_id` absente de la ligne compte comme "pas
+ * d'abonnement": un `.select()` qui l'oublie doit refuser, pas ouvrir.
+ */
+export function isTrialLapsed(tenant: TenantLockRow, now: number = Date.now()): boolean {
+  if (tenant.subscription_status !== 'trial' || !tenant.trial_ends_at) return false;
+  if (tenant.stripe_subscription_id) return false;
+  return new Date(tenant.trial_ends_at).getTime() < now;
 }
 
 /** Pourquoi l'acces est coupe. Chaque cause a sa propre reponse HTTP. */
@@ -81,16 +114,20 @@ export type TenantLockReason = 'inactive' | 'suspended' | 'subscription';
  * reponse renvoyee quand plusieurs verrous sont poses en meme temps (le cas
  * courant), donc le changer changerait des codes HTTP observables.
  */
-export function tenantLockReason(tenant: TenantLockRow): TenantLockReason | null {
+export function tenantLockReason(
+  tenant: TenantLockRow,
+  now: number = Date.now(),
+): TenantLockReason | null {
   if (!tenant.is_active) return 'inactive';
   if (tenant.suspended_at) return 'suspended';
   if (!isSubscriptionUsable(tenant.subscription_status as SubscriptionStatus | null)) {
     return 'subscription';
   }
+  if (isTrialLapsed(tenant, now)) return 'subscription';
   return null;
 }
 
 /** Le restaurant peut-il servir ? Raccourci pour les appelants sans besoin de cause. */
-export function isTenantServing(tenant: TenantLockRow): boolean {
-  return tenantLockReason(tenant) === null;
+export function isTenantServing(tenant: TenantLockRow, now: number = Date.now()): boolean {
+  return tenantLockReason(tenant, now) === null;
 }

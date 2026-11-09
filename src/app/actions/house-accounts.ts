@@ -46,7 +46,7 @@ export async function actionCreateHouseAccount(
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
     // assert-tenant-serving.ts.
-    await assertTenantServing(supabase, parsedTenant.data);
+    await assertTenantServing(parsedTenant.data);
     const { id } = await createOrderAnnotationService(supabase).createHouseAccount(
       parsedTenant.data,
       {
@@ -106,7 +106,7 @@ export async function actionAttachOrderToHouseAccount(
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
     // assert-tenant-serving.ts.
-    await assertTenantServing(supabase, parsedTenant.data);
+    await assertTenantServing(parsedTenant.data);
     await createOrderAnnotationService(supabase).attachOrderToHouseAccount(
       parsed.data.orderId,
       parsedTenant.data,
@@ -138,7 +138,7 @@ export async function actionDetachOrder(
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
     // assert-tenant-serving.ts.
-    await assertTenantServing(supabase, parsedTenant.data);
+    await assertTenantServing(parsedTenant.data);
     await createOrderAnnotationService(supabase).detachOrderFromHouseAccount(
       parsedOrder.data,
       parsedTenant.data,
@@ -169,7 +169,7 @@ export async function actionSettleHouseAccount(
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
     // assert-tenant-serving.ts.
-    await assertTenantServing(supabase, parsedTenant.data);
+    await assertTenantServing(parsedTenant.data);
     await createOrderAnnotationService(supabase).settleHouseAccount(
       parsed.data.accountId,
       parsedTenant.data,

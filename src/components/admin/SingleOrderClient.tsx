@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import OrderDetails from '@/components/admin/OrderDetails';
 import type { Order, CurrencyCode } from '@/types/admin.types';
+import { orderDisplayLabel } from '@/components/admin/orders/order-display-label';
 
 interface SingleOrderClientProps {
   order: Order;
@@ -19,7 +20,7 @@ export default function SingleOrderClient({
   const router = useRouter();
   const t = useTranslations('orders');
 
-  const displayLabel = initialOrder.order_number || `#${initialOrder.id.slice(0, 8).toUpperCase()}`;
+  const displayLabel = orderDisplayLabel(initialOrder);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

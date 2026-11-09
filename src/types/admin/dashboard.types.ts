@@ -5,10 +5,13 @@
 export interface DashboardStats {
   ordersToday: number;
   revenueToday: number;
+  /** Paid revenue / paid orders of the day (minor units), see averagePaidTicket. */
+  avgTicketToday: number;
   activeItems: number;
   activeCards: number;
   ordersTrend?: number;
   revenueTrend?: number;
+  avgTicketTrend?: number;
 }
 
 export interface CategoryBreakdown {

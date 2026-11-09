@@ -29,6 +29,8 @@ interface Props {
   isOpen?: boolean;
   restaurantId?: string;
   currency?: string;
+  /** Table carried by the scanned QR url (root `/?table=`). */
+  initialTable?: string;
 }
 
 export function HomeHeaderClient({
@@ -42,6 +44,7 @@ export function HomeHeaderClient({
   isOpen = true,
   restaurantId,
   currency,
+  initialTable,
 }: Props) {
   const t = useTranslations('homeHeader');
   const {
@@ -63,7 +66,7 @@ export function HomeHeaderClient({
     openDetail,
     searchResults,
     handleQRScan,
-  } = useHomeHeader({ site, popularFull, featuredLabel });
+  } = useHomeHeader({ site, popularFull, featuredLabel, initialTable });
 
   return (
     <>

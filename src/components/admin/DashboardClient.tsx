@@ -78,6 +78,8 @@ export default function DashboardClient(props: DashboardClientProps) {
   const activeCards = stats.activeCards;
   const revenueTrend = stats.revenueTrend;
   const ordersTrend = stats.ordersTrend;
+  const ticketToday = stats.avgTicketToday;
+  const ticketTrend = stats.avgTicketTrend;
   const activeTablesUsed = initialActiveTables.used;
   const activeTablesTotal = initialActiveTables.total;
 
@@ -100,14 +102,6 @@ export default function DashboardClient(props: DashboardClientProps) {
     const ordYest =
       ordersTrend !== undefined && ordersTrend !== -100
         ? ordersToday / (1 + ordersTrend / 100)
-        : undefined;
-
-    const ticketToday = ordersToday > 0 ? revenueToday / ordersToday : 0;
-    const ticketYest =
-      revYest !== undefined && ordYest !== undefined && ordYest > 0 ? revYest / ordYest : undefined;
-    const ticketTrend =
-      ticketYest !== undefined && ticketYest > 0
-        ? Math.round(((ticketToday - ticketYest) / ticketYest) * 100)
         : undefined;
 
     const tablesTotal = activeTablesTotal || activeCards;
@@ -175,6 +169,8 @@ export default function DashboardClient(props: DashboardClientProps) {
     activeCards,
     revenueTrend,
     ordersTrend,
+    ticketToday,
+    ticketTrend,
     activeTablesUsed,
     activeTablesTotal,
   ]);

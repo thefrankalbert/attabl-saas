@@ -2,15 +2,17 @@
 
 import { useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useFormatter } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronRight, Eye } from 'lucide-react';
 import { SortableHeader } from '@/components/admin/ResponsiveDataTable';
+import { cn } from '@/lib/utils';
 import type { Order } from '@/types/admin.types';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { GetOrderStatusConfig } from './use-order-status-config';
+import { orderDisplayLabel } from './order-display-label';
 
 interface UseOrdersColumnsParams {
   selectedIds: Set<string>;
@@ -20,6 +22,8 @@ interface UseOrdersColumnsParams {
   getStatusConfig: GetOrderStatusConfig;
   formatNumber: (n: number) => string;
   handleStatusChange: (orderId: string, newStatus: OrderStatus) => void;
+  /** IANA zone of the restaurant (resolveTenantTimezone), not the server's or the device's. */
+  timeZone: string;
 }
 
 /** TanStack Table column definitions for the orders table. */
@@ -31,10 +35,12 @@ export function useOrdersColumns({
   getStatusConfig,
   formatNumber,
   handleStatusChange,
+  timeZone,
 }: UseOrdersColumnsParams): ColumnDef<Order, unknown>[] {
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
+  const format = useFormatter();
 
   return useMemo<ColumnDef<Order, unknown>[]>(
     () => [
@@ -70,6 +76,49 @@ export function useOrdersColumns({
             onClick={(e) => e.stopPropagation()}
           />
         ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'order_number',
+        header: () => ta('colOrder'),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-medium text-app-text whitespace-nowrap">
+            {orderDisplayLabel(row.original)}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'created_at',
+        header: () => ta('colTime'),
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-app-text-muted whitespace-nowrap">
+            {format.dateTime(new Date(row.original.created_at), {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone,
+            })}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'status',
+        header: () => ta('colStatus'),
+        cell: ({ row }) => {
+          const config = getStatusConfig(row.original.status);
+          return (
+            <span
+              className={cn(
+                'px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap',
+                config.bg,
+                config.text,
+              )}
+            >
+              {config.label}
+            </span>
+          );
+        },
         enableSorting: false,
       },
       {
@@ -157,6 +206,7 @@ export function useOrdersColumns({
       t,
       tc,
       ta,
+      format,
       getStatusConfig,
       formatNumber,
       selectedIds,
@@ -164,6 +214,7 @@ export function useOrdersColumns({
       handleStatusChange,
       setSelectedIds,
       setSelectedOrder,
+      timeZone,
     ],
   );
 }

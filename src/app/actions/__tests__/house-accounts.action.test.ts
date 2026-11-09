@@ -54,12 +54,26 @@ function chaineTenant(ligne: Record<string, unknown> | null) {
 const TENANT_ID = '22222222-2222-4222-a222-222222222222';
 const ACCOUNT_ID = '44444444-4444-4444-a444-444444444444';
 
-function brancherTenant(statut: string) {
+/**
+ * Client servi en service_role: la coupure y lit sa ligne, parce que
+ * `stripe_subscription_id` (regle de l'essai expire) est illisible pour
+ * `authenticated`.
+ */
+let clientServiceRole: { from: ReturnType<typeof vi.fn> } | null = null;
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => clientServiceRole }));
+
+function brancherTenant(statut: string, colonnes: Record<string, unknown> = {}) {
   const supabase = {
     from: vi.fn(() =>
-      chaineTenant({ is_active: true, suspended_at: null, subscription_status: statut }),
+      chaineTenant({
+        is_active: true,
+        suspended_at: null,
+        subscription_status: statut,
+        ...colonnes,
+      }),
     ),
   };
+  clientServiceRole = supabase;
   mockGetAuthUserForTenant.mockResolvedValue({
     supabase,
     user: { id: 'user-9' },
@@ -80,6 +94,19 @@ describe('ardoises - coupure du restaurant', () => {
     expect(result.error).toBe('Ce restaurant est temporairement indisponible');
     expect(result.success).toBeUndefined();
     // Le point qui compte: l'encaissement n'a pas eu lieu.
+    expect(mockSettle).not.toHaveBeenCalled();
+  });
+
+  it("refuse de solder une ardoise quand l'essai est expire, avant le gel du cron", async () => {
+    // Le cron ne gele qu'a 02:00: jusqu'a 24 h d'encaissement gratuit sinon.
+    brancherTenant('trial', {
+      trial_ends_at: '2020-01-01T00:00:00Z',
+      stripe_subscription_id: null,
+    });
+    const { actionSettleHouseAccount } = await import('@/app/actions/house-accounts');
+    const result = await actionSettleHouseAccount(TENANT_ID, ACCOUNT_ID);
+
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
     expect(mockSettle).not.toHaveBeenCalled();
   });
 

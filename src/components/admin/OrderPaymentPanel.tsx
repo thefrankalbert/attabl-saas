@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrencyMinor, toMinorUnits, fromMinorUnits } from '@/lib/utils/money';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 import {
   actionGetPaymentSummary,
   actionRecordTender,
@@ -48,6 +49,8 @@ export default function OrderPaymentPanel({
   onUpdate,
 }: OrderPaymentPanelProps) {
   const t = useTranslations('payment');
+  // Libelles des moyens de paiement: meme source que les reglages du restaurant.
+  const tMethod = useTranslations('admin.settings.paymentMethod');
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -86,6 +89,12 @@ export default function OrderPaymentPanel({
 
   // summary.due / net / remaining and each tender.amount are integer MINOR units.
   const fmt = (amount: number) => formatCurrencyMinor(amount, currency);
+  // Une methode inconnue (donnee historique) reste lisible telle quelle plutot
+  // que d'afficher une cle i18n brute.
+  const methodLabel = (method: string) =>
+    (ALL_PAYMENT_METHOD_IDS as readonly string[]).includes(method)
+      ? tMethod(`${method}.label`)
+      : method;
   const remaining = Math.max(0, summary.due - summary.net);
   const isComp = summary.paymentStatus === 'comp';
   // A comped order is closed for free: hide the settle/refund inputs.
@@ -176,10 +185,9 @@ export default function OrderPaymentPanel({
             <span className="tabular-nums font-mono text-app-text">{fmt(summary.net)}</span>
           </div>
           {remaining > 0 && (
-            <div className="flex justify-between font-semibold text-[var(--warning)]">
-              <span>{t('remaining')}</span>
-              <span className="tabular-nums font-mono">{fmt(remaining)}</span>
-            </div>
+            <p className="font-semibold text-[var(--warning)] tabular-nums">
+              {t('remaining', { amount: fmt(remaining) })}
+            </p>
           )}
         </div>
 
@@ -194,7 +202,7 @@ export default function OrderPaymentPanel({
             <ul className="divide-y divide-app-border">
               {summary.tenders.map((tender) => (
                 <li key={tender.id} className="flex items-center justify-between py-1 text-xs">
-                  <span className="text-app-text-muted">{tender.method}</span>
+                  <span className="text-app-text-muted">{methodLabel(tender.method)}</span>
                   <span
                     className={
                       tender.status === 'refunded'
@@ -213,7 +221,7 @@ export default function OrderPaymentPanel({
 
         {/* Record a (partial) payment */}
         {canSettle && (
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <Input
               type="number"
               inputMode="numeric"
@@ -222,13 +230,13 @@ export default function OrderPaymentPanel({
               value={tenderAmount}
               onChange={(e) => setTenderAmount(e.target.value)}
               aria-label={t('amount')}
-              className="h-9 text-base md:text-sm"
+              className="h-9 min-w-0 flex-1 basis-24 text-base md:text-sm"
             />
             <Button
               size="sm"
               onClick={handleRecord}
               disabled={loading || !tenderAmount}
-              className="h-9 text-xs shrink-0"
+              className="h-9 flex-1 text-xs"
             >
               {loading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -242,7 +250,7 @@ export default function OrderPaymentPanel({
 
         {/* Refund */}
         {canRefund && (
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <Input
               type="number"
               inputMode="numeric"
@@ -251,14 +259,14 @@ export default function OrderPaymentPanel({
               value={refundAmount}
               onChange={(e) => setRefundAmount(e.target.value)}
               aria-label={t('refundAmount')}
-              className="h-9 text-base md:text-sm"
+              className="h-9 min-w-0 flex-1 basis-24 text-base md:text-sm"
             />
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefund}
               disabled={loading || !refundAmount}
-              className="h-9 text-xs shrink-0"
+              className="h-9 flex-1 text-xs"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
               {t('refund')}

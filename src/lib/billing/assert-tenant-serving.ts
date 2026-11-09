@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from './tenant-lock';
@@ -48,11 +49,17 @@ export class TenantLockedError extends AuthError {
  * page d'abonnement pour payer. Couper la lecture, c'est l'empecher de
  * redevenir client.
  *
+ * LECTURE EN service_role, et pas avec le client de l'appelant: la regle de
+ * l'essai expire lit `stripe_subscription_id`, colonne que `authenticated` ne
+ * peut pas lire (42501, donc refus de TOUTES les mutations). La lecture est
+ * bornee a la ligne du restaurant dont l'appelant a deja prouve etre membre
+ * (`getAuthenticatedUserForTenant` passe avant), et n'en rend que le verdict.
+ *
  * @throws {TenantLockedError} 403 si le restaurant est coupe ou illisible.
  */
 export async function assertTenantServing(
-  supabase: SupabaseClient,
   tenantId: string,
+  supabase: SupabaseClient = createAdminClient(),
 ): Promise<void> {
   const { data: tenant, error } = await supabase
     .from('tenants')

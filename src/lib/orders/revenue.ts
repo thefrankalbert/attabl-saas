@@ -39,3 +39,14 @@ export function orderGross(o: RevenueOrder): number {
 export function sumPaidRevenue(orders: RevenueOrder[]): number {
   return orders.reduce((sum, o) => (isPaidOrder(o) ? sum + orderGross(o) : sum), 0);
 }
+
+/**
+ * Average ticket = paid revenue / number of PAID orders (minor units, rounded).
+ * Dividing paid revenue by ALL orders (unpaid included) showed 333 for a single
+ * paid order of 1000 among 3 orders: numerator and denominator must count the
+ * same orders.
+ */
+export function averagePaidTicket(orders: RevenueOrder[]): number {
+  const paidCount = orders.filter(isPaidOrder).length;
+  return paidCount > 0 ? Math.round(sumPaidRevenue(orders) / paidCount) : 0;
+}

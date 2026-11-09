@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
-import { isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
+import { averagePaidTicket, isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
 import { CHART_PALETTE, CHART_NEUTRAL } from '@/lib/design-tokens';
 import type {
   DashboardStats,
@@ -179,6 +179,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         // Revenue = paid orders only (single definition, shared with the SSR
         // dashboard and the reporting RPCs via src/lib/orders/revenue.ts).
         revenueToday: sumPaidRevenue(ordersData),
+        avgTicketToday: averagePaidTicket(ordersData),
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -221,6 +222,12 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       if (yesterdayRevenue > 0) {
         stats.revenueTrend = Math.round(
           ((stats.revenueToday - yesterdayRevenue) / yesterdayRevenue) * 100,
+        );
+      }
+      const yesterdayTicket = averagePaidTicket(yesterdayOrders);
+      if (yesterdayTicket > 0) {
+        stats.avgTicketTrend = Math.round(
+          ((stats.avgTicketToday - yesterdayTicket) / yesterdayTicket) * 100,
         );
       }
 

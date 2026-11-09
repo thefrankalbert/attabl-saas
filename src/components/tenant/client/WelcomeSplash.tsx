@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { UtensilsCrossed, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
+import { saveScannedTable } from '@/hooks/useScannedTable';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), { ssr: false });
 
@@ -39,13 +40,7 @@ export default function WelcomeSplash({
 
   const handleScan = useCallback(
     (result: QRScanResult) => {
-      if (result.tableNumber) {
-        try {
-          localStorage.setItem(`attabl_${tenantSlug}_table`, result.tableNumber);
-        } catch {
-          // localStorage unavailable - the table still flows through the URL
-        }
-      }
+      if (result.tableNumber) saveScannedTable(tenantSlug, result.tableNumber);
       setIsScannerOpen(false);
       const target = result.menuSlug
         ? `/sites/${tenantSlug}/menu?menu=${result.menuSlug}${result.tableNumber ? `&table=${result.tableNumber}` : ''}`

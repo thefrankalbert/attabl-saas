@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPaidOrder, orderGross, sumPaidRevenue } from '../revenue';
+import { averagePaidTicket, isPaidOrder, orderGross, sumPaidRevenue } from '../revenue';
 
 describe('orders/revenue', () => {
   describe('isPaidOrder', () => {
@@ -47,6 +47,30 @@ describe('orders/revenue', () => {
         { payment_status: 'pending', total: 5000, tip_amount: 0 }, // excluded
       ];
       expect(sumPaidRevenue(orders)).toBe(2300); // 23.00 EUR in minor units
+    });
+  });
+
+  describe('averagePaidTicket', () => {
+    it('divides paid revenue by PAID orders only (1 paid of 1000 among 3 -> 1000, not 333)', () => {
+      const orders = [
+        { payment_status: 'paid', total: 1000, tip_amount: 0 },
+        { payment_status: 'pending', total: 1000, tip_amount: 0 },
+        { payment_status: 'pending', total: 1000, tip_amount: 0 },
+      ];
+      expect(averagePaidTicket(orders)).toBe(1000);
+    });
+
+    it('averages gross (tip included) and rounds to a minor-unit integer', () => {
+      const orders = [
+        { payment_status: 'paid', total: 1000, tip_amount: 1 },
+        { payment_status: 'paid', total: 2000, tip_amount: 0 },
+      ];
+      expect(averagePaidTicket(orders)).toBe(1501); // 3001 / 2 = 1500.5
+    });
+
+    it('returns 0 when no order is paid', () => {
+      expect(averagePaidTicket([])).toBe(0);
+      expect(averagePaidTicket([{ payment_status: 'pending', total: 1000 }])).toBe(0);
     });
   });
 });
