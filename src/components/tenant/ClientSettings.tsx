@@ -117,7 +117,7 @@ export default function ClientSettings({
         <header className="relative overflow-hidden bg-[var(--color-ink)] px-[18px] pb-[22px] pt-5 text-white">
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-[var(--color-brand)] opacity-[0.16] blur-[34px]"
+            className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-[var(--brand-cta)] opacity-[0.16] blur-[34px]"
           />
           <div className="relative flex items-center gap-3.5">
             <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-modal)] border border-white/20 bg-white/10">
@@ -152,7 +152,9 @@ export default function ClientSettings({
             <span
               className={cn(
                 'inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-tag)] px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.3px]',
-                isOpen ? 'bg-[var(--color-brand)] text-white' : 'bg-white/15 text-white/80',
+                isOpen
+                  ? 'bg-[var(--brand-cta)] text-[var(--brand-cta-fg)]'
+                  : 'bg-white/15 text-white/80',
               )}
             >
               <span
@@ -254,7 +256,7 @@ export default function ClientSettings({
                 <span
                   className={cn(
                     'flex h-[22px] w-[38px] items-center rounded-full p-[2px] transition-colors',
-                    notificationsEnabled ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-ink-soft)]',
+                    notificationsEnabled ? 'bg-[var(--brand-cta)]' : 'bg-[var(--color-ink-soft)]',
                   )}
                 >
                   <span

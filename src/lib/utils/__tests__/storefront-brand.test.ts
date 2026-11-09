@@ -20,7 +20,27 @@ describe('storefrontBrandStyle', () => {
   });
 
   it('never overrides --color-brand (status indicators keep their meaning)', () => {
-    expect(Object.keys(tokens('#EF4444'))).toEqual(['--brand-cta', '--brand-cta-fg']);
+    expect(Object.keys(tokens('#EF4444'))).toEqual([
+      '--brand-cta',
+      '--brand-cta-fg',
+      '--brand-accent',
+    ]);
+  });
+
+  it('gives an accent (text/icon on white) that keeps the tenant hue and reads at 4.5:1', () => {
+    // Ruby as text on white measures 3.76:1: it must be darkened, not replaced.
+    const ruby = tokens('#EF4444')['--brand-accent'];
+    expect(ruby).not.toBe('#EF4444');
+    expect(contrastRatio(ruby, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(ruby.slice(i, i + 2), 16));
+    expect(r).toBeGreaterThan(g);
+    expect(r).toBeGreaterThan(b);
+    // Lime as text on white is 1.18:1.
+    expect(contrastRatio(tokens('#CCFF00')['--brand-accent'], '#FFFFFF')).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    // Already readable: kept as is.
+    expect(tokens('#1E40AF')['--brand-accent']).toBe('#1E40AF');
   });
 
   it('falls back to the ATTABL lime when the tenant has no valid color', () => {

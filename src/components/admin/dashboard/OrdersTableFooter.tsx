@@ -37,7 +37,7 @@ export function OrdersTableFooter({
       <div className="flex-1 whitespace-nowrap text-[13px] text-[var(--muted-foreground)]">
         {t('selectedCount', { count: selectedCount })}
       </div>
-      <div className="ml-auto flex items-center gap-5">
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
         <div className="flex items-center gap-2 whitespace-nowrap text-[13px] font-medium">
           {t('rowsPerPage')}
           <Select

@@ -23,7 +23,8 @@ interface OrdersTableRowProps {
   onToggle: (id: string) => void;
   adminBase: string;
   locale: string;
-  nowMs: number;
+  /** null until hydrated: time-of-day and age are browser-only (clock + timezone). */
+  nowMs: number | null;
   formatValue: (n: number) => string;
 }
 
@@ -50,9 +51,13 @@ export function OrdersTableRow({
   const StatusIcon = meta.icon;
   const channel = channelLabel();
   const created = new Date(o.created_at);
-  const ageMin = Math.max(0, Math.floor((nowMs - created.getTime()) / 60000));
+  const ageMin = nowMs === null ? 0 : Math.max(0, Math.floor((nowMs - created.getTime()) / 60000));
   const rel =
-    ageMin < 60 ? t('agoMin', { n: ageMin }) : t('agoHour', { n: Math.floor(ageMin / 60) });
+    nowMs === null
+      ? '-'
+      : ageMin < 60
+        ? t('agoMin', { n: ageMin })
+        : t('agoHour', { n: Math.floor(ageMin / 60) });
   const activeStatus = o.status !== 'delivered' && o.status !== 'cancelled';
   const tone =
     activeStatus && ageMin >= 30
@@ -81,10 +86,12 @@ export function OrdersTableRow({
       <TableCell className={CELL_CLS}>
         <span className="flex flex-col items-start gap-[3px]">
           <span className="text-[13px] font-medium tabular-nums">
-            {created.toLocaleTimeString(locale, {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {nowMs === null
+              ? '--:--'
+              : created.toLocaleTimeString(locale, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
           </span>
           <span
             className="inline-flex items-center gap-1 rounded-full px-[7px] py-px text-[11px]"

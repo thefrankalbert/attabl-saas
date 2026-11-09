@@ -57,7 +57,7 @@ export default function WelcomeSplash({
       {/* brand glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-16 top-1/3 h-72 w-72 rounded-full bg-[var(--color-brand)] opacity-[0.10] blur-[60px]"
+        className="pointer-events-none absolute -right-16 top-1/3 h-72 w-72 rounded-full bg-[var(--brand-cta)] opacity-[0.10] blur-[60px]"
       />
 
       {/* Top: venue identity */}
@@ -93,7 +93,7 @@ export default function WelcomeSplash({
         style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/10 px-2.5 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.4px] text-white/85">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-cta)]" />
           {t('welcomeBadge')}
         </span>
         <h1 className="mt-3.5 line-clamp-2 break-words text-[40px] font-bold leading-[1.02] tracking-[-1.2px]">
@@ -105,7 +105,7 @@ export default function WelcomeSplash({
 
         <Button
           onClick={() => setIsScannerOpen(true)}
-          className="mt-6 h-[58px] w-full justify-center gap-2.5 rounded-full bg-[var(--color-brand)] text-[15.5px] font-semibold text-white hover:bg-[var(--color-brand-dark)]"
+          className="mt-6 h-[58px] w-full justify-center gap-2.5 rounded-full bg-[var(--brand-cta)] text-[15.5px] font-semibold text-[var(--brand-cta-fg)] hover:bg-[var(--brand-cta)] hover:opacity-90"
         >
           {t('scanMyTable')}
           <QrCode className="h-[18px] w-[18px]" strokeWidth={2.2} />
