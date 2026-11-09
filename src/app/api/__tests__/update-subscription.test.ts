@@ -27,6 +27,10 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock('@/lib/billing/tenant-billing-ids', () => ({
+  getTenantBillingIds: vi.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
@@ -35,6 +39,7 @@ import { POST } from '../update-subscription/route';
 import { checkoutLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,6 +130,13 @@ function createMockSupabase(overrides?: {
     data: { role: 'owner' },
     error: null,
   };
+
+  // The Stripe id is no longer read by the session client (column revoked for
+  // `authenticated`): it comes from the service-role helper. Same fixture.
+  vi.mocked(getTenantBillingIds).mockResolvedValue({
+    stripe_customer_id: null,
+    stripe_subscription_id: tenantResult.data?.stripe_subscription_id ?? null,
+  });
 
   return {
     auth: {
@@ -221,6 +233,7 @@ describe('POST /api/update-subscription', () => {
     setupAuthenticatedMocks({ adminUser: { data: { role: 'manager' }, error: null } });
 
     const res = await POST(buildRequest({ plan: 'pro' }));
+    expect(getTenantBillingIds).not.toHaveBeenCalled();
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(403);
@@ -324,5 +337,8 @@ describe('POST /api/update-subscription', () => {
     expect(json.subscriptionId).toBe('sub_test_123');
     expect(json.status).toBe('active');
     expect(getStripePriceId).toHaveBeenCalledWith('pro', 'yearly');
+    // Read via the service role, for the verified tenant only.
+    expect(getTenantBillingIds).toHaveBeenCalledWith('tenant-abc');
+    expect(stripe.subscriptions.retrieve).toHaveBeenCalledWith('sub_test_123');
   });
 });

@@ -585,7 +585,7 @@
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Politique de confidentialité et protection des données personnelles d'ATTABL.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 28 février 2026",
+      "lastUpdate": "Dernière mise à jour : 8 novembre 2026",
       "section1Title": "1. Responsable du traitement",
       "section1Body": "ATTABL, plateforme SaaS de gestion digitale pour la restauration, est responsable du traitement des données personnelles collectées via le site attabl.com.",
       "section2Title": "2. Données collectées",
@@ -599,7 +599,9 @@
       "section6Title": "6. Cookies",
       "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé.",
       "section7Title": "7. Duree de conservation",
-      "section7Body": "Les donnees de votre compte et de votre etablissement sont conservees pendant toute la duree de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, telephone, adresse de livraison) sont effacees automatiquement 90 jours apres la commande : la commande, elle, est conservee sans ces informations, car le droit commercial impose de garder les pieces comptables. Les journaux de connexion sont supprimes au bout de 90 jours. Apres la resiliation de votre abonnement, vous pouvez demander la suppression de votre compte a tout moment."
+      "section7Body": "Les donnees de votre compte et de votre etablissement sont conservees pendant toute la duree de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, telephone, adresse de livraison) sont effacees automatiquement 90 jours apres la commande : la commande, elle, est conservee sans ces informations, car le droit commercial impose de garder les pieces comptables. Les journaux de connexion sont supprimes au bout de 90 jours. Apres la resiliation de votre abonnement, vous pouvez demander la suppression de votre compte a tout moment.",
+      "section8Title": "8. Application mobile Atfood",
+      "section8Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyees dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le detourage, optionnel, et les controles de qualite des photos se font sur le telephone (Apple Vision) : rien n'est envoye a un tiers. L'application utilise les donnees de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous etes rattache. En cas de plantage, un rapport anonyme, sans aucune donnee personnelle, peut etre envoye a Sentry pour corriger le probleme. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte."
     },
     "features": {
       "metaTitle": "Fonctionnalités - Attabl",

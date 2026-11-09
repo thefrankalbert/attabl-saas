@@ -33,6 +33,10 @@ vi.mock('@/lib/cache', () => ({
   getTenant: vi.fn(),
 }));
 
+vi.mock('@/lib/billing/tenant-billing-ids', () => ({
+  getTenantBillingIds: vi.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
@@ -43,6 +47,7 @@ import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/server';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,6 +90,15 @@ function createMockSupabase(overrides?: {
   const mockEqTenant = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
   const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqTenant });
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+  // The Stripe id is no longer embedded in the session-client query: it comes
+  // from the service-role helper. Keep the fixtures above as the single source.
+  const tenants = (adminUserResult.data as { tenants?: { stripe_customer_id?: string | null } })
+    ?.tenants;
+  vi.mocked(getTenantBillingIds).mockResolvedValue({
+    stripe_customer_id: tenants?.stripe_customer_id ?? null,
+    stripe_subscription_id: null,
+  });
 
   return {
     auth: {
@@ -152,6 +166,7 @@ describe('POST /api/billing-portal', () => {
     expect(res.status).toBe(403);
     expect(json.error).toContain('Non autoris');
     expect(stripe.billingPortal.sessions.create).not.toHaveBeenCalled();
+    expect(getTenantBillingIds).not.toHaveBeenCalled();
   });
 
   it('returns 403 when no admin_users row matches the user and tenant', async () => {
@@ -201,6 +216,12 @@ describe('POST /api/billing-portal', () => {
 
     expect(res.status).toBe(200);
     expect(json.url).toBe('https://billing.stripe.com/session/test');
+    // Stripe id read via the service role, for the verified tenant only.
+    expect(getTenantBillingIds).toHaveBeenCalledWith('tenant-1');
+    expect(mock.from).toHaveBeenCalledWith('admin_users');
+    expect(stripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: 'cus_test_123' }),
+    );
   });
 
   it('returns 500 when Stripe throws', async () => {

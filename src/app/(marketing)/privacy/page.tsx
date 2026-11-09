@@ -75,6 +75,13 @@ export default async function PrivacyPage() {
         <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
           {t('section7Body')}
         </p>
+
+        <h2 className="mt-10 text-xl font-semibold tracking-[-0.015em] text-zinc-950 dark:text-zinc-50">
+          {t('section8Title')}
+        </h2>
+        <p className="mt-3 text-base leading-[1.6] text-zinc-600 dark:text-zinc-400">
+          {t('section8Body')}
+        </p>
       </div>
     </section>
   );

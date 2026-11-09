@@ -585,7 +585,7 @@
       "metaTitle": "Privacy Policy",
       "metaDescription": "Privacy policy and personal data protection for ATTABL.",
       "heading": "Privacy Policy",
-      "lastUpdate": "Last updated: February 28, 2026",
+      "lastUpdate": "Last updated: November 8, 2026",
       "section1Title": "1. Data controller",
       "section1Body": "ATTABL, a SaaS platform for digital restaurant management, is the data controller for personal data collected via the attabl.com website.",
       "section2Title": "2. Data collected",
@@ -599,7 +599,9 @@
       "section6Title": "6. Cookies",
       "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used.",
       "section7Title": "7. Retention period",
-      "section7Body": "Your account and venue data is kept for as long as your subscription lasts. A diner's personal details on an order (name, phone, delivery address) are erased automatically 90 days after the order: the order itself is kept without those details, because commercial law requires accounting records to be retained. Login logs are deleted after 90 days. After your subscription ends, you may request deletion of your account at any time."
+      "section7Body": "Your account and venue data is kept for as long as your subscription lasts. A diner's personal details on an order (name, phone, delivery address) are erased automatically 90 days after the order: the order itself is kept without those details, because commercial law requires accounting records to be retained. Login logs are deleted after 90 days. After your subscription ends, you may request deletion of your account at any time.",
+      "section8Title": "8. Atfood mobile app",
+      "section8Body": "Atfood is the ATTABL iPhone app for restaurant staff. It uses the camera only to photograph dishes. Photos are uploaded to the restaurant's menu storage (Supabase) and shown publicly on the restaurant's menu. Optional background removal and photo quality checks run on the phone (Apple Vision): nothing is sent to third parties. The app uses your account data: email address, user ID and the restaurant you belong to. If the app crashes, an anonymous crash report with no personal data may be sent to Sentry so we can fix the problem. You can request the deletion of your account from the app: Profil > Supprimer mon compte (Profile > Delete my account)."
     },
     "features": {
       "metaTitle": "Features - Attabl",

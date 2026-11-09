@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger';
 import { billingPortalLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 export async function POST(request: Request) {
   try {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('role, tenants(stripe_customer_id, slug)')
+      .select('role, tenants(slug)')
       .eq('user_id', user.id)
       .eq('tenant_id', tenantCtx.id)
       .maybeSingle();
@@ -58,18 +59,19 @@ export async function POST(request: Request) {
     }
 
     // Supabase join type gap
-    const tenant = adminUser?.tenants as unknown as {
-      stripe_customer_id: string | null;
-      slug: string;
-    } | null;
+    const tenant = adminUser?.tenants as unknown as { slug: string } | null;
 
-    if (!tenant?.stripe_customer_id) {
+    // Membership + role verified above with the session client: the Stripe id
+    // is now read with the service role (column not readable by `authenticated`).
+    const billing = await getTenantBillingIds(tenantCtx.id);
+    const customerId = billing?.stripe_customer_id;
+
+    if (!tenant || !customerId) {
       return NextResponse.json({ error: 'Pas de compte Stripe lié' }, { status: 400 });
     }
 
     const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/sites/${tenant.slug}/admin/subscription`;
 
-    const customerId = tenant.stripe_customer_id;
     const session = await withStripeBreaker(() =>
       stripe.billingPortal.sessions.create({
         customer: customerId,

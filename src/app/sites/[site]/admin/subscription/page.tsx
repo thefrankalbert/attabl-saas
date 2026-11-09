@@ -4,12 +4,13 @@ import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
+import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  await requireAdminPermission(site, 'settings.view');
+  const { tenantId } = await requireAdminPermission(site, 'settings.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -30,22 +31,24 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
       data: { user },
     },
     { data: billingInfo },
+    billingIds,
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from('tenants')
-      .select(
-        'subscription_current_period_end, billing_interval, stripe_customer_id, stripe_subscription_id',
-      )
+      .select('subscription_current_period_end, billing_interval')
       .eq('id', tenant.id)
       .single(),
+    // Stripe ids are not readable by `authenticated`: service role, filtered on
+    // the tenant whose access requireAdminPermission just verified.
+    getTenantBillingIds(tenantId),
   ]);
   const tenantWithEmail = {
     ...tenant,
     email: user?.email,
     subscription_current_period_end: billingInfo?.subscription_current_period_end ?? null,
     billing_interval: billingInfo?.billing_interval ?? null,
-    stripe_subscription_id: billingInfo?.stripe_subscription_id ?? null,
+    stripe_subscription_id: billingIds?.stripe_subscription_id ?? null,
   };
 
   return (
