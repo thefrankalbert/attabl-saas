@@ -195,7 +195,7 @@ export function useCartSuggestions(
               .eq('is_available', true)
               .eq('tenant_id', currentRestaurantId)
               .order('is_featured', { ascending: false })
-              .order('display_order', { ascending: true })
+              .order('created_at', { ascending: true })
               .limit(8);
 
             if (complementItems && complementItems.length > 0) {
@@ -277,7 +277,7 @@ export function useCartSuggestions(
                 .in('category_id', otherCatIds)
                 .eq('is_available', true)
                 .eq('tenant_id', currentRestaurantId)
-                .order('display_order', { ascending: true })
+                .order('created_at', { ascending: true })
                 .limit(6);
 
               if (otherItems && otherItems.length > 0) {
