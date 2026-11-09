@@ -1,7 +1,6 @@
--- NOT YET APPLIED. Apply only AFTER this PR (getTenantBillingIds) is deployed.
 -- Any logged-in user could read Stripe ids / activation events of every active tenant via
 -- "Public can read active tenants". Keep every other column readable, hide the three sensitive ones.
--- NOTE: a NEW tenants column must be granted to authenticated explicitly if the storefront reads it authenticatedymously.
+-- NOTE: a NEW tenants column must be granted to authenticated explicitly if the storefront reads it with a user session.
 REVOKE SELECT ON public.tenants FROM authenticated;
 DO $$
 DECLARE cols text;
