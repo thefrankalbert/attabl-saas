@@ -9,11 +9,21 @@ ALTER POLICY "Admins manage own tenant drafts" ON public.dish_photo_drafts
   WITH CHECK (public.has_tenant_write_permission(tenant_id, 'menu.edit'));
 
 -- 2. Dish photo writes limited to menu.edit (was: any staff role). Web uploads use the service role.
+-- Guarded: the pgTAP database has a `storage` schema but no `storage.objects` table.
+DO $guard$
+BEGIN
+  IF to_regclass('storage.objects') IS NULL THEN
+    RAISE NOTICE 'storage.objects absent: storage policies skipped';
+    RETURN;
+  END IF;
+  EXECUTE $sql$
 ALTER POLICY "Tenants can upload menu photos" ON storage.objects
   WITH CHECK (bucket_id = 'menu-items' AND CASE
     WHEN (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     THEN public.has_tenant_write_permission(((storage.foldername(name))[1])::uuid, 'menu.edit')
-    ELSE false END);
+    ELSE false END)
+  $sql$;
+  EXECUTE $sql$
 ALTER POLICY "Tenants can update own menu photos" ON storage.objects
   USING (bucket_id = 'menu-items' AND CASE
     WHEN (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
@@ -22,12 +32,16 @@ ALTER POLICY "Tenants can update own menu photos" ON storage.objects
   WITH CHECK (bucket_id = 'menu-items' AND CASE
     WHEN (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     THEN public.has_tenant_write_permission(((storage.foldername(name))[1])::uuid, 'menu.edit')
-    ELSE false END);
+    ELSE false END)
+  $sql$;
+  EXECUTE $sql$
 ALTER POLICY "Tenants can delete own menu photos" ON storage.objects
   USING (bucket_id = 'menu-items' AND CASE
     WHEN (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     THEN public.has_tenant_write_permission(((storage.foldername(name))[1])::uuid, 'menu.edit')
-    ELSE false END);
+    ELSE false END)
+  $sql$;
+END $guard$;
 
 -- 3. A dish / category can only reference a category / menu of the same tenant.
 ALTER TABLE public.categories ADD CONSTRAINT categories_id_tenant_key UNIQUE (id, tenant_id);
