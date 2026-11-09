@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -64,13 +65,25 @@ export async function GET(request: Request) {
     // plateforme) et le statut d'abonnement, parce qu'un tenant `frozen` peut
     // tres bien porter `is_active = true` (c'est ce que `unsuspendTenant`
     // produit).
-    const { data: tenant, error: tenantError } = await supabase
+    // Lecture de l'ETAT du tenant en service_role, comme validateTenant (prise de
+    // commande, /api/orders). Depuis 20261109002847, anon ne lit plus
+    // `suspended_at` ni `subscription_status` (secrets d'abonnement): lue avec le
+    // client anon, cette requete repondait 42501, et la recherche de la carte
+    // etait cassee pour TOUS les restaurants. Seuls l'id et les colonnes de
+    // verrou sont lus, pour un slug venu du proxy; les plats restent lus en anon,
+    // sous RLS.
+    const { data: tenant, error: tenantError } = await createAdminClient()
       .from('tenants')
       .select(`id, ${TENANT_LOCK_COLUMNS}`)
       .eq('slug', tenantSlug)
       .is('deleted_at', null)
       .single();
 
+    // Une erreur de lecture se faisait passer pour "tenant inconnu": c'est ce qui
+    // a cache la panne ci-dessus. Le client recoit la meme reponse, mais on trace.
+    if (tenantError && tenantError.code !== 'PGRST116') {
+      logger.error('Menu search tenant lookup failed', { tenantSlug, code: tenantError.code });
+    }
     if (tenantError || !tenant || tenantLockReason(tenant)) {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }

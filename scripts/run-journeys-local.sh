@@ -23,6 +23,20 @@ ROOT="$(pwd)"
 # Les migrations dont le timestamp est STRICTEMENT superieur sont rejouees.
 FIXTURE_MARKER="20260628000000"
 SCHEMA_FIXTURE="tests/journeys/fixtures/schema.sql"
+# JOURNEY_SCHEMA_SNAPSHOT=supabase/schema.sql -> utilise l'instantane de reference
+# du depot (plus recent que la fixture figee) et lit son propre marqueur
+# `SCHEMA_SNAPSHOT_MIGRATION=` en tete de fichier, comme scripts/run-pgtap.sh.
+if [ -n "${JOURNEY_SCHEMA_SNAPSHOT:-}" ]; then
+  SCHEMA_FIXTURE="$JOURNEY_SCHEMA_SNAPSHOT"
+  MARKER_IN_FILE="$(sed -n 's/^-- SCHEMA_SNAPSHOT_MIGRATION=\([0-9]*\).*/\1/p' "$SCHEMA_FIXTURE" 2>/dev/null | head -1)"
+  [ -n "$MARKER_IN_FILE" ] && FIXTURE_MARKER="$MARKER_IN_FILE"
+fi
+# JOURNEY_KEEP_UP=1 -> provisionne puis laisse la stack et le dev server debout
+# (banc d'essai pilote par plusieurs agents sur la duree). Arreter le process
+# (Ctrl-C) declenche le teardown automatique. Seulement s'il a ete tue de force
+# (kill -9), nettoyer a la main: `supabase stop --no-backup` +
+# `lsof -ti :3100 | xargs kill -9` + `git checkout -- supabase/migrations/ && rm -rf supabase/config.toml`.
+KEEP_UP="${JOURNEY_KEEP_UP:-}"
 DEV_PORT="3100"
 LOCAL_DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 MIG_BAK="$(mktemp -d)"
@@ -67,8 +81,28 @@ log "supabase start (stack local vierge)"
 # sur un poste de dev. L'exclure raccourcit le demarrage et supprime cette panne.
 supabase start -x edge-runtime >/dev/null 2>&1 || { echo "supabase start a echoue"; exit 1; }
 
-log "charge le schema prod (snapshot) dans le local"
-psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$SCHEMA_FIXTURE" >/dev/null || { echo "load schema echoue"; exit 1; }
+log "charge le schema prod (snapshot) dans le local: $SCHEMA_FIXTURE (marqueur $FIXTURE_MARKER)"
+if [ -n "${JOURNEY_SCHEMA_SNAPSHOT:-}" ]; then
+  # L'instantane de reference est un pg_dump avec proprietaires et privileges:
+  # `CREATE SCHEMA IF NOT EXISTS "public"` et les GRANT sur des roles absents en
+  # local echouent sans consequence. On tolere donc les erreurs (comme
+  # scripts/run-pgtap.sh) puis on juge sur le nombre de tables obtenu.
+  psql "$LOCAL_DB" -q -f "$SCHEMA_FIXTURE" >/dev/null 2>/tmp/journeys-schema.err || true
+  TABLES="$(psql "$LOCAL_DB" -X -A -t -c "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE';")"
+  log "  tables creees: $TABLES"
+  [ "${TABLES:-0}" -ge 45 ] || { echo "load schema insuffisant ($TABLES tables, voir /tmp/journeys-schema.err)"; exit 1; }
+  # L'instantane ne couvre QUE le schema public: les policies de storage.objects
+  # creees par des migrations anterieures au marqueur n'y sont pas, et une
+  # migration plus recente qui les modifie (20261108214107) echoue sans elles.
+  # ponytail: liste explicite. Si l'instantane est regenere apres une nouvelle
+  # migration de storage, l'ajouter ici (l'oubli fait echouer le delta, bruyamment).
+  for f in 20260805000200_menu_items_storage_tenant_scoped.sql; do
+    log "  storage (hors instantane): $f"
+    psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$MIG_BAK/$f" >/dev/null || { echo "storage $f echoue"; exit 1; }
+  done
+else
+  psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$SCHEMA_FIXTURE" >/dev/null || { echo "load schema echoue"; exit 1; }
+fi
 
 log "applique les deltas de migration > $FIXTURE_MARKER"
 for f in "$MIG_BAK"/*.sql; do
@@ -135,11 +169,23 @@ NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
 DEV_PID=$!
 
 log "attente du dev server..."
+DEV_READY=""
 for _ in $(seq 1 80); do
   code="$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$DEV_PORT/api/health" 2>/dev/null)"
-  [ "$code" = "200" ] || [ "$code" = "503" ] && { log "dev pret (health=$code)"; break; }
+  [ "$code" = "200" ] || [ "$code" = "503" ] && { log "dev pret (health=$code)"; DEV_READY=1; break; }
   sleep 3
 done
+
+if [ -n "$KEEP_UP" ]; then
+  # Sans ce garde, un dev server mort annoncait quand meme "BANC PRET".
+  [ -n "$DEV_READY" ] || { echo "dev server non pret apres 240 s (voir /tmp/journeys-dev.log)"; exit 1; }
+  log "BANC PRET: app=http://localhost:$DEV_PORT  api=$API_URL  studio=http://127.0.0.1:54323"
+  log "SERVICE_ROLE_LOCAL=$SERVICE"
+  log "ANON_LOCAL=$ANON"
+  log "La stack reste debout. Arreter ce process declenche le teardown complet."
+  wait "$DEV_PID"
+  exit 0
+fi
 
 log "Playwright journeys${1:+ (filtre: $1)}"
 # JOURNEY_STRIPE_SECRET_KEY (sk_test_...) est transmis depuis l'environnement si
