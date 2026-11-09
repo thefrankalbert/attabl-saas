@@ -29,6 +29,10 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn(),
 }));
@@ -40,6 +44,7 @@ vi.mock('@/lib/logger', () => ({
 import { GET } from '../menu-search/route';
 import { menuSearchLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 
 type TenantRow = Record<string, unknown> | null;
@@ -55,7 +60,7 @@ function setupSupabase(tenant: TenantRow): Harness {
 
   const menuItems = [{ id: 'item-1', name: 'Poulet bicyclette', price: 4500 }];
 
-  vi.mocked(createClient).mockResolvedValue({
+  const client = {
     from: (table: string) => {
       if (table === 'tenants') {
         const chain = {
@@ -88,7 +93,10 @@ function setupSupabase(tenant: TenantRow): Harness {
       throw new Error(`Table inattendue: ${table}`);
     },
     // Double reduit a `from`: la route n'utilise rien d'autre du client.
-  } as unknown as SupabaseClient);
+  } as unknown as SupabaseClient;
+  vi.mocked(createClient).mockResolvedValue(client);
+  // The tenant lock is read with the service role (anon cannot read suspended_at).
+  vi.mocked(createAdminClient).mockReturnValue(client as never);
 
   return harness;
 }

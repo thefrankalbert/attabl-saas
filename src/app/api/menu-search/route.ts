@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -64,7 +65,11 @@ export async function GET(request: Request) {
     // plateforme) et le statut d'abonnement, parce qu'un tenant `frozen` peut
     // tres bien porter `is_active = true` (c'est ce que `unsuspendTenant`
     // produit).
-    const { data: tenant, error: tenantError } = await supabase
+    // Service role for this read only: anonymous diners cannot read `suspended_at` /
+    // `subscription_status` (column grants), so the session client failed with 42501
+    // and search returned 400 for every logged-out customer. Menu items stay on the
+    // session client below, under RLS.
+    const { data: tenant, error: tenantError } = await createAdminClient()
       .from('tenants')
       .select(`id, ${TENANT_LOCK_COLUMNS}`)
       .eq('slug', tenantSlug)
