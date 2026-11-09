@@ -10,6 +10,8 @@ import CartPage from '../page';
 // QR entry writes with, or a key drift silently sends the order without table.
 
 const submitOrder = vi.fn();
+const tenantCtx = vi.hoisted(() => ({ orderingPaused: false }));
+const cartState = vi.hoisted(() => ({ empty: false }));
 
 vi.mock('@/lib/offline/submit-order', () => ({
   submitOrder: (...args: unknown[]) => submitOrder(...args),
@@ -27,7 +29,7 @@ vi.mock('@/lib/logger', () => ({
 }));
 vi.mock('@/contexts/CartContext', () => ({
   useCart: () => ({
-    items: [{ id: 'item-1', name: 'Poulet', price: 2500, quantity: 1 }],
+    items: cartState.empty ? [] : [{ id: 'item-1', name: 'Poulet', price: 2500, quantity: 1 }],
     updateQuantity: vi.fn(),
     removeFromCart: vi.fn(),
     addToCart: vi.fn(),
@@ -51,7 +53,11 @@ vi.mock('@/contexts/CartContext', () => ({
   }),
 }));
 vi.mock('@/contexts/TenantContext', () => ({
-  useTenant: () => ({ slug: 'resto', tenant: { name: 'Resto' } }),
+  useTenant: () => ({
+    slug: 'resto',
+    tenant: { name: 'Resto' },
+    orderingPaused: tenantCtx.orderingPaused,
+  }),
 }));
 vi.mock('@/contexts/CurrencyContext', () => ({
   useDisplayCurrency: () => ({
@@ -74,6 +80,8 @@ vi.mock('@/components/tenant/cart/OrderSummary', () => ({ OrderSummary: () => nu
 
 describe('cart - table attached to the order', () => {
   beforeEach(() => {
+    tenantCtx.orderingPaused = false;
+    cartState.empty = false;
     localStorage.clear();
     submitOrder.mockReset();
     submitOrder.mockResolvedValue({ status: 'sent', data: { orderId: 'order-1' } });
@@ -101,5 +109,29 @@ describe('cart - table attached to the order', () => {
     await waitFor(() => expect(submitOrder).toHaveBeenCalledTimes(1));
     const [{ body }] = submitOrder.mock.calls[0] as [{ body: { tableNumber?: string } }];
     expect(body.tableNumber).toBeUndefined();
+  });
+
+  // Fin d'essai (decision produit du 2026-11-09): la carte reste visible, la
+  // commande est en pause. Le panier ne doit offrir aucun envoi, ni pre-valider.
+  it('commandes en pause: aucun bouton d envoi, aucune requete', async () => {
+    tenantCtx.orderingPaused = true;
+    render(<CartPage />);
+
+    expect(screen.getByText('orderingPaused')).toBeInTheDocument();
+    expect(screen.queryByText('confirmOrder')).toBeNull();
+    await new Promise((r) => setTimeout(r, 700));
+    expect(fetch).not.toHaveBeenCalled();
+    expect(submitOrder).not.toHaveBeenCalled();
+  });
+
+  // Panier vide pendant la pause: l'ecran vide invitait a "ajouter quelques
+  // plats", ce qui contredit la pause (constate en demo locale le 2026-11-09).
+  it('commandes en pause, panier vide: la pause prime sur l invitation a commander', () => {
+    tenantCtx.orderingPaused = true;
+    cartState.empty = true;
+    render(<CartPage />);
+
+    expect(screen.getByText('orderingPaused')).toBeInTheDocument();
+    expect(screen.queryByText('emptyCartDesc')).toBeNull();
   });
 });

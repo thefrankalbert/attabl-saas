@@ -64,10 +64,12 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => mockAuth
 
 const mockCancelOrder = vi.fn();
 const mockUpdateStatus = vi.fn();
+const mockSetCourseHeld = vi.fn();
 vi.mock('@/services/order.service', () => ({
   createOrderService: vi.fn(() => ({
     cancelOrder: mockCancelOrder,
     updateStatus: mockUpdateStatus,
+    setCourseHeld: mockSetCourseHeld,
   })),
 }));
 
@@ -311,4 +313,126 @@ describe('actions d argent - coupure du restaurant', () => {
       expect(mockCompOrder).toHaveBeenCalled();
     },
   );
+});
+
+/**
+ * Decision produit du 2026-11-09: a la fin d'un essai sans abonnement (pas
+ * encore gele par le cron), la cuisine FINIT les commandes creees avant
+ * `trial_ends_at`. Ni encaissement, ni commande creee apres la fin d'essai.
+ */
+describe("actions de cuisine - fin d'essai", () => {
+  const FIN_ESSAI = '2020-01-10T10:00:00Z';
+  const ITEM_ID = '44444444-4444-4444-a444-444444444444';
+
+  function brancherEssaiExpire(commandeCreeeLe: string, etat: Record<string, unknown> = {}) {
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: mockAuthedSupabase,
+      user: { id: 'user-9', email: 'chef@resto.test' },
+      adminUserId: 'admin-9',
+    });
+    const chaine = (resolved: unknown) => {
+      const chain: Record<string, unknown> = {};
+      for (const m of ['select', 'eq', 'is', 'in', 'update']) chain[m] = vi.fn(() => chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue(resolved);
+      chain.then = (resolve: (v: unknown) => unknown) => resolve({ error: null });
+      return chain;
+    };
+    mockAuthedSupabase.from.mockImplementation(((table: string) => {
+      if (table === 'tenants') {
+        return chaine({
+          data: {
+            subscription_plan: 'starter',
+            subscription_status: 'trial',
+            trial_ends_at: FIN_ESSAI,
+            stripe_subscription_id: null,
+            is_active: true,
+            suspended_at: null,
+            ...etat,
+          },
+          error: null,
+        });
+      }
+      return chaine({ data: { id: ORDER_ID, created_at: commandeCreeeLe }, error: null });
+    }) as never);
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUpdateStatus.mockResolvedValue(undefined);
+    mockCancelOrder.mockResolvedValue(undefined);
+    mockSetCourseHeld.mockResolvedValue(undefined);
+    afterCallbacks.length = 0;
+  });
+
+  it('commande d avant la fin: la cuisine la fait avancer', async () => {
+    brancherEssaiExpire('2020-01-10T09:00:00Z');
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    expect(result).toEqual({ success: true });
+    expect(mockUpdateStatus).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'ready');
+  });
+
+  it('commande d avant la fin: la cuisine peut l annuler, et le stock revient', async () => {
+    // Le plan stocke (starter) n'a pas le module stock, mais la commande a ete
+    // destockee pendant l'essai: sans restockage, le stock resterait faux.
+    vi.mocked(canAccessFeature).mockReturnValue(false);
+    mockRestockOrder.mockResolvedValue(1);
+    brancherEssaiExpire('2020-01-10T09:00:00Z');
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'cancelled');
+
+    expect(result).toEqual({ success: true });
+    expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
+    await runScheduled();
+    expect(mockRestockOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, 'user-9');
+  });
+
+  it('commande d avant la fin: articles et plats tenus aussi', async () => {
+    brancherEssaiExpire('2020-01-10T09:00:00Z');
+    const { actionUpdateItemStatus, actionSetCourseHeld } = await import('@/app/actions/orders');
+
+    await expect(actionUpdateItemStatus(TENANT_ID, ORDER_ID, [ITEM_ID], 'ready')).resolves.toEqual({
+      success: true,
+    });
+    await expect(actionSetCourseHeld(TENANT_ID, ORDER_ID, 'main', false)).resolves.toEqual({
+      success: true,
+    });
+    expect(mockSetCourseHeld).toHaveBeenCalled();
+  });
+
+  it('commande creee apres la fin: refusee', async () => {
+    brancherEssaiExpire('2020-01-10T10:30:00Z');
+    const { actionUpdateOrderStatus, actionUpdateItemStatus, actionSetCourseHeld } =
+      await import('@/app/actions/orders');
+
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+
+    const item = await actionUpdateItemStatus(TENANT_ID, ORDER_ID, [ITEM_ID], 'ready');
+    expect(item.error).toBe('Ce restaurant est temporairement indisponible');
+
+    const held = await actionSetCourseHeld(TENANT_ID, ORDER_ID, 'main', false);
+    expect(held.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(mockSetCourseHeld).not.toHaveBeenCalled();
+  });
+
+  it('suspendu par le super-admin: aucune exception, meme pour une commande d avant', async () => {
+    brancherEssaiExpire('2020-01-10T09:00:00Z', { suspended_at: '2020-01-10T11:00:00Z' });
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it('l encaissement reste refuse, meme pour une commande d avant', async () => {
+    brancherEssaiExpire('2020-01-10T09:00:00Z');
+    const { actionCompOrder } = await import('@/app/actions/orders');
+    const result = await actionCompOrder(TENANT_ID, ORDER_ID, 'Geste commercial');
+
+    expect(result.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(mockCompOrder).not.toHaveBeenCalled();
+  });
 });

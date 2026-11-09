@@ -3182,7 +3182,8 @@
     "closeAriaLabel": "Fermer",
     "choosePlan": "Choisir mon plan",
     "expired": "Votre essai est termine. Choisissez un plan pour continuer.",
-    "seePlans": "Voir les plans"
+    "seePlans": "Voir les plans",
+    "menuVisibleDaysLeft": "Votre carte reste visible encore {count, plural, one {# jour} other {# jours}}. Choisissez un plan pour reprendre les commandes."
   },
   "ads": {
     "title": "Publicités & Bannières",
@@ -3940,6 +3941,8 @@
     "yourCart": "Votre panier",
     "itemCount": "{count} article(s)",
     "addToCart": "Ajouter au panier",
+    "orderingPaused": "Commandes en pause pour le moment",
+    "orderingPausedNotice": "Commandes en pause pour le moment. La carte reste ouverte, regardez a votre aise.",
     "selectSize": "Choisir la taille",
     "specialInstructions": "Instructions spéciales",
     "specialInstructionsPlaceholder": "Allergies, préférences...",

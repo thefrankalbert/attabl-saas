@@ -81,4 +81,28 @@ describe('LockedSubscriptionRedirect', () => {
     render(<LockedSubscriptionRedirect tenantSlug="demo" />);
     expect(mockReplace).not.toHaveBeenCalled();
   });
+
+  // Decision produit du 2026-11-09: a la fin d'un essai pas encore gele, la
+  // cuisine finit les commandes d'avant la fin d'essai. Seule la cuisine s'ouvre.
+  it.each(['/sites/demo/admin/kitchen', '/sites/demo/admin/kitchen/'])(
+    'fin d essai: laisse la cuisine atteignable (%s)',
+    (path) => {
+      mockPathname = path;
+      mockSubscription.isFrozen = true;
+      render(<LockedSubscriptionRedirect tenantSlug="demo" kitchenMayFinish />);
+      expect(mockReplace).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    '/sites/demo/admin',
+    '/sites/demo/admin/pos',
+    '/sites/demo/admin/orders',
+    '/sites/demo/admin/kitchen-settings',
+  ])('fin d essai: renvoie quand meme vers l abonnement depuis %s', (path) => {
+    mockPathname = path;
+    mockSubscription.isFrozen = true;
+    render(<LockedSubscriptionRedirect tenantSlug="demo" kitchenMayFinish />);
+    expect(mockReplace).toHaveBeenCalledWith('/sites/demo/admin/subscription');
+  });
 });

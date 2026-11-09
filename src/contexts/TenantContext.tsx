@@ -7,12 +7,20 @@ interface TenantContextType {
   slug: string | null;
   tenantId: string | null;
   tenant: Tenant | null;
+  /**
+   * Fin d'essai sans abonnement, dans les 7 jours de grace: la carte reste
+   * visible mais aucune commande n'est possible (`storefrontAccess` ===
+   * 'read_only'). Le serveur refuse de toute facon la commande: ce drapeau
+   * n'est que l'explication a l'ecran.
+   */
+  orderingPaused: boolean;
 }
 
 const TenantContext = createContext<TenantContextType>({
   slug: null,
   tenantId: null,
   tenant: null,
+  orderingPaused: false,
 });
 
 export function TenantProvider({
@@ -20,14 +28,18 @@ export function TenantProvider({
   slug,
   tenantId,
   tenant,
+  orderingPaused = false,
 }: {
   children: ReactNode;
   slug: string | null;
   tenantId: string | null;
   tenant: Tenant | null;
+  orderingPaused?: boolean;
 }) {
   return (
-    <TenantContext.Provider value={{ slug, tenantId, tenant }}>{children}</TenantContext.Provider>
+    <TenantContext.Provider value={{ slug, tenantId, tenant, orderingPaused }}>
+      {children}
+    </TenantContext.Provider>
   );
 }
 

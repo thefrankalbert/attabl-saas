@@ -11,7 +11,11 @@ import {
   getClientIp,
 } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
-import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
+import {
+  TENANT_LOCK_COLUMNS,
+  isLockedOnlyByLapsedTrial,
+  tenantLockReason,
+} from '@/lib/billing/tenant-lock';
 import {
   orderMutationSchema,
   type OrderMutationInput,
@@ -43,6 +47,19 @@ import { actionAssignServer, actionReleaseAssignment } from '@/app/actions/assig
  * reel bloque plus longtemps en "non synchronise" cote caisse.
  */
 const STALE_CLAIM_MS = 60_000;
+
+/**
+ * Les gestes de cuisine. A la fin d'un essai sans abonnement (et seulement
+ * dans ce cas), ils passent la coupure de cette route: l'action appelee juge
+ * ensuite commande par commande (`assertTenantServingForKitchen`, creee avant
+ * `trial_ends_at` ?). Decision produit du 2026-11-09. Encaissement et
+ * assignations restent refuses.
+ */
+const KITCHEN_MUTATIONS: ReadonlySet<OrderMutationInput['type']> = new Set([
+  'status',
+  'item_status',
+  'course_held',
+]);
 
 /** Runs the mutation for a given (already tenant-derived) request. */
 async function dispatch(
@@ -184,7 +201,9 @@ export async function POST(request: Request) {
     }
 
     const lockReason = tenantLockReason(lockRow);
-    if (lockReason) {
+    const kitchenFinishing =
+      KITCHEN_MUTATIONS.has(input.type) && isLockedOnlyByLapsedTrial(lockRow);
+    if (lockReason && !kitchenFinishing) {
       logger.warn('Order mutation refused: tenant access locked', {
         tenantId,
         reason: lockReason,

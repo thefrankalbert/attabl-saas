@@ -35,11 +35,21 @@ vi.mock('@/lib/cache', () => ({
     id: 'tenant-1',
     name: 'Resto',
     slug: 'resto',
+    is_active: true,
+    subscription_status: 'active',
     currency: 'XOF',
     opening_hours: null,
     logo_url: null,
   }),
   getTableOccupied: (...args: unknown[]) => getTableOccupied(...(args as [])),
+}));
+
+// The storefront access rule reads Stripe ids in service_role ('server-only')
+// only for an expired trial. This tenant is subscribed: the read must not happen.
+vi.mock('@/lib/billing/tenant-billing-ids', () => ({
+  getTenantBillingIds: () => {
+    throw new Error('service_role read for a tenant without an expired trial');
+  },
 }));
 
 const stub = (name: string) => {

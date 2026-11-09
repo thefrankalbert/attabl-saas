@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag } from 'lucide-react';
 import { useCartData } from '@/contexts/CartContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 import { formatCartCount } from '@/lib/utils/cart-display';
 import { usePathname } from 'next/navigation';
@@ -13,6 +14,10 @@ export function ClientFloatingCart({ slug }: { slug: string }) {
   const { totalItems, subtotal, currencyCode, items } = useCartData();
   const t = useTranslations('tenant');
   const pathname = usePathname();
+  // Commandes en pause (fin d'essai): un panier garde d'avant ne doit pas
+  // inviter a commander. Il reste stocke pour plus tard.
+  const { orderingPaused } = useTenant();
+  if (orderingPaused) return null;
   if (totalItems === 0) return null;
   if (pathname?.includes('/cart')) return null;
   if (pathname?.endsWith('/welcome')) return null;

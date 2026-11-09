@@ -2,7 +2,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AuthError } from '@/lib/auth/get-session';
 import { logger } from '@/lib/logger';
-import { TENANT_LOCK_COLUMNS, tenantLockReason } from './tenant-lock';
+import {
+  TENANT_LOCK_COLUMNS,
+  isLockedOnlyByLapsedTrial,
+  kitchenMayFinishOrder,
+  tenantLockReason,
+  type TenantLockRow,
+} from './tenant-lock';
 
 /**
  * Refus parce que le restaurant est coupe, et non parce que l'employe manque
@@ -61,6 +67,59 @@ export async function assertTenantServing(
   tenantId: string,
   supabase: SupabaseClient = createAdminClient(),
 ): Promise<void> {
+  const tenant = await readLockRow(tenantId, supabase);
+  const reason = tenantLockReason(tenant);
+  if (reason) {
+    logger.warn('Mutation refusee: restaurant coupe', { tenantId, reason });
+    throw new TenantLockedError();
+  }
+}
+
+/**
+ * `assertTenantServing` pour les gestes de CUISINE sur une commande (statut,
+ * statut d'article, envoi d'un plat tenu, annulation), avec la seule exception
+ * de la decision produit du 2026-11-09: a la fin d'un essai sans abonnement, la
+ * cuisine finit les commandes creees AVANT `trial_ends_at` (`kitchenMayFinishOrder`).
+ *
+ * A NE PAS appeler pour encaisser, rembourser, offrir, solder ou annoter:
+ * ces chemins restent sur `assertTenantServing`, sans exception.
+ *
+ * La commande est relue ICI, en service_role et bornee a `tenantId`: la date
+ * de creation ne vient jamais du client. Commande introuvable, d'un autre
+ * restaurant ou lecture en echec: refus, comme le reste de la garde.
+ *
+ * Rend `true` quand le geste passe AU TITRE de cette exception (restaurant
+ * coupe), `false` quand le restaurant sert normalement. L'annulation s'en sert:
+ * le stock deduit pendant l'essai doit revenir meme si le plan stocke n'a pas
+ * le module stock.
+ *
+ * @throws {TenantLockedError} 403 si le restaurant est coupe et que l'exception ne s'applique pas.
+ */
+export async function assertTenantServingForKitchen(
+  tenantId: string,
+  orderId: string,
+  supabase: SupabaseClient = createAdminClient(),
+): Promise<boolean> {
+  const tenant = await readLockRow(tenantId, supabase);
+  const reason = tenantLockReason(tenant);
+  if (!reason) return false;
+
+  if (isLockedOnlyByLapsedTrial(tenant)) {
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('created_at')
+      .eq('id', orderId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+    if (!error && order && kitchenMayFinishOrder(tenant, order.created_at as string)) return true;
+  }
+
+  logger.warn('Geste cuisine refuse: restaurant coupe', { tenantId, orderId, reason });
+  throw new TenantLockedError();
+}
+
+/** La ligne de verrou du restaurant, ou un refus (echec ferme). */
+async function readLockRow(tenantId: string, supabase: SupabaseClient): Promise<TenantLockRow> {
   const { data: tenant, error } = await supabase
     .from('tenants')
     .select(TENANT_LOCK_COLUMNS)
@@ -72,10 +131,5 @@ export async function assertTenantServing(
     logger.warn('Mutation refusee: restaurant illisible', { tenantId });
     throw new TenantLockedError();
   }
-
-  const reason = tenantLockReason(tenant);
-  if (reason) {
-    logger.warn('Mutation refusee: restaurant coupe', { tenantId, reason });
-    throw new TenantLockedError();
-  }
+  return tenant;
 }

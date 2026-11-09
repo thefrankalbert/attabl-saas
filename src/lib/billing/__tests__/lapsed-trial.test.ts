@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { isTrialLapsedForTenant, resolveDisplayedSubscriptionStatus } from '../lapsed-trial';
+import {
+  isTrialLapsedForTenant,
+  menuVisibleDaysLeftForTenant,
+  resolveDisplayedSubscriptionStatus,
+  storefrontAccessForTenant,
+} from '../lapsed-trial';
 
 // Le chargeur par defaut lit en service_role ('server-only'). Chaque test
 // injecte le sien; ce mock prouve qu'aucun ne retombe sur le client reel.
@@ -67,5 +72,104 @@ describe('isTrialLapsedForTenant', () => {
   it('restaurant introuvable a la relecture: compte comme sans abonnement', async () => {
     const load = vi.fn().mockResolvedValue(null);
     await expect(isTrialLapsedForTenant('t1', expire, load, MAINTENANT)).resolves.toBe(true);
+  });
+});
+
+describe('storefrontAccessForTenant - meme lecture service_role que la garde', () => {
+  const expireActif = { ...expire, is_active: true, suspended_at: null };
+
+  it('essai expire sans abonnement: carte en lecture seule', async () => {
+    const load = vi.fn().mockResolvedValue({ stripe_subscription_id: null });
+    await expect(storefrontAccessForTenant('t1', expireActif, load, MAINTENANT)).resolves.toBe(
+      'read_only',
+    );
+    expect(load).toHaveBeenCalledWith('t1');
+  });
+
+  it('essai expire mais abonnement Stripe ouvert: carte ouverte', async () => {
+    const load = vi.fn().mockResolvedValue({ stripe_subscription_id: 'sub_123' });
+    await expect(storefrontAccessForTenant('t1', expireActif, load, MAINTENANT)).resolves.toBe(
+      'open',
+    );
+  });
+
+  it('lecture en echec: lecture seule, jamais ouverte', async () => {
+    const load = vi.fn().mockRejectedValue(new Error('panne'));
+    await expect(storefrontAccessForTenant('t1', expireActif, load, MAINTENANT)).resolves.toBe(
+      'read_only',
+    );
+  });
+
+  it('gel du cron: aucune lecture service_role, la cause suffit', async () => {
+    const load = vi.fn();
+    const gele = {
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'trial_expired',
+      trial_ends_at: expire.trial_ends_at,
+    };
+    await expect(storefrontAccessForTenant('t1', gele, load, MAINTENANT)).resolves.toBe(
+      'read_only',
+    );
+    expect(load).not.toHaveBeenCalled();
+  });
+});
+
+describe('menuVisibleDaysLeftForTenant - compte a rebours du bandeau admin', () => {
+  const sansAbonnement = () => vi.fn().mockResolvedValue({ stripe_subscription_id: null });
+
+  it('essai expire il y a 4 h: 7 jours de carte visible', async () => {
+    const row = { ...expire, is_active: true, suspended_at: null };
+    await expect(
+      menuVisibleDaysLeftForTenant('t1', row, sansAbonnement(), MAINTENANT),
+    ).resolves.toBe(7);
+  });
+
+  it('gel du cron il y a 3 jours et 4 h: 4 jours', async () => {
+    const row = {
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'trial_expired',
+      trial_ends_at: '2026-11-06T08:00:00Z',
+    };
+    await expect(menuVisibleDaysLeftForTenant('t1', row, vi.fn(), MAINTENANT)).resolves.toBe(4);
+  });
+
+  it('essai en cours: aucun compte a rebours', async () => {
+    const row = { ...enCours, is_active: true, suspended_at: null };
+    await expect(
+      menuVisibleDaysLeftForTenant('t1', row, sansAbonnement(), MAINTENANT),
+    ).resolves.toBeNull();
+  });
+
+  it('gel pour une autre cause (litige): aucun compte a rebours', async () => {
+    const row = {
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'dispute',
+      trial_ends_at: expire.trial_ends_at,
+    };
+    await expect(menuVisibleDaysLeftForTenant('t1', row, vi.fn(), MAINTENANT)).resolves.toBeNull();
+  });
+
+  it('essai expire mais suspendu par la plateforme: aucun compte a rebours', async () => {
+    const row = { ...expire, is_active: true, suspended_at: '2026-11-09T09:00:00Z' };
+    await expect(
+      menuVisibleDaysLeftForTenant('t1', row, sansAbonnement(), MAINTENANT),
+    ).resolves.toBeNull();
+  });
+
+  it('plus de 7 jours apres la fin de l essai: aucun compte a rebours', async () => {
+    const row = {
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'trial_expired',
+      trial_ends_at: '2026-11-01T08:00:00Z',
+    };
+    await expect(menuVisibleDaysLeftForTenant('t1', row, vi.fn(), MAINTENANT)).resolves.toBeNull();
   });
 });

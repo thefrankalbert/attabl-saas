@@ -3182,7 +3182,8 @@
     "closeAriaLabel": "Close",
     "choosePlan": "Choose my plan",
     "expired": "Your trial has ended. Choose a plan to continue.",
-    "seePlans": "See plans"
+    "seePlans": "See plans",
+    "menuVisibleDaysLeft": "Your menu stays visible for {count, plural, one {# more day} other {# more days}}. Choose a plan to take orders again."
   },
   "ads": {
     "title": "Ads & Banners",
@@ -3940,6 +3941,8 @@
     "yourCart": "Your Cart",
     "itemCount": "{count} item(s)",
     "addToCart": "Add to Cart",
+    "orderingPaused": "Ordering is paused for now",
+    "orderingPausedNotice": "Ordering is paused for now. The menu stays open, take your time.",
     "selectSize": "Select size",
     "specialInstructions": "Special instructions",
     "specialInstructionsPlaceholder": "Allergies, preferences...",

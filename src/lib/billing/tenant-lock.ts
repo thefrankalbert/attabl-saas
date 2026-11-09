@@ -131,3 +131,39 @@ export function tenantLockReason(
 export function isTenantServing(tenant: TenantLockRow, now: number = Date.now()): boolean {
   return tenantLockReason(tenant, now) === null;
 }
+
+/**
+ * Le restaurant est-il coupe PAR LA SEULE FIN DE L'ESSAI, pas encore gele par
+ * le cron ? Actif, non suspendu, statut `trial`, essai expire sans abonnement.
+ * Toute autre cause (gel, suspension, desactivation, resiliation...) rend
+ * `false`, y compris un essai expire que le cron a deja gele.
+ */
+export function isLockedOnlyByLapsedTrial(
+  tenant: TenantLockRow,
+  now: number = Date.now(),
+): boolean {
+  return tenantLockReason(tenant, now) === 'subscription' && isTrialLapsed(tenant, now);
+}
+
+/**
+ * La cuisine peut-elle encore faire avancer CETTE commande alors que le
+ * restaurant est coupe ?
+ *
+ * DECISION PRODUIT (proprietaire, 2026-11-09). A la fin d'un essai sans
+ * abonnement, les commandes deja en cuisine ne restent pas en plan: la cuisine
+ * peut les finir (statut, articles, envoi d'un plat tenu, annulation). Rien
+ * d'autre: ni nouvelle commande, ni encaissement, ni caisse.
+ *
+ * Seulement quand le verrou vient de la fin d'essai (`isLockedOnlyByLapsedTrial`)
+ * et seulement pour une commande creee AVANT `trial_ends_at`. Le cron ne gele
+ * l'essai que 12 h plus tard: c'est la fenetre de la cuisine. Apres le gel, le
+ * proxy ferme l'admin et cette regle ne s'applique plus.
+ */
+export function kitchenMayFinishOrder(
+  tenant: TenantLockRow,
+  orderCreatedAt: string,
+  now: number = Date.now(),
+): boolean {
+  if (!tenant.trial_ends_at || !isLockedOnlyByLapsedTrial(tenant, now)) return false;
+  return new Date(orderCreatedAt).getTime() < new Date(tenant.trial_ends_at).getTime();
+}

@@ -17,7 +17,10 @@ import { ServiceError } from '@/services/errors';
 import { compOrderSchema, orderNoteSchema } from '@/lib/validations/house-account.schema';
 import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
-import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
+import {
+  assertTenantServing,
+  assertTenantServingForKitchen,
+} from '@/lib/billing/assert-tenant-serving';
 import { ORDER_STAFF_ROLES, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
@@ -228,7 +231,12 @@ export async function actionUpdateOrderStatus(
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
     // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
     // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
-    await assertTenantServing(parsed.data.tenantId);
+    // Geste de cuisine: a la fin d'un essai, la cuisine finit les commandes
+    // passees avant `trial_ends_at` (decision produit du 2026-11-09).
+    const finishingAfterTrial = await assertTenantServingForKitchen(
+      parsed.data.tenantId,
+      parsed.data.orderId,
+    );
     const service = createOrderService(supabase);
     if (parsed.data.status === 'cancelled') {
       // Cancellation reverses side-effects (audit C7), in two halves by design:
@@ -239,11 +247,13 @@ export async function actionUpdateOrderStatus(
       //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
       await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
 
-      const hasInventory = await isFeatureEntitled(
-        supabase,
-        parsed.data.tenantId,
-        'canAccessInventory',
-      );
+      // Fin d'essai: le plan effectif retombe sur le plan stocke (souvent sans
+      // stock), mais la commande a ete destockee pendant l'essai. Sans ce cas,
+      // l'annuler laisserait le stock faux a vie. `restock_order` ne rend que
+      // ce qui a ete deduit pour cette commande: sans destockage, rien ne bouge.
+      const hasInventory =
+        finishingAfterTrial ||
+        (await isFeatureEntitled(supabase, parsed.data.tenantId, 'canAccessInventory'));
 
       if (hasInventory) {
         const { orderId: cancelledOrderId, tenantId: cancelledTenantId } = parsed.data;
@@ -314,7 +324,9 @@ export async function actionUpdateItemStatus(
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
     // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
     // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
-    await assertTenantServing(parsed.data.tenantId);
+    // Geste de cuisine: a la fin d'un essai, la cuisine finit les commandes
+    // passees avant `trial_ends_at` (decision produit du 2026-11-09).
+    await assertTenantServingForKitchen(parsed.data.tenantId, parsed.data.orderId);
 
     // Verify the order belongs to the verified tenant before touching its items.
     const { data: order, error: orderError } = await supabase
@@ -380,7 +392,9 @@ export async function actionSetCourseHeld(
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
     // l'interface (OrderPaymentPanel, CompOrderDialog), donc la garde de
     // `/api/orders/mutations` ne les couvre pas. Voir assert-tenant-serving.ts.
-    await assertTenantServing(parsed.data.tenantId);
+    // Geste de cuisine: a la fin d'un essai, la cuisine finit les commandes
+    // passees avant `trial_ends_at` (decision produit du 2026-11-09).
+    await assertTenantServingForKitchen(parsed.data.tenantId, parsed.data.orderId);
     await createOrderService(supabase).setCourseHeld(
       parsed.data.orderId,
       parsed.data.tenantId,

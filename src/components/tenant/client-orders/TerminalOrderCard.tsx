@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { grandTotal, type OrderRecord } from './types';
 
@@ -26,6 +27,8 @@ export function TerminalOrderCard({
   const locale = useLocale();
   const dateLocale = locale.startsWith('fr') ? fr : undefined;
   const { formatDisplayPrice } = useDisplayCurrency();
+  // Commandes en pause (fin d'essai): pas de "recommander".
+  const { orderingPaused } = useTenant();
 
   const dateStr = format(new Date(order.created_at), 'dd MMM, HH:mm', {
     locale: dateLocale,
@@ -54,14 +57,16 @@ export function TerminalOrderCard({
         <div className="text-[13px] font-bold tabular-nums text-[var(--color-ink)]">
           {formatDisplayPrice(grandTotal(order), currency)}
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => onReorder(order)}
-          className="relative z-10 mt-0.5 h-auto p-0 text-[10.5px] font-semibold text-[var(--color-accent)] hover:bg-transparent"
-        >
-          {t('reorderShort')}
-        </Button>
+        {!orderingPaused && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onReorder(order)}
+            className="relative z-10 mt-0.5 h-auto p-0 text-[10.5px] font-semibold text-[var(--color-accent)] hover:bg-transparent"
+          >
+            {t('reorderShort')}
+          </Button>
+        )}
       </div>
     </div>
   );
