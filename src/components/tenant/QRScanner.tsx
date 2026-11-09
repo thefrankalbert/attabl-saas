@@ -183,14 +183,14 @@ export default function QRScanner({
             }}
           >
             {/* Corner brackets (brand green per maquette) */}
-            <div className="absolute -top-px -left-px h-7 w-7 rounded-tl border-l-2 border-t-2 border-[var(--color-brand)]" />
-            <div className="absolute -top-px -right-px h-7 w-7 rounded-tr border-r-2 border-t-2 border-[var(--color-brand)]" />
-            <div className="absolute -bottom-px -left-px h-7 w-7 rounded-bl border-b-2 border-l-2 border-[var(--color-brand)]" />
-            <div className="absolute -bottom-px -right-px h-7 w-7 rounded-br border-b-2 border-r-2 border-[var(--color-brand)]" />
+            <div className="absolute -top-px -left-px h-7 w-7 rounded-tl border-l-2 border-t-2 border-[var(--brand-cta)]" />
+            <div className="absolute -top-px -right-px h-7 w-7 rounded-tr border-r-2 border-t-2 border-[var(--brand-cta)]" />
+            <div className="absolute -bottom-px -left-px h-7 w-7 rounded-bl border-b-2 border-l-2 border-[var(--brand-cta)]" />
+            <div className="absolute -bottom-px -right-px h-7 w-7 rounded-br border-b-2 border-r-2 border-[var(--brand-cta)]" />
 
             {/* Scan line */}
             {scanStatus === 'scanning' && (
-              <div className="absolute left-0 right-0 top-0 h-px animate-[scan_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--color-brand)] to-transparent" />
+              <div className="absolute left-0 right-0 top-0 h-px animate-[scan_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--brand-cta)] to-transparent" />
             )}
           </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -9,6 +9,7 @@ import { getCurrencyConfig } from '@/lib/utils/currency';
 import { formatCurrencyMinor, fromMinorUnits } from '@/lib/utils/money';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useMinuteClock } from '@/hooks/useMinuteClock';
 import { SectionCards, type SectionCardData } from './dashboard/SectionCards';
 import { OrdersTable } from './dashboard/OrdersTable';
 import type {
@@ -62,12 +63,8 @@ export default function DashboardClient(props: DashboardClientProps) {
   const { can } = usePermissions();
   const showFin = can('canViewAllFinances');
 
-  const [currentTime, setCurrentTime] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
+  // null on the server and during hydration, then the real minute (see hook).
+  const nowMs = useMinuteClock();
 
   // -- KPI section cards
   // Depend on primitive stat values, not the whole `stats` object -
@@ -225,13 +222,13 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Live orders - tablet: second; desktop: full-height left column */}
-      <div className="order-2 min-w-0 xl:col-start-1 xl:row-start-1 xl:row-span-2">
+      <div className="order-2 min-w-0 px-3 sm:px-5 xl:col-start-1 xl:row-start-1 xl:row-span-2">
         <OrdersTable
           orders={recentOrders}
           formatValue={fmtF}
           locale={locale}
           adminBase={adminBase}
-          nowMs={currentTime.getTime()}
+          nowMs={nowMs}
           onStatusChange={handleStatusChange}
         />
       </div>

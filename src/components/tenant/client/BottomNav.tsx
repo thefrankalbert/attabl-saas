@@ -78,19 +78,21 @@ export function ClientBottomNav({ slug }: { slug: string }) {
             >
               <span className="relative">
                 <tab.Icon
-                  className={active ? 'text-[var(--color-brand)]' : 'text-[var(--color-ink-muted)]'}
+                  className={
+                    active ? 'text-[var(--brand-accent)]' : 'text-[var(--color-ink-muted)]'
+                  }
                   width={22}
                   height={22}
                   strokeWidth={active ? 2.2 : 1.8}
                 />
                 {tab.badge && totalItems > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand)] px-1 text-[10px] font-bold tabular-nums text-white">
+                  <span className="absolute -right-2 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[var(--brand-cta)] px-1 text-[10px] font-bold tabular-nums text-[var(--brand-cta-fg)]">
                     {formatCartCount(totalItems)}
                   </span>
                 )}
               </span>
               <span
-                className={`text-[10.5px] tracking-[-0.1px] ${active ? 'font-semibold text-[var(--color-brand)]' : 'font-medium text-[var(--color-ink-muted)]'}`}
+                className={`text-[10.5px] tracking-[-0.1px] ${active ? 'font-semibold text-[var(--brand-accent)]' : 'font-medium text-[var(--color-ink-muted)]'}`}
               >
                 {t(tab.key)}
               </span>

@@ -258,10 +258,10 @@ export default async function HomePage({
             >
               <div
                 className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20 blur-[20px]"
-                style={{ backgroundColor: 'var(--color-brand)' }}
+                style={{ backgroundColor: 'var(--brand-cta)' }}
               />
               <div className="relative">
-                <div className="font-mono text-[11px] font-medium uppercase tracking-[0.6px] text-[var(--color-brand)]">
+                <div className="font-mono text-[11px] font-medium uppercase tracking-[0.6px] text-[var(--brand-cta)]">
                   {periodLabel} &middot; {hour}H
                 </div>
                 <div className="mt-2 text-[26px] font-semibold leading-[1.1] tracking-[-0.04em] text-white">
@@ -270,7 +270,7 @@ export default async function HomePage({
                 </div>
                 {openingState.isOpen && (
                   <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-cta)]" />
                     {t('cuisineOuverte')}
                   </div>
                 )}
