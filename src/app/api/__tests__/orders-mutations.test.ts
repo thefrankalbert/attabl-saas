@@ -10,6 +10,8 @@ const mockSettlementLimitCheck = vi.fn<() => Promise<{ success: boolean }>>();
 vi.mock('@/lib/rate-limit', () => ({
   assignmentLimiter: { check: () => mockRateLimitCheck() },
   orderSettlementLimiter: { check: () => mockSettlementLimitCheck() },
+  // Gestes article de la cuisine: meme budget que les assignations dans ce test.
+  kitchenItemLimiter: { check: () => mockRateLimitCheck() },
   getClientIp: () => '127.0.0.1',
 }));
 
@@ -23,9 +25,13 @@ const mockActionStatus = vi.fn();
 const mockActionAssign = vi.fn();
 const mockActionRelease = vi.fn();
 const mockActionMarkPaid = vi.fn();
+const mockActionItemStatus = vi.fn();
+const mockActionCourseHeld = vi.fn();
 vi.mock('@/app/actions/orders', () => ({
   actionUpdateOrderStatus: (...a: unknown[]) => mockActionStatus(...a),
   actionMarkOrderPaid: (...a: unknown[]) => mockActionMarkPaid(...a),
+  actionUpdateItemStatus: (...a: unknown[]) => mockActionItemStatus(...a),
+  actionSetCourseHeld: (...a: unknown[]) => mockActionCourseHeld(...a),
 }));
 vi.mock('@/app/actions/assignments', () => ({
   actionAssignServer: (...a: unknown[]) => mockActionAssign(...a),
@@ -395,6 +401,80 @@ describe('POST /api/orders/mutations - coupure du restaurant', () => {
 
     expect(res.status).toBe(200);
     expect(mockActionMarkPaid).toHaveBeenCalled();
+  });
+
+  // Decision produit du 2026-11-09: a la fin d'un essai pas encore gele, les
+  // gestes de cuisine passent la coupure de la route. L'action juge ensuite
+  // commande par commande (assertTenantServingForKitchen, teste a part).
+  describe("fin d'essai pas encore gelee: la cuisine finit ses commandes", () => {
+    const ESSAI_EXPIRE = {
+      subscription_status: 'trial',
+      trial_ends_at: '2020-01-01T00:00:00Z',
+      stripe_subscription_id: null,
+    };
+    const iid = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+
+    it.each([
+      ['status', { type: 'status', orderId: oid, status: 'ready' }, () => mockActionStatus],
+      [
+        'item_status',
+        { type: 'item_status', orderId: oid, itemIds: [iid], status: 'ready' },
+        () => mockActionItemStatus,
+      ],
+      [
+        'course_held',
+        { type: 'course_held', orderId: oid, course: 'main', held: false },
+        () => mockActionCourseHeld,
+      ],
+    ])('%s: transmis a l action', async (_type, corps, action) => {
+      tenantRow = { ...LIGNE_SERVANTE, ...ESSAI_EXPIRE };
+      action().mockResolvedValue({ success: true });
+
+      const { POST } = await import('@/app/api/orders/mutations/route');
+      const res = await POST(post({ ...corps, client_request_id: rid }));
+
+      expect(res.status).toBe(200);
+      expect(action()).toHaveBeenCalled();
+    });
+
+    it('pay: reste refuse en 403, sans consommer la cle', async () => {
+      tenantRow = { ...LIGNE_SERVANTE, ...ESSAI_EXPIRE };
+      const { POST } = await import('@/app/api/orders/mutations/route');
+      const res = await POST(
+        post({ type: 'pay', client_request_id: rid, orderId: oid, method: 'cash' }),
+      );
+      expect(res.status).toBe(403);
+      expect(mockActionMarkPaid).not.toHaveBeenCalled();
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('assign: reste refuse en 403', async () => {
+      tenantRow = { ...LIGNE_SERVANTE, ...ESSAI_EXPIRE };
+      const { POST } = await import('@/app/api/orders/mutations/route');
+      const res = await POST(
+        post({
+          type: 'assign',
+          client_request_id: rid,
+          tableId: oid,
+          serverId: iid,
+        }),
+      );
+      expect(res.status).toBe(403);
+      expect(mockActionAssign).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['suspendu par le super-admin', { suspended_at: '2026-11-01T00:00:00Z' }],
+      ['deja gele par le cron', { subscription_status: 'frozen', is_active: false }],
+    ])('status: refuse quand l essai expire est aussi %s', async (_cas, etat) => {
+      tenantRow = { ...LIGNE_SERVANTE, ...ESSAI_EXPIRE, ...etat };
+      const { POST } = await import('@/app/api/orders/mutations/route');
+      const res = await POST(
+        post({ type: 'status', client_request_id: rid, orderId: oid, status: 'ready' }),
+      );
+      expect(res.status).toBe(403);
+      expect(mockActionStatus).not.toHaveBeenCalled();
+    });
   });
 
   it('repond 404 quand le restaurant est introuvable ou supprime', async () => {

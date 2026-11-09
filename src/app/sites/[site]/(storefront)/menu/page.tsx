@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant, getCachedMenuData, getTableOccupied, toPublicTenant } from '@/lib/cache';
 import { resolveTableParam } from '@/lib/qr/table-param';
+import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
 
 export const revalidate = 30;
 
@@ -65,10 +66,16 @@ export default async function MenuDetailPage({
     return notFound();
   }
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const { tenant, access } = await getStorefrontTenant(tenantSlug);
 
   if (!tenant) {
     return notFound();
+  }
+  // Vitrine fermee: le layout affiche StorefrontUnavailable, mais cette page
+  // est rendue en parallele et son payload partirait quand meme. Aucune
+  // lecture de la carte, aucune donnee.
+  if (access === 'closed') {
+    return null;
   }
 
   // Heavy menu payload (venues, categories, items+modifiers, menus, zones,

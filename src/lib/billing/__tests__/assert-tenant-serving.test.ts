@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { assertTenantServing, TenantLockedError } from '../assert-tenant-serving';
+import {
+  assertTenantServing,
+  assertTenantServingForKitchen,
+  TenantLockedError,
+} from '../assert-tenant-serving';
 import { AuthError } from '@/lib/auth/get-session';
 
 // Le client par defaut (service_role) importe 'server-only'. Chaque test injecte
@@ -172,5 +176,122 @@ describe('assertTenantServing', () => {
         'Ce restaurant est temporairement indisponible',
       );
     });
+  });
+});
+
+/**
+ * Decision produit du 2026-11-09: a la fin d'un essai sans abonnement, la
+ * cuisine finit les commandes creees AVANT `trial_ends_at`. La garde relit la
+ * commande elle-meme, bornee au restaurant: la date ne vient jamais du client.
+ */
+describe('assertTenantServingForKitchen', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const FIN_ESSAI = '2020-01-10T10:00:00Z';
+  const ESSAI_EXPIRE: LigneTenant = {
+    ...SERVANT,
+    subscription_status: 'trial',
+    trial_ends_at: FIN_ESSAI,
+    stripe_subscription_id: null,
+  };
+
+  /** Doublure a deux tables: `tenants` (verrou) et `orders` (date de creation). */
+  function clientCuisine(
+    tenant: LigneTenant | null,
+    commande: { data: { created_at: string } | null; error: unknown },
+  ) {
+    const filtresCommande: [string, string][] = [];
+    const lectureCommande = vi.fn().mockResolvedValue(commande);
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === 'tenants') {
+          const chaine = {
+            select: () => chaine,
+            eq: () => chaine,
+            is: () => chaine,
+            maybeSingle: () => Promise.resolve({ data: tenant, error: null }),
+          };
+          return chaine;
+        }
+        const chaine = {
+          select: () => chaine,
+          eq: (col: string, valeur: string) => {
+            filtresCommande.push([col, valeur]);
+            return chaine;
+          },
+          maybeSingle: lectureCommande,
+        };
+        return chaine;
+      }),
+    };
+    return { client, filtresCommande, lectureCommande };
+  }
+
+  it('laisse passer un restaurant qui sert, sans relire la commande', async () => {
+    const { client, lectureCommande } = clientCuisine(SERVANT, { data: null, error: null });
+    await expect(assertTenantServingForKitchen('t-1', 'o-1', client as never)).resolves.toBe(false);
+    expect(lectureCommande).not.toHaveBeenCalled();
+  });
+
+  it('fin d essai: autorise une commande creee avant, lue dans CE restaurant', async () => {
+    const { client, filtresCommande } = clientCuisine(ESSAI_EXPIRE, {
+      data: { created_at: '2020-01-10T09:30:00Z' },
+      error: null,
+    });
+    await expect(assertTenantServingForKitchen('t-1', 'o-1', client as never)).resolves.toBe(true);
+    expect(filtresCommande).toEqual([
+      ['id', 'o-1'],
+      ['tenant_id', 't-1'],
+    ]);
+  });
+
+  it.each([
+    [
+      'creee apres la fin de l essai',
+      { data: { created_at: '2020-01-10T10:05:00Z' }, error: null },
+    ],
+    ['introuvable ou d un autre restaurant', { data: null, error: null }],
+    ['illisible', { data: null, error: { message: 'boom' } }],
+  ])('fin d essai: refuse une commande %s', async (_cas, commande) => {
+    const { client } = clientCuisine(ESSAI_EXPIRE, commande);
+    await expect(
+      assertTenantServingForKitchen('t-1', 'o-1', client as never),
+    ).rejects.toBeInstanceOf(TenantLockedError);
+  });
+
+  it.each([
+    ['suspendu par le super-admin', { suspended_at: '2020-01-10T11:00:00Z' }],
+    ['gele par le cron', { subscription_status: 'frozen', is_active: false }],
+    ['desactive', { is_active: false }],
+    ['resilie', { subscription_status: 'cancelled' }],
+  ])(
+    'refuse meme une commande d avant la fin d essai quand le restaurant est %s',
+    async (_cas, etat) => {
+      const { client, lectureCommande } = clientCuisine(
+        { ...ESSAI_EXPIRE, ...etat },
+        { data: { created_at: '2020-01-10T09:30:00Z' }, error: null },
+      );
+      await expect(
+        assertTenantServingForKitchen('t-1', 'o-1', client as never),
+      ).rejects.toBeInstanceOf(TenantLockedError);
+      expect(lectureCommande).not.toHaveBeenCalled();
+    },
+  );
+
+  it('refuse quand la ligne du restaurant est absente', async () => {
+    const { client } = clientCuisine(null, { data: null, error: null });
+    await expect(
+      assertTenantServingForKitchen('t-1', 'o-1', client as never),
+    ).rejects.toBeInstanceOf(TenantLockedError);
+  });
+
+  it('la garde des encaissements, elle, ne fait aucune exception', async () => {
+    const { client } = clientCuisine(ESSAI_EXPIRE, {
+      data: { created_at: '2020-01-10T09:30:00Z' },
+      error: null,
+    });
+    await expect(assertTenantServing('t-1', client as never)).rejects.toBeInstanceOf(
+      TenantLockedError,
+    );
   });
 });

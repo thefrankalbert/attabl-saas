@@ -9,6 +9,7 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  CirclePause,
   Loader2,
   MapPin,
   ShoppingBag,
@@ -75,7 +76,7 @@ export default function CartPage() {
     applyCoupon,
     removeCoupon,
   } = useCart();
-  const { slug: tenantSlug, tenant } = useTenant();
+  const { slug: tenantSlug, tenant, orderingPaused } = useTenant();
 
   const tableNum = useScannedTable(tenantSlug);
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
@@ -146,7 +147,8 @@ export default function CartPage() {
   );
 
   useEffect(() => {
-    if (items.length === 0) {
+    // Commandes en pause: rien a pre-valider, le panier ne partira pas.
+    if (items.length === 0 || orderingPaused) {
       return;
     }
 
@@ -172,7 +174,7 @@ export default function CartPage() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [items, applyPreviewResult]);
+  }, [items, applyPreviewResult, orderingPaused]);
 
   // Tip amount computation
   const tipAmount = useMemo(() => {
@@ -242,7 +244,7 @@ export default function CartPage() {
   const finalTotal = grandTotal + tipAmount;
 
   const handleSubmitOrder = async () => {
-    if (submitLock.current) return;
+    if (submitLock.current || orderingPaused) return;
     submitLock.current = true;
     setIsSubmitting(true);
     setError(null);
@@ -363,8 +365,9 @@ export default function CartPage() {
     }
   };
 
-  // Empty cart state
-  if (items.length === 0) {
+  // Empty cart state. Commandes en pause: l'ecran de pause prime, sinon un
+  // panier vide inviterait a "ajouter quelques plats" qu'on ne peut pas commander.
+  if (items.length === 0 && !orderingPaused) {
     return (
       <div className="h-full bg-white pb-20">
         <div className="max-w-lg mx-auto h-14 px-4 flex items-center">
@@ -388,6 +391,47 @@ export default function CartPage() {
           </h2>
           <p className="text-[13px] text-[var(--color-ink-muted)] text-center mb-8 max-w-[280px]">
             {t('emptyCartDesc')}
+          </p>
+          <Button
+            asChild
+            className="h-[52px] px-8 rounded-xl bg-[var(--color-ink)] text-white text-[15px] font-semibold hover:bg-black"
+          >
+            <Link href={menuPath}>
+              <ArrowLeft className="w-4 h-4" />
+              {t('browseMenu')}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Commandes en pause (fin d'essai, 7 jours de grace): le panier reste
+  // stocke, mais rien ne peut partir. Le serveur refuse de toute facon.
+  if (orderingPaused) {
+    return (
+      <div className="h-full bg-white pb-20">
+        <div className="max-w-lg mx-auto h-14 px-4 flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+            aria-label={t('ariaGoBack')}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+        </div>
+
+        <div className="flex flex-col items-center justify-center px-4 pt-20">
+          <div className="w-32 h-32 bg-[var(--color-surface-alt)] rounded-full flex items-center justify-center mb-6">
+            <CirclePause className="w-16 h-16 text-[var(--color-ink-soft)]" strokeWidth={1.5} />
+          </div>
+          <h2 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
+            {t('orderingPaused')}
+          </h2>
+          <p className="text-[13px] text-[var(--color-ink-muted)] text-center mb-8 max-w-[280px]">
+            {t('orderingPausedNotice')}
           </p>
           <Button
             asChild

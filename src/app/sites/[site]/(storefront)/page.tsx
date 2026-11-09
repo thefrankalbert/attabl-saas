@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant, getTableOccupied } from '@/lib/cache';
+import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
 import { resolveTableParam } from '@/lib/qr/table-param';
 import { TableOccupiedNotice } from '@/components/tenant/TableOccupiedNotice';
 import { computeOpeningState } from '@/lib/opening-hours';
@@ -99,10 +100,16 @@ export default async function HomePage({
   }
 
   const supabase = await createClient();
-  const tenant = await getCachedTenant(tenantSlug);
+  const { tenant, access } = await getStorefrontTenant(tenantSlug);
 
   if (!tenant) {
     return notFound();
+  }
+  // Vitrine fermee: le layout affiche StorefrontUnavailable, mais cette page
+  // est rendue en parallele et son payload partirait quand meme. Aucune
+  // lecture de la carte, aucune donnee.
+  if (access === 'closed') {
+    return null;
   }
 
   const [categoriesResult, featuredResult, recentResult, menusResult, tablesResult] =

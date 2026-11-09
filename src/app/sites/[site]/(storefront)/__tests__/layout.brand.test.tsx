@@ -9,7 +9,13 @@ import { TenantBrandProvider } from '@/components/theme/TenantBrandProvider';
 // tenant without a color: #1A1A1A on one side, green on the other).
 
 const tenant = vi.hoisted(() => ({
-  current: { id: 't1', slug: 'resto', is_active: true, primary_color: null as string | null },
+  current: {
+    id: 't1',
+    slug: 'resto',
+    is_active: true,
+    subscription_status: 'active',
+    primary_color: null as string | null,
+  },
 }));
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));

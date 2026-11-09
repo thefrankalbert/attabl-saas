@@ -4,6 +4,7 @@ import { Plus, Minus, Tag } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { useCartData, useCartActions } from '@/contexts/CartContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
 import type { MenuItem } from '@/types/admin.types';
@@ -41,12 +42,17 @@ export function CardAddControl({
   const t = useTranslations('tenant');
   const { items } = useCartData();
   const { addToCart, updateQuantity, removeFromCart } = useCartActions();
+  const { orderingPaused } = useTenant();
 
   const isSimple = !(item.options?.length || item.price_variants?.length || item.modifiers?.length);
   // A simple item has no options/variants/modifiers, so its cart key is its id.
   const qty = isSimple ? (items.find((l) => getCartItemKey(l) === item.id)?.quantity ?? 0) : 0;
 
   const pos = placement === 'photo' ? 'bottom-2 right-2' : '-bottom-1.5 -right-1.5';
+
+  // Commandes en pause (fin d'essai): pas de "+" ni de compteur. La carte
+  // s'ouvre toujours au tap, et la fiche explique la pause.
+  if (orderingPaused) return null;
 
   if (isSimple && qty > 0) {
     return (

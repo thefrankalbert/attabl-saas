@@ -225,6 +225,87 @@ describe('GET /api/menu-search - etat du tenant', () => {
   });
 });
 
+/**
+ * Fin d'essai (decision produit 2026-11-09): pendant 7 jours apres
+ * `trial_ends_at`, la vitrine montre la carte en lecture seule. Sa recherche
+ * doit suivre la MEME regle (`storefrontAccess`): avec l'ancienne
+ * (`tenantLockReason`), la carte etait a l'ecran mais la recherche repondait
+ * 400 et n'affichait rien.
+ */
+describe('GET /api/menu-search - lecture seule apres la fin de l essai', () => {
+  const HOUR_MS = 60 * 60 * 1000;
+  const ilYa = (heures: number) => new Date(Date.now() - heures * HOUR_MS).toISOString();
+
+  it('sert la carte d un essai expire sans abonnement, pas encore gele', async () => {
+    setupSupabase({
+      id: 'tenant-1',
+      is_active: true,
+      suspended_at: null,
+      subscription_status: 'trial',
+      trial_ends_at: ilYa(2),
+      stripe_subscription_id: null,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(200);
+  });
+
+  it('sert la carte d un restaurant gele par le cron de fin d essai, dans les 7 jours', async () => {
+    const harness = setupSupabase({
+      id: 'tenant-1',
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'trial_expired',
+      trial_ends_at: ilYa(48),
+      stripe_subscription_id: null,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(200);
+    expect(harness.tenantColumns[0]).toContain('freeze_reason');
+  });
+
+  it('refuse apres les 7 jours de lecture seule', async () => {
+    setupSupabase({
+      id: 'tenant-1',
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'trial_expired',
+      trial_ends_at: ilYa(8 * 24),
+      stripe_subscription_id: null,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(400);
+  });
+
+  it('refuse un gel pour une autre cause que la fin d essai, meme dans les 7 jours', async () => {
+    setupSupabase({
+      id: 'tenant-1',
+      is_active: false,
+      suspended_at: null,
+      subscription_status: 'frozen',
+      freeze_reason: 'dispute',
+      trial_ends_at: ilYa(2),
+      stripe_subscription_id: null,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(400);
+  });
+
+  it('refuse un essai expire suspendu par la plateforme: aucune grace', async () => {
+    setupSupabase({
+      id: 'tenant-1',
+      is_active: true,
+      suspended_at: ilYa(1),
+      subscription_status: 'trial',
+      trial_ends_at: ilYa(2),
+      stripe_subscription_id: null,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(400);
+  });
+});
+
 describe('GET /api/menu-search - cle du compteur de debit', () => {
   function tenantSain() {
     setupSupabase({

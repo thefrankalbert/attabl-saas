@@ -26,6 +26,12 @@ export interface Tenant {
    * Volontairement absente de `toPublicTenant`: le convive n'a rien a en savoir.
    */
   suspended_at?: string | null;
+  /**
+   * Cause d'un gel (`subscription_status = 'frozen'`). Lue en service_role par le
+   * cache tenant: decide si la carte reste visible apres la fin de l'essai
+   * (`storefrontAccess`). Absente de `toPublicTenant`.
+   */
+  freeze_reason?: string | null;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   billing_interval?: BillingInterval;

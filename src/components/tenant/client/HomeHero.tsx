@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Photo } from '@/components/tenant/client/Photo';
 import { formatAmount } from '@/lib/utils/currency';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
+import { useTenant } from '@/contexts/TenantContext';
 import type { MenuItem } from '@/types/admin.types';
 
 // Home "plat du jour" hero. Tapping it opens the item detail sheet (same as the
@@ -31,6 +32,9 @@ export function HomeHero({
 }) {
   const t = useTranslations('homePage');
   const [open, setOpen] = useState(false);
+  // Commandes en pause (fin d'essai): pas de "Commander". Le plat s'ouvre
+  // toujours au tap, en lecture seule.
+  const { orderingPaused } = useTenant();
 
   return (
     <>
@@ -69,10 +73,12 @@ export function HomeHero({
                   {currencyUnit}
                 </span>
               </span>
-              <span className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[var(--brand-cta)] px-4 text-[12.5px] font-semibold leading-none tracking-[-0.2px] text-[var(--brand-cta-fg)]">
-                {t('commander')}
-                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
-              </span>
+              {!orderingPaused && (
+                <span className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[var(--brand-cta)] px-4 text-[12.5px] font-semibold leading-none tracking-[-0.2px] text-[var(--brand-cta-fg)]">
+                  {t('commander')}
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
+                </span>
+              )}
             </div>
           </div>
         </div>

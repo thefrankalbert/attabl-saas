@@ -21,7 +21,11 @@ import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialo
 import { SoundProvider } from '@/contexts/SoundContext';
 import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
 import { getPlanLimits } from '@/lib/plans/features';
-import { resolveDisplayedSubscriptionStatus } from '@/lib/billing/lapsed-trial';
+import {
+  kitchenMayFinishForTenant,
+  menuVisibleDaysLeftForTenant,
+  resolveDisplayedSubscriptionStatus,
+} from '@/lib/billing/lapsed-trial';
 import { LockedSubscriptionRedirect } from '@/components/admin/LockedSubscriptionRedirect';
 import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
@@ -235,6 +239,18 @@ export default async function AdminLayout({
     trial_ends_at: tenant.trial_ends_at,
   });
 
+  // Fin d'essai sans abonnement: la carte reste visible 7 jours apres
+  // `trial_ends_at` (decision produit du 2026-11-09, regle dans
+  // lib/billing/storefront-access). Le bandeau de gel donne ce compte a
+  // rebours: `null` hors lecture seule (restaurant qui sert, ou verrou d'une
+  // autre cause, sans grace).
+  const menuDaysLeft = await menuVisibleDaysLeftForTenant(tenant.id, tenant);
+
+  // Fin d'essai pas encore gelee: la cuisine finit les commandes passees avant
+  // `trial_ends_at` (decision produit du 2026-11-09). Ouvre la seule page
+  // cuisine a `LockedSubscriptionRedirect`; chaque geste reste juge cote serveur.
+  const kitchenMayFinish = await kitchenMayFinishForTenant(tenant.id, tenant);
+
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   // Effective permissions for sidebar nav filtering. Reflects the full 3-level
@@ -313,8 +329,15 @@ export default async function AdminLayout({
                     tenantSlug={tenantSlug}
                   >
                     {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
-                    <LockedSubscriptionRedirect tenantSlug={tenantSlug} />
-                    <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
+                    <LockedSubscriptionRedirect
+                      tenantSlug={tenantSlug}
+                      kitchenMayFinish={kitchenMayFinish}
+                    />
+                    <AdminContentWrapper
+                      chrome={
+                        <SubscriptionBanners tenantSlug={tenantSlug} menuDaysLeft={menuDaysLeft} />
+                      }
+                    >
                       {children}
                     </AdminContentWrapper>
                   </SubscriptionProvider>

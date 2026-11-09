@@ -35,6 +35,18 @@ const PAST_DUE_GRACE_DAYS = 15;
 /** Plafond de gels d'impayes par execution (voir le commentaire au point d'appel). */
 const MAX_PAST_DUE_FREEZES_PER_RUN = 25;
 
+/**
+ * Delai minimal entre `trial_ends_at` et le gel d'un essai expire.
+ *
+ * Decision produit du 2026-11-09: la cuisine doit pouvoir FINIR les commandes
+ * passees avant la fin de l'essai. Le gel met `is_active = false`, et le proxy
+ * (fichier protege) ferme alors toutes les pages admin, cuisine comprise. On
+ * ne gele donc qu'un essai fini depuis plus de 12 h: la cuisine a toujours au
+ * moins cette fenetre. La prise de NOUVELLES commandes, elle, est refusee des
+ * `trial_ends_at` par `tenantLockReason`, gel ou pas.
+ */
+const TRIAL_FREEZE_DELAY_HOURS = 12;
+
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
     const cronSecret = process.env.CRON_SECRET;
@@ -48,7 +60,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
-    const nowIso = new Date().toISOString();
+    const trialFreezeCutoff = new Date(
+      Date.now() - TRIAL_FREEZE_DELAY_HOURS * 60 * 60 * 1000,
+    ).toISOString();
     const supabase = createAdminClient();
     // F6: le webhook customer.subscription.deleted met is_active=false; ce cron
     // ne le faisait pas. Or le middleware ne protege que /sites/<slug>/admin: la
@@ -69,7 +83,7 @@ export async function GET(request: Request) {
           .from('tenants')
           .update(payload)
           .eq('subscription_status', 'trial')
-          .lt('trial_ends_at', nowIso)
+          .lt('trial_ends_at', trialFreezeCutoff)
           .is('stripe_subscription_id', null)
           .select('id'),
       { cause: FREEZE_REASONS.TRIAL_EXPIRED },

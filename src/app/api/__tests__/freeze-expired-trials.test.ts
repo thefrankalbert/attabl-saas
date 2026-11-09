@@ -78,6 +78,22 @@ describe('GET /api/cron/freeze-expired-trials', () => {
     expect(builder.is).toHaveBeenCalledWith('stripe_subscription_id', null);
   });
 
+  // Decision produit du 2026-11-09: la cuisine finit les commandes d'avant la
+  // fin d'essai. Le gel ferme la cuisine (proxy), donc il attend 12 h.
+  it('ne gele un essai expire que 12 h apres trial_ends_at', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-09T02:00:00.000Z'));
+    try {
+      const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
+      const response = await GET(createRequest('Bearer test-cron-secret'));
+      expect(response.status).toBe(200);
+      expect(builder.lt).toHaveBeenCalledWith('trial_ends_at', '2026-11-08T14:00:00.000Z');
+      expect(builder.lt).not.toHaveBeenCalledWith('trial_ends_at', '2026-11-09T02:00:00.000Z');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('gele un impaye depasse avec sa propre cause', async () => {
     const { GET } = await import('@/app/api/cron/freeze-expired-trials/route');
     const response = await GET(createRequest('Bearer test-cron-secret'));

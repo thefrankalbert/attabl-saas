@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 
 import {
   TENANT_LOCK_COLUMNS,
+  isLockedOnlyByLapsedTrial,
   isTenantServing,
   isTrialLapsed,
+  kitchenMayFinishOrder,
   tenantLockReason,
   type TenantLockRow,
 } from '../tenant-lock';
@@ -151,5 +153,60 @@ describe("tenantLockReason - fin d'essai", () => {
       trial_ends_at: '2026-11-09T11:59:00Z',
     };
     expect(isTrialLapsed(sansColonne, MAINTENANT)).toBe(true);
+  });
+});
+
+/**
+ * Decision produit du 2026-11-09: a la fin d'un essai sans abonnement, la
+ * cuisine finit les commandes passees AVANT `trial_ends_at`. Uniquement quand le
+ * verrou vient de la fin d'essai: aucune autre coupure n'ouvre quoi que ce soit.
+ */
+describe('kitchenMayFinishOrder', () => {
+  const MAINTENANT = Date.parse('2026-11-09T12:00:00Z');
+  const FIN = '2026-11-09T10:00:00Z';
+  const AVANT = '2026-11-09T09:59:59Z';
+  const APRES = '2026-11-09T10:00:01Z';
+  const expire: TenantLockRow = {
+    ...servant,
+    subscription_status: 'trial',
+    trial_ends_at: FIN,
+    stripe_subscription_id: null,
+  };
+
+  it('autorise une commande creee avant la fin de l essai', () => {
+    expect(isLockedOnlyByLapsedTrial(expire, MAINTENANT)).toBe(true);
+    expect(kitchenMayFinishOrder(expire, AVANT, MAINTENANT)).toBe(true);
+  });
+
+  it('refuse une commande creee a la fin de l essai ou apres', () => {
+    expect(kitchenMayFinishOrder(expire, FIN, MAINTENANT)).toBe(false);
+    expect(kitchenMayFinishOrder(expire, APRES, MAINTENANT)).toBe(false);
+  });
+
+  it('refuse une date de commande illisible', () => {
+    expect(kitchenMayFinishOrder(expire, 'pas une date', MAINTENANT)).toBe(false);
+  });
+
+  it.each([
+    ['suspendu par le super-admin', { suspended_at: '2026-11-09T11:00:00Z' }],
+    ['desactive', { is_active: false }],
+    ['gele par le cron', { subscription_status: 'frozen', is_active: false }],
+    ['gele, is_active encore a true', { subscription_status: 'frozen' }],
+    ['resilie', { subscription_status: 'cancelled' }],
+  ])("n'ouvre rien quand le restaurant est %s", (_cas, etat) => {
+    const row = { ...expire, ...etat };
+    expect(isLockedOnlyByLapsedTrial(row, MAINTENANT)).toBe(false);
+    expect(kitchenMayFinishOrder(row, AVANT, MAINTENANT)).toBe(false);
+  });
+
+  it("n'a rien a ouvrir pour un restaurant qui sert", () => {
+    const enCours = { ...expire, trial_ends_at: '2026-11-09T13:00:00Z' };
+    expect(isLockedOnlyByLapsedTrial(servant, MAINTENANT)).toBe(false);
+    expect(isLockedOnlyByLapsedTrial(enCours, MAINTENANT)).toBe(false);
+  });
+
+  it('ne rouvre pas un essai couvert par un abonnement Stripe (il sert deja)', () => {
+    const souscrit = { ...expire, stripe_subscription_id: 'sub_1' };
+    expect(isLockedOnlyByLapsedTrial(souscrit, MAINTENANT)).toBe(false);
   });
 });

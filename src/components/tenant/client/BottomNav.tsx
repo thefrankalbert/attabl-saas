@@ -6,6 +6,7 @@ import { Home, UtensilsCrossed, ShoppingBag, Clock, User } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCartData } from '@/contexts/CartContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { formatCartCount } from '@/lib/utils/cart-display';
 
 type TabKey = 'home' | 'menu' | 'cart' | 'orders' | 'account';
@@ -55,6 +56,8 @@ const TAB_DEFS: TabDef[] = [
 export function ClientBottomNav({ slug }: { slug: string }) {
   const path = usePathname() ?? '';
   const { totalItems } = useCartData();
+  // Commandes en pause (fin d'essai): pas de pastille qui pousse au panier.
+  const { orderingPaused } = useTenant();
   const t = useTranslations('bottomNav');
 
   // Splash is a full-screen pre-entry experience - no tab bar.
@@ -85,7 +88,7 @@ export function ClientBottomNav({ slug }: { slug: string }) {
                   height={22}
                   strokeWidth={active ? 2.2 : 1.8}
                 />
-                {tab.badge && totalItems > 0 && (
+                {tab.badge && totalItems > 0 && !orderingPaused && (
                   <span className="absolute -right-2 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[var(--brand-cta)] px-1 text-[10px] font-bold tabular-nums text-[var(--brand-cta-fg)]">
                     {formatCartCount(totalItems)}
                   </span>

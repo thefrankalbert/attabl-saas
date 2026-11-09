@@ -1,6 +1,16 @@
 import { logger } from '@/lib/logger';
 import { getTenantBillingIds, type TenantBillingIds } from './tenant-billing-ids';
-import { isTrialLapsed, type TenantLockRow } from './tenant-lock';
+import { isLockedOnlyByLapsedTrial, isTrialLapsed, type TenantLockRow } from './tenant-lock';
+import {
+  menuVisibleDaysLeft,
+  storefrontAccess,
+  type StorefrontAccess,
+  type StorefrontAccessRow,
+} from './storefront-access';
+
+type LoadBillingIds = (
+  tenantId: string,
+) => Promise<Pick<TenantBillingIds, 'stripe_subscription_id'> | null>;
 
 /**
  * L'essai expire, juge sur une ligne LUE PAR LE CLIENT DE SESSION (cache
@@ -27,19 +37,64 @@ import { isTrialLapsed, type TenantLockRow } from './tenant-lock';
 export async function isTrialLapsedForTenant(
   tenantId: string,
   row: Pick<TenantLockRow, 'subscription_status' | 'trial_ends_at'>,
-  loadBillingIds: (
-    tenantId: string,
-  ) => Promise<Pick<TenantBillingIds, 'stripe_subscription_id'> | null> = getTenantBillingIds,
+  loadBillingIds: LoadBillingIds = getTenantBillingIds,
   now: number = Date.now(),
 ): Promise<boolean> {
-  if (!isTrialLapsed(row, now)) return false;
+  return isTrialLapsed(await withBillingIdsIfLapsed(tenantId, row, loadBillingIds, now), now);
+}
+
+/**
+ * La ligne completee par `stripe_subscription_id` (service_role), lu SEULEMENT
+ * si elle dit "essai expire". Une lecture en echec ou un restaurant introuvable
+ * donne `null`: compte comme "pas d'abonnement", comme les gardes serveur.
+ */
+async function withBillingIdsIfLapsed<R extends TenantLockRow>(
+  tenantId: string,
+  row: R,
+  loadBillingIds: LoadBillingIds,
+  now: number,
+): Promise<R> {
+  if (!isTrialLapsed(row, now)) return row;
   try {
     const billing = await loadBillingIds(tenantId);
-    return isTrialLapsed({ ...row, stripe_subscription_id: billing?.stripe_subscription_id }, now);
+    return { ...row, stripe_subscription_id: billing?.stripe_subscription_id ?? null };
   } catch (err) {
     logger.warn('Billing ids unreadable, expired trial treated as lapsed', { err, tenantId });
-    return true;
+    return { ...row, stripe_subscription_id: null };
   }
+}
+
+/**
+ * `storefrontAccess` (storefront-access.ts) sur une ligne lue sans
+ * `stripe_subscription_id`: meme lecture service_role que
+ * `isTrialLapsedForTenant`, dans le seul cas ou elle change la reponse.
+ * Meme contrat d'appel: `tenantId` resolu cote serveur, jamais venu du client.
+ */
+export async function storefrontAccessForTenant(
+  tenantId: string,
+  row: StorefrontAccessRow,
+  loadBillingIds: LoadBillingIds = getTenantBillingIds,
+  now: number = Date.now(),
+): Promise<StorefrontAccess> {
+  return storefrontAccess(await withBillingIdsIfLapsed(tenantId, row, loadBillingIds, now), now);
+}
+
+/**
+ * Jours pendant lesquels la carte reste visible, pour le bandeau admin: un
+ * nombre seulement quand la vitrine est en lecture seule (fin d'essai, dans
+ * les 7 jours), sinon `null` - un restaurant qui sert n'a pas de delai, et un
+ * verrou d'une autre cause (suspension, litige, impaye...) n'a pas de grace.
+ * Meme contrat d'appel que `storefrontAccessForTenant`.
+ */
+export async function menuVisibleDaysLeftForTenant(
+  tenantId: string,
+  row: StorefrontAccessRow,
+  loadBillingIds?: LoadBillingIds,
+  now: number = Date.now(),
+): Promise<number | null> {
+  if (!row.trial_ends_at) return null;
+  const access = await storefrontAccessForTenant(tenantId, row, loadBillingIds, now);
+  return access === 'read_only' ? menuVisibleDaysLeft(row.trial_ends_at, now) : null;
 }
 
 /**
@@ -55,4 +110,24 @@ export async function resolveDisplayedSubscriptionStatus<S extends string | null
 ): Promise<S | 'frozen'> {
   const lapsed = await isTrialLapsedForTenant(tenantId, row, loadBillingIds, now);
   return lapsed ? 'frozen' : row.subscription_status;
+}
+
+/**
+ * La cuisine reste-t-elle ouverte pour FINIR les commandes d'avant la fin de
+ * l'essai ? `isLockedOnlyByLapsedTrial` (tenant-lock.ts) sur une ligne lue sans
+ * `stripe_subscription_id`, completee comme `isTrialLapsedForTenant`.
+ * Decision produit du 2026-11-09. Ouvre seulement la PAGE cuisine: chaque geste
+ * est ensuite juge commande par commande par `assertTenantServingForKitchen`.
+ * Meme contrat d'appel que `isTrialLapsedForTenant`.
+ */
+export async function kitchenMayFinishForTenant(
+  tenantId: string,
+  row: TenantLockRow,
+  loadBillingIds: LoadBillingIds = getTenantBillingIds,
+  now: number = Date.now(),
+): Promise<boolean> {
+  return isLockedOnlyByLapsedTrial(
+    await withBillingIdsIfLapsed(tenantId, row, loadBillingIds, now),
+    now,
+  );
 }

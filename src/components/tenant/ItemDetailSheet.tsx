@@ -7,6 +7,7 @@ import { Minus, Plus, Utensils, Leaf, Check, X, Star } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ export default function ItemDetailSheet({
   language = 'fr',
 }: ItemDetailSheetProps) {
   const { addToCart } = useCart();
+  const { orderingPaused } = useTenant();
   const t = useTranslations('tenant');
   const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
   const shouldReduceMotion = useReducedMotion();
@@ -160,6 +162,9 @@ export default function ItemDetailSheet({
     // entry path (deep link ?item=, search, list). The list/search also block it,
     // but this is the single guard that covers every opener.
     if (item.is_available === false) return;
+    // Meme point de passage pour la pause des commandes (fin d'essai): aucun
+    // chemin d'ouverture ne remplit un panier que le serveur refusera.
+    if (orderingPaused) return;
 
     if (item.modifiers && item.modifiers.length > 0) {
       // Only require modifiers that are actually shown (available). A required
@@ -235,6 +240,7 @@ export default function ItemDetailSheet({
     addToCart,
     restaurantId,
     onClose,
+    orderingPaused,
   ]);
 
   // --- Derived -----------------------------------------------------------
@@ -639,7 +645,7 @@ export default function ItemDetailSheet({
                 </div>
                 <Button
                   onClick={handleAddToCart}
-                  disabled={showSuccess || item?.is_available === false}
+                  disabled={showSuccess || item?.is_available === false || orderingPaused}
                   className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
                 >
                   {showSuccess ? (
@@ -653,6 +659,8 @@ export default function ItemDetailSheet({
                     </motion.div>
                   ) : item?.is_available === false ? (
                     <span className="mx-auto min-w-0 truncate">{t('unavailable')}</span>
+                  ) : orderingPaused ? (
+                    <span className="mx-auto min-w-0 truncate">{t('orderingPaused')}</span>
                   ) : (
                     <>
                       <span className="min-w-0 truncate">{t('addToCart')}</span>

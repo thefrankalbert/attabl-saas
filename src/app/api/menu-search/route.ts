@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { menuSearchLimiter, getClientIp, grouperAdresse } from '@/lib/rate-limit';
-import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
+import { TENANT_LOCK_COLUMNS } from '@/lib/billing/tenant-lock';
+import { storefrontAccess } from '@/lib/billing/storefront-access';
 import type { MenuItem } from '@/types/admin.types';
 
 const FALLBACK_ERRORS = {
@@ -72,9 +73,13 @@ export async function GET(request: Request) {
     // etait cassee pour TOUS les restaurants. Seuls l'id et les colonnes de
     // verrou sont lus, pour un slug venu du proxy; les plats restent lus en anon,
     // sous RLS.
+    // La regle est `storefrontAccess`, celle de la vitrine: pendant la lecture
+    // seule qui suit la fin de l'essai, la carte est a l'ecran, donc sa
+    // recherche doit repondre aussi. `freeze_reason` est lu pour distinguer un
+    // gel de fin d'essai (grace) de tout autre gel (ferme).
     const { data: tenant, error: tenantError } = await createAdminClient()
       .from('tenants')
-      .select(`id, ${TENANT_LOCK_COLUMNS}`)
+      .select(`id, freeze_reason, ${TENANT_LOCK_COLUMNS}`)
       .eq('slug', tenantSlug)
       .is('deleted_at', null)
       .single();
@@ -84,7 +89,7 @@ export async function GET(request: Request) {
     if (tenantError && tenantError.code !== 'PGRST116') {
       logger.error('Menu search tenant lookup failed', { tenantSlug, code: tenantError.code });
     }
-    if (tenantError || !tenant || tenantLockReason(tenant)) {
+    if (tenantError || !tenant || storefrontAccess(tenant) === 'closed') {
       return NextResponse.json({ error: FALLBACK_ERRORS.tenantNotIdentified }, { status: 400 });
     }
 
