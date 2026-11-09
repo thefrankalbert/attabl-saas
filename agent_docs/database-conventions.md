@@ -16,6 +16,18 @@
 - Statuts : `subscription_status` (trial | active | past_due | cancelled | paused)
 - Plans : `subscription_plan` (essentiel | premium | enterprise)
 
+**Droits de lecture colonne par colonne (depuis le 2026-11-09).** Ni `anon` ni
+`authenticated` n'ont SELECT sur toute la table : chacun a une liste de colonnes.
+Une colonne ajoutee est donc ILLISIBLE pour les deux roles tant qu'on ne la
+donne pas, et la page qui la lit casse en prod (`42501 permission denied`).
+Dans la migration qui ajoute la colonne :
+
+- lue par le dashboard (cas normal) : `GRANT SELECT (col) ON public.tenants TO authenticated;`
+- affichee sur la vitrine publique (rare) : `GRANT SELECT (col) ON public.tenants TO anon;`
+
+Le test pgTAP `supabase/tests/rls/tenants_column_grants.test.sql` echoue tant
+qu'une colonne n'est pas classee : y mettre a jour la liste attendue.
+
 ### admin_users
 
 - Lie un `user_id` (auth.users) a un `tenant_id`
@@ -93,7 +105,7 @@ CREATE POLICY "tenant_insert" ON table_name
 
 ### Tables avec acces public en lecture
 
-- `tenants` : lecture publique (par slug) pour afficher le menu
+- `tenants` : lecture publique (par slug) pour afficher le menu, LIMITEE aux colonnes de la vitrine (voir `tenants` plus haut)
 - `menu_items` : lecture publique pour les clients du restaurant
 - `categories` : lecture publique pour la navigation du menu
 
