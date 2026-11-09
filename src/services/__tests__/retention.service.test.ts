@@ -27,18 +27,19 @@ interface AppelOrders {
   payload: Record<string, unknown>;
   filtreDate?: string;
   filtreOr?: string;
+  options?: unknown;
 }
 
 let appelsOrders: AppelOrders[];
-let reponseOrders: { data: { id: string }[] | null; error: unknown };
+let reponseOrders: { count: number | null; error: unknown };
 let reponseSessions: { count: number | null; error: unknown };
 let suppressions: { table: string; options: unknown; filtreDate?: string }[];
 
 function fausseBase(): SupabaseClient {
   return {
     from: (table: string) => ({
-      update: (payload: Record<string, unknown>) => {
-        const appel: AppelOrders = { table, payload };
+      update: (payload: Record<string, unknown>, options?: unknown) => {
+        const appel: AppelOrders = { table, payload, options };
         appelsOrders.push(appel);
         const chaine = {
           lt: (_colonne: string, valeur: string) => {
@@ -49,7 +50,12 @@ function fausseBase(): SupabaseClient {
             appel.filtreOr = expression;
             return chaine;
           },
-          select: async () => reponseOrders,
+          // PostgREST rejects `or` + returning rows (42703): `.select()` here
+          // is the bug itself, so the fake refuses it.
+          select: () => {
+            throw new Error('select() apres or(): 42703 en vrai PostgREST');
+          },
+          then: (resolve: (v: unknown) => void) => resolve(reponseOrders),
         };
         return chaine;
       },
@@ -74,7 +80,7 @@ describe('createRetentionService', () => {
     vi.clearAllMocks();
     appelsOrders = [];
     suppressions = [];
-    reponseOrders = { data: [{ id: 'o-1' }, { id: 'o-2' }], error: null };
+    reponseOrders = { count: 2, error: null };
     reponseSessions = { count: 3, error: null };
   });
 
@@ -121,6 +127,11 @@ describe('createRetentionService', () => {
     );
   });
 
+  it('compte les lignes sans les relire (or + select = 42703 en PostgREST)', async () => {
+    await createRetentionService(fausseBase()).anonymiserCommandesAnciennes(LE_15_MAI);
+    expect(appelsOrders[0].options).toEqual({ count: 'exact' });
+  });
+
   it('rend le nombre de commandes reellement anonymisees', async () => {
     const n = await createRetentionService(fausseBase()).anonymiserCommandesAnciennes(LE_15_MAI);
     expect(n).toBe(2);
@@ -154,7 +165,7 @@ describe('createRetentionService', () => {
   // Les erreurs: une obligation qui echoue ne doit pas emporter l'autre
   // ==========================================================================
   it('une erreur sur les commandes laisse la purge des sessions se faire', async () => {
-    reponseOrders = { data: null, error: { message: 'base indisponible' } };
+    reponseOrders = { count: null, error: { message: 'base indisponible' } };
 
     const resultat = await createRetentionService(fausseBase()).executer(LE_15_MAI);
 
@@ -177,7 +188,7 @@ describe('createRetentionService', () => {
    * obligations distinctes, qui ne doivent pas se tenir par la main.
    */
   it('executer ne jette jamais, meme si les deux purges echouent', async () => {
-    reponseOrders = { data: null, error: { message: 'panne' } };
+    reponseOrders = { count: null, error: { message: 'panne' } };
     reponseSessions = { count: null, error: { message: 'panne' } };
 
     await expect(createRetentionService(fausseBase()).executer(LE_15_MAI)).resolves.toEqual({

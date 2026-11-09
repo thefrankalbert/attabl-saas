@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 import { parseSettingsTab } from '@/lib/settings-tabs';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { DEFAULT_PAYMENT_METHODS } from '@/lib/payments/methods';
+import { parseEstablishmentDetails } from '@/lib/validations/establishment-details.schema';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -46,6 +47,19 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
     redirectToUnauthorized();
   }
 
+  // Read apart from the cached tenant select (shared by every admin page), so
+  // this column only concerns this page. A failed read THROWS: the form always
+  // sends the details back on save, so showing "none" here would wipe the
+  // stored ones at the next save.
+  const { data: detailsRow, error: detailsError } = await supabase
+    .from('tenants')
+    .select('establishment_details')
+    .eq('id', tenant.id)
+    .maybeSingle();
+  if (detailsError) {
+    throw new Error(`settings: establishment_details read failed: ${detailsError.message}`);
+  }
+
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full">
       <SettingsForm
@@ -65,6 +79,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
           phone: tenant.phone,
           establishment_type: tenant.establishment_type,
           table_count: tenant.table_count,
+          establishment_details: parseEstablishmentDetails(detailsRow?.establishment_details),
           notification_sound_id: tenant.notification_sound_id,
           currency: tenant.currency,
           supported_currencies: tenant.supported_currencies,

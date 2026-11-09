@@ -1,6 +1,25 @@
 import type { QRDesignConfig, QRTemplateId } from '@/types/qr-design.types';
-import { createDefaultQRDesignConfig, TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
-import type { OnboardingData } from '@/app/onboarding/page';
+import {
+  createDefaultQRDesignConfig,
+  QR_MESSAGE_MAX_LENGTH,
+  TEMPLATE_DEFAULTS,
+} from '@/types/qr-design.types';
+
+/**
+ * The onboarding fields this conversion reads. A structural subset, so the
+ * client preview (OnboardingData) and the server completion
+ * (OnboardingCompleteData) feed the SAME function: what the restaurateur sees
+ * in the preview is exactly what gets saved as their QR design.
+ */
+export interface OnboardingQrInput {
+  qrTemplate?: string;
+  qrStyle?: string;
+  qrCta?: string;
+  qrDescription?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  logoUrl?: string;
+}
 
 /** QR style → fg/bg color mapping */
 const QR_STYLE_COLORS: Record<string, { fg: string; bg: string }> = {
@@ -10,20 +29,21 @@ const QR_STYLE_COLORS: Record<string, { fg: string; bg: string }> = {
   dark: { fg: '#FFFFFF', bg: '#1a1a1a' },
 };
 
-/**
- * Converts OnboardingData into a QRDesignConfig that can be
- * passed to real template components from the TEMPLATE_REGISTRY.
- */
 // Map any legacy onboarding template id (from an old saved draft) onto the
 // current three-template set so TEMPLATE_DEFAULTS lookups never miss.
-function coerceTemplateId(id: string): QRTemplateId {
+export function coerceTemplateId(id: string): QRTemplateId {
   if (id === 'minimal' || id === 'carte' || id === 'chevalet') return id;
   if (id === 'elegant') return 'chevalet';
   return 'minimal';
 }
 
+/**
+ * Converts the onboarding QR choices into a QRDesignConfig that can be passed
+ * to real template components from the TEMPLATE_REGISTRY, and saved as the
+ * tenant's default qr_designs row.
+ */
 export function onboardingDataToQRConfig(
-  data: OnboardingData,
+  data: OnboardingQrInput,
   templateOverride?: QRTemplateId,
 ): QRDesignConfig {
   const templateId: QRTemplateId = templateOverride ?? coerceTemplateId(String(data.qrTemplate));
@@ -39,7 +59,14 @@ export function onboardingDataToQRConfig(
   const qrFg = styleColors.fg === 'primary' ? primary : styleColors.fg;
   const qrBg = styleColors.bg;
 
-  const logoEnabled = !!data.logoUrl;
+  // Same scheme rule as the saved design (qr-design.schema.ts logo.src): a logo
+  // the save would refuse is left out instead of failing the whole design.
+  const rawLogo = data.logoUrl || '';
+  const logoSrc = rawLogo.startsWith('https://') || /^data:image\//.test(rawLogo) ? rawLogo : '';
+  const logoEnabled = logoSrc !== '';
+  // The onboarding "description" is the short message printed under the code
+  // (printLayout.message). It used to be typed and then dropped.
+  const message = (data.qrDescription || '').trim().slice(0, QR_MESSAGE_MAX_LENGTH);
 
   return {
     ...base,
@@ -55,8 +82,8 @@ export function onboardingDataToQRConfig(
     templateTextColor: '#FFFFFF',
     ctaText: data.qrCta || '',
     logo: {
-      enabled: !!data.logoUrl,
-      src: data.logoUrl || '',
+      enabled: logoEnabled,
+      src: logoSrc,
       width: 50,
       height: 50,
       excavate: true,
@@ -64,5 +91,9 @@ export function onboardingDataToQRConfig(
     },
     showPoweredBy: true,
     fontFamily: 'Geist',
+    printLayout: {
+      ...base.printLayout,
+      message: { enabled: message.length > 0, text: message },
+    },
   };
 }

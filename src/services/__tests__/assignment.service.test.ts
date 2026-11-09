@@ -44,10 +44,12 @@ function createMockSupabase() {
         eq: vi.fn().mockImplementation(() => {
           const p = callResolve() as Promise<unknown> & {
             is: () => Promise<unknown>;
-            or: () => { select: () => Promise<unknown> };
+            or: () => Promise<unknown>;
           };
           p.is = callResolve;
-          p.or = vi.fn().mockReturnValue({ select: chain.resolve });
+          // claimOrder awaits `.or()` directly with `{ count: 'exact' }`: no
+          // `.select()` (PostgREST rejects or + returning rows with 42703).
+          p.or = callResolve;
           return p;
         }),
         is: chain.resolve,
@@ -276,10 +278,8 @@ describe('AssignmentService', () => {
     it('should resolve without error when a row is claimed', async () => {
       const supabase = createMockSupabase();
 
-      // update().eq().eq().or().select() returns the claimed row
-      supabase
-        ._getChain('orders')
-        .resolve.mockResolvedValue({ data: [{ id: ORDER_ID }], error: null });
+      // update(..., { count }).eq().eq().or() reports one row updated
+      supabase._getChain('orders').resolve.mockResolvedValue({ count: 1, error: null });
 
       const service = createAssignmentService(asSupabase(supabase));
 
@@ -290,7 +290,7 @@ describe('AssignmentService', () => {
       const supabase = createMockSupabase();
 
       // No row matched the (server_id IS NULL OR server_id = me) guard -> already taken
-      supabase._getChain('orders').resolve.mockResolvedValue({ data: [], error: null });
+      supabase._getChain('orders').resolve.mockResolvedValue({ count: 0, error: null });
 
       const service = createAssignmentService(asSupabase(supabase));
 

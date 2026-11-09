@@ -75,18 +75,20 @@ export function createRetentionService(supabase: SupabaseClient) {
       const limite = dateLimite(maintenant);
       const vide = Object.fromEntries(COLONNES_PERSONNELLES.map((c) => [c, null]));
 
-      const { data, error } = await supabase
+      // `count`, not `.select('id')`: PostgREST rejects an `or` filter combined
+      // with returning the updated rows (42703, measured 2026-11-08 on
+      // PostgREST v14.3), so the nightly anonymisation ALWAYS failed.
+      const { count, error } = await supabase
         .from('orders')
-        .update(vide)
+        .update(vide, { count: 'exact' })
         .lt('created_at', limite)
-        .or(COLONNES_PERSONNELLES.map((c) => `${c}.not.is.null`).join(','))
-        .select('id');
+        .or(COLONNES_PERSONNELLES.map((c) => `${c}.not.is.null`).join(','));
 
       if (error) {
         logger.error('Anonymisation des commandes anciennes impossible', error);
         throw error;
       }
-      return data?.length ?? 0;
+      return count ?? 0;
     },
 
     /**

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 import type { ZoneInput } from '@/lib/validations/table-config.schema';
 import {
   DEFAULT_CAPACITY,
@@ -88,6 +89,22 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
         .select();
 
       if (tablesError || !allTables) {
+        // The zones were inserted by the previous query: without their tables
+        // they are empty shells that a retry would duplicate (and that make the
+        // onboarding believe the dining room already exists). Remove them.
+        const { error: cleanupError } = await supabase
+          .from('zones')
+          .delete()
+          .in(
+            'id',
+            typedZones.map((zone) => zone.id),
+          )
+          .eq('tenant_id', tenantId);
+        if (cleanupError) {
+          logger.error('Failed to remove zones after table creation failure', cleanupError, {
+            tenantId,
+          });
+        }
         throw new ServiceError(
           `Erreur creation tables: ${tablesError?.message || 'Donnees manquantes'}`,
           'INTERNAL',

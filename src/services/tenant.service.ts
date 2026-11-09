@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import type { CurrencyCode, OpeningHoursMap } from '@/types/admin.types';
+import type { EstablishmentDetails } from '@/lib/validations/establishment-details.schema';
 
 interface TenantSettings {
   name?: string;
@@ -16,6 +17,7 @@ interface TenantSettings {
   // Establishment
   establishmentType?: string;
   tableCount?: number;
+  establishmentDetails?: EstablishmentDetails;
   // Facturation fields
   currency?: CurrencyCode;
   supportedCurrencies?: CurrencyCode[];
@@ -80,6 +82,9 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
           establishment_type: settings.establishmentType || null,
         }),
         ...(settings.tableCount !== undefined && { table_count: settings.tableCount }),
+        ...(settings.establishmentDetails !== undefined && {
+          establishment_details: settings.establishmentDetails,
+        }),
         ...(settings.notificationSoundId !== undefined && {
           notification_sound_id: settings.notificationSoundId || null,
         }),

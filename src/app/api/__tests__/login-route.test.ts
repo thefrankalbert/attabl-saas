@@ -104,13 +104,31 @@ describe('POST /api/login redirect routing', () => {
     expect(redirect).toBe('/admin/platform');
   });
 
-  it('routes a normal owner with a completed tenant to /admin/tenants', async () => {
+  it('routes an owner of ONE completed tenant straight into its space', async () => {
     const { redirect } = await loginWith([
       {
         tenant_id: 't1',
         is_super_admin: false,
         role: 'owner',
         tenants: { slug: 'resto', onboarding_completed: true },
+      },
+    ]);
+    expect(redirect).toBe('/sites/resto/admin');
+  });
+
+  it('routes an owner of SEVERAL tenants to the directory to choose', async () => {
+    const { redirect } = await loginWith([
+      {
+        tenant_id: 't1',
+        is_super_admin: false,
+        role: 'owner',
+        tenants: { slug: 'resto', onboarding_completed: true },
+      },
+      {
+        tenant_id: 't2',
+        is_super_admin: false,
+        role: 'owner',
+        tenants: { slug: 'resto-2', onboarding_completed: false },
       },
     ]);
     expect(redirect).toBe('/admin/tenants');

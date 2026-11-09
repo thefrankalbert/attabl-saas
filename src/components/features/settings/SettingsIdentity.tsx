@@ -22,6 +22,7 @@ import { locales, LOCALE_LABELS } from '@/i18n/config';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
+import SettingsEstablishmentDetails from './SettingsEstablishmentDetails';
 
 const ESTABLISHMENT_TYPES = [
   { value: 'restaurant', labelKey: 'typeRestaurant' },
@@ -174,6 +175,8 @@ export default function SettingsIdentity({
                 </SelectContent>
               </Select>
             </div>
+
+            <SettingsEstablishmentDetails form={form} />
           </div>
 
           <div className="space-y-4">

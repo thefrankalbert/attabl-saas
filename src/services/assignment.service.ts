@@ -136,16 +136,20 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       // re-claim one already owned by this same server (idempotent). Without the
       // server_id guard two waiters claiming at once would silently steal each
       // other's order (last write wins).
-      const { data, error } = await supabase
+      //
+      // `count`, not `.select()`: PostgREST rejects an `or` filter combined with
+      // returning the updated rows (42703 "column orders.server_id does not
+      // exist", measured 2026-11-08 on PostgREST v14.3), so the claim ALWAYS
+      // failed. The row count keeps the single atomic statement.
+      const { count, error } = await supabase
         .from('orders')
-        .update({ server_id: serverId })
+        .update({ server_id: serverId }, { count: 'exact' })
         .eq('id', orderId)
         .eq('tenant_id', tenantId)
-        .or(`server_id.is.null,server_id.eq.${serverId}`)
-        .select('id');
+        .or(`server_id.is.null,server_id.eq.${serverId}`);
 
       if (error) throw new ServiceError('Erreur lors du claim', 'INTERNAL');
-      if (!Array.isArray(data) || data.length === 0) {
+      if (!count) {
         // Race lost: another server already owns this order. CONFLICT -> HTTP 409
         // (a retryable concurrency outcome), not VALIDATION/400 (bad input).
         throw new ServiceError('Cette commande est deja prise en charge', 'CONFLICT');

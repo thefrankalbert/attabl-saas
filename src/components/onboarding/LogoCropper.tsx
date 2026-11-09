@@ -8,6 +8,7 @@ import { X, Check, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { compressImage } from '@/lib/image-compress';
+import { withOnboardingSite } from '@/lib/onboarding/site-param';
 
 interface LogoCropperProps {
   imageSrc: string;
@@ -82,7 +83,10 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
       const formData = new FormData();
       formData.append('file', compressed, 'logo.jpg');
       formData.append('bucket', 'logos');
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const res = await fetch(withOnboardingSite('/api/upload'), {
+        method: 'POST',
+        body: formData,
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Upload failed' }));
         throw new Error(err.error || 'Upload failed');

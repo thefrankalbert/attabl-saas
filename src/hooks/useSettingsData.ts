@@ -9,6 +9,10 @@ import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { openingHoursSchema } from '@/lib/validations/tenant.schema';
+import {
+  establishmentDetailsSchema,
+  type EstablishmentDetails,
+} from '@/lib/validations/establishment-details.schema';
 import type { CurrencyCode, OpeningHoursMap } from '@/types/admin.types';
 import type { UseFormReturn, FieldErrors } from 'react-hook-form';
 
@@ -28,6 +32,7 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     // Establishment
     establishmentType: z.string().optional(),
     tableCount: z.number().int().min(0).max(500).optional(),
+    establishmentDetails: establishmentDetailsSchema.optional(),
     // Billing fields
     currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
     supportedCurrencies: z
@@ -67,6 +72,7 @@ export interface SettingsTenant {
   phone?: string;
   establishment_type?: string;
   table_count?: number;
+  establishment_details?: EstablishmentDetails;
   notification_sound_id?: string;
   currency?: CurrencyCode;
   supported_currencies?: CurrencyCode[];
@@ -129,6 +135,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       logo_url: tenant.logo_url || '',
       establishmentType: tenant.establishment_type || 'restaurant',
       tableCount: tenant.table_count ?? 10,
+      establishmentDetails: tenant.establishment_details ?? {},
       currency: tenant.currency || 'XAF',
       supportedCurrencies: tenant.supported_currencies || [tenant.currency || 'XAF'],
       enableTax: tenant.enable_tax ?? false,
@@ -265,6 +272,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('establishmentType', data.establishmentType || 'restaurant');
       // tableCount is not editable from Settings (no control), so it is not sent
       // here - the partial-PATCH action leaves the stored value untouched.
+      formData.append('establishmentDetails', JSON.stringify(data.establishmentDetails ?? {}));
       // Billing fields - reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       if (data.supportedCurrencies) {

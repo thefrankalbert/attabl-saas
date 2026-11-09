@@ -18,6 +18,10 @@ interface MockChain {
   maybeSingle: ReturnType<typeof vi.fn>;
   ownership: ReturnType<typeof vi.fn>;
   bulkResult: ReturnType<typeof vi.fn>;
+  /** `.delete().in(col, ids)` - records the ids, returns the `.eq()` step. */
+  deleteIn: ReturnType<typeof vi.fn>;
+  /** `.delete().in(...).eq(col, val)` - awaited result of the delete. */
+  deleteEq: ReturnType<typeof vi.fn>;
 }
 
 function createMockSupabase() {
@@ -41,7 +45,10 @@ function createMockSupabase() {
         // returning the owned rows; default returns nothing (overridden per-case).
         ownership: vi.fn().mockResolvedValue({ data: [], error: null }),
         bulkResult: vi.fn(),
+        deleteIn: vi.fn(),
+        deleteEq: vi.fn().mockResolvedValue({ error: null }),
       };
+      chains[table].deleteIn.mockReturnValue({ eq: chains[table].deleteEq });
     }
     return chains[table];
   }
@@ -50,6 +57,9 @@ function createMockSupabase() {
     const chain = getChain(table);
 
     return {
+      // delete().in('id', ids).eq('tenant_id', t) - cleanup of orphan zones
+      delete: vi.fn().mockReturnValue({ in: chain.deleteIn }),
+
       // insert().select() - bulk inserts for both zones and tables
       // Also supports .single() for addTablesToZone lookup pattern
       insert: vi.fn().mockReturnValue({
@@ -236,6 +246,30 @@ describe('TableConfigService', () => {
       await expect(service.createZonesAndTables(TENANT_ID, VENUE_ID, zones)).rejects.toBeInstanceOf(
         ServiceError,
       );
+
+      // The zones inserted just before are removed: left empty, a retry would
+      // duplicate them (and the onboarding would think the room exists).
+      expect(supabase._getChain('zones').deleteIn).toHaveBeenCalledWith('id', ['zone-a']);
+      expect(supabase._getChain('zones').deleteEq).toHaveBeenCalledWith('tenant_id', TENANT_ID);
+    });
+
+    it('should not delete anything when the tables insert succeeds', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [{ id: 'zone-a', name: 'Interieur', prefix: 'INT' }],
+        error: null,
+      });
+      supabase._getChain('tables').bulkResult.mockReturnValueOnce({
+        data: [{ id: 't1', zone_id: 'zone-a' }],
+        error: null,
+      });
+
+      await service.createZonesAndTables(TENANT_ID, VENUE_ID, [
+        { name: 'Interieur', prefix: 'INT', tableCount: 1, defaultCapacity: 4 },
+      ]);
+
+      expect(supabase._getChain('zones').deleteIn).not.toHaveBeenCalled();
     });
 
     it('should use default capacity of 2 when not specified', async () => {

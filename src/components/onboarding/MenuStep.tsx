@@ -12,6 +12,7 @@ import { getSegmentFamily } from '@/lib/segment-terms';
 import { MenuItemRow } from './menu/MenuItemRow';
 import { type Category, buildCategoriesFromData } from './menu/menu-data';
 import { sameCategoryName, suggestedCategoryKeys } from './menu/category-suggestions';
+import { withOnboardingSite } from '@/lib/onboarding/site-param';
 
 interface MenuStepProps {
   data: OnboardingData;
@@ -194,7 +195,10 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       const formData = new FormData();
       formData.append('file', compressed, 'photo.jpg');
       formData.append('bucket', 'menu-items');
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const res = await fetch(withOnboardingSite('/api/upload'), {
+        method: 'POST',
+        body: formData,
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Upload failed' }));
         throw new Error(err.error || 'Upload failed');

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, LayoutGrid, Check } from 'lucide-react';
+import { Loader2, LayoutGrid, Check, CloudOff } from 'lucide-react';
 import Link from 'next/link';
 
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -12,7 +12,7 @@ interface OnboardingTopNavProps {
   phases: PhaseDefinition[];
   phase: number;
   tenantName: string;
-  autoSaveStatus: 'idle' | 'saving' | 'saved';
+  autoSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   t: (key: string) => string;
   phaseIsComplete: (p: number) => boolean;
   goToPhase: (targetPhase: number) => void;
@@ -94,6 +94,12 @@ export function OnboardingTopNav({
           <span className="text-[10px] text-accent flex items-center gap-1">
             <Check className="w-3 h-3" />
             <span className="hidden sm:inline">{t('autoSaved')}</span>
+          </span>
+        )}
+        {autoSaveStatus === 'error' && (
+          <span className="text-xs text-status-error flex items-center gap-1" role="status">
+            <CloudOff className="w-3 h-3" />
+            <span className="hidden sm:inline">{t('autoSaveFailed')}</span>
           </span>
         )}
         <ThemeToggle />

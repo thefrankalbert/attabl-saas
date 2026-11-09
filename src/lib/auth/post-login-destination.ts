@@ -36,6 +36,14 @@ export interface PostLoginMembership {
    */
   onboardingCompleted: boolean | null;
   tenantCreatedAt: string | null;
+  /**
+   * `deleted_at` de l'ETABLISSEMENT (pas de la ligne de membre). Un
+   * etablissement supprime en douceur garde ses lignes `admin_users`
+   * vivantes, et son proprietaire peut encore le lire: sans ce champ, la
+   * connexion l'envoyait dans un espace qui le renvoie a /login, qui le
+   * renvoyait dans l'espace (boucle infinie). `null` quand non selectionne.
+   */
+  tenantDeletedAt: string | null;
 }
 
 /**
@@ -55,6 +63,7 @@ interface RawTenant {
   slug?: string | null;
   onboarding_completed?: boolean | null;
   created_at?: string | null;
+  deleted_at?: string | null;
 }
 
 export function mapMembershipRows(
@@ -74,6 +83,7 @@ export function mapMembershipRows(
       tenantSlug: tenant?.slug ?? null,
       onboardingCompleted: tenant?.onboarding_completed ?? null,
       tenantCreatedAt: tenant?.created_at ?? null,
+      tenantDeletedAt: tenant?.deleted_at ?? null,
     };
   });
 }
@@ -85,7 +95,9 @@ export function mapMembershipRows(
  * layout le refusait ensuite, mais sur une page ou il n'avait rien a faire.
  */
 function liveOnly(rows: readonly PostLoginMembership[]): PostLoginMembership[] {
-  return rows.filter((row) => row.isActive && row.deletedAt === null);
+  return rows.filter(
+    (row) => row.isActive && row.deletedAt === null && row.tenantDeletedAt === null,
+  );
 }
 
 /**
@@ -134,15 +146,55 @@ export function postLoginDestination(rows: readonly PostLoginMembership[]): stri
   const isOwner = live.some((row) => row.role === 'owner');
 
   if (isOwner) {
-    // Un etablissement inacheve se reprend; `/onboarding` ouvre le plus recent.
-    // `=== false` et non `!...`: une colonne non selectionnee vaut `null` et ne
-    // doit PAS etre lue comme un onboarding a refaire.
-    const needsOnboarding = live.some((row) => row.onboardingCompleted === false);
-    return needsOnboarding ? '/onboarding' : '/admin/tenants';
+    // Decision produit (2026-11-08): un seul etablissement -> on entre
+    // directement dedans; plusieurs -> on choisit d'abord, dans l'annuaire.
+    //
+    // Avant, tout proprietaire atterrissait sur l'annuaire, meme avec un seul
+    // restaurant (un clic inutile a chaque connexion). Et un proprietaire dont
+    // UN etablissement restait inacheve etait renvoye dans l'onboarding a
+    // chaque connexion, sans acces direct a ses restaurants qui tournent.
+    const homes = live.filter((row) => row.tenantSlug !== null);
+    if (homes.length === 1) {
+      // `=== false` et non `!...`: une colonne non selectionnee vaut `null` et
+      // ne doit PAS etre lue comme un onboarding a refaire.
+      return homes[0].onboardingCompleted === false
+        ? '/onboarding'
+        : `/sites/${homes[0].tenantSlug}/admin`;
+    }
+    // Plusieurs: l'annuaire liste chacun; un etablissement inacheve propose de
+    // reprendre SON installation depuis son espace (OnboardingResumeDialog).
+    return '/admin/tenants';
   }
 
   // Tout autre role: son espace. L'onboarding est l'affaire du proprietaire, on
   // n'y envoie donc jamais un serveur ou un cuisinier.
   const slug = pickHomeTenantSlug(live);
   return slug ? `/sites/${slug}/admin` : '/unauthorized';
+}
+
+/**
+ * Garde de `/onboarding` (une seule fois par etablissement). Rend l'adresse ou
+ * renvoyer l'utilisateur, ou `null` s'il doit voir l'onboarding.
+ *
+ * - aucune ligne: inscription interrompue, l'onboarding cree l'etablissement;
+ * - un etablissement vivant inacheve dont il est PROPRIETAIRE: il reste;
+ * - sinon: la meme adresse qu'apres une connexion.
+ */
+export function onboardingGateDestination(rows: readonly PostLoginMembership[]): string | null {
+  if (rows.length === 0) return null;
+  const hasUnfinished = liveOnly(rows).some(
+    (row) => row.role === 'owner' && row.onboardingCompleted === false,
+  );
+  return hasUnfinished ? null : postLoginDestination(rows);
+}
+
+/**
+ * `/login` pour un utilisateur deja connecte: son espace, ou `null` pour
+ * afficher le formulaire. Un compte sans acces (`/unauthorized`) garde le
+ * formulaire, sinon il ne pourrait plus changer de compte: le lien
+ * "se connecter" de /unauthorized le renvoyait sur /unauthorized.
+ */
+export function loginPageDestination(rows: readonly PostLoginMembership[]): string | null {
+  const destination = postLoginDestination(rows);
+  return destination === '/unauthorized' ? null : destination;
 }

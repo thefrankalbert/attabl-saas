@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { onboardingSaveSchema, onboardingCompleteSchema } from '../onboarding.schema';
+import {
+  onboardingSaveSchema,
+  onboardingCompleteSchema,
+  readOnboardingSiteParam,
+} from '../onboarding.schema';
 
 describe('onboardingSaveSchema', () => {
   it('should accept valid save data', () => {
@@ -171,5 +175,78 @@ describe('devise acceptee a la fin de l onboarding', () => {
 
   it('reste optionnelle', () => {
     expect(onboardingCompleteSchema.safeParse(base).success).toBe(true);
+  });
+});
+
+describe('onboardingCompleteSchema - champs qui etaient perdus (2026-11-08)', () => {
+  it('accepte le type "other", propose par l ecran de choix du type', () => {
+    // Choisir "Autre" faisait echouer le lancement en "Validation failed".
+    const r = onboardingCompleteSchema.safeParse({ data: { establishmentType: 'other' } });
+    expect(r.success).toBe(true);
+  });
+
+  it('garde les details propres au type au lieu de les retirer en silence', () => {
+    const r = onboardingCompleteSchema.safeParse({
+      data: { establishmentType: 'hotel', starRating: 4, hasRestaurant: true, totalCapacity: 80 },
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.data.starRating).toBe(4);
+      expect(r.data.data.hasRestaurant).toBe(true);
+      expect(r.data.data.totalCapacity).toBe(80);
+    }
+  });
+
+  it('refuse des details hors bornes (6 etoiles)', () => {
+    const r = onboardingCompleteSchema.safeParse({ data: { starRating: 6 } });
+    expect(r.success).toBe(false);
+  });
+
+  it('garde le choix du QR', () => {
+    const r = onboardingCompleteSchema.safeParse({
+      data: { qrTemplate: 'carte', qrStyle: 'dark', qrCta: 'Commandez', qrDescription: 'Wifi' },
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.data.qrTemplate).toBe('carte');
+  });
+
+  it('accepte un brouillon ancien (modele "elegant") en le ramenant comme l apercu', () => {
+    // Le refuser bloquait le tout dernier bouton du parcours.
+    const r = onboardingCompleteSchema.safeParse({ data: { qrTemplate: 'elegant' } });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.data.qrTemplate).toBe('chevalet');
+  });
+
+  it('ramene un modele ou un style inconnus sur les valeurs par defaut', () => {
+    const r = onboardingCompleteSchema.safeParse({
+      data: { qrTemplate: 'inconnu', qrStyle: 'fluo' },
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.data.qrTemplate).toBe('minimal');
+      expect(r.data.data.qrStyle).toBe('branded');
+    }
+  });
+
+  it('refuse toujours un modele qui n est pas une chaine', () => {
+    const r = onboardingCompleteSchema.safeParse({ data: { qrTemplate: 3 } });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe('readOnboardingSiteParam', () => {
+  it('rend null sans parametre', () => {
+    expect(readOnboardingSiteParam('http://x/api/onboarding/state')).toBeNull();
+  });
+
+  it('rend le slug valide', () => {
+    expect(readOnboardingSiteParam('http://x/api/onboarding/state?site=chez-amadou-2')).toBe(
+      'chez-amadou-2',
+    );
+  });
+
+  it('rend undefined (invalide) pour un slug mal forme', () => {
+    expect(readOnboardingSiteParam('http://x/a?site=../etc')).toBeUndefined();
+    expect(readOnboardingSiteParam('http://x/a?site=Chez%20Amadou')).toBeUndefined();
   });
 });

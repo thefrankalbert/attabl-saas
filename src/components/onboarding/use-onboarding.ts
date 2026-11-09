@@ -6,6 +6,8 @@ import { Palette, UtensilsCrossed, Rocket } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { useToast } from '@/components/ui/use-toast';
+import { ONBOARDING_LAUNCH_DEFAULTS } from '@/lib/onboarding/launch-defaults';
+import { withOnboardingSite } from '@/lib/onboarding/site-param';
 import { getSegmentFeatures } from '@/lib/segment-features';
 import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 
@@ -21,29 +23,55 @@ export function useOnboarding() {
   const [phase, setPhase] = useState(0);
   const [subScreen, setSubScreen] = useState(0);
   const [loading, setLoading] = useState(true);
+  /**
+   * The saved state could not be read. The studio is NOT shown: with empty
+   * fields, the first keystroke would auto-save them over the real draft.
+   */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  );
+  /** Bumped every 10 s while the last save failed, to retry it (see below). */
+  const [saveRetryTick, setSaveRetryTick] = useState(0);
+  /**
+   * Bumped on EVERY failed save. A failure while the status is already
+   * 'error' does not change the status, so without this the retry timer was
+   * never re-armed (e.g. a permanent 400, then a network failure).
+   */
+  const [saveFailures, setSaveFailures] = useState(0);
   const touchStartXRef = useRef(0);
   const lastSavedPayload = useRef<string>('');
   const autoSaveErrorShown = useRef(false);
+  /**
+   * Whether the last failed save can succeed by itself (network, 5xx, 429).
+   * A 400 or a taken name will fail identically until the user edits: those
+   * are shown but not retried in a loop.
+   */
+  const retryableRef = useRef(false);
+  /** Body of a save-on-leave request still in flight (dedupes the 3 events). */
+  const flushInFlightRef = useRef<string | null>(null);
   /** Skip native "leave site?" dialog when redirecting after successful completion */
   const skipUnloadWarningRef = useRef(false);
+  /** Leaves the onboarding for good: `replace`, so "back" cannot return here. */
+  const leaveToAdmin = (slug: string) => {
+    skipUnloadWarningRef.current = true;
+    window.location.replace(`${window.location.origin}/sites/${slug}/admin`);
+  };
 
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
     address: '',
     city: '',
-    country: 'Cameroun',
+    // Marche de lancement (Burkina Faso, XOF): meme source que le serveur, qui
+    // ecrasait auparavant ces valeurs par les defauts de la base (XAF).
+    country: ONBOARDING_LAUNCH_DEFAULTS.country,
     phone: '',
     tableCount: 10,
     language: 'fr-FR',
-    // Marche de lancement: Burkina Faso, donc XOF (franc CFA d'Afrique de
-    // l'Ouest). Le defaut etait 'EUR', ce qui presentait l'euro a un
-    // restaurateur ouagalais. Reste modifiable dans le meme formulaire, puis
-    // dans les Parametres.
-    currency: 'XOF',
+    currency: ONBOARDING_LAUNCH_DEFAULTS.currency,
     starRating: undefined,
     hasRestaurant: undefined,
     hasTerrace: undefined,
@@ -114,9 +142,15 @@ export function useOnboarding() {
   useEffect(() => {
     const fetchOnboardingState = async () => {
       try {
-        const res = await fetch('/api/onboarding/state');
+        const res = await fetch(withOnboardingSite('/api/onboarding/state'));
         if (res.ok) {
           const state = await res.json();
+
+          // Shown once per establishment: a finished one goes to its space.
+          if (state.completed && typeof state.tenantSlug === 'string' && state.tenantSlug) {
+            leaveToAdmin(state.tenantSlug);
+            return;
+          }
           const restoredData = state.data || {};
 
           // Extract navigation position metadata from the draft (if saved)
@@ -148,12 +182,18 @@ export function useOnboarding() {
             setPhase(restoredPhase);
             setSubScreen(restoredSub);
           }
+        } else {
+          // Not a silent empty form: an empty form here gets auto-saved over
+          // the real draft as soon as the user types.
+          const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(errBody.error || t('saveError'));
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        toast({ title: t('saveError'), description: message, variant: 'destructive' });
+        const message = err instanceof Error ? err.message : t('saveError');
+        setLoadError(message);
       } finally {
-        setLoading(false);
+        // Keep the skeleton while redirecting a finished establishment away.
+        if (!skipUnloadWarningRef.current) setLoading(false);
       }
     };
 
@@ -164,7 +204,7 @@ export function useOnboarding() {
   // --- Auto-save debounced ---------------------------------------------------
 
   useEffect(() => {
-    if (loading || phase === 0 || isLastScreen) return;
+    if (loading || loadError || phase === 0 || isLastScreen) return;
     const timer = setTimeout(async () => {
       // Deduplicate: skip save if payload hasn't changed since last save
       const draftPayload = {
@@ -177,7 +217,7 @@ export function useOnboarding() {
 
       setAutoSaveStatus('saving');
       try {
-        const res = await fetch('/api/onboarding/save', {
+        const res = await fetch(withOnboardingSite('/api/onboarding/save'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payloadJson,
@@ -186,11 +226,26 @@ export function useOnboarding() {
           lastSavedPayload.current = payloadJson;
           autoSaveErrorShown.current = false;
           setAutoSaveStatus('saved');
-          setTimeout(() => setAutoSaveStatus('idle'), 2000);
           return;
         }
 
-        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        const errBody = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          slug?: string | null;
+        };
+
+        // Finished in another tab: this draft must not overwrite anything.
+        if (res.status === 409 && errBody.error === 'ONBOARDING_ALREADY_COMPLETED') {
+          if (errBody.slug) {
+            leaveToAdmin(errBody.slug);
+          } else {
+            retryableRef.current = false;
+            setAutoSaveStatus('error');
+            setSaveFailures((n) => n + 1);
+          }
+          return;
+        }
+
         if (!autoSaveErrorShown.current) {
           autoSaveErrorShown.current = true;
           const description =
@@ -202,42 +257,108 @@ export function useOnboarding() {
           });
         }
         if (res.status === 401 || res.status === 403) {
+          // Retrying cannot succeed (session gone / no access): stop the loop.
           lastSavedPayload.current = payloadJson;
+          setAutoSaveStatus('idle');
+          return;
         }
+        // Shown in every case; retried only when a retry can succeed. The
+        // next edit retries a permanent failure anyway (new payload).
+        retryableRef.current = res.status >= 500 || res.status === 429;
+        setAutoSaveStatus('error');
+        setSaveFailures((n) => n + 1);
       } catch {
-        setAutoSaveStatus('idle');
+        // Network down: used to fall back to "idle" in silence, so the user
+        // believed the draft was kept. Shown, and retried below.
+        retryableRef.current = true;
+        setAutoSaveStatus('error');
+        setSaveFailures((n) => n + 1);
       }
     }, 2000);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: toast/t are referenced only on the error path and are stable across renders; including them would reset the 2s auto-save debounce on every locale/toast identity change (2026-06-18)
-  }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: toast/t/leaveToAdmin are referenced only on the error path and are stable in behavior across renders; including them would reset the 2s auto-save debounce on every render (2026-11-08)
+  }, [data, phase, subScreen, loading, loadError, apiStep, isLastScreen, saveRetryTick]);
 
-  // --- Save on tab close / navigate away (beacon API for reliability) ------
+  // "Saved" fades back to idle; a failed save that can succeed is retried every
+  // 10 s (the payload differs from the last saved one, so the save re-runs).
+  useEffect(() => {
+    if (autoSaveStatus === 'saved') {
+      const id = setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      return () => clearTimeout(id);
+    }
+    if (autoSaveStatus === 'error' && retryableRef.current) {
+      const id = setTimeout(() => setSaveRetryTick((n) => n + 1), 10000);
+      return () => clearTimeout(id);
+    }
+  }, [autoSaveStatus, saveRetryTick, saveFailures]);
+
+  // --- Save when the page is left or hidden ---------------------------------
+  //
+  // `beforeunload` alone missed mobile: iOS Safari does not fire it when the
+  // user switches app or closes the tab, so the last ~2 s of typing (the
+  // debounce) were lost. `visibilitychange` (hidden) and `pagehide` fire there.
+  // A `keepalive` request survives the page going away.
 
   useEffect(() => {
-    if (loading || phase === 0) return;
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Warn when leaving mid-flow, but not after "Lancer mon etablissement" (redirect)
-      if (phase > 0 && !skipUnloadWarningRef.current) {
-        e.preventDefault();
-      }
-      // Persist draft via beacon regardless
-      const draftPayload = {
-        ...data,
-        _phase: phase,
-        _subScreen: subScreen,
-      };
-      const body = JSON.stringify({ step: apiStep, data: draftPayload });
-      void fetch('/api/onboarding/save', {
+    if (loading || loadError || phase === 0) return;
+
+    const flushDraft = () => {
+      if (skipUnloadWarningRef.current) return; // leaving after a completed launch
+      const body = JSON.stringify({
+        step: apiStep,
+        data: { ...data, _phase: phase, _subScreen: subScreen },
+      });
+      // Nothing new to keep, or the same body already on its way.
+      if (body === lastSavedPayload.current || body === flushInFlightRef.current) return;
+      flushInFlightRef.current = body;
+      void fetch(withOnboardingSite('/api/onboarding/save'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body,
         keepalive: true,
-      });
+      })
+        .then((res) => {
+          if (res.ok) {
+            lastSavedPayload.current = body;
+            return;
+          }
+          // Page still open (tab hidden then shown): show it and retry.
+          retryableRef.current = res.status >= 500 || res.status === 429;
+          setAutoSaveStatus('error');
+          setSaveFailures((n) => n + 1);
+        })
+        .catch(() => {
+          // The page may already be gone (the next visit resumes from the last
+          // successful save); if it is still open, show it and retry.
+          retryableRef.current = true;
+          setAutoSaveStatus('error');
+          setSaveFailures((n) => n + 1);
+        })
+        .finally(() => {
+          flushInFlightRef.current = null;
+        });
     };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Warn when leaving mid-flow, but not after "Lancer mon etablissement" (redirect)
+      if (!skipUnloadWarningRef.current) {
+        e.preventDefault();
+      }
+      flushDraft();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushDraft();
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [data, phase, subScreen, loading, apiStep]);
+    window.addEventListener('pagehide', flushDraft);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', flushDraft);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [data, phase, subScreen, loading, loadError, apiStep]);
 
   // --- Data update callback -------------------------------------------------
 
@@ -320,7 +441,7 @@ export function useOnboarding() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch('/api/onboarding/complete', {
+      const res = await fetch(withOnboardingSite('/api/onboarding/complete'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data }),
@@ -339,6 +460,9 @@ export function useOnboarding() {
         if (result.error === 'RESTAURANT_NAME_TAKEN') {
           throw new Error(t('nameTaken'));
         }
+        if (result.error === 'ONBOARDING_IN_PROGRESS') {
+          throw new Error(t('launchInProgress'));
+        }
         throw new Error(result.error || t('completeError'));
       }
 
@@ -347,9 +471,7 @@ export function useOnboarding() {
         throw new Error(t('completeError'));
       }
 
-      skipUnloadWarningRef.current = true;
-      const origin = window.location.origin;
-      window.location.href = `${origin}/sites/${slug}/admin`;
+      leaveToAdmin(slug);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('completeError');
       setError(message);
@@ -373,6 +495,7 @@ export function useOnboarding() {
     phase,
     subScreen,
     loading,
+    loadError,
     saving,
     error,
     setError,

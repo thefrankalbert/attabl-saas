@@ -2,7 +2,7 @@
   "name": "ATTABL - Menu Digital & Commandes",
   "short_name": "ATTABL",
   "description": "Menu digital et commandes pour restaurants et hotels",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#CCFF00",

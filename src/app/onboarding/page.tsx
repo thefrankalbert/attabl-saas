@@ -31,6 +31,7 @@ export default function OnboardingPage() {
     phase,
     subScreen,
     loading,
+    loadError,
     saving,
     error,
     setError,
@@ -77,6 +78,27 @@ export default function OnboardingPage() {
 
   if (loading) {
     return <OnboardingLoadingSkeleton />;
+  }
+
+  // --- Saved state unreadable: block, never show an empty studio -------------
+
+  if (loadError) {
+    return (
+      /* Standalone page - h-dvh is intentional */
+      <div className="onboarding-brand h-dvh overflow-hidden flex items-center justify-center bg-app-bg px-5">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <Alert variant="destructive">
+            <AlertDescription>
+              <p className="font-semibold">{t('loadErrorTitle')}</p>
+              <p className="mt-1 text-sm">{loadError}</p>
+            </AlertDescription>
+          </Alert>
+          <Button className="min-h-[44px] w-full" onClick={() => window.location.reload()}>
+            {tc('retry')}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   // --- Welcome screen (phase 0) ---------------------------------------------
