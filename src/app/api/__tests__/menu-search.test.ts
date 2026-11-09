@@ -29,6 +29,13 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+// Le client service_role declare `server-only`: sans ce mock, l'import echoue.
+vi.mock('server-only', () => ({}));
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn(),
 }));
@@ -40,6 +47,7 @@ vi.mock('@/lib/logger', () => ({
 import { GET } from '../menu-search/route';
 import { menuSearchLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 
 type TenantRow = Record<string, unknown> | null;
@@ -55,7 +63,22 @@ function setupSupabase(tenant: TenantRow): Harness {
 
   const menuItems = [{ id: 'item-1', name: 'Poulet bicyclette', price: 4500 }];
 
-  vi.mocked(createClient).mockResolvedValue({
+  // Le tenant n'est lisible QUE par le client service_role: comme en prod depuis
+  // 20261109002847, le client anon recoit 42501 sur les colonnes de verrou.
+  const anonTenantsDenied = () => {
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      is: () => chain,
+      single: async () => ({
+        data: null,
+        error: { code: '42501', message: 'permission denied for table tenants' },
+      }),
+    };
+    return chain;
+  };
+
+  vi.mocked(createAdminClient).mockReturnValue({
     from: (table: string) => {
       if (table === 'tenants') {
         const chain = {
@@ -75,6 +98,13 @@ function setupSupabase(tenant: TenantRow): Harness {
         };
         return chain;
       }
+      throw new Error(`Table inattendue en service_role: ${table}`);
+    },
+  } as unknown as ReturnType<typeof createAdminClient>);
+
+  vi.mocked(createClient).mockResolvedValue({
+    from: (table: string) => {
+      if (table === 'tenants') return anonTenantsDenied();
       if (table === 'menu_items') {
         const chain = {
           select: () => chain,
