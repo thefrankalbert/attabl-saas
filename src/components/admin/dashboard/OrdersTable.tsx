@@ -30,8 +30,12 @@ interface OrdersTableProps {
   formatValue: (n: number) => string;
   locale: string;
   adminBase: string;
-  /** Current time in ms - used for the urgency indicator on pending orders */
-  nowMs: number;
+  /**
+   * Current time in ms - used for the urgency indicator on pending orders.
+   * null until hydrated (useMinuteClock): no date scoping and no relative
+   * time on the server render, so server and client HTML match.
+   */
+  nowMs: number | null;
   /** Advance/cancel order status (bulk actions + row menu) */
   onStatusChange?: (orderId: string, newStatus: string) => Promise<void> | void;
 }
@@ -63,6 +67,7 @@ export function OrdersTable({
 
   // Orders scoped to the header period selector (?range=).
   const dateScoped = useMemo(() => {
+    if (nowMs === null) return orders;
     const startToday = new Date(nowMs);
     startToday.setHours(0, 0, 0, 0);
     const startMs = startToday.getTime();
