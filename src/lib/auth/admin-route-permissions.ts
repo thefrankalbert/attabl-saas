@@ -8,7 +8,8 @@ import type { PermissionCode } from '@/types/permission.types';
  *
  * Routes that return null are open to any authenticated tenant member -
  * operational pages every role needs: dashboard home, orders, kitchen, menus,
- * items, categories, service, qr-codes, support.
+ * items, categories, service, qr-codes, support. Their EDIT actions are hidden
+ * on screen without the matching permission (menu.edit, orders.pay...).
  *
  * Enforced in the middleware (proxy.ts) so an unauthorized role gets a clean
  * server-side 307 redirect for ALL clients (browser, curl, bots), and mirrored
@@ -29,6 +30,8 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCod
   { test: /^\/suppliers(\/|$)/, permission: 'inventory.view' },
   { test: /^\/recipes(\/|$)/, permission: 'inventory.view' },
   { test: /^\/pos(\/|$)/, permission: 'pos.use' },
+  // Les ardoises sont de l'argent (decision du 2026-11-09): pas le serveur ni le chef.
+  { test: /^\/orders\/house-accounts(\/|$)/, permission: 'orders.pay' },
   { test: /^\/coupons(\/|$)/, permission: 'menu.edit' },
   { test: /^\/ads(\/|$)/, permission: 'menu.edit' },
   { test: /^\/announcements(\/|$)/, permission: 'menu.edit' },
@@ -46,4 +49,18 @@ export function permissionForAdminSubPath(subPath: string): PermissionCode | nul
     if (test.test(subPath)) return permission;
   }
   return null;
+}
+
+/**
+ * Le membre peut-il ouvrir cette sous-route admin, d'apres ses permissions
+ * EFFECTIVES ? Meme regle que le middleware: une route sans permission est
+ * ouverte a tout membre. Partage par la barre du bas et la palette de commandes
+ * pour qu'aucun lien ne mene a /unauthorized.
+ */
+export function canOpenAdminSubPath(
+  subPath: string,
+  permissions: Partial<Record<PermissionCode, boolean>>,
+): boolean {
+  const required = permissionForAdminSubPath(subPath);
+  return required === null || permissions[required] === true;
 }

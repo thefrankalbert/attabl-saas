@@ -20,6 +20,8 @@ import OrderNotesSection from '@/components/admin/orders/OrderNotesSection';
 import AttachToHouseAccount from '@/components/admin/orders/AttachToHouseAccount';
 import type { PaymentSummary } from '@/services/payment.service';
 import type { CurrencyCode } from '@/types/admin.types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isRoleAllowed, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
 
 interface OrderPaymentPanelProps {
   tenantId: string;
@@ -52,6 +54,12 @@ export default function OrderPaymentPanel({
   // Libelles des moyens de paiement: meme source que les reglages du restaurant.
   const tMethod = useTranslations('admin.settings.paymentMethod');
   const { toast } = useToast();
+  // Memes regles que le serveur: encaisser et l'ardoise = `orders.pay`;
+  // rembourser = en plus un role de gerant. Les autres voient le detail en
+  // lecture seule au lieu d'un champ qui finit en refus.
+  const { role, can } = usePermissions();
+  const canPay = can('orders.pay');
+  const canGiveMoneyBack = canPay && isRoleAllowed(role, ORDER_MONEY_ROLES);
 
   const [loading, setLoading] = useState(false);
   const [tenderAmount, setTenderAmount] = useState('');
@@ -98,12 +106,12 @@ export default function OrderPaymentPanel({
   const remaining = Math.max(0, summary.due - summary.net);
   const isComp = summary.paymentStatus === 'comp';
   // A comped order is closed for free: hide the settle/refund inputs.
-  const canSettle = remaining > 0 && summary.paymentStatus !== 'paid' && !isComp;
-  const canRefund = summary.net > 0;
+  const canSettle = canPay && remaining > 0 && summary.paymentStatus !== 'paid' && !isComp;
+  const canRefund = canGiveMoneyBack && summary.net > 0;
   // Comp only applies to a fully-unsettled order (the server rejects partial).
   const canOfferComp = canComp && summary.paymentStatus === 'pending';
   // Put an unpaid order on a running tab (never once paid or comped).
-  const canAttach = summary.paymentStatus !== 'paid' && !isComp;
+  const canAttach = canPay && summary.paymentStatus !== 'paid' && !isComp;
 
   const handleRecord = async () => {
     // The cashier types a MAJOR-unit amount (e.g. 12.50); the ledger stores minor.

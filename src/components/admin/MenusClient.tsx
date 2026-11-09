@@ -17,6 +17,7 @@ import MenuImportExcel from '@/components/features/menus/MenuImportExcel';
 import MenuImportPDF from '@/components/features/menus/MenuImportPDF';
 import MenusTable from '@/components/features/menus/MenusTable';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Menu, Venue, CurrencyCode } from '@/types/admin.types';
 
 interface MenusClientProps {
@@ -36,6 +37,8 @@ export default function MenusClient({
 }: MenusClientProps) {
   const t = useTranslations('menus');
   const tc = useTranslations('common');
+  // Liste consultable avec `menu.view`; import, creation et suppression = `menu.edit`.
+  const canEdit = usePermissions().can('menu.edit');
   const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
 
   const confirmWithMessage = useCallback(
@@ -129,7 +132,7 @@ export default function MenusClient({
   };
 
   return (
-    <RoleGuard permission="canManageMenus">
+    <RoleGuard permission="menu.view">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
@@ -146,45 +149,49 @@ export default function MenusClient({
                     className="pl-10 h-9"
                   />
                 </div>
-                {selectedIds.size > 0 && (
-                  <Button
-                    onClick={handleDeleteSelected}
-                    variant="outline"
-                    size="sm"
-                    title={tc('delete')}
-                    className="gap-1.5 shrink-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                {canEdit && (
+                  <>
+                    {selectedIds.size > 0 && (
+                      <Button
+                        onClick={handleDeleteSelected}
+                        variant="outline"
+                        size="sm"
+                        title={tc('delete')}
+                        className="gap-1.5 shrink-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setShowImportModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 shrink-0"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('importExcel')}</span>
+                    </Button>
+                    <Button
+                      onClick={() => setShowPdfImportModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 shrink-0"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('importPdf')}</span>
+                    </Button>
+                    <Button
+                      onClick={() => openNewMenuModal()}
+                      variant="default"
+                      size="sm"
+                      disabled={isLimitReached}
+                      className="gap-1.5 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('newMenu')}</span>
+                    </Button>
+                  </>
                 )}
-                <Button
-                  onClick={() => setShowImportModal(true)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 shrink-0"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('importExcel')}</span>
-                </Button>
-                <Button
-                  onClick={() => setShowPdfImportModal(true)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 shrink-0"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('importPdf')}</span>
-                </Button>
-                <Button
-                  onClick={() => openNewMenuModal()}
-                  variant="default"
-                  size="sm"
-                  disabled={isLimitReached}
-                  className="gap-1.5 shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('newMenu')}</span>
-                </Button>
               </>
             }
           />

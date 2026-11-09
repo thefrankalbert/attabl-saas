@@ -117,13 +117,15 @@ describe('actionRecordLoss', () => {
     expect(mockRecordLoss).toHaveBeenCalledWith(TENANT_ID, validInput);
   });
 
-  it('WRITE stays gated at inventory.edit with the write role list', async () => {
+  it('WRITE stays gated at inventory.edit, decided by the permission alone', async () => {
     const { actionRecordLoss } = await import('@/app/actions/inventory');
     await actionRecordLoss(TENANT_ID, validInput);
 
     expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
       TENANT_ID,
-      ['owner', 'admin', 'manager'],
+      // Plus de liste de roles avant la permission: le reglage du
+      // proprietaire (inventory.edit) decide seul (X9).
+      ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'],
       'inventory.edit',
     );
   });
@@ -187,7 +189,9 @@ describe('actionReceiveStock (WRITE gated at inventory.edit)', () => {
     );
     expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
       TENANT_ID,
-      ['owner', 'admin', 'manager'],
+      // Plus de liste de roles avant la permission: le reglage du
+      // proprietaire (inventory.edit) decide seul (X9).
+      ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'],
       'inventory.edit',
     );
   });

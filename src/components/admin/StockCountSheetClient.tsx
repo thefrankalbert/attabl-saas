@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useStockCount } from '@/hooks/queries/useStockCounts';
 import {
   actionSaveStockCountLines,
@@ -70,7 +71,10 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCommitDialog, setShowCommitDialog] = useState(false);
 
-  const isReadOnly = data?.count.status !== 'open';
+  // Lecture seule aussi sans `inventory.edit` (le chef par defaut): le serveur
+  // refuserait l'enregistrement et la validation du comptage.
+  const canEdit = usePermissions().can('inventory.edit');
+  const isReadOnly = data?.count.status !== 'open' || !canEdit;
 
   const getDisplayQty = useCallback(
     (ingredientId: string): number | null => {

@@ -217,7 +217,7 @@ export default function OrdersClient({
   );
 
   return (
-    <RoleGuard permission="canViewAllOrders">
+    <RoleGuard permission="orders.view">
       <div className="h-full flex flex-col overflow-hidden">
         <h1 className="sr-only">{t('title')}</h1>
         <OrdersToolbar

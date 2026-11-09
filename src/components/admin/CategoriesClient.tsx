@@ -23,6 +23,7 @@ import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Category, Menu } from '@/types/admin.types';
 import { actionDeleteCategory, actionReorderCategories } from '@/app/actions/categories';
 import { ListPagination } from '@/components/admin/ListPagination';
@@ -54,6 +55,8 @@ export default function CategoriesClient({
   const pathname = usePathname();
   const dndId = useId();
   const t = useTranslations('categories');
+  // Page consultable avec `menu.view`; creer/modifier/supprimer = `menu.edit`.
+  const canEdit = usePermissions().can('menu.edit');
   const tc = useTranslations('common');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
@@ -235,21 +238,23 @@ export default function CategoriesClient({
   };
 
   return (
-    <RoleGuard permission="canManageMenus">
+    <RoleGuard permission="menu.view">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
             title={t('title')}
             actions={
-              <Button
-                onClick={openNewModal}
-                variant="default"
-                size="sm"
-                className="gap-1.5 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('newCategory')}</span>
-              </Button>
+              canEdit ? (
+                <Button
+                  onClick={openNewModal}
+                  variant="default"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('newCategory')}</span>
+                </Button>
+              ) : undefined
             }
           />
         </div>
@@ -325,9 +330,11 @@ export default function CategoriesClient({
               </div>
               <h3 className="text-base font-bold text-app-text">{t('noCategories')}</h3>
               <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesDesc')}</p>
-              <Button onClick={openNewModal} variant="default" className="mt-4">
-                {t('createCategory')}
-              </Button>
+              {canEdit && (
+                <Button onClick={openNewModal} variant="default" className="mt-4">
+                  {t('createCategory')}
+                </Button>
+              )}
             </div>
           )}
         </div>

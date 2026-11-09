@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { billingCapabilities } from '@/lib/billing/provider';
 import { logger } from '@/lib/logger';
 
-export function PastDueBanner() {
+/** `showManageCard`: faux pour qui n'est ni owner ni admin (le portail le refuse). */
+export function PastDueBanner({ showManageCard = true }: { showManageCard?: boolean }) {
   const [loading, setLoading] = useState(false);
   // Le portail de facturation est une CAPACITE du prestataire, pas un acquis:
   // Stripe en heberge un, un agregateur mobile money non (voir
@@ -16,7 +17,7 @@ export function PastDueBanner() {
   // A FAIRE le jour ou un prestataire sans portail devient actif: le message
   // ci-dessous dit "Mettez a jour votre carte", ce qui n'a pas de sens sans
   // carte ni portail. Il faudra une invitation a regler la periode en cours.
-  const canOpenPortal = billingCapabilities().hostedPortal;
+  const canOpenPortal = showManageCard && billingCapabilities().hostedPortal;
 
   const handleManageCard = async () => {
     setLoading(true);

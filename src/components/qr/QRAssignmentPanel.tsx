@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { actionSaveQrDesign, actionAssignQrDesign } from '@/app/actions/qr-design';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Table, Zone } from '@/types/admin.types';
 import { groupTablesByZone } from '@/lib/qr/group-tables';
 import type { QRDesignConfig } from '@/types/qr-design.types';
@@ -63,6 +64,9 @@ export function QRAssignmentPanel({
   onLoadDesign,
 }: QRAssignmentPanelProps) {
   const t = useTranslations('qrCodes');
+  // Enregistrer et assigner un design = `settings.edit` cote serveur. Sans ce
+  // droit, le panneau reste consultable (charger un design pour imprimer).
+  const canEdit = usePermissions().can('settings.edit');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -137,51 +141,53 @@ export function QRAssignmentPanel({
             <Layers className="w-4 h-4 text-app-text-muted" />
             {t('savedDesigns')}
           </h3>
-          <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <Save className="w-4 h-4" />
-                {t('saveCurrentDesign')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('saveCurrentDesign')}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div>
-                  <Label htmlFor="qr-design-name" className="mb-1.5 block">
-                    {t('designName')}
-                  </Label>
-                  <Input
-                    id="qr-design-name"
-                    value={designName}
-                    onChange={(e) => setDesignName(e.target.value)}
-                    placeholder={t('designNamePlaceholder')}
-                    maxLength={80}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="qr-design-default" className="cursor-pointer">
-                    {t('setAsDefault')}
-                  </Label>
-                  <Switch
-                    id="qr-design-default"
-                    checked={makeDefault}
-                    onCheckedChange={setMakeDefault}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={saveCurrentDesign}
-                  disabled={isPending || designName.trim().length === 0}
-                >
-                  {t('save')}
+          {canEdit && (
+            <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Save className="w-4 h-4" />
+                  {t('saveCurrentDesign')}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t('saveCurrentDesign')}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div>
+                    <Label htmlFor="qr-design-name" className="mb-1.5 block">
+                      {t('designName')}
+                    </Label>
+                    <Input
+                      id="qr-design-name"
+                      value={designName}
+                      onChange={(e) => setDesignName(e.target.value)}
+                      placeholder={t('designNamePlaceholder')}
+                      maxLength={80}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="qr-design-default" className="cursor-pointer">
+                      {t('setAsDefault')}
+                    </Label>
+                    <Switch
+                      id="qr-design-default"
+                      checked={makeDefault}
+                      onCheckedChange={setMakeDefault}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={saveCurrentDesign}
+                    disabled={isPending || designName.trim().length === 0}
+                  >
+                    {t('save')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {designs.length === 0 ? (
@@ -239,7 +245,7 @@ export function QRAssignmentPanel({
                       <Select
                         value={zone.qr_design_id ?? INHERIT}
                         onValueChange={(v) => assign('zone', zone.id, v)}
-                        disabled={isPending || designs.length === 0}
+                        disabled={!canEdit || isPending || designs.length === 0}
                       >
                         <SelectTrigger
                           className="w-44 h-9"
@@ -284,7 +290,7 @@ export function QRAssignmentPanel({
                           <Select
                             value={table.qr_design_id ?? INHERIT}
                             onValueChange={(v) => assign('table', table.id, v)}
-                            disabled={isPending || designs.length === 0}
+                            disabled={!canEdit || isPending || designs.length === 0}
                           >
                             <SelectTrigger
                               className="w-44 h-9"

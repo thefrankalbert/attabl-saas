@@ -2,13 +2,13 @@
 
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
-import type { AdminRole } from '@/types/admin.types';
 import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
 import { createMenuService } from '@/services/menu.service';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 
 type ActionResponse = {
   success?: boolean;
@@ -20,14 +20,13 @@ type ActionResponse = {
  * SECURITY: Authenticates user and verifies tenant membership + role.
  * tenantId is verified against the session (IDOR prevention).
  */
-async function checkMenuPermissions(
-  tenantId: string,
-  allowedRoles: AdminRole[] = ['owner', 'admin', 'manager'],
-) {
+async function checkMenuPermissions(tenantId: string) {
   try {
+    // `menu.edit` decide seule: une liste de roles ici annulait le droit que
+    // le proprietaire accorde dans /settings/permissions.
     const { user, supabase, role } = await getAuthenticatedUserForTenant(
       tenantId,
-      allowedRoles,
+      ALL_ADMIN_ROLES,
       'menu.edit',
     );
     return { error: null, supabase, user, role };
@@ -174,12 +173,7 @@ export async function actionUpdateMenu(
  * Delete a menu.
  */
 export async function actionDeleteMenu(tenantId: string, menuId: string): Promise<ActionResponse> {
-  const {
-    error: permError,
-    supabase,
-    user,
-    role,
-  } = await checkMenuPermissions(tenantId, ['owner', 'admin', 'manager']);
+  const { error: permError, supabase, user, role } = await checkMenuPermissions(tenantId);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 
   try {

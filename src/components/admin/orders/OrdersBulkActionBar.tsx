@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import type { Order } from '@/types/admin.types';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { GetOrderStatusConfig } from './use-order-status-config';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isRoleAllowed } from '@/lib/admin-roles';
 
 interface OrdersBulkActionBarProps {
   selectedIds: Set<string>;
@@ -31,6 +33,12 @@ export default function OrdersBulkActionBar({
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const { toast } = useToast();
+  // Memes regles que le serveur: avancer = `orders.manage`; supprimer =
+  // owner ou admin ET `orders.pay` (actionDeleteOrders, RLS DELETE). Un gerant
+  // voyait la corbeille et se faisait refuser apres confirmation.
+  const { role, can } = usePermissions();
+  const canAdvance = can('orders.manage');
+  const canDelete = isRoleAllowed(role, ['owner', 'admin']) && can('orders.pay');
 
   return (
     <div
@@ -43,60 +51,64 @@ export default function OrdersBulkActionBar({
         {t('selected', { count: selectedIds.size })}
       </span>
       <div className="w-px h-4 bg-app-border" />
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Next"
-        onClick={() => {
-          const ids = Array.from(selectedIds);
-          const selectedOrders = ids
-            .map((id) => orders.find((o) => o.id === id))
-            .filter(Boolean) as Order[];
+      {canAdvance && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Next"
+          onClick={() => {
+            const ids = Array.from(selectedIds);
+            const selectedOrders = ids
+              .map((id) => orders.find((o) => o.id === id))
+              .filter(Boolean) as Order[];
 
-          // Filter out orders that can't be advanced (already delivered/cancelled)
-          const eligibleOrders = selectedOrders.filter(
-            (o) => o.status !== 'delivered' && o.status !== 'cancelled',
-          );
-          if (eligibleOrders.length === 0) {
-            toast({
-              title: t('noEligibleOrders') || 'Aucune commande eligible',
-              variant: 'destructive',
-            });
-            return;
-          }
-          if (eligibleOrders.length < selectedOrders.length) {
-            toast({
-              title:
-                t('someOrdersSkipped', {
-                  count: selectedOrders.length - eligibleOrders.length,
-                }) ||
-                `${selectedOrders.length - eligibleOrders.length} commande(s) non-eligible(s) ignoree(s)`,
-            });
-          }
-
-          eligibleOrders.forEach((order) => {
-            const config = getStatusConfig(order.status);
-            if (config.nextStatus) {
-              handleStatusChange(order.id, config.nextStatus);
+            // Filter out orders that can't be advanced (already delivered/cancelled)
+            const eligibleOrders = selectedOrders.filter(
+              (o) => o.status !== 'delivered' && o.status !== 'cancelled',
+            );
+            if (eligibleOrders.length === 0) {
+              toast({
+                title: t('noEligibleOrders') || 'Aucune commande eligible',
+                variant: 'destructive',
+              });
+              return;
             }
-          });
-          setSelectedIds(new Set());
-        }}
-        title={t('advanceStatus')}
-        className="h-8 w-8 text-accent hover:bg-accent-muted"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Delete"
-        onClick={() => setShowDeleteConfirm(true)}
-        title={tc('delete')}
-        className="h-8 w-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
+            if (eligibleOrders.length < selectedOrders.length) {
+              toast({
+                title:
+                  t('someOrdersSkipped', {
+                    count: selectedOrders.length - eligibleOrders.length,
+                  }) ||
+                  `${selectedOrders.length - eligibleOrders.length} commande(s) non-eligible(s) ignoree(s)`,
+              });
+            }
+
+            eligibleOrders.forEach((order) => {
+              const config = getStatusConfig(order.status);
+              if (config.nextStatus) {
+                handleStatusChange(order.id, config.nextStatus);
+              }
+            });
+            setSelectedIds(new Set());
+          }}
+          title={t('advanceStatus')}
+          className="h-8 w-8 text-accent hover:bg-accent-muted"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      )}
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Delete"
+          onClick={() => setShowDeleteConfirm(true)}
+          title={tc('delete')}
+          className="h-8 w-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="icon"

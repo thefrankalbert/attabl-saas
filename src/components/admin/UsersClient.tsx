@@ -193,7 +193,7 @@ export default function UsersClient({
   };
 
   return (
-    <RoleGuard permission="canManageUsers">
+    <RoleGuard permission="team.view">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
@@ -219,7 +219,7 @@ export default function UsersClient({
             onToggleStatus={data.handleToggleStatus}
             onDeleteUser={data.handleDeleteUser}
             onEditUser={data.canManageUsers ? openEditModal : undefined}
-            onEditPermissions={data.canManageUsers ? setPermsUser : undefined}
+            onEditPermissions={data.canEditPermissions ? setPermsUser : undefined}
           />
 
           {useServerPagination && serverListPagination && (

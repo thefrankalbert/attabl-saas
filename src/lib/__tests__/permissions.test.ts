@@ -33,11 +33,25 @@ describe('hasPermission', () => {
       expect(hasPermission(user, 'team.manage')).toBe(true);
     });
 
-    it('waiter can view menu and orders but not manage orders', () => {
+    // Decision du 2026-11-09: le serveur prend et fait avancer les commandes,
+    // a la caisse comprise, mais ne touche pas a l'argent.
+    it('waiter takes and moves orders at the till but takes no money', () => {
       const user = makeUser('waiter');
       expect(hasPermission(user, 'menu.view')).toBe(true);
       expect(hasPermission(user, 'orders.view')).toBe(true);
-      expect(hasPermission(user, 'orders.manage')).toBe(false);
+      expect(hasPermission(user, 'orders.manage')).toBe(true);
+      expect(hasPermission(user, 'pos.use')).toBe(true);
+      expect(hasPermission(user, 'orders.pay')).toBe(false);
+    });
+
+    it('chef keeps the kitchen but takes no money', () => {
+      const user = makeUser('chef');
+      expect(hasPermission(user, 'orders.manage')).toBe(true);
+      expect(hasPermission(user, 'orders.pay')).toBe(false);
+    });
+
+    it('cashier takes money', () => {
+      expect(hasPermission(makeUser('cashier'), 'orders.pay')).toBe(true);
     });
 
     it('chef can view inventory but not edit it', () => {
@@ -94,7 +108,7 @@ describe('hasPermission', () => {
 
     it('individual override does not affect other permissions', () => {
       const user = makeUser('waiter', { 'inventory.view': true });
-      expect(hasPermission(user, 'orders.manage')).toBe(false);
+      expect(hasPermission(user, 'orders.pay')).toBe(false);
     });
   });
 

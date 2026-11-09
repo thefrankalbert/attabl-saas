@@ -51,7 +51,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const siteSlug = typeof params?.site === 'string' ? params.site : '';
   const queryClient = useQueryClient();
   const { can } = usePermissions();
-  const canEdit = can('canManageStocks');
+  const canEdit = can('inventory.edit');
 
   const supabase = createClient();
   const inventoryService = useMemo(() => createInventoryService(supabase), [supabase]);

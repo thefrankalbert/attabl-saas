@@ -56,7 +56,8 @@ interface POSCartProps {
 
   // Payment
   onPrintOrder: () => void;
-  onCheckout: () => void;
+  /** Absent quand le membre n'encaisse pas (`orders.pay`): seul "Envoyer" reste. */
+  onCheckout?: () => void;
 }
 
 export default function POSCart({

@@ -21,6 +21,13 @@ export interface Notification {
   created_at: string;
 }
 
+type NotificationRow = Notification & { notification_reads: { user_id: string }[] | null };
+
+/** Read = legacy shared flag OR the viewer's own read row. */
+export function toNotification({ notification_reads, ...row }: NotificationRow): Notification {
+  return { ...row, read: row.read || (notification_reads?.length ?? 0) > 0 };
+}
+
 interface UseNotificationsOptions {
   tenantId: string;
   userId?: string;
@@ -50,15 +57,19 @@ export function useNotifications({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('notifications')
-        // Explicit columns (rule 05) - matches the Notification interface exactly.
-        .select('id, tenant_id, user_id, type, title, body, link, read, created_at')
+        // Explicit columns (rule 05). `notification_reads` is filtered by RLS to
+        // the viewer's own rows: "read" is per person (migration 20261109210000),
+        // the legacy shared `read` flag still counts for older rows.
+        .select(
+          'id, tenant_id, user_id, type, title, body, link, read, created_at, notification_reads(user_id)',
+        )
         .eq('tenant_id', tenantId)
         .or(userId ? `user_id.eq.${userId},user_id.is.null` : 'user_id.is.null')
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      return (data as Notification[]) ?? [];
+      return ((data ?? []) as NotificationRow[]).map(toNotification);
     },
     enabled: enabled && !!tenantId,
   });

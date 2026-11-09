@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -38,6 +38,19 @@ vi.mock('@/components/admin/orders/OrderNotesSection', () => ({ default: () => n
 vi.mock('@/components/admin/orders/AttachToHouseAccount', () => ({ default: () => null }));
 vi.mock('@/components/ui/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
+// Acteur courant: modifiable par test (role + permissions effectives).
+const actor: { role: string; perms: Record<string, boolean> } = {
+  role: 'manager',
+  perms: { 'orders.pay': true },
+};
+vi.mock('@/hooks/usePermissions', () => ({
+  usePermissions: () => ({
+    role: actor.role,
+    permissions: actor.perms,
+    can: (code: string) => actor.perms[code] === true,
+  }),
+}));
+
 function renderPanel() {
   // onError rethrows: a message rendered without its {amount} value (or a
   // missing key) fails the test instead of silently showing the raw key.
@@ -72,5 +85,37 @@ describe('OrderPaymentPanel', () => {
     const input = await screen.findByLabelText('Montant');
     expect(input).toHaveClass('min-w-0');
     expect(input.parentElement).toHaveClass('flex-wrap');
+  });
+
+  describe('argent selon le role', () => {
+    afterEach(() => {
+      actor.role = 'manager';
+      actor.perms = { 'orders.pay': true };
+    });
+
+    // Decision du 2026-11-09: le serveur et le chef ne touchent pas a l'argent.
+    // Ils voient ce qui est paye, sans champ d'encaissement ni de remboursement.
+    it('montre le detail en lecture seule au serveur', async () => {
+      actor.role = 'waiter';
+      actor.perms = { 'orders.pay': false };
+      renderPanel();
+      expect(await screen.findByText('Especes')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Montant')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
+    });
+
+    // Le caissier encaisse mais ne rembourse pas: le serveur le refusait apres
+    // coup, le bouton etait pourtant affiche.
+    it('laisse le caissier encaisser sans lui montrer le remboursement', async () => {
+      actor.role = 'cashier';
+      renderPanel();
+      expect(await screen.findByLabelText('Montant')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
+    });
+
+    it('montre le remboursement au gerant', async () => {
+      renderPanel();
+      expect(await screen.findByRole('button', { name: /Rembourser/ })).toBeInTheDocument();
+    });
   });
 });

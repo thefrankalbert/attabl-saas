@@ -697,4 +697,59 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(adminUsersUpdate).toHaveBeenCalledTimes(1);
     });
   });
+
+  // Decision du proprietaire (2026-11-09): seul lui regle les permissions. Les
+  // surcharges INDIVIDUELLES priment sur tout (hasPermission, etape 1): un admin
+  // qui les ecrivait donnait l'encaissement a un serveur en contournant
+  // /api/permissions (reserve au proprietaire).
+  describe('actionUpdateAdminUser - permissions individuelles', () => {
+    beforeEach(() => {
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'serveur@resto-a.test',
+        role: 'waiter',
+        deleted_at: null,
+      };
+    });
+
+    it('refuse a un admin de regler des permissions individuelles', async () => {
+      mockGetAuthForTenant.mockResolvedValue({
+        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
+        role: 'admin',
+        adminUserId: 'admin-row',
+        tenantId: TENANT_A,
+        supabase: {},
+      });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        custom_permissions: { 'orders.pay': true },
+      });
+      expect(res.error).toBe('permissionDenied');
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('laisse un admin modifier le nom sans toucher aux permissions', async () => {
+      mockGetAuthForTenant.mockResolvedValue({
+        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
+        role: 'admin',
+        adminUserId: 'admin-row',
+        tenantId: TENANT_A,
+        supabase: {},
+      });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        full_name: 'Awa',
+      });
+      expect(res.success).toBe(true);
+    });
+
+    it('laisse le proprietaire regler des permissions individuelles', async () => {
+      actorIsOwnerOfTenantA();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        custom_permissions: { 'orders.pay': true },
+      });
+      expect(res.success).toBe(true);
+      expect(adminUsersUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ custom_permissions: { 'orders.pay': true } }),
+      );
+    });
+  });
 });

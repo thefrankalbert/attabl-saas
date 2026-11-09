@@ -326,6 +326,72 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
     expect(ordersChain.eq).toHaveBeenCalledWith('payment_status', 'pending');
     expect(ordersChain.neq).toHaveBeenCalledWith('status', 'cancelled');
   });
+
+  /**
+   * Decision du proprietaire (2026-11-09): le serveur prend les commandes a la
+   * caisse (`pos.use`) mais n'encaisse pas (`orders.pay`). Avant, `pos.use`
+   * suffisait pour creer la commande ET l'inscrire payee dans `payments`.
+   */
+  describe('argent a la caisse', () => {
+    afterEach(() => {
+      mockAdminUserRow.data.role = 'cashier';
+    });
+
+    it('refuse un encaissement du serveur, sans rien creer', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' }));
+      const { status } = await parseResponse(response);
+
+      expect(status).toBe(403);
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+      expect(ordersChain.update).not.toHaveBeenCalled();
+    });
+
+    it('refuse un pourboire du serveur', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest({ ...validPosBody(), tip_amount: 500 }));
+
+      expect(response.status).toBe(403);
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    });
+
+    it('refuse un coupon du serveur: une remise est un geste d argent', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest({ ...validPosBody(), coupon_code: 'PROMO10' }));
+
+      expect(response.status).toBe(403);
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    });
+
+    it('laisse le serveur envoyer une commande impayee en cuisine', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest(validPosBody()));
+
+      expect(response.status).toBe(200);
+      expect(mockCreateOrderWithItems).toHaveBeenCalled();
+      expect(ordersChain.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'paid' }),
+      );
+    });
+
+    it('laisse le caissier encaisser', async () => {
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' }));
+
+      expect(response.status).toBe(200);
+      expect(ordersChain.update).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'paid' }),
+      );
+    });
+  });
 });
 
 // --- Test Suite - coupure du restaurant -----------------------

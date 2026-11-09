@@ -46,7 +46,7 @@ async function enforceTenantPermission(
   tenantId: string,
   role: string,
   customPermissions: AdminUser['custom_permissions'],
-  requiredPermission: PermissionCode,
+  requiredPermission: PermissionCode | readonly PermissionCode[],
 ): Promise<void> {
   const principal = {
     role: role as AdminRole,
@@ -67,7 +67,9 @@ async function enforceTenantPermission(
       : null;
   }
 
-  if (!hasPermission(principal, requiredPermission, override)) {
+  const required: readonly PermissionCode[] =
+    typeof requiredPermission === 'string' ? [requiredPermission] : requiredPermission;
+  if (!required.every((perm) => hasPermission(principal, perm, override))) {
     throw new AuthError('Permissions insuffisantes', 403);
   }
 }
@@ -256,7 +258,9 @@ export async function getAuthenticatedUserWithTenant(
  *   this gate runs BEFORE `requiredPermission`, a too-narrow list silently
  *   overrides the fine permission - which is the real authorization rule.
  *   Prefer a named group from `@/lib/admin-roles` over a list written inline.
- * @param requiredPermission - Optional fine-grained permission code. When set, the
+ * @param requiredPermission - Optional fine-grained permission code (or several,
+ *   ALL required: e.g. cancelling an order needs `orders.manage` AND the money
+ *   permission `orders.pay`). When set, the
  *   action ALSO requires this permission via the 3-level resolution
  *   (individual custom_permissions -> tenant role_permissions override -> default
  *   matrix). This is what makes per-user and per-role permission overrides actually
@@ -269,7 +273,7 @@ export async function getAuthenticatedUserWithTenant(
 export async function getAuthenticatedUserForTenant(
   clientTenantId: string,
   allowedRoles: AdminRole[] = ['owner', 'admin'],
-  requiredPermission?: PermissionCode,
+  requiredPermission?: PermissionCode | readonly PermissionCode[],
 ): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 

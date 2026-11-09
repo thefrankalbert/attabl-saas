@@ -163,7 +163,11 @@ export async function actionAssignQrDesign(input: unknown) {
 export async function actionResolveDesignsForTables(tableIds: unknown) {
   const t = await getTranslations('errors');
   try {
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // LECTURE seule, pour imprimer les QR des tables: /qr-codes est ouvert a
+    // tout membre, donc l'appartenance suffit. `settings.edit` ici empechait
+    // un gerant ou la salle d'imprimer les cartes de table. Creer, modifier et
+    // assigner un design restent sous `settings.edit` (actions ci-dessus).
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
     if (!Array.isArray(tableIds) || tableIds.some((id) => typeof id !== 'string')) {
       return { success: false as const, error: 'Invalid input' };

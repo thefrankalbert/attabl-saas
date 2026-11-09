@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
@@ -64,6 +64,16 @@ vi.mock('@/components/ui/alert-dialog', () => ({
       {children}
     </button>
   ),
+}));
+
+// Permissions effectives du membre courant, modifiables par test.
+const mockPerms: Record<string, boolean> = { 'settings.view': true };
+vi.mock('@/hooks/usePermissions', () => ({
+  usePermissions: () => ({
+    role: 'owner',
+    permissions: mockPerms,
+    can: (c: string) => mockPerms[c] === true,
+  }),
 }));
 
 import { ShellAccountMenu } from '../ShellAccountMenu';
@@ -154,5 +164,27 @@ describe('ShellAccountMenu - deconnexion et file hors ligne', () => {
 
     await waitFor(() => expect(mockToast).toHaveBeenCalled());
     expect(mockToast.mock.calls[0][0]).toMatchObject({ variant: 'destructive' });
+  });
+});
+
+// Le personnel n'ouvre pas /subscription ni /settings (settings.view): le menu
+// du compte les lui proposait quand meme, et le clic finissait sur /unauthorized.
+describe('ShellAccountMenu - liens selon les permissions', () => {
+  afterEach(() => {
+    mockPerms['settings.view'] = true;
+  });
+
+  it('montre abonnement et reglages a qui peut les ouvrir', () => {
+    render(<ShellAccountMenu {...props} />);
+    expect(screen.getByText('navSubscription')).toBeInTheDocument();
+    expect(screen.getByText('navSettings')).toBeInTheDocument();
+  });
+
+  it('les cache a un membre sans settings.view', () => {
+    mockPerms['settings.view'] = false;
+    render(<ShellAccountMenu {...props} />);
+    expect(screen.queryByText('navSubscription')).toBeNull();
+    expect(screen.queryByText('navSettings')).toBeNull();
+    expect(screen.getByText('navSupport')).toBeInTheDocument();
   });
 });

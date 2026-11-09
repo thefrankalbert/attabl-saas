@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
@@ -21,7 +22,7 @@ import {
   assertTenantServing,
   assertTenantServingForKitchen,
 } from '@/lib/billing/assert-tenant-serving';
-import { ORDER_STAFF_ROLES, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
+import { ALL_ADMIN_ROLES, ORDER_MONEY_ROLES, ORDER_PAY_PERMISSIONS } from '@/lib/admin-roles';
 
 const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
@@ -147,10 +148,25 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     .select('tenant_id, role')
     .eq('user_id', user.id)
     .in('tenant_id', tenantIds)
-    .in('role', ['owner', 'admin']);
+    .in('role', ['owner', 'admin'])
+    // Comme toutes les autres gardes: un compte suspendu ou retire ne supprime rien.
+    .eq('is_active', true)
+    .is('deleted_at', null);
 
   if (adminError || !adminRecords || adminRecords.length !== tenantIds.length) {
     return { error: 'Unauthorized: requires owner or admin role' };
+  }
+
+  // Detruire une note impayee revient a l'annuler: c'est un geste d'argent. La
+  // base exige deja `orders.pay` (has_tenant_money_permission) pour supprimer
+  // une commande ou ses articles. Sans ce controle, un admin a qui le
+  // proprietaire a retire l'argent recevait un succes alors que la base
+  // n'avait rien supprime (un DELETE refuse par la RLS ne leve aucune erreur).
+  for (const tid of tenantIds) {
+    const { allowed } = await resolveAdminPermission(supabase, user.id, tid, 'orders.pay');
+    if (!allowed) {
+      return { error: "Votre role ne permet pas de supprimer une commande (droit d'encaisser)." };
+    }
   }
 
   const foundIds = orders.map((o) => o.id);
@@ -222,10 +238,14 @@ export async function actionUpdateOrderStatus(
   }
 
   try {
+    // Faire avancer une commande = `orders.manage` (serveur et cuisine compris).
+    // L'ANNULER annule une note impayee: prendre l'argent puis annuler la
+    // commande est le detournement classique. L'annulation exige donc en plus
+    // le droit d'argent `orders.pay` (decision du proprietaire du 2026-11-09).
     const { supabase, user } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      parsed.data.status === 'cancelled' ? ORDER_PAY_PERMISSIONS : 'orders.manage',
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -317,7 +337,7 @@ export async function actionUpdateItemStatus(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
+      ALL_ADMIN_ROLES,
       'orders.manage',
     );
 
@@ -385,7 +405,7 @@ export async function actionSetCourseHeld(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
+      ALL_ADMIN_ROLES,
       'orders.manage',
     );
 
@@ -415,8 +435,8 @@ export async function actionSetCourseHeld(
 }
 
 /**
- * Marks an order as paid.
- * Verifies the current user is a staff member (server or above) for the tenant.
+ * Marks an order as paid. Money: needs ORDER_PAY_PERMISSIONS (`orders.pay`,
+ * which the waiter and the chef do not hold by default).
  */
 export async function actionMarkOrderPaid(
   tenantId: string,
@@ -432,8 +452,8 @@ export async function actionMarkOrderPaid(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      ORDER_PAY_PERMISSIONS,
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -474,7 +494,7 @@ export async function actionMarkOrderPaid(
 /**
  * Record one split / partial tender against an order. Multiple calls accumulate
  * in the append-only payments ledger; the order's payment_status is recomputed
- * (pending -> partial -> paid) after each tender. Staff (server or above).
+ * (pending -> partial -> paid) after each tender. Money: ORDER_PAY_PERMISSIONS.
  */
 export async function actionRecordTender(
   tenantId: string,
@@ -503,8 +523,8 @@ export async function actionRecordTender(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      ORDER_PAY_PERMISSIONS,
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -542,8 +562,8 @@ export async function actionRecordTender(
 /**
  * Refund part or all of an order's net settled amount. Inserts an offsetting
  * ledger row and recomputes payment_status (-> partial or refunded). Refunds are
- * a manager action: the gate is ORDER_MONEY_ROLES, deliberately narrower than
- * `orders.manage`, which cashier and chef also hold.
+ * a manager action: ORDER_MONEY_ROLES on top of ORDER_PAY_PERMISSIONS, so the
+ * cashier, who takes payments, still cannot give money back.
  */
 export async function actionRefundOrder(
   tenantId: string,
@@ -567,7 +587,7 @@ export async function actionRefundOrder(
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
       ORDER_MONEY_ROLES,
-      'orders.manage',
+      ORDER_PAY_PERMISSIONS,
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -599,8 +619,9 @@ export async function actionRefundOrder(
 
 /**
  * Read the payment ledger summary for an order (amount due, net settled, status,
- * the list of tenders). Used by the order detail payment panel. Staff (server or
- * above) - read-only.
+ * the list of tenders). Used by the order detail payment panel. Read-only, so
+ * `orders.view` is enough: whoever can open the order sees what is paid, and
+ * only the money actions themselves need `orders.pay`.
  */
 export async function actionGetPaymentSummary(
   tenantId: string,
@@ -614,8 +635,8 @@ export async function actionGetPaymentSummary(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      'orders.view',
     );
     const summary = await createPaymentService(supabase).getSummary(
       parsed.data.orderId,
@@ -637,8 +658,7 @@ export async function actionGetPaymentSummary(
 /**
  * Comp / offer an order (close it for FREE). This is a MANAGER privilege - the
  * fraud surface of letting a waiter or a cashier zero out checks is why the gate
- * is ORDER_MONEY_ROLES, deliberately narrower than `orders.manage`, which
- * cashier and chef also hold. Comp is columns-only on the order (never a payments row) and
+ * is ORDER_MONEY_ROLES on top of ORDER_PAY_PERMISSIONS. Comp is columns-only on the order (never a payments row) and
  * is auto-excluded from revenue (payment_status='comp' is not 'paid'). A comped
  * transition is snapshotted into the audit log; an idempotent replay is not.
  */
@@ -656,7 +676,7 @@ export async function actionCompOrder(
     const { supabase, user, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
       ORDER_MONEY_ROLES,
-      'orders.manage',
+      ORDER_PAY_PERMISSIONS,
     );
 
     // Coupure du restaurant: ces actions sont appelees EN DIRECT par
@@ -713,7 +733,7 @@ export async function actionAddOrderNote(
   try {
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
+      ALL_ADMIN_ROLES,
       'orders.manage',
     );
 
@@ -740,7 +760,7 @@ export async function actionAddOrderNote(
 }
 
 /**
- * List the manager notes of an order (oldest first). Read-only, staff or above.
+ * List the manager notes of an order (oldest first). Read-only: `orders.view`.
  */
 export async function actionListOrderNotes(
   tenantId: string,
@@ -754,8 +774,8 @@ export async function actionListOrderNotes(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsed.data.tenantId,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      'orders.view',
     );
     const notes = await createOrderAnnotationService(supabase).listOrderNotes(
       parsed.data.orderId,

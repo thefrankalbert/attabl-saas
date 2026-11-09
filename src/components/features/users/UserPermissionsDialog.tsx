@@ -20,7 +20,7 @@ import type { AdminUser } from '@/types/admin.types';
 // Same grouping as the role-level matrix (PermissionsClient) for consistency.
 const PERMISSION_CATEGORIES: { key: string; permissions: PermissionCode[] }[] = [
   { key: 'menu', permissions: ['menu.view', 'menu.edit'] },
-  { key: 'orders', permissions: ['orders.view', 'orders.manage'] },
+  { key: 'orders', permissions: ['orders.view', 'orders.manage', 'orders.pay'] },
   { key: 'reports', permissions: ['reports.view'] },
   { key: 'pos', permissions: ['pos.use'] },
   { key: 'inventory', permissions: ['inventory.view', 'inventory.edit'] },

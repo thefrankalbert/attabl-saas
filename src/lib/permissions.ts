@@ -1,244 +1,21 @@
-// Centralized role-based permissions for ATTABL SaaS
-// Defines what each AdminRole can access across the platform
+// Resolution des permissions d'un membre d'un restaurant (ATTABL SaaS).
 //
-// This module provides two permission APIs:
-// 1. Legacy role-matrix API: hasPermission(role, permission) - used by admin sidebar/nav
-// 2. New 3-level override API: hasPermission(adminUser, permCode, roleOverrides?) - used by permission checks
+// UNE SEULE SOURCE DE VERITE: les codes PermissionCode, leur matrice par defaut
+// (DEFAULT_PERMISSIONS) et les surcharges du proprietaire (role_permissions) et
+// individuelles (custom_permissions). Le serveur, le middleware et l'interface
+// lisent tous cette meme resolution. Il existait avant une seconde matrice
+// "par role" (canManageMenus, canViewAllFinances...) lue seulement par
+// l'interface: elle contredisait le serveur (un chef voyait "Ajouter un plat"
+// puis se faisait refuser, un caissier etait bloque sur /orders) et ignorait
+// les reglages du proprietaire. Elle a ete supprimee.
 
-import type { AdminRole, AdminUser } from '@/types/admin.types';
+import type { AdminUser } from '@/types/admin.types';
 import {
   DEFAULT_PERMISSIONS,
   PERMISSION_CODES,
   type PermissionCode,
-  type RolePermissions as NewRolePermissions,
+  type RolePermissions,
 } from '@/types/permission.types';
-
-// --- View Types ----------------------------------------------
-type ViewType = 'standard' | 'pos' | 'kitchen' | 'server';
-
-// --- Stats Scope ---------------------------------------------
-type StatsScope = 'all' | 'restaurant' | 'quantities' | 'own';
-
-// --- Legacy Permission Interface (role matrix) --------------
-export interface RolePermissions {
-  // Menu
-  canManageMenus: boolean;
-  canViewMenuPrices: boolean;
-  canViewMenuDetails: boolean;
-
-  // Finance
-  canViewAllFinances: boolean;
-  canViewOwnFinances: boolean;
-  canViewRestaurantRevenue: boolean;
-
-  // Users
-  canManageUsers: boolean;
-  canViewAllUsers: boolean;
-
-  // Stats
-  canViewAllStats: boolean;
-  canViewOwnStats: boolean;
-  statsScope: StatsScope;
-
-  // Stocks
-  canManageStocks: boolean;
-  canViewStocks: boolean;
-
-  // Orders
-  canTakeOrders: boolean;
-  canViewAllOrders: boolean;
-  canViewOwnOrders: boolean;
-
-  // Config
-  canManageSettings: boolean;
-  canConfigureKitchen: boolean;
-  canUsePOS: boolean;
-
-  // Views
-  availableViews: ViewType[];
-  defaultView: ViewType;
-}
-
-// --- Role Permission Definitions -----------------------------
-
-const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
-  // Owner (superadmin): full access to everything
-  owner: {
-    canManageMenus: true,
-    canViewMenuPrices: true,
-    canViewMenuDetails: true,
-    canViewAllFinances: true,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: true,
-    canManageUsers: true,
-    canViewAllUsers: true,
-    canViewAllStats: true,
-    canViewOwnStats: true,
-    statsScope: 'all',
-    canManageStocks: true,
-    canViewStocks: true,
-    canTakeOrders: true,
-    canViewAllOrders: true,
-    canViewOwnOrders: true,
-    canManageSettings: true,
-    canConfigureKitchen: true,
-    canUsePOS: true,
-    availableViews: ['standard', 'pos', 'kitchen', 'server'],
-    defaultView: 'standard',
-  },
-
-  // Admin (gerant): full access, restaurant-scoped stats
-  admin: {
-    canManageMenus: true,
-    canViewMenuPrices: true,
-    canViewMenuDetails: true,
-    canViewAllFinances: true,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: true,
-    canManageUsers: true,
-    canViewAllUsers: true,
-    canViewAllStats: true,
-    canViewOwnStats: true,
-    statsScope: 'restaurant',
-    canManageStocks: true,
-    canViewStocks: true,
-    canTakeOrders: true,
-    canViewAllOrders: true,
-    canViewOwnOrders: true,
-    canManageSettings: true,
-    canConfigureKitchen: true,
-    canUsePOS: true,
-    availableViews: ['standard', 'pos', 'kitchen', 'server'],
-    defaultView: 'standard',
-  },
-
-  // Manager: operational management, no user management or global settings
-  manager: {
-    canManageMenus: true,
-    canViewMenuPrices: true,
-    canViewMenuDetails: true,
-    canViewAllFinances: true,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: true,
-    canManageUsers: false,
-    canViewAllUsers: true,
-    canViewAllStats: true,
-    canViewOwnStats: true,
-    statsScope: 'restaurant',
-    canManageStocks: true,
-    canViewStocks: true,
-    canTakeOrders: true,
-    canViewAllOrders: true,
-    canViewOwnOrders: true,
-    canManageSettings: false,
-    canConfigureKitchen: true,
-    canUsePOS: true,
-    availableViews: ['standard', 'pos', 'kitchen', 'server'],
-    defaultView: 'standard',
-  },
-
-  // Chef: kitchen-focused, sees finances/stats for menu optimization
-  chef: {
-    canManageMenus: true,
-    canViewMenuPrices: true,
-    canViewMenuDetails: true,
-    canViewAllFinances: true,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: true,
-    canManageUsers: false,
-    canViewAllUsers: true,
-    canViewAllStats: true,
-    canViewOwnStats: true,
-    statsScope: 'restaurant',
-    canManageStocks: false,
-    canViewStocks: true,
-    canTakeOrders: true,
-    canViewAllOrders: true,
-    canViewOwnOrders: true,
-    canManageSettings: false,
-    canConfigureKitchen: true,
-    canUsePOS: false,
-    availableViews: ['standard', 'kitchen'],
-    defaultView: 'kitchen',
-  },
-
-  // Waiter (serveur): order-taking, needs menu details for allergens/ingredients
-  waiter: {
-    canManageMenus: false,
-    canViewMenuPrices: true,
-    canViewMenuDetails: true,
-    canViewAllFinances: false,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: false,
-    canManageUsers: false,
-    canViewAllUsers: false,
-    canViewAllStats: false,
-    canViewOwnStats: true,
-    statsScope: 'own',
-    canManageStocks: false,
-    canViewStocks: false,
-    canTakeOrders: true,
-    canViewAllOrders: false,
-    canViewOwnOrders: true,
-    canManageSettings: false,
-    canConfigureKitchen: false,
-    canUsePOS: false,
-    availableViews: ['standard', 'server'],
-    defaultView: 'server',
-  },
-
-  // Cashier (caissier): POS-focused, own financial visibility
-  cashier: {
-    canManageMenus: false,
-    canViewMenuPrices: true,
-    canViewMenuDetails: false,
-    canViewAllFinances: false,
-    canViewOwnFinances: true,
-    canViewRestaurantRevenue: false,
-    canManageUsers: false,
-    canViewAllUsers: false,
-    canViewAllStats: false,
-    canViewOwnStats: true,
-    statsScope: 'own',
-    canManageStocks: false,
-    canViewStocks: false,
-    canTakeOrders: true,
-    canViewAllOrders: false,
-    canViewOwnOrders: true,
-    canManageSettings: false,
-    canConfigureKitchen: false,
-    canUsePOS: true,
-    availableViews: ['standard', 'pos'],
-    defaultView: 'pos',
-  },
-};
-
-// --- Legacy Helper Functions ---------------------------------
-
-/**
- * Check if a role has a specific boolean permission (legacy role-matrix API).
- */
-function hasLegacyPermission(role: AdminRole, permission: keyof RolePermissions): boolean {
-  const permissions = ROLE_PERMISSIONS[role];
-  const value = permissions[permission];
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  return Boolean(value);
-}
-
-/**
- * Get the full permissions object for a given role.
- */
-export function getRolePermissions(role: AdminRole): RolePermissions {
-  return ROLE_PERMISSIONS[role];
-}
-
-// --- Navigation Filtering ------------------------------------
-
-export type NavItemPermission = keyof RolePermissions | null;
-
-// --- New 3-Level Permission Override API ---------------------
 
 /**
  * Check if an admin user has a specific permission.
@@ -249,23 +26,12 @@ export type NavItemPermission = keyof RolePermissions | null;
  * 3. Default matrix (hardcoded) - fallback
  *
  * Owner role always returns true (immutable).
- *
- * Also supports legacy call signature: hasPermission(role, legacyPermission)
  */
 export function hasPermission(
-  adminUserOrRole: AdminUser | AdminRole,
-  permission: PermissionCode | keyof RolePermissions,
-  roleOverrides?: NewRolePermissions | null,
+  adminUser: Pick<AdminUser, 'role' | 'custom_permissions'>,
+  perm: PermissionCode,
+  roleOverrides?: Pick<RolePermissions, 'permissions'> | null,
 ): boolean {
-  // Legacy API: hasPermission(role: AdminRole, permission: keyof RolePermissions)
-  if (typeof adminUserOrRole === 'string') {
-    return hasLegacyPermission(adminUserOrRole as AdminRole, permission as keyof RolePermissions);
-  }
-
-  // New API: hasPermission(adminUser: AdminUser, permission: PermissionCode, roleOverrides?)
-  const adminUser = adminUserOrRole;
-  const perm = permission as PermissionCode;
-
   // Owner is immutable - always has all permissions
   if (adminUser.role === 'owner') {
     return true;
@@ -295,8 +61,8 @@ export function hasPermission(
  * Useful for UI rendering (show/hide sidebar items, buttons, etc.)
  */
 export function getEffectivePermissions(
-  adminUser: AdminUser,
-  roleOverrides?: NewRolePermissions | null,
+  adminUser: Pick<AdminUser, 'role' | 'custom_permissions'>,
+  roleOverrides?: Pick<RolePermissions, 'permissions'> | null,
 ): Record<PermissionCode, boolean> {
   const result = {} as Record<PermissionCode, boolean>;
 

@@ -97,9 +97,11 @@ select ok(
 );
 
 set local request.jwt.claims = '{"sub":"d3333333-3333-3333-3333-333333333333"}';
+-- Depuis 20261109200000 le serveur detient orders.manage par defaut (il fait
+-- avancer les commandes). Le droit qu'il n'a PAS sans delegation est l'argent.
 select ok(
-  not public.has_tenant_write_permission('d5555555-5555-5555-5555-555555555555', 'orders.manage'),
-  'non-elargissement: un waiter sans delegation orders.manage reste REFUSE'
+  not public.has_tenant_write_permission('d5555555-5555-5555-5555-555555555555', 'orders.pay'),
+  'non-elargissement: un waiter sans delegation orders.pay reste REFUSE'
 );
 
 select ok(

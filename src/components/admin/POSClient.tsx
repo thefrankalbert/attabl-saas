@@ -17,6 +17,7 @@ import POSUnpaidPanel from '@/components/features/pos/POSUnpaidPanel';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import { ReassignTableDialog } from '@/components/admin/service/ReassignTableDialog';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
@@ -35,6 +36,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const tc = useTranslations('common');
   const seg = useSegmentTerms();
   const { isMobile } = useDevice();
+  // Le serveur prend les commandes a la caisse sans encaisser (decision du
+  // 2026-11-09): sans `orders.pay`, ni "Valider le paiement" ni "A encaisser",
+  // ni coupon (une remise). La route /api/orders/pos refuse de toute facon un
+  // paiement, un pourboire ou un coupon sans ce droit.
+  const canPay = usePermissions().can('orders.pay');
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   // -- "A encaisser" (C2): bill an existing QR/served order from the caisse --
@@ -118,18 +124,18 @@ export default function POSClient({ tenantId }: POSClientProps) {
         section: 'contextual',
         keys: ['p'],
         action: () => {
-          if (cart.length > 0) setShowPaymentModal(true);
+          if (canPay && cart.length > 0) setShowPaymentModal(true);
         },
       },
     ],
-    [ts, cart, menuItems, addToCart],
+    [ts, cart, menuItems, addToCart, canPay],
   );
   useContextualShortcuts(shortcuts);
 
   const router = useRouter();
 
   return (
-    <RoleGuard permission="canUsePOS">
+    <RoleGuard permission="pos.use">
       <div className="@container h-full flex flex-col overflow-hidden bg-app-bg">
         {!mounted || pos.loading ? (
           <div className="flex-1 flex items-center justify-center text-app-text-muted">
@@ -186,19 +192,21 @@ export default function POSClient({ tenantId }: POSClientProps) {
               )}
 
               {/* A encaisser: orders awaiting payment (incl. QR/served) */}
-              <Button
-                variant="ghost"
-                onClick={() => setShowUnpaid(true)}
-                className="relative ml-auto mr-2 min-h-[44px] gap-2 text-sm font-semibold text-app-text-secondary hover:text-app-text"
-              >
-                <Receipt className="h-4 w-4" />
-                <span className="hidden @sm:inline">{t('toSettle')}</span>
-                {unpaidOrders.length > 0 && (
-                  <span className="rounded-full bg-accent px-1.5 py-0.5 text-xs text-accent-text">
-                    {unpaidOrders.length}
-                  </span>
-                )}
-              </Button>
+              {canPay && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowUnpaid(true)}
+                  className="relative ml-auto mr-2 min-h-[44px] gap-2 text-sm font-semibold text-app-text-secondary hover:text-app-text"
+                >
+                  <Receipt className="h-4 w-4" />
+                  <span className="hidden @sm:inline">{t('toSettle')}</span>
+                  {unpaidOrders.length > 0 && (
+                    <span className="rounded-full bg-accent px-1.5 py-0.5 text-xs text-accent-text">
+                      {unpaidOrders.length}
+                    </span>
+                  )}
+                </Button>
+              )}
             </div>
 
             {/* Main layout - flat surfaces separated by border lines, no boxed cards */}
@@ -255,7 +263,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   }}
                   orderNotes={pos.orderNotes}
                   setOrderNotes={pos.setOrderNotes}
-                  enableCoupons={pos.enableCoupons}
+                  enableCoupons={canPay && pos.enableCoupons}
                   couponCode={pos.couponCode}
                   setCouponCode={pos.setCouponCode}
                   appliedCoupon={pos.appliedCoupon}
@@ -264,7 +272,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   onValidateCoupon={pos.validateCoupon}
                   onRemoveCoupon={pos.removeCoupon}
                   onPrintOrder={() => pos.handleOrder('pending')}
-                  onCheckout={() => setShowPaymentModal(true)}
+                  onCheckout={canPay ? () => setShowPaymentModal(true) : undefined}
                 />
               </div>
             </div>
@@ -323,7 +331,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             />
 
             {/* Payment Modal Reuse */}
-            {showPaymentModal && (
+            {canPay && showPaymentModal && (
               <PaymentModal
                 onClose={() => setShowPaymentModal(false)}
                 orderNumber={pos.orderNumber}
@@ -351,7 +359,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
             {/* A encaisser panel: pick an existing unpaid order to settle */}
             <POSUnpaidPanel
-              open={showUnpaid}
+              open={canPay && showUnpaid}
               onClose={() => setShowUnpaid(false)}
               orders={unpaidOrders}
               loading={unpaidLoading}
@@ -363,7 +371,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             />
 
             {/* Settle an existing order: PaymentModal in order mode -> markPaid */}
-            {settlingOrder && (
+            {canPay && settlingOrder && (
               <PaymentModal
                 order={settlingOrder}
                 currency={pos.currency}

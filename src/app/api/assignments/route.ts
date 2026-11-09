@@ -11,6 +11,8 @@ import { createAssignmentSchema } from '@/lib/validations/assignment.schema';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { ASSIGNMENT_MANAGER_ROLES, isRoleAllowed } from '@/lib/admin-roles';
 
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
@@ -112,6 +114,19 @@ export async function POST(request: Request) {
         .eq('is_active', true)
         .single();
       if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+
+      // Assigner un serveur a une table = gestion de salle: meme garde que
+      // actionAssignServer et que DELETE /api/assignments/[id] (role de gerant
+      // ET orders.manage). L'appartenance seule laissait tout membre le faire.
+      const { allowed: canAssign, role } = await resolveAdminPermission(
+        supabase,
+        user.id,
+        tenant.id,
+        'orders.manage',
+      );
+      if (!canAssign || !role || !isRoleAllowed(role, ASSIGNMENT_MANAGER_ROLES)) {
+        return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+      }
 
       const body = await request.json();
       const parsed = createAssignmentSchema.safeParse(body);

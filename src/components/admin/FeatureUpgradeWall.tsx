@@ -4,6 +4,7 @@ import { Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { getAdminPermission } from '@/lib/auth/require-admin-permission';
 
 type GatedFeature = 'kds' | 'inventory' | 'recipes' | 'reports' | 'service' | 'tables';
 
@@ -28,6 +29,11 @@ export async function FeatureUpgradeWall({
   tenantId,
 }: FeatureUpgradeWallProps) {
   const t = await getTranslations('admin.upgradeWall');
+  // Le bouton mene a /subscription (settings.view): le personnel ne peut pas
+  // l'ouvrir. Il lit a la place qui peut activer la fonction. Le restaurant se
+  // lit dans l'en-tete injecte par le middleware, l'URL ne sert que de repli.
+  const site = /\/sites\/([^/]+)\//.exec(checkoutUrl)?.[1] ?? '';
+  const canUpgrade = await getAdminPermission(site, 'settings.view');
 
   if (tenantId) {
     const eventKey = FEATURE_EVENT_KEY[feature];
@@ -58,10 +64,16 @@ export async function FeatureUpgradeWall({
         <p className="text-muted-foreground">{t(`${feature}.desc`)}</p>
       </div>
       <div className="flex flex-col items-center gap-2">
-        <Button asChild size="lg">
-          <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
-        </Button>
-        <p className="text-xs text-muted-foreground">{t('trialNote')}</p>
+        {canUpgrade ? (
+          <>
+            <Button asChild size="lg">
+              <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
+            </Button>
+            <p className="text-xs text-muted-foreground">{t('trialNote')}</p>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('askOwner')}</p>
+        )}
       </div>
     </div>
   );

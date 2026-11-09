@@ -40,13 +40,13 @@ describe('RoleGuard', () => {
 
   it('renders children when user has required permission', () => {
     render(
-      <RoleGuard permission="canManageMenus">
+      <RoleGuard permission="menu.edit">
         <div data-testid="protected">Protected content</div>
       </RoleGuard>,
     );
 
     expect(screen.getByTestId('protected')).toBeInTheDocument();
-    expect(mockPermissions.can).toHaveBeenCalledWith('canManageMenus');
+    expect(mockPermissions.can).toHaveBeenCalledWith('menu.edit');
   });
 
   it('shows AccessDenied when role is not in whitelist', () => {
@@ -66,13 +66,17 @@ describe('RoleGuard', () => {
     mockPermissions.can = vi.fn(() => false);
 
     render(
-      <RoleGuard permission="canManageUsers">
+      <RoleGuard permission="team.view">
         <div data-testid="protected">Protected content</div>
       </RoleGuard>,
     );
 
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
     expect(screen.getByText('accessDenied')).toBeInTheDocument();
+    // Message generique: l'ancien texte parlait des permissions sur des pages
+    // qui n'avaient rien a voir.
+    expect(screen.getByText('noAccessHint')).toBeInTheDocument();
+    expect(screen.queryByText('ownerOnly')).not.toBeInTheDocument();
   });
 
   it('renders custom fallback when access denied', () => {

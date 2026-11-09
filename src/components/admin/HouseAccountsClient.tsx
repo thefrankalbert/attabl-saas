@@ -38,6 +38,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { usePermissions } from '@/hooks/usePermissions';
+import { isRoleAllowed, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
 import { formatCurrencyMinor } from '@/lib/utils/money';
 import {
   actionListHouseAccounts,
@@ -52,8 +53,6 @@ interface HouseAccountsClientProps {
   currency?: CurrencyCode;
 }
 
-const MANAGER_ROLES = ['owner', 'admin', 'manager'] as const;
-
 /**
  * House accounts (ardoises) dashboard: every running tab with its outstanding
  * balance. Managers can open a new account and settle one. Outstanding =
@@ -66,8 +65,9 @@ export default function HouseAccountsClient({
   const t = useTranslations('houseAccount');
   const tc = useTranslations('common');
   const { toast } = useToast();
-  const { role } = usePermissions();
-  const canManage = (MANAGER_ROLES as readonly string[]).includes(role);
+  const { role, can } = usePermissions();
+  // Meme regle que le serveur: role de gerant ET droit d'encaisser.
+  const canManage = isRoleAllowed(role, ORDER_MONEY_ROLES) && can('orders.pay');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');

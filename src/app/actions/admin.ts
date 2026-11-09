@@ -292,6 +292,15 @@ export async function actionUpdateAdminUser(
     return { error: t('permissionDenied') };
   }
 
+  // SECURITY: seules les permissions INDIVIDUELLES priment sur tout le reste
+  // (hasPermission, etape 1). Les laisser a l'admin contournait la regle "seul
+  // le proprietaire regle les permissions" (/api/permissions, verifyOwner): un
+  // admin pouvait donner l'encaissement a un serveur ou les reglages a un
+  // caissier. Decision du proprietaire du 2026-11-09.
+  if (parsed.data.custom_permissions !== undefined && currentRole !== 'owner') {
+    return { error: t('permissionDenied') };
+  }
+
   const adminClient = createAdminClient();
 
   // SECURITY: verify the actor outranks the target's CURRENT role before any

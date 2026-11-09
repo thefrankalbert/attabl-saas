@@ -16,6 +16,7 @@ import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enfor
 import type { Tenant } from '@/types/admin.types';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
@@ -63,6 +64,19 @@ export async function GET(request: Request) {
         .maybeSingle();
 
       if (!adminUser) {
+        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+      }
+
+      // Inviter fait entrer du personnel: meme permission que creer un membre
+      // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
+      // proprietaire avait retire team.manage invitait encore.
+      const { allowed: canManageTeam } = await resolveAdminPermission(
+        supabase,
+        user.id,
+        tenant.id,
+        'team.manage',
+      );
+      if (!canManageTeam) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 
@@ -165,6 +179,26 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (!adminUser) {
+        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+      }
+
+      // Inviter fait entrer du personnel: meme permission que creer un membre
+      // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
+      // proprietaire avait retire team.manage invitait encore.
+      const { allowed: canManageTeam } = await resolveAdminPermission(
+        supabase,
+        user.id,
+        currentTenant.id,
+        'team.manage',
+      );
+      if (!canManageTeam) {
+        return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+      }
+
+      // Seul le proprietaire regle des permissions (decision du 2026-11-09).
+      // Une surcharge individuelle prime sur tout: l'accepter d'un admin lui
+      // permettait de donner l'encaissement ou les reglages a un employe.
+      if (parsed.data.custom_permissions && adminUser.role !== 'owner') {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
 

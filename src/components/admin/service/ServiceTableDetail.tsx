@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { useCanManageFloor } from '@/hooks/usePermissions';
 import { formatAmountMinor } from '@/lib/utils/money';
 import { formatInitials, formatTimeHHMM } from './service-status';
 import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDialog';
@@ -81,6 +82,7 @@ export function ServiceTableDetail({
 }: Props) {
   const { toast } = useToast();
   const [reassignOpen, setReassignOpen] = useState(false);
+  const canAssign = useCanManageFloor();
 
   useEffect(() => {
     if (!vm) return;
@@ -193,7 +195,7 @@ export function ServiceTableDetail({
                     {assignedServer.server.role}
                   </div>
                 </div>
-                {assignment && (
+                {assignment && canAssign && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -210,20 +212,22 @@ export function ServiceTableDetail({
                 <div className="mb-2 rounded border border-dashed border-app-border px-4 py-4 text-center text-[11px] text-app-text-muted">
                   {labels.noServerAssigned}
                 </div>
-                <Select onValueChange={(val) => onAssignServer(table.id, val)}>
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder={labels.selectServer} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {servers
-                      .filter((s) => s.status !== 'break')
-                      .map((s) => (
-                        <SelectItem key={s.server.id} value={s.server.id}>
-                          {s.server.full_name ?? '-'}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                {canAssign && (
+                  <Select onValueChange={(val) => onAssignServer(table.id, val)}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder={labels.selectServer} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {servers
+                        .filter((s) => s.status !== 'break')
+                        .map((s) => (
+                          <SelectItem key={s.server.id} value={s.server.id}>
+                            {s.server.full_name ?? '-'}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </>
             )}
           </Section>

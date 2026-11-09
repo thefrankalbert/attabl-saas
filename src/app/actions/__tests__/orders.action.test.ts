@@ -208,10 +208,11 @@ describe('actionCompOrder - manager gating + audit', () => {
     expect(result.success).toBe(true);
     expect(result.paymentStatus).toBe('comp');
     // Deliberately narrower than `orders.manage`, which cashier and chef hold too.
+    // ET le droit d'encaisser (orders.pay), que le proprietaire peut retirer.
     expect(mockGetAuthUserForTenant).toHaveBeenCalledWith(
       TENANT_ID,
       ['owner', 'admin', 'manager'],
-      'orders.manage',
+      ['orders.manage', 'orders.pay'],
     );
     expect(mockCompOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, {
       reason: 'Geste commercial',

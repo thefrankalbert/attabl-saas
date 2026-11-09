@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createSuggestionService, generateAndSaveSuggestions } from '@/services/suggestion.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -28,7 +29,7 @@ const createSuggestionPayloadSchema = z.object({
 
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
     return { error: null };
   } catch (err) {
     if (err instanceof AuthError) {

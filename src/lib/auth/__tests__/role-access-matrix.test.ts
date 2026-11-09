@@ -41,7 +41,10 @@ const GATED: Array<{ path: string; allowed: AdminRole[] }> = [
   { path: '/stock-history', allowed: ['owner', 'admin', 'manager', 'chef'] },
   { path: '/suppliers', allowed: ['owner', 'admin', 'manager', 'chef'] },
   { path: '/recipes', allowed: ['owner', 'admin', 'manager', 'chef'] },
-  { path: '/pos', allowed: ['owner', 'admin', 'manager', 'cashier'] }, // pos.use
+  // Le serveur prend les commandes a la caisse (decision du 2026-11-09).
+  { path: '/pos', allowed: ['owner', 'admin', 'manager', 'cashier', 'waiter'] }, // pos.use
+  // Les ardoises sont de l'argent: ni le serveur ni le chef.
+  { path: '/orders/house-accounts', allowed: ['owner', 'admin', 'manager', 'cashier'] }, // orders.pay
   { path: '/coupons', allowed: ['owner', 'admin', 'manager'] }, // menu.edit
   { path: '/ads', allowed: ['owner', 'admin', 'manager'] },
   { path: '/announcements', allowed: ['owner', 'admin', 'manager'] },
@@ -71,15 +74,14 @@ describe('admin per-role access matrix', () => {
     }
   });
 
-  it('waiter is denied every gated route (view-only role)', () => {
-    for (const path of GATED.map((g) => g.path)) {
-      expect(canAccess('waiter', path)).toBe(false);
-    }
+  it('waiter reaches only POS among gated routes (takes orders, no money)', () => {
+    const reachable = GATED.filter((g) => canAccess('waiter', g.path)).map((g) => g.path);
+    expect(reachable).toEqual(['/pos']);
   });
 
-  it('cashier reaches only POS among gated routes', () => {
+  it('cashier reaches only POS and the house accounts among gated routes', () => {
     const reachable = GATED.filter((g) => canAccess('cashier', g.path)).map((g) => g.path);
-    expect(reachable).toEqual(['/pos']);
+    expect(reachable).toEqual(['/pos', '/orders/house-accounts']);
   });
 
   it('chef reaches only the inventory routes among gated routes', () => {

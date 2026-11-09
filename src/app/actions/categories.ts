@@ -3,12 +3,13 @@
 import { z } from 'zod';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
-import type { AdminRole, PreparationZone } from '@/types/admin.types';
+import type { PreparationZone } from '@/types/admin.types';
 import { createAuditService } from '@/services/audit.service';
 import { createCategoryService } from '@/services/category.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 
 const toggleCategoryActiveSchema = z.object({
   tenantId: z.string().uuid(),
@@ -28,14 +29,13 @@ type ActionResponse = {
  * SECURITY: Authenticates user and verifies tenant membership + role.
  * tenantId is verified against the session (IDOR prevention).
  */
-async function checkCategoryPermissions(
-  tenantId: string,
-  allowedRoles: AdminRole[] = ['owner', 'admin', 'manager'],
-) {
+async function checkCategoryPermissions(tenantId: string) {
   try {
+    // `menu.edit` decide seule: une liste de roles ici annulait le droit que
+    // le proprietaire accorde dans /settings/permissions.
     const { user, supabase, role } = await getAuthenticatedUserForTenant(
       tenantId,
-      allowedRoles,
+      ALL_ADMIN_ROLES,
       'menu.edit',
     );
     return { error: null, supabase, user, role };

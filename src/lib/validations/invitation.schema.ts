@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PERMISSION_CODES } from '@/types/permission.types';
 
 const INVITABLE_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 
@@ -16,7 +17,9 @@ export const createInvitationSchema = z.object({
   role: z.enum(INVITABLE_ROLES, {
     error: 'Role invalide (owner ne peut pas etre invite)',
   }),
-  custom_permissions: z.record(z.string(), z.boolean()).optional(),
+  // Cles limitees aux codes connus: une cle libre finissait telle quelle dans
+  // admin_users.custom_permissions a l'acceptation.
+  custom_permissions: z.partialRecord(z.enum(PERMISSION_CODES), z.boolean()).optional(),
 });
 
 // Accept: deux parcours derriere le meme jeton.

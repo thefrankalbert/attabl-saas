@@ -17,6 +17,7 @@ import { scheduleDestock } from '../schedule-destock';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
@@ -171,6 +172,37 @@ export async function POST(request: Request) {
 
     if (!adminUser) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // ENCAISSER A LA CAISSE = `orders.pay`, pas seulement `pos.use`.
+    //
+    // Decision du proprietaire (2026-11-09): le serveur prend les commandes a
+    // la caisse mais ne touche pas a l'argent. Cette route cree la commande ET,
+    // si un moyen de paiement est fourni, la passe a `paid` et inscrit le tender
+    // dans `payments` (applyPosFinalState). Avec `pos.use` seul, donner la
+    // caisse au serveur lui donnait aussi l'encaissement et les pourboires.
+    // Un moyen de paiement ou un pourboire exige donc `orders.pay`; sans lui,
+    // la commande part en cuisine impayee et le caissier l'encaisse ensuite.
+    // Place AVANT le rejeu hors ligne, qui rappelle aussi applyPosFinalState.
+    // Un coupon aussi: c'est une remise sur l'addition, et le proprietaire a
+    // exclu toute remise pour le serveur. Sans ce droit, le serveur baissait le
+    // total avec n'importe quel coupon actif.
+    if (payment_method || (tip_amount ?? 0) > 0 || coupon_code) {
+      const { allowed } = await resolveAdminPermission(
+        adminSupabase,
+        user.id,
+        tenant_id,
+        'orders.pay',
+      );
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error:
+              "Votre role ne permet pas d'encaisser ni d'appliquer un coupon. Envoyez la commande sans paiement.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // COUPURE DU RESTAURANT - avant tout effet de bord, rejeu compris.

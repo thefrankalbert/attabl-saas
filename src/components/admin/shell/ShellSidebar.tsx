@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getHiddenNav } from '@/lib/segment-features';
-import { permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import { canOpenAdminSubPath, permissionForAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import { getSegmentFamily } from '@/lib/segment-terms';
 import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { SettingsTab } from './SettingsDialog';
@@ -203,12 +203,16 @@ export function ShellSidebar({
 
         {/* -- Footer: plan upsell + user dropdown -- */}
         <div className="mt-auto border-t border-[var(--sidebar-border)] pt-2">
-          <SidebarPlanCard
-            basePath={basePath}
-            planName={planName}
-            planRaw={planRaw}
-            collapsed={collapsed}
-          />
+          {/* L'offre "Passer au Pro" mene a /subscription: cachee a qui ne peut
+              pas l'ouvrir (le personnel, par defaut). */}
+          {(!navPermissions || canOpenAdminSubPath('/subscription', navPermissions)) && (
+            <SidebarPlanCard
+              basePath={basePath}
+              planName={planName}
+              planRaw={planRaw}
+              collapsed={collapsed}
+            />
+          )}
           <ShellAccountMenu
             basePath={basePath}
             tenantSlug={tenant.slug}

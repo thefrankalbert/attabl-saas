@@ -64,7 +64,6 @@ vi.mock('@/lib/logger', () => ({
 
 // Import the route handlers AFTER mocks are set up
 import { PUT, DELETE } from '@/app/api/permissions/route';
-import { PERMISSION_CODES } from '@/types/permission.types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -74,20 +73,13 @@ const USER_ID = 'user-1';
 const SLUG_TENANT_ID = 'tenant-A';
 const OTHER_TENANT_ID = 'tenant-B';
 
-// The route schema uses z.record(z.enum(PERMISSION_CODES), z.boolean()), which is
-// exhaustive: every permission code must be present. Build a complete map.
-const FULL_PERMISSIONS: Record<string, boolean> = Object.fromEntries(
-  PERMISSION_CODES.map((code) => [code, false]),
-);
-
-function buildPutRequest(): Request {
+// The role editor (PermissionsClient) sends ONLY the overrides that differ from
+// the role defaults, never a complete map. The happy path must use that shape.
+function buildPutRequest(permissions: Record<string, unknown> = { 'pos.use': true }): Request {
   return new Request('http://localhost/api/permissions', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      role: 'manager',
-      permissions: { ...FULL_PERMISSIONS, 'orders.view': true },
-    }),
+    body: JSON.stringify({ role: 'manager', permissions }),
   });
 }
 
@@ -243,6 +235,43 @@ describe('permissions API route', () => {
       expect.objectContaining({ tenant_id: SLUG_TENANT_ID, role: 'manager' }),
       expect.objectContaining({ onConflict: 'tenant_id,role' }),
     );
+  });
+
+  // 4a. The owner toggles a single permission: the partial map is stored as is.
+  it('PUT accepts a partial map of overrides and stores it unchanged', async () => {
+    setupAllowed();
+    mockGetHeader.mockReturnValue('restaurant-a');
+    mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
+
+    const eqCalls: Array<[string, unknown]> = [];
+    const adminUsersChain = buildAdminUsersChain(eqCalls, {
+      id: 'membership-A',
+      tenant_id: SLUG_TENANT_ID,
+      role: 'owner',
+    });
+    const { chain: rolePermissionsChain } = buildRolePermissionsChain();
+    mockFrom.mockImplementation((table: string) =>
+      table === 'admin_users' ? adminUsersChain : rolePermissionsChain,
+    );
+
+    const res = await PUT(buildPutRequest({ 'orders.pay': false }));
+
+    expect(res.status).toBe(200);
+    expect(rolePermissionsChain.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ permissions: { 'orders.pay': false } }),
+      expect.anything(),
+    );
+  });
+
+  it('PUT rejects an unknown permission code and an empty map', async () => {
+    setupAllowed();
+    mockGetHeader.mockReturnValue('restaurant-a');
+    mockGetTenant.mockResolvedValue({ id: SLUG_TENANT_ID });
+
+    expect((await PUT(buildPutRequest({ 'orders.everything': true }))).status).toBe(400);
+    expect((await PUT(buildPutRequest({}))).status).toBe(400);
+    expect((await PUT(buildPutRequest({ 'pos.use': 'yes' }))).status).toBe(400);
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   // 4b. Regression guard: updated_by must be the actor's admin_users.id (the

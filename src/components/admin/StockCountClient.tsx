@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/use-toast';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import { actionOpenStockCount } from '@/app/actions/stock-count';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useStockCounts } from '@/hooks/queries/useStockCounts';
 import type { StockCount, StockCountStatus } from '@/types/inventory.types';
 
@@ -47,6 +48,8 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
   const queryClient = useQueryClient();
 
   const [isNewCountOpen, setIsNewCountOpen] = useState(false);
+  // Ouvrir un comptage = `inventory.edit` cote serveur (chef: lecture seule).
+  const canEdit = usePermissions().can('inventory.edit');
   const [reference, setReference] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -124,10 +127,12 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
         <AdminPageHeader
           title={t('physicalCount')}
           actions={
-            <Button size="sm" className="min-h-[44px]" onClick={() => setIsNewCountOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('newCount')}
-            </Button>
+            canEdit ? (
+              <Button size="sm" className="min-h-[44px]" onClick={() => setIsNewCountOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('newCount')}
+              </Button>
+            ) : undefined
           }
         />
       </div>
@@ -137,15 +142,17 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
           <ClipboardList className="h-12 w-12 text-app-text-muted opacity-40" />
           <p className="font-medium text-app-text-muted">{t('countsEmptyTitle')}</p>
           <p className="text-sm text-app-text-muted">{t('countsEmptyBody')}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 min-h-[44px]"
-            onClick={() => setIsNewCountOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('newCount')}
-          </Button>
+          {canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 min-h-[44px]"
+              onClick={() => setIsNewCountOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('newCount')}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="flex-1 min-h-0">

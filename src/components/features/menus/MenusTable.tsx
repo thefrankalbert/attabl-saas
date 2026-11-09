@@ -26,6 +26,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { usePermissions } from '@/hooks/usePermissions';
 
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
@@ -75,6 +76,8 @@ function MenuRow({
 }: MenuRowProps) {
   const t = useTranslations('menus');
   const tc = useTranslations('common');
+  // Lecture seule sans `menu.edit`: on ouvre la carte, on ne la modifie pas.
+  const canEdit = usePermissions().can('menu.edit');
   const {
     attributes,
     listeners,
@@ -83,7 +86,7 @@ function MenuRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: menu.id });
+  } = useSortable({ id: menu.id, disabled: !canEdit });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -104,26 +107,30 @@ function MenuRow({
       )}
     >
       {/* Selection checkbox */}
-      <Checkbox
-        aria-label={`${t('select')} ${menu.name}`}
-        checked={isSelected}
-        onCheckedChange={() => onToggleSelect()}
-        className="shrink-0 cursor-pointer"
-      />
+      {canEdit && (
+        <Checkbox
+          aria-label={`${t('select')} ${menu.name}`}
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect()}
+          className="shrink-0 cursor-pointer"
+        />
+      )}
 
       {/* Drag handle */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing shrink-0 h-auto w-auto p-0"
-        aria-label="Drag to reorder"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="w-4 h-4 text-app-text-muted" />
-      </Button>
+      {canEdit && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          ref={setActivatorNodeRef}
+          className="touch-none cursor-grab active:cursor-grabbing shrink-0 h-auto w-auto p-0"
+          aria-label="Drag to reorder"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4 text-app-text-muted" />
+        </Button>
+      )}
 
       {/* Menu name + badge */}
       <div className="flex-1 min-w-40 flex items-center gap-3 py-1">
@@ -170,48 +177,52 @@ function MenuRow({
             <ExternalLink className="w-4 h-4" />
           </Link>
         </Button>
-        {/* Edit menu name */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onEdit}
-          title={t('editMenuTitle')}
-          className="h-9 w-9 p-0"
-        >
-          <Edit2 className="w-4 h-4" />
-        </Button>
-        {/* Toggle active */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggle}
-          title={menu.is_active ? t('active') : t('inactive')}
-          className="h-9 w-9 p-0"
-        >
-          {menu.is_active ? (
-            <ToggleRight className="w-4 h-4 text-status-success" />
-          ) : (
-            <ToggleLeft className="w-4 h-4 text-app-text-muted" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onAddChild}
-          title={t('addSubMenu')}
-          className="h-9 w-9 p-0"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          title={tc('delete')}
-          className="h-9 w-9 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        {canEdit && (
+          <>
+            {/* Edit menu name */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              title={t('editMenuTitle')}
+              className="h-9 w-9 p-0"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
+            {/* Toggle active */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              title={menu.is_active ? t('active') : t('inactive')}
+              className="h-9 w-9 p-0"
+            >
+              {menu.is_active ? (
+                <ToggleRight className="w-4 h-4 text-status-success" />
+              ) : (
+                <ToggleLeft className="w-4 h-4 text-app-text-muted" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onAddChild}
+              title={t('addSubMenu')}
+              className="h-9 w-9 p-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              title={tc('delete')}
+              className="h-9 w-9 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -234,6 +245,7 @@ export default function MenusTable({
   onCreateFirst,
 }: MenusTableProps) {
   const t = useTranslations('menus');
+  const canEdit = usePermissions().can('menu.edit');
   const dndId = useId();
 
   // @dnd-kit sensors
@@ -336,9 +348,11 @@ export default function MenusTable({
           </div>
           <h3 className="text-base font-bold text-app-text">{t('noMenus')}</h3>
           <p className="text-sm text-app-text-secondary mt-2">{t('noMenusDesc')}</p>
-          <Button onClick={onCreateFirst} variant="default" className="mt-4">
-            {t('createMenu')}
-          </Button>
+          {canEdit && (
+            <Button onClick={onCreateFirst} variant="default" className="mt-4">
+              {t('createMenu')}
+            </Button>
+          )}
         </div>
       )}
     </DndContext>

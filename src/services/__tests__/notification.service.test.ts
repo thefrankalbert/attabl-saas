@@ -354,6 +354,7 @@ describe('notifyDestockFailed', () => {
         like: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
         gte: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValue({ data: opts.recent ?? [], error: null }),
         insert: insertSpy,
       };
@@ -396,6 +397,29 @@ describe('notifyDestockFailed', () => {
     await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-3', outOfStock: true });
 
     expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  it('re-arms once a member has acknowledged the latest warning (read per person)', async () => {
+    // Members no longer flip the shared flag of a restaurant-wide row: the
+    // acknowledgement is a notification_reads row. A second, unrelated failure
+    // within 15 minutes must still be told.
+    const { notifyDestockFailed } = await import('../notification.service');
+    wire({
+      recent: [{ id: 'notif-acked', read: false, notification_reads: [{ user_id: 'u-1' }] }],
+    });
+
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-5', outOfStock: true });
+
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-arms on a legacy row acknowledged through the shared flag', async () => {
+    const { notifyDestockFailed } = await import('../notification.service');
+    wire({ recent: [{ id: 'notif-legacy', read: true, notification_reads: [] }] });
+
+    await notifyDestockFailed({ tenantId: 'tenant-1', orderId: 'order-6', outOfStock: true });
+
+    expect(insertSpy).toHaveBeenCalledTimes(1);
   });
 
   it('never throws, even when the database is unreachable', async () => {

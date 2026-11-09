@@ -9,6 +9,8 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isRoleAllowed } from '@/lib/admin-roles';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { Invitation } from '@/types/invitation.types';
 
@@ -41,6 +43,8 @@ export interface UseUsersDataParams {
 export interface UseUsersDataReturn {
   users: AdminUser[];
   canManageUsers: boolean;
+  /** Proprietaire seulement: il est le seul a regler des permissions. */
+  canEditPermissions: boolean;
 
   // Modal state
   isModalOpen: boolean;
@@ -145,7 +149,13 @@ export function useUsersData({
     role: 'waiter' as AdminRole,
   });
 
-  const canManageUsers = ['owner', 'admin'].includes(currentUserRole);
+  // Meme regle que le serveur (check-tenant-admin + invitations): role owner
+  // ou admin ET permission team.manage, que le proprietaire peut retirer.
+  const { can } = usePermissions();
+  const canManageUsers = isRoleAllowed(currentUserRole, ['owner', 'admin']) && can('team.manage');
+  // Les permissions individuelles priment sur tout le reste: seul le
+  // proprietaire les regle (decision du 2026-11-09).
+  const canEditPermissions = currentUserRole === 'owner';
 
   // Fetch pending invitations
   const fetchInvitations = useCallback(async () => {
@@ -346,6 +356,7 @@ export function useUsersData({
   return {
     users,
     canManageUsers,
+    canEditPermissions,
 
     isModalOpen,
     setIsModalOpen,

@@ -29,6 +29,7 @@ export default function OrderDetails({
     loading,
     showPayment,
     setShowPayment,
+    canPay,
     canComp,
     isComp,
     fmt,
@@ -80,6 +81,7 @@ export default function OrderDetails({
           order={order}
           loading={loading}
           isComp={isComp}
+          canPay={canPay}
           canComp={canComp}
           currency={currency}
           onUpdate={onUpdate}

@@ -61,7 +61,7 @@ export default function LossesReportClient({
   }, [tenantId, startDate, endDate]);
 
   return (
-    <RoleGuard permission="canViewStocks">
+    <RoleGuard permission="inventory.view">
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader title={t('title')} />
