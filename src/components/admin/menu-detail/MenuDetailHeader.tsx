@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function MenuDetailHeader({ vm }: Props) {
-  const { tenantSlug, t, menu, toggleMenuActive } = vm;
+  const { tenantSlug, t, menu, toggleMenuActive, canEdit } = vm;
 
   return (
     <div className="shrink-0 flex items-center justify-between gap-3 mb-4 sm:mb-6">
@@ -29,6 +29,7 @@ export function MenuDetailHeader({ vm }: Props) {
       <Button
         variant="outline"
         onClick={toggleMenuActive}
+        disabled={!canEdit}
         className={cn(
           'px-3 py-1.5 rounded-[0.625rem] text-xs font-medium h-auto shrink-0',
           menu.is_active

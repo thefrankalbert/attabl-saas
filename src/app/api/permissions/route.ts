@@ -15,8 +15,10 @@ const VALID_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 // schema accepted z.record(z.string(), z.boolean()), which let a compromised
 // owner account inject arbitrary keys into role_permissions.permissions that a
 // lax front-end check might honor as "granted".
+// partialRecord, not record: with enum keys zod 4 makes z.record exhaustive,
+// while the role editor sends only the overrides that differ from the default.
 const permissionsMapSchema = z
-  .record(z.enum(PERMISSION_CODES), z.boolean())
+  .partialRecord(z.enum(PERMISSION_CODES), z.boolean())
   .refine((val) => Object.keys(val).length > 0, {
     message: 'At least one permission must be provided',
   });

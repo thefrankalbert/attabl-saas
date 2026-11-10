@@ -25,6 +25,7 @@ export function MenuItemRow({ vm, item }: Props) {
     openEditItemModal,
     setEditingModifiersItem,
     toggleItemAvailable,
+    canEdit,
   } = vm;
 
   return (
@@ -60,6 +61,7 @@ export function MenuItemRow({ vm, item }: Props) {
         <Button
           variant="ghost"
           onClick={() => startEditingPrice(item)}
+          disabled={!canEdit}
           className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline h-auto px-1 py-0"
           title={t('editItem')}
         >
@@ -74,30 +76,35 @@ export function MenuItemRow({ vm, item }: Props) {
       )}
 
       {/* Action buttons */}
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Edit"
-        onClick={() => openEditItemModal(item)}
-        title={t('editItem')}
-      >
-        <Edit2 className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Settings"
-        onClick={(e) => {
-          e.stopPropagation();
-          setEditingModifiersItem(item);
-        }}
-        title={t('manageModifiers')}
-      >
-        <Settings2 className="w-4 h-4" />
-      </Button>
+      {canEdit && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Edit"
+            onClick={() => openEditItemModal(item)}
+            title={t('editItem')}
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Settings"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingModifiersItem(item);
+            }}
+            title={t('manageModifiers')}
+          >
+            <Settings2 className="w-4 h-4" />
+          </Button>
+        </>
+      )}
       <Button
         variant="outline"
         onClick={() => toggleItemAvailable(item)}
+        disabled={!canEdit}
         className={cn(
           'px-2 py-0.5 rounded-[0.625rem] text-xs font-medium h-auto',
           item.is_available

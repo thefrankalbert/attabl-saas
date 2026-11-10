@@ -18,6 +18,8 @@ export function useInventoryColumns(
   openAdjust: (ing: Ingredient) => void,
   openEdit: (ing: Ingredient) => void,
   openLoss: (ing: Ingredient) => void,
+  /** `inventory.edit`: sans lui, pas de colonne d'actions (ajuster, perte, modifier). */
+  canEdit: boolean,
 ) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
@@ -101,45 +103,49 @@ export function useInventoryColumns(
         },
         enableSorting: false,
       },
-      {
-        id: 'actions',
-        header: () => <span className="w-full text-right block">{tc('actions')}</span>,
-        cell: ({ row }) => (
-          <div className="flex justify-end gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openAdjust(row.original)}
-              className="text-xs"
-            >
-              +/-
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openLoss(row.original)}
-              className="text-xs"
-              aria-label={t('declareLoss')}
-              title={t('declareLoss')}
-            >
-              <TrendingDown className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openEdit(row.original)}
-              className="text-xs"
-              aria-label={tc('edit')}
-              title={tc('edit')}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        ),
-        enableSorting: false,
-      },
+      ...(canEdit
+        ? ([
+            {
+              id: 'actions',
+              header: () => <span className="w-full text-right block">{tc('actions')}</span>,
+              cell: ({ row }) => (
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openAdjust(row.original)}
+                    className="text-xs"
+                  >
+                    +/-
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openLoss(row.original)}
+                    className="text-xs"
+                    aria-label={t('declareLoss')}
+                    title={t('declareLoss')}
+                  >
+                    <TrendingDown className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEdit(row.original)}
+                    className="text-xs"
+                    aria-label={tc('edit')}
+                    title={tc('edit')}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ),
+              enableSorting: false,
+            },
+          ] satisfies ColumnDef<Ingredient>[])
+        : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: openAdjust/openEdit are stable dialog openers (only call setState); excluding them keeps the column defs from rebuilding on every render, and a stale reference is harmless here (2026-06-18)
-    [currency, t, tc],
+    [currency, t, tc, canEdit],
   );
 }

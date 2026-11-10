@@ -5,6 +5,7 @@ import type { DragEvent } from 'react';
 import { CheckCircle2, GripVertical, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCanManageFloor } from '@/hooks/usePermissions';
 import { formatInitials, formatTimeHHMM, getElapsedMinutes } from './service-status';
 import type { ServiceServerStatus, ServiceServerVM } from './service.types';
 import type { Order } from '@/types/admin.types';
@@ -236,6 +237,8 @@ function ServerCard({
   onHighlight: (serverId: string | null) => void;
 }) {
   const [dragging, setDragging] = useState(false);
+  // Glisser un serveur sur une table = l'assigner: reserve au gerant.
+  const canAssign = useCanManageFloor();
   const initials = formatInitials(vm.server.full_name);
   const canHighlight = vm.assignedTables.length > 0;
   const handleStart = (e: DragEvent<HTMLDivElement>) => {
@@ -254,8 +257,8 @@ function ServerCard({
   };
   return (
     <div
-      draggable
-      onDragStart={handleStart}
+      draggable={canAssign}
+      onDragStart={canAssign ? handleStart : undefined}
       onDragEnd={handleEnd}
       onClick={handleClick}
       role={canHighlight ? 'button' : undefined}
@@ -311,7 +314,7 @@ function ServerCard({
           </div>
         )}
       </div>
-      <GripVertical className="h-3 w-3 shrink-0 text-app-text-muted" aria-hidden />
+      {canAssign && <GripVertical className="h-3 w-3 shrink-0 text-app-text-muted" aria-hidden />}
     </div>
   );
 }

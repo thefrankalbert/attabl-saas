@@ -12,6 +12,8 @@ import { Search, Volume2, VolumeX, NotebookTabs } from 'lucide-react';
 import { useSound } from '@/contexts/SoundContext';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import SoundPicker from './SoundPicker';
 
 interface OrdersToolbarProps {
@@ -35,6 +37,9 @@ export default function OrdersToolbar({
   const { soundEnabled, toggleSound } = useSound();
   const params = useParams<{ site: string }>();
   const houseAccountsHref = `/sites/${params?.site ?? ''}/admin/orders/house-accounts`;
+  // Les ardoises sont de l'argent: lien cache a qui n'encaisse pas.
+  const { permissions } = usePermissions();
+  const showHouseAccounts = canOpenAdminSubPath('/orders/house-accounts', permissions);
 
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,12 +102,14 @@ export default function OrdersToolbar({
           </TabsList>
         </Tabs>
 
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href={houseAccountsHref}>
-            <NotebookTabs className="h-4 w-4 mr-1.5" />
-            {th('title')}
-          </Link>
-        </Button>
+        {showHouseAccounts && (
+          <Button asChild variant="outline" size="sm" className="shrink-0">
+            <Link href={houseAccountsHref}>
+              <NotebookTabs className="h-4 w-4 mr-1.5" />
+              {th('title')}
+            </Link>
+          </Button>
+        )}
 
         <div className="relative shrink-0">
           <Button

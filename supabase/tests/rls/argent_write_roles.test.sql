@@ -68,18 +68,22 @@ values ('c6666666-6666-6666-6666-666666666666', 'c5555555-5555-5555-5555-5555555
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"c2222222-2222-2222-2222-222222222222"}';
 
-update public.orders set payment_status = 'paid'
- where id = 'c4444444-4444-4444-4444-444444444444';
-select is(
-  (select payment_status from public.orders where id = 'c4444444-4444-4444-4444-444444444444'),
-  'pending',
+-- Depuis 20261109200000 le serveur detient orders.manage (il fait avancer les
+-- commandes): la policy le laisse viser la ligne, et ce sont les declencheurs
+-- qui refusent l'argent, en levant 42501 au lieu de masquer la ligne.
+select throws_ok(
+  $$update public.orders set payment_status = 'paid'
+    where id = 'c4444444-4444-4444-4444-444444444444'$$,
+  '42501',
+  null,
   'argent: un waiter ne peut PAS marquer une commande payee'
 );
 
-update public.orders set total = 1 where id = 'c4444444-4444-4444-4444-444444444444';
-select is(
-  (select total::int from public.orders where id = 'c4444444-4444-4444-4444-444444444444'),
-  29000,
+select throws_ok(
+  $$update public.orders set total = 1
+    where id = 'c4444444-4444-4444-4444-444444444444'$$,
+  '42501',
+  null,
   'argent: un waiter ne peut PAS changer le total d une commande'
 );
 
@@ -106,6 +110,9 @@ select throws_ok(
   'argent: un waiter ne peut PAS ecrire au ledger des paiements'
 );
 
+-- Le serveur prend les commandes a la caisse (/api/orders/pos, client admin),
+-- jamais par une insertion sous son propre jeton: depuis 20261109200000 la
+-- policy INSERT exige orders.pay (section 8).
 select throws_ok(
   $$insert into public.orders (tenant_id, order_number, subtotal, total)
     values ('c3333333-3333-3333-3333-333333333333', 'CMD-PIRATE', 1, 1)$$,

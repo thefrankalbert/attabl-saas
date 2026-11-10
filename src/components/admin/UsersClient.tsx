@@ -193,7 +193,7 @@ export default function UsersClient({
   };
 
   return (
-    <RoleGuard permission="canManageUsers">
+    <RoleGuard permission="team.view">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader
@@ -219,7 +219,7 @@ export default function UsersClient({
             onToggleStatus={data.handleToggleStatus}
             onDeleteUser={data.handleDeleteUser}
             onEditUser={data.canManageUsers ? openEditModal : undefined}
-            onEditPermissions={data.canManageUsers ? setPermsUser : undefined}
+            onEditPermissions={data.canEditPermissions ? setPermsUser : undefined}
           />
 
           {useServerPagination && serverListPagination && (
@@ -277,6 +277,7 @@ export default function UsersClient({
             <div className="space-y-1.5">
               <Label>{t('fullName')}</Label>
               <Input
+                autoComplete="off"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 className="min-h-[44px]"
@@ -286,6 +287,7 @@ export default function UsersClient({
               <Label>{t('email')}</Label>
               <Input
                 type="email"
+                autoComplete="off"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
                 className="min-h-[44px]"

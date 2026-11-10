@@ -36,7 +36,8 @@ interface POSCartFooterProps {
 
   // Payment
   onPrintOrder: () => void;
-  onCheckout: () => void;
+  /** Absent quand le membre n'encaisse pas (`orders.pay`): seul "Envoyer" reste. */
+  onCheckout?: () => void;
 }
 
 export function POSCartFooter({
@@ -224,7 +225,10 @@ export function POSCartFooter({
         <Button
           data-testid="pos-send-order"
           variant="outline"
-          className="col-span-2 min-h-[48px] rounded-xl gap-1.5 touch-manipulation"
+          className={cn(
+            'min-h-[48px] rounded-xl gap-1.5 touch-manipulation',
+            onCheckout ? 'col-span-2' : 'col-span-7',
+          )}
           disabled={cart.length === 0}
           onClick={onPrintOrder}
           title={seg.sentToProduction}
@@ -232,16 +236,18 @@ export function POSCartFooter({
           <Printer className="w-4 h-4" />
           <span className="hidden @sm:inline text-xs">{t('printShort')}</span>
         </Button>
-        <Button
-          variant="default"
-          className="col-span-5 min-h-[48px] rounded-xl px-2 @sm:px-4 text-xs @sm:text-sm font-bold touch-manipulation"
-          disabled={cart.length === 0}
-          onClick={onCheckout}
-        >
-          <Check className="w-4 h-4 shrink-0 hidden @sm:inline" />
-          <span className="truncate">{t('validatePayment')}</span>
-          <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80 hidden @sm:inline" />
-        </Button>
+        {onCheckout && (
+          <Button
+            variant="default"
+            className="col-span-5 min-h-[48px] rounded-xl px-2 @sm:px-4 text-xs @sm:text-sm font-bold touch-manipulation"
+            disabled={cart.length === 0}
+            onClick={onCheckout}
+          >
+            <Check className="w-4 h-4 shrink-0 hidden @sm:inline" />
+            <span className="truncate">{t('validatePayment')}</span>
+            <ArrowRight className="ml-1 w-4 h-4 shrink-0 opacity-80 hidden @sm:inline" />
+          </Button>
+        )}
       </div>
     </div>
   );

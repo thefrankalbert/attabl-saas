@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Printer, Receipt, FileText, CreditCard, AlertCircle } from 'lucide-react';
+import { Printer, Receipt, FileText, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus, CurrencyCode } from '@/types/admin.types';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
@@ -11,6 +11,8 @@ interface OrderActionsPanelProps {
   order: Order;
   loading: boolean;
   isComp: boolean;
+  /** `orders.pay`: sans lui, la commande se marque servie au lieu d'etre encaissee. */
+  canPay: boolean;
   canComp: boolean;
   currency: CurrencyCode;
   onUpdate: () => void;
@@ -25,6 +27,7 @@ export function OrderActionsPanel({
   order,
   loading,
   isComp,
+  canPay,
   canComp,
   currency,
   onUpdate,
@@ -76,7 +79,7 @@ export function OrderActionsPanel({
               <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
               {t('statusButtonReady')}
             </Button>
-            {!isComp && (
+            {!isComp && canPay && (
               <Button
                 size="sm"
                 onClick={onShowPayment}
@@ -86,9 +89,22 @@ export function OrderActionsPanel({
                 <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonCheckout')}
               </Button>
             )}
+            {/* Sans droit d'argent (serveur, chef): la commande se marque servie,
+                le caissier l'encaisse ensuite. */}
+            {!canPay && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onStatusUpdate('delivered')}
+                disabled={loading}
+                className="justify-start h-8 text-xs"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonServed')}
+              </Button>
+            )}
           </div>
 
-          {order.status !== 'ready' && (
+          {canPay && order.status !== 'ready' && (
             <p className="text-[10px] text-status-warning flex items-start gap-1">
               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
               {t('warningReadyBeforeCheckout')}

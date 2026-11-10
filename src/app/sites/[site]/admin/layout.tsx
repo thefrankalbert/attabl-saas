@@ -286,27 +286,31 @@ export default async function AdminLayout({
           tenantId={tenant.id}
           notificationSoundId={tenant.notification_sound_id ?? undefined}
         >
-          <AdminLayoutClient
-            isDevMode={false}
-            basePath={`/sites/${tenantSlug}/admin`}
-            role={userRole}
-            navPermissions={navPermissions}
-            tenant={{
-              name: tenant.name,
-              slug: tenant.slug,
-              logo_url: tenant.logo_url ?? undefined,
-              subscription_plan: tenant.subscription_plan ?? undefined,
-              establishment_type: tenant.establishment_type ?? undefined,
-            }}
-            userName={adminUser?.name || user.email || ''}
-            userEmail={user.email ?? undefined}
-            ordersUsagePercent={ordersUsagePercent}
-            userTenants={userTenants}
-            notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
-            breadcrumbs={<AdminBreadcrumbs />}
-            appVersion={APP_VERSION}
-          >
-            <PermissionsProvider role={userRole}>
+          {/* Au-dessus du shell: barre laterale, barre du bas, menu du compte et
+              pages lisent tous les MEMES permissions effectives que le serveur. */}
+          <PermissionsProvider role={userRole} permissions={navPermissions}>
+            <AdminLayoutClient
+              isDevMode={false}
+              basePath={`/sites/${tenantSlug}/admin`}
+              role={userRole}
+              navPermissions={navPermissions}
+              tenant={{
+                name: tenant.name,
+                slug: tenant.slug,
+                logo_url: tenant.logo_url ?? undefined,
+                subscription_plan: tenant.subscription_plan ?? undefined,
+                establishment_type: tenant.establishment_type ?? undefined,
+              }}
+              userName={adminUser?.name || user.email || ''}
+              userEmail={user.email ?? undefined}
+              ordersUsagePercent={ordersUsagePercent}
+              userTenants={userTenants}
+              notifications={
+                <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+              }
+              breadcrumbs={<AdminBreadcrumbs />}
+              appVersion={APP_VERSION}
+            >
               <OfflineIndicator />
               <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
               <CommandPalette />
@@ -343,8 +347,8 @@ export default async function AdminLayout({
                   </SubscriptionProvider>
                 </AdminIdleWrapper>
               </ShortcutsProvider>
-            </PermissionsProvider>
-          </AdminLayoutClient>
+            </AdminLayoutClient>
+          </PermissionsProvider>
         </SoundProvider>
       </QueryProvider>
     </div>

@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const getUser = vi.fn();
+const signInWithPassword = vi.fn();
 const acceptInvitation = vi.fn();
 const validateToken = vi.fn();
 
@@ -31,7 +32,13 @@ vi.mock('@/lib/supabase/admin', () => ({
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: () => Promise.resolve({ auth: { getUser: () => getUser() } }),
+  createClient: () =>
+    Promise.resolve({
+      auth: {
+        getUser: () => getUser(),
+        signInWithPassword: (creds: unknown) => signInWithPassword(creds),
+      },
+    }),
 }));
 
 vi.mock('@/services/invitation.service', () => ({
@@ -72,6 +79,7 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
       role: 'manager',
     });
     acceptInvitation.mockResolvedValue({ tenantSlug: 'mon-resto' });
+    signInWithPassword.mockResolvedValue({ data: {}, error: null });
   });
 
   it("transmet au service l'adresse de la session verifiee cote serveur", async () => {
@@ -134,5 +142,34 @@ describe('POST /api/invitations/accept - session du titulaire', () => {
 
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'Connectez-vous' });
+  });
+  it('connecte le nouvel employe avec le mot de passe choisi', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const res = await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
+    );
+    expect(res.status).toBe(200);
+    expect(signInWithPassword).toHaveBeenCalledWith({
+      email: 'equipier@resto.test',
+      password: 'motdepasse-solide',
+    });
+  });
+
+  it('ne reconnecte pas un titulaire deja connecte', async () => {
+    getUser.mockResolvedValue({
+      data: { user: { id: 'auth-equipier', email: 'equipier@resto.test' } },
+      error: null,
+    });
+    await POST(buildRequest({ token: TOKEN }));
+    expect(signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('un echec de connexion automatique ne fait pas echouer l acceptation', async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    signInWithPassword.mockResolvedValue({ data: {}, error: { code: 'x' } });
+    const res = await POST(
+      buildRequest({ token: TOKEN, full_name: 'Awa Traore', password: 'motdepasse-solide' }),
+    );
+    expect(res.status).toBe(200);
   });
 });

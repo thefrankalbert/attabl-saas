@@ -263,23 +263,29 @@ export async function notifyDestockFailed(params: {
 
     // In a rush with one ingredient at zero, EVERY order fails to deduct: a row
     // per order would bury the notification centre and teach the staff to ignore
-    // it. So: at most one UNREAD warning per restaurant per 15 minutes. Keyed on
-    // `read` so that acknowledging it re-arms the alert - otherwise a second,
-    // unrelated failure two minutes later would have been swallowed in silence.
+    // it. So: at most one UNACKNOWLEDGED warning per restaurant per 15 minutes.
+    // Acknowledging it re-arms the alert - otherwise a second, unrelated failure
+    // two minutes later would be swallowed in silence. Since 20261109210000
+    // "read" is per person: the latest warning counts as acknowledged as soon as
+    // ONE member has read it (a notification_reads row), or, for older rows,
+    // when the legacy shared flag is set.
     const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     // Matched on the title prefix, not a new `type`: NotificationCenter maps
     // icons and colours over a CLOSED union of types, so an unknown one would
     // render blank. 'stock_alert' is already the right bucket.
     const { data: recent } = await supabase
       .from('notifications')
-      .select('id')
+      .select('id, read, notification_reads(user_id)')
       .eq('tenant_id', tenantId)
       .eq('type', 'stock_alert')
-      .eq('read', false)
       .like('title', `${DESTOCK_FAILED_TITLE_PREFIX}%`)
       .gte('created_at', since)
+      .order('created_at', { ascending: false })
       .limit(1);
-    if (recent && recent.length > 0) {
+    const latest = recent?.[0] as
+      | { read?: boolean | null; notification_reads?: { user_id: string }[] | null }
+      | undefined;
+    if (latest && !latest.read && (latest.notification_reads?.length ?? 0) === 0) {
       logger.warn('notifyDestockFailed: deja signale recemment, pas de doublon', {
         tenantId,
         orderId,

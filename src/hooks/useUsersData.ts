@@ -9,6 +9,8 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isRoleAllowed } from '@/lib/admin-roles';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { Invitation } from '@/types/invitation.types';
 
@@ -41,6 +43,8 @@ export interface UseUsersDataParams {
 export interface UseUsersDataReturn {
   users: AdminUser[];
   canManageUsers: boolean;
+  /** Proprietaire seulement: il est le seul a regler des permissions. */
+  canEditPermissions: boolean;
 
   // Modal state
   isModalOpen: boolean;
@@ -78,33 +82,35 @@ export interface UseUsersDataReturn {
 
 // --- Helpers -----------------------------------------------
 
+/**
+ * Bare durations ("2 jours", "3 heures"): the sentence around them
+ * ("Envoyee il y a {time}", "Expire dans {time}") carries the direction.
+ * Keys live in the `users` namespace.
+ */
+function formatDuration(
+  diffMs: number,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (diffHours < 1) return t('durationLessThanHour');
+  if (diffHours < 24) return t('durationHours', { count: diffHours });
+  return t('durationDays', { count: Math.floor(diffHours / 24) });
+}
+
 export function timeAgo(
   dateStr: string,
   t: (key: string, values?: Record<string, number>) => string,
 ): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return t('lessThanHour');
-  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
-  const diffDays = Math.floor(diffHours / 24);
-  return t('daysAgo', { count: diffDays });
+  return formatDuration(Date.now() - new Date(dateStr).getTime(), t);
 }
 
+/** Time left before `dateStr`, or null once it has passed. */
 export function timeUntil(
   dateStr: string,
   t: (key: string, values?: Record<string, number>) => string,
-): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = date.getTime() - now.getTime();
-  if (diffMs <= 0) return t('expired');
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return t('lessThanHour');
-  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
-  const diffDays = Math.floor(diffHours / 24);
-  return t('daysAgo', { count: diffDays });
+): string | null {
+  const diffMs = new Date(dateStr).getTime() - Date.now();
+  return diffMs <= 0 ? null : formatDuration(diffMs, t);
 }
 
 // --- Hook --------------------------------------------------
@@ -145,7 +151,13 @@ export function useUsersData({
     role: 'waiter' as AdminRole,
   });
 
-  const canManageUsers = ['owner', 'admin'].includes(currentUserRole);
+  // Meme regle que le serveur (check-tenant-admin + invitations): role owner
+  // ou admin ET permission team.manage, que le proprietaire peut retirer.
+  const { can } = usePermissions();
+  const canManageUsers = isRoleAllowed(currentUserRole, ['owner', 'admin']) && can('team.manage');
+  // Les permissions individuelles priment sur tout le reste: seul le
+  // proprietaire les regle (decision du 2026-11-09).
+  const canEditPermissions = currentUserRole === 'owner';
 
   // Fetch pending invitations
   const fetchInvitations = useCallback(async () => {
@@ -346,6 +358,7 @@ export function useUsersData({
   return {
     users,
     canManageUsers,
+    canEditPermissions,
 
     isModalOpen,
     setIsModalOpen,

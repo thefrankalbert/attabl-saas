@@ -293,9 +293,12 @@ select ok(
 );
 
 set local request.jwt.claims = '{"sub":"b9999999-9999-9999-9999-999999999999"}';
+-- Decision du proprietaire du 2026-11-09 (20261109200000): le serveur fait
+-- avancer les commandes (orders.manage) mais ne touche pas a l'argent
+-- (orders.pay). Voir argent_orders_pay.test.sql.
 select ok(
-  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.manage'),
-  'matrice: un serveur ne gere PAS les commandes par defaut'
+  NOT public.has_tenant_write_permission('b3333333-3333-3333-3333-333333333333', 'orders.pay'),
+  'matrice: un serveur n encaisse PAS par defaut'
 );
 
 set local request.jwt.claims = '{"sub":"b2222222-2222-2222-2222-222222222222"}';

@@ -165,7 +165,13 @@ describe('postLoginDestination', () => {
 
   it('laisse les pages d un autre role refusees apres la correction', () => {
     const principal = { role: 'waiter' as AdminRole, custom_permissions: null } as AdminUser;
-    for (const gated of ['/users', '/settings', '/reports', '/inventory', '/pos']) {
+    for (const gated of [
+      '/users',
+      '/settings',
+      '/reports',
+      '/inventory',
+      '/orders/house-accounts',
+    ]) {
       const required = permissionForAdminSubPath(gated);
       expect(required).not.toBeNull();
       expect(hasPermission(principal, required!)).toBe(false);

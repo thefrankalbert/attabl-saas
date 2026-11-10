@@ -3,14 +3,14 @@
 import { usePermissions } from '@/hooks/usePermissions';
 import { ShieldX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { RolePermissions } from '@/lib/permissions';
 import type { AdminRole } from '@/types/admin.types';
+import type { PermissionCode } from '@/types/permission.types';
 
 // --- Types ----------------------------------------------
 
 interface RoleGuardProps {
-  /** Legacy permission check via the can() helper */
-  permission?: keyof RolePermissions;
+  /** Permission EFFECTIVE requise (meme resolution que le serveur). */
+  permission?: PermissionCode;
   /** Direct role whitelist (user must have one of these roles) */
   roles?: AdminRole[];
   /** Custom fallback UI (defaults to AccessDenied) */
@@ -29,7 +29,7 @@ function AccessDenied() {
         <ShieldX className="w-8 h-8 text-app-text-muted" />
       </div>
       <h2 className="text-lg font-semibold text-app-text mb-1">{t('accessDenied')}</h2>
-      <p className="text-sm text-app-text-secondary max-w-sm">{t('ownerOnly')}</p>
+      <p className="text-sm text-app-text-secondary max-w-sm">{t('noAccessHint')}</p>
     </div>
   );
 }
@@ -44,7 +44,7 @@ export default function RoleGuard({ permission, roles, fallback, children }: Rol
     return <>{fallback ?? <AccessDenied />}</>;
   }
 
-  // Check legacy permission
+  // Check effective permission
   if (permission && !can(permission)) {
     return <>{fallback ?? <AccessDenied />}</>;
   }

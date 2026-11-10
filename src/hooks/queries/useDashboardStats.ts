@@ -56,9 +56,19 @@ async function safeQuery<T>(
  *
  * Each query is isolated so a single failure cannot block other charts from loading.
  */
-export function useDashboardStats(tenantId: string, initialData?: DashboardData) {
+export function useDashboardStats(
+  tenantId: string,
+  /**
+   * `reports.view` effectif. Sans lui, le serveur masque deja le chiffre
+   * d'affaires de la page; ce rafraichissement client le recalculait 30 s plus
+   * tard (le chef voyait la recette du jour). Sans ce droit, les montants ne
+   * sont ni demandes ni calcules: seuls les comptes de commandes restent.
+   */
+  canViewRevenue: boolean,
+  initialData?: DashboardData,
+) {
   return useQuery<DashboardData>({
-    queryKey: ['dashboard-stats', tenantId],
+    queryKey: ['dashboard-stats', tenantId, canViewRevenue],
     queryFn: async () => {
       const supabase = createClient();
       const today = new Date();
@@ -80,7 +90,12 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, status, payment_status, created_at')
+                // Colonnes d'argent lues seulement par qui a le droit de les voir.
+                .select(
+                  canViewRevenue
+                    ? 'id, total, tip_amount, status, payment_status, created_at'
+                    : 'id, status, payment_status, created_at',
+                )
                 .eq('tenant_id', tenantId)
                 .gte('created_at', today.toISOString()),
             'todayOrders',
@@ -136,7 +151,11 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, status, payment_status')
+                .select(
+                  canViewRevenue
+                    ? 'id, total, tip_amount, status, payment_status'
+                    : 'id, status, payment_status',
+                )
                 .eq('tenant_id', tenantId)
                 .gte('created_at', yesterday.toISOString())
                 .lt('created_at', today.toISOString()),
@@ -147,7 +166,11 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
             () =>
               supabase
                 .from('orders')
-                .select('id, total, tip_amount, created_at, status, payment_status')
+                .select(
+                  canViewRevenue
+                    ? 'id, total, tip_amount, created_at, status, payment_status'
+                    : 'id, created_at, status, payment_status',
+                )
                 .eq('tenant_id', tenantId)
                 .gte('created_at', sevenDaysAgo.toISOString()),
             'weekOrders',
@@ -158,28 +181,33 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       // Bounded to today (matches revenueToday semantics: the donut breaks down today's
       // revenue by category) and capped so an all-time order_items join can never grow
       // unbounded as a tenant accumulates history.
-      const categoryRes = await safeQuery(
-        () =>
-          supabase
-            .from('order_items')
-            .select(
-              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
-            )
-            .eq('orders.tenant_id', tenantId)
-            .eq('orders.payment_status', 'paid')
-            .gte('orders.created_at', today.toISOString())
-            .limit(2000),
-        'categoryBreakdown',
-      );
+      // Repartition du chiffre d'affaires: pas demandee sans `reports.view`.
+      const categoryRes = !canViewRevenue
+        ? { data: null, count: null }
+        : await safeQuery(
+            () =>
+              supabase
+                .from('order_items')
+                .select(
+                  'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
+                )
+                .eq('orders.tenant_id', tenantId)
+                .eq('orders.payment_status', 'paid')
+                .gte('orders.created_at', today.toISOString())
+                .limit(2000),
+            'categoryBreakdown',
+          );
 
       // -- Build stats from isolated results --
-      const ordersData = (ordersRes.data || []) as Array<Record<string, unknown>>;
+      const ordersData = (ordersRes.data || []) as unknown as Array<Record<string, unknown>>;
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
         // Revenue = paid orders only (single definition, shared with the SSR
         // dashboard and the reporting RPCs via src/lib/orders/revenue.ts).
-        revenueToday: sumPaidRevenue(ordersData),
-        avgTicketToday: averagePaidTicket(ordersData),
+        // Sans `reports.view`, les colonnes d'argent ne sont pas lues: on
+        // l'ecrit aussi ici pour ne jamais dependre de ce detail de requete.
+        revenueToday: canViewRevenue ? sumPaidRevenue(ordersData) : 0,
+        avgTicketToday: canViewRevenue ? averagePaidTicket(ordersData) : 0,
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -210,7 +238,9 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       const stockItems = ((stockRes.data as StockItem[]) || []) as StockItem[];
 
       // -- Trend calculations --
-      const yesterdayOrders = (yesterdayRes.data || []) as Array<Record<string, unknown>>;
+      const yesterdayOrders = (yesterdayRes.data || []) as unknown as Array<
+        Record<string, unknown>
+      >;
       const yesterdayRevenue = sumPaidRevenue(yesterdayOrders);
       const yesterdayCount = yesterdayOrders.length;
 
@@ -219,20 +249,20 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           ((stats.ordersToday - yesterdayCount) / yesterdayCount) * 100,
         );
       }
-      if (yesterdayRevenue > 0) {
+      if (canViewRevenue && yesterdayRevenue > 0) {
         stats.revenueTrend = Math.round(
           ((stats.revenueToday - yesterdayRevenue) / yesterdayRevenue) * 100,
         );
       }
       const yesterdayTicket = averagePaidTicket(yesterdayOrders);
-      if (yesterdayTicket > 0) {
+      if (canViewRevenue && yesterdayTicket > 0) {
         stats.avgTicketTrend = Math.round(
           ((stats.avgTicketToday - yesterdayTicket) / yesterdayTicket) * 100,
         );
       }
 
       // -- Sparklines: group 7-day orders by date --
-      const weekOrders = (weekRes.data || []) as Array<Record<string, unknown>>;
+      const weekOrders = (weekRes.data || []) as unknown as Array<Record<string, unknown>>;
       const dayBuckets: Record<string, { revenue: number; count: number }> = {};
       for (let i = 0; i < 7; i++) {
         const d = new Date();
@@ -251,9 +281,9 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         }
       }
       const bucketValues = Object.values(dayBuckets);
-      const revenueSparkline: SparklinePoint[] = bucketValues.map((b) => ({
-        value: b.revenue,
-      }));
+      const revenueSparkline: SparklinePoint[] = canViewRevenue
+        ? bucketValues.map((b) => ({ value: b.revenue }))
+        : [];
       const ordersSparkline: SparklinePoint[] = bucketValues.map((b) => ({
         value: b.count,
       }));

@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
 import type { SettingsTab } from './SettingsDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 
 interface ShellAccountMenuProps {
   basePath: string;
@@ -52,6 +54,10 @@ export function ShellAccountMenu({
   collapsed,
   onOpenSettings,
 }: ShellAccountMenuProps) {
+  // N'offrir que les pages que ce membre peut ouvrir (meme regle que le
+  // middleware): reglages et abonnement sont fermes au personnel par defaut.
+  const { permissions } = usePermissions();
+  const canOpen = (subPath: string) => canOpenAdminSubPath(subPath, permissions);
   const t = useTranslations('sidebar');
   const { toast } = useToast();
 
@@ -193,30 +199,34 @@ export function ShellAccountMenu({
               </DropdownMenuItem>
             </>
           ) : (
-            <>
-              <DropdownMenuItem asChild>
-                <Link href={`${basePath}/settings`} prefetch={false}>
-                  <CircleUser className="size-4" />
-                  {t('accountMenu')}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`${basePath}/settings`} prefetch={false}>
-                  <Settings className="size-4" />
-                  {t('navSettings')}
-                </Link>
-              </DropdownMenuItem>
-            </>
+            canOpen('/settings') && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href={`${basePath}/settings`} prefetch={false}>
+                    <CircleUser className="size-4" />
+                    {t('accountMenu')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`${basePath}/settings`} prefetch={false}>
+                    <Settings className="size-4" />
+                    {t('navSettings')}
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )
           )}
-          <DropdownMenuItem asChild>
-            <Link href={`${basePath}/subscription`} prefetch={false}>
-              <CreditCard className="size-4" />
-              <span className="flex-1">{t('navSubscription')}</span>
-              <span className="rounded bg-[var(--secondary)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--secondary-foreground)]">
-                {planRaw}
-              </span>
-            </Link>
-          </DropdownMenuItem>
+          {canOpen('/subscription') && (
+            <DropdownMenuItem asChild>
+              <Link href={`${basePath}/subscription`} prefetch={false}>
+                <CreditCard className="size-4" />
+                <span className="flex-1">{t('navSubscription')}</span>
+                <span className="rounded bg-[var(--secondary)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--secondary-foreground)]">
+                  {planRaw}
+                </span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link href={`${basePath}/support`} prefetch={false}>
               <LifeBuoy className="size-4" />

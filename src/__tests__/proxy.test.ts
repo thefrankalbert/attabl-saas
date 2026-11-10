@@ -650,19 +650,21 @@ describe('proxy - RBAC route gate', () => {
     }
   });
 
-  it('redirects a waiter away from reports / inventory / pos / marketing editors', async () => {
+  // Depuis le 2026-11-09 le serveur prend les commandes a la caisse (pos.use):
+  // /pos lui est ouvert. Les ardoises (argent, orders.pay) restent fermees.
+  it('redirects a waiter away from reports / inventory / house accounts / marketing editors', async () => {
     authed('w-2');
     mockAdminRole = 'waiter';
-    for (const sub of ['reports', 'inventory', 'pos', 'coupons', 'supports']) {
+    for (const sub of ['reports', 'inventory', 'orders/house-accounts', 'coupons', 'supports']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).toBe(307);
     }
   });
 
-  it('lets a waiter reach operational routes (orders, kitchen, menus, dashboard)', async () => {
+  it('lets a waiter reach operational routes (orders, kitchen, menus, pos, dashboard)', async () => {
     authed('w-3');
     mockAdminRole = 'waiter';
-    for (const sub of ['orders', 'kitchen', 'menus', '']) {
+    for (const sub of ['orders', 'kitchen', 'menus', 'pos', '']) {
       const res = await go(`/sites/radisson/admin/${sub}`);
       expect(res.status).not.toBe(307);
     }

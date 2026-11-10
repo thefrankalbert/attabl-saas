@@ -20,8 +20,6 @@ import {
   Receipt,
   ScrollText,
 } from 'lucide-react';
-import type { NavItemPermission } from '@/lib/permissions';
-import type { PermissionCode } from '@/types/permission.types';
 
 // --- Types ----------------------------------------------
 
@@ -32,10 +30,11 @@ export type NavItemConfig = {
   /** i18n key in 'sidebar' namespace */
   labelKey: string;
   highlight?: boolean;
-  requiredPermission?: NavItemPermission;
-  permissionCode?: PermissionCode;
-  ownerOnly?: boolean;
 };
+
+// Pas de permission ici: la permission d'un lien est celle de sa ROUTE
+// (`permissionForAdminSubPath`), lue par la barre laterale, la barre du bas et
+// la palette de commandes. Une seconde table ici divergeait de la route.
 
 export type NavGroupConfig = {
   id: string;
@@ -46,8 +45,6 @@ export type NavGroupConfig = {
   /** If set, group is a direct link (no sub-items) */
   directPath?: string;
   highlight?: boolean;
-  requiredPermission?: NavItemPermission;
-  permissionCode?: PermissionCode;
   /** Section bucket used by the redesigned sidebar (mono uppercase header).
    * Groups with the same section label are grouped under that heading.
    * If omitted the group is rendered alone above the sections. */
@@ -71,7 +68,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     icon: ShoppingBag,
     directPath: '/orders',
     items: [],
-    permissionCode: 'orders.view',
     sectionKey: 'operations',
   },
   {
@@ -84,50 +80,36 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/menus',
         icon: ClipboardList,
         labelKey: 'navMenus',
-        requiredPermission: 'canManageMenus',
-        permissionCode: 'menu.view',
       },
       {
         path: '/categories',
         icon: UtensilsCrossed,
         labelKey: 'navCategories',
-        requiredPermission: 'canManageMenus',
-        permissionCode: 'menu.view',
       },
       {
         path: '/items',
         icon: BookOpen,
         labelKey: 'navDishes',
-        requiredPermission: 'canManageMenus',
-        permissionCode: 'menu.view',
       },
       {
         path: '/inventory',
         icon: Package,
         labelKey: 'navInventory',
-        requiredPermission: 'canViewStocks',
-        permissionCode: 'inventory.view',
       },
       {
         path: '/inventory/counts',
         icon: ClipboardList,
         labelKey: 'navInventoryCounts',
-        requiredPermission: 'canViewStocks',
-        permissionCode: 'inventory.view',
       },
       {
         path: '/recipes',
         icon: BookOpenCheck,
         labelKey: 'navRecipes',
-        requiredPermission: 'canManageMenus',
-        permissionCode: 'menu.view',
       },
       {
         path: '/suppliers',
         icon: Truck,
         labelKey: 'navSuppliers',
-        requiredPermission: 'canManageStocks',
-        permissionCode: 'inventory.edit',
       },
     ],
   },
@@ -141,29 +123,21 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/announcements',
         icon: Megaphone,
         labelKey: 'navAnnouncements',
-        requiredPermission: 'canManageSettings',
-        permissionCode: 'settings.edit',
       },
       {
         path: '/coupons',
         icon: Tag,
         labelKey: 'navCoupons',
-        requiredPermission: 'canManageSettings',
-        permissionCode: 'settings.edit',
       },
       {
         path: '/suggestions',
         icon: Lightbulb,
         labelKey: 'navSuggestions',
-        requiredPermission: 'canManageMenus',
-        permissionCode: 'menu.edit',
       },
       {
         path: '/supports',
         icon: Printer,
         labelKey: 'navSupports',
-        requiredPermission: 'canManageSettings',
-        permissionCode: 'settings.edit',
       },
     ],
   },
@@ -174,8 +148,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     directPath: '/pos',
     highlight: true,
     items: [],
-    requiredPermission: 'canUsePOS',
-    permissionCode: 'pos.use',
     sectionKey: 'operations',
   },
   {
@@ -185,8 +157,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     directPath: '/kitchen',
     highlight: true,
     items: [],
-    requiredPermission: 'canConfigureKitchen',
-    permissionCode: 'orders.manage',
     sectionKey: 'operations',
   },
   {
@@ -195,8 +165,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     icon: UserCheck,
     directPath: '/service',
     items: [],
-    requiredPermission: 'canManageUsers',
-    permissionCode: 'team.view',
     sectionKey: 'operations',
   },
   {
@@ -208,34 +176,26 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: '/reports',
         icon: BarChart3,
         labelKey: 'navReports',
-        requiredPermission: 'canViewAllStats',
-        permissionCode: 'reports.view',
       },
       {
         path: '/stock-history',
         icon: History,
         labelKey: 'navStockHistory',
-        requiredPermission: 'canViewStocks',
-        permissionCode: 'inventory.view',
       },
       {
         path: '/stock-losses',
         icon: TrendingDown,
         labelKey: 'navStockLosses',
-        requiredPermission: 'canViewStocks',
-        permissionCode: 'inventory.view',
       },
       {
         path: '/invoices',
         icon: Receipt,
         labelKey: 'navInvoices',
-        ownerOnly: true,
       },
       {
         path: '/audit-logs',
         icon: ScrollText,
         labelKey: 'navAuditLogs',
-        ownerOnly: true,
       },
     ],
   },
@@ -243,7 +203,9 @@ export const NAV_GROUPS: NavGroupConfig[] = [
 
 /**
  * Bottom nav items for mobile admin (5 items max).
- * Maps role to the most relevant nav items.
+ * Maps role to the most relevant nav items. Ce n'est qu'un ORDRE de preference:
+ * AdminBottomNav retire ensuite chaque entree dont la route est refusee au
+ * membre (permissions effectives).
  */
 export const BOTTOM_NAV_ITEMS: Record<string, string[]> = {
   owner: ['dashboard', 'orders', 'pos', 'kitchen', 'analyse'],

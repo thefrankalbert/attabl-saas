@@ -42,6 +42,7 @@ type TargetRow = {
    * discriminant (reserve S2 du contre-audit LOT 6).
    */
   deleted_at?: string | null;
+  is_active?: boolean;
 } | null;
 
 let membershipRows: MembershipRow[] = [];
@@ -147,6 +148,12 @@ vi.mock('@/lib/auth/get-session', () => ({
   },
 }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => adminClient }));
+const canAddStaff = vi.fn();
+const canAddAdmin = vi.fn();
+vi.mock('@/services/plan-enforcement.service', () => ({
+  STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
+  createPlanEnforcementService: () => ({ canAddStaff, canAddAdmin }),
+}));
 vi.mock('@/services/audit.service', () => ({
   createAuditService: () => ({ log: vi.fn() }),
 }));
@@ -194,6 +201,8 @@ describe('prise de controle de compte via les actions admin', () => {
     resetLinkLimiterCheck.mockResolvedValue({ success: true });
     resetLinkIpLimiterCheck.mockResolvedValue({ success: true });
     adminRpc.mockResolvedValue({ data: false, error: null });
+    canAddStaff.mockResolvedValue(undefined);
+    canAddAdmin.mockResolvedValue(undefined);
   });
 
   describe('actionResetUserPassword', () => {
@@ -695,6 +704,118 @@ describe('prise de controle de compte via les actions admin', () => {
 
       expect(res.success).toBe(true);
       expect(adminUsersUpdate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // Un quota que seule la creation verifie n'en est pas un: retrograder puis
+  // repromouvoir, ou desactiver puis reactiver, le contournait.
+  describe('actionUpdateAdminUser - quota du plan', () => {
+    it('refuse de reactiver un membre quand le quota est plein', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'caissier@resto-a.test',
+        role: 'cashier',
+        deleted_at: null,
+        is_active: false,
+      };
+      const { ServiceError } = await import('@/services/errors');
+      canAddStaff.mockRejectedValue(new ServiceError('Limite atteinte', 'VALIDATION'));
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { is_active: true });
+
+      expect(res.error).toBe('Limite atteinte');
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('refuse de promouvoir un caissier admin quand la place admin est prise', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'caissier@resto-a.test',
+        role: 'cashier',
+        deleted_at: null,
+        is_active: true,
+      };
+      const { ServiceError } = await import('@/services/errors');
+      canAddAdmin.mockRejectedValue(new ServiceError('Limite admin', 'VALIDATION'));
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'admin' });
+
+      expect(res.error).toBe('Limite admin');
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('ne consulte pas le quota pour un simple changement de nom', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'caissier@resto-a.test',
+        role: 'cashier',
+        deleted_at: null,
+        is_active: true,
+      };
+
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { full_name: 'Awa' });
+
+      expect(res.success).toBe(true);
+      expect(canAddStaff).not.toHaveBeenCalled();
+      expect(canAddAdmin).not.toHaveBeenCalled();
+    });
+  });
+
+  // Decision du proprietaire (2026-11-09): seul lui regle les permissions. Les
+  // surcharges INDIVIDUELLES priment sur tout (hasPermission, etape 1): un admin
+  // qui les ecrivait donnait l'encaissement a un serveur en contournant
+  // /api/permissions (reserve au proprietaire).
+  describe('actionUpdateAdminUser - permissions individuelles', () => {
+    beforeEach(() => {
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'serveur@resto-a.test',
+        role: 'waiter',
+        deleted_at: null,
+      };
+    });
+
+    it('refuse a un admin de regler des permissions individuelles', async () => {
+      mockGetAuthForTenant.mockResolvedValue({
+        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
+        role: 'admin',
+        adminUserId: 'admin-row',
+        tenantId: TENANT_A,
+        supabase: {},
+      });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        custom_permissions: { 'orders.pay': true },
+      });
+      expect(res.error).toBe('permissionDenied');
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('laisse un admin modifier le nom sans toucher aux permissions', async () => {
+      mockGetAuthForTenant.mockResolvedValue({
+        user: { id: 'admin-auth-id', email: 'gerant@resto-a.test' },
+        role: 'admin',
+        adminUserId: 'admin-row',
+        tenantId: TENANT_A,
+        supabase: {},
+      });
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        full_name: 'Awa',
+      });
+      expect(res.success).toBe(true);
+    });
+
+    it('laisse le proprietaire regler des permissions individuelles', async () => {
+      actorIsOwnerOfTenantA();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        custom_permissions: { 'orders.pay': true },
+      });
+      expect(res.success).toBe(true);
+      expect(adminUsersUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ custom_permissions: { 'orders.pay': true } }),
+      );
     });
   });
 });

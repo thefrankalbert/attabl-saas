@@ -9,9 +9,12 @@ import { useTranslations } from 'next-intl';
 export function FrozenBanner({
   tenantSlug,
   menuDaysLeft = null,
+  showPlansLink = true,
 }: {
   tenantSlug: string;
   menuDaysLeft?: number | null;
+  /** Faux pour qui ne peut pas ouvrir /subscription (le personnel). */
+  showPlansLink?: boolean;
 }) {
   const t = useTranslations('trial');
   return (
@@ -24,12 +27,14 @@ export function FrozenBanner({
           {menuDaysLeft === null ? t('expired') : t('menuVisibleDaysLeft', { count: menuDaysLeft })}
         </p>
       </div>
-      <Link
-        href={`/sites/${tenantSlug}/admin/subscription`}
-        className="shrink-0 bg-status-error text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
-      >
-        {t('seePlans')}
-      </Link>
+      {showPlansLink && (
+        <Link
+          href={`/sites/${tenantSlug}/admin/subscription`}
+          className="shrink-0 bg-status-error text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+        >
+          {t('seePlans')}
+        </Link>
+      )}
     </div>
   );
 }

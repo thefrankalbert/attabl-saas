@@ -10,6 +10,7 @@ import { sendInvitationEmail } from '@/services/email.service';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
 import { canActOnUser } from '@/lib/auth/role-hierarchy';
 import type { AdminRole } from '@/types/admin.types';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -62,6 +63,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .maybeSingle();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // Inviter fait entrer du personnel: meme permission que creer un membre
+    // (team.manage, check-tenant-admin). Sans elle, un admin a qui le
+    // proprietaire avait retire team.manage invitait encore.
+    const { allowed: canManageTeam } = await resolveAdminPermission(
+      supabase,
+      user.id,
+      existingInvitation.tenant_id,
+      'team.manage',
+    );
+    if (!canManageTeam) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
 

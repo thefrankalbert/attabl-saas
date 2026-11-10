@@ -7,8 +7,12 @@ import { verifyOrigin } from '@/lib/csrf';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 
 /**
- * Reset API - allows high-level admins (owner, admin) to reset specific data.
+ * Reset API - lets the OWNER wipe orders (paid ones included, with their
+ * payments history), stock movements or coupon counters.
  * Requires typing a confirmation phrase for safety.
+ *
+ * Owner only (decision 2026-11-09): only the owner touches the money history.
+ * An admin used to pass, with no fine permission to remove from him.
  */
 
 const CONFIRMATION_PHRASE = 'CONFIRMER SUPPRESSION';
@@ -36,12 +40,11 @@ export async function POST(request: Request) {
     // 1. Auth + tenant from session (IDOR prevention)
     const { tenantId, user, role } = await getAuthenticatedUserWithTenant();
 
-    // 2. Only owner/admin can reset
-    if (!['owner', 'admin'].includes(role)) {
+    // 2. Only the owner can reset (super_admin resolves to 'owner' in get-session)
+    if (role !== 'owner') {
       return NextResponse.json(
         {
-          error:
-            'Permissions insuffisantes. Seuls les proprietaires et administrateurs peuvent effectuer cette action.',
+          error: 'Seul le proprietaire du restaurant peut effectuer cette action.',
         },
         { status: 403 },
       );

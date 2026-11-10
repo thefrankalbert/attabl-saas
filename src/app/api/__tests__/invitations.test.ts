@@ -40,6 +40,13 @@ vi.mock('@/lib/cache-headers', () => ({
   jsonWithCache: vi.fn().mockImplementation((data: unknown) => Response.json(data)),
 }));
 
+// team.manage, resolu en trois niveaux: simule ici, la resolution elle-meme a
+// ses propres tests (resolve-admin-permission, permissions).
+const mockResolvePermission = vi.fn();
+vi.mock('@/lib/auth/resolve-admin-permission', () => ({
+  resolveAdminPermission: (...a: unknown[]) => mockResolvePermission(...a),
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn().mockResolvedValue({
     get: (key: string) => (key === 'x-tenant-slug' ? 'test' : null),
@@ -93,6 +100,10 @@ function buildResendRequest(): Request {
 function buildParams(id = TEST_INVITATION_ID): { params: Promise<{ id: string }> } {
   return { params: Promise.resolve({ id }) };
 }
+
+beforeEach(() => {
+  mockResolvePermission.mockResolvedValue({ allowed: true, role: 'owner' });
+});
 
 function mockRateLimit(allowed: boolean) {
   vi.mocked(invitationManageLimiter.check).mockResolvedValue({
@@ -541,5 +552,81 @@ describe('POST /api/invitations/[id]/resend', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.invitation).not.toHaveProperty('token');
+  });
+});
+
+/**
+ * X10/X11: inviter fait entrer du personnel, donc exige team.manage comme la
+ * creation directe; et seul le proprietaire attache des permissions
+ * individuelles (decision du 2026-11-09).
+ */
+describe('invitations - team.manage et permissions individuelles', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockResolvePermission.mockResolvedValue({ allowed: false, role: 'admin' });
+    mockRateLimit(true);
+  });
+
+  it('GET refuse un admin sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    const res = await GET(buildGetRequest());
+    expect(res.status).toBe(403);
+    expect(mockResolvePermission).toHaveBeenCalledWith(
+      expect.anything(),
+      'user-1',
+      'tenant-1',
+      'team.manage',
+    );
+  });
+
+  it('POST refuse un admin sans team.manage, sans rien creer', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'chef' }));
+    expect(res.status).toBe(403);
+  });
+
+  it('DELETE refuse un admin sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+    setupMockAdminClient();
+    const res = await DELETE(buildDeleteRequest(), buildParams());
+    expect(res.status).toBe(403);
+  });
+
+  it('renvoi refuse a un admin sans team.manage', async () => {
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+    setupMockAdminClient();
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+    expect(res.status).toBe(403);
+  });
+
+  it('un admin ne joint pas de permissions individuelles a une invitation', async () => {
+    mockResolvePermission.mockResolvedValue({ allowed: true, role: 'admin' });
+    vi.mocked(createClient).mockResolvedValue(
+      createMockSupabase({ adminUser: { tenant_id: 'tenant-1', role: 'admin' } }) as never,
+    );
+    setupMockAdminClient();
+    const res = await POST(
+      buildPostRequest({
+        email: 'new@test.com',
+        role: 'waiter',
+        custom_permissions: { 'orders.pay': true },
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('refuse une cle de permission inconnue', async () => {
+    mockResolvePermission.mockResolvedValue({ allowed: true, role: 'owner' });
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+    const res = await POST(
+      buildPostRequest({
+        email: 'new@test.com',
+        role: 'waiter',
+        custom_permissions: { root: true },
+      }),
+    );
+    expect(res.status).toBe(400);
   });
 });

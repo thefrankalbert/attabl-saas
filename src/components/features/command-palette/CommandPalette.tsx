@@ -14,11 +14,8 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { usePermissions } from '@/hooks/usePermissions';
-import {
-  NAV_GROUPS,
-  type NavGroupConfig,
-  type NavItemConfig,
-} from '@/lib/layout/navigation-config';
+import { NAV_GROUPS } from '@/lib/layout/navigation-config';
+import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -26,7 +23,7 @@ export function CommandPalette() {
   const params = useParams();
   const t = useTranslations('sidebar');
   const tc = useTranslations('commandPalette');
-  const { permissions } = usePermissions();
+  const { permissions, can } = usePermissions();
 
   const site = params?.site as string | undefined;
   const basePath = site ? `/sites/${site}/admin` : '/admin';
@@ -43,12 +40,11 @@ export function CommandPalette() {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  // Check if a nav item/group is visible for the current role
+  // A link is listed only if the member may open its route: same rule as the
+  // middleware, read from the same effective permissions (owner overrides
+  // included), so no entry ends on /unauthorized.
   const isVisible = useCallback(
-    (item: NavGroupConfig | NavItemConfig) => {
-      if (!item.requiredPermission) return true;
-      return permissions[item.requiredPermission as keyof typeof permissions] === true;
-    },
+    (subPath: string) => canOpenAdminSubPath(subPath, permissions),
     [permissions],
   );
 
@@ -57,9 +53,7 @@ export function CommandPalette() {
     const items: { label: string; path: string; icon: typeof Search; group: string }[] = [];
 
     for (const group of NAV_GROUPS) {
-      if (!isVisible(group)) continue;
-
-      if (group.directPath !== undefined) {
+      if (group.directPath !== undefined && isVisible(group.directPath)) {
         // Direct link group (Dashboard, Orders, POS, Kitchen, Service)
         items.push({
           label: t(group.titleKey),
@@ -71,7 +65,7 @@ export function CommandPalette() {
 
       // Sub-items
       for (const item of group.items) {
-        if (!isVisible(item)) continue;
+        if (!isVisible(item.path)) continue;
         items.push({
           label: t(item.labelKey),
           path: `${basePath}${item.path}`,
@@ -82,7 +76,7 @@ export function CommandPalette() {
     }
 
     // Always add Settings and Users if permitted
-    if (permissions.canManageSettings) {
+    if (isVisible('/settings')) {
       items.push({
         label: tc('settings'),
         path: `${basePath}/settings`,
@@ -90,7 +84,7 @@ export function CommandPalette() {
         group: tc('navigation'),
       });
     }
-    if (permissions.canManageUsers) {
+    if (isVisible('/users')) {
       items.push({
         label: tc('users'),
         path: `${basePath}/users`,
@@ -100,19 +94,21 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [basePath, isVisible, permissions, t, tc]);
+  }, [basePath, isVisible, t, tc]);
 
   // Quick actions
   const quickActions = useMemo(() => {
     const actions: { label: string; path: string; icon: typeof Plus }[] = [];
 
-    if (permissions.canTakeOrders) {
+    // Each quick action needs the permission its server action enforces, not
+    // just the right to open the page.
+    if (can('pos.use')) {
       actions.push({ label: tc('newOrder'), path: `${basePath}/pos`, icon: Plus });
     }
-    if (permissions.canManageMenus) {
+    if (can('menu.edit')) {
       actions.push({ label: tc('addDish'), path: `${basePath}/items?action=add`, icon: Plus });
     }
-    if (permissions.canManageUsers) {
+    if (can('team.manage')) {
       actions.push({
         label: tc('inviteUser'),
         path: `${basePath}/users?action=invite`,
@@ -121,7 +117,7 @@ export function CommandPalette() {
     }
 
     return actions;
-  }, [basePath, permissions, tc]);
+  }, [basePath, can, tc]);
 
   const runCommand = useCallback(
     (path: string) => {

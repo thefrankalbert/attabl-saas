@@ -123,7 +123,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   const columns = useStockHistoryColumns({ locale, formatDateShort, formatTime });
 
   return (
-    <RoleGuard permission="canViewStocks">
+    <RoleGuard permission="inventory.view">
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
         {/* -- Header row -- */}
         <div className="shrink-0 space-y-4">

@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { actionToggleMenuItemAvailable } from '@/app/actions/menu-items';
@@ -83,11 +84,14 @@ export function ItemsList({
   const tc = useTranslations('common');
   const seg = useSegmentTerms();
   const router = useRouter();
+  // Lecture seule sans `menu.edit` (caissier, serveur, chef par defaut): la
+  // carte reste consultable, sans bouton qui finirait en refus serveur.
+  const canEdit = usePermissions().can('menu.edit');
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4 sm:mt-6">
       {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
+      {canEdit && selectedIds.size > 0 && (
         <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
           <span className="text-sm font-medium text-app-text">
             {t('selectedCount', { count: selectedIds.size })}
@@ -149,42 +153,46 @@ export function ItemsList({
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
             <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
               {/* Select all header */}
-              <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
-                <Checkbox
-                  aria-label={tc('selectAll') || 'Select all'}
-                  checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
-                  onCheckedChange={(checked) => {
-                    const next = new Set(selectedIds);
-                    if (checked) {
-                      items.forEach((i) => next.add(i.id));
-                    } else {
-                      items.forEach((i) => next.delete(i.id));
-                    }
-                    setSelectedIds(next);
-                  }}
-                />
-                <span className="text-xs text-app-text-muted">
-                  {tc('selectAll') || 'Select all'}
-                </span>
-              </div>
+              {canEdit && (
+                <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
+                  <Checkbox
+                    aria-label={tc('selectAll') || 'Select all'}
+                    checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
+                    onCheckedChange={(checked) => {
+                      const next = new Set(selectedIds);
+                      if (checked) {
+                        items.forEach((i) => next.add(i.id));
+                      } else {
+                        items.forEach((i) => next.delete(i.id));
+                      }
+                      setSelectedIds(next);
+                    }}
+                  />
+                  <span className="text-xs text-app-text-muted">
+                    {tc('selectAll') || 'Select all'}
+                  </span>
+                </div>
+              )}
               {pageItems.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => onSelectItem(item)}
                   className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
-                  <Checkbox
-                    aria-label={`${tc('select') || 'Select'} ${item.name}`}
-                    checked={selectedIds.has(item.id)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set(selectedIds);
-                      if (checked) next.add(item.id);
-                      else next.delete(item.id);
-                      setSelectedIds(next);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="shrink-0"
-                  />
+                  {canEdit && (
+                    <Checkbox
+                      aria-label={`${tc('select') || 'Select'} ${item.name}`}
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(selectedIds);
+                        if (checked) next.add(item.id);
+                        else next.delete(item.id);
+                        setSelectedIds(next);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0"
+                    />
+                  )}
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -211,6 +219,7 @@ export function ItemsList({
                   </div>
                   <Button
                     variant="outline"
+                    disabled={!canEdit}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleAvailable(item);
@@ -234,47 +243,49 @@ export function ItemsList({
                       </>
                     )}
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="More options"
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-auto w-auto p-1.5 text-app-text-muted"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditItem(item);
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFeatured(item);
-                        }}
-                      >
-                        <Star className="w-4 h-4 mr-2" />{' '}
-                        {item.is_featured ? t('removedFromFeatured') : t('addedToFeatured')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteItem(item);
-                        }}
-                        className="text-status-error"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {canEdit && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="More options"
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-auto w-auto p-1.5 text-app-text-muted"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditItem(item);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFeatured(item);
+                          }}
+                        >
+                          <Star className="w-4 h-4 mr-2" />{' '}
+                          {item.is_featured ? t('removedFromFeatured') : t('addedToFeatured')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteItem(item);
+                          }}
+                          className="text-status-error"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               ))}
             </div>
@@ -300,9 +311,11 @@ export function ItemsList({
               {tc('clearFilters')}
             </Button>
           ) : null}
-          <Button onClick={onAddItem} size="sm">
-            <Plus className="w-4 h-4 mr-1" /> {seg.addItem}
-          </Button>
+          {canEdit && (
+            <Button onClick={onAddItem} size="sm">
+              <Plus className="w-4 h-4 mr-1" /> {seg.addItem}
+            </Button>
+          )}
         </div>
       )}
     </div>

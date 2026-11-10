@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 
 interface TrialBannerProps {
   tenantSlug: string;
+  /** Faux pour qui ne peut pas ouvrir /subscription (le personnel). */
+  showPlansLink?: boolean;
 }
 
-export function TrialBanner({ tenantSlug }: TrialBannerProps) {
+export function TrialBanner({ tenantSlug, showPlansLink = true }: TrialBannerProps) {
   const { isInTrial, daysRemaining } = useSubscription();
   const t = useTranslations('trial');
   const [isDismissed, setIsDismissed] = useState(false);
@@ -37,13 +39,15 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-1">
-        <Link
-          href={upgradeUrl}
-          className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-90 ${styleConfig.ctaClass}`}
-        >
-          {t('choosePlan')}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        {showPlansLink && (
+          <Link
+            href={upgradeUrl}
+            className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-90 ${styleConfig.ctaClass}`}
+          >
+            {t('choosePlan')}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
         <Button
           variant="ghost"
           size="icon"

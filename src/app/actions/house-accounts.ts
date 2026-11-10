@@ -9,7 +9,7 @@ import {
 } from '@/services/order-annotation.service';
 import { ServiceError } from '@/services/errors';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
-import { ORDER_STAFF_ROLES, ORDER_MONEY_ROLES } from '@/lib/admin-roles';
+import { ALL_ADMIN_ROLES, ORDER_MONEY_ROLES, ORDER_PAY_PERMISSIONS } from '@/lib/admin-roles';
 import {
   houseAccountSchema,
   attachHouseAccountSchema,
@@ -19,8 +19,10 @@ import {
 /**
  * House account (ardoise / running tab) server actions. The tenant is verified
  * against the authenticated membership (IDOR-safe); created_by / settled_by use
- * the actor's admin_users.id. Create + settle are manager privileges; attach /
- * detach / list are open to staff (server or above).
+ * the actor's admin_users.id. An ardoise is money: every action needs
+ * ORDER_PAY_PERMISSIONS (the waiter and the chef do not hold `orders.pay` by
+ * default - owner decision of 2026-11-09). Create + settle are, on top of
+ * that, manager privileges (ORDER_MONEY_ROLES).
  */
 
 const tenantIdSchema = z.string().uuid();
@@ -41,7 +43,7 @@ export async function actionCreateHouseAccount(
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
       ORDER_MONEY_ROLES,
-      'orders.manage',
+      ORDER_PAY_PERMISSIONS,
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
@@ -61,7 +63,7 @@ export async function actionCreateHouseAccount(
   }
 }
 
-/** List house accounts with outstanding balances. Staff or above (read-only). */
+/** List house accounts with outstanding balances (read-only, money staff). */
 export async function actionListHouseAccounts(
   tenantId: string,
 ): Promise<{ accounts?: HouseAccountBalance[]; error?: string }> {
@@ -73,8 +75,8 @@ export async function actionListHouseAccounts(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      ORDER_PAY_PERMISSIONS,
     );
     const accounts = await createOrderAnnotationService(supabase).listHouseAccountsWithBalances(
       parsedTenant.data,
@@ -85,7 +87,7 @@ export async function actionListHouseAccounts(
   }
 }
 
-/** Attach an order to a house account (put it on the tab). Staff or above. */
+/** Attach an order to a house account (put it on the tab). Money staff. */
 export async function actionAttachOrderToHouseAccount(
   tenantId: string,
   orderId: string,
@@ -100,8 +102,8 @@ export async function actionAttachOrderToHouseAccount(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      ORDER_PAY_PERMISSIONS,
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
@@ -118,7 +120,7 @@ export async function actionAttachOrderToHouseAccount(
   }
 }
 
-/** Detach an order from its house account. Staff or above. */
+/** Detach an order from its house account. Money staff. */
 export async function actionDetachOrder(
   tenantId: string,
   orderId: string,
@@ -132,8 +134,8 @@ export async function actionDetachOrder(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
-      ORDER_STAFF_ROLES,
-      'orders.manage',
+      ALL_ADMIN_ROLES,
+      ORDER_PAY_PERMISSIONS,
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir
@@ -164,7 +166,7 @@ export async function actionSettleHouseAccount(
     const { supabase, adminUserId } = await getAuthenticatedUserForTenant(
       parsedTenant.data,
       ORDER_MONEY_ROLES,
-      'orders.manage',
+      ORDER_PAY_PERMISSIONS,
     );
     // Coupure du restaurant: solder une ardoise est un encaissement, et ces
     // actions sont appelees en direct par l'interface. Voir

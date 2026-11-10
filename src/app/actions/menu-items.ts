@@ -8,6 +8,7 @@ import { createMenuItemService } from '@/services/menu-item.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { menuItemCreateSchema, menuItemUpdateSchema } from '@/lib/validations/menu-item.schema';
@@ -37,7 +38,7 @@ export async function actionCreateMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -113,7 +114,7 @@ export async function actionUpdateMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -158,7 +159,7 @@ export async function actionDeleteMenuItem(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -199,7 +200,7 @@ export async function actionToggleMenuItemAvailable(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -240,7 +241,7 @@ export async function actionToggleMenuItemFeatured(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
@@ -281,7 +282,7 @@ export async function actionUpdateMenuItemPrice(
   const t = await getTranslations('errors');
 
   try {
-    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager'], 'menu.edit');
+    await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };

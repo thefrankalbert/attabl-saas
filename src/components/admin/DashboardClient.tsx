@@ -61,7 +61,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   const { stats, recentOrders, loading, handleStatusChange } = useDashboardData(props);
   const { can } = usePermissions();
-  const showFin = can('canViewAllFinances');
+  const showFin = can('reports.view');
 
   // null on the server and during hydration, then the real minute (see hook).
   const nowMs = useMinuteClock();

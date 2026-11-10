@@ -114,7 +114,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
   const isConfirmed = confirmText.trim() === CONFIRMATION_PHRASE;
 
   return (
-    <RoleGuard roles={['owner', 'admin']} fallback={null}>
+    <RoleGuard roles={['owner']} fallback={null}>
       <div className="mt-8 border-t border-status-error/20 pt-6">
         <div className="flex items-center gap-2 mb-1">
           <AlertTriangle className="w-4 h-4 text-status-error" />

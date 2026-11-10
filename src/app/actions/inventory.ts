@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createInventoryService } from '@/services/inventory.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { isFeatureEntitled, type GatedFeature } from '@/lib/plans/assert-feature';
 import type {
   Ingredient,
@@ -18,8 +19,6 @@ import type {
 } from '@/types/inventory.types';
 import { LOSS_REASONS } from '@/types/inventory.types';
 
-const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
-
 // Le module Inventaire est une fonctionnalite Pro. La page la gate deja
 // (inventory/page.tsx, canAccessInventory), mais une Server Action est un
 // endpoint POST adressable par son Action ID: sans cette garde, un tenant
@@ -27,12 +26,10 @@ const ALLOWED_ROLES = ['owner', 'admin', 'manager'] as const;
 const INVENTORY_PLAN_ERROR = 'Le module Inventaire est reserve au plan Pro.';
 const RECIPES_PLAN_ERROR = 'Les fiches techniques sont reservees au plan Pro.';
 
-// READ surfaces (reports) are gated purely on the permission, not a coarse role
-// list - mirroring the page's requireAdminPermission('inventory.view'). Passing
-// every role makes the role gate a no-op so any role holding inventory.view
-// (default: owner/admin/manager/chef; or cashier/waiter via a tenant/user
-// override) can load AND filter the report, matching the page + nav + RoleGuard.
-const VIEW_ROLES = ['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
+// Reads AND writes are gated purely on the permission (inventory.view /
+// inventory.edit), not on a coarse role list: ALL_ADMIN_ROLES makes the role
+// gate a no-op, so an owner override (e.g. inventory.edit granted to the chef in
+// /settings/permissions) is honored here exactly as by the import routes.
 
 const adjustStockSchema = z.object({
   tenantId: z.string().uuid(),
@@ -127,7 +124,7 @@ async function checkInventoryPermissions(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       tenantId,
-      [...ALLOWED_ROLES],
+      ALL_ADMIN_ROLES,
       'inventory.edit',
     );
     if (!(await isFeatureEntitled(supabase, tenantId, feature))) {
@@ -155,7 +152,7 @@ async function checkInventoryViewPermissions(
   try {
     const { supabase } = await getAuthenticatedUserForTenant(
       tenantId,
-      [...VIEW_ROLES],
+      ALL_ADMIN_ROLES,
       'inventory.view',
     );
     if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessInventory'))) {

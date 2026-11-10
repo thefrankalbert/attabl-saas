@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { Category } from '@/types/admin.types';
 
@@ -33,6 +34,8 @@ export function ItemsHeader({
 }: ItemsHeaderProps) {
   const t = useTranslations('items');
   const seg = useSegmentTerms();
+  // Sans `menu.edit`, pas de bouton d'ajout: le serveur refuserait l'enregistrement.
+  const canEdit = usePermissions().can('menu.edit');
 
   return (
     <AdminPageHeader
@@ -65,9 +68,11 @@ export function ItemsHeader({
             </Select>
           </div>
 
-          <Button onClick={onAddItem} variant="default" className="gap-2 h-9 shrink-0">
-            <Plus className="w-4 h-4" /> {seg.addItem}
-          </Button>
+          {canEdit && (
+            <Button onClick={onAddItem} variant="default" className="gap-2 h-9 shrink-0">
+              <Plus className="w-4 h-4" /> {seg.addItem}
+            </Button>
+          )}
         </>
       }
     />

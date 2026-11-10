@@ -1,11 +1,14 @@
 import type { AdminRole } from '@/types/admin/enums.types';
+import type { PermissionCode } from '@/types/permission.types';
 
 export const ONBOARDING_COMPLETE_ROLES = ['owner'] as const;
 
 export const ASSIGNMENT_MANAGER_ROLES = ['owner', 'admin', 'manager'] as const;
 
 /**
- * Garde grossiere des actions de commande: TOUS les roles du produit.
+ * Garde grossiere "neutre": TOUS les roles du produit. A passer a
+ * `getAuthenticatedUserForTenant` quand c'est la permission fine qui doit
+ * decider seule (menu.edit, inventory.edit, orders.manage, orders.pay...).
  *
  * POURQUOI CETTE CONSTANTE EXISTE. Onze actions de commande portaient la liste
  * ecrite a la main `['owner', 'admin', 'manager', 'server']`. Le role 'server'
@@ -27,10 +30,16 @@ export const ASSIGNMENT_MANAGER_ROLES = ['owner', 'admin', 'manager'] as const;
  * Lister les six roles rend la garde grossiere volontairement inoffensive et
  * laisse `orders.manage` decider seule.
  *
- * A ne pas utiliser pour une action qui engage de l'argent: voir
- * ORDER_MONEY_ROLES.
+ * Meme defaut corrige ensuite sur le catalogue, le stock, les tables, les
+ * fournisseurs et le marketing: une liste ['owner','admin','manager'] posee
+ * AVANT `menu.edit` ou `inventory.edit` annulait le droit que le proprietaire
+ * accordait a un chef dans /settings/permissions (les imports, qui ne portaient
+ * que la permission, l'acceptaient, l'action d'a cote le refusait).
+ *
+ * Encaisser releve de `orders.pay`, pas de cette liste. Rembourser et offrir
+ * relevent en plus de ORDER_MONEY_ROLES.
  */
-export const ORDER_STAFF_ROLES: AdminRole[] = [
+export const ALL_ADMIN_ROLES: AdminRole[] = [
   'owner',
   'admin',
   'manager',
@@ -40,15 +49,26 @@ export const ORDER_STAFF_ROLES: AdminRole[] = [
 ];
 
 /**
- * Garde des actions de commande qui ENGAGENT DE L'ARGENT: remboursement, offert
- * (comp), ouverture et solde d'un compte maison.
+ * Garde des actions qui SORTENT ou EFFACENT de l'argent: remboursement, offert
+ * (comp), ouverture et solde d'un compte maison (ardoise).
  *
- * Deliberement PLUS ETROITE que `orders.manage`, que `cashier` et `chef`
- * detiennent aussi. Laisser un caissier annuler une note a zero ou rembourser
- * est une surface de fraude: ces actions restent au gerant et au-dessus. Cette
- * restriction est voulue, ce n'est pas un oubli de la matrice.
+ * S'ajoute a `orders.pay` (encaisser), que le caissier detient aussi. Laisser
+ * un caissier mettre une note a zero ou rembourser est une surface de fraude:
+ * ces actions restent au gerant et au-dessus. Restriction voulue, pas un oubli
+ * de la matrice. Le serveur et le chef n'ont ni l'un ni l'autre (decision du
+ * proprietaire du 2026-11-09: aucune operation d'argent).
  */
 export const ORDER_MONEY_ROLES: AdminRole[] = ['owner', 'admin', 'manager'];
+
+/**
+ * Permissions exigees pour ENCAISSER ou deplacer de l'argent sur une commande:
+ * paiement, tender, ardoise, annulation. `orders.pay` est le droit d'argent
+ * (le serveur et le chef ne l'ont pas par defaut); `orders.manage` reste exige
+ * parce que la base n'autorise la modification d'une commande qu'avec lui. Les
+ * deux ensemble donnent un refus net cote application au lieu d'une erreur de
+ * base au milieu d'un encaissement.
+ */
+export const ORDER_PAY_PERMISSIONS: readonly PermissionCode[] = ['orders.manage', 'orders.pay'];
 
 export function isRoleAllowed(role: string, allowed: readonly string[]): boolean {
   return allowed.includes(role);

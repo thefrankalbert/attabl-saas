@@ -25,6 +25,7 @@ export function CategoryList({ vm }: Props) {
     pageSize,
     totalCategories,
     handleCategoryPageChange,
+    canEdit,
   } = vm;
 
   return (
@@ -37,7 +38,7 @@ export function CategoryList({ vm }: Props) {
             {t('categoriesCount', { count: categories.length })}
           </h2>
           <div className="flex items-center gap-2">
-            {availableCategories.length > 0 && (
+            {canEdit && availableCategories.length > 0 && (
               <div className="relative">
                 <Button
                   variant="outline"
@@ -76,9 +77,11 @@ export function CategoryList({ vm }: Props) {
                 )}
               </div>
             )}
-            <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> {t('newCategory')}
-            </Button>
+            {canEdit && (
+              <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
+                <Plus className="w-4 h-4" /> {t('newCategory')}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -110,9 +113,11 @@ export function CategoryList({ vm }: Props) {
             </div>
             <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
             <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
-            <Button onClick={openNewCategoryModal} className="mt-4">
-              {t('createCategory')}
-            </Button>
+            {canEdit && (
+              <Button onClick={openNewCategoryModal} className="mt-4">
+                {t('createCategory')}
+              </Button>
+            )}
           </div>
         )}
       </div>

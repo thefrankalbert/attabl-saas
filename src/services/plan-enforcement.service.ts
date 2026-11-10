@@ -98,7 +98,11 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
         .from('admin_users')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        // Only owner/admin count here: staff roles have their own quota
+        // (canAddStaff). Counting them made one hired cashier use up the
+        // admin seat of a starter plan.
+        .in('role', ['owner', 'admin']);
 
       if (error) {
         throw new ServiceError('Erreur de vérification des limites', 'INTERNAL', error);

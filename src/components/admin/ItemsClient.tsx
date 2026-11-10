@@ -266,7 +266,7 @@ export default function ItemsClient({
   };
 
   return (
-    <RoleGuard permission="canManageMenus">
+    <RoleGuard permission="menu.view">
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <ItemsHeader

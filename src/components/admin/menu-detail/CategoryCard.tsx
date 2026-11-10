@@ -21,6 +21,7 @@ export function CategoryCard({ vm, cat }: Props) {
     openEditCategoryModal,
     handleDeleteCategory,
     getItemsForCategory,
+    canEdit,
   } = vm;
 
   const catItems = getItemsForCategory(cat.id);
@@ -54,34 +55,36 @@ export function CategoryCard({ vm, cat }: Props) {
           <Utensils className="w-3.5 h-3.5" />
           <span className="font-medium">{t('dishCount', { count: catItems.length })}</span>
         </div>
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toggleCategoryActive(cat)}
-            className="text-xs h-8"
-            title={isCatActive ? t('categoryVisible') : t('categoryHidden')}
-          >
-            {isCatActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openEditCategoryModal(cat)}
-            className="text-xs h-8"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDeleteCategory(cat)}
-            title="Supprimer"
-            className="text-xs h-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
+        {canEdit && (
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleCategoryActive(cat)}
+              className="text-xs h-8"
+              title={isCatActive ? t('categoryVisible') : t('categoryHidden')}
+            >
+              {isCatActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openEditCategoryModal(cat)}
+              className="text-xs h-8"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDeleteCategory(cat)}
+              title="Supprimer"
+              className="text-xs h-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Items in this category - collapsible */}

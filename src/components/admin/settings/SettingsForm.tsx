@@ -13,6 +13,7 @@ import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { SettingsTab } from '@/lib/settings-tabs';
 
 // Feature components
@@ -50,6 +51,16 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
   const router = useRouter();
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
+  // La page s'ouvre sur `settings.view` (admin-route-permissions.ts). Sans
+  // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
+  // et ni l'enregistrement ni l'editeur de permissions ne s'affichent, au lieu
+  // de "Acces refuse" ou d'un formulaire que le serveur refuserait ensuite.
+  const { can, role } = usePermissions();
+  const canEdit = can('settings.edit');
+  // Owner decision (2026-11-09): only the owner edits permissions. An admin
+  // holds settings.edit, so the link must not hang on it alone: it led him to
+  // an "access denied" page.
+  const canEditPermissions = role === 'owner';
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -80,7 +91,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
   } = useSettingsData(tenant);
 
   return (
-    <RoleGuard permission="canManageSettings">
+    <RoleGuard permission="settings.view">
       <form
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
@@ -108,16 +119,18 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
                 {t('management.tables')}
               </Link>
             </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="min-h-[44px] justify-start sm:justify-center"
-            >
-              <Link href={`${pathname}/permissions`}>
-                <Users className="mr-2 h-4 w-4" />
-                {t('management.permissions')}
-              </Link>
-            </Button>
+            {canEditPermissions && (
+              <Button
+                asChild
+                variant="outline"
+                className="min-h-[44px] justify-start sm:justify-center"
+              >
+                <Link href={`${pathname}/permissions`}>
+                  <Users className="mr-2 h-4 w-4" />
+                  {t('management.permissions')}
+                </Link>
+              </Button>
+            )}
           </div>
         </Card>
 
@@ -142,57 +155,61 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
             ref={scrollRef}
             className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6"
           >
-            {/* Identity tab (includes domain + language) */}
-            <SettingsIdentity
-              form={form}
-              tenant={tenant}
-              logoPreview={logoPreview}
-              uploading={uploading}
-              saving={saving}
-              onLogoUpload={handleLogoUpload}
-              onLogoChange={handleLogoChange}
-              onLogoRemove={handleLogoRemove}
-              onDomainSave={async (domain) => {
-                // Partial save: only the domain. The action/service skip every
-                // field absent from the FormData, so this never writes the
-                // (possibly unsaved/invalid) name or colors from the main form.
-                const formData = new FormData();
-                formData.append('customDomain', domain || '');
-                const result = await actionUpdateTenantSettings(formData);
-                if (!result.success) throw new Error(result.error);
-              }}
-              t={t}
-            />
-
-            {/* Branding tab */}
-            <SettingsBranding form={form} t={t} />
-
-            {/* Billing tab */}
-            <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
-
-            {/* Opening hours tab */}
-            <SettingsOpeningHours form={form} t={t} />
-
-            {/* Sounds tab */}
-            <TabsContent value="sounds" className="mt-0 space-y-6">
-              <SoundSettings
-                currentSoundId={selectedSoundId}
-                onSoundChange={setSelectedSoundId}
-                tenantId={tenant.id}
+            {/* display: contents - aucun effet de mise en page, seulement le
+                verrou natif de tous les champs et boutons des onglets. */}
+            <fieldset disabled={!canEdit} className="contents" data-testid="settings-fields">
+              {/* Identity tab (includes domain + language) */}
+              <SettingsIdentity
+                form={form}
+                tenant={tenant}
+                logoPreview={logoPreview}
+                uploading={uploading}
+                saving={saving}
+                onLogoUpload={handleLogoUpload}
+                onLogoChange={handleLogoChange}
+                onLogoRemove={handleLogoRemove}
+                onDomainSave={async (domain) => {
+                  // Partial save: only the domain. The action/service skip every
+                  // field absent from the FormData, so this never writes the
+                  // (possibly unsaved/invalid) name or colors from the main form.
+                  const formData = new FormData();
+                  formData.append('customDomain', domain || '');
+                  const result = await actionUpdateTenantSettings(formData);
+                  if (!result.success) throw new Error(result.error);
+                }}
+                t={t}
               />
-              <PushOptIn tenantId={tenant.id} />
-            </TabsContent>
 
-            {/* Security tab */}
-            <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} />
+              {/* Branding tab */}
+              <SettingsBranding form={form} t={t} />
 
-            {/* Contact tab */}
-            <SettingsContact form={form} t={t} />
+              {/* Billing tab */}
+              <SettingsBilling form={form} t={t} initialPaymentMethods={initialPaymentMethods} />
+
+              {/* Opening hours tab */}
+              <SettingsOpeningHours form={form} t={t} />
+
+              {/* Sounds tab */}
+              <TabsContent value="sounds" className="mt-0 space-y-6">
+                <SoundSettings
+                  currentSoundId={selectedSoundId}
+                  onSoundChange={setSelectedSoundId}
+                  tenantId={tenant.id}
+                />
+                <PushOptIn tenantId={tenant.id} />
+              </TabsContent>
+
+              {/* Security tab */}
+              <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} />
+
+              {/* Contact tab */}
+              <SettingsContact form={form} t={t} />
+            </fieldset>
           </div>
         </Tabs>
 
         {/* Actions - visible only when there are unsaved changes */}
-        {(hasUnsavedChanges || saving || uploading) && (
+        {canEdit && (hasUnsavedChanges || saving || uploading) && (
           <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
             <Button
               type="submit"

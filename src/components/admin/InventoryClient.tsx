@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ResponsiveDataTable } from '@/components/admin/ResponsiveDataTable';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import InventoryFilters from '@/components/admin/inventory/InventoryFilters';
 import InventoryMobileCard from '@/components/admin/inventory/InventoryMobileCard';
@@ -149,7 +150,10 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
     return true;
   });
 
-  const columns = useInventoryColumns(currency, openAdjust, openEdit, openLoss);
+  // Ajouter, ajuster, declarer une perte = `inventory.edit` cote serveur. Le
+  // chef (inventory.view) consulte le stock sans formulaire qui finit en refus.
+  const canEdit = usePermissions().can('inventory.edit');
+  const columns = useInventoryColumns(currency, openAdjust, openEdit, openLoss, canEdit);
 
   const lowCount = ingredients.filter(
     (i) => i.current_stock > 0 && i.current_stock <= i.min_stock_alert,
@@ -157,7 +161,7 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
   const outCount = ingredients.filter((i) => i.current_stock <= 0).length;
 
   return (
-    <RoleGuard permission="canViewStocks">
+    <RoleGuard permission="inventory.view">
       <div className="h-full flex flex-col overflow-hidden">
         {/* Fixed header area */}
         <div className="shrink-0 space-y-4">
@@ -186,10 +190,12 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
                 </Button>
 
                 {/* Add button */}
-                <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
-                  <Plus className="w-4 h-4" />
-                  {t('addIngredient')}
-                </Button>
+                {canEdit && (
+                  <Button onClick={openAdd} variant="default" className="gap-2 h-9 shrink-0">
+                    <Plus className="w-4 h-4" />
+                    {t('addIngredient')}
+                  </Button>
+                )}
               </>
             }
           />

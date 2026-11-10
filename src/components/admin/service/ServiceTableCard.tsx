@@ -4,6 +4,7 @@ import type { DragEvent, KeyboardEvent, MouseEvent } from 'react';
 import { X as CloseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCanManageFloor } from '@/hooks/usePermissions';
 import { formatTimeHHMM } from './service-status';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 
@@ -71,6 +72,7 @@ export function ServiceTableCard({
   onDrop,
 }: Props) {
   const { table, status, assignment, since } = vm;
+  const canAssign = useCanManageFloor();
   const displayId = table.display_name || table.table_number;
   const sinceLabel =
     since && status === 'occupied'
@@ -86,7 +88,7 @@ export function ServiceTableCard({
     e.preventDefault();
     const serverId = e.dataTransfer.getData('text/server-id');
     onDragLeave(table.id);
-    if (serverId) onDrop(table.id, serverId);
+    if (serverId && canAssign) onDrop(table.id, serverId);
   };
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -132,7 +134,7 @@ export function ServiceTableCard({
           <span className="font-mono text-[10px] tracking-wide text-app-text-muted">
             {table.capacity} {labels.seatsShort}
           </span>
-          {assignment && (
+          {assignment && canAssign && (
             <Button
               type="button"
               variant="ghost"

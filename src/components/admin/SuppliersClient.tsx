@@ -110,7 +110,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   });
 
   return (
-    <RoleGuard permission="canManageStocks">
+    <RoleGuard permission="inventory.view">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <AdminPageHeader

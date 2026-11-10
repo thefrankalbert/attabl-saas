@@ -17,24 +17,18 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-const mockPermissions = {
-  canManageMenus: true,
-  canManageUsers: true,
-  canManageSettings: true,
-  canTakeOrders: true,
-  canViewOrders: true,
-  canViewStocks: true,
-  canManageStocks: true,
-  canUsePOS: true,
-  canConfigureKitchen: true,
-  canViewAllStats: true,
-};
+import { PERMISSION_CODES, type PermissionCode } from '@/types/permission.types';
+
+const mockPermissions = Object.fromEntries(PERMISSION_CODES.map((c) => [c, true])) as Record<
+  PermissionCode,
+  boolean
+>;
 
 vi.mock('@/hooks/usePermissions', () => ({
   usePermissions: () => ({
     role: 'admin',
     permissions: mockPermissions,
-    can: (key: string) => mockPermissions[key as keyof typeof mockPermissions] ?? false,
+    can: (key: PermissionCode) => mockPermissions[key] === true,
   }),
 }));
 
@@ -88,9 +82,9 @@ describe('CommandPalette', () => {
   });
 
   it('hides quick actions when permissions are missing', async () => {
-    mockPermissions.canTakeOrders = false;
-    mockPermissions.canManageMenus = false;
-    mockPermissions.canManageUsers = false;
+    mockPermissions['pos.use'] = false;
+    mockPermissions['menu.edit'] = false;
+    mockPermissions['team.manage'] = false;
 
     render(<CommandPalette />);
 
@@ -139,5 +133,45 @@ describe('CommandPalette', () => {
       expect(screen.getByText('settings')).toBeInTheDocument();
       expect(screen.getByText('users')).toBeInTheDocument();
     });
+  });
+
+  // Chef par defaut: la palette lisait l'ancienne matrice et lui proposait
+  // "Ajouter un plat", "Nouvelle commande" et "Rapports", trois refus serveur.
+  it('follows the effective permissions of a chef (no POS, no menu edit, no reports)', async () => {
+    mockPermissions['pos.use'] = false;
+    mockPermissions['menu.edit'] = false;
+    mockPermissions['reports.view'] = false;
+    mockPermissions['settings.view'] = false;
+    mockPermissions['team.view'] = false;
+    mockPermissions['team.manage'] = false;
+
+    render(<CommandPalette />);
+    fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByText('navDashboard')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('newOrder')).not.toBeInTheDocument();
+    expect(screen.queryByText('addDish')).not.toBeInTheDocument();
+    expect(screen.queryByText('navReports')).not.toBeInTheDocument();
+    expect(screen.queryByText('navPos')).not.toBeInTheDocument();
+    expect(screen.queryByText('settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('users')).not.toBeInTheDocument();
+    // Ce que ses permissions ouvrent reste propose.
+    expect(screen.getByText('navInventory')).toBeInTheDocument();
+  });
+
+  // Un gerant (menu.edit) ouvre Annonces/Coupons: l'ancienne matrice les cachait.
+  it('lists a route as soon as its route permission is held', async () => {
+    mockPermissions['settings.edit'] = false;
+    mockPermissions['settings.view'] = false;
+
+    render(<CommandPalette />);
+    fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByText('navAnnouncements')).toBeInTheDocument();
+    });
+    expect(screen.getByText('navCoupons')).toBeInTheDocument();
   });
 });

@@ -25,6 +25,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { getTenantUrl } from '@/lib/constants';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 
 export type SettingsTab = 'compte' | 'etablissement' | 'imprimantes' | 'tva' | 'personnel';
 
@@ -56,12 +58,24 @@ export function SettingsDialog({
   const clientUrl = getTenantUrl(tenant.slug);
   const planLabel = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
 
+  // Chaque onglet ne fait que renvoyer vers une page: on ne montre que ceux dont
+  // la page s'ouvre pour ce membre (meme regle que le middleware), au lieu
+  // d'un bouton qui finit sur /unauthorized.
+  const { permissions } = usePermissions();
+  const canOpen = (subPath: string) => canOpenAdminSubPath(subPath, permissions);
+
   const tabs: { key: SettingsTab; label: string; icon: typeof CircleUser }[] = [
     { key: 'compte', label: t('setAccount'), icon: CircleUser },
     { key: 'etablissement', label: t('setEstablishment'), icon: Store },
-    { key: 'imprimantes', label: t('setPrinters'), icon: Printer },
-    { key: 'tva', label: t('setTax'), icon: Percent },
-    { key: 'personnel', label: t('setStaff'), icon: Users },
+    ...(canOpen('/settings')
+      ? [
+          { key: 'imprimantes' as const, label: t('setPrinters'), icon: Printer },
+          { key: 'tva' as const, label: t('setTax'), icon: Percent },
+        ]
+      : []),
+    ...(canOpen('/users')
+      ? [{ key: 'personnel' as const, label: t('setStaff'), icon: Users }]
+      : []),
   ];
 
   const linkBtn = (href: string, label: string) => (
@@ -126,7 +140,9 @@ export function SettingsDialog({
                 <Field label={t('setFieldName')} value={userName || '-'} />
                 <Field label={t('setFieldEmail')} value={userEmail || '-'} />
                 <Field label={t('setFieldPlan')} value={planLabel} />
-                <div>{linkBtn(`${basePath}/subscription`, t('setManageSub'))}</div>
+                {canOpen('/subscription') && (
+                  <div>{linkBtn(`${basePath}/subscription`, t('setManageSub'))}</div>
+                )}
               </Pane>
             )}
 
@@ -147,19 +163,19 @@ export function SettingsDialog({
               </Pane>
             )}
 
-            {activeTab === 'imprimantes' && (
+            {activeTab === 'imprimantes' && canOpen('/settings') && (
               <Pane title={t('setPrinters')} sub={t('setPrintersSub')}>
                 <div>{linkBtn(`${basePath}/settings`, t('setManageSettings'))}</div>
               </Pane>
             )}
 
-            {activeTab === 'tva' && (
+            {activeTab === 'tva' && canOpen('/settings') && (
               <Pane title={t('setTax')} sub={t('setTaxSub')}>
                 <div>{linkBtn(`${basePath}/settings`, t('setManageSettings'))}</div>
               </Pane>
             )}
 
-            {activeTab === 'personnel' && (
+            {activeTab === 'personnel' && canOpen('/users') && (
               <Pane title={t('setStaff')} sub={t('setStaffSub')}>
                 <div>{linkBtn(`${basePath}/users`, t('setManageStaff'))}</div>
               </Pane>

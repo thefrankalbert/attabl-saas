@@ -8,6 +8,7 @@ import { useDashboardStats } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
 import { useSound } from '@/contexts/SoundContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import type {
   Order,
   DashboardStats,
@@ -68,6 +69,8 @@ export function useDashboardData({
   const supabase = createClient();
   const queryClient = useQueryClient();
   const { play: playNotification } = useSound();
+  // Meme droit que le masquage serveur de la page (reports.view).
+  const canViewRevenue = usePermissions().can('reports.view');
 
   // Coalesce bursts of realtime events into a single refetch. During service the
   // dashboard receives hundreds of order/ingredient events per hour; without this,
@@ -80,7 +83,7 @@ export function useDashboardData({
 
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
-  const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
+  const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, canViewRevenue, {
     stats: initialStats,
     recentOrders: initialRecentOrders,
     stockItems: [],

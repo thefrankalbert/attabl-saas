@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { CurrencyCode, MenuItem } from '@/types/admin.types';
 
 interface ItemDetailPanelProps {
@@ -17,6 +18,7 @@ interface ItemDetailPanelProps {
 
 export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailPanelProps) {
   const t = useTranslations('items');
+  const canEdit = usePermissions().can('menu.edit');
   const tc = useTranslations('common');
   const ta = useTranslations('allergens');
 
@@ -160,17 +162,19 @@ export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailP
             )}
           </div>
 
-          {/* Edit Button */}
-          <Button
-            variant="default"
-            className="w-full mt-2"
-            onClick={() => {
-              onEdit(item);
-              onClose();
-            }}
-          >
-            {t('edit')}
-          </Button>
+          {/* Edit Button (menu.edit only: sinon refus serveur a l'enregistrement) */}
+          {canEdit && (
+            <Button
+              variant="default"
+              className="w-full mt-2"
+              onClick={() => {
+                onEdit(item);
+                onClose();
+              }}
+            >
+              {t('edit')}
+            </Button>
+          )}
         </div>
       </div>
     </>

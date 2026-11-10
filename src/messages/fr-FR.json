@@ -236,6 +236,7 @@
     "statusButtonPreparing": "En préparation",
     "statusButtonReady": "Prêt à servir",
     "statusButtonCheckout": "Encaisser",
+    "statusButtonServed": "Marquer servie",
     "statusLabel": "Statut",
     "printLabel": "Impression",
     "printKitchenTicket": "Ticket Cuisine",
@@ -2053,6 +2054,7 @@
     "upgradeWall": {
       "planRequired": "Fonctionnalite Pro",
       "upgradeCta": "Passer au Pro - 14j gratuits",
+      "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
       "trialNote": "Disponible gratuitement pendant votre essai Pro",
       "kds": {
         "title": "Écran cuisine (KDS)",
@@ -2441,7 +2443,7 @@
     "dnsConfig": "Configuration DNS",
     "currentUrl": "URL actuelle :",
     "dangerZone": "Zone dangereuse",
-    "dangerZoneDescription": "Ces actions sont irréversibles. Réservées aux propriétaires et administrateurs.",
+    "dangerZoneDescription": "Ces actions sont irréversibles. Réservées au propriétaire du restaurant.",
     "reset_statistics_title": "Réinitialiser les statistiques",
     "reset_statistics_description": "Supprime les commandes livrées/annulées. Les commandes en cours sont conservées.",
     "reset_statistics_warning": "Cette action supprimera toutes les commandes livrées et annulées. Les commandes en cours ne seront pas affectées. Cette action est irréversible.",
@@ -2557,7 +2559,7 @@
     "navAuditLogs": "Journal d'audit",
     "roleOwner": "Administrateur général",
     "roleAdmin": "Administrateur",
-    "roleManager": "Gerant",
+    "roleManager": "Gérant",
     "roleStaff": "Personnel",
     "roleKitchen": "Cuisine",
     "roleServer": "Serveur",
@@ -2807,7 +2809,7 @@
     "createdAt": "Créé le",
     "roleOwner": "Administrateur général",
     "roleAdmin": "Administrateur",
-    "roleManager": "Gerant",
+    "roleManager": "Gérant",
     "roleCashier": "Caissier",
     "roleChef": "Chef cuisinier",
     "roleWaiter": "Serveur",
@@ -2824,7 +2826,7 @@
     "newMember": "Nouveau Membre",
     "roleOwnerLabel": "Administrateur général",
     "roleAdminLabel": "Admin",
-    "roleManagerLabel": "Gerant",
+    "roleManagerLabel": "Gérant",
     "roleCashierLabel": "Caissier",
     "roleChefLabel": "Chef",
     "roleWaiterLabel": "Serveur",
@@ -2843,7 +2845,7 @@
     "emailPlaceholder": "jean@restaurant.com",
     "temporaryPassword": "Mot de passe provisoire",
     "roleAndPermissions": "Rôle & Permissions",
-    "roleDescription": "Les administrateurs ont un accès complet. Les serveurs ne peuvent que prendre des commandes.",
+    "roleDescription": "Le caissier encaisse. Le serveur prend les commandes et les marque servies, sans toucher à l'argent. Le chef suit la cuisine. Seul le propriétaire règle les permissions.",
     "cancel": "Annuler",
     "createAccount": "Créer le compte",
     "fillAllFields": "Veuillez remplir tous les champs",
@@ -2870,7 +2872,11 @@
     "inviteSentTo": "Invitation envoyée à {email}",
     "inviteEmailNotSent": "Invitation créée, mais l'email n'est pas parti. Renvoyez-la depuis la liste.",
     "invitationResent": "Invitation renvoyée",
-    "invitationCancelled": "Invitation annulée"
+    "invitationCancelled": "Invitation annulée",
+    "durationLessThanHour": "moins d'une heure",
+    "durationHours": "{count, plural, one {# heure} other {# heures}}",
+    "durationDays": "{count, plural, one {# jour} other {# jours}}",
+    "invitationExpired": "Invitation expirée"
   },
   "reports": {
     "title": "Rapports",
@@ -2971,8 +2977,8 @@
     "deleteError": "Erreur lors de la suppression",
     "restoreError": "Erreur lors de la restauration",
     "restoreSuccess": "Permissions par defaut restaurees pour {role}",
-    "accessDenied": "Acces refuse",
-    "ownerOnly": "Seul le proprietaire peut gérer les permissions.",
+    "accessDenied": "Accès refusé",
+    "noAccessHint": "Votre rôle ne donne pas accès à cette page. Demandez au propriétaire si vous en avez besoin.",
     "restoreDefaults": "Restaurer les defauts",
     "reset": "Reinitialiser",
     "modified": "modifie",
@@ -2991,6 +2997,7 @@
       "menu_edit": "Modifier les menus",
       "orders_view": "Voir les commandes",
       "orders_manage": "Gérer les commandes",
+      "orders_pay": "Encaisser l'argent (paiements, ardoises, annulations)",
       "reports_view": "Voir les rapports",
       "pos_use": "Utiliser la caisse",
       "inventory_view": "Voir l'inventaire",
@@ -3003,7 +3010,7 @@
     "role": {
       "owner": "Administrateur general",
       "admin": "Administrateur",
-      "manager": "Gerant",
+      "manager": "Gérant",
       "cashier": "Caissier",
       "chef": "Chef Cuisine",
       "waiter": "Serveur"
@@ -3016,7 +3023,8 @@
       "inventory": "Inventaire",
       "team": "Équipe",
       "settings": "Parametres"
-    }
+    },
+    "ownerOnlyHint": "Seul le propriétaire du restaurant modifie les permissions."
   },
   "coupons": {
     "title": "Coupons",

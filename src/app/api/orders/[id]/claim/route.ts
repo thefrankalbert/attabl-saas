@@ -8,6 +8,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -50,8 +51,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .single();
     if (!adminUser) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
 
-    const CLAIM_ALLOWED_ROLES = ['owner', 'manager', 'cashier', 'waiter'];
-    if (!CLAIM_ALLOWED_ROLES.includes(adminUser.role)) {
+    // Prendre une commande en charge modifie la commande: meme regle que la
+    // faire avancer, `orders.manage` en trois niveaux. L'ancienne liste de roles
+    // oubliait `admin` et ignorait les reglages du proprietaire.
+    const { allowed: canClaim } = await resolveAdminPermission(
+      supabase,
+      user.id,
+      tenant.id,
+      'orders.manage',
+    );
+    if (!canClaim) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
