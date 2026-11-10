@@ -8,10 +8,12 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_EXTENSIONS = ['.xlsx', '.xls'];
+// .xlsx uniquement: exceljs ne lit pas l'ancien format .xls (Excel 97-2003).
+const ALLOWED_EXTENSIONS = ['.xlsx'];
 const ALLOWED_MIME_TYPES = [
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-  'application/vnd.ms-excel', // .xls
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Certains navigateurs n'envoient aucun type pour un .xlsx: l'extension suffit alors.
+  '',
 ];
 
 export async function POST(request: Request) {
@@ -67,7 +69,10 @@ export async function POST(request: Request) {
     const hasValidMimeType = ALLOWED_MIME_TYPES.includes(file.type);
     if (!hasValidExtension || !hasValidMimeType) {
       return NextResponse.json(
-        { error: 'Format de fichier invalide. Seuls les fichiers .xlsx et .xls sont acceptes.' },
+        {
+          error:
+            'Format de fichier invalide. Enregistrez votre fichier au format .xlsx (Excel > Enregistrer sous > Classeur Excel).',
+        },
         { status: 400 },
       );
     }

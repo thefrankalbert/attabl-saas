@@ -63,6 +63,32 @@ export function mapHeaders(
 }
 
 /**
+ * Trouve la ligne d'en-tetes d'une feuille: la premiere ligne qui porte TOUS
+ * les champs obligatoires.
+ *
+ * Les modeles telecharges depuis ATTABL commencent par une bande de titre et un
+ * sous-titre (voir buildStyledWorkbook): les en-tetes sont en ligne 4, pas en
+ * ligne 1. Lire la ligne 1 faisait refuser au restaurateur le modele qu'on venait
+ * de lui donner. Un fichier fait a la main, en-tetes en ligne 1, reste lu pareil.
+ *
+ * @returns l'index (base 0) de la ligne d'en-tetes, ou -1 si aucune ligne des
+ *   `maxScan` premieres ne contient tous les champs obligatoires.
+ */
+export function findHeaderRow(
+  aliases: Record<string, string[]>,
+  rows: unknown[][],
+  required: string[],
+  maxScan = 10,
+): number {
+  for (let i = 0; i < Math.min(rows.length, maxScan); i++) {
+    const cells = (rows[i] ?? []).map((c) => (c == null ? '' : String(c)));
+    const fields = new Set(mapHeaders(aliases, cells).values());
+    if (required.every((f) => fields.has(f))) return i;
+  }
+  return -1;
+}
+
+/**
  * Lit une cellule numerique (prix, quantite) venue d'un fichier uploade.
  *
  * Le separateur de milliers est le piege central, et il coutait de l'argent.

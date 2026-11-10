@@ -143,6 +143,7 @@ export function useMenuImportPDF({ menus, onImportComplete }: UseMenuImportPDFPa
         categoriesCreated: data.categoriesCreated ?? 0,
         categoriesExisting: data.categoriesExisting ?? 0,
         itemsCreated: data.itemsCreated ?? 0,
+        itemsUpdated: data.itemsUpdated ?? 0,
         itemsSkipped: data.itemsSkipped ?? 0,
         errors: data.errors ?? [],
       });

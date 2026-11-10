@@ -71,6 +71,7 @@ export interface PlanEnforcementService {
   canAddVenue(tenant: Tenant): Promise<void>;
   canAddMenu(tenant: Tenant): Promise<void>;
   canAddItems(tenant: Tenant, batchSize: number): Promise<void>;
+  remainingItemSlots(tenant: Tenant): Promise<number>;
   getUsageCounts(tenantId: string): Promise<{
     admins: number;
     items: number;
@@ -266,6 +267,33 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
           'VALIDATION',
         );
       }
+    },
+
+    /**
+     * Number of NEW items the plan still allows (Infinity when unlimited).
+     * Used by the Excel import, which also updates existing items: updates must
+     * not be blocked by a full plan, only new items count against it.
+     */
+    async remainingItemSlots(tenant: Tenant): Promise<number> {
+      const limits = getPlanLimits(
+        tenant.subscription_plan,
+        tenant.subscription_status,
+        tenant.trial_ends_at,
+      );
+
+      if (limits.maxItems === -1) return Number.POSITIVE_INFINITY;
+
+      const { count, error } = await supabase
+        .from('menu_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .is('deleted_at', null);
+
+      if (error) {
+        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
+      }
+
+      return Math.max(0, limits.maxItems - (count || 0));
     },
 
     /**

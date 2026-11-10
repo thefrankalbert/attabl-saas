@@ -35,6 +35,7 @@ export const COLUMN_ALIASES: Record<string, string[]> = {
     'itemname',
   ],
   nameEn: [
+    'nomduplaten',
     'dishnameen',
     'dishnamefrenglish',
     'nomen',

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import {
+  findHeaderRow,
   mapHeaders,
   parseBooleanCell,
   readFirstSheetRows,
@@ -95,21 +96,22 @@ export function createSupplierImportService(supabase: SupabaseClient): SupplierI
         );
       }
 
-      const headerRow = (rawData[0] as unknown[]).map((c) => (c == null ? '' : String(c)));
-      const headerMapping = mapHeaders(SUPPLIER_ALIASES, headerRow);
-      const mappedFields = new Set(headerMapping.values());
-
-      if (!mappedFields.has('name')) {
+      // Le modele ATTABL place un titre au-dessus des en-tetes (findHeaderRow).
+      const headerIndex = findHeaderRow(SUPPLIER_ALIASES, rawData, ['name']);
+      if (headerIndex === -1) {
         throw new ServiceError(
           'Colonne obligatoire manquante : Nom (Name). Colonnes attendues : Nom, Contact, Telephone, Email, Adresse, Notes, Actif',
           'VALIDATION',
         );
       }
 
+      const headerRow = (rawData[headerIndex] ?? []).map((c) => (c == null ? '' : String(c)));
+      const headerMapping = mapHeaders(SUPPLIER_ALIASES, headerRow);
+      const mappedFields = new Set(headerMapping.values());
       const rows: ParsedSupplierRow[] = [];
       const errors: ImportRowError[] = [];
 
-      for (let i = 1; i < rawData.length; i++) {
+      for (let i = headerIndex + 1; i < rawData.length; i++) {
         const cells = rawData[i] as unknown[];
         if (isEmptyRow(cells)) continue;
 

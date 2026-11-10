@@ -4,20 +4,37 @@ import { z } from 'zod';
 
 export const excelRowSchema = z.object({
   category: z
-    .string({ error: 'Category is required' })
-    .min(1, 'Category name cannot be empty')
-    .max(100, 'Category name must be 100 characters or fewer'),
-  categoryEn: z.string().max(100).nullable().optional(),
+    .string({ error: 'Categorie obligatoire' })
+    .min(1, 'Categorie obligatoire')
+    .max(100, 'Categorie trop longue (100 caracteres maximum)'),
+  categoryEn: z
+    .string()
+    .max(100, 'Categorie EN trop longue (100 caracteres maximum)')
+    .nullable()
+    .optional(),
   name: z
-    .string({ error: 'Dish name is required' })
-    .min(1, 'Dish name cannot be empty')
-    .max(200, 'Dish name must be 200 characters or fewer'),
-  nameEn: z.string().max(200).nullable().optional(),
-  description: z.string().max(1000).nullable().optional(),
-  descriptionEn: z.string().max(1000).nullable().optional(),
+    .string({ error: 'Nom du plat obligatoire' })
+    .min(1, 'Nom du plat obligatoire')
+    .max(200, 'Nom du plat trop long (200 caracteres maximum)'),
+  nameEn: z
+    .string()
+    .max(200, 'Nom du plat EN trop long (200 caracteres maximum)')
+    .nullable()
+    .optional(),
+  description: z
+    .string()
+    .max(1000, 'Description trop longue (1000 caracteres maximum)')
+    .nullable()
+    .optional(),
+  descriptionEn: z
+    .string()
+    .max(1000, 'Description EN trop longue (1000 caracteres maximum)')
+    .nullable()
+    .optional(),
   price: z
-    .number({ error: 'Price must be a valid number' })
-    .positive('Price must be a positive number'),
-  isAvailable: z.boolean().default(true),
-  isFeatured: z.boolean().default(false),
+    .number({ error: 'Prix manquant ou illisible' })
+    .positive('Le prix doit etre superieur a zero'),
+  // null = case laissee vide (voir le parser).
+  isAvailable: z.boolean().nullable(),
+  isFeatured: z.boolean().nullable(),
 });

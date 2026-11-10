@@ -8,7 +8,7 @@ const mockVerifyOrigin = vi.fn();
 const mockExcelLimiterCheck = vi.fn();
 const mockGetAuthenticatedUserWithTenant = vi.fn();
 const mockImportFromExcel = vi.fn();
-const mockCanAddMenuItem = vi.fn();
+const mockRemainingItemSlots = vi.fn();
 
 vi.mock('@/lib/csrf', () => ({
   verifyOrigin: (...args: unknown[]) => mockVerifyOrigin(...args),
@@ -36,7 +36,7 @@ vi.mock('@/services/excel-import.service', () => ({
 
 vi.mock('@/services/plan-enforcement.service', () => ({
   createPlanEnforcementService: vi.fn(() => ({
-    canAddMenuItem: (...args: unknown[]) => mockCanAddMenuItem(...args),
+    remainingItemSlots: (...args: unknown[]) => mockRemainingItemSlots(...args),
   })),
 }));
 
@@ -128,7 +128,7 @@ describe('POST /api/menu-import', () => {
     vi.clearAllMocks();
     mockVerifyOrigin.mockReturnValue(null);
     mockExcelLimiterCheck.mockResolvedValue({ success: true });
-    mockCanAddMenuItem.mockResolvedValue(undefined);
+    mockRemainingItemSlots.mockResolvedValue(12);
     mockImportFromExcel.mockResolvedValue({
       categoriesCreated: 0,
       categoriesExisting: 0,
@@ -164,6 +164,9 @@ describe('POST /api/menu-import', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(menusEq).toHaveBeenCalledWith('tenant_id', 'tenant-1');
-    expect(mockImportFromExcel).toHaveBeenCalledWith('tenant-1', 'menu-1', expect.anything());
+    // Le reste du forfait est transmis: seuls les NOUVEAUX plats sont limites.
+    expect(mockImportFromExcel).toHaveBeenCalledWith('tenant-1', 'menu-1', expect.anything(), {
+      maxNewItems: 12,
+    });
   });
 });

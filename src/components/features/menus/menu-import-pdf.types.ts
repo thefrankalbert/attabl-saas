@@ -13,6 +13,7 @@ export interface ImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
+  itemsUpdated: number;
   itemsSkipped: number;
   errors: Array<{ index: number; message: string }>;
 }
