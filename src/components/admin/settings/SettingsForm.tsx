@@ -55,7 +55,12 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
   // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
   // et ni l'enregistrement ni l'editeur de permissions ne s'affichent, au lieu
   // de "Acces refuse" ou d'un formulaire que le serveur refuserait ensuite.
-  const canEdit = usePermissions().can('settings.edit');
+  const { can, role } = usePermissions();
+  const canEdit = can('settings.edit');
+  // Owner decision (2026-11-09): only the owner edits permissions. An admin
+  // holds settings.edit, so the link must not hang on it alone: it led him to
+  // an "access denied" page.
+  const canEditPermissions = role === 'owner';
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -114,7 +119,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
                 {t('management.tables')}
               </Link>
             </Button>
-            {canEdit && (
+            {canEditPermissions && (
               <Button
                 asChild
                 variant="outline"

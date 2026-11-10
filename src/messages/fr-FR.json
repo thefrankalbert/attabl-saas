@@ -3023,7 +3023,8 @@
       "inventory": "Inventaire",
       "team": "Équipe",
       "settings": "Parametres"
-    }
+    },
+    "ownerOnlyHint": "Seul le propriétaire du restaurant modifie les permissions."
   },
   "coupons": {
     "title": "Coupons",

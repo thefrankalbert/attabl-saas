@@ -38,13 +38,16 @@ vi.mock('@/components/features/settings/SettingsSecurity', () => ({ default: () 
 vi.mock('@/components/features/settings/SettingsContact', () => ({ default: () => null }));
 vi.mock('@/components/features/settings/SettingsOpeningHours', () => ({ default: () => null }));
 
-function renderWith(overrides: Partial<Record<PermissionCode, boolean>>) {
+function renderWith(
+  overrides: Partial<Record<PermissionCode, boolean>>,
+  role: 'manager' | 'admin' | 'owner' = 'manager',
+) {
   const permissions = { ...DEFAULT_PERMISSIONS.manager, ...overrides } as Record<
     PermissionCode,
     boolean
   >;
   render(
-    <PermissionsProvider role="manager" permissions={permissions}>
+    <PermissionsProvider role={role} permissions={permissions}>
       <SettingsForm
         tenant={{ id: 't1', slug: 'demo' } as SettingsTenant}
         initialPaymentMethods={[]}
@@ -64,11 +67,18 @@ describe('Parametres: lecture seule sans settings.edit', () => {
     expect(screen.queryByText('management.permissions')).toBeNull();
   });
 
-  it('settings.edit: champs actifs, enregistrer et permissions visibles', () => {
-    renderWith({ 'settings.view': true, 'settings.edit': true });
+  // Decision du proprietaire: seul lui regle les permissions. settings.edit
+  // ouvre les champs, pas l'editeur de permissions.
+  it('settings.edit sans etre proprietaire: champs actifs, pas de lien permissions', () => {
+    renderWith({ 'settings.view': true, 'settings.edit': true }, 'admin');
     expect(screen.getByTestId('settings-fields')).not.toBeDisabled();
     expect(screen.getByLabelText('nom')).not.toBeDisabled();
     expect(screen.getByText('saveChanges')).toBeInTheDocument();
+    expect(screen.queryByText('management.permissions')).toBeNull();
+  });
+
+  it('proprietaire: lien vers les permissions visible', () => {
+    renderWith({ 'settings.view': true, 'settings.edit': true }, 'owner');
     expect(screen.getByText('management.permissions')).toBeInTheDocument();
   });
 

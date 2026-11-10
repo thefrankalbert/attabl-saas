@@ -31,6 +31,43 @@ type ActionResponse = {
 };
 
 /**
+ * Plan seat check for a member who is about to hold `role` while active.
+ * Staff roles count against maxStaff, owner/admin against maxAdmins, as in the
+ * invitation routes. Returns an error message, or null when a seat is free.
+ * Shared by creation, role change and reactivation: a quota that only one of
+ * those paths checks is not a quota.
+ */
+async function checkSeatQuota(
+  adminClient: ReturnType<typeof createAdminClient>,
+  tenantId: string,
+  role: string,
+  t: (key: string) => string,
+): Promise<string | null> {
+  try {
+    const { data: tenant, error: tenantError } = await adminClient
+      .from('tenants')
+      .select(
+        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+      )
+      .eq('id', tenantId)
+      .single();
+    if (tenantError || !tenant) return t('tenantNotFound');
+
+    const planService = createPlanEnforcementService(adminClient);
+    if ((STAFF_ROLES as readonly string[]).includes(role)) {
+      await planService.canAddStaff(tenant);
+    } else {
+      await planService.canAddAdmin(tenant);
+    }
+    return null;
+  } catch (err) {
+    return err instanceof ServiceError ? err.message : t('planLimitError');
+  }
+}
+
+const isStaffRole = (role: string): boolean => (STAFF_ROLES as readonly string[]).includes(role);
+
+/**
  * Creates a new admin user for a tenant.
  */
 export async function actionCreateAdminUser(
@@ -65,36 +102,8 @@ export async function actionCreateAdminUser(
 
   const adminClient = createAdminClient();
 
-  // Vérification des limites du plan
-  try {
-    const planService = createPlanEnforcementService(adminClient);
-
-    // Récupérer le tenant avec les infos de plan
-    const { data: tenant, error: tenantError } = await adminClient
-      .from('tenants')
-      .select(
-        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
-      )
-      .eq('id', tenantId)
-      .single();
-
-    if (tenantError || !tenant) {
-      return { error: t('tenantNotFound') };
-    }
-
-    // Staff roles count against maxStaff; admin/owner against maxAdmins, as in
-    // the invitation routes.
-    if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
-      await planService.canAddStaff(tenant);
-    } else {
-      await planService.canAddAdmin(tenant);
-    }
-  } catch (err) {
-    if (err instanceof ServiceError) {
-      return { error: err.message };
-    }
-    return { error: t('planLimitError') };
-  }
+  const quotaError = await checkSeatQuota(adminClient, tenantId, parsed.data.role, t);
+  if (quotaError) return { error: quotaError };
 
   // 1. Create Auth User
   const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
@@ -327,7 +336,7 @@ export async function actionUpdateAdminUser(
   // service_role, qui ignore le RLS. Les deux couches sont necessaires.
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('role')
+    .select('role, is_active')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
@@ -335,6 +344,19 @@ export async function actionUpdateAdminUser(
   if (!targetUser) return { error: t('userNotFound') };
   if (!canActOnUser(currentRole, targetUser.role as AdminRole)) {
     return { error: t('permissionDenied') };
+  }
+
+  // A seat is taken when the member becomes active again, or moves between the
+  // staff and admin quotas while active. Without this, demote-then-promote or
+  // deactivate-then-reactivate went around the plan limit.
+  const nextRole = parsed.data.role ?? targetUser.role;
+  const nextActive = parsed.data.is_active ?? targetUser.is_active !== false;
+  const takesNewSeat =
+    nextActive &&
+    (targetUser.is_active === false || isStaffRole(nextRole) !== isStaffRole(targetUser.role));
+  if (takesNewSeat) {
+    const quotaError = await checkSeatQuota(adminClient, tenantId, nextRole, t);
+    if (quotaError) return { error: quotaError };
   }
 
   // Only send keys that were provided. custom_permissions: an object sets the

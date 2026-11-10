@@ -3023,7 +3023,8 @@
       "inventory": "Inventory",
       "team": "Team",
       "settings": "Settings"
-    }
+    },
+    "ownerOnlyHint": "Only the restaurant owner can change permissions."
   },
   "coupons": {
     "title": "Coupons",
