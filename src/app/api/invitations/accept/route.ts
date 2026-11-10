@@ -97,6 +97,23 @@ export async function POST(request: Request) {
       authenticatedUserId: sessionUser?.id ?? undefined,
     });
 
+    // A brand-new employee has no session yet: the account was just created
+    // with the admin client. Sign them in with the password they chose, so the
+    // redirect lands in their space instead of the login screen. Best effort:
+    // the account exists either way, and the login screen still works.
+    const motDePasse = parsed.data.password;
+    if (motDePasse && sessionUser?.email?.toLowerCase() !== invitation.email.toLowerCase()) {
+      const { error: signInError } = await sessionClient.auth.signInWithPassword({
+        email: invitation.email,
+        password: motDePasse,
+      });
+      if (signInError) {
+        logger.warn('Invitation accepted but automatic sign-in failed', {
+          code: signInError.code,
+        });
+      }
+    }
+
     return NextResponse.json({ success: true, tenantSlug });
   } catch (error) {
     if (error instanceof ServiceError) {

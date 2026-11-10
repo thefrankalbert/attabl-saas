@@ -17,7 +17,7 @@ import {
   getClientIpFromHeaders,
 } from '@/lib/rate-limit';
 import { headers } from 'next/headers';
-import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
@@ -82,7 +82,13 @@ export async function actionCreateAdminUser(
       return { error: t('tenantNotFound') };
     }
 
-    await planService.canAddAdmin(tenant);
+    // Staff roles count against maxStaff; admin/owner against maxAdmins, as in
+    // the invitation routes.
+    if ((STAFF_ROLES as readonly string[]).includes(parsed.data.role)) {
+      await planService.canAddStaff(tenant);
+    } else {
+      await planService.canAddAdmin(tenant);
+    }
   } catch (err) {
     if (err instanceof ServiceError) {
       return { error: err.message };

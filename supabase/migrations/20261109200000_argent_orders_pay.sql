@@ -117,6 +117,19 @@
 -- les webhooks et le cron aussi. Le declencheur ne juge que `authenticated` et
 -- `anon`, comme `refuser_reecriture_montants_commande`.
 --
+-- ORDRE DE DEPLOIEMENT DES TROIS MIGRATIONS DU 2026-11-09 (obligatoire):
+--   1. 20261109200000 (celle-ci). Sans danger pour l'application en ligne:
+--      elle ne retire l'argent qu'au chef et au serveur (l'ancienne
+--      application laissait encore le chef encaisser: il recevra un refus,
+--      c'est la decision du proprietaire), et elle n'ajoute que
+--      `orders.manage` au serveur. Caissier, gerant, admin et proprietaire
+--      gardent tous leurs gestes;
+--   2. 20261109210000 (purement additive: la table notification_reads);
+--   3. l'application (merge sur main, promotion automatique);
+--   4. 20261109220000, une fois l'application servie (verifier
+--      https://attabl.com/api/version): elle retire aux membres l'ecriture du
+--      drapeau partage, que l'ancienne application utilisait encore.
+--
 -- VERIFICATION: supabase/tests/rls/argent_orders_pay.test.sql (pgTAP, CI).
 --
 -- ROLLBACK (dans cet ordre):
@@ -254,27 +267,25 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- LISTE BLANCHE, comme la section 10 pour `order_items`. Sans `orders.pay`,
+  -- seules ces colonnes peuvent changer: faire avancer la commande (`status`,
+  -- `served_at`), la prendre en charge (`server_id`), et `updated_at` que le
+  -- declencheur update_orders_updated_at reecrit de toute facon. Une premiere
+  -- version listait au contraire les colonnes INTERDITES: toute colonne
+  -- oubliee restait ouverte au serveur par l'API directe, y compris
+  -- `wave_checkout_id` et `orange_money_pay_token`, qui relient un paiement
+  -- mobile a SA commande (les reecrire fait payer une commande par l'argent
+  -- d'une autre). Une colonne ajoutee plus tard est gardee par defaut.
+  -- Les seuls UPDATE applicatifs sous jeton d'employe sans `orders.pay`
+  -- (order-lifecycle: status + served_at; assignment.service: server_id)
+  -- n'ecrivent que ces colonnes.
   IF (
-       NEW.payment_status IS DISTINCT FROM OLD.payment_status
-       OR NEW.payment_method IS DISTINCT FROM OLD.payment_method
-       OR NEW.paid_at IS DISTINCT FROM OLD.paid_at
-       OR NEW.tip_amount IS DISTINCT FROM OLD.tip_amount
-       OR NEW.house_account_id IS DISTINCT FROM OLD.house_account_id
-       OR NEW.is_comp IS DISTINCT FROM OLD.is_comp
+       (to_jsonb(NEW) - ARRAY['status', 'served_at', 'server_id', 'updated_at'])
+         IS DISTINCT FROM
+       (to_jsonb(OLD) - ARRAY['status', 'served_at', 'server_id', 'updated_at'])
+       -- Annuler une note impayee apres avoir pris l'argent est le
+       -- detournement classique: l'annulation reste une operation d'argent.
        OR (NEW.status = 'cancelled' AND OLD.status IS DISTINCT FROM 'cancelled')
-       -- La note de table: deplacer une commande impayee hors de la session
-       -- d'une table la retire de l'addition.
-       OR NEW.session_id IS DISTINCT FROM OLD.session_id
-       OR NEW.table_id IS DISTINCT FROM OLD.table_id
-       OR NEW.table_number IS DISTINCT FROM OLD.table_number
-       -- Champs d'argent que refuser_reecriture_montants_commande ne garde pas.
-       OR NEW.tax_amount IS DISTINCT FROM OLD.tax_amount
-       OR NEW.coupon_id IS DISTINCT FROM OLD.coupon_id
-       OR NEW.cashier_id IS DISTINCT FROM OLD.cashier_id
-       OR NEW.comp_reason IS DISTINCT FROM OLD.comp_reason
-       OR NEW.comped_by IS DISTINCT FROM OLD.comped_by
-       OR NEW.comped_at IS DISTINCT FROM OLD.comped_at
-       OR NEW.comp_amount IS DISTINCT FROM OLD.comp_amount
      )
      -- Jugee sur le restaurant PROPRIETAIRE (OLD), comme les autres gardes.
      AND NOT public.has_tenant_write_permission(OLD.tenant_id, 'orders.pay')

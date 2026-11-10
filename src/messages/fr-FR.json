@@ -2559,7 +2559,7 @@
     "navAuditLogs": "Journal d'audit",
     "roleOwner": "Administrateur général",
     "roleAdmin": "Administrateur",
-    "roleManager": "Gerant",
+    "roleManager": "Gérant",
     "roleStaff": "Personnel",
     "roleKitchen": "Cuisine",
     "roleServer": "Serveur",
@@ -2809,7 +2809,7 @@
     "createdAt": "Créé le",
     "roleOwner": "Administrateur général",
     "roleAdmin": "Administrateur",
-    "roleManager": "Gerant",
+    "roleManager": "Gérant",
     "roleCashier": "Caissier",
     "roleChef": "Chef cuisinier",
     "roleWaiter": "Serveur",
@@ -2826,7 +2826,7 @@
     "newMember": "Nouveau Membre",
     "roleOwnerLabel": "Administrateur général",
     "roleAdminLabel": "Admin",
-    "roleManagerLabel": "Gerant",
+    "roleManagerLabel": "Gérant",
     "roleCashierLabel": "Caissier",
     "roleChefLabel": "Chef",
     "roleWaiterLabel": "Serveur",
@@ -2872,7 +2872,11 @@
     "inviteSentTo": "Invitation envoyée à {email}",
     "inviteEmailNotSent": "Invitation créée, mais l'email n'est pas parti. Renvoyez-la depuis la liste.",
     "invitationResent": "Invitation renvoyée",
-    "invitationCancelled": "Invitation annulée"
+    "invitationCancelled": "Invitation annulée",
+    "durationLessThanHour": "moins d'une heure",
+    "durationHours": "{count, plural, one {# heure} other {# heures}}",
+    "durationDays": "{count, plural, one {# jour} other {# jours}}",
+    "invitationExpired": "Invitation expirée"
   },
   "reports": {
     "title": "Rapports",
@@ -3006,7 +3010,7 @@
     "role": {
       "owner": "Administrateur general",
       "admin": "Administrateur",
-      "manager": "Gerant",
+      "manager": "Gérant",
       "cashier": "Caissier",
       "chef": "Chef Cuisine",
       "waiter": "Serveur"

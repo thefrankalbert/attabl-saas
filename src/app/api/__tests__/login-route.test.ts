@@ -49,14 +49,17 @@ import { POST } from '../login/route';
 import { createClient } from '@/lib/supabase/server';
 
 type AdminRow = {
+  id?: string;
+  is_active?: boolean;
   tenant_id: string;
   is_super_admin: boolean;
   role: string;
   tenants: { slug: string; onboarding_completed: boolean } | null;
 };
 
-function mockSupabase(adminUsers: AdminRow[]) {
+function mockSupabase(adminUsers: AdminRow[], rpcError: unknown = null) {
   return {
+    rpc: vi.fn().mockResolvedValue({ data: null, error: rpcError }),
     auth: {
       signInWithPassword: vi
         .fn()
@@ -102,6 +105,48 @@ describe('POST /api/login redirect routing', () => {
     ]);
     expect(status).toBe(200);
     expect(redirect).toBe('/admin/platform');
+  });
+
+  it('records the login of each active membership (team page "last login")', async () => {
+    const supabase = mockSupabase([
+      {
+        id: 'au-1',
+        tenant_id: 't1',
+        is_super_admin: false,
+        role: 'cashier',
+        tenants: { slug: 'resto', onboarding_completed: true },
+      },
+      {
+        id: 'au-2',
+        tenant_id: 't2',
+        is_super_admin: false,
+        role: 'waiter',
+        is_active: false,
+        tenants: { slug: 'autre', onboarding_completed: true },
+      },
+    ]);
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
+    await POST(buildRequest());
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+    expect(supabase.rpc).toHaveBeenCalledWith('increment_login_count', { admin_user_id: 'au-1' });
+  });
+
+  it('a failed login counter never blocks the login', async () => {
+    const supabase = mockSupabase(
+      [
+        {
+          id: 'au-1',
+          tenant_id: 't1',
+          is_super_admin: false,
+          role: 'owner',
+          tenants: { slug: 'resto', onboarding_completed: true },
+        },
+      ],
+      { message: 'boom' },
+    );
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
+    const res = await POST(buildRequest());
+    expect(res.status).toBe(200);
   });
 
   it('routes an owner of ONE completed tenant straight into its space', async () => {

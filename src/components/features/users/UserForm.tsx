@@ -110,6 +110,7 @@ export default function UserForm({
                 className="pl-9"
                 type="email"
                 placeholder={seg.emailPlaceholder}
+                autoComplete="off"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
@@ -162,6 +163,7 @@ export default function UserForm({
               <Input
                 className="pl-9"
                 placeholder={t('fullNamePlaceholder')}
+                autoComplete="off"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               />
@@ -176,6 +178,7 @@ export default function UserForm({
                 className="pl-9"
                 type="email"
                 placeholder={seg.emailPlaceholder}
+                autoComplete="off"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -190,6 +193,7 @@ export default function UserForm({
                 className="pl-9"
                 type="password"
                 placeholder="********"
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />

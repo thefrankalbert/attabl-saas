@@ -277,6 +277,7 @@ export default function UsersClient({
             <div className="space-y-1.5">
               <Label>{t('fullName')}</Label>
               <Input
+                autoComplete="off"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 className="min-h-[44px]"
@@ -286,6 +287,7 @@ export default function UsersClient({
               <Label>{t('email')}</Label>
               <Input
                 type="email"
+                autoComplete="off"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
                 className="min-h-[44px]"

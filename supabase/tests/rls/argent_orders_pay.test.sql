@@ -19,7 +19,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(51);
+select plan(53);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -403,6 +403,18 @@ select throws_ok(
   '42501',
   null,
   'serveur: ne change PAS le numero de table d une commande (API directe)'
+);
+select throws_ok(
+  $$update public.orders set wave_checkout_id = 'cs_vole'
+    where id = 'f6000000-0000-4000-8000-000000000003'$$,
+  '42501',
+  null,
+  'serveur: ne reecrit PAS le lien de paiement mobile (liste blanche)'
+);
+select lives_ok(
+  $$update public.orders set server_id = null
+    where id = 'f6000000-0000-4000-8000-000000000003'$$,
+  'serveur: prend ou rend une commande (server_id reste permis)'
 );
 
 set local request.jwt.claims = '{"sub":"f2222222-2222-2222-2222-222222222222"}';

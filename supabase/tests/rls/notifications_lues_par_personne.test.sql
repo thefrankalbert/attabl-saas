@@ -99,7 +99,9 @@ select is(
   0,
   'patron: la lecture du serveur ne compte pas pour lui'
 );
--- Un UPDATE refuse par la RLS touche 0 ligne sans lever: on RELIT le drapeau.
+-- Temoin POSITIF du resserrement de 20261109220000: le patron garde le droit
+-- de marquer lue SA notification personnelle. On RELIT le drapeau, car un
+-- UPDATE refuse par la RLS toucherait 0 ligne sans lever d'erreur.
 update public.notifications set read = true
   where id = 'e7000000-0000-4000-8000-000000000002';
 reset role;

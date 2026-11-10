@@ -29,7 +29,10 @@ export default function PendingInvitations({
   onCancel,
 }: PendingInvitationsProps) {
   const t = useTranslations('users');
-  const tc = useTranslations('common');
+  const expiryLabel = (expiresAt: string): string => {
+    const left = timeUntil(expiresAt, t);
+    return left ? t('expiresIn', { time: left }) : t('invitationExpired');
+  };
 
   return (
     <div className="space-y-3">
@@ -67,10 +70,10 @@ export default function PendingInvitations({
                           <RoleIcon className="w-3 h-3" />
                           {roleConfig.label}
                         </div>
-                        <span>{t('sentAgo', { time: timeAgo(invitation.created_at, tc) })}</span>
+                        <span>{t('sentAgo', { time: timeAgo(invitation.created_at, t) })}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {t('expiresIn', { time: timeUntil(invitation.expires_at, tc) })}
+                          {expiryLabel(invitation.expires_at)}
                         </span>
                       </div>
                     </div>

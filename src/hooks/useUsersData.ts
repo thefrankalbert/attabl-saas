@@ -82,33 +82,35 @@ export interface UseUsersDataReturn {
 
 // --- Helpers -----------------------------------------------
 
+/**
+ * Bare durations ("2 jours", "3 heures"): the sentence around them
+ * ("Envoyee il y a {time}", "Expire dans {time}") carries the direction.
+ * Keys live in the `users` namespace.
+ */
+function formatDuration(
+  diffMs: number,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (diffHours < 1) return t('durationLessThanHour');
+  if (diffHours < 24) return t('durationHours', { count: diffHours });
+  return t('durationDays', { count: Math.floor(diffHours / 24) });
+}
+
 export function timeAgo(
   dateStr: string,
   t: (key: string, values?: Record<string, number>) => string,
 ): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return t('lessThanHour');
-  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
-  const diffDays = Math.floor(diffHours / 24);
-  return t('daysAgo', { count: diffDays });
+  return formatDuration(Date.now() - new Date(dateStr).getTime(), t);
 }
 
+/** Time left before `dateStr`, or null once it has passed. */
 export function timeUntil(
   dateStr: string,
   t: (key: string, values?: Record<string, number>) => string,
-): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = date.getTime() - now.getTime();
-  if (diffMs <= 0) return t('expired');
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return t('lessThanHour');
-  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
-  const diffDays = Math.floor(diffHours / 24);
-  return t('daysAgo', { count: diffDays });
+): string | null {
+  const diffMs = new Date(dateStr).getTime() - Date.now();
+  return diffMs <= 0 ? null : formatDuration(diffMs, t);
 }
 
 // --- Hook --------------------------------------------------

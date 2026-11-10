@@ -2872,7 +2872,11 @@
     "inviteSentTo": "Invitation sent to {email}",
     "inviteEmailNotSent": "Invitation created, but the email did not send. Resend it from the list.",
     "invitationResent": "Invitation resent",
-    "invitationCancelled": "Invitation cancelled"
+    "invitationCancelled": "Invitation cancelled",
+    "durationLessThanHour": "less than an hour",
+    "durationHours": "{count, plural, one {# hour} other {# hours}}",
+    "durationDays": "{count, plural, one {# day} other {# days}}",
+    "invitationExpired": "Invitation expired"
   },
   "reports": {
     "title": "Reports",

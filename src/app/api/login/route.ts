@@ -140,9 +140,21 @@ export async function POST(request: Request) {
     const { data: adminUsers } = await supabase
       .from('admin_users')
       .select(
-        'tenant_id, is_super_admin, role, is_active, deleted_at, tenants(slug, onboarding_completed, created_at, deleted_at)',
+        'id, tenant_id, is_super_admin, role, is_active, deleted_at, tenants(slug, onboarding_completed, created_at, deleted_at)',
       )
       .eq('user_id', authData.user.id);
+
+    // Record the login, as the OAuth callback does. Without it every member who
+    // signs in with a password stayed "Never logged in" on the team page.
+    // Best effort: a failed counter must never block a login.
+    const membres = (adminUsers ?? []).filter((m) => m.is_active !== false && !m.deleted_at);
+    const suivis = await Promise.allSettled(
+      membres.map((m) => supabase.rpc('increment_login_count', { admin_user_id: m.id })),
+    );
+    for (const suivi of suivis) {
+      const echec = suivi.status === 'rejected' ? suivi.reason : suivi.value.error;
+      if (echec) logger.warn('Login tracking failed', { error: String(echec) });
+    }
 
     // 4. Determine redirect.
     //

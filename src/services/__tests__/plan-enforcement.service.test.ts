@@ -66,6 +66,18 @@ describe('canAddAdmin', () => {
     await expect(service.canAddAdmin(makeTenant())).rejects.toThrow(ServiceError);
   });
 
+  it('counts only owner/admin seats, not staff', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 0, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await service.canAddAdmin(makeTenant());
+    const chain = (supabase.from as ReturnType<typeof vi.fn>).mock.results[0].value as {
+      in: ReturnType<typeof vi.fn>;
+    };
+    expect(chain.in).toHaveBeenCalledWith('role', ['owner', 'admin']);
+  });
+
   it('uses pro limits during active trial', async () => {
     const trialTenant = makeTenant({
       subscription_status: 'trial',
