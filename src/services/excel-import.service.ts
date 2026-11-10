@@ -1,7 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
-import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-import';
+import {
+  bulkImportMenuRows,
+  type MenuBulkImportOptions,
+  type MenuBulkImportRow,
+} from '@/lib/menu-bulk-import';
 import { parseExcelBuffer } from './excel-import/parser';
 import { generateExcelTemplate } from './excel-import/template';
 import type { ImportResult, ImportRowError, ParsedRow } from './excel-import/types';
@@ -15,8 +19,18 @@ export interface ExcelImportService {
   groupByCategory(
     rows: ParsedRow[],
   ): Map<string, { categoryEn: string | null; items: ParsedRow[] }>;
-  importToDatabase(tenantId: string, menuId: string, rows: ParsedRow[]): Promise<ImportResult>;
-  importFromExcel(tenantId: string, menuId: string, buffer: ArrayBuffer): Promise<ImportResult>;
+  importToDatabase(
+    tenantId: string,
+    menuId: string,
+    rows: ParsedRow[],
+    options?: MenuBulkImportOptions,
+  ): Promise<ImportResult>;
+  importFromExcel(
+    tenantId: string,
+    menuId: string,
+    buffer: ArrayBuffer,
+    options?: MenuBulkImportOptions,
+  ): Promise<ImportResult>;
   generateTemplate(): Promise<Buffer>;
 }
 
@@ -74,7 +88,7 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
      * For each category:
      * 1. Checks if the category already exists (by name + tenant_id)
      * 2. Creates it if not
-     * 3. Inserts all menu items under that category
+     * 3. Creates new items, updates the ones already present (same category + name)
      *
      * Returns a summary of the import operation.
      */
@@ -82,6 +96,7 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
       tenantId: string,
       menuId: string,
       rows: ParsedRow[],
+      options: MenuBulkImportOptions = {},
     ): Promise<ImportResult> {
       const grouped = this.groupByCategory(rows);
       const bulkGrouped = new Map<
@@ -107,12 +122,13 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
         });
       }
 
-      const bulk = await bulkImportMenuRows(supabase, tenantId, menuId, bulkGrouped);
+      const bulk = await bulkImportMenuRows(supabase, tenantId, menuId, bulkGrouped, options);
 
       return {
         categoriesCreated: bulk.categoriesCreated,
         categoriesExisting: bulk.categoriesExisting,
         itemsCreated: bulk.itemsCreated,
+        itemsUpdated: bulk.itemsUpdated,
         itemsSkipped: bulk.itemsSkipped,
         errors: bulk.errors.map((e) => ({ row: e.key, message: e.message })),
       };
@@ -130,6 +146,7 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
       tenantId: string,
       menuId: string,
       buffer: ArrayBuffer,
+      options: MenuBulkImportOptions = {},
     ): Promise<ImportResult> {
       logger.info('Starting Excel menu import', { tenantId, menuId });
 
@@ -140,16 +157,20 @@ export function createExcelImportService(supabase: SupabaseClient): ExcelImportS
           categoriesCreated: 0,
           categoriesExisting: 0,
           itemsCreated: 0,
+          itemsUpdated: 0,
           itemsSkipped: parseErrors.length,
           errors: parseErrors,
         };
       }
 
       if (rows.length === 0) {
-        throw new ServiceError('No valid rows found in the Excel file', 'VALIDATION');
+        throw new ServiceError(
+          'Aucun plat trouve sous la ligne d en-tetes du fichier',
+          'VALIDATION',
+        );
       }
 
-      const result = await this.importToDatabase(tenantId, menuId, rows);
+      const result = await this.importToDatabase(tenantId, menuId, rows, options);
 
       // Merge parse errors into the final result
       result.errors = [...parseErrors, ...result.errors];

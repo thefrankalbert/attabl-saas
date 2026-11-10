@@ -21,6 +21,7 @@ import type { Menu } from '@/types/admin.types';
 interface ImportResult {
   categoriesCreated: number;
   itemsCreated: number;
+  itemsUpdated: number;
   itemsSkipped: number;
   errors: Array<{ row: number; message: string }>;
 }
@@ -64,12 +65,9 @@ export default function MenuImportExcel({
       toast({ title: t('maxFileSize'), variant: 'destructive' });
       return;
     }
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-    ];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.xlsx?$/i)) {
-      toast({ title: t('importError'), variant: 'destructive' });
+    // .xlsx uniquement: l'ancien format .xls n'est pas lisible par le serveur.
+    if (!/\.xlsx$/i.test(file.name)) {
+      toast({ title: t('invalidFormat'), variant: 'destructive' });
       return;
     }
     setImportFile(file);
@@ -115,20 +113,28 @@ export default function MenuImportExcel({
         setImportResult({
           categoriesCreated: 0,
           itemsCreated: 0,
+          itemsUpdated: 0,
           itemsSkipped: 0,
           errors: data.errors || [],
         });
         return;
       }
 
-      setImportResult({
+      const result: ImportResult = {
         categoriesCreated: data.categoriesCreated ?? 0,
         itemsCreated: data.itemsCreated ?? 0,
+        itemsUpdated: data.itemsUpdated ?? 0,
         itemsSkipped: data.itemsSkipped ?? 0,
         errors: data.errors ?? [],
-      });
+      };
+      setImportResult(result);
 
-      toast({ title: t('importSuccess') });
+      // Un "succes" n'est annonce que si au moins un plat a ete cree ou mis a jour.
+      if (result.itemsCreated + result.itemsUpdated === 0) {
+        toast({ title: t('importNothing'), variant: 'destructive' });
+        return;
+      }
+      toast({ title: result.itemsSkipped > 0 ? t('importPartial') : t('importSuccess') });
       onImportComplete();
     } catch {
       toast({ title: t('importError'), variant: 'destructive' });
@@ -185,7 +191,7 @@ export default function MenuImportExcel({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".xlsx,.xls"
+          accept=".xlsx"
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files?.[0])}
         />
@@ -220,6 +226,12 @@ export default function MenuImportExcel({
             <div className="flex items-center gap-2 text-sm text-status-success">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('itemsCreated', { count: importResult.itemsCreated })}
+            </div>
+          )}
+          {importResult.itemsUpdated > 0 && (
+            <div className="flex items-center gap-2 text-sm text-status-success">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {t('itemsUpdated', { count: importResult.itemsUpdated })}
             </div>
           )}
           {importResult.itemsSkipped > 0 && (

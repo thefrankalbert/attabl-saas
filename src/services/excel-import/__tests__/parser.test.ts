@@ -40,10 +40,29 @@ describe('parseExcelBuffer - refus du fichier entier', () => {
     await expect(parseExcelBuffer(tampon)).rejects.toMatchObject({ code: 'VALIDATION' });
   });
 
-  it('refuse un fichier sans aucune ligne de donnees', async () => {
+  it('rend zero ligne pour un fichier sans aucune ligne de donnees', async () => {
+    // Le refus "aucun plat" est porte par le service (importFromExcel).
     lireFeuille.mockResolvedValue([ENTETES]);
 
-    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/at least a header row/);
+    await expect(parseExcelBuffer(tampon)).resolves.toEqual({ rows: [], errors: [] });
+  });
+
+  it('trouve les en-tetes sous la bande de titre du modele ATTABL', async () => {
+    // Regression: le modele telecharge (titre en ligne 1, sous-titre en ligne
+    // 2, en-tetes en ligne 4) etait refuse par l'import qui lisait la ligne 1.
+    lireFeuille.mockResolvedValue([
+      Array(6).fill("Ma carte - modele d'import ATTABL"),
+      Array(6).fill('Une ligne par plat.'),
+      [],
+      ENTETES,
+      ['Plats', 'Poulet DG', '', 6500, 'Oui', 'Non'],
+    ]);
+
+    const { rows, errors } = await parseExcelBuffer(tampon);
+
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ name: 'Poulet DG', price: 6500, rowNumber: 5 });
   });
 
   it('nomme les colonnes obligatoires manquantes', async () => {
@@ -54,9 +73,9 @@ describe('parseExcelBuffer - refus du fichier entier', () => {
       ['Pizza', 'bonne'],
     ]);
 
-    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Missing required columns/);
-    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/category/);
-    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/price/);
+    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Colonnes obligatoires introuvables/);
+    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Categorie/);
+    await expect(parseExcelBuffer(tampon)).rejects.toThrow(/Prix/);
   });
 
   it('laisse remonter une panne de lecture qui n est pas un classeur vide', async () => {
@@ -111,7 +130,7 @@ describe('parseExcelBuffer - separateur de milliers (defaut corrige)', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/positive/i);
+    expect(errors[0].message).toMatch(/superieur a zero/i);
   });
 });
 
@@ -150,7 +169,7 @@ describe('parseExcelBuffer - ligne par ligne', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/price is required/i);
+    expect(errors[0].message).toMatch(/prix manquant ou illisible/i);
   });
 
   it('saute les lignes entierement vides sans les compter en erreur', async () => {
@@ -174,7 +193,7 @@ describe('parseExcelBuffer - ligne par ligne', () => {
     const { rows, errors } = await parseExcelBuffer(tampon);
 
     expect(rows).toHaveLength(0);
-    expect(errors[0].message).toMatch(/dish name/i);
+    expect(errors[0].message).toMatch(/nom du plat obligatoire/i);
   });
 
   it('nettoie les espaces autour des textes', async () => {
@@ -196,15 +215,15 @@ describe('parseExcelBuffer - ligne par ligne', () => {
 });
 
 describe('parseExcelBuffer - disponibilite et mise en avant', () => {
-  it('considere un plat disponible par defaut', async () => {
-    // Un plat importe doit etre vendable sans action supplementaire; c'est
-    // l'inverse pour la mise en avant, qui est un choix deliberé.
+  it('rend null pour une case vide (defaut a la creation, valeur gardee a la mise a jour)', async () => {
+    // Le defaut (disponible, pas en vedette) est applique a la creation par
+    // bulkImportMenuRows; pour un plat existant, une case vide ne change rien.
     feuille([['Plats', 'Poulet', '', '1000', '', '']]);
 
     const { rows } = await parseExcelBuffer(tampon);
 
-    expect(rows[0].isAvailable).toBe(true);
-    expect(rows[0].isFeatured).toBe(false);
+    expect(rows[0].isAvailable).toBeNull();
+    expect(rows[0].isFeatured).toBeNull();
   });
 
   it('comprend les reponses francaises et anglaises', async () => {

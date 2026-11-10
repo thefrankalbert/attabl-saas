@@ -31,6 +31,11 @@ export interface StyledSheetInput {
   subtitle?: string;
   columns: StyledColumn[];
   rows: Array<Array<string | number | null | undefined>>;
+  /**
+   * Optional "how to fill" guide, written on a SECOND sheet (one line per entry).
+   * The data sheet stays first: importers read the first sheet only.
+   */
+  guide?: { sheetName: string; lines: string[] };
 }
 
 const thinBorder = { style: 'thin' as const, color: { argb: LINE } };
@@ -100,6 +105,24 @@ export async function buildStyledWorkbook(input: StyledSheetInput): Promise<Buff
       if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUBTLE } };
     });
   });
+
+  if (input.guide) {
+    const guide = wb.addWorksheet(input.guide.sheetName);
+    guide.getColumn(1).width = 110;
+    input.guide.lines.forEach((line, i) => {
+      const cell = guide.getCell(i + 1, 1);
+      cell.value = line;
+      cell.alignment = { vertical: 'top', wrapText: true };
+      // Lignes de titre (sans retrait) en gras, le detail en texte normal.
+      const isHeading = i === 0 || (line !== '' && !line.startsWith(' ') && line.endsWith(':'));
+      cell.font = {
+        name: 'Calibri',
+        size: i === 0 ? 15 : 11,
+        bold: isHeading,
+        color: { argb: isHeading ? INK : MUTED },
+      };
+    });
+  }
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);

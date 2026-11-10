@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import {
+  findHeaderRow,
   normalizeHeader,
   mapHeaders,
   parseNumericCell,
@@ -138,23 +139,22 @@ export function createRecipeImportService(supabase: SupabaseClient): RecipeImpor
         );
       }
 
-      const headerRow = (rawData[0] as unknown[]).map((c) => (c == null ? '' : String(c)));
-      const headerMapping = mapHeaders(RECIPE_ALIASES, headerRow);
-      const mappedFields = new Set(headerMapping.values());
-
+      // Le modele ATTABL place un titre au-dessus des en-tetes (findHeaderRow).
       const required = ['dishName', 'ingredientName', 'unit', 'quantity'];
-      const missing = required.filter((f) => !mappedFields.has(f));
-      if (missing.length > 0) {
+      const headerIndex = findHeaderRow(RECIPE_ALIASES, rawData, required);
+      if (headerIndex === -1) {
         throw new ServiceError(
           'Colonnes obligatoires manquantes. Colonnes attendues : Plat, Ingredient, Unite, Quantite, Notes',
           'VALIDATION',
         );
       }
 
+      const headerRow = (rawData[headerIndex] ?? []).map((c) => (c == null ? '' : String(c)));
+      const headerMapping = mapHeaders(RECIPE_ALIASES, headerRow);
       const rows: ParsedRecipeRow[] = [];
       const errors: ImportRowError[] = [];
 
-      for (let i = 1; i < rawData.length; i++) {
+      for (let i = headerIndex + 1; i < rawData.length; i++) {
         const cells = rawData[i] as unknown[];
         if (isEmptyRow(cells)) continue;
 

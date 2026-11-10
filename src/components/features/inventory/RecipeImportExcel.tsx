@@ -50,12 +50,9 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
       toast({ title: t('maxFileSize'), variant: 'destructive' });
       return;
     }
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-    ];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.xlsx?$/i)) {
-      toast({ title: t('importError'), variant: 'destructive' });
+    // .xlsx uniquement: l'ancien format .xls n'est pas lisible par le serveur.
+    if (!/\.xlsx$/i.test(file.name)) {
+      toast({ title: t('invalidFormat'), variant: 'destructive' });
       return;
     }
     setImportFile(file);
@@ -107,15 +104,21 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
         return;
       }
 
-      setImportResult({
+      const result: RecipeImportResult = {
         recipesCreated: data.recipesCreated ?? 0,
         recipesUpdated: data.recipesUpdated ?? 0,
         ingredientsCreated: data.ingredientsCreated ?? 0,
         itemsSkipped: data.itemsSkipped ?? 0,
         errors: data.errors ?? [],
-      });
+      };
+      setImportResult(result);
 
-      toast({ title: t('importSuccess') });
+      // Pas de "succes" annonce si aucune ligne n'a ete creee ni mise a jour.
+      if (result.recipesCreated + result.recipesUpdated === 0) {
+        toast({ title: t('importNothing'), variant: 'destructive' });
+        return;
+      }
+      toast({ title: result.itemsSkipped > 0 ? t('importPartial') : t('importSuccess') });
       onImportComplete();
     } catch {
       toast({ title: t('importError'), variant: 'destructive' });
@@ -153,7 +156,7 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
         <input
           ref={fileInputRef}
           type="file"
-          accept=".xlsx,.xls"
+          accept=".xlsx"
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files?.[0])}
         />

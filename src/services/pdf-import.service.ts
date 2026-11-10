@@ -22,6 +22,7 @@ interface PdfImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
+  itemsUpdated: number;
   itemsSkipped: number;
   errors: Array<{ index: number; message: string }>;
 }
@@ -216,8 +217,8 @@ ${pdfText.substring(0, 15000)}
     /**
      * Imports extracted PDF items into the database.
      *
-     * Groups items by category, creates categories if needed,
-     * and inserts menu_items with proper display_order.
+     * Groups items by category, creates categories if needed, creates new
+     * menu_items and updates those already present (same category + name).
      */
     async importItems(
       tenantId: string,
@@ -229,6 +230,7 @@ ${pdfText.substring(0, 15000)}
           categoriesCreated: 0,
           categoriesExisting: 0,
           itemsCreated: 0,
+          itemsUpdated: 0,
           itemsSkipped: 0,
           errors: [],
         };
@@ -262,8 +264,10 @@ ${pdfText.substring(0, 15000)}
               name: item.name,
               description: item.description,
               price: item.price,
-              isAvailable: true,
-              isFeatured: false,
+              // null: valeurs par defaut a la creation, inchangees pour un plat deja
+              // present (le PDF ne dit rien de la disponibilite).
+              isAvailable: null,
+              isFeatured: null,
             };
           }),
         });
@@ -275,6 +279,7 @@ ${pdfText.substring(0, 15000)}
         categoriesCreated: bulk.categoriesCreated,
         categoriesExisting: bulk.categoriesExisting,
         itemsCreated: bulk.itemsCreated,
+        itemsUpdated: bulk.itemsUpdated,
         itemsSkipped: bulk.itemsSkipped,
         errors: bulk.errors.map((e) => ({ index: e.key, message: e.message })),
       };

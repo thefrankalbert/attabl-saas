@@ -11,10 +11,12 @@ import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-sessio
 import type { Tenant } from '@/types/admin.types';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_EXTENSIONS = ['.xlsx', '.xls'];
+// .xlsx uniquement: exceljs ne lit pas l'ancien format .xls (Excel 97-2003).
+const ALLOWED_EXTENSIONS = ['.xlsx'];
 const ALLOWED_MIME_TYPES = [
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-  'application/vnd.ms-excel', // .xls
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Certains navigateurs n'envoient aucun type pour un .xlsx: l'extension suffit alors.
+  '',
 ];
 
 export async function POST(request: Request) {
@@ -71,7 +73,10 @@ export async function POST(request: Request) {
 
     if (!hasValidExtension || !hasValidMimeType) {
       return NextResponse.json(
-        { error: 'Format de fichier invalide. Seuls les fichiers .xlsx et .xls sont acceptes.' },
+        {
+          error:
+            'Format de fichier invalide. Enregistrez votre fichier au format .xlsx (Excel > Enregistrer sous > Classeur Excel).',
+        },
         { status: 400 },
       );
     }
@@ -112,14 +117,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Menu non trouve' }, { status: 404 });
     }
 
-    // 9. Check plan limits before import
+    // 9. Plan limit: only NEW items count, updates of existing items stay allowed.
     const enforcement = createPlanEnforcementService(supabase);
-    await enforcement.canAddMenuItem(tenant as Tenant);
+    const maxNewItems = await enforcement.remainingItemSlots(tenant as Tenant);
 
     // 10. Read file buffer and call service
     const buffer = await file.arrayBuffer();
     const importService = createExcelImportService(supabase);
-    const result = await importService.importFromExcel(tenant.id, menuId, buffer);
+    const result = await importService.importFromExcel(tenant.id, menuId, buffer, {
+      maxNewItems,
+    });
 
     revalidateTag(CACHE_TAG_MENUS, 'max');
 

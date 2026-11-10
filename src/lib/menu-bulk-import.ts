@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 
 const BULK_INSERT_CHUNK = 50;
+const UPDATE_CONCURRENCY = 10;
 
 export interface MenuBulkImportRow {
   rowKey: number;
@@ -12,25 +13,23 @@ export interface MenuBulkImportRow {
   description?: string | null;
   descriptionEn?: string | null;
   price: number;
-  isAvailable: boolean;
-  isFeatured: boolean;
+  /** null = non renseigne: defaut a la creation, valeur actuelle gardee a la mise a jour. */
+  isAvailable: boolean | null;
+  isFeatured: boolean | null;
 }
 
 export interface MenuBulkImportResult {
   categoriesCreated: number;
   categoriesExisting: number;
   itemsCreated: number;
+  itemsUpdated: number;
   itemsSkipped: number;
   errors: Array<{ key: number; message: string }>;
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+export interface MenuBulkImportOptions {
+  /** Nombre de NOUVEAUX plats autorises par le forfait. Absent = pas de limite. */
+  maxNewItems?: number;
 }
 
 type CategoryGroup = {
@@ -38,20 +37,35 @@ type CategoryGroup = {
   items: MenuBulkImportRow[];
 };
 
+/** Cle d'identite d'un plat: meme categorie + meme nom (casse et espaces ignores). */
+function itemKey(categoryId: string, name: string): string {
+  return `${categoryId}|${name.trim().replace(/\s+/g, ' ').toLowerCase()}`;
+}
+
 /**
- * Bulk menu import: 2-3 DB round-trips per category group instead of per row.
- * Used by Excel and PDF import services.
+ * Bulk menu import, used by the Excel and PDF import services.
+ *
+ * Un plat deja present dans la carte (meme categorie, meme nom) est MIS A JOUR
+ * au lieu d'etre cree une deuxieme fois: recharger son fichier corrige les
+ * fiches au lieu de dupliquer toute la carte. Les champs optionnels laisses vides
+ * dans le fichier ne remplacent pas la valeur existante.
+ *
+ * Seules les colonnes reelles de `menu_items` sont ecrites. Une colonne inconnue
+ * fait refuser le lot entier par PostgREST (PGRST204): c'est ce qui bloquait
+ * tout import avec `slug` et `display_order`, absentes de la table.
  */
 export async function bulkImportMenuRows(
   supabase: SupabaseClient,
   tenantId: string,
   menuId: string,
   grouped: Map<string, CategoryGroup>,
+  options: MenuBulkImportOptions = {},
 ): Promise<MenuBulkImportResult> {
   const result: MenuBulkImportResult = {
     categoriesCreated: 0,
     categoriesExisting: 0,
     itemsCreated: 0,
+    itemsUpdated: 0,
     itemsSkipped: 0,
     errors: [],
   };
@@ -59,6 +73,11 @@ export async function bulkImportMenuRows(
   if (grouped.size === 0) {
     return result;
   }
+
+  const skip = (key: number, message: string) => {
+    result.errors.push({ key, message });
+    result.itemsSkipped += 1;
+  };
 
   const { data: existingCategories, error: catListError } = await supabase
     .from('categories')
@@ -117,11 +136,7 @@ export async function bulkImportMenuRows(
       logger.error('Bulk import: failed to create categories', createCatError, { tenantId });
       for (const [, group] of createMeta) {
         for (const item of group.items) {
-          result.errors.push({
-            key: item.rowKey,
-            message: 'Failed to create categories batch',
-          });
-          result.itemsSkipped += 1;
+          skip(item.rowKey, 'Impossible de creer la categorie');
         }
       }
       return result;
@@ -133,92 +148,111 @@ export async function bulkImportMenuRows(
     }
   }
 
+  // Plats deja presents (non supprimes) dans les categories visees.
   const categoryIds = [...new Set(categoryByName.values())];
-  const itemCountByCategory = new Map<string, number>();
-
+  const existingItemId = new Map<string, string>();
   if (categoryIds.length > 0) {
-    const { data: existingItems, error: countError } = await supabase
+    const { data: existingItems, error: listError } = await supabase
       .from('menu_items')
-      .select('category_id')
+      .select('id, category_id, name')
       .eq('tenant_id', tenantId)
-      .in('category_id', categoryIds);
+      .in('category_id', categoryIds)
+      .is('deleted_at', null);
 
-    if (countError) {
-      logger.error('Bulk import: failed to count menu items', countError, { tenantId });
-    } else {
-      for (const row of existingItems ?? []) {
-        const cid = row.category_id as string;
-        itemCountByCategory.set(cid, (itemCountByCategory.get(cid) ?? 0) + 1);
-      }
+    if (listError) {
+      // Sans la liste on ne peut pas distinguer creation et mise a jour: creer
+      // a l'aveugle dupliquerait la carte. On arrete proprement.
+      logger.error('Bulk import: failed to list menu items', listError, { tenantId });
+      throw listError;
+    }
+    for (const row of existingItems ?? []) {
+      existingItemId.set(itemKey(row.category_id as string, row.name as string), row.id as string);
     }
   }
 
-  const pendingInserts: Array<Record<string, unknown>> = [];
-  const pendingKeys: number[] = [];
-
-  const flushInserts = async () => {
-    if (pendingInserts.length === 0) {
-      return;
-    }
-    const batch = pendingInserts.splice(0, pendingInserts.length);
-    const keys = pendingKeys.splice(0, pendingKeys.length);
-
-    const { error: insertError } = await supabase.from('menu_items').insert(batch);
-    if (insertError) {
-      logger.error('Bulk import: menu_items batch failed', insertError, { tenantId });
-      for (let i = 0; i < keys.length; i++) {
-        result.errors.push({
-          key: keys[i],
-          message: `Failed to insert items batch: ${insertError.message}`,
-        });
-        result.itemsSkipped += 1;
-      }
-      return;
-    }
-    result.itemsCreated += keys.length;
-  };
+  const inserts: Array<{ key: number; row: Record<string, unknown> }> = [];
+  const updates: Array<{ key: number; id: string; patch: Record<string, unknown> }> = [];
+  const seenInFile = new Set<string>();
+  let newItemsAllowed = options.maxNewItems ?? Number.POSITIVE_INFINITY;
 
   for (const [categoryName, group] of grouped) {
     const categoryId = categoryByName.get(categoryName);
     if (!categoryId) {
       for (const item of group.items) {
-        result.errors.push({
-          key: item.rowKey,
-          message: `Category "${categoryName}" not found after import`,
-        });
-        result.itemsSkipped += 1;
+        skip(item.rowKey, `Categorie "${categoryName}" introuvable apres creation`);
       }
       continue;
     }
 
-    let nextItemOrder = itemCountByCategory.get(categoryId) ?? 0;
-
     for (const item of group.items) {
-      pendingInserts.push({
-        tenant_id: tenantId,
-        category_id: categoryId,
-        name: item.name,
-        name_en: item.nameEn || null,
-        description: item.description || null,
-        description_en: item.descriptionEn || null,
-        price: item.price,
-        is_available: item.isAvailable,
-        is_featured: item.isFeatured,
-        slug: slugify(item.name),
-        display_order: nextItemOrder,
-      });
-      pendingKeys.push(item.rowKey);
-      nextItemOrder += 1;
-
-      if (pendingInserts.length >= BULK_INSERT_CHUNK) {
-        await flushInserts();
+      const key = itemKey(categoryId, item.name);
+      if (seenInFile.has(key)) {
+        skip(item.rowKey, `"${item.name}" apparait deux fois dans la categorie "${categoryName}"`);
+        continue;
       }
-    }
+      seenInFile.add(key);
 
-    itemCountByCategory.set(categoryId, nextItemOrder);
+      const existingId = existingItemId.get(key);
+      if (existingId) {
+        const patch: Record<string, unknown> = { name: item.name, price: item.price };
+        if (item.nameEn) patch.name_en = item.nameEn;
+        if (item.description) patch.description = item.description;
+        if (item.descriptionEn) patch.description_en = item.descriptionEn;
+        if (item.isAvailable != null) patch.is_available = item.isAvailable;
+        if (item.isFeatured != null) patch.is_featured = item.isFeatured;
+        updates.push({ key: item.rowKey, id: existingId, patch });
+        continue;
+      }
+
+      if (newItemsAllowed <= 0) {
+        skip(item.rowKey, 'Limite de plats de votre forfait atteinte');
+        continue;
+      }
+      newItemsAllowed -= 1;
+      inserts.push({
+        key: item.rowKey,
+        row: {
+          tenant_id: tenantId,
+          category_id: categoryId,
+          name: item.name,
+          name_en: item.nameEn || null,
+          description: item.description || null,
+          description_en: item.descriptionEn || null,
+          price: item.price,
+          is_available: item.isAvailable ?? true,
+          is_featured: item.isFeatured ?? false,
+        },
+      });
+    }
   }
 
-  await flushInserts();
+  for (let i = 0; i < inserts.length; i += BULK_INSERT_CHUNK) {
+    const batch = inserts.slice(i, i + BULK_INSERT_CHUNK);
+    const { error } = await supabase.from('menu_items').insert(batch.map((b) => b.row));
+    if (error) {
+      logger.error('Bulk import: menu_items batch failed', error, { tenantId });
+      for (const b of batch) skip(b.key, 'Enregistrement du plat impossible');
+    } else {
+      result.itemsCreated += batch.length;
+    }
+  }
+
+  for (let i = 0; i < updates.length; i += UPDATE_CONCURRENCY) {
+    const batch = updates.slice(i, i + UPDATE_CONCURRENCY);
+    const outcomes = await Promise.all(
+      batch.map((u) =>
+        supabase.from('menu_items').update(u.patch).eq('id', u.id).eq('tenant_id', tenantId),
+      ),
+    );
+    outcomes.forEach(({ error }, j) => {
+      if (error) {
+        logger.error('Bulk import: menu_items update failed', error, { tenantId });
+        skip(batch[j].key, 'Mise a jour du plat impossible');
+      } else {
+        result.itemsUpdated += 1;
+      }
+    });
+  }
 
   logger.info('Bulk menu import completed', {
     tenantId,
@@ -226,6 +260,7 @@ export async function bulkImportMenuRows(
     categoriesCreated: result.categoriesCreated,
     categoriesExisting: result.categoriesExisting,
     itemsCreated: result.itemsCreated,
+    itemsUpdated: result.itemsUpdated,
     itemsSkipped: result.itemsSkipped,
     errorCount: result.errors.length,
   });
