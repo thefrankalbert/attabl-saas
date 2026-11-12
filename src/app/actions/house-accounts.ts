@@ -7,6 +7,7 @@ import {
   createOrderAnnotationService,
   type HouseAccountBalance,
 } from '@/services/order-annotation.service';
+import { createHouseAccountSettlementService } from '@/services/house-account-settlement.service';
 import { ServiceError } from '@/services/errors';
 import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES, ORDER_MONEY_ROLES, ORDER_PAY_PERMISSIONS } from '@/lib/admin-roles';
@@ -172,7 +173,9 @@ export async function actionSettleHouseAccount(
     // actions sont appelees en direct par l'interface. Voir
     // assert-tenant-serving.ts.
     await assertTenantServing(parsedTenant.data);
-    await createOrderAnnotationService(supabase).settleHouseAccount(
+    // Encaisse le reste du de chaque commande au registre, PUIS ferme
+    // l'ardoise. Voir house-account-settlement.service.ts.
+    await createHouseAccountSettlementService(supabase).settle(
       parsed.data.accountId,
       parsedTenant.data,
       { settledBy: adminUserId },

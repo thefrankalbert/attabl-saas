@@ -119,7 +119,15 @@ export function TablesClient({
 
   const handleAddZone = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!zoneName.trim() || !zonePrefix.trim()) return;
+    // Un nom vide ou fait d'espaces abandonnait sans un mot (audit 2026-11-10, C-060).
+    if (!zoneName.trim() || !zonePrefix.trim()) {
+      toast({
+        title: tc('required'),
+        description: t('zoneNameAndPrefixRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setSavingZone(true);
     const result = await actionCreateZone(
@@ -155,7 +163,10 @@ export function TablesClient({
   };
 
   const handleSaveZoneName = async (zoneId: string) => {
-    if (!editingZoneName.trim()) return;
+    if (!editingZoneName.trim()) {
+      toast({ title: tc('nameRequired'), variant: 'destructive' });
+      return;
+    }
 
     const result = await actionUpdateZoneName(tenantId, zoneId, editingZoneName.trim());
     if (result.error) {
@@ -272,7 +283,10 @@ export function TablesClient({
   };
 
   const handleSaveTableName = async (tableId: string) => {
-    if (!editingDisplayName.trim()) return;
+    if (!editingDisplayName.trim()) {
+      toast({ title: tc('nameRequired'), variant: 'destructive' });
+      return;
+    }
 
     const result = await actionUpdateTableDisplayName(tenantId, tableId, editingDisplayName.trim());
     if (result.error) {

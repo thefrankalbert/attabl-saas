@@ -1,8 +1,6 @@
 import { getTenant } from '@/lib/cache';
-import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import TenantNotFound from '@/components/admin/TenantNotFound';
-import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import ReportsClient from '@/components/admin/ReportsClient';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
@@ -23,23 +21,11 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
     return <TenantNotFound />;
   }
 
-  // Auth + role check: owner, admin, or manager only
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirectToLogin();
-  }
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenant.id)
-    .single();
-  if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
-    redirectToUnauthorized();
-  }
+  // L'acces est decide UNE fois, par requireAdminPermission ci-dessus: session,
+  // appartenance active, puis droit `reports.view` avec les surcharges du
+  // proprietaire. Une seconde liste de roles ecrite en dur refusait ici le
+  // caissier a qui le proprietaire avait donne ce droit: le lien Rapports
+  // apparaissait dans son menu et menait a un refus (audit 2026-11-10, C-071).
 
   // Plan gate: sales reports + best sellers are Pro+ (see pricing-data.ts).
   const hasReports = canAccessFeature(

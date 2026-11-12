@@ -126,6 +126,13 @@ export function useInventoryActions(tenantId: string) {
       return;
     }
 
+    // Une valeur negative etait refusee par le serveur, mais l'ecran ne
+    // montrait que "Erreur", sans dire quoi corriger (audit 2026-11-10, C-043).
+    if ([formStock, formMinAlert, formCostPerUnit].some((v) => parseFloat(v) < 0)) {
+      toast({ title: t('negativeNotAllowed'), variant: 'destructive' });
+      return;
+    }
+
     // Purchase-unit config (#15): empty label = bought in base unit (identity).
     const purchaseUnit = formPurchaseUnit.trim() || null;
     const parsedUpp = parseFloat(formUnitsPerPurchase);
@@ -193,6 +200,11 @@ export function useInventoryActions(tenantId: string) {
   const handleAdjust = async () => {
     if (isSubmitting) return;
     if (!selectedIngredient || !adjustQty) return;
+    // Le sens vient du type de mouvement: la quantite est toujours positive.
+    if (!(parseFloat(adjustQty) > 0)) {
+      toast({ title: t('quantityMustBePositive'), variant: 'destructive' });
+      return;
+    }
 
     // Receiving in the purchase unit routes to actionReceiveStock, which
     // converts to the base unit server-side before the ledger write. Only

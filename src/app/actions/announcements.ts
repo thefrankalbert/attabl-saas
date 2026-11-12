@@ -17,7 +17,7 @@ const tenantIdSchema = z.string().uuid();
 const announcementIdSchema = z.string().uuid();
 
 const announcementPayloadSchema = z.object({
-  title: z.string().min(1).max(200),
+  title: z.string().trim().min(1).max(200),
   description: z.string().nullable().optional(),
   start_date: z.string().min(1),
   end_date: z.string().nullable().optional(),

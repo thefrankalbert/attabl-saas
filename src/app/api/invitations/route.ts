@@ -234,6 +234,7 @@ export async function POST(request: Request) {
       }
 
       const service = createInvitationService(adminClient);
+      await service.assertNotAlreadyMember(tenantId, parsed.data.email);
       const invitation = await service.createInvitation({
         tenantId,
         email: parsed.data.email,

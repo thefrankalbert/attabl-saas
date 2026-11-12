@@ -115,6 +115,20 @@ export function timeUntil(
 
 // --- Hook --------------------------------------------------
 
+/**
+ * Vrai quand l'API dit explicitement que le courriel n'est PAS parti
+ * (`emailSent: false`). La ligne d'invitation existe quand meme: on previent
+ * l'administrateur, qui peut renvoyer, au lieu d'annoncer un envoi.
+ */
+function reportsEmailNotSent(data: unknown): boolean {
+  return (
+    !!data &&
+    typeof data === 'object' &&
+    'emailSent' in data &&
+    (data as { emailSent: unknown }).emailSent === false
+  );
+}
+
 export function useUsersData({
   tenantId,
   currentUserRole,
@@ -215,13 +229,7 @@ export function useUsersData({
       // The invitation row is created even if the email failed to send; the API
       // reports emailSent so we warn the admin (who can resend) instead of
       // wrongly claiming the email left.
-      const okData: unknown = await response.json();
-      const emailSent = !(
-        okData &&
-        typeof okData === 'object' &&
-        'emailSent' in okData &&
-        (okData as { emailSent: unknown }).emailSent === false
-      );
+      const emailSent = !reportsEmailNotSent(await response.json());
       toast(
         emailSent
           ? { title: t('inviteSentTo', { email: inviteEmail }) }
@@ -254,7 +262,12 @@ export function useUsersData({
         throw new Error(tc('unknownError'));
       }
 
-      toast({ title: t('invitationResent') });
+      // Meme regle que l'invitation: ne pas annoncer un envoi qui n'a pas eu lieu.
+      toast(
+        reportsEmailNotSent(await response.json())
+          ? { title: t('inviteEmailNotSent'), variant: 'destructive' }
+          : { title: t('invitationResent') },
+      );
       void fetchInvitations();
     } catch (e: unknown) {
       toast({
@@ -318,7 +331,9 @@ export function useUsersData({
   };
 
   const handleDeleteUser = async (userId: string) => {
-    const ok = await confirm(t('confirmDeleteUser'));
+    // La cle `users.confirmDeleteUser` n'existe pas (elle vit sous `platform`):
+    // la boite affichait le nom de la cle au lieu d'une question.
+    const ok = await confirm(t('confirmDelete'));
     if (!ok) return;
 
     try {

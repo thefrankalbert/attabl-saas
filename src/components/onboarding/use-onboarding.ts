@@ -14,6 +14,7 @@ import { isReservedSiteSlug } from '@/lib/tenant-slugs';
 import { SCREEN_TO_API_STEP, oldStepToPhaseScreen, type ScreenKey } from './onboarding-steps';
 import type { PhaseDefinition } from './onboarding-steps';
 import type { OnboardingData } from './types';
+import { stepBlockingError } from './utils/step-validation';
 
 export function useOnboarding() {
   const t = useTranslations('onboarding');
@@ -402,6 +403,13 @@ export function useOnboarding() {
     // empty name so onboarding never completes with a nameless tenant.
     if (screenKey === 'establishment' && !data.tenantName.trim()) {
       setError(t('nameRequired'));
+      return;
+    }
+
+    // Prix negatif, zone sans nom: refuses ici, sur l'ecran fautif.
+    const blocage = screenKey ? stepBlockingError(screenKey, data) : null;
+    if (blocage) {
+      setError(t(blocage));
       return;
     }
 

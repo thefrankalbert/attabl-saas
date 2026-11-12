@@ -38,6 +38,8 @@ export interface Order {
   order_number?: string;
   table_number: string;
   total_price: number; // mapped from DB column `total`
+  /** Solde restant (unites mineures), renseigne seulement pour une note payee en partie. */
+  amount_due?: number;
   total?: number;
   total_amount?: number;
   status: OrderStatus;

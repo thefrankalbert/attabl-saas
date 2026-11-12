@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useToast } from '@/components/ui/use-toast';
 import { Globe, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ export default function MenuForm({
   onCancel,
 }: MenuFormProps) {
   const t = useTranslations('menus');
+  const tc = useTranslations('common');
+  const { toast } = useToast();
 
   // Form state - initialized from editingMenu or defaults
   const [formName, setFormName] = useState(editingMenu?.name ?? '');
@@ -64,7 +67,11 @@ export default function MenuForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim()) return;
+    // Un nom vide ou fait d'espaces abandonnait sans un mot (audit 2026-11-10, C-060).
+    if (!formName.trim()) {
+      toast({ title: tc('nameRequired'), variant: 'destructive' });
+      return;
+    }
     setSaving(true);
 
     try {

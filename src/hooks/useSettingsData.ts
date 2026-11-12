@@ -306,7 +306,15 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
           description: t('settingsSavedSuccess'),
         });
       } else {
-        throw new Error(result.error);
+        // Le serveur dit POURQUOI il refuse (ex : "La description ne doit pas
+        // depasser 500 caracteres"). Ce message etait jete au profit d'un
+        // "Une erreur est survenue" generique, et la raison ne se lisait que
+        // dans la console (audit 2026-11-10, C-070).
+        toast({
+          title: tc('error'),
+          description: result.error || t('settingsSaveError'),
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       logger.error('Failed to save settings', error);
