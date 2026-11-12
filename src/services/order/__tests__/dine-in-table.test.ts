@@ -17,12 +17,17 @@ function mockSupabase(row: unknown) {
 }
 
 describe('checkDineInTable (C-009 / C-061)', () => {
-  it('ignores takeaway, delivery and room service', async () => {
+  it('needs no table for takeaway, delivery and room service', async () => {
     const { supabase, from } = mockSupabase(null);
     for (const mode of ['takeaway', 'delivery', 'room_service']) {
       expect(await checkDineInTable(supabase, 't1', mode, undefined)).toBeNull();
     }
     expect(from).not.toHaveBeenCalled();
+  });
+
+  it('still refuses an invented table on a takeaway order', async () => {
+    const { supabase } = mockSupabase(null);
+    expect(await checkDineInTable(supabase, 't1', 'takeaway', 'TAB-99')).toBe('UNKNOWN_TABLE');
   });
 
   it('requires a table to eat in', async () => {

@@ -138,6 +138,8 @@ export async function POST(request: Request) {
 
     // C-009/C-061: sur place = une vraie table de ce restaurant.
     const tableProblem = await checkDineInTable(adminSupabase, tenantId, service_type, tableNumber);
+    // The value checked above is the one recorded and sent to the kitchen.
+    const orderTable = tableNumber?.trim() || undefined;
     if (tableProblem) {
       return NextResponse.json(
         {
@@ -254,7 +256,7 @@ export async function POST(request: Request) {
         tenantId,
         items,
         total: pricing.total,
-        tableNumber,
+        tableNumber: orderTable,
         customerName,
         customerPhone,
         notes,
@@ -339,7 +341,7 @@ export async function POST(request: Request) {
     scheduleOrderNotification(adminSupabase, {
       tenantId,
       tenantSlug,
-      tableNumber,
+      tableNumber: orderTable,
       itemsCount: items.length,
       total: pricing.total,
       currency: tenant.currency,

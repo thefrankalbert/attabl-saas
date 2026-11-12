@@ -7,8 +7,10 @@ export type DineInTableProblem = 'TABLE_REQUIRED' | 'UNKNOWN_TABLE';
  * Audit C-009 / C-061 (owner decision 2026-11-12): an order "sur place" must
  * name a table that exists and is active in THIS restaurant. Before, anyone
  * could open the restaurant's address and send a dine-in ticket without a
- * table (or with `?table=TAB-99`) straight to the kitchen. Takeaway, delivery
- * and room service are not concerned.
+ * table (or with `?table=TAB-99`) straight to the kitchen. ANY table sent is
+ * checked, whatever the mode: a takeaway order carrying an invented table
+ * would otherwise print that table on the kitchen ticket (security review
+ * 2026-11-12). Takeaway, delivery and room service need no table.
  *
  * Returns the problem instead of throwing, so the route can send a code the
  * storefront acts on (it forgets an unknown table and offers takeaway).
@@ -19,9 +21,8 @@ export async function checkDineInTable(
   serviceType: string,
   tableNumber: string | undefined,
 ): Promise<DineInTableProblem | null> {
-  if (serviceType !== 'dine_in') return null;
   const table = tableNumber?.trim();
-  if (!table) return 'TABLE_REQUIRED';
+  if (!table) return serviceType === 'dine_in' ? 'TABLE_REQUIRED' : null;
 
   const { data, error } = await supabase
     .from('tables')
