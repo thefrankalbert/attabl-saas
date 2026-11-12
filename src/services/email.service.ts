@@ -186,8 +186,10 @@ export const sendContactFormEmail = async (data: {
 }): Promise<boolean> => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    logger.warn('RESEND_API_KEY not configured - contact email skipped');
-    return true;
+    // `false`, pas `true`: le message du visiteur n'est stocke nulle part,
+    // un envoi saute est un message perdu et l'appelant doit le savoir.
+    logger.warn('RESEND_API_KEY not configured - contact email NOT sent');
+    return false;
   }
   try {
     const r = new Resend(apiKey);

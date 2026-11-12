@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
@@ -133,6 +133,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   useContextualShortcuts(shortcuts);
 
   const router = useRouter();
+  const site = useParams()?.site as string | undefined;
 
   return (
     <RoleGuard permission="pos.use">
@@ -366,6 +367,14 @@ export default function POSClient({ tenantId }: POSClientProps) {
               currency={pos.currency}
               onSelect={(order) => {
                 setShowUnpaid(false);
+                // Une note payee en partie se solde sur sa fiche: c'est le seul
+                // ecran qui encaisse un montant libre contre le registre.
+                // L'encaissement rapide ci-dessous ne sait regler qu'une note
+                // entiere encore intacte.
+                if (order.payment_status === 'partial') {
+                  router.push(`${site ? `/sites/${site}/admin` : '/admin'}/orders/${order.id}`);
+                  return;
+                }
                 setSettlingOrder(order);
               }}
             />

@@ -21,6 +21,7 @@ interface POSUnpaidPanelProps {
  * Cash-desk panel listing orders awaiting payment (audit C2). Selecting an order
  * routes it to the existing PaymentModal (order mode) -> actionMarkOrderPaid, so
  * the cashier bills the actual QR/served order instead of re-ringing a duplicate.
+ * A partly paid order shows its remaining balance (`amount_due`), not its total.
  */
 export default function POSUnpaidPanel({
   open,
@@ -100,8 +101,13 @@ export default function POSUnpaidPanel({
                             : t('itemsCount', { count: itemCount })}
                         </span>
                       </span>
-                      <span className="shrink-0 text-sm font-bold text-app-text">
-                        {formatCurrencyMinor(order.total_price || 0, currency)}
+                      <span className="shrink-0 text-right text-sm font-bold text-app-text">
+                        {order.amount_due != null && (
+                          <span className="block text-xs font-medium text-status-warning">
+                            {t('toSettleRemaining')}
+                          </span>
+                        )}
+                        {formatCurrencyMinor(order.amount_due ?? order.total_price ?? 0, currency)}
                       </span>
                     </Button>
                   </li>

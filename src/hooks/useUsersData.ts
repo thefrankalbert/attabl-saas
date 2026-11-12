@@ -318,7 +318,9 @@ export function useUsersData({
   };
 
   const handleDeleteUser = async (userId: string) => {
-    const ok = await confirm(t('confirmDeleteUser'));
+    // La cle `users.confirmDeleteUser` n'existe pas (elle vit sous `platform`):
+    // la boite affichait le nom de la cle au lieu d'une question.
+    const ok = await confirm(t('confirmDelete'));
     if (!ok) return;
 
     try {

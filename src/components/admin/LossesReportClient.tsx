@@ -19,6 +19,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { StatusBadge } from '@/components/admin/shared/StatusBadge';
 import { formatCurrency } from '@/lib/utils/currency';
+import { dayRangeToIso } from '@/lib/utils/day-range';
 import { actionGetLossesByReason } from '@/app/actions/inventory';
 import type { LossByReason, LossReasonCode } from '@/types/inventory.types';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -48,10 +49,9 @@ export default function LossesReportClient({
   const applyFilter = useCallback(async () => {
     setLoading(true);
     setError(false);
-    const r = await actionGetLossesByReason(tenantId, {
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-    });
+    // Journees entieres: le jour "Au" est inclus (voir day-range.ts).
+    const { start, end } = dayRangeToIso(startDate, endDate);
+    const r = await actionGetLossesByReason(tenantId, { startDate: start, endDate: end });
     if (r.success) {
       setRows(r.data ?? []);
     } else {

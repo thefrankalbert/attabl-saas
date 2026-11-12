@@ -41,11 +41,21 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
     };
   }
 
+  // Un champ absent du formulaire revient `null` de FormData, et Zod refuse
+  // `null` pour un champ optionnel (il attend une chaine ou `undefined`). La
+  // refonte de la vitrine a retire le champ `date` du formulaire: chaque envoi
+  // etait alors refuse sur ce champ, sans endroit ou afficher l'erreur. On
+  // traduit donc "absent" en `undefined`.
+  const champOptionnel = (cle: string): string | undefined => {
+    const valeur = formData.get(cle);
+    return typeof valeur === 'string' && valeur.trim() ? valeur : undefined;
+  };
+
   const validatedFields = contactSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
-    company: formData.get('company'),
-    date: formData.get('date'),
+    company: champOptionnel('company'),
+    date: champOptionnel('date'),
     message: formData.get('message'),
   });
 
@@ -69,11 +79,15 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
 
   const emailSent = await sendContactFormEmail({ name, email, company, date, message });
 
+  // Le message n'est stocke nulle part ailleurs: si le courriel ne part pas,
+  // il est perdu. Annoncer un succes ferait croire au visiteur qu'on va le
+  // rappeler. On lui dit la verite et on lui laisse les autres canaux.
   if (!emailSent) {
-    logger.warn('Contact form email could not be sent', {
+    logger.error('Contact form email could not be sent', undefined, {
       nameLength: name.length,
       emailHash: hashEmail(email),
     });
+    return { success: false, message: t('contactSendFailed') };
   }
 
   return {

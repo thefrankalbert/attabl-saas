@@ -13,7 +13,10 @@ import POSClient from '../POSClient';
 // sans `orders.pay`, ni "Valider le paiement" ni coupon (une remise).
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ back: vi.fn() }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
+  useParams: () => ({ site: 'demo' }),
+}));
 vi.mock('@/hooks/useSegmentTerms', () => ({
   useSegmentTerms: () => new Proxy({}, { get: (_t, k) => String(k) }),
 }));

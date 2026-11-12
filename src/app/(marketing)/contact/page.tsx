@@ -185,6 +185,11 @@ export default function ContactPage() {
                     <p className="text-xs text-red-500">{formState.errors.message[0]}</p>
                   )}
                 </div>
+                {formState.message && (
+                  <p role="alert" className="text-sm text-red-500">
+                    {formState.message}
+                  </p>
+                )}
                 <SubmitButton />
                 <p className="text-[13px] text-zinc-500 dark:text-zinc-400">{t('formNote')}</p>
               </form>

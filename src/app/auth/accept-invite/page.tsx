@@ -45,6 +45,7 @@ function AcceptInviteForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
+  const [tokenInvalid, setTokenInvalid] = useState(false);
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -61,6 +62,13 @@ function AcceptInviteForm() {
         const res = await fetch(`/api/invitations/validate?token=${encodeURIComponent(token!)}`);
         if (res.status === 410) {
           setTokenExpired(true);
+        } else if (res.status === 400 || res.status === 404) {
+          // Lien errone, deja utilise ou annule. Sans cet etat, la page
+          // affichait "Vous avez ete invite !" et le formulaire complet, puis
+          // refusait la saisie avec "Donnees invalides" (audit 2026-11-10,
+          // C-037). Un 429 ou un 500 ne dit rien du lien: on laisse l'envoi
+          // trancher.
+          setTokenInvalid(true);
         }
       } catch {
         // Network error - let the actual submit handle it
@@ -69,8 +77,8 @@ function AcceptInviteForm() {
     validateToken();
   }, [token]);
 
-  // No token in URL
-  if (!token) {
+  // No token in URL, or a token the server does not recognise
+  if (!token || tokenInvalid) {
     return (
       <div className="w-full">
         <AttablLogo />

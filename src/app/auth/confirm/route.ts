@@ -17,9 +17,7 @@ export async function GET(request: Request) {
 
   if (!tokenHash || type !== 'signup') {
     logger.warn('Invalid confirmation link parameters', { tokenHash: !!tokenHash, type });
-    return NextResponse.redirect(
-      `${requestUrl.origin}/login?error=${encodeURIComponent('Lien de confirmation invalide.')}`,
-    );
+    return NextResponse.redirect(`${requestUrl.origin}/login?error=invalid_token`);
   }
 
   try {
@@ -34,13 +32,15 @@ export async function GET(request: Request) {
     if (error) {
       logger.error('Email confirmation failed', { error: error.message });
 
+      // La page de connexion n'affiche que des CODES qu'elle connait (elle ne
+      // recopie jamais un texte venu de l'adresse). Ce fichier envoyait des
+      // phrases: aucune ne correspondait a un code, donc un lien expire
+      // affichait "Une erreur est survenue" - sans dire que le lien etait
+      // perime ni comment en obtenir un autre (audit 2026-11-10, C-038).
       const isExpired = error.message.includes('expired') || error.message.includes('invalid');
-      const errorMessage = isExpired
-        ? 'Le lien de confirmation a expiré. Cliquez sur "Renvoyer le lien" ci-dessous.'
-        : 'Erreur lors de la confirmation. Veuillez réessayer.';
 
       return NextResponse.redirect(
-        `${requestUrl.origin}/login?error=${encodeURIComponent(errorMessage)}`,
+        `${requestUrl.origin}/login?error=${isExpired ? 'expired_link' : 'auth_failed'}`,
       );
     }
 
@@ -82,8 +82,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${requestUrl.origin}/login?confirmed=true`);
   } catch (err) {
     logger.error('Unexpected error during email confirmation', err);
-    return NextResponse.redirect(
-      `${requestUrl.origin}/login?error=${encodeURIComponent('Erreur serveur. Veuillez réessayer.')}`,
-    );
+    return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_failed`);
   }
 }

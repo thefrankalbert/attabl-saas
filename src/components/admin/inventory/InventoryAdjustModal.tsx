@@ -118,13 +118,17 @@ export default function InventoryAdjustModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]).map(
-                    (mt) => (
-                      <SelectItem key={mt} value={mt}>
-                        {MOVEMENT_TYPE_LABELS[mt].label}
-                      </SelectItem>
-                    ),
-                  )}
+                  {/* "Ajustement" n'est plus propose: le service le traite comme un
+                      retrait (signe negatif), donc "ajuster de 1" un stock de 5
+                      donnait 4. Meme effet que "Retrait manuel" sous un nom qui
+                      laissait croire a une correction vers la valeur saisie
+                      (audit 2026-11-10, C-044). Pour corriger un stock vers une
+                      valeur comptee, c'est l'inventaire physique. */}
+                  {(['manual_add', 'manual_remove', 'opening'] as MovementType[]).map((mt) => (
+                    <SelectItem key={mt} value={mt}>
+                      {MOVEMENT_TYPE_LABELS[mt].label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
