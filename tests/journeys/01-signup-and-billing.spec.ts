@@ -27,6 +27,12 @@ import {
   postWebhookEventBadSignature,
 } from './fixtures/stripe';
 
+// Slug REEL du restaurant cree par le signup (C-001): le nom 'Journey Test
+// Bistro' donne un slug derive, pas journeyEnv.tenantSlug. Le checkout cherche
+// le restaurant designe par x-tenant-slug (PR #345): viser le slug d'env
+// renvoyait 404 et bloquait les 2 tests suivants.
+let ownerTenantSlug = journeyEnv.tenantSlug;
+
 test.describe.serial('01 - Signup & Billing', () => {
   test('le proprietaire cree son compte (signup)', async () => {
     const ctx = await newApiContext();
@@ -45,6 +51,10 @@ test.describe.serial('01 - Signup & Billing', () => {
     expect([200, 201, 409], `signup statut ${res.status()} - ${await res.text()}`).toContain(
       res.status(),
     );
+    if ([200, 201].includes(res.status())) {
+      const created = (await res.json()) as { slug?: string };
+      if (created.slug) ownerTenantSlug = created.slug;
+    }
 
     // Verification positive: si le compte vient d'etre cree, l'utilisateur auth doit
     // exister reellement (un 2xx qui ne cree rien serait un faux succes). On ne peut
@@ -76,7 +86,7 @@ test.describe.serial('01 - Signup & Billing', () => {
     const ctx = await loginPersona(OWNER);
     const res = await ctx.post('/api/create-checkout-session', {
       data: { plan: 'starter', billingInterval: 'monthly' },
-      headers: { 'x-tenant-slug': journeyEnv.tenantSlug },
+      headers: { 'x-tenant-slug': ownerTenantSlug },
     });
     expect(res.ok(), `create-checkout-session: ${res.status()}`).toBeTruthy();
     const body = await res.json();
