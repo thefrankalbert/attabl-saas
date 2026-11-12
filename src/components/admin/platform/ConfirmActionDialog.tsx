@@ -21,6 +21,9 @@ export interface ConfirmActionState {
   confirmLabel: string;
   destructive?: boolean;
   withReason?: boolean;
+  /** Overrides the free-text field's label/placeholder (e.g. a domain, C-083). */
+  reasonLabel?: string;
+  reasonPlaceholder?: string;
   /** When set, the operator must type this exact string to enable confirm. */
   requireText?: string | null;
   onConfirm: (reason?: string) => void;
@@ -69,12 +72,12 @@ export function ConfirmActionDialog({ state, onClose, pending }: ConfirmActionDi
             <div className="flex flex-col gap-4">
               {state.withReason && (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="confirm-reason">{t('reasonLabel')}</Label>
+                  <Label htmlFor="confirm-reason">{state.reasonLabel ?? t('reasonLabel')}</Label>
                   <Textarea
                     id="confirm-reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder={t('reasonPlaceholder')}
+                    placeholder={state.reasonPlaceholder ?? t('reasonPlaceholder')}
                     rows={3}
                     maxLength={500}
                   />

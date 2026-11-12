@@ -31,7 +31,8 @@ type PlatformAction =
   | 'unban_user'
   | 'soft_delete_user'
   | 'restore_user'
-  | 'impersonate_tenant';
+  | 'impersonate_tenant'
+  | 'set_custom_domain';
 
 interface AuditInput {
   action: PlatformAction;
@@ -54,6 +55,12 @@ export interface TrashTenant {
 export interface PlatformAdminService {
   suspendTenant(tenantId: string, actor: PlatformActor, reason?: string): Promise<void>;
   unsuspendTenant(tenantId: string, actor: PlatformActor): Promise<void>;
+  /**
+   * Audit C-083 (owner decision 2026-11-12): only the platform sets a tenant's
+   * custom domain (a restaurant could otherwise claim another's address). The
+   * restaurant sends a request from its settings. null removes the domain.
+   */
+  setCustomDomain(tenantId: string, actor: PlatformActor, domain: string | null): Promise<void>;
   softDeleteTenant(tenantId: string, actor: PlatformActor, reason?: string): Promise<void>;
   restoreTenant(tenantId: string, actor: PlatformActor): Promise<void>;
   banAdminUser(adminUserId: string, actor: PlatformActor, reason?: string): Promise<void>;
@@ -195,6 +202,33 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         targetLabel: `${label.name} (${label.slug})`,
         tenantId,
         reason,
+      });
+    },
+
+    async setCustomDomain(tenantId, actor, domain) {
+      const label = await getTenantLabel(tenantId);
+      const { error } = await admin
+        .from('tenants')
+        .update({ custom_domain: domain })
+        .eq('id', tenantId)
+        .is('deleted_at', null);
+      if (error) {
+        if (error.code === '23505') {
+          throw new ServiceError(
+            'Ce domaine est deja utilise par un autre restaurant',
+            'CONFLICT',
+            error,
+          );
+        }
+        throw new ServiceError("Echec de l'enregistrement du domaine", 'INTERNAL', error);
+      }
+      await audit(actor, {
+        action: 'set_custom_domain',
+        targetType: 'tenant',
+        targetId: tenantId,
+        targetLabel: `${label.name} (${label.slug})`,
+        tenantId,
+        reason: domain ?? 'domaine retire',
       });
     },
 

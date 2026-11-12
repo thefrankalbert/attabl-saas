@@ -98,10 +98,4 @@ export const updateTenantSettingsSchema = z.object({
   screenLockMode: z.enum(['overlay', 'password']).optional(),
   // --- Opening hours ---------------------------------------
   openingHours: openingHoursSchema.optional(),
-  // --- Custom domain ---------------------------------------
-  customDomain: z
-    .string()
-    .max(255, 'Le domaine ne doit pas dépasser 255 caractères')
-    .nullable()
-    .optional(),
 });

@@ -13,6 +13,7 @@ export interface PlatformTenantRow {
   deleted_at: string | null;
   suspended_at: string | null;
   suspend_reason: string | null;
+  custom_domain: string | null;
   created_at: string;
 }
 

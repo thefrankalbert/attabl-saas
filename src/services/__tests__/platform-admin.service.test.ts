@@ -115,6 +115,27 @@ describe('createPlatformAdminService', () => {
   // ecrivaient dans la meme colonne sans se parler: lever une suspension sur un
   // restaurant gele le remettait en service, et le gel ne gelait plus rien.
   // C'est une fuite de revenu, pas un detail d'ergonomie.
+  it('setCustomDomain writes the domain on the live row and audits it (C-083)', async () => {
+    const { client, updates, inserts } = makeAdmin({
+      tenants: { row: { name: 'Resto', slug: 'resto' } },
+    });
+
+    await createPlatformAdminService(client).setCustomDomain('t-1', actor, 'menu.resto.com');
+
+    expect(updates).toEqual([{ table: 'tenants', payload: { custom_domain: 'menu.resto.com' } }]);
+    expect(inserts[0]?.payload).toMatchObject({ action: 'set_custom_domain' });
+  });
+
+  it('setCustomDomain says so in plain words when another restaurant has the domain', async () => {
+    const { client } = makeAdmin({
+      tenants: { row: { name: 'Resto', slug: 'resto' }, mutError: { code: '23505' } },
+    });
+
+    await expect(
+      createPlatformAdminService(client).setCustomDomain('t-1', actor, 'menu.autre.com'),
+    ).rejects.toThrow('Ce domaine est deja utilise par un autre restaurant');
+  });
+
   it('unsuspendTenant REFUSE de reactiver un restaurant gele', async () => {
     const { client, updates } = makeAdmin({
       tenants: {

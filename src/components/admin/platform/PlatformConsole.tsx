@@ -22,6 +22,7 @@ import {
   actionSoftDeleteAdminUser,
   actionRestoreAdminUser,
   actionImpersonateTenant,
+  actionSetTenantCustomDomain,
 } from '@/app/actions/platform-admin';
 
 interface PlatformConsoleProps {
@@ -164,9 +165,30 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                               title={`${tn.slug} - ${tn.subscription_plan ?? '-'}`}
                             >
                               {tn.slug} - {tn.subscription_plan ?? '-'}
+                              {tn.custom_domain ? ` - ${tn.custom_domain}` : ''}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="min-h-[44px]"
+                              disabled={isPending}
+                              onClick={() =>
+                                setConfirm({
+                                  title: t('domainTitle', { name: tn.name }),
+                                  description: t('domainDesc'),
+                                  confirmLabel: t('domainSave'),
+                                  withReason: true,
+                                  reasonLabel: t('domainLabel'),
+                                  reasonPlaceholder: tn.custom_domain ?? 'menu.monresto.com',
+                                  onConfirm: (domain) =>
+                                    run(() => actionSetTenantCustomDomain(tn.id, domain ?? '')),
+                                })
+                              }
+                            >
+                              {t('actionDomain')}
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"

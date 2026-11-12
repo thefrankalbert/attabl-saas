@@ -48,7 +48,6 @@ interface SettingsIdentityProps {
   onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onLogoChange?: (url: string) => void;
   onLogoRemove?: () => void;
-  onDomainSave: (domain: string | null) => Promise<void>;
   t: (key: string) => string;
 }
 
@@ -62,7 +61,6 @@ export default function SettingsIdentity({
   saving,
   onLogoChange,
   onLogoRemove,
-  onDomainSave,
   t,
 }: SettingsIdentityProps) {
   const {
@@ -82,7 +80,6 @@ export default function SettingsIdentity({
   const [domain, setDomain] = useState(tenant.custom_domain || '');
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(!!tenant.custom_domain);
-  const [domainSaving, setDomainSaving] = useState(false);
 
   const handleVerifyDomain = async () => {
     if (!domain.trim()) return;
@@ -105,31 +102,13 @@ export default function SettingsIdentity({
     }
   };
 
-  const handleSaveDomain = async () => {
-    setDomainSaving(true);
-    try {
-      await onDomainSave(domain.trim() || null);
-      toast({ title: t('domainSaved') });
-    } catch {
-      toast({ title: t('settingsSaveError'), variant: 'destructive' });
-    } finally {
-      setDomainSaving(false);
-    }
-  };
-
-  const handleRemoveDomain = async () => {
-    setDomainSaving(true);
-    try {
-      await onDomainSave(null);
-      setDomain('');
-      setVerified(false);
-      toast({ title: t('domainRemoved') });
-    } catch {
-      toast({ title: t('settingsSaveError'), variant: 'destructive' });
-    } finally {
-      setDomainSaving(false);
-    }
-  };
+  // C-083 (owner decision 2026-11-12): only the platform sets a custom domain,
+  // so the restaurant sends a REQUEST. The e-mail carries what support needs.
+  const domainRequestHref = `mailto:support@attabl.com?subject=${encodeURIComponent(
+    t('domainRequestSubject'),
+  )}&body=${encodeURIComponent(
+    `${t('domainRequestBody')}\n\n${tenant.slug}.attabl.com -> ${domain.trim()}`,
+  )}`;
 
   const handleLocaleChange = (newLocale: string) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
@@ -279,29 +258,17 @@ export default function SettingsIdentity({
             </code>
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleSaveDomain}
-              disabled={domainSaving || !domain.trim()}
-              className="min-h-[44px]"
-            >
-              {domainSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t('save')}
-            </Button>
-            {tenant.custom_domain && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleRemoveDomain}
-                disabled={domainSaving}
-                className="text-[var(--destructive)] min-h-[44px]"
-              >
-                {t('remove')}
+          {domain.trim() && domain.trim() !== tenant.custom_domain && (
+            <div className="space-y-2">
+              <p className="text-xs text-app-text-secondary">{t('domainRequestHint')}</p>
+              <Button asChild variant="default" className="min-h-[44px]">
+                <a href={domainRequestHref}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  {t('domainRequest')}
+                </a>
               </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           <p className="text-xs text-app-text-muted">
             {t('currentUrl')}{' '}
