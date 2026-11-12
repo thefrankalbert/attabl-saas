@@ -29,7 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCartSuggestions, type UpsellItem } from '@/hooks/useCartSuggestions';
 import { CartItemsList, getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
-import { readScannedTable, useScannedTable } from '@/hooks/useScannedTable';
+import { clearScannedTable, readScannedTable, useScannedTable } from '@/hooks/useScannedTable';
 import { UpsellSection } from '@/components/tenant/cart/UpsellSection';
 import { PromoSection } from '@/components/tenant/cart/PromoSection';
 import { TipSection, type TipPreset } from '@/components/tenant/cart/TipSection';
@@ -298,6 +298,9 @@ export default function CartPage() {
         clientRequestId: clientRequestIdRef.current,
         body: {
           tableNumber,
+          // C-009: sans table scannee, la commande part a emporter (le serveur
+          // refuse un "sur place" sans vraie table).
+          service_type: tableNumber ? 'dine_in' : 'takeaway',
           items: orderItems,
           notes: notes || undefined,
           display_currency: displayCurrency,
@@ -307,6 +310,11 @@ export default function CartPage() {
       });
 
       if (result.status === 'rejected') {
+        // C-061: table inconnue ou supprimee: on l'oublie, le prochain envoi
+        // part a emporter et le bandeau l'explique.
+        if (tenantSlug && (result.code === 'UNKNOWN_TABLE' || result.code === 'TABLE_REQUIRED')) {
+          clearScannedTable(tenantSlug);
+        }
         // Server refused (validation/price/coupon): keep the cart AND the same
         // idempotency key so a corrected retry dedupes against nothing new.
         if (result.details && Array.isArray(result.details)) {
@@ -489,6 +497,16 @@ export default function CartPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        {/* C-009: sans table, la commande part a emporter. */}
+        {!tableNum && (
+          <p
+            role="status"
+            className="rounded-xl border border-[var(--color-divider)] px-4 py-3 text-[13px] leading-snug text-[var(--color-ink-muted)]"
+          >
+            {t('takeawayNoTableNotice')}
+          </p>
+        )}
+
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
           <div className="p-4 bg-[#FEF2F2] border border-[var(--color-divider)] rounded-xl">

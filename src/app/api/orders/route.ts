@@ -26,6 +26,7 @@ import {
   scheduleMonthlyQuotaCheck,
 } from './route.helpers';
 import { scheduleDestock } from './schedule-destock';
+import { checkDineInTable } from '@/services/order/dine-in-table';
 
 export async function POST(request: Request) {
   let t: (key: string) => string;
@@ -135,6 +136,20 @@ export async function POST(request: Request) {
       tenant.currency || 'XAF',
     );
 
+    // C-009/C-061: sur place = une vraie table de ce restaurant.
+    const tableProblem = await checkDineInTable(adminSupabase, tenantId, service_type, tableNumber);
+    // The value checked above is the one recorded and sent to the kitchen.
+    const orderTable = tableNumber?.trim() || undefined;
+    if (tableProblem) {
+      return NextResponse.json(
+        {
+          error: t(tableProblem === 'TABLE_REQUIRED' ? 'tableRequired' : 'unknownTable'),
+          code: tableProblem,
+        },
+        { status: 400 },
+      );
+    }
+
     // Idempotency: if this order was already created (offline replay), return it
     // unchanged BEFORE any side effect (coupon claim, order creation).
     if (client_request_id) {
@@ -241,7 +256,7 @@ export async function POST(request: Request) {
         tenantId,
         items,
         total: pricing.total,
-        tableNumber,
+        tableNumber: orderTable,
         customerName,
         customerPhone,
         notes,
@@ -326,7 +341,7 @@ export async function POST(request: Request) {
     scheduleOrderNotification(adminSupabase, {
       tenantId,
       tenantSlug,
-      tableNumber,
+      tableNumber: orderTable,
       itemsCount: items.length,
       total: pricing.total,
       currency: tenant.currency,

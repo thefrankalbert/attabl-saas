@@ -99,6 +99,14 @@ vi.mock('@/services/order.service', () => ({
   })),
 }));
 
+// --- Dine-in table check (C-009) ---------------------------------
+const mockCheckDineInTable = vi.fn<() => Promise<'TABLE_REQUIRED' | 'UNKNOWN_TABLE' | null>>(
+  async () => null,
+);
+vi.mock('@/services/order/dine-in-table', () => ({
+  checkDineInTable: () => mockCheckDineInTable(),
+}));
+
 // --- Coupon service mock ---------------------------------------
 const mockValidateCoupon =
   vi.fn<(code: string, tenantId: string, subtotal: number) => Promise<CouponValidationResult>>();
@@ -466,6 +474,18 @@ describe('POST /api/orders', () => {
   });
 
   // -- 7. Successful order with pricing breakdown -------------
+
+  it('refuses a dine-in order without a real table, with a code the cart acts on (C-009)', async () => {
+    mockCheckDineInTable.mockResolvedValueOnce('UNKNOWN_TABLE');
+
+    const { POST } = await import('@/app/api/orders/route');
+    const response = await POST(createMockRequest(validOrderBody()));
+    const { status, body } = await parseResponse(response);
+
+    expect(status).toBe(400);
+    expect(body.code).toBe('UNKNOWN_TABLE');
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+  });
 
   it('should return success with pricing breakdown on valid order', async () => {
     mockCalculateOrderTotal.mockReturnValue({

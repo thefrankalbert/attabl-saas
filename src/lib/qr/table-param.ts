@@ -13,3 +13,15 @@ export function resolveTableParam(params: {
   const first = (value: SearchParamValue) => (Array.isArray(value) ? value[0] : value);
   return first(params.table) || first(params.t) || undefined;
 }
+
+/**
+ * Keep the scanned table only if it is an ACTIVE table of the restaurant
+ * (audit C-061: `?table=TAB-99` was shown and remembered for the visit).
+ */
+export function keepKnownTable(
+  table: string | undefined,
+  tables: ReadonlyArray<{ table_number: string; is_active?: boolean | null }>,
+): string | undefined {
+  if (!table) return undefined;
+  return tables.some((t) => t.table_number === table && t.is_active !== false) ? table : undefined;
+}

@@ -29,6 +29,19 @@ export function saveScannedTable(tenantSlug: string, tableNumber: string) {
 }
 
 /**
+ * Forget the persisted table (the server said it does not exist, C-061): the
+ * next order goes out as takeaway instead of failing again.
+ */
+export function clearScannedTable(tenantSlug: string) {
+  try {
+    localStorage.removeItem(tableKey(tenantSlug));
+  } catch {
+    // localStorage unavailable - nothing to forget
+  }
+  listeners.forEach((listener) => listener());
+}
+
+/**
  * The persisted table for a tenant, read synchronously (e.g. at order time).
  * Returns null when the tenant is unknown, nothing is stored, or localStorage
  * is unavailable.

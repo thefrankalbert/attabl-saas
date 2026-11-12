@@ -6,7 +6,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant, getTableOccupied } from '@/lib/cache';
 import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
-import { resolveTableParam } from '@/lib/qr/table-param';
+import { keepKnownTable, resolveTableParam } from '@/lib/qr/table-param';
 import { TableOccupiedNotice } from '@/components/tenant/TableOccupiedNotice';
 import { computeOpeningState } from '@/lib/opening-hours';
 import Link from 'next/link';
@@ -89,7 +89,7 @@ export default async function HomePage({
   const { site } = await params;
   // A table QR without a menu slug points at this root page (buildQRUrl), and
   // codes are already printed that way: honor ?table here exactly like /menu.
-  const initialTable = resolveTableParam(await searchParams);
+  const scannedTable = resolveTableParam(await searchParams);
   const [messages, t] = await Promise.all([getMessages(), getTranslations('homePage')]);
 
   const headersList = await headers();
@@ -176,6 +176,9 @@ export default async function HomePage({
         .eq('tenant_id', tenant.id)
         .eq('is_active', true),
     ]);
+
+  // C-061: an unknown table in the URL is ignored, never remembered.
+  const initialTable = keepKnownTable(scannedTable, (tablesResult.data || []) as Table[]);
 
   // Soft warning when the scanned table already holds an open session, as on /menu.
   const tableOccupied = initialTable ? await getTableOccupied(tenant.id, initialTable) : false;

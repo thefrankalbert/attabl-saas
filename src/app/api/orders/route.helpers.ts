@@ -12,6 +12,10 @@ export const FALLBACK_ERRORS: Record<string, string> = {
   tenantNotIdentified: 'Tenant non identifie',
   invalidRequestBody: 'Corps de requete invalide',
   invalidOrderData: 'Donnees de commande invalides',
+  tableRequired:
+    'Pour manger sur place, scannez le QR de votre table. Sinon, commandez a emporter.',
+  unknownTable:
+    "Cette table n'existe pas dans ce restaurant. Scannez le QR de votre table ou commandez a emporter.",
   tenantConfigNotFound: 'Configuration du restaurant non trouvee',
   invalidCoupon: 'Coupon invalide',
   orderSuccess: 'Commande envoyee avec succes',
