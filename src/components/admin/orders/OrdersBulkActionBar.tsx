@@ -101,7 +101,7 @@ export default function OrdersBulkActionBar({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Delete"
+          aria-label={tc('delete')}
           onClick={() => setShowDeleteConfirm(true)}
           title={tc('delete')}
           className="h-8 w-8 text-[var(--destructive)] hover:bg-[var(--accent)]"
@@ -112,7 +112,7 @@ export default function OrdersBulkActionBar({
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Cancel selection"
+        aria-label={tc('cancelSelection')}
         onClick={() => {
           setSelectedIds(new Set());
         }}

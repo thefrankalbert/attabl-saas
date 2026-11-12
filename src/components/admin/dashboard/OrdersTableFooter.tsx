@@ -31,6 +31,7 @@ export function OrdersTableFooter({
   pageCount,
 }: OrdersTableFooterProps) {
   const t = useTranslations('admin');
+  const tc = useTranslations('common');
 
   return (
     <div className="flex flex-wrap items-center gap-3 px-1">
@@ -70,7 +71,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage === 0}
             onClick={() => setPage(0)}
-            aria-label="First page"
+            aria-label={tc('firstPage')}
           >
             <ChevronsLeft className="size-[15px]" />
           </Button>
@@ -81,7 +82,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
-            aria-label="Previous page"
+            aria-label={tc('previousPage')}
           >
             <ChevronLeft className="size-[15px]" />
           </Button>
@@ -92,7 +93,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-            aria-label="Next page"
+            aria-label={tc('nextPage')}
           >
             <ChevronRight className="size-[15px]" />
           </Button>
@@ -103,7 +104,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage(pageCount - 1)}
-            aria-label="Last page"
+            aria-label={tc('lastPage')}
           >
             <ChevronsRight className="size-[15px]" />
           </Button>

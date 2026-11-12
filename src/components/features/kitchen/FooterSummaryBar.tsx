@@ -62,6 +62,7 @@ function FooterSummaryBarInner({
   tenantName,
 }: FooterSummaryBarProps) {
   const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
 
   const summary = useMemo(() => computeSummary(orders), [orders]);
 
@@ -161,7 +162,7 @@ function FooterSummaryBarInner({
           size="icon"
           onClick={() => onPageChange('prev')}
           disabled={currentPage <= 1}
-          aria-label="Previous page"
+          aria-label={tc('previousPage')}
           className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronUp className="w-4 h-4" />
@@ -174,7 +175,7 @@ function FooterSummaryBarInner({
           size="icon"
           onClick={() => onPageChange('next')}
           disabled={currentPage >= totalPages}
-          aria-label="Next page"
+          aria-label={tc('nextPage')}
           className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronDown className="w-4 h-4" />

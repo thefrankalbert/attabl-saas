@@ -177,7 +177,7 @@ export default function OnboardingPage() {
                         onClick={() => setError(null)}
                         className="text-destructive/60 hover:text-destructive ml-3 shrink-0 h-8 w-8"
                       >
-                        <span className="sr-only">Close</span>
+                        <span className="sr-only">{tc('close')}</span>
                         &times;
                       </Button>
                     </AlertDescription>

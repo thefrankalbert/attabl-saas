@@ -103,22 +103,11 @@ export async function updateMenu(
 ): Promise<MenuRow> {
   const { id, ...updates } = input;
 
-  // If name changed, regenerate slug
-  let slug: string | undefined;
-  if (updates.name) {
-    const { data: slugData } = await supabase.rpc('generate_menu_slug', {
-      p_tenant_id: tenantId,
-      p_name: updates.name,
-    });
-    if (slugData) {
-      slug = slugData as string;
-    }
-  }
-
+  // The slug is fixed at creation and never follows a rename: printed QR codes
+  // and shared links carry it (audit C-059, renaming broke every printed QR).
   const payload: Record<string, unknown> = {};
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.name_en !== undefined) payload.name_en = updates.name_en;
-  if (slug) payload.slug = slug;
   if (updates.description !== undefined) payload.description = updates.description;
   if (updates.description_en !== undefined) payload.description_en = updates.description_en;
   if (updates.venue_id !== undefined) payload.venue_id = updates.venue_id || null;

@@ -61,7 +61,7 @@ const ingredientUnitEnum = z.enum(['kg', 'L', 'pièce', 'cl', 'g', 'bouteille'])
 
 const createIngredientSchema = z.object({
   tenantId: z.string().uuid(),
-  name: z.string().min(1),
+  name: z.string().trim().min(1, 'Le nom est requis').max(100, 'Maximum 100 caractères'),
   unit: ingredientUnitEnum,
   current_stock: z.number().finite().nonnegative().optional(),
   min_stock_alert: z.number().finite().nonnegative().optional(),
@@ -74,7 +74,7 @@ const createIngredientSchema = z.object({
 const updateIngredientSchema = z.object({
   tenantId: z.string().uuid(),
   ingredientId: z.string().uuid(),
-  name: z.string().min(1).optional(),
+  name: z.string().trim().min(1, 'Le nom est requis').max(100, 'Maximum 100 caractères').optional(),
   unit: ingredientUnitEnum.optional(),
   min_stock_alert: z.number().finite().nonnegative().optional(),
   cost_per_unit: z.number().finite().nonnegative().optional(),

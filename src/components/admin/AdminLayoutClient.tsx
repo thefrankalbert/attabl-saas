@@ -249,7 +249,7 @@ function AdminLayoutInner({
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-[var(--card)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
         >
-          Skip to content
+          {commonT('skipToContent')}
         </a>
 
         <main

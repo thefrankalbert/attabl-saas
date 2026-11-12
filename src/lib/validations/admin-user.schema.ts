@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordSchema } from './common.schema';
 import { PERMISSION_CODES } from '@/types/permission.types';
 
 const PERMISSION_CODE_SET = new Set<string>(PERMISSION_CODES);
@@ -18,10 +19,7 @@ export const createAdminUserSchema = z.object({
     .toLowerCase()
     .email('Adresse email invalide')
     .max(255, "L'email ne doit pas dépasser 255 caractères"),
-  password: z
-    .string()
-    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-    .max(100, 'Le mot de passe ne doit pas dépasser 100 caractères'),
+  password: passwordSchema,
   full_name: z
     .string()
     .min(2, 'Le nom doit contenir au moins 2 caractères')

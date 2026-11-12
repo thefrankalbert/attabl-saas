@@ -1,5 +1,14 @@
 {
   "common": {
+    "increase": "Increase",
+    "decrease": "Decrease",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "moreOptions": "More options",
+    "cancelSelection": "Cancel selection",
+    "skipToContent": "Skip to content",
     "nameRequired": "Name is required.",
     "offlineMode": "Offline mode - Showing cached data",
     "connectionRestored": "Connection restored - Syncing...",
@@ -3962,6 +3971,7 @@
     "addToCart": "Add to Cart",
     "orderingPaused": "Ordering is paused for now",
     "orderingPausedNotice": "Ordering is paused for now. The menu stays open, take your time.",
+    "announcementsLabel": "Restaurant announcements",
     "selectSize": "Select size",
     "specialInstructions": "Special instructions",
     "specialInstructionsPlaceholder": "Allergies, preferences...",

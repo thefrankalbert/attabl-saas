@@ -115,7 +115,7 @@ export default function OrdersToolbar({
           <Button
             variant="outline"
             size="icon"
-            aria-label="Sound settings"
+            aria-label={tc('soundSettings')}
             onPointerDown={handleSoundPointerDown}
             onPointerUp={handleSoundPointerUp}
             onPointerLeave={handleSoundPointerLeave}

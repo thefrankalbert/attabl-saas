@@ -62,7 +62,8 @@ export default function StockCountSheetClient({ tenantId, countId }: StockCountS
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useStockCount(tenantId, countId);
+  // isPending, not isLoading (audit C-018): see StockCountClient.
+  const { data, isPending: isLoading } = useStockCount(tenantId, countId);
 
   // Local edits: ingredient_id -> counted_qty (null = not yet counted)
   const [edits, setEdits] = useState<Map<string, number | null>>(new Map());

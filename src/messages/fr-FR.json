@@ -1,5 +1,14 @@
 {
   "common": {
+    "increase": "Augmenter",
+    "decrease": "Diminuer",
+    "collapse": "Replier",
+    "expand": "Déplier",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "moreOptions": "Plus d'options",
+    "cancelSelection": "Annuler la sélection",
+    "skipToContent": "Aller au contenu",
     "nameRequired": "Le nom est obligatoire.",
     "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
     "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
@@ -23,7 +32,7 @@
       "print": "Imprimer",
       "minimize": "Réduire",
       "toggleSidebar": "Basculer la barre laterale",
-      "toggleTheme": "Basculer le theme",
+      "toggleTheme": "Basculer le thème",
       "search": "Rechercher",
       "openMenu": "Ouvrir le menu",
       "settings": "Paramètres",
@@ -121,7 +130,7 @@
     "previous": "Précédent",
     "next": "Suivant",
     "notFoundSearch": "Rechercher",
-    "notFoundPopular": "Pages les plus consultees"
+    "notFoundPopular": "Pages les plus consultées"
   },
   "checkout": {
     "successTitle": "Paiement réussi !",
@@ -131,9 +140,9 @@
     "goToDashboard": "Accéder à mon dashboard",
     "login": "Se connecter",
     "backToHome": "Retour à l'accueil",
-    "cancelTitle": "Paiement annule",
-    "cancelDescription": "Votre paiement a ete annule. Vous pouvez reessayer a tout moment.",
-    "retry": "Reessayer",
+    "cancelTitle": "Paiement annulé",
+    "cancelDescription": "Votre paiement a été annulé. Vous pouvez réessayer à tout moment.",
+    "retry": "Réessayer",
     "page": {
       "title": "ATTABL - Abonnement",
       "subscribingTo": "Vous souscrivez à",
@@ -248,7 +257,7 @@
     "kitchenTicketPrinted": "Impression ticket cuisine lancée",
     "clientReceiptPrinted": "Impression reçu client lancée",
     "invoicePrinted": "Impression facture lancée",
-    "printWindowBlocked": "La fenetre d'impression a ete bloquee par le navigateur. Autorisez les fenetres surgissantes pour ce site, puis reessayez.",
+    "printWindowBlocked": "La fenêtre d'impression a été bloquée par le navigateur. Autorisez les fenêtres surgissantes pour ce site, puis réessayez.",
     "statusUpdated": "Statut mis à jour",
     "checkoutWarning": "Attention: La commande doit être 'Prête' avant l'encaissement.",
     "roomNumber": "Ch.{number}",
@@ -342,9 +351,9 @@
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Hôtel, chaine ou multi-sites : un seul dashboard pour tout piloter.",
+          "subtitle": "Hôtel, chaîne ou multi-sites : un seul dashboard pour tout piloter.",
           "primaryButton": "Essayer gratuitement",
-          "secondaryButton": "Demander une demo",
+          "secondaryButton": "Demander une démo",
           "featuresTitle": "Inclus dans BUSINESS",
           "benefits": {
             "b1": "Tout PRO + jusqu'à 10 sites",
@@ -365,7 +374,7 @@
         "enterprise": {
           "badge": "Sur mesure",
           "title": "ENTERPRISE",
-          "subtitle": "Pour les groupes, franchises et chaines qui gerent plusieurs sites.",
+          "subtitle": "Pour les groupes, franchises et chaînes qui gèrent plusieurs sites.",
           "button": "Contactez-nous",
           "featuresTitle": "Inclus dans ENTERPRISE",
           "benefits": {
@@ -393,7 +402,7 @@
             "title": "Menu & Commandes",
             "features": {
               "qrMenu": "Menu QR digital bilingue",
-              "qrCustomization": "Personnalisation du QR (couleurs, logo, modeles)",
+              "qrCustomization": "Personnalisation du QR (couleurs, logo, modèles)",
               "onsiteOrders": "Commandes sur place",
               "takeawayOrders": "Commandes à emporter",
               "deliveryOrders": "Commandes delivery",
@@ -597,15 +606,15 @@
       "section3Title": "3. Finalités",
       "section3Body": "Les données sont utilisées pour : la gestion de votre compte, la fourniture du service, la facturation, le support client, et l'amélioration de la plateforme.",
       "section4Title": "4. Hébergement et sécurité",
-      "section4Body": "Les donnees sont hebergees dans l'Union europeenne : la base de donnees chez Supabase en Irlande (region eu-west-1), l'application chez Vercel a Paris (region cdg1). Toutes les communications sont chiffrees (HTTPS).",
+      "section4Body": "Les données sont hébergées dans l'Union européenne : la base de données chez Supabase en Irlande (région eu-west-1), l'application chez Vercel à Paris (région cdg1). Toutes les communications sont chiffrées (HTTPS).",
       "section5Title": "5. Vos droits",
       "section5Body": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données. Contactez-nous à",
       "section6Title": "6. Cookies",
       "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé.",
-      "section7Title": "7. Duree de conservation",
-      "section7Body": "Les donnees de votre compte et de votre etablissement sont conservees pendant toute la duree de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, telephone, adresse de livraison) sont effacees automatiquement 90 jours apres la commande : la commande, elle, est conservee sans ces informations, car le droit commercial impose de garder les pieces comptables. Les journaux de connexion sont supprimes au bout de 90 jours. Apres la resiliation de votre abonnement, vous pouvez demander la suppression de votre compte a tout moment.",
+      "section7Title": "7. Durée de conservation",
+      "section7Body": "Les données de votre compte et de votre établissement sont conservées pendant toute la durée de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, téléphone, adresse de livraison) sont effacées automatiquement 90 jours après la commande : la commande, elle, est conservée sans ces informations, car le droit commercial impose de garder les pièces comptables. Les journaux de connexion sont supprimés au bout de 90 jours. Après la résiliation de votre abonnement, vous pouvez demander la suppression de votre compte à tout moment.",
       "section8Title": "8. Application mobile Atfood",
-      "section8Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyees dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le detourage, optionnel, et les controles de qualite des photos se font sur le telephone (Apple Vision) : rien n'est envoye a un tiers. L'application utilise les donnees de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous etes rattache. En cas de plantage, un rapport anonyme, sans aucune donnee personnelle, peut etre envoye a Sentry pour corriger le probleme. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte."
+      "section8Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnee personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte."
     },
     "features": {
       "metaTitle": "Fonctionnalités - Attabl",
@@ -839,7 +848,7 @@
         "items": {
           "q1": {
             "q": "Et si internet coupe en plein service ?",
-            "a": "La caisse continue en local et se remet a jour toute seule au retour du réseau. Vous ne perdez rien."
+            "a": "La caisse continue en local et se remet à jour toute seule au retour du réseau. Vous ne perdez rien."
           },
           "q2": {
             "q": "Mon équipe va-t-elle s'y faire ?",
@@ -905,7 +914,7 @@
       "searchLabel": "Rechercher"
     },
     "footer": {
-      "tagline": "Votre restaurant digital,\nde A a Z.",
+      "tagline": "Votre restaurant digital,\nde A à Z.",
       "copyright": "© {year} Attabl. Tous droits réservés.",
       "columns": {
         "product": {
@@ -944,9 +953,9 @@
     },
     "about": {
       "metaTitle": "À propos",
-      "metaDescription": "ATTABL aide les restaurants, hôtels et bars d'Afrique a digitaliser leur menu, leurs commandes et leur gestion. Decouvrez notre histoire.",
+      "metaDescription": "ATTABL aide les restaurants, hôtels et bars d'Afrique à digitaliser leur menu, leurs commandes et leur gestion. Découvrez notre histoire.",
       "heading": "À propos d'ATTABL",
-      "intro": "ATTABL est un outil concu pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
+      "intro": "ATTABL est un outil conçu pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
       "visionTitle": "Notre vision",
       "visionBody": "Nous croyons que chaque établissement, du petit bistrot au grand hôtel, mérite des outils digitaux qui fonctionnent vraiment. ATTABL regroupe menu QR code, commandes en temps réel, POS tactile, écran cuisine (KDS) et analytics - tout au même endroit.",
       "techTitle": "Technologie",
@@ -1123,7 +1132,7 @@
         }
       },
       "useCases": {
-        "title": "Ce que ca change, un soir de service.",
+        "title": "Ce que ça change, un soir de service.",
         "subtitle": "Pas des promesses. Des situations que vous vivez, réglées.",
         "cards": {
           "restaurant": {
@@ -1148,7 +1157,7 @@
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
         "s1": {
           "title": "Créez votre compte",
-          "body": "2 minutes, sans carte bancaire. 14 jours d'accès complet a l'offre Pro."
+          "body": "2 minutes, sans carte bancaire. 14 jours d'accès complet à l'offre Pro."
         },
         "s2": {
           "title": "Montez votre carte",
@@ -1182,14 +1191,14 @@
       }
     },
     "materiel": {
-      "metaTitle": "Materiel compatible - Attabl",
-      "metaDescription": "Attabl tourne sur les appareils que vous avez deja. Telephone, tablette, imprimante ticket : ajoutez du materiel a votre rythme.",
-      "eyebrow": "Materiel",
-      "title": "Rien a acheter pour commencer.",
-      "subtitle": "Attabl tourne sur les appareils que vous avez deja. Ajoutez du materiel plus tard, a votre rythme.",
+      "metaTitle": "Matériel compatible - Attabl",
+      "metaDescription": "Attabl tourne sur les appareils que vous avez déjà. Téléphone, tablette, imprimante ticket : ajoutez du matériel à votre rythme.",
+      "eyebrow": "Matériel",
+      "title": "Rien à acheter pour commencer.",
+      "subtitle": "Attabl tourne sur les appareils que vous avez déjà. Ajoutez du matériel plus tard, à votre rythme.",
       "devices": {
         "phone": {
-          "title": "Votre telephone",
+          "title": "Votre téléphone",
           "body": "Prenez les commandes et suivez le service depuis un smartphone Android ou iPhone."
         },
         "tablet": {
@@ -1198,11 +1207,11 @@
         },
         "printer": {
           "title": "Imprimante ticket",
-          "body": "Compatible avec les imprimantes thermiques Bluetooth et reseau les plus courantes."
+          "body": "Compatible avec les imprimantes thermiques Bluetooth et réseau les plus courantes."
         },
         "drawer": {
           "title": "Tiroir-caisse",
-          "body": "Se connecte a l'imprimante et s'ouvre a chaque encaissement en especes."
+          "body": "Se connecte à l'imprimante et s'ouvre à chaque encaissement en espèces."
         },
         "terminal": {
           "title": "Terminal de paiement",
@@ -1216,31 +1225,31 @@
       "kits": {
         "title": "Trois configurations, selon votre salle.",
         "subtitle": "Commencez avec ce que vous avez. Ajoutez une piece quand vous en avez besoin.",
-        "recommended": "Recommande",
+        "recommended": "Recommandé",
         "items": {
           "counter": {
             "place": "Le comptoir",
             "name": "Kit essentiel",
-            "for": "Pour le cafe, le bar ou la vente a emporter.",
-            "i1": "Un telephone ou une tablette",
+            "for": "Pour le café, le bar ou la vente à emporter.",
+            "i1": "Un téléphone ou une tablette",
             "i2": "Imprimante ticket",
             "i3": "Tiroir-caisse"
           },
           "room": {
             "place": "La salle",
             "name": "Kit restaurant",
-            "for": "Pour le service a table, cuisine comprise.",
+            "for": "Pour le service à table, cuisine comprise.",
             "i1": "Une tablette en caisse",
-            "i2": "Ecran cuisine sur tablette",
+            "i2": "Écran cuisine sur tablette",
             "i3": "Imprimante ticket + tiroir",
-            "i4": "Telephones des serveurs"
+            "i4": "Téléphones des serveurs"
           },
           "hotel": {
-            "place": "L'hotel",
+            "place": "L'hôtel",
             "name": "Kit multi-points",
             "for": "Pour restaurant, bar et service en chambre.",
             "i1": "Une tablette par point de vente",
-            "i2": "Ecran cuisine dedie",
+            "i2": "Écran cuisine dédié",
             "i3": "Imprimantes par poste",
             "i4": "QR codes en chambre"
           }
@@ -1248,25 +1257,25 @@
       },
       "reassure": {
         "wireless": {
-          "title": "Bluetooth et reseau",
+          "title": "Bluetooth et réseau",
           "body": "Vos imprimantes se connectent sans cable complique."
         },
         "brands": {
           "title": "Marques courantes",
-          "body": "Compatible avec les imprimantes thermiques les plus repandues."
+          "body": "Compatible avec les imprimantes thermiques les plus répandues."
         },
         "nocontract": {
-          "title": "Aucun contrat materiel",
-          "body": "Vous achetez votre materiel ou vous voulez, quand vous voulez."
+          "title": "Aucun contrat matériel",
+          "body": "Vous achetez votre matériel où vous voulez, quand vous voulez."
         },
         "offline": {
           "title": "Marche hors-ligne",
-          "body": "La caisse continue meme quand le reseau tombe."
+          "body": "La caisse continue même quand le réseau tombe."
         }
       },
       "cta": {
-        "title": "Un doute sur votre materiel ?",
-        "subtitle": "Dites-nous ce que vous avez deja. On vous dit ce qui marche, et ce qu'il vous faut vraiment.",
+        "title": "Un doute sur votre matériel ?",
+        "subtitle": "Dites-nous ce que vous avez déjà. On vous dit ce qui marche, et ce qu'il vous faut vraiment.",
         "primary": "Nous poser la question",
         "secondary": "Voir les tarifs"
       }
@@ -1278,51 +1287,51 @@
       "subtitle": "Tapez pour rechercher dans le site.",
       "placeholder": "Rechercher...",
       "label": "Rechercher dans le site",
-      "empty": "Aucune page ne correspond a votre recherche.",
+      "empty": "Aucune page ne correspond à votre recherche.",
       "pages": {
         "solutions": {
           "title": "Solutions",
-          "description": "Restaurant, hotel, restauration rapide, bar et cafe : Attabl s'adapte a votre etablissement."
+          "description": "Restaurant, hôtel, restauration rapide, bar et café : Attabl s'adapte à votre établissement."
         },
         "features": {
-          "title": "Fonctionnalites",
-          "description": "Menu QR code, caisse, ecran cuisine, stock, rapports et equipe. Commandes, tickets et encaissement."
+          "title": "Fonctionnalités",
+          "description": "Menu QR code, caisse, écran cuisine, stock, rapports et équipe. Commandes, tickets et encaissement."
         },
         "pricing": {
           "title": "Tarifs",
           "description": "Des prix clairs en FCFA. Starter, Pro, Business et Enterprise. Essai gratuit 14 jours, sans carte bancaire."
         },
         "materiel": {
-          "title": "Materiel",
-          "description": "Attabl tourne sur les appareils que vous avez deja : telephone, tablette, imprimante de tickets."
+          "title": "Matériel",
+          "description": "Attabl tourne sur les appareils que vous avez déjà : téléphone, tablette, imprimante de tickets."
         },
         "nouveautes": {
-          "title": "Nouveautes",
-          "description": "Les dernieres mises a jour et notes de version d'Attabl."
+          "title": "Nouveautés",
+          "description": "Les dernières mises à jour et notes de version d'Attabl."
         },
         "blog": {
           "title": "Blog",
-          "description": "Conseils et retours d'experience pour les restaurateurs et hoteliers d'Afrique."
+          "description": "Conseils et retours d'expérience pour les restaurateurs et hôteliers d'Afrique."
         },
         "about": {
-          "title": "A propos",
+          "title": "À propos",
           "description": "Qui nous sommes et pourquoi nous construisons Attabl."
         },
         "contact": {
           "title": "Contact",
-          "description": "Une question ? Ecrivez-nous, on repond vite. Demander une demo."
+          "description": "Une question ? Écrivez-nous, on repond vite. Demander une démo."
         },
         "support": {
           "title": "Support",
-          "description": "Aide, assistance et reponses aux questions frequentes. Un probleme ? On vous accompagne."
+          "description": "Aide, assistance et réponses aux questions fréquentes. Un problème ? On vous accompagne."
         },
         "legal": {
-          "title": "Conditions generales",
-          "description": "Conditions generales d'utilisation et mentions legales d'Attabl."
+          "title": "Conditions générales",
+          "description": "Conditions générales d'utilisation et mentions légales d'Attabl."
         },
         "privacy": {
-          "title": "Confidentialite",
-          "description": "Protection des donnees personnelles, cookies et vos droits sur vos donnees."
+          "title": "Confidentialité",
+          "description": "Protection des données personnelles, cookies et vos droits sur vos données."
         },
         "blogStock": {
           "title": "Gestion de stock en Afrique : le guide complet",
@@ -1330,31 +1339,31 @@
         },
         "blogQrCode": {
           "title": "Menu QR code : pourquoi chaque restaurant devrait en avoir un",
-          "description": "Du papier au digital : le menu QR transforme l'experience client et simplifie la gestion de la carte."
+          "description": "Du papier au digital : le menu QR transforme l'expérience client et simplifie la gestion de la carte."
         },
         "blogMobileMoney": {
           "title": "POS et Mobile Money : encaisser sans friction en Afrique",
-          "description": "Cash, carte, mobile money : proposer tous les moyens de paiement a vos clients avec un seul outil."
+          "description": "Cash, carte, mobile money : proposer tous les moyens de paiement à vos clients avec un seul outil."
         }
       }
     },
     "support": {
       "metaTitle": "Support - Attabl",
-      "metaDescription": "Questions frequentes, guides de demarrage et contact du support Attabl. Reponse le jour meme, en francais.",
+      "metaDescription": "Questions fréquentes, guides de démarrage et contact du support Attabl. Réponse le jour même, en français.",
       "eyebrow": "Support",
       "title": "On ne vous laisse pas seul.",
-      "subtitle": "Une aide en francais, par des gens qui ont vu un service du soir. Cherchez une reponse, ou ecrivez-nous.",
-      "searchPlaceholder": "Chercher une reponse...",
+      "subtitle": "Une aide en français, par des gens qui ont vu un service du soir. Cherchez une réponse, ou écrivez-nous.",
+      "searchPlaceholder": "Chercher une réponse...",
       "searchLabel": "Chercher dans l'aide",
       "searchButton": "Chercher",
       "categories": {
         "start": {
-          "title": "Demarrage",
-          "body": "Creer votre compte, monter votre carte, generer les QR codes."
+          "title": "Démarrage",
+          "body": "Créer votre compte, monter votre carte, générer les QR codes."
         },
         "pos": {
           "title": "Caisse et commandes",
-          "body": "Encaisser, gerer les tables, l'ecran cuisine et les canaux."
+          "body": "Encaisser, gérer les tables, l'écran cuisine et les canaux."
         },
         "stock": {
           "title": "Stock et recettes",
@@ -1365,53 +1374,53 @@
           "body": "Offres, facturation, devises et essai gratuit."
         },
         "team": {
-          "title": "Compte et equipe",
-          "body": "Gerants, employes, roles et acces multi-etablissements."
+          "title": "Compte et équipe",
+          "body": "Gérants, employés, rôles et accès multi-établissements."
         },
         "network": {
-          "title": "Pannes et reseau",
+          "title": "Pannes et réseau",
           "body": "Mode hors-ligne, resynchronisation, coupures en plein service."
         }
       },
       "faq": {
-        "title": "Questions frequentes",
-        "subtitle": "Aucune reponse ne correspond ?",
-        "cta": "Ecrivez-nous, on repond vite.",
+        "title": "Questions fréquentes",
+        "subtitle": "Aucune réponse ne correspond ?",
+        "cta": "Écrivez-nous, on repond vite.",
         "items": {
           "q1": {
-            "q": "Combien de temps pour etre operationnel ?",
-            "a": "En une matinee. Vous creez votre compte, montez votre carte et generez vos QR codes le meme jour."
+            "q": "Combien de temps pour être opérationnel ?",
+            "a": "En une matinée. Vous créez votre compte, montez votre carte et générez vos QR codes le même jour."
           },
           "q2": {
-            "q": "Et si le reseau tombe en plein service ?",
-            "a": "La caisse continue hors-ligne. Vos commandes se resynchronisent des que la connexion revient."
+            "q": "Et si le réseau tombe en plein service ?",
+            "a": "La caisse continue hors-ligne. Vos commandes se resynchronisent dès que la connexion revient."
           },
           "q3": {
             "q": "Quels appareils me faut-il ?",
-            "a": "Ceux que vous avez deja. Un telephone ou une tablette suffit pour commencer. Ajoutez imprimante et tiroir plus tard."
+            "a": "Ceux que vous avez déjà. Un téléphone ou une tablette suffit pour commencer. Ajoutez imprimante et tiroir plus tard."
           },
           "q4": {
             "q": "Comment sont pris les paiements ?",
-            "a": "Carte et especes des le depart. Le Mobile Money arrive prochainement."
+            "a": "Carte et espèces dès le départ. Le Mobile Money arrive prochainement."
           },
           "q5": {
-            "q": "Puis-je gerer plusieurs etablissements ?",
-            "a": "Oui. Un seul compte, plusieurs etablissements, avec des roles et des acces par personne."
+            "q": "Puis-je gérer plusieurs établissements ?",
+            "a": "Oui. Un seul compte, plusieurs établissements, avec des rôles et des accès par personne."
           },
           "q6": {
             "q": "Y a-t-il un engagement ?",
-            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois. Sans contrat sur le materiel."
+            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois. Sans contrat sur le matériel."
           }
         }
       },
       "guides": {
-        "title": "Guides de demarrage",
-        "subtitle": "Les premieres etapes, expliquees simplement. En une matinee, vous etes pret.",
+        "title": "Guides de démarrage",
+        "subtitle": "Les premières étapes, expliquées simplement. En une matinée, vous êtes prêt.",
         "items": {
           "g1": {
             "time": "5 min",
-            "title": "Creer votre compte et votre restaurant",
-            "body": "Le compte, l'etablissement, les premiers reglages."
+            "title": "Créer votre compte et votre restaurant",
+            "body": "Le compte, l'établissement, les premiers réglages."
           },
           "g2": {
             "time": "15 min",
@@ -1420,30 +1429,30 @@
           },
           "g3": {
             "time": "10 min",
-            "title": "Ajouter votre equipe et lancer le service",
-            "body": "Les roles, les acces, et c'est parti."
+            "title": "Ajouter votre équipe et lancer le service",
+            "body": "Les rôles, les accès, et c'est parti."
           }
         },
         "perks": {
-          "p1": "Reponse le jour meme, en francais",
-          "p2": "On forme votre equipe avec vous",
-          "p3": "Meme hors-ligne, le service continue"
+          "p1": "Réponse le jour même, en français",
+          "p2": "On forme votre équipe avec vous",
+          "p3": "Même hors-ligne, le service continue"
         }
       },
       "contact": {
-        "title": "Vous n'avez pas trouve ?",
-        "hours": "Une personne vous repond, du lundi au samedi, de 8 h a 22 h.",
+        "title": "Vous n'avez pas trouvé ?",
+        "hours": "Une personne vous repond, du lundi au samedi, de 8 h à 22 h.",
         "whatsapp": {
           "title": "WhatsApp",
-          "body": "Le plus rapide, meme pendant le service."
+          "body": "Le plus rapide, même pendant le service."
         },
         "email": {
           "title": "E-mail",
           "body": "support@attabl.com"
         },
         "cities": {
-          "title": "Ou nous trouver",
-          "body": "Yaounde, Ouagadougou, N'Djamena."
+          "title": "Où nous trouver",
+          "body": "Yaoundé, Ouagadougou, N'Djamena."
         }
       }
     }
@@ -1495,8 +1504,8 @@
       "backToLogin": "Retour à la connexion"
     },
     "errors": {
-      "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
-      "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
+      "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublié.",
+      "captchaFailed": "Vérification anti-robot échouée. Rechargez la page et réessayez.",
       "signupGeneric": "Erreur lors de l'inscription",
       "resendGeneric": "Erreur lors de l'envoi",
       "loginGeneric": "Erreur de connexion",
@@ -1509,53 +1518,53 @@
       "invalidToken": "Le lien a expiré ou est invalide. Veuillez réessayer.",
       "expiredLink": "Ce lien a expiré. Connectez-vous ci-dessous avec votre email et votre mot de passe : on vous proposera de renvoyer un lien.",
       "generic": "Une erreur est survenue. Veuillez réessayer.",
-      "restaurantNameRequired": "Le nom du restaurant doit contenir au moins 2 caracteres.",
-      "restaurantNameTaken": "Ce nom de restaurant est deja pris. Choisissez-en un autre."
+      "restaurantNameRequired": "Le nom du restaurant doit contenir au moins 2 caractères.",
+      "restaurantNameTaken": "Ce nom de restaurant est déjà pris. Choisissez-en un autre."
     },
     "forgot": {
-      "backToLogin": "Retour a la connexion",
-      "sentTitle": "Verifiez votre boite mail",
-      "sentBody": "Si un compte existe pour {email}, un lien de reinitialisation vient d'etre envoye.",
+      "backToLogin": "Retour à la connexion",
+      "sentTitle": "Vérifiez votre boîte mail",
+      "sentBody": "Si un compte existe pour {email}, un lien de réinitialisation vient d'être envoyé.",
       "resend": "Renvoyer le lien",
-      "title": "Mot de passe oublie ?",
-      "subtitle": "Indiquez votre email, on vous envoie un lien de reinitialisation.",
+      "title": "Mot de passe oublié ?",
+      "subtitle": "Indiquez votre email, on vous envoie un lien de réinitialisation.",
       "emailLabel": "Email",
       "emailPlaceholder": "vous@exemple.com",
       "submit": "Envoyer le lien"
     },
     "reset": {
-      "checkingText": "Verification du lien en cours...",
-      "samePasswordError": "Le nouveau mot de passe doit etre different de l'ancien.",
-      "genericError": "Une erreur est survenue. Veuillez reessayer.",
-      "successTitle": "Mot de passe modifie",
-      "successBody": "Votre mot de passe a ete mis a jour. Redirection vers la connexion...",
-      "backToLoginCta": "Retour a la connexion",
-      "expiredTitle": "Lien expire",
-      "expiredBody": "Ce lien de reinitialisation a expire ou est invalide. Demandez-en un nouveau.",
+      "checkingText": "Vérification du lien en cours...",
+      "samePasswordError": "Le nouveau mot de passe doit être différent de l'ancien.",
+      "genericError": "Une erreur est survenue. Veuillez réessayer.",
+      "successTitle": "Mot de passe modifié",
+      "successBody": "Votre mot de passe a été mis à jour. Redirection vers la connexion...",
+      "backToLoginCta": "Retour à la connexion",
+      "expiredTitle": "Lien expiré",
+      "expiredBody": "Ce lien de réinitialisation a expiré ou est invalide. Demandez-en un nouveau.",
       "requestNewLink": "Demander un nouveau lien",
       "title": "Nouveau mot de passe",
       "subtitle": "Choisissez un nouveau mot de passe pour votre compte.",
       "newPasswordLabel": "Nouveau mot de passe",
-      "newPasswordPlaceholder": "Minimum 8 caracteres",
+      "newPasswordPlaceholder": "Minimum 8 caractères",
       "confirmPasswordLabel": "Confirmer le mot de passe",
       "confirmPasswordPlaceholder": "Ressaisissez le mot de passe",
-      "strengthLength": "8 caracteres minimum",
+      "strengthLength": "8 caractères minimum",
       "strengthMatch": "Les mots de passe correspondent",
-      "submit": "Mettre a jour le mot de passe"
+      "submit": "Mettre à jour le mot de passe"
     }
   },
   "admin": {
     "platform": {
       "banner": "Console plateforme",
       "title": "Console plateforme",
-      "subtitle": "Gerer les restaurants et les comptes",
+      "subtitle": "Gérer les restaurants et les comptes",
       "back": "Retour au tableau de bord",
       "tabActive": "Restaurants",
       "tabTrash": "Corbeille",
       "searchPlaceholder": "Rechercher un restaurant...",
       "statusActive": "Actif",
       "statusSuspended": "Suspendu",
-      "statusDeleted": "Supprime",
+      "statusDeleted": "Supprimé",
       "noResults": "Aucun restaurant",
       "emptyTrash": "La corbeille est vide",
       "actionImpersonate": "Voir le restaurant",
@@ -1566,41 +1575,41 @@
       "manageUsers": "Comptes",
       "noUsers": "Aucun compte",
       "userActive": "Actif",
-      "userBanned": "Bloque",
-      "userDeleted": "Supprime",
+      "userBanned": "Bloqué",
+      "userDeleted": "Supprimé",
       "banUser": "Bloquer",
-      "unbanUser": "Debloquer",
+      "unbanUser": "Débloquer",
       "deleteUser": "Supprimer",
       "restoreUser": "Restaurer",
       "confirmSuspendTitle": "Suspendre ce restaurant ?",
-      "confirmSuspendDesc": "{name} ne pourra plus prendre de commandes tant qu'il est suspendu. Action reversible.",
+      "confirmSuspendDesc": "{name} ne pourra plus prendre de commandes tant qu'il est suspendu. Action réversible.",
       "confirmDeleteTitle": "Supprimer ce restaurant ?",
-      "confirmDeleteDesc": "{name} sera mis a la corbeille et deviendra inaccessible. Restaurable depuis la corbeille.",
+      "confirmDeleteDesc": "{name} sera mis à la corbeille et deviendra inaccessible. Restaurable depuis la corbeille.",
       "confirmBanTitle": "Bloquer ce compte ?",
-      "confirmBanDesc": "{email} ne pourra plus se connecter tant qu'il est bloque. Action reversible.",
+      "confirmBanDesc": "{email} ne pourra plus se connecter tant qu'il est bloqué. Action réversible.",
       "confirmDeleteUserTitle": "Supprimer ce compte ?",
-      "confirmDeleteUserDesc": "{email} sera retire de ce restaurant. Restaurable ensuite.",
+      "confirmDeleteUserDesc": "{email} sera retiré de ce restaurant. Restaurable ensuite.",
       "reasonLabel": "Raison (optionnel)",
-      "reasonPlaceholder": "Note conservee dans le journal",
+      "reasonPlaceholder": "Note conservée dans le journal",
       "typeToConfirm": "Tapez \"{name}\" pour confirmer",
       "cancel": "Annuler",
       "working": "En cours...",
-      "done": "Action effectuee"
+      "done": "Action effectuée"
     },
     "tenants": {
       "commandCenter": {
         "tenantsDialog": {
           "title": "Tous les établissements",
-          "subtitleSingle": "{count} établissement enregistre",
-          "subtitlePlural": "{count} établissements enregistres",
+          "subtitleSingle": "{count} établissement enregistré",
+          "subtitlePlural": "{count} établissements enregistrés",
           "searchPlaceholder": "Rechercher par nom ou sous-domaine...",
-          "noResults": "Aucun resultat pour \"{query}\"",
+          "noResults": "Aucun résultat pour \"{query}\"",
           "menu": "Menu"
         },
         "alerts": {
-          "orderCancelled": "Commande #{number} annulee",
-          "siteOffline": "Site desactive",
-          "title": "A surveiller",
+          "orderCancelled": "Commande #{number} annulée",
+          "siteOffline": "Site désactivé",
+          "title": "À surveiller",
           "empty": "Tout roule, aucune alerte",
           "viewSite": "Ouvrir {name}"
         },
@@ -1618,22 +1627,22 @@
           "currencyShort": "F"
         },
         "errors": {
-          "fetchFailed": "Impossible de charger les données. Reessayez.",
-          "retry": "Reessayer"
+          "fetchFailed": "Impossible de charger les données. Réessayez.",
+          "retry": "Réessayer"
         },
         "hero": {
           "todayRevenue": "Chiffre d'affaires - aujourd'hui",
           "live": "en direct",
           "vsYesterday": "vs hier",
-          "lastOrderJustNow": "Derniere commande a l'instant",
-          "lastOrderMinutesAgo": "Derniere commande il y a {minutes} min",
-          "lastOrderHoursAgo": "Derniere commande il y a {hours} h"
+          "lastOrderJustNow": "Dernière commande à l'instant",
+          "lastOrderMinutesAgo": "Dernière commande il y a {minutes} min",
+          "lastOrderHoursAgo": "Dernière commande il y a {hours} h"
         },
         "flux": {
-          "title": "Activite recente",
+          "title": "Activité récente",
           "live": "en direct",
           "empty": "Aucune commande encore",
-          "statusDelivered": "Livree",
+          "statusDelivered": "Livrée",
           "statusPreparing": "En préparation",
           "statusPending": "En attente"
         },
@@ -1647,7 +1656,7 @@
           "ordersShort": "cmd.",
           "trendLabel": "vs hier",
           "trendNew": "Nouveau",
-          "sparklineLabel": "Activite du jour de {name}",
+          "sparklineLabel": "Activité du jour de {name}",
           "mineTitle": "Vos établissements",
           "card": {
             "manage": "Gérer mon restaurant",
@@ -1661,8 +1670,8 @@
           }
         },
         "topbar": {
-          "toggleTheme": "Basculer le theme",
-          "logout": "Se deconnecter",
+          "toggleTheme": "Basculer le thème",
+          "logout": "Se déconnecter",
           "refresh": "Rafraichir les données",
           "account": "Compte"
         },
@@ -1769,7 +1778,7 @@
     "presenceMap": "Implantation",
     "popularCategories": "Catégories populaires",
     "topItemsTitle": "Top articles",
-    "quickAccessTitle": "Acces rapides",
+    "quickAccessTitle": "Accès rapides",
     "activeTables": "Tables actives",
     "avgBasket": "Panier moyen",
     "pendingCount": "{count} en attente",
@@ -1779,13 +1788,13 @@
     "tableLabel": "Table",
     "server": "Serveur",
     "assignServer": "Assigner un serveur",
-    "releaseTable": "Liberer la table",
-    "releaseAll": "Tout liberer",
+    "releaseTable": "Libérer la table",
+    "releaseAll": "Tout libérer",
     "claimOrder": "Prendre en charge",
     "myTables": "Mes tables",
     "unassigned": "Non assigné",
     "noActiveAssignments": "Aucune assignation active",
-    "assignedTo": "Assigne a {name}",
+    "assignedTo": "Assigné à {name}",
     "serverPerformance": "Performance par serveur",
     "periodDay": "Jour",
     "periodWeek": "Semaine",
@@ -1802,18 +1811,18 @@
     "kpiDown": "En baisse aujourd'hui",
     "kpiFlat": "Pas encore de tendance",
     "kpiAvgFlat": "Pas encore de tendance",
-    "kpiVsYesterdayValue": "Compare a {value} hier",
-    "kpiOrdersYesterday": "{value} hier a la même heure",
-    "kpiAvgFoot": "CA du jour / commandes payees",
+    "kpiVsYesterdayValue": "Comparé à {value} hier",
+    "kpiOrdersYesterday": "{value} hier à la même heure",
+    "kpiAvgFoot": "CA du jour / commandes payées",
     "kpiAvgUp": "Hausse du panier moyen",
     "kpiAvgDown": "Recul du panier moyen",
     "kpiTablesActive": "Service en cours",
     "kpiTablesFoot": "{used} sur {total} occupées",
     "chartRevenueTitle": "Total des revenus",
     "chartRevenueDesc": "Chiffre d'affaires par canal de vente",
-    "chartRevenueEmpty": "Aucune vente sur cette periode.",
+    "chartRevenueEmpty": "Aucune vente sur cette période.",
     "channelSurplace": "Sur place",
-    "channelEmporter": "A emporter",
+    "channelEmporter": "À emporter",
     "ordersTableTitle": "Commandes",
     "tabAll": "Toutes",
     "tabPending": "En attente",
@@ -1835,9 +1844,9 @@
     "agoHour": "il y a {n} h",
     "colPayment": "Paiement",
     "payPaid": "Paye",
-    "payPending": "A encaisser",
+    "payPending": "À encaisser",
     "payPartial": "Partiel",
-    "payRefunded": "Rembourse",
+    "payRefunded": "Remboursé",
     "payComped": "Offert",
     "colColumns": "Colonnes",
     "colAdd": "Ajouter",
@@ -1852,17 +1861,17 @@
     "periodYesterday": "Hier",
     "period7d": "7 derniers jours",
     "period30d": "30 derniers jours",
-    "settingsHub": "Parametres",
+    "settingsHub": "Paramètres",
     "setAccount": "Compte",
     "setEstablishment": "Établissement",
     "setPrinters": "Imprimantes",
     "setTax": "TVA",
     "setStaff": "Personnel",
     "setAccountSub": "Vos informations et votre abonnement.",
-    "setEstablishmentSub": "Coordonnees et QR du menu.",
+    "setEstablishmentSub": "Coordonnées et QR du menu.",
     "setPrintersSub": "Imprimantes tickets et cuisine.",
-    "setTaxSub": "Taux de taxe appliques aux additions.",
-    "setStaffSub": "Membres de l'équipe et roles d'acces.",
+    "setTaxSub": "Taux de taxe appliqués aux additions.",
+    "setStaffSub": "Membres de l'équipe et rôles d'accès.",
     "setFieldName": "Nom",
     "setFieldEmail": "Email",
     "setFieldPlan": "Abonnement",
@@ -1871,7 +1880,7 @@
     "setManageQr": "Gérer les QR codes",
     "setManageSub": "Gérer l'abonnement",
     "setManageStaff": "Gérer l'équipe",
-    "setManageSettings": "Ouvrir dans les parametres",
+    "setManageSettings": "Ouvrir dans les paramètres",
     "trendUp": "▲",
     "trendDown": "▼",
     "pageSubtitle": "Total encaissé aujourd'hui",
@@ -1915,8 +1924,8 @@
       "unlimited": "Illimité",
       "changePlan": "Changer de plan",
       "manageBilling": "Gérer la facturation",
-      "planChanged": "Plan mis a jour. Votre facturation est calculee au prorata.",
-      "planChangeError": "Impossible de changer le plan. Reessayez.",
+      "planChanged": "Plan mis à jour. Votre facturation est calculée au prorata.",
+      "planChangeError": "Impossible de changer le plan. Réessayez.",
       "monthly": "Mensuel",
       "yearly": "Annuel",
       "semiannual": "Semestriel",
@@ -1924,7 +1933,7 @@
       "popularPlan": "Le plus populaire",
       "renewsOn": "Renouvellement le",
       "trialEndsOn": "Essai jusqu'au",
-      "billedSemiannual": "Facture {total} F/6 mois",
+      "billedSemiannual": "Facturé {total} F/6 mois",
       "starterName": "Starter",
       "starterDesc": "Pour démarrer votre menu digital",
       "proName": "Pro",
@@ -1932,9 +1941,9 @@
       "perMonth": "F/mois",
       "perYear": "F/an",
       "perSemiannual": "F/6 mois",
-      "nextCharge": "Prochain prelevement",
+      "nextCharge": "Prochain prélèvement",
       "enterpriseTitle": "Besoin de plus ?",
-      "enterpriseDesc": "Plusieurs etablissements, gros volumes, besoins sur mesure. On construit l'offre avec vous.",
+      "enterpriseDesc": "Plusieurs établissements, gros volumes, besoins sur mesure. On construit l'offre avec vous.",
       "enterpriseCta": "Parlons-en",
       "billedYearly": "Facturé {total} F/an",
       "feature1Space": "1 espace restaurant",
@@ -1951,8 +1960,8 @@
       "statusActive": "Actif",
       "statusTrial": "Essai gratuit",
       "statusPastDue": "Paiement en retard",
-      "statusCancelled": "Annule",
-      "statusFrozen": "Gele",
+      "statusCancelled": "Annulé",
+      "statusFrozen": "Gelé",
       "loading": "Chargement...",
       "upgradePro": "Passer au Pro",
       "chooseStarter": "Choisir Starter",
@@ -2020,18 +2029,18 @@
       "create": "Créer l'établissement",
       "creationError": "Erreur lors de la création",
       "unknownError": "Erreur inconnue",
-      "nameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom."
+      "nameTaken": "Ce nom est déjà utilisé par un autre compte. Choisissez un autre nom."
     },
     "settings": {
       "paymentMethodsTitle": "Modes de paiement",
       "paymentMethodsDesc": "Activez les modes de paiement disponibles pour vos clients.",
-      "paymentMethodsSaved": "Modes de paiement enregistres",
+      "paymentMethodsSaved": "Modes de paiement enregistrés",
       "paymentMethodsError": "Erreur lors de l'enregistrement des modes de paiement",
       "savePaymentMethods": "Enregistrer",
       "paymentMethod": {
         "cash": {
-          "label": "Especes",
-          "desc": "Paiement en especes a la livraison ou au comptoir"
+          "label": "Espèces",
+          "desc": "Paiement en espèces à la livraison ou au comptoir"
         },
         "card": {
           "label": "Carte bancaire",
@@ -2056,7 +2065,7 @@
       }
     },
     "upgradeWall": {
-      "planRequired": "Fonctionnalite Pro",
+      "planRequired": "Fonctionnalité Pro",
       "upgradeCta": "Passer au Pro - 14j gratuits",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
       "trialNote": "Disponible gratuitement pendant votre essai Pro",
@@ -2066,15 +2075,15 @@
       },
       "inventory": {
         "title": "Gestion des stocks",
-        "desc": "Suivez vos ingredients en temps réel, recevez des alertes avant les ruptures, et destockez automatiquement après chaque commande."
+        "desc": "Suivez vos ingrédients en temps réel, recevez des alertes avant les ruptures, et déstockez automatiquement après chaque commande."
       },
       "recipes": {
         "title": "Fiches techniques",
-        "desc": "Calculez le cout réel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activite réelle."
+        "desc": "Calculez le coût réel de chaque plat, suivez vos marges et optimisez vos achats en fonction de votre activité réelle."
       },
       "reports": {
-        "title": "Statistiques avancees",
-        "desc": "Decouvrez quels plats se vendent, a quelle heure, pour combien. Prenez des décisions basees sur des données réelles."
+        "title": "Statistiques avancées",
+        "desc": "Découvrez quels plats se vendent, à quelle heure, pour combien. Prenez des décisions basées sur des données réelles."
       },
       "service": {
         "title": "Plan de salle et service",
@@ -2082,7 +2091,7 @@
       },
       "tables": {
         "title": "Gestion des tables",
-        "desc": "Creez vos zones, numerotez vos tables, un QR par table. Chaque commande arrive avec le bon numero."
+        "desc": "Créez vos zones, numérotez vos tables, un QR par table. Chaque commande arrive avec le bon numéro."
       }
     }
   },
@@ -2170,8 +2179,8 @@
     "savingRecipe": "Enregistrement de la recette...",
     "recipeSaved": "Recette enregistrée",
     "recipeSaveError": "Erreur lors de l'enregistrement de la recette",
-    "recipeQtyRequired": "Indiquez une quantite superieure a 0 pour chaque ingredient",
-    "recipeDuplicateIngredient": "Chaque ingredient ne peut apparaitre qu'une fois",
+    "recipeQtyRequired": "Indiquez une quantité supérieure à 0 pour chaque ingrédient",
+    "recipeDuplicateIngredient": "Chaque ingrédient ne peut apparaitre qu'une fois",
     "recipeAllIngredientsUsed": "Tous vos produits sont déjà dans cette fiche",
     "recipeReadOnlyHint": "Vous pouvez consulter les fiches. Seuls les responsables stock peuvent les modifier.",
     "goToInventory": "Gérer les produits en stock",
@@ -2215,27 +2224,27 @@
     "newCount": "Nouvel inventaire",
     "countSheet": "Feuille d'inventaire",
     "countReference": "Référence (optionnel)",
-    "countReferencePlaceholder": "Ex: Inventaire juillet, Cloture...",
-    "theoreticalQty": "Theorique",
+    "countReferencePlaceholder": "Ex: Inventaire juillet, Clôture...",
+    "theoreticalQty": "Théorique",
     "countedQty": "Compte",
-    "variance": "Ecart",
+    "variance": "Écart",
     "commitCount": "Valider l'inventaire",
     "commitConfirmTitle": "Valider l'inventaire ?",
-    "commitConfirmBody": "Cette action est irreversible. Le stock sera mis a jour.",
+    "commitConfirmBody": "Cette action est irréversible. Le stock sera mis à jour.",
     "saveCount": "Enregistrer",
     "countStatusOpen": "Ouvert",
-    "countStatusCommitted": "Valide",
-    "countStatusCancelled": "Annule",
+    "countStatusCommitted": "Validé",
+    "countStatusCancelled": "Annulé",
     "cancelCount": "Annuler l'inventaire",
-    "noVariance": "Aucun ecart detecte",
+    "noVariance": "Aucun écart detecte",
     "countsEmptyTitle": "Aucun inventaire",
     "countsEmptyBody": "Lancez votre premier inventaire physique pour pointer votre stock.",
-    "itemsWithVariance": "{count} produit(s) avec ecart",
-    "countCommitted": "Inventaire valide. Stock mis a jour.",
+    "itemsWithVariance": "{count} produit(s) avec écart",
+    "countCommitted": "Inventaire validé. Stock mis à jour.",
     "countColDate": "Date",
     "countView": "Voir",
     "countNotFound": "Inventaire introuvable.",
-    "countSaved": "Inventaire enregistre",
+    "countSaved": "Inventaire enregistré",
     "movementPhysicalCount": "Inventaire physique",
     "declareLoss": "Déclarer une perte",
     "lossQty": "Quantité perdue",
@@ -2244,8 +2253,8 @@
     "lossRecorded": "Perte enregistrée",
     "lossError": "Erreur lors de l'enregistrement de la perte",
     "importTechnicalSheets": "Importer fiches techniques",
-    "unitChangeWarning": "Attention: changer l'unite ne convertit rien. Le stock enregistre et toutes les recettes qui utilisent cet ingredient gardent leurs nombres tels quels: 2 en {from} devient 2 en {to}. Corrigez le stock et les recettes apres l'enregistrement.",
-    "unitChangeAcknowledge": "Je comprends: je corrigerai moi-meme le stock et les recettes"
+    "unitChangeWarning": "Attention: changer l'unité ne convertit rien. Le stock enregistré et toutes les recettes qui utilisent cet ingrédient gardent leurs nombres tels quels: 2 en {from} devient 2 en {to}. Corrigez le stock et les recettes après l'enregistrement.",
+    "unitChangeAcknowledge": "Je comprends: je corrigerai moi-même le stock et les recettes"
   },
   "losses": {
     "title": "Pertes par motif",
@@ -2313,7 +2322,7 @@
     "typeBar": "Bar",
     "typeCafe": "Café",
     "typeFastfood": "Fast-food",
-    "typeRetail": "Commerce de detail",
+    "typeRetail": "Commerce de détail",
     "typeBoutique": "Boutique",
     "typePharmacy": "Pharmacie",
     "typeSalon": "Salon",
@@ -2428,7 +2437,7 @@
     "daySat": "Samedi",
     "daySun": "Dimanche",
     "qrCodesTitle": "QR Codes",
-    "qrCodesDescription": "Personnalisez et telechargez vos QR codes pour vos tables et menus.",
+    "qrCodesDescription": "Personnalisez et téléchargez vos QR codes pour vos tables et menus.",
     "domain": "Domaine",
     "customDomain": "Domaine personnalisé",
     "customDomainDesc": "Utilisez votre propre nom de domaine pour votre établissement",
@@ -2466,20 +2475,20 @@
     "resetClose": "Fermer",
     "resetInProgress": "Suppression...",
     "resetError": "Une erreur est survenue lors de la réinitialisation.",
-    "enableBarDisplay": "Zones de préparation separees",
-    "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand desactive, toutes les commandes apparaissent sur un seul écran."
+    "enableBarDisplay": "Zones de préparation séparées",
+    "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand désactivé, toutes les commandes apparaissent sur un seul écran."
   },
   "espaces": {
     "title": "Espaces de restauration",
     "subtitle": "Un espace = un lieu de service avec sa carte. Panorama, lobby bar, pool...",
     "add": "Ajouter un espace",
-    "create": "Creer l'espace",
+    "create": "Créer l'espace",
     "rename": "Renommer",
-    "deactivate": "Desactiver",
+    "deactivate": "Désactiver",
     "reactivate": "Reactiver",
     "required": "Requis",
     "principal": "Principal",
-    "limitReached": "Limite du plan atteinte. Passer au plan superieur",
+    "limitReached": "Limite du plan atteinte. Passer au plan supérieur",
     "newSpace": "Nouvel espace",
     "renameSpace": "Renommer l'espace",
     "nameLabel": "Nom de l'espace",
@@ -2488,13 +2497,13 @@
     "save": "Enregistrer",
     "tablesCount": "{count, plural, one {# table} other {# tables}}",
     "inactive": "inactif",
-    "toastCreated": "Espace cree.",
-    "toastRenamed": "Espace renomme.",
-    "toastDeactivated": "Espace desactive.",
-    "toastReactivated": "Espace reactive.",
-    "toastLastSpace": "Impossible de desactiver le dernier espace.",
-    "backToSettings": "Retour aux parametres",
-    "newSpaceHint": "Donnez un nom clair a ce lieu de service.",
+    "toastCreated": "Espace créé.",
+    "toastRenamed": "Espace renommé.",
+    "toastDeactivated": "Espace désactivé.",
+    "toastReactivated": "Espace réactivé.",
+    "toastLastSpace": "Impossible de désactiver le dernier espace.",
+    "backToSettings": "Retour aux paramètres",
+    "newSpaceHint": "Donnez un nom clair à ce lieu de service.",
     "renameHint": "Choisissez un nouveau nom pour cet espace.",
     "reactivateLimit": "Limite du plan atteinte",
     "empty": "Aucun espace pour le moment."
@@ -2528,10 +2537,10 @@
     "loading": "Chargement...",
     "unavailable": {
       "developpement": "Les notifications push ne fonctionnent pas en mode developpement. Lancez un build de production pour les tester.",
-      "cle-absente": "Les notifications push ne sont pas encore configurees sur le serveur. Contactez le support.",
-      "ios-a-installer": "Sur iPhone et iPad, ajoutez d'abord ATTABL a votre ecran d'accueil (bouton Partager, puis Sur l'ecran d'accueil). Les notifications seront alors disponibles.",
+      "cle-absente": "Les notifications push ne sont pas encore configurées sur le serveur. Contactez le support.",
+      "ios-a-installer": "Sur iPhone et iPad, ajoutez d'abord ATTABL à votre écran d'accueil (bouton Partager, puis Sur l'écran d'accueil). Les notifications seront alors disponibles.",
       "navigateur": "Ce navigateur ne gere pas les notifications push. Essayez Chrome, Edge ou Firefox.",
-      "service-worker": "Les notifications n'ont pas pu demarrer sur cet appareil. Rechargez la page, et si cela persiste contactez le support."
+      "service-worker": "Les notifications n'ont pas pu démarrer sur cet appareil. Rechargez la page, et si cela persiste contactez le support."
     }
   },
   "sidebar": {
@@ -2582,7 +2591,7 @@
     "navPermissions": "Permissions",
     "fullscreen": "Plein écran",
     "exitFullscreen": "Quitter le plein écran",
-    "sectionOperations": "OPERATIONS",
+    "sectionOperations": "OPÉRATIONS",
     "sectionCatalog": "CATALOGUE",
     "sectionMarketing": "MARKETING",
     "switchSpace": "Changer d'espace",
@@ -2596,8 +2605,8 @@
     "planFree": "Gratuit",
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
-    "planCardUpsellPro": "Debloquez le point de vente complet, la cuisine et le stock.",
-    "planCardUpsellBusiness": "Multi-etablissements, room service et analytics.",
+    "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
+    "planCardUpsellBusiness": "Multi-établissements, room service et analytics.",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
@@ -2619,22 +2628,22 @@
       "versoNone": "Recto simple",
       "versoLogo": "Logo seul au verso",
       "versoMirror": "Miroir recto",
-      "exportPdf": "Telecharger PDF",
-      "exportPng": "Telecharger PNG",
+      "exportPdf": "Télécharger PDF",
+      "exportPng": "Télécharger PNG",
       "saving": "Sauvegarde...",
-      "saved": "Sauvegarde",
+      "saved": "Sauvegardé",
       "rectoLabel": "RECTO",
       "versoLabel": "VERSO",
       "exportPdfError": "Erreur lors de l'export PDF",
       "exportPngError": "Erreur lors de l'export PNG",
       "tenantNotFound": "Restaurant introuvable"
     },
-    "logoutBlocked": "Deconnexion impossible",
-    "logoutBlockedDesc": "{count} commande(s) pas encore envoyee(s). Reconnectez le reseau et attendez que le compteur retombe a zero.",
-    "logoutLostDesc": "{count} commande(s) n'ont pas pu etre envoyees et sont perdues. Notez-les avant de continuer, puis recliquez sur Deconnexion.",
-    "logoutForceExplain": "Si vous vous deconnectez maintenant, ces commandes ne sont pas perdues : elles restent sur cette tablette et repartiront quand vous vous reconnecterez ici. Personne d'autre ne peut les envoyer a votre place.",
-    "logoutStay": "Rester connecte",
-    "logoutForce": "Se deconnecter quand meme"
+    "logoutBlocked": "Déconnexion impossible",
+    "logoutBlockedDesc": "{count} commande(s) pas encore envoyée(s). Reconnectez le réseau et attendez que le compteur retombe à zéro.",
+    "logoutLostDesc": "{count} commande(s) n'ont pas pu être envoyées et sont perdues. Notez-les avant de continuer, puis recliquez sur Déconnexion.",
+    "logoutForceExplain": "Si vous vous déconnectez maintenant, ces commandes ne sont pas perdues : elles restent sur cette tablette et repartiront quand vous vous reconnecterez ici. Personne d'autre ne peut les envoyer à votre place.",
+    "logoutStay": "Rester connecté",
+    "logoutForce": "Se déconnecter quand même"
   },
   "kitchen": {
     "title": "Cuisine (KDS)",
@@ -2675,37 +2684,37 @@
     "footerAll": "Tout",
     "footerQueue": "File",
     "footerCooking": "Cuisson",
-    "footerPacking": "Pret",
+    "footerPacking": "Prêt",
     "footerDelayed": "Retard",
     "footerPage": "Page",
     "orderedAt": "Commande {time}",
     "serviceDineIn": "Sur place",
     "statusQueue": "FILE",
     "statusCooking": "CUISSON",
-    "statusPacking": "PRET",
+    "statusPacking": "PRÊT",
     "due": "Pour",
-    "startCooking": "DEMARRER",
+    "startCooking": "DÉMARRER",
     "finishCooking": "TERMINER",
     "done": "FAIT",
     "moreItems": "articles de plus",
-    "showLess": "Reduire",
+    "showLess": "Réduire",
     "tabActive": "ACTIVES",
-    "tabScheduled": "PLANIFIEES",
-    "tabCompleted": "TERMINEES",
+    "tabScheduled": "PLANIFIÉES",
+    "tabCompleted": "TERMINÉES",
     "tapToEnableSound": "Appuyez pour activer le son",
-    "tapToEnableSoundDesc": "Les notifications sonores seront activees pour les nouvelles commandes",
+    "tapToEnableSoundDesc": "Les notifications sonores seront activées pour les nouvelles commandes",
     "zoneAll": "Tout",
     "zoneKitchen": "Cuisine",
     "zoneBar": "Bar",
     "searchPlaceholder": "Rechercher une commande...",
     "searchLabel": "Rechercher",
-    "courseAppetizer": "Entrees",
+    "courseAppetizer": "Entrées",
     "courseMain": "Plats",
     "courseDessert": "Desserts",
     "courseDrink": "Boissons",
     "fireCourse": "Envoyer",
     "holdCourse": "Retenir",
-    "staleScreen": "Ecran non synchronise depuis {time}"
+    "staleScreen": "Écran non synchronisé depuis {time}"
   },
   "pos": {
     "title": "Caisse (POS)",
@@ -2780,11 +2789,11 @@
     "selectModifiers": "Modificateurs",
     "addToCart": "Ajouter au panier",
     "orderNote": "Note de commande",
-    "orderNotePlaceholder": "Instructions speciales pour cette commande...",
+    "orderNotePlaceholder": "Instructions spéciales pour cette commande...",
     "couponPlaceholder": "Code promo",
-    "toSettle": "A encaisser",
+    "toSettle": "À encaisser",
     "toSettleSubtitle": "Commandes en attente de paiement",
-    "toSettleEmpty": "Aucune commande a encaisser",
+    "toSettleEmpty": "Aucune commande à encaisser",
     "toSettleRemaining": "Reste à payer",
     "zone": "Zone",
     "tables": "Tables",
@@ -2792,7 +2801,7 @@
     "increaseQty": "Augmenter la quantité",
     "removeCoupon": "Retirer le code promo",
     "noTablesInZone": "Aucune table dans cette zone",
-    "tableOccupied": "Occupee",
+    "tableOccupied": "Occupée",
     "noZonesConfigured": "Aucune zone configurée",
     "noZonesHint": "Créez vos zones et tables dans Paramètres > Tables",
     "tableWithNumber": "Table {table}",
@@ -2801,8 +2810,8 @@
     "productsTab": "Produits",
     "couponInvalid": "Coupon invalide",
     "couponValidationError": "Erreur de validation",
-    "paymentQueued": "Encaissement en attente de reseau",
-    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistre et partira des le retour du reseau."
+    "paymentQueued": "Encaissement en attente de réseau",
+    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistré et partira dès le retour du réseau."
   },
   "users": {
     "title": "Utilisateurs",
@@ -2872,9 +2881,9 @@
     "expiresIn": "Expire dans {time}",
     "resend": "Renvoyer",
     "passwordSection": "Mot de passe",
-    "sendResetLink": "Envoyer un lien de reinitialisation",
+    "sendResetLink": "Envoyer un lien de réinitialisation",
     "resetLinkHint": "Le lien part sur l adresse du membre. Lui seul choisit son mot de passe.",
-    "resetLinkSent": "Lien de reinitialisation envoye a l adresse du compte de ce membre",
+    "resetLinkSent": "Lien de réinitialisation envoyé à l adresse du compte de ce membre",
     "emailRequired": "Veuillez saisir une adresse email",
     "inviteSentTo": "Invitation envoyée à {email}",
     "inviteEmailNotSent": "Invitation créée, mais l'email n'est pas parti. Renvoyez-la depuis la liste.",
@@ -2887,26 +2896,26 @@
   },
   "reports": {
     "title": "Rapports",
-    "reportModel": "Modele de fiche",
-    "model_simple": "Etat des stocks - simple",
-    "model_detailed": "Etat des stocks - detaille",
+    "reportModel": "Modèle de fiche",
+    "model_simple": "État des stocks - simple",
+    "model_detailed": "État des stocks - détaillé",
     "model_count-sheet": "Feuille de comptage",
     "orientation": "Orientation",
     "portrait": "Portrait",
     "landscape": "Paysage",
     "print": "Imprimer",
     "total": "Total",
-    "stockReportTitle": "Etat des stocks",
-    "stockGeneratedOn": "Genere le {date} - {count} ingredients",
-    "colIngredient": "Ingredient",
-    "colUnit": "Unite",
+    "stockReportTitle": "État des stocks",
+    "stockGeneratedOn": "Généré le {date} - {count} ingrédients",
+    "colIngredient": "Ingrédient",
+    "colUnit": "Unité",
     "colStock": "Stock",
     "colMinAlert": "Alerte mini",
-    "colTheoretical": "Stock theorique",
+    "colTheoretical": "Stock théorique",
     "colCounted": "Compte",
-    "colGap": "Ecart",
-    "colCategory": "Categorie",
-    "colUnitCost": "Cout unitaire",
+    "colGap": "Écart",
+    "colCategory": "Catégorie",
+    "colUnitCost": "Coût unitaire",
     "colValue": "Valeur",
     "colStatus": "Statut",
     "statusLow": "Bas",
@@ -2976,29 +2985,29 @@
     "retry": "Réessayer"
   },
   "permissions": {
-    "title": "Permissions par role",
+    "title": "Permissions par rôle",
     "permissionColumn": "Permission",
     "saving": "Sauvegarde...",
     "loadError": "Erreur lors du chargement des permissions",
     "saveError": "Erreur lors de la sauvegarde",
     "deleteError": "Erreur lors de la suppression",
     "restoreError": "Erreur lors de la restauration",
-    "restoreSuccess": "Permissions par defaut restaurees pour {role}",
+    "restoreSuccess": "Permissions par défaut restaurées pour {role}",
     "accessDenied": "Accès refusé",
     "noAccessHint": "Votre rôle ne donne pas accès à cette page. Demandez au propriétaire si vous en avez besoin.",
-    "restoreDefaults": "Restaurer les defauts",
-    "reset": "Reinitialiser",
-    "modified": "modifie",
-    "legendAllowed": "autorise",
-    "legendDenied": "refuse",
-    "legendModified": "valeur differente du defaut",
-    "autoSaveNote": "Les modifications sont sauvegardees automatiquement.",
+    "restoreDefaults": "Restaurer les défauts",
+    "reset": "Réinitialiser",
+    "modified": "modifié",
+    "legendAllowed": "autorisé",
+    "legendDenied": "refusé",
+    "legendModified": "valeur différente du défaut",
+    "autoSaveNote": "Les modifications sont sauvegardées automatiquement.",
     "userTitle": "Permissions du membre",
-    "userSubtitle": "Ajustez les acces de {name} au-dela de son role.",
-    "useRoleDefault": "Defaut du role",
-    "autoSaveHint": "Vos changements sont enregistres automatiquement.",
-    "saved": "Enregistre",
-    "ownerAllAccess": "Le proprietaire a tous les acces. Rien a ajuster.",
+    "userSubtitle": "Ajustez les accès de {name} au-dela de son rôle.",
+    "useRoleDefault": "Défaut du rôle",
+    "autoSaveHint": "Vos changements sont enregistrés automatiquement.",
+    "saved": "Enregistré",
+    "ownerAllAccess": "Le propriétaire a tous les accès. Rien à ajuster.",
     "perm": {
       "menu_view": "Voir les menus",
       "menu_edit": "Modifier les menus",
@@ -3011,11 +3020,11 @@
       "inventory_edit": "Modifier l'inventaire",
       "team_view": "Voir l'équipe",
       "team_manage": "Gérer l'équipe",
-      "settings_view": "Voir les parametres",
-      "settings_edit": "Modifier les parametres"
+      "settings_view": "Voir les paramètres",
+      "settings_edit": "Modifier les paramètres"
     },
     "role": {
-      "owner": "Administrateur general",
+      "owner": "Administrateur général",
       "admin": "Administrateur",
       "manager": "Gérant",
       "cashier": "Caissier",
@@ -3029,7 +3038,7 @@
       "pos": "Point de vente",
       "inventory": "Inventaire",
       "team": "Équipe",
-      "settings": "Parametres"
+      "settings": "Paramètres"
     },
     "ownerOnlyHint": "Seul le propriétaire du restaurant modifie les permissions."
   },
@@ -3183,7 +3192,7 @@
     "publish": "Publier",
     "fieldsRequired": "Titre et date de début requis",
     "announcementCreated": "Annonce créée !",
-    "deleteConfirm": "Supprimer cette annonce ? Cette action est irreversible.",
+    "deleteConfirm": "Supprimer cette annonce ? Cette action est irréversible.",
     "deleteAnnouncement": "Supprimer l'annonce",
     "deleteAction": "Supprimer",
     "announcementDeletedConfirm": "Annonce supprimée",
@@ -3192,11 +3201,11 @@
     "endDateBeforeStartDate": "La date de fin doit être après la date de début"
   },
   "trial": {
-    "expiresToday": "Votre essai gratuit se termine dans moins de 24 h. Sans plan, les commandes s'arretent.",
+    "expiresToday": "Votre essai gratuit se termine dans moins de 24 h. Sans plan, les commandes s'arrêtent.",
     "daysRemaining": "Votre essai gratuit se termine dans {count, plural, one {# jour} other {# jours}}.",
     "closeAriaLabel": "Fermer",
     "choosePlan": "Choisir mon plan",
-    "expired": "Votre essai est termine. Choisissez un plan pour continuer.",
+    "expired": "Votre essai est terminé. Choisissez un plan pour continuer.",
     "seePlans": "Voir les plans",
     "menuVisibleDaysLeft": "Votre carte reste visible encore {count, plural, one {# jour} other {# jours}}. Choisissez un plan pour reprendre les commandes."
   },
@@ -3265,12 +3274,12 @@
     "featuredOnHomeLimit": "Limite recommandée de {count} catégories atteinte. Au-delà, seules les {count} premières seront affichées.",
     "isActive": "Catégorie active",
     "isActiveDesc": "Masquer cette catégorie sur le menu client sans la supprimer.",
-    "categoryLinkedToMenu": "Cette catégorie est liee a un menu et ne peut pas être supprimee.",
-    "icon": "Icone"
+    "categoryLinkedToMenu": "Cette catégorie est liée à un menu et ne peut pas être supprimée.",
+    "icon": "Icône"
   },
   "items": {
-    "selectedCount": "{count} selectionne(s)",
-    "bulkToggleAvailability": "Basculer la disponibilite",
+    "selectedCount": "{count} sélectionné(s)",
+    "bulkToggleAvailability": "Basculer la disponibilité",
     "title": "Plats & Articles",
     "newItem": "Nouveau plat",
     "allCategories": "Toutes les catégories",
@@ -3286,7 +3295,7 @@
     "noItems": "Aucun plat",
     "noItemsDesc": "Ajoutez des plats à votre carte",
     "noItemsFilter": "Aucun plat pour ces filtres",
-    "noItemsFilterDesc": "Changez la catégorie ou le statut, ou reinitialisez les filtres",
+    "noItemsFilterDesc": "Changez la catégorie ou le statut, ou réinitialisez les filtres",
     "addItem": "Ajouter un plat",
     "editItemTitle": "Modifier le plat",
     "newItemTitle": "Nouveau plat",
@@ -3339,14 +3348,14 @@
     "independentMenus": "Cartes indépendantes",
     "space": "Espace",
     "subMenuCount": "{count} sous-carte(s)",
-    "select": "Selectionner",
+    "select": "Sélectionner",
     "noMenus": "Aucune carte",
     "noMenusDesc": "Créez votre première carte pour organiser vos plats",
     "createMenu": "Créer une carte",
     "editMenuTitle": "Modifier la carte",
     "newMenuTitle": "Nouvelle carte",
     "coverImage": "Image de la carte",
-    "coverImageDesc": "Photo affichee sur la tuile de la carte a l'accueil du menu client.",
+    "coverImageDesc": "Photo affichée sur la tuile de la carte à l'accueil du menu client.",
     "nameFr": "Nom *",
     "nameFrPlaceholder": "Ex: Carte des Boissons",
     "nameEn": "Nom (traduction)",
@@ -3372,7 +3381,7 @@
     "loadingError": "Erreur lors du chargement",
     "saveError": "Erreur lors de la sauvegarde",
     "deleteError": "Erreur lors de la suppression",
-    "deleteConfirm": "Supprimer la carte {name} ? Cette action est irreversible.",
+    "deleteConfirm": "Supprimer la carte {name} ? Cette action est irréversible.",
     "breadcrumbMenus": "Cartes",
     "categoriesCount": "Catégories ({count})",
     "newCategory": "Nouvelle catégorie",
@@ -3444,7 +3453,7 @@
     "sharedMenuHint": "Ce menu sera visible dans tous vos espaces (ex : Carte des Boissons)",
     "transversalMenu": "Carte transversale (disponible partout)",
     "transversalMenuHint": "Cette carte apparaitra comme sous-onglet sur toutes les autres cartes (ex : Boissons disponibles depuis n'importe quelle carte).",
-    "wizardMenuCreatedMessage": "Carte \"{name}\" creee",
+    "wizardMenuCreatedMessage": "Carte \"{name}\" créée",
     "wizardAddCategoriesPrompt": "Souhaitez-vous ajouter des catégories maintenant ?",
     "wizardAddCategories": "Ajouter des catégories",
     "wizardAddItems": "Ajouter des plats",
@@ -3498,23 +3507,23 @@
     "validatePayment": "Valider l'encaissement",
     "amountRemaining": "Il manque {amount}",
     "quickAdd": "+{amount}",
-    "paymentAlreadySettled": "Commande deja reglee",
+    "paymentAlreadySettled": "Commande déjà réglée",
     "payPartial": "Paiement partiel",
     "recordPartial": "Encaisser un acompte",
-    "partialRecorded": "Acompte enregistre",
-    "remaining": "Reste a payer : {amount}",
+    "partialRecorded": "Acompte enregistré",
+    "remaining": "Reste à payer : {amount}",
     "refund": "Rembourser",
-    "refundAmount": "Montant a rembourser",
+    "refundAmount": "Montant à rembourser",
     "refundConfirm": "Confirmer le remboursement",
-    "refunded": "Remboursement enregistre",
+    "refunded": "Remboursement enregistré",
     "refundError": "Erreur lors du remboursement",
     "ledger": "Paiements",
     "netPaid": "Encaisse",
     "tenderHistory": "Historique des paiements",
-    "noTenders": "Aucun paiement enregistre",
+    "noTenders": "Aucun paiement enregistré",
     "recordPayment": "Enregistrer le paiement",
     "amount": "Montant",
-    "tenderRecorded": "Paiement enregistre",
+    "tenderRecorded": "Paiement enregistré",
     "loadError": "Impossible de charger les paiements",
     "compOrder": "Offrir la commande",
     "compReason": "Raison",
@@ -3524,17 +3533,17 @@
     "compedBadge": "Offert",
     "compSuccess": "Commande offerte",
     "compError": "Impossible d'offrir la commande",
-    "cannotCompPaid": "Cette commande est deja payee. Utilisez un remboursement.",
-    "paymentQueued": "Encaissement en attente de reseau",
-    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistre et partira des le retour du reseau."
+    "cannotCompPaid": "Cette commande est déjà payée. Utilisez un remboursement.",
+    "paymentQueued": "Encaissement en attente de réseau",
+    "paymentQueuedDesc": "Pas de connexion. Le paiement est enregistré et partira dès le retour du réseau."
   },
   "orderNote": {
-    "title": "Notes du gerant",
+    "title": "Notes du gérant",
     "add": "Ajouter",
     "placeholder": "Laisser une note sur cette commande",
     "empty": "Aucune note pour l'instant",
     "by": "par {name}",
-    "added": "Note ajoutee"
+    "added": "Note ajoutée"
   },
   "houseAccount": {
     "title": "Ardoises",
@@ -3542,19 +3551,19 @@
     "name": "Nom",
     "namePlaceholder": "Qui doit (client, chambre 12, staff...)",
     "description": "Note",
-    "descriptionPlaceholder": "Pourquoi c'est impaye",
+    "descriptionPlaceholder": "Pourquoi c'est impayé",
     "attach": "Mettre sur l'ardoise",
     "detach": "Retirer de l'ardoise",
     "onTab": "Sur l'ardoise",
     "openOrders": "Commandes ouvertes",
     "outstanding": "Reste du",
     "settle": "Solder",
-    "settleConfirm": "Marquer cette ardoise comme soldee ? Cette action confirme que le solde a ete regle.",
-    "settled": "Ardoise soldee",
+    "settleConfirm": "Marquer cette ardoise comme soldée ? Cette action confirme que le solde a été réglé.",
+    "settled": "Ardoise soldée",
     "statusOpen": "Ouverte",
-    "statusSettled": "Soldee",
+    "statusSettled": "Soldée",
     "empty": "Aucune ardoise ouverte",
-    "created": "Ardoise creee",
+    "created": "Ardoise créée",
     "error": "Une erreur est survenue"
   },
   "qrCodes": {
@@ -3563,7 +3572,7 @@
     "designLoadError": "Impossible de charger ce design (format invalide).",
     "logoInvalidType": "Fichier non valide. Choisissez une image.",
     "logoTooLarge": "Image trop lourde (5 Mo max).",
-    "logoUploadError": "Impossible de traiter cette image. Reessayez.",
+    "logoUploadError": "Impossible de traiter cette image. Réessayez.",
     "stepSelection": "Sélection",
     "stepCustomization": "Personnalisation",
     "stepDownload": "Téléchargement",
@@ -3597,38 +3606,38 @@
     "tabDownload": "Télécharger",
     "guideButton": "Guide",
     "guideTitle": "Comment utiliser vos QR codes",
-    "guideIntro": "Un QR par table. Le client scanne, votre carte s'ouvre sur son telephone. Voici les 4 etapes.",
+    "guideIntro": "Un QR par table. Le client scanne, votre carte s'ouvre sur son téléphone. Voici les 4 étapes.",
     "guideStep1Title": "Choisir la table et la carte",
-    "guideStep1Body": "Selectionnez une table et la carte a afficher. Le QR pointera vers cette carte, pour cette table.",
+    "guideStep1Body": "Sélectionnez une table et la carte à afficher. Le QR pointera vers cette carte, pour cette table.",
     "guideStep2Title": "Personnaliser le QR",
     "guideStep2Body": "Mettez vos couleurs et votre logo au centre. Le QR reste scannable.",
     "guideStep3Title": "Assigner un design",
-    "guideStep3Body": "Appliquez un design a une zone entiere ou table par table, d'un coup.",
-    "guideStep4Title": "Telecharger et imprimer",
-    "guideStep4Body": "Telechargez en PNG, SVG ou PDF. Une table ou toutes d'un coup pour l'impression.",
+    "guideStep3Body": "Appliquez un design à une zone entiere ou table par table, d'un coup.",
+    "guideStep4Title": "Télécharger et imprimer",
+    "guideStep4Body": "Téléchargez en PNG, SVG ou PDF. Une table ou toutes d'un coup pour l'impression.",
     "guideTipTitle": "Sur chaque table",
-    "guideTipBody": "Imprimez, plastifiez, posez sur la table. Testez avec votre telephone avant le service.",
+    "guideTipBody": "Imprimez, plastifiez, posez sur la table. Testez avec votre téléphone avant le service.",
     "formatA4": "Format A4",
-    "assignIntro": "Sauvegardez un design puis assignez-le a une zone ou a une table. Chaque table peut avoir son propre code.",
+    "assignIntro": "Sauvegardez un design puis assignez-le à une zone ou à une table. Chaque table peut avoir son propre code.",
     "savedDesigns": "Designs sauvegardes",
     "saveCurrentDesign": "Sauvegarder ce design",
     "designName": "Nom du design",
     "designNamePlaceholder": "Ex: Terrasse, Salle principale",
-    "setAsDefault": "Definir par defaut",
+    "setAsDefault": "Définir par défaut",
     "save": "Sauvegarder",
-    "noSavedDesigns": "Aucun design sauvegarde pour l'instant.",
-    "default": "Defaut",
-    "designSaved": "Design \"{name}\" sauvegarde",
+    "noSavedDesigns": "Aucun design sauvegardé pour l'instant.",
+    "default": "Défaut",
+    "designSaved": "Design \"{name}\" sauvegardé",
     "assignmentSaved": "Assignation mise a jour",
     "assignByZoneTable": "Assigner par zone et par table",
-    "assignHint": "Une table sans design specifique herite du design de sa zone, sinon du design par defaut.",
+    "assignHint": "Une table sans design spécifique hérite du design de sa zone, sinon du design par défaut.",
     "noZonesTables": "Ajoutez des zones et des tables pour assigner un design.",
     "zoneDesign": "Design de la zone",
-    "useDefault": "Design par defaut",
-    "inheritZone": "Heriter de la zone",
-    "badgeSpecific": "Specifique",
-    "badgeInheritZone": "Herite de la zone",
-    "badgeDefault": "Defaut",
+    "useDefault": "Design par défaut",
+    "inheritZone": "Hériter de la zone",
+    "badgeSpecific": "Spécifique",
+    "badgeInheritZone": "Hérite de la zone",
+    "badgeDefault": "Défaut",
     "badgeNone": "Aucun",
     "formatAndLayout": "Format & impression",
     "cardFormat": "Format de la carte",
@@ -3643,32 +3652,32 @@
     "perPage_2": "2 par page",
     "perPage_4": "4 par page",
     "perPage_auto": "Remplir la page (auto)",
-    "exportPdf": "Telecharger le PDF",
+    "exportPdf": "Télécharger le PDF",
     "exportPng": "PNG",
     "exportSvgOnly": "SVG (QR seul)",
     "template_minimal_name": "Minimal",
-    "template_minimal_desc": "Le QR seul, epure",
+    "template_minimal_desc": "Le QR seul, épuré",
     "template_carte_name": "Carte bordee",
     "template_carte_desc": "Nom, filet fin, QR centre",
     "template_chevalet_name": "Chevalet",
     "template_chevalet_desc": "A6 vertical pour les tables",
     "colorPreset": "Couleur {color}",
     "colorPickerLabel": "Selecteur de couleur",
-    "hexValueLabel": "Valeur hexadecimale",
-    "ctaSelectLabel": "Appel a l'action",
+    "hexValueLabel": "Valeur hexadécimale",
+    "ctaSelectLabel": "Appel à l'action",
     "assignZoneLabel": "Design pour la zone {name}",
     "assignTableLabel": "Design pour la table {name}",
-    "exporting": "Generation...",
+    "exporting": "Génération...",
     "print": "Imprimer",
-    "printPreview": "Apercu impression",
+    "printPreview": "Aperçu impression",
     "landscape": "paysage",
     "portrait": "portrait",
     "perPageCount": "{count} par page",
-    "exportDone": "PDF genere",
-    "exportError": "Erreur lors de la generation",
-    "exportNotReady": "Apercu pas encore pret. Reessayez dans un instant.",
-    "batchSkipped": "{count} table(s) ignoree(s) : QR non genere. Reessayez.",
-    "templateSection": "Modele",
+    "exportDone": "PDF généré",
+    "exportError": "Erreur lors de la génération",
+    "exportNotReady": "Aperçu pas encore prêt. Réessayez dans un instant.",
+    "batchSkipped": "{count} table(s) ignorée(s) : QR non généré. Réessayez.",
+    "templateSection": "Modèle",
     "styleSection": "Style du QR",
     "cardSection": "Carte",
     "dotStyleLabel": "Points",
@@ -3677,7 +3686,7 @@
     "dot_rounded": "Arrondis",
     "dot_dots": "Points",
     "dot_classy": "Chic",
-    "dot_extra-rounded": "Tres arrondis",
+    "dot_extra-rounded": "Très arrondis",
     "corner_square": "Carres",
     "corner_rounded": "Arrondis",
     "corner_dot": "Points",
@@ -3693,13 +3702,13 @@
     "logoLabel": "Logo",
     "logoHint": "Afficher un logo au centre du code",
     "uploadLogo": "Importer un logo",
-    "ctaLabel": "Appel a l'action",
-    "ctaCustom": "Personnalise",
+    "ctaLabel": "Appel à l'action",
+    "ctaCustom": "Personnalisé",
     "poweredByLabel": "Mention Powered by Attabl",
     "dashCardTitle": "Codes QR",
-    "dashCardDesc": "Creez et assignez un QR par table ou par zone",
-    "dashCardDescCount": "{count} tables - creez et assignez leurs QR codes",
-    "dashCardCta": "Gerer"
+    "dashCardDesc": "Créez et assignez un QR par table ou par zone",
+    "dashCardDescCount": "{count} tables - créez et assignez leurs QR codes",
+    "dashCardCta": "Gérer"
   },
   "service": {
     "title": "Service",
@@ -3730,7 +3739,7 @@
     "tableLabel": "Table",
     "itemsCount": "{count} article(s)",
     "orderAge": "il y a {minutes} min",
-    "releaseAssignment": "Liberer l'assignation",
+    "releaseAssignment": "Libérer l'assignation",
     "searchAssignments": "Rechercher des assignations",
     "statusFree": "Libre",
     "statusOccupied": "Occupée",
@@ -3797,16 +3806,16 @@
     "selectServer": "Sélectionner un serveur...",
     "currentOrderSection": "Commande en cours",
     "orderEmpty": "Aucune commande ouverte pour cette table.",
-    "orderOpened": "ouverte a",
-    "moveTableBtn": "Deplacer vers une table",
-    "reassignTitle": "Deplacer la commande",
+    "orderOpened": "ouverte à",
+    "moveTableBtn": "Déplacer vers une table",
+    "reassignTitle": "Déplacer la commande",
     "reassignDescription": "Choisissez une table libre. La commande et son addition suivent.",
     "reassignPlaceholder": "Table libre",
     "reassignNoFreeTables": "Aucune table libre pour le moment.",
-    "reassignConfirm": "Deplacer",
-    "reassignMoving": "Deplacement...",
-    "reassignSuccess": "Commande deplacee",
-    "reassignError": "Deplacement impossible"
+    "reassignConfirm": "Déplacer",
+    "reassignMoving": "Déplacement...",
+    "reassignSuccess": "Commande déplacée",
+    "reassignError": "Déplacement impossible"
   },
   "stockHistory": {
     "title": "Historique des mouvements",
@@ -3840,22 +3849,22 @@
     "noResultsHint": "Essayez un autre filtre ou changez votre recherche.",
     "clearFilters": "Réinitialiser",
     "columnAuthor": "Par",
-    "unattributed": "Systeme",
-    "staffReportCta": "Rapport employes",
-    "staffReportTitle": "Sorties par employe",
-    "staffReportSubtitle": "Mouvements de stock groupes par operateur sur la periode.",
+    "unattributed": "Système",
+    "staffReportCta": "Rapport employés",
+    "staffReportTitle": "Sorties par employé",
+    "staffReportSubtitle": "Mouvements de stock groupes par opérateur sur la période.",
     "staffReportPeriod7": "7 derniers jours",
     "staffReportPeriod30": "30 derniers jours",
     "staffReportPeriodMonth": "Mois en cours",
-    "staffReportColAuthor": "Employe",
+    "staffReportColAuthor": "Employé",
     "staffReportColOut": "Sorties",
-    "staffReportColIn": "Entrees",
+    "staffReportColIn": "Entrées",
     "staffReportColCount": "Mouvements",
     "staffReportColManualRemove": "Retraits manuels",
-    "staffReportColAdjustment": "Ajust. negatifs",
+    "staffReportColAdjustment": "Ajust. négatifs",
     "staffReportColOrderDestock": "Sorties commande",
     "staffReportError": "Impossible de charger le rapport.",
-    "staffReportEmpty": "Aucun mouvement attribue sur cette periode.",
+    "staffReportEmpty": "Aucun mouvement attribué sur cette période.",
     "fromOrder": "Commande {n}"
   },
   "screenLock": {
@@ -3869,7 +3878,7 @@
     "unlock": "Déverrouiller"
   },
   "tenant": {
-    "tableOccupiedNotice": "La table {table} semble deja occupee. Vous pouvez continuer, ou voir avec le personnel pour une autre table.",
+    "tableOccupiedNotice": "La table {table} semble déjà occupée. Vous pouvez continuer, ou voir avec le personnel pour une autre table.",
     "tableOccupiedDismiss": "Fermer",
     "closedNow": "Fermé actuellement",
     "opensAt": "Ouvre {time}",
@@ -3961,7 +3970,8 @@
     "itemCount": "{count} article(s)",
     "addToCart": "Ajouter au panier",
     "orderingPaused": "Commandes en pause pour le moment",
-    "orderingPausedNotice": "Commandes en pause pour le moment. La carte reste ouverte, regardez a votre aise.",
+    "orderingPausedNotice": "Commandes en pause pour le moment. La carte reste ouverte, regardez à votre aise.",
+    "announcementsLabel": "Annonces du restaurant",
     "selectSize": "Choisir la taille",
     "specialInstructions": "Instructions spéciales",
     "specialInstructionsPlaceholder": "Allergies, préférences...",
@@ -4227,7 +4237,7 @@
     "clickOrDragImage": "Cliquez ou glissez une image ici",
     "imageFormats": "PNG, JPG supportés (Max 5Mo)",
     "featureAvailableWithPremium": "{feature} est disponible avec le plan Premium.",
-    "premiumFeature": "Fonctionnalite Premium",
+    "premiumFeature": "Fonctionnalité Premium",
     "currentPlan": "Votre plan actuel :",
     "upgradeToPremium": "Passer au Premium",
     "premiumBadge": "Premium",
@@ -4310,7 +4320,7 @@
     "successDeleteTable": "Table supprimée"
   },
   "onboarding": {
-    "qrExportError": "Echec de l'export du QR. Reessayez.",
+    "qrExportError": "Échec de l'export du QR. Réessayez.",
     "step": "Étape",
     "stepOf": "sur",
     "next": "Continuer",
@@ -4332,13 +4342,13 @@
     "establishmentSubtitle": "On configure tout automatiquement ensuite.",
     "nameLabel": "Nom de l'établissement",
     "namePlaceholder": "Ex : Le Petit Bistrot",
-    "nameRequired": "Donnez d'abord un nom a votre établissement.",
+    "nameRequired": "Donnez d'abord un nom à votre établissement.",
     "zoneNameRequired": "Donnez un nom à chaque zone (ex : Salle, Terrasse).",
     "priceInvalid": "Un prix ne peut pas être négatif. Corrigez le plat concerné.",
     "typeRestaurant": "Restaurant",
-    "typeRestaurantDesc": "Service a table, midi et soir",
+    "typeRestaurantDesc": "Service à table, midi et soir",
     "typeHotel": "Hôtel",
-    "typeHotelDesc": "Room service, F&B, hebergement",
+    "typeHotelDesc": "Room service, F&B, hébergement",
     "typeBar": "Bar",
     "typeBarDesc": "Cocktails, boissons, terrasse",
     "typeCafe": "Café",
@@ -4459,7 +4469,7 @@
     "launchCTA": "Lancer mon établissement",
     "saveError": "Erreur lors de la sauvegarde",
     "completeError": "Erreur lors du lancement",
-    "nameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom.",
+    "nameTaken": "Ce nom est déjà utilisé par un autre compte. Choisissez un autre nom.",
     "welcomeTitle": "On lance {name}.",
     "welcomeSubtitle": "Configurons votre espace en quelques minutes",
     "welcomeCTA": "C'est parti",
@@ -4508,7 +4518,7 @@
     "cropZoom": "Zoom",
     "cropApply": "Appliquer",
     "cropUploading": "Envoi...",
-    "previewHighlights": "A ne pas manquer",
+    "previewHighlights": "À ne pas manquer",
     "previewViewMenu": "Voir le menu complet",
     "previewCart": "Votre panier"
   },
@@ -4687,7 +4697,7 @@
   },
   "installPrompt": {
     "installApp": "Installer {name}",
-    "subtitle": "Acces rapide en un clic",
+    "subtitle": "Accès rapide en un clic",
     "install": "Installer",
     "howTo": "Comment ?",
     "close": "Fermer",
@@ -4769,7 +4779,7 @@
     "userNotFound": "Utilisateur introuvable",
     "invalidEmail": "Email invalide",
     "rateLimited": "Trop de requêtes. Réessayez plus tard.",
-    "rateLimitedMinutes": "Trop de tentatives. Reessayez dans {minutes} minutes.",
+    "rateLimitedMinutes": "Trop de tentatives. Réessayez dans {minutes} minutes.",
     "contactSuccessHoneypot": "Votre demande de rendez-vous a été envoyée !",
     "validationError": "Erreur de validation. Vérifiez les champs.",
     "contactSuccess": "Votre demande a été enregistrée. Notre équipe vous contactera bientôt.",
@@ -4786,13 +4796,13 @@
     "serverError": "Erreur serveur",
     "invalidCredentials": "Email ou mot de passe incorrect.",
     "emailNotConfirmed": "Veuillez confirmer votre adresse email avant de vous connecter",
-    "loginError": "Erreur de connexion. Veuillez reessayer.",
-    "noEstablishment": "Aucun établissement associe a ce compte",
+    "loginError": "Erreur de connexion. Veuillez réessayer.",
+    "noEstablishment": "Aucun établissement associé à ce compte",
     "invalidLoginFields": "Email ou mot de passe invalide.",
-    "signupConfirmation": "Un email de confirmation a ete envoye. Veuillez verifier votre boite mail.",
-    "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublie.",
-    "restaurantNameTaken": "Ce nom est deja utilise par un autre compte. Choisissez un autre nom.",
-    "captchaFailed": "Verification anti-robot echouee. Rechargez la page et reessayez.",
+    "signupConfirmation": "Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.",
+    "emailAlreadyRegistered": "Un compte existe déjà avec cette adresse email. Connectez-vous ou utilisez Mot de passe oublié.",
+    "restaurantNameTaken": "Ce nom est déjà utilisé par un autre compte. Choisissez un autre nom.",
+    "captchaFailed": "Vérification anti-robot échouée. Rechargez la page et réessayez.",
     "invalidDataFallback": "Données invalides"
   },
   "segment": {
@@ -4906,7 +4916,7 @@
       "inProduction": "En cours",
       "productionNote": "Note prestation",
       "productionNoteTitle": "Note pour la prestation",
-      "productionNotePlaceholder": "Ex: Allergie a certains produits...",
+      "productionNotePlaceholder": "Ex: Allergie à certains produits...",
       "sentToProduction": "Envoyé en atelier !",
       "printProductionTicket": "Ticket Prestation",
       "productionTicketPrinted": "Impression ticket prestation lancée",
@@ -4915,7 +4925,7 @@
   },
   "updateBanner": {
     "message": "Une nouvelle version est disponible.",
-    "sidebarLabel": "Mise a jour disponible",
+    "sidebarLabel": "Mise à jour disponible",
     "refreshHint": "Cliquez pour recharger"
   },
   "inventoryImport": {
@@ -4941,6 +4951,6 @@
     "cancel": "Annuler"
   },
   "authShell": {
-    "secure": "Connexion securisee"
+    "secure": "Connexion sécurisée"
   }
 }

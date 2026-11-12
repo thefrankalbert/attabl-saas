@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { establishmentDetailsSchema } from './establishment-details.schema';
+import { phoneSchema } from './common.schema';
 
 /**
  * Zod schemas for tenant validation.
@@ -58,7 +59,7 @@ export const updateTenantSettingsSchema = z.object({
   address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
   city: z.string().max(100, 'La ville ne doit pas dépasser 100 caractères').optional(),
   country: z.string().max(100, 'Le pays ne doit pas dépasser 100 caractères').optional(),
-  phone: z.string().max(20, 'Le téléphone ne doit pas dépasser 20 caractères').optional(),
+  phone: phoneSchema.optional(),
   logoUrl: z.string().url().optional().or(z.literal('')),
   notificationSoundId: z.string().max(500).optional(),
   establishmentType: z.string().max(50).optional(),

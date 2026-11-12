@@ -35,6 +35,20 @@ export function isTenantNameConflictError(error: { message?: string } | null | u
 }
 
 /**
+ * Unique-index violation (23505) -> CONFLICT with a message the owner can act
+ * on; anything else -> INTERNAL with the usual message. Used where a unique
+ * index guards a name (ingredients, suppliers, zones, table numbers).
+ */
+export function uniqueConflictOr(
+  error: { code?: string } | null | undefined,
+  conflictMessage: string,
+  fallbackMessage: string,
+): ServiceError {
+  if (error?.code === '23505') return new ServiceError(conflictMessage, 'CONFLICT', error);
+  return new ServiceError(fallbackMessage, 'INTERNAL', error);
+}
+
+/**
  * Maps a ServiceError code to an HTTP status code.
  * Used by API routes to translate service errors into responses.
  */

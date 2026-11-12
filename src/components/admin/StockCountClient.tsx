@@ -53,7 +53,10 @@ export default function StockCountClient({ tenantId }: StockCountClientProps) {
   const [reference, setReference] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: counts = [], isLoading } = useStockCounts(tenantId);
+  // isPending, not isLoading (audit C-018): isLoading also needs fetchStatus,
+  // which query-core forces to 'idle' on the server and 'fetching' on the first
+  // client render, so the two rendered different branches (hydration error).
+  const { data: counts = [], isPending: isLoading } = useStockCounts(tenantId);
 
   const columns: ColumnDef<StockCount, unknown>[] = [
     {

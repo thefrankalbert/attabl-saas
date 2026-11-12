@@ -29,6 +29,7 @@ export default function KDSTicketActionBar({
   barDisplayEnabled,
 }: KDSTicketActionBarProps) {
   const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
 
   return (
     <div className="flex items-stretch border-t border-app-border">
@@ -51,7 +52,7 @@ export default function KDSTicketActionBar({
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Print"
+        aria-label={tc('print')}
         onClick={() => printKitchenTicket(order, { zoneFilter, barDisplayEnabled })}
         className="w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover rounded-none"
         title="Print"

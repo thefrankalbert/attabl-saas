@@ -50,6 +50,7 @@ export function TableGrid({
   onCreateZone,
 }: TableGridProps) {
   const t = useTranslations('tables');
+  const tc = useTranslations('common');
 
   return (
     <div className="flex-1 min-w-0">
@@ -110,7 +111,7 @@ export function TableGrid({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Delete"
+                      aria-label={tc('delete')}
                       onClick={() => onDeleteTable(table)}
                       title="Supprimer"
                       className="h-7 w-7 text-app-text-muted transition-opacity hover:text-[var(--destructive)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100"

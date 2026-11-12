@@ -206,7 +206,9 @@ export function ItemsList({
                       <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-app-text-muted" />
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
+                  {/* min-w-[9rem] below lg (audit C-058): with min-w-0 the name column
+                      shrank to 21 px at 375 px instead of letting the row wrap. */}
+                  <div className="flex-1 min-w-[9rem] lg:min-w-0">
                     <p className="font-semibold text-app-text text-sm break-words">{item.name}</p>
                     <p className="text-xs text-app-text-muted mt-0.5">
                       {item.category?.name || t('uncategorized')}
@@ -249,7 +251,7 @@ export function ItemsList({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="More options"
+                          aria-label={tc('moreOptions')}
                           onClick={(e) => e.stopPropagation()}
                           className="h-auto w-auto p-1.5 text-app-text-muted"
                         >

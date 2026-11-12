@@ -170,16 +170,15 @@ describe('menu.mutations updateMenu', () => {
     expect(payload).not.toHaveProperty('is_active');
   });
 
-  it('regenerates the slug when the name changes', async () => {
+  it('keeps the slug when the menu is renamed, so printed QR codes still work', async () => {
     const { client, rpc, queries } = mockSupabase({ rpc: { data: 'nouvelle-carte', error: null } });
 
     await updateMenu(client, 'tenant-1', { id: 'menu-1', name: 'Nouvelle carte' });
 
-    expect(rpc).toHaveBeenCalledWith('generate_menu_slug', {
-      p_tenant_id: 'tenant-1',
-      p_name: 'Nouvelle carte',
-    });
-    expect(queries[0]!.update.mock.calls[0]![0].slug).toBe('nouvelle-carte');
+    expect(rpc).not.toHaveBeenCalled();
+    const payload = queries[0]!.update.mock.calls[0]![0] as Record<string, unknown>;
+    expect(payload.name).toBe('Nouvelle carte');
+    expect(payload).not.toHaveProperty('slug');
   });
 
   it('does not touch the slug when the name is not part of the update', async () => {
@@ -190,16 +189,6 @@ describe('menu.mutations updateMenu', () => {
     // Re-slugging on an unrelated save would break every QR code already printed.
     expect(rpc).not.toHaveBeenCalled();
     expect(queries[0]!.update.mock.calls[0]![0]).not.toHaveProperty('slug');
-  });
-
-  it('keeps the current slug when slug generation returns nothing', async () => {
-    const { client, queries } = mockSupabase({ rpc: { data: null, error: null } });
-
-    await updateMenu(client, 'tenant-1', { id: 'menu-1', name: 'Nouvelle carte' });
-
-    const payload = queries[0]!.update.mock.calls[0]![0] as Record<string, unknown>;
-    expect(payload.name).toBe('Nouvelle carte');
-    expect(payload).not.toHaveProperty('slug');
   });
 
   it('writes false and 0 rather than skipping them', async () => {
