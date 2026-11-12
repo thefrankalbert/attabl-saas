@@ -77,12 +77,10 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
   const {
     form,
     logoPreview,
-    uploading,
     saving,
     selectedSoundId,
     setSelectedSoundId,
     hasUnsavedChanges,
-    handleLogoUpload,
     handleLogoChange,
     handleLogoRemove,
     onSubmit,
@@ -162,9 +160,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
                 form={form}
                 tenant={tenant}
                 logoPreview={logoPreview}
-                uploading={uploading}
                 saving={saving}
-                onLogoUpload={handleLogoUpload}
                 onLogoChange={handleLogoChange}
                 onLogoRemove={handleLogoRemove}
                 t={t}
@@ -199,23 +195,18 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
         </Tabs>
 
         {/* Actions - visible only when there are unsaved changes */}
-        {canEdit && (hasUnsavedChanges || saving || uploading) && (
+        {canEdit && (hasUnsavedChanges || saving) && (
           <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
             <Button
               type="submit"
               variant="default"
-              disabled={saving || uploading}
+              disabled={saving}
               className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
             >
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {tc('saving')}
-                </>
-              ) : uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('logoUploading')}
                 </>
               ) : (
                 <>

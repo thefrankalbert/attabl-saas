@@ -91,12 +91,10 @@ export interface SettingsTenant {
 export interface UseSettingsDataReturn {
   form: UseFormReturn<SettingsFormValues>;
   logoPreview: string | null;
-  uploading: boolean;
   saving: boolean;
   selectedSoundId: string;
   setSelectedSoundId: (id: string) => void;
   hasUnsavedChanges: boolean;
-  handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleLogoChange: (url: string) => void;
   handleLogoRemove: () => void;
   onSubmit: (data: SettingsFormValues) => Promise<void>;
@@ -116,7 +114,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const initialSoundId = tenant.notification_sound_id || 'classic-bell';
   const [selectedSoundId, setSelectedSoundId] = useState(initialSoundId);
@@ -151,84 +148,9 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     },
   });
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    // Aligne sur /api/upload, qui valide aussi les OCTETS MAGIQUES. SVG et GIF
-    // sont retires volontairement: un SVG est un document actif, et servi depuis
-    // un bucket public il devient un vecteur de XSS stocke. Les annoncer ici
-    // alors que le serveur les refuse donnait un apercu du logo a l'ecran suivi
-    // d'une erreur opaque, sans que le logo soit jamais enregistre.
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: t('invalidFileType'),
-        description: t('logoAcceptedFormats'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: t('fileTooLarge'),
-        description: t('logoMaxSize'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Set local DataURL preview for immediate feedback
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to Supabase Storage
-    setUploading(true);
-    try {
-      // Upload via /api/upload, comme LogoCropper et MenuStep. La route derive le
-      // tenant de la SESSION, valide les octets magiques du fichier et applique le
-      // rate limiting. L'upload direct depuis le navigateur ne faisait aucun des
-      // trois: le type declare suffisait a stocker n'importe quel contenu.
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('bucket', 'menu-items');
-      // Le logo precedent est supprime par la route apres un televersement
-      // reussi: sans cela, chaque changement laissait un fichier mort dans un
-      // bucket public. La route verifie que le chemin appartient bien au tenant.
-      const previousLogo = form.getValues('logo_url');
-      if (previousLogo) formData.append('replaces', previousLogo);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
-        throw new Error(err.error || 'Upload failed');
-      }
-      const { url } = await res.json();
-
-      form.setValue('logo_url', url);
-
-      toast({
-        title: t('logoUploaded'),
-      });
-    } catch (uploadErr) {
-      logger.error('Failed to upload logo to storage', uploadErr);
-      // Revert logo preview to original on failure
-      setLogoPreview(tenant.logo_url || null);
-      toast({
-        title: tc('error'),
-        description: t('logoUploadError'),
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
+  // ponytail: le logo passe par ImageUpload (recadrage + /api/upload, 10 Mo).
+  // L'ancien gestionnaire de fichier (limite 2 Mo) n'etait branche nulle part:
+  // il est retire avec son etat `uploading` (audit C-079).
   // Called by ImageUpload after crop+upload is done
   const handleLogoChange = (url: string) => {
     setLogoPreview(url);
@@ -334,12 +256,10 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   return {
     form,
     logoPreview,
-    uploading,
     saving,
     selectedSoundId,
     setSelectedSoundId,
     hasUnsavedChanges,
-    handleLogoUpload,
     handleLogoChange,
     handleLogoRemove,
     onSubmit,

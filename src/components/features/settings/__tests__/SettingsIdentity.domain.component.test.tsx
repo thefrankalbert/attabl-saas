@@ -31,9 +31,7 @@ function Harness({ customDomain }: { customDomain?: string | null }) {
         form={form}
         tenant={{ slug: 'chezawa', custom_domain: customDomain ?? null }}
         logoPreview={null}
-        uploading={false}
         saving={false}
-        onLogoUpload={async () => {}}
         t={t}
       />
     </Tabs>
