@@ -259,8 +259,8 @@ export const oauthSignupLimiter = createLimiter(
  * perdu ne se rattrape pas. On garde donc fail-open ici, et on ferme la ou le
  * dommage est vraiment irreversible - voir `couponClaimLimiter`.
  *
- * Les autres compartiments demandes par RL-FAILOPEN (contact, newsletter,
- * export) restent fail-closed: leur indisponibilite ne coute rien a personne.
+ * Les autres compartiments demandes par RL-FAILOPEN (contact, export)
+ * restent fail-closed: leur indisponibilite ne coute rien a personne.
  */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
 
@@ -365,13 +365,6 @@ export const onboardingCompleteLimiter = createLimiter(
 
 /** Contact form: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
 export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'), true);
-
-/** Newsletter: 3 requests / hour per IP (RL-FAILOPEN: fail-closed). */
-export const newsletterLimiter = createLimiter(
-  'newsletter',
-  Ratelimit.slidingWindow(3, '1 h'),
-  true,
-);
 
 /**
  * Import de menu Excel: 30 par heure.
