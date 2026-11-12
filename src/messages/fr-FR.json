@@ -4346,6 +4346,7 @@
     "nameLabel": "Nom de l'établissement",
     "namePlaceholder": "Ex : Le Petit Bistrot",
     "nameRequired": "Donnez d'abord un nom à votre établissement.",
+    "emptyMenuWarning": "Votre carte est vide : vos clients ne verront aucun plat. Ajoutez-en un, ou appuyez encore sur Continuer pour le faire plus tard.",
     "zoneNameRequired": "Donnez un nom à chaque zone (ex : Salle, Terrasse).",
     "priceInvalid": "Un prix ne peut pas être négatif. Corrigez le plat concerné.",
     "typeRestaurant": "Restaurant",

@@ -4346,6 +4346,7 @@
     "nameLabel": "Establishment name",
     "namePlaceholder": "E.g.: The Little Bistro",
     "nameRequired": "Give your establishment a name first.",
+    "emptyMenuWarning": "Your menu is empty: your customers will see no dish. Add one, or press Continue again to do it later.",
     "zoneNameRequired": "Name each zone (e.g. Dining room, Terrace).",
     "priceInvalid": "A price cannot be negative. Fix the dish in question.",
     "typeRestaurant": "Restaurant",
