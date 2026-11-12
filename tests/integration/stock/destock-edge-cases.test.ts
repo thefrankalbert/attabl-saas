@@ -6,7 +6,8 @@
  * isolation, idempotency, auto-unavailable). This file covers the cases an
  * owner actually hits in service and which no test pinned down:
  *   - a dish with NO recipe
- *   - stock short on ONE line of a multi-ingredient recipe (atomicity)
+ *   - stock short on ONE line of a multi-ingredient recipe (every line is
+ *     still deducted, the short one goes negative - owner decision C-048)
  *   - a cancellation restock must not un-hide a dish the owner hid by hand
  *   - an order whose items change after the destock already ran
  */
@@ -175,7 +176,7 @@ describe('destock edge cases (real Postgres)', () => {
     expect(await countMovements(orderId, 'order_destock')).toBe(0);
   });
 
-  it('short stock on ONE recipe line deducts NOTHING (whole call rolls back)', async () => {
+  it('short stock on ONE recipe line still deducts EVERY line (C-048)', async () => {
     const plenty = await seedIngredient({ stock: 10 });
     const short = await seedIngredient({ stock: 0.1 });
     const item = await seedMenuItem();
@@ -185,10 +186,12 @@ describe('destock edge cases (real Postgres)', () => {
 
     const { error } = await destock(orderId);
 
-    expect(error?.message ?? '').toContain('INSUFFICIENT_STOCK');
-    expect(await getStock(plenty)).toBe(10);
-    expect(await getStock(short)).toBe(0.1);
-    expect(await countMovements(orderId, 'order_destock')).toBe(0);
+    // Before C-048 the whole call rolled back: NOTHING was deducted, not even
+    // the ingredient that had enough, and the stock stayed wrong.
+    expect(error).toBeNull();
+    expect(await getStock(plenty)).toBe(9);
+    expect(await getStock(short)).toBe(-0.9);
+    expect(await countMovements(orderId, 'order_destock')).toBe(2);
   });
 
   it('a restock must NOT un-hide a dish the owner hid by hand', async () => {
