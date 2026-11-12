@@ -182,6 +182,17 @@ describe('canAddVenue', () => {
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddVenue(makeTenant())).rejects.toThrow(ServiceError);
   });
+
+  it('during the trial, the message talks about the trial, not the starter plan (C-080)', async () => {
+    const supabase = createMockSupabase({ venues: { count: 50, error: null } });
+    const service = createPlanEnforcementService(supabase);
+    const tenant = makeTenant({
+      subscription_status: 'trial',
+      trial_ends_at: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+    });
+    await expect(service.canAddVenue(tenant)).rejects.toThrow(/pendant votre essai/);
+    await expect(service.canAddVenue(tenant)).rejects.not.toThrow(/starter/);
+  });
 });
 
 describe('canAddMenu', () => {

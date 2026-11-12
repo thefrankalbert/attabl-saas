@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getPlanLimits, type PlanLimits } from '@/lib/plans/features';
+import { getPlanLimits, isTrialActive, type PlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
@@ -8,6 +8,21 @@ import { ServiceError } from './errors';
  * Roles counted against the per-plan staff limit (maxStaff).
  * Admin/owner roles are counted against maxAdmins instead.
  */
+
+/**
+ * C-080: pendant l'essai, le restaurant a les limites de l'offre Pro, mais les
+ * messages citaient son plan enregistre ("starter"), ce qui contredisait la
+ * limite affichee.
+ */
+function planLabel(tenant: Tenant): string {
+  if (
+    isTrialActive(tenant.subscription_status as SubscriptionStatus | null, tenant.trial_ends_at)
+  ) {
+    return 'pendant votre essai (offre Pro)';
+  }
+  return `pour votre plan ${tenant.subscription_plan || 'starter'}`;
+}
+
 export const STAFF_ROLES = ['manager', 'cashier', 'chef', 'waiter'] as const;
 
 /**
@@ -111,7 +126,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxAdmins) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxAdmins} administrateur(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxAdmins} administrateur(s) maximum ${planLabel(tenant)}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -142,7 +157,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxStaff) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxStaff} membre(s) d'equipe maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxStaff} membre(s) d'équipe maximum ${planLabel(tenant)}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -172,7 +187,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxItems) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxItems} articles maximum ${planLabel(tenant)}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -202,7 +217,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxVenues) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxVenues} espace(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxVenues} espace(s) maximum ${planLabel(tenant)}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -232,7 +247,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
 
       if ((count || 0) >= limits.maxMenus) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxMenus} carte(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxMenus} carte(s) maximum ${planLabel(tenant)}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -263,7 +278,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient): PlanEnfo
       if ((count || 0) + batchSize > limits.maxItems) {
         const remaining = limits.maxItems - (count || 0);
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
+          `Limite atteinte : ${limits.maxItems} articles maximum ${planLabel(tenant)}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
           'VALIDATION',
         );
       }
