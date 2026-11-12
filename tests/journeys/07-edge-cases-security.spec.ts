@@ -90,12 +90,15 @@ test.describe.serial('07 - Cas limites & securite', () => {
 
       const ctx = await newApiContext();
 
-      const baseRes = await ctx.post('/api/orders', { data: { items: orderItems } });
+      // A emporter: ce parcours teste le code promo, pas la table (C-009).
+      const baseRes = await ctx.post('/api/orders', {
+        data: { items: orderItems, service_type: 'takeaway' },
+      });
       expect(baseRes.status(), await baseRes.text()).toBeLessThan(400);
       const baseTotal = ((await baseRes.json()) as { total: number }).total;
 
       const couponRes = await ctx.post('/api/orders', {
-        data: { items: orderItems, coupon_code: 'JOURNEY10' },
+        data: { items: orderItems, service_type: 'takeaway', coupon_code: 'JOURNEY10' },
       });
       expect(couponRes.status(), await couponRes.text()).toBeLessThan(400);
       const couponTotal = ((await couponRes.json()) as { total: number }).total;
