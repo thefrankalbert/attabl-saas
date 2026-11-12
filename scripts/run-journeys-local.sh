@@ -104,6 +104,24 @@ else
   psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q -f "$SCHEMA_FIXTURE" >/dev/null || { echo "load schema echoue"; exit 1; }
 fi
 
+# Audit C-019: Supabase local accorde par DEFAUT tous les droits sur chaque
+# table creee a anon et authenticated, et un pg_dump ne restitue que les GRANT
+# en plus de ce defaut, jamais les retraits. Resultat mesure le 2026-11-10: sur
+# le banc, un serveur pouvait se promouvoir proprietaire, alors que la
+# production ne lui ouvre que des colonnes precises. Tout test de droits joue
+# ici etait faux. On retire donc ces droits par defaut sur les tables du
+# schema, PUIS on rejoue les GRANT de l'instantane (l'etat de la production au
+# marqueur). Les deltas, appliques ensuite, posent leurs propres droits comme
+# en production.
+log "aligne les droits des tables sur la production (C-019)"
+psql "$LOCAL_DB" -v ON_ERROR_STOP=1 -q >/dev/null <<'SQL' || { echo "revoke droits echoue"; exit 1; }
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+SQL
+grep -E '^(GRANT|REVOKE) .* ON (TABLE|SEQUENCE) ' "$SCHEMA_FIXTURE" \
+  | psql "$LOCAL_DB" -q >/dev/null 2>>/tmp/journeys-schema.err || true
+GRANTS_AUTH="$(psql "$LOCAL_DB" -X -A -t -c "select has_table_privilege('authenticated','public.admin_users','UPDATE')::text;")"
+log "  authenticated peut UPDATE admin_users en entier: $GRANTS_AUTH (production: false)"
+
 log "applique les deltas de migration > $FIXTURE_MARKER"
 for f in "$MIG_BAK"/*.sql; do
   ts="$(basename "$f" | cut -d_ -f1)"
