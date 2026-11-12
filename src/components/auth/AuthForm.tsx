@@ -249,7 +249,7 @@ function AuthForm({ mode }: AuthFormProps) {
               {isLogin && (
                 <Link
                   href="/forgot-password"
-                  className="absolute bottom-full right-0 mb-1.5 flex h-5 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
+                  className="absolute bottom-full right-0 mb-0 flex h-5 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
                 >
                   {tForm('forgotPassword')}
                 </Link>
