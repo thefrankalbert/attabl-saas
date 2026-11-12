@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type Stripe from 'stripe';
+import { logger } from '@/lib/logger';
 import { detectBillingInterval, isValidInterval } from '../status';
+
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
+beforeEach(() => {
+  vi.mocked(logger.warn).mockClear();
+});
 
 /** Abonnement Stripe minimal: seul le plan du premier article compte ici. */
 function abonnement(
@@ -28,6 +37,22 @@ describe('detectBillingInterval', () => {
     expect(detectBillingInterval(abonnement({ interval: 'month', interval_count: 6 }))).toBe(
       'monthly',
     );
+    // ... mais pas en silence: la base dirait "mensuel" a un client facture
+    // tous les 6 mois.
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('un abonnement de 2 ans reste annuel, avec un avertissement', () => {
+    expect(detectBillingInterval(abonnement({ interval: 'year', interval_count: 2 }))).toBe(
+      'yearly',
+    );
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('mensuel et annuel standards ne declenchent aucun avertissement', () => {
+    detectBillingInterval(abonnement({ interval: 'month', interval_count: 1 }));
+    detectBillingInterval(abonnement({ interval: 'year', interval_count: 1 }));
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('un abonnement sans article donne monthly', () => {

@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Gate 0: Critical files — ensure security-critical files exist
+      # Gate 0: Critical files - ensure security-critical files exist
       - name: Critical files guard
         run: |
           CRITICAL_FILES=(
@@ -74,7 +74,7 @@ jobs:
           MISSING=0
           for f in "${CRITICAL_FILES[@]}"; do
             if [ ! -f "$f" ]; then
-              echo "::error file=$f::CRITICAL FILE MISSING: $f — this file is required for auth, security, and multi-tenant isolation."
+              echo "::error file=$f::CRITICAL FILE MISSING: $f - this file is required for auth, security, and multi-tenant isolation."
               MISSING=1
             fi
           done

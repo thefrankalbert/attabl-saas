@@ -15,11 +15,7 @@ import { FaqSection } from './_components/FaqSection';
 export default function PricingPage() {
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
-  // La page ne lit plus de variante A/B: l'experimentation sur ce selecteur est
-  // arretee. L'appel ci-dessous reste necessaire pour poser le cookie de la
-  // duree d'essai, que l'inscription lit ensuite.
-  const effectivePeriod: BillingPeriod = period;
-
+  // Pose le cookie de la duree d'essai (A/B), que l'inscription lit ensuite.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     initAbVariants({ trial: params.get('ab_trial') });
@@ -27,8 +23,8 @@ export default function PricingPage() {
 
   return (
     <>
-      <PricingHero effectivePeriod={effectivePeriod} setPeriod={setPeriod} />
-      <PlanCards effectivePeriod={effectivePeriod} />
+      <PricingHero effectivePeriod={period} setPeriod={setPeriod} />
+      <PlanCards effectivePeriod={period} />
       <TrialBand />
       <FeatureComparison />
       <CostOverThreeYears />

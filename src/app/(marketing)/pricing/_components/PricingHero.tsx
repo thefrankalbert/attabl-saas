@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 
-// `px-2.5` en dessous de `sm`: les onglets de periode mesuraient 370px dans une colonne de 335px sur un telephone de
-// 375, et "-20%" etait coupe au bord de l'ecran - sur la page des tarifs.
-// Mesure du 2026-11-06. L'aspect sur grand ecran ne bouge pas.
+// `px-2.5` en dessous de `sm`: garde le selecteur de periode et son "-20%" dans
+// la colonne de 335px d'un telephone de 375 (debordement mesure le 2026-11-06,
+// quand il avait trois onglets). L'aspect sur grand ecran ne bouge pas.
 const PILL =
   'h-auto rounded-full px-2.5 py-2 text-[13px] font-medium shadow-none transition-colors hover:bg-transparent sm:px-[18px]';
 const PILL_ON =
