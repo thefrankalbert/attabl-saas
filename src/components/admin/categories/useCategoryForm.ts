@@ -24,6 +24,7 @@ export function useCategoryForm({
   loadCategories,
 }: UseCategoryFormParams) {
   const t = useTranslations('categories');
+  const tc = useTranslations('common');
   const { toast } = useToast();
 
   const [showModal, setShowModal] = useState(false);
@@ -69,7 +70,11 @@ export function useCategoryForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    // Un nom vide ou fait d'espaces abandonnait sans un mot (audit 2026-11-10, C-060).
+    if (!name.trim()) {
+      toast({ title: tc('nameRequired'), variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
       const payload = {

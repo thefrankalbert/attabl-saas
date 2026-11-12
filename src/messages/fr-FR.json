@@ -1,5 +1,6 @@
 {
   "common": {
+    "nameRequired": "Le nom est obligatoire.",
     "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
     "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "outboxPending": "{count} commande(s) en attente d'envoi",
@@ -689,6 +690,7 @@
               "desc": "Tickets numériques par table, avec minuteur."
             },
             "tables": {
+              "zoneNameAndPrefixRequired": "Donnez un nom et un préfixe à la zone (ex : Terrasse, TER).",
               "title": "Plan de tables",
               "desc": "L'état de chaque table, en direct."
             },

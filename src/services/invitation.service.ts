@@ -55,6 +55,7 @@ function getExpiresAt(): string {
 }
 
 export interface InvitationService {
+  assertNotAlreadyMember(tenantId: string, email: string): Promise<void>;
   createInvitation(input: CreateInvitationInput): Promise<Invitation>;
   validateToken(token: string): Promise<Invitation>;
   acceptInvitation(input: AcceptInvitationInput): Promise<{ tenantSlug: string }>;
@@ -68,6 +69,37 @@ export interface InvitationService {
 
 export function createInvitationService(supabase: SupabaseClient): InvitationService {
   return {
+    /**
+     * Refuse d'inviter une adresse qui est DEJA membre de ce restaurant (audit
+     * 2026-11-10, C-072): l'invitation etait acceptee, souvent avec un autre
+     * role que celui du membre, et creait un doublon dans l'equipe.
+     *
+     * Ne revele rien qu'on ne sache deja: l'invitant voit la liste de SON equipe.
+     * La regle anti-enumeration de createInvitation (meme reponse qu'un compte
+     * existe ou non AILLEURS) est intacte, cette lecture ne porte que sur ce
+     * restaurant. Un membre retire (deleted_at) peut etre reinvite.
+     */
+    async assertNotAlreadyMember(tenantId: string, email: string): Promise<void> {
+      const candidates = Array.from(new Set([normalizeEmail(email), email.trim()]));
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .in('email', candidates)
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (error) {
+        throw new ServiceError('Verification de l equipe impossible', 'INTERNAL', error);
+      }
+      if (data && data.length > 0) {
+        throw new ServiceError(
+          'Cette personne fait deja partie de votre equipe. Modifiez son role depuis la liste des membres.',
+          'VALIDATION',
+        );
+      }
+    },
+
     async createInvitation(input: CreateInvitationInput): Promise<Invitation> {
       // SECURITE (constat SVC-12, prise de controle de compte). Il y avait ici
       // une branche "le compte existe deja -> on l'ajoute DIRECTEMENT dans

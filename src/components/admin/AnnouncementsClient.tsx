@@ -71,7 +71,8 @@ export default function AnnouncementsClient({
   };
 
   const handleSave = async () => {
-    if (!title || !startDate) {
+    // Un titre fait d'espaces creait une annonce vide (audit 2026-11-10, C-060).
+    if (!title.trim() || !startDate) {
       toast({ title: t('fieldsRequired'), variant: 'destructive' });
       return;
     }

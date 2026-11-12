@@ -98,17 +98,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com'}/auth/accept-invite?token=${invitation.token}`;
 
-    await sendInvitationEmail(invitation.email, {
-      restaurantName: tenant?.name || 'Restaurant',
-      restaurantLogoUrl: tenant?.logo_url || undefined,
-      role: invitation.role,
-      inviteUrl,
-    });
+    // Le resultat de l'envoi etait ignore: "Invitation renvoyee" s'affichait
+    // meme quand le courriel n'etait pas parti (audit 2026-11-10, C-031). On
+    // le rapporte comme la creation d'invitation (`emailSent`).
+    let emailSent = false;
+    try {
+      emailSent = await sendInvitationEmail(invitation.email, {
+        restaurantName: tenant?.name || 'Restaurant',
+        restaurantLogoUrl: tenant?.logo_url || undefined,
+        role: invitation.role,
+        inviteUrl,
+      });
+    } catch (emailError) {
+      logger.error('Invitation resend email threw', { invitationId: id, error: emailError });
+    }
+    if (!emailSent) {
+      logger.error('Invitation resend email failed', { invitationId: id });
+    }
 
     // Strip sensitive token field before returning
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _token, ...sanitizedInvitation } = invitation;
-    return NextResponse.json({ success: true, invitation: sanitizedInvitation });
+    return NextResponse.json({ success: true, invitation: sanitizedInvitation, emailSent });
   } catch (error) {
     if (error instanceof ServiceError) {
       if (error.details) {

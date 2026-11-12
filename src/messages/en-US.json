@@ -1,5 +1,6 @@
 {
   "common": {
+    "nameRequired": "Name is required.",
     "offlineMode": "Offline mode - Showing cached data",
     "connectionRestored": "Connection restored - Syncing...",
     "outboxPending": "{count} order(s) waiting to send",
@@ -689,6 +690,7 @@
               "desc": "Digital tickets per table, with a timer."
             },
             "tables": {
+              "zoneNameAndPrefixRequired": "Give the zone a name and a prefix (e.g. Terrace, TER).",
               "title": "Table plan",
               "desc": "The state of each table, live."
             },

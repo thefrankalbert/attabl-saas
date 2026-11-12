@@ -240,6 +240,7 @@ function setupMockAdminClient(overrides?: {
   vi.mocked(createAdminClient).mockReturnValue(adminClient as never);
   vi.mocked(createInvitationService).mockReturnValue({
     getPendingInvitations: vi.fn().mockResolvedValue({ invitations, total: invitations.length }),
+    assertNotAlreadyMember: vi.fn().mockResolvedValue(undefined),
     createInvitation: vi.fn().mockResolvedValue(invitation),
     cancelInvitation: vi.fn().mockResolvedValue(undefined),
     resendInvitation: vi.fn().mockResolvedValue(invitation),
@@ -396,6 +397,7 @@ describe('POST /api/invitations', () => {
     });
     vi.mocked(createInvitationService).mockReturnValue({
       getPendingInvitations: vi.fn(),
+      assertNotAlreadyMember: vi.fn().mockResolvedValue(undefined),
       createInvitation,
       cancelInvitation: vi.fn(),
       resendInvitation: vi.fn(),
