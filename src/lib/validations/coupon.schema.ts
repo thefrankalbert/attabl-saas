@@ -10,7 +10,7 @@ import { z } from 'zod';
  * Used in /api/coupons/validate route.
  */
 export const validateCouponSchema = z.object({
-  code: z.string().min(1, 'Code requis'),
+  code: z.string().min(1, 'Code requis').max(50),
   subtotal: z.number().min(0, 'Le sous-total doit être positif').default(0),
   // Optional fallback when the middleware didn't inject x-tenant-slug
   // (e.g., localhost dev without subdomain routing). Header always wins when present.

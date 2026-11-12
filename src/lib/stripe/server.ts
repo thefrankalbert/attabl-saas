@@ -10,7 +10,9 @@ export function getStripe(): Stripe {
     if (!key) {
       throw new Error('STRIPE_SECRET_KEY environment variable is not set');
     }
-    _stripeInstance = new Stripe(key);
+    // Delai maximum par requete: le disjoncteur abandonne l'attente a 10 s mais
+    // n'annule pas l'appel; ce delai ferme reellement la connexion.
+    _stripeInstance = new Stripe(key, { timeout: 10_000 });
   }
   return _stripeInstance;
 }

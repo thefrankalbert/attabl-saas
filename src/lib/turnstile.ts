@@ -50,7 +50,9 @@ export async function verifyTurnstileToken(token: string, ip?: string): Promise<
 
   let res: Response;
   try {
-    res = await fetch(VERIFY_URL, { method: 'POST', body });
+    // Delai maximum: sans lui, un Cloudflare lent tient la connexion et
+    // l'inscription jusqu'a la limite de la plateforme.
+    res = await fetch(VERIFY_URL, { method: 'POST', body, signal: AbortSignal.timeout(5000) });
   } catch {
     return false;
   }

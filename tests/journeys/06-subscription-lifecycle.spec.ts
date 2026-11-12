@@ -163,7 +163,10 @@ test.describe.serial('06 - Cycle de vie abonnement', () => {
       await cancelSubscription(t.subscriptionId);
       const res = await postWebhookEvent(
         ctx,
-        buildSubscriptionDeletedEvent({ customerId: t.customerId }),
+        buildSubscriptionDeletedEvent({
+          customerId: t.customerId,
+          subscriptionId: t.subscriptionId,
+        }),
       );
       expect(res.status(), await res.text()).toBe(200);
       const billing = await getTenantBilling(t.tenantId);

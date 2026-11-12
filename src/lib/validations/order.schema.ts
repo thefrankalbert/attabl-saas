@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
 /**
+ * Plafond du pourboire, en unites de la devise du restaurant. Sans plafond, un
+ * convive anonyme pouvait gonfler le reste a payer d'une commande (et faire
+ * deborder le montant en base).
+ */
+const MAX_TIP_AMOUNT = 1_000_000;
+
+/**
  * Zod schemas for order validation.
  * Used in /api/orders POST route.
  */
@@ -72,7 +79,7 @@ export const createOrderSchema = z
     // (this schema) are anonymous. Accepting server_id from the client would let
     // an attacker attribute orders to an arbitrary staff member.
     display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
-    tip_amount: z.number().min(0).optional(),
+    tip_amount: z.number().min(0).max(MAX_TIP_AMOUNT).optional(),
     // Idempotency key minted client-side when the order is composed. Lets an
     // offline-replayed order dedupe server-side instead of creating a duplicate.
     client_request_id: z.string().uuid().optional(),
@@ -147,7 +154,7 @@ export const createPOSOrderSchema = z
     room_number: z.string().max(20).optional(),
     delivery_address: z.string().max(500).optional(),
     payment_method: z.string().max(50).optional(),
-    tip_amount: z.number().min(0).optional(),
+    tip_amount: z.number().min(0).max(MAX_TIP_AMOUNT).optional(),
     notes: z.string().max(500).optional(),
     coupon_code: z.string().max(50).optional(),
     items: z

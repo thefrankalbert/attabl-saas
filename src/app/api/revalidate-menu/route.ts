@@ -40,7 +40,20 @@ export async function POST(request: Request) {
     // body is optional
   }
 
-  revalidateTag(CACHE_TAG_MENUS, 'max');
+  if (!slug) {
+    // Sans slug, la route vide le cache de TOUTES les cartes: reserve a un
+    // membre vivant d'au moins un restaurant, pas a n'importe quel compte.
+    const { data: anyMembership } = await supabase
+      .from('admin_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+    if (!anyMembership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
   if (slug) {
     // IDOR guard: only a member (or super_admin) of the slug's tenant may
     // revalidate that tenant's public ISR pages. Without this any authenticated
@@ -60,14 +73,18 @@ export async function POST(request: Request) {
       .from('admin_users')
       .select('tenant_id, is_super_admin, role')
       .eq('user_id', user.id)
+      .eq('is_active', true)
       .or(`tenant_id.eq.${tenant.id},is_super_admin.eq.true,role.eq.super_admin`)
       .limit(1)
       .maybeSingle();
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+    revalidateTag(CACHE_TAG_MENUS, 'max');
     revalidatePath(`/sites/${slug}`);
     revalidatePath(`/sites/${slug}/menu`);
+  } else {
+    revalidateTag(CACHE_TAG_MENUS, 'max');
   }
   return NextResponse.json({ revalidated: true });
 }

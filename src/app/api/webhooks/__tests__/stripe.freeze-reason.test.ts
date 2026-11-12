@@ -363,7 +363,12 @@ describe('cause du gel - chaque chemin l ecrit (invariant: non nul SSI frozen)',
     const response = await POST(makeRequest());
     expect(response.status).toBe(200);
     expect(chain.updatePayloads).toEqual([
-      { subscription_status: 'frozen', is_active: false, freeze_reason: 'subscription_deleted' },
+      {
+        subscription_status: 'frozen',
+        is_active: false,
+        freeze_reason: 'subscription_deleted',
+        stripe_subscription_id: null,
+      },
     ]);
   });
 
@@ -663,6 +668,7 @@ describe('colonne freeze_reason absente - comportement sur, jamais de 500', () =
     expect(chain.updatePayloads[1]).toEqual({
       subscription_status: 'frozen',
       is_active: false,
+      stripe_subscription_id: null,
     });
   });
 });

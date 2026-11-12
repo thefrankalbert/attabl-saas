@@ -296,6 +296,19 @@ describe('POST /api/update-subscription', () => {
     expect(json.error).toContain('annul');
   });
 
+  it('refuse le changement de formule a un abonnement en impaye (intrusion M-03)', async () => {
+    setupAuthenticatedMocks();
+    vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
+      status: 'past_due',
+      items: { data: [{ id: 'si_1' }] },
+    } as never);
+
+    const res = await POST(buildRequest({ plan: 'business' }));
+
+    expect(res.status).toBe(400);
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
   it('returns 500 when subscription has no items', async () => {
     setupAuthenticatedMocks();
     vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({

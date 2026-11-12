@@ -126,6 +126,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Intrusion M-03: un abonnement en impaye pouvait changer de plan, et le
+    // webhook appliquait le nouveau plan alors que rien n'etait paye. Le
+    // changement n'est ouvert qu'a un abonnement en regle.
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+      return NextResponse.json(
+        { error: "Reglez d'abord la facture en attente avant de changer de formule." },
+        { status: 400 },
+      );
+    }
+
     const existingItem = subscription.items.data[0];
     if (!existingItem) {
       logger.error('Update subscription: no items found', undefined, {

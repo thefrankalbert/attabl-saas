@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { resolveTenantTimezone } from '@/lib/timezones';
 import {
   paginationQuerySchema,
@@ -24,6 +25,9 @@ export default async function OrdersPage({
   searchParams: Promise<{ page?: string; pageSize?: string }>;
 }) {
   const { site } = await params;
+  // Le proxy garde deja /orders, sauf sur un domaine personnalise: la page
+  // porte donc sa propre garde, comme toutes les autres pages admin.
+  await requireAdminPermission(site, 'orders.view');
   const sp = await searchParams;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;

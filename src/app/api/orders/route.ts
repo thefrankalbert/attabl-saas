@@ -166,7 +166,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
+    const { validatedTotal, verifiedPrices, verifiedLabels, categoryIds, itemCategoryMap } =
       await orderService.validateOrderItems(tenantId, items);
 
     // 3b. Determine preparation zone + validate coupon in parallel (Optimization #3)
@@ -279,6 +279,7 @@ export async function POST(request: Request) {
         // au-dessus (assertOrderFeaturesAllowed), il ne sert plus qu'a cela.
         display_currency: tenant?.currency ?? 'XAF',
         verifiedPrices,
+        verifiedLabels,
         preparation_zone: preparationZone,
         itemPreparationZones,
         clientRequestId: client_request_id,

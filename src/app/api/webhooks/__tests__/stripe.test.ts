@@ -354,11 +354,141 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
         // LOT 7: la cause du gel. charge.dispute.closed ne leve que le gel
         // pose par un litige: celui-ci ne doit pas l'etre.
         freeze_reason: 'subscription_deleted',
+        stripe_subscription_id: null,
       });
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-del');
       expect(logger.warn).toHaveBeenCalledWith('Tenant frozen - subscription deleted', {
         tenantId: 'tenant-del',
       });
+    });
+  });
+
+  // =========================================================================
+  // Intrusion M-02: evenement d'un abonnement qui n'est pas l'abonnement courant
+  // =========================================================================
+
+  describe('evenement d un autre abonnement (M-02)', () => {
+    it('ne gele PAS un restaurant quand un ANCIEN abonnement est supprime', async () => {
+      const chain = setupSupabaseChain({
+        selectResult: {
+          data: {
+            id: 'tenant-paie',
+            subscription_status: 'active',
+            stripe_subscription_id: 'sub_courant',
+          },
+          error: null,
+        },
+      });
+      mockConstructEvent.mockReturnValue(
+        makeStripeEvent('customer.subscription.deleted', {
+          id: 'sub_ancien',
+          customer: 'cus_paie',
+          status: 'canceled',
+        }),
+      );
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+      expect(chain.updateFn).not.toHaveBeenCalled();
+    });
+
+    it('gele toujours quand c est l abonnement COURANT qui est supprime (temoin)', async () => {
+      const chain = setupSupabaseChain({
+        selectResult: {
+          data: {
+            id: 'tenant-paie',
+            subscription_status: 'active',
+            stripe_subscription_id: 'sub_courant',
+          },
+          error: null,
+        },
+      });
+      mockConstructEvent.mockReturnValue(
+        makeStripeEvent('customer.subscription.deleted', {
+          id: 'sub_courant',
+          customer: 'cus_paie',
+          status: 'canceled',
+        }),
+      );
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+      expect(chain.updateFn).toHaveBeenCalledWith(
+        expect.objectContaining({ subscription_status: 'frozen', is_active: false }),
+      );
+    });
+
+    it('ne met PAS en impaye sur l echec de la facture d un autre abonnement', async () => {
+      const chain = setupSupabaseChain({
+        selectResult: {
+          data: {
+            id: 'tenant-paie',
+            subscription_status: 'active',
+            stripe_subscription_id: 'sub_courant',
+          },
+          error: null,
+        },
+      });
+      mockConstructEvent.mockReturnValue(
+        makeStripeEvent('invoice.payment_failed', {
+          customer: 'cus_paie',
+          parent: { subscription_details: { subscription: 'sub_doublon' } },
+        }),
+      );
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+      expect(chain.updateFn).not.toHaveBeenCalled();
+    });
+
+    it('met toujours en impaye sur l echec de la facture de l abonnement COURANT (temoin)', async () => {
+      const chain = setupSupabaseChain({
+        selectResult: {
+          data: {
+            id: 'tenant-paie',
+            subscription_status: 'active',
+            stripe_subscription_id: 'sub_courant',
+          },
+          error: null,
+        },
+      });
+      mockConstructEvent.mockReturnValue(
+        makeStripeEvent('invoice.payment_failed', {
+          customer: 'cus_paie',
+          parent: { subscription_details: { subscription: 'sub_courant' } },
+        }),
+      );
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+      expect(chain.updateFn).toHaveBeenCalledWith(
+        expect.objectContaining({ subscription_status: 'past_due' }),
+      );
+    });
+
+    it('n applique PAS la mise a jour d un autre abonnement', async () => {
+      const chain = setupSupabaseChain({
+        selectResult: {
+          data: {
+            id: 'tenant-paie',
+            subscription_status: 'active',
+            stripe_subscription_id: 'sub_courant',
+          },
+          error: null,
+        },
+      });
+      mockConstructEvent.mockReturnValue(
+        makeStripeEvent('customer.subscription.updated', {
+          id: 'sub_ancien',
+          customer: 'cus_paie',
+          status: 'canceled',
+          items: { data: [] },
+        }),
+      );
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+      expect(chain.updateFn).not.toHaveBeenCalled();
     });
   });
 

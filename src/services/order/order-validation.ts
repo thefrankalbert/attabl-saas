@@ -4,7 +4,7 @@ import type { OrderPreparationZone, PreparationZone } from '@/types/admin.types'
 import { ServiceError } from '../errors';
 import { logger } from '@/lib/logger';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
-import type { OrderPreviewIssue, OrderPreviewResult } from './order-types';
+import type { OrderPreviewIssue, OrderPreviewResult, VerifiedLineLabels } from './order-types';
 import { verifiedPriceKey } from './verified-price-key';
 
 export function createValidationMethods(supabase: SupabaseClient) {
@@ -25,11 +25,11 @@ export function createValidationMethods(supabase: SupabaseClient) {
           supabase,
           tenantId,
           itemIds,
-          'id, name, price, is_available, category_id',
+          'id, name, name_en, price, is_available, category_id',
         ),
         supabase
           .from('item_modifiers')
-          .select('id, menu_item_id, name, price')
+          .select('id, menu_item_id, name, price, is_available')
           .eq('tenant_id', tenantId)
           .in('menu_item_id', itemIds),
         supabase
@@ -51,7 +51,16 @@ export function createValidationMethods(supabase: SupabaseClient) {
       const { data: dbModifiers } = modifiersRes;
       const modifiersByItem = new Map<string, Map<string, number>>();
       const modifiersByItemId = new Map<string, Map<string, number>>();
+      // Libelles lus en base, par article puis par id ou par nom normalise. Ils
+      // remplacent ceux du client a l'enregistrement (voir VerifiedLineLabels).
+      const modifierRows = new Map<string, { id: string; name: string; price: number }>();
       for (const mod of dbModifiers || []) {
+        // Un supplement retire de la vente n'est plus commandable: il n'entre
+        // dans aucun index, donc la ligne qui le porte est refusee plus bas.
+        if (mod.is_available === false) continue;
+        const row = { id: mod.id as string, name: mod.name as string, price: mod.price as number };
+        modifierRows.set(`${mod.menu_item_id}:id:${mod.id}`, row);
+        modifierRows.set(`${mod.menu_item_id}:name:${mod.name.toLowerCase()}`, row);
         if (!modifiersByItem.has(mod.menu_item_id)) {
           modifiersByItem.set(mod.menu_item_id, new Map());
         }
@@ -67,7 +76,13 @@ export function createValidationMethods(supabase: SupabaseClient) {
       const { data: dbVariants } = variantsRes;
       const variantsByItem = new Map<string, Map<string, number>>();
       const variantsByItemId = new Map<string, Map<string, number>>();
+      const variantNames = new Map<string, string>();
       for (const v of dbVariants || []) {
+        variantNames.set(`${v.menu_item_id}:id:${v.id}`, v.variant_name_fr);
+        variantNames.set(
+          `${v.menu_item_id}:name:${v.variant_name_fr.toLowerCase()}`,
+          v.variant_name_fr,
+        );
         if (!variantsByItem.has(v.menu_item_id)) {
           variantsByItem.set(v.menu_item_id, new Map());
         }
@@ -85,6 +100,7 @@ export function createValidationMethods(supabase: SupabaseClient) {
           const row = item as {
             id: string;
             name: string;
+            name_en: string | null;
             price: number;
             is_available: boolean;
             category_id: string | null;
@@ -97,8 +113,10 @@ export function createValidationMethods(supabase: SupabaseClient) {
       const invalidItemIds: string[] = [];
       let calculatedTotal = 0;
       const verifiedPrices = new Map<string, number>();
+      // Aligne sur `items` (meme index). `null` pour une ligne refusee.
+      const verifiedLabels: (VerifiedLineLabels | null)[] = items.map(() => null);
 
-      for (const item of items) {
+      for (const [index, item] of items.entries()) {
         if (item.quantity < 1) {
           issues.push({
             itemId: item.id,
@@ -164,8 +182,13 @@ export function createValidationMethods(supabase: SupabaseClient) {
         const itemModifiers = modifiersByItem.get(item.id);
         const itemModifiersById = modifiersByItemId.get(item.id);
         let modifiersTotal = 0;
+        const serverModifiers: { id: string; name: string; price: number }[] = [];
         if (item.modifiers && item.modifiers.length > 0) {
           for (const mod of item.modifiers) {
+            const serverRow =
+              (mod.id ? modifierRows.get(`${item.id}:id:${mod.id}`) : undefined) ??
+              modifierRows.get(`${item.id}:name:${mod.name.toLowerCase()}`);
+            if (serverRow) serverModifiers.push(serverRow);
             const modById = mod.id ? itemModifiersById?.get(mod.id) : undefined;
             const serverPrice = modById ?? itemModifiers?.get(mod.name.toLowerCase());
             if (serverPrice !== undefined) {
@@ -189,6 +212,17 @@ export function createValidationMethods(supabase: SupabaseClient) {
           // Cle par LIGNE de panier (article + variante), pas par article: deux
           // variantes du meme article s'ecrasaient l'une l'autre (F8).
           verifiedPrices.set(verifiedPriceKey(item), expectedPrice);
+          const variant = item.selectedVariant;
+          verifiedLabels[index] = {
+            name: menuItem.name,
+            nameEn: menuItem.name_en,
+            variantName: variant
+              ? ((variant.id ? variantNames.get(`${item.id}:id:${variant.id}`) : undefined) ??
+                variantNames.get(`${item.id}:name:${variant.name_fr.toLowerCase()}`) ??
+                null)
+              : null,
+            modifiers: serverModifiers,
+          };
           calculatedTotal += (expectedPrice + modifiersTotal) * item.quantity;
         }
       }
@@ -212,6 +246,7 @@ export function createValidationMethods(supabase: SupabaseClient) {
         invalidItemIds,
         validatedSubtotal: calculatedTotal,
         verifiedPrices,
+        verifiedLabels,
         categoryIds: Array.from(categoryIds),
         itemCategoryMap,
       };
@@ -226,6 +261,7 @@ export function createValidationMethods(supabase: SupabaseClient) {
     ): Promise<{
       validatedTotal: number;
       verifiedPrices: Map<string, number>;
+      verifiedLabels: (VerifiedLineLabels | null)[];
       categoryIds: string[];
       itemCategoryMap: Map<string, string>;
     }> {
@@ -243,6 +279,7 @@ export function createValidationMethods(supabase: SupabaseClient) {
       return {
         validatedTotal: preview.validatedSubtotal,
         verifiedPrices: preview.verifiedPrices,
+        verifiedLabels: preview.verifiedLabels,
         categoryIds: preview.categoryIds,
         itemCategoryMap: preview.itemCategoryMap,
       };

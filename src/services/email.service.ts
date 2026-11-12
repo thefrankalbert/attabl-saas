@@ -39,6 +39,23 @@ export type {
   LowStockAlertEmailData,
 } from './email.types';
 
+/** Delai maximum d'un envoi: le SDK Resend n'en a pas, un envoi bloque tiendrait la requete. */
+const DELAI_ENVOI_MS = 10_000;
+
+async function avecDelai<T>(envoi: Promise<T>): Promise<T> {
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      envoi,
+      new Promise<never>((_, rejeter) => {
+        minuteur = setTimeout(() => rejeter(new Error('Resend: delai depasse')), DELAI_ENVOI_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(minuteur);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
@@ -63,13 +80,15 @@ export function createEmailService(): EmailService {
     }
 
     try {
-      const { error } = await resend.emails.send({
-        from,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-        text,
-      });
+      const { error } = await avecDelai(
+        resend.emails.send({
+          from,
+          to: Array.isArray(to) ? to : [to],
+          subject,
+          html,
+          text,
+        }),
+      );
 
       if (error) {
         logger.error('Resend API error', error, { subject });
@@ -193,14 +212,16 @@ export const sendContactFormEmail = async (data: {
   }
   try {
     const r = new Resend(apiKey);
-    const { error } = await r.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@attabl.com',
-      replyTo: data.email,
-      to: ['support@attabl.com'],
-      subject: `Contact : ${data.name}${data.company ? ` (${data.company})` : ''}`,
-      html: `<p><strong>${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)})</p><p>${escapeHtml(data.message)}</p>`,
-      text: `De: ${data.name} (${data.email})\n\n${data.message}`,
-    });
+    const { error } = await avecDelai(
+      r.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'noreply@attabl.com',
+        replyTo: data.email,
+        to: ['support@attabl.com'],
+        subject: `Contact : ${data.name}${data.company ? ` (${data.company})` : ''}`,
+        html: `<p><strong>${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)})</p><p>${escapeHtml(data.message)}</p>`,
+        text: `De: ${data.name} (${data.email})\n\n${data.message}`,
+      }),
+    );
     if (error) {
       logger.error('Resend contact email error', error);
       return false;

@@ -102,17 +102,20 @@ export function createCreationMethods(supabase: SupabaseClient) {
       }
 
       // Build items array for the DB function
-      const itemsJson = input.items.map((item) => {
+      const itemsJson = input.items.map((item, index) => {
+        // Libelles de la carte (voir VerifiedLineLabels). Le repli sur ceux du
+        // client ne sert qu'aux appelants qui ne valident pas (tests unitaires).
+        const labels = input.verifiedLabels?.[index];
         const parts: string[] = [];
-        if (item.selectedVariant) parts.push(item.selectedVariant.name_fr);
+        if (item.selectedVariant) parts.push(labels?.variantName ?? item.selectedVariant.name_fr);
         if (item.selectedOption) parts.push(item.selectedOption.name_fr);
         if (item.customerNotes) parts.push(item.customerNotes);
         const combinedNotes = parts.length > 0 ? parts.join(' - ') : null;
 
         return {
           menu_item_id: item.id,
-          item_name: item.name,
-          item_name_en: item.name_en || null,
+          item_name: labels?.name ?? item.name,
+          item_name_en: (labels ? labels.nameEn : item.name_en) || null,
           quantity: item.quantity,
           // price_at_order: server-verified MAJOR menu price -> integer minor units.
           price_at_order: toMinorUnits(
@@ -120,7 +123,7 @@ export function createCreationMethods(supabase: SupabaseClient) {
             currency,
           ),
           customer_notes: combinedNotes,
-          modifiers: item.modifiers || [],
+          modifiers: labels?.modifiers ?? item.modifiers ?? [],
           course: item.course || null,
           preparation_zone: input.itemPreparationZones?.get(item.id) || 'kitchen',
         };

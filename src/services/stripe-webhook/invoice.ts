@@ -15,6 +15,36 @@ import { isActiveUnlessLocked, isHealthySubscriptionStatus } from './status';
  * facture encaissee - le seul evenement de ce webhook qui prouve un paiement.
  */
 
+/** Identifiant de l'abonnement que la facture regle, `null` si elle n'en porte pas. */
+function abonnementDeLaFacture(invoice: Stripe.Invoice): string | null {
+  const lien: unknown =
+    invoice.parent?.subscription_details?.subscription ??
+    (invoice as { subscription?: unknown }).subscription;
+  if (typeof lien === 'string') return lien;
+  if (lien && typeof lien === 'object' && 'id' in lien) return String(lien.id);
+  return null;
+}
+
+/**
+ * Intrusion M-02, cote factures: la facture regle-t-elle un AUTRE abonnement
+ * que celui du restaurant ? Meme regle que pour les evenements d'abonnement
+ * (voir subscription.ts): l'impaye d'un abonnement en double ne doit pas
+ * mettre en impaye un restaurant qui paie le sien, et sa facture payee ne doit
+ * pas lever l'impaye du courant. Sans identifiant des deux cotes, on ne peut
+ * rien affirmer: l'evenement est traite comme avant.
+ */
+function factureDUnAutreAbonnement(
+  tenant: { stripe_subscription_id?: string | null },
+  invoice: Stripe.Invoice,
+): boolean {
+  const abonnement = abonnementDeLaFacture(invoice);
+  return (
+    Boolean(abonnement) &&
+    Boolean(tenant.stripe_subscription_id) &&
+    tenant.stripe_subscription_id !== abonnement
+  );
+}
+
 export async function handleInvoicePaymentFailed(
   { supabase }: StripeWebhookDeps,
   invoice: Stripe.Invoice,
@@ -29,12 +59,20 @@ export async function handleInvoicePaymentFailed(
     // `is_active`, et un impaye sur un tenant suspendu encore `active`
     // chez Stripe rallumait donc l'acces - un ECHEC de paiement rendait
     // le service. Les verrous humains sont lus ici aussi.
-    .select('id, subscription_status, suspended_at, deleted_at')
+    .select('id, subscription_status, stripe_subscription_id, suspended_at, deleted_at')
     .eq('stripe_customer_id', customerId)
     .single();
 
   if (tenantPaymentError || !tenant) {
     logger.warn('Payment failed: tenant not found', { customerId });
+    return;
+  }
+
+  if (factureDUnAutreAbonnement(tenant, invoice)) {
+    logger.warn('invoice.payment_failed ignore: facture d un autre abonnement', {
+      tenantId: tenant.id,
+      invoiceId: invoice.id,
+    });
     return;
   }
 
@@ -105,6 +143,23 @@ export async function handleInvoicePaid(
   invoice: Stripe.Invoice,
 ): Promise<void> {
   const customerId = invoice.customer as string;
+
+  // Lecture prealable, pour la seule garde M-02. Une lecture en echec ne bloque
+  // pas le filet: il s'applique alors comme avant.
+  if (abonnementDeLaFacture(invoice)) {
+    const { data: courant } = await supabase
+      .from('tenants')
+      .select('id, stripe_subscription_id')
+      .eq('stripe_customer_id', customerId)
+      .maybeSingle();
+    if (courant && factureDUnAutreAbonnement(courant, invoice)) {
+      logger.warn('invoice.paid ignore: facture d un autre abonnement', {
+        tenantId: courant.id,
+        invoiceId: invoice.id,
+      });
+      return;
+    }
+  }
 
   const { error: paidError } = await updateTolerantToMissingFreezeReason(
     {

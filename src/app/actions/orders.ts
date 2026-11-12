@@ -179,7 +179,7 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (itemsError) {
     logger.error('Failed to delete order_items', itemsError, { orderIds: foundIds });
-    return { error: `Failed to delete order items: ${itemsError.message}` };
+    return { error: 'La suppression a echoue. Reessayez.' };
   }
 
   // Step 2: Delete the orders
@@ -187,7 +187,7 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
 
   if (deleteError) {
     logger.error('Failed to delete orders', deleteError, { orderIds: foundIds });
-    return { error: `Failed to delete orders: ${deleteError.message}` };
+    return { error: 'La suppression a echoue. Reessayez.' };
   }
 
   logger.info('Orders deleted successfully', { count: foundIds.length, orderIds: foundIds });

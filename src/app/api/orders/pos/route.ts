@@ -399,7 +399,7 @@ export async function POST(request: Request) {
       ]),
     ]);
 
-    const { validatedTotal, verifiedPrices, itemCategoryMap } = validationResult;
+    const { validatedTotal, verifiedPrices, verifiedLabels, itemCategoryMap } = validationResult;
     const { orderZone: preparationZone, categoryZoneMap } = zoneResult;
 
     // Build per-item preparation zone map
@@ -481,6 +481,7 @@ export async function POST(request: Request) {
         display_currency: tenant.currency ?? 'XAF',
         server_id: adminUser.id,
         verifiedPrices,
+        verifiedLabels,
         preparation_zone: preparationZone,
         itemPreparationZones,
         clientRequestId: client_request_id,

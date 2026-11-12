@@ -110,7 +110,23 @@ export async function POST(request: Request) {
     const couponService = createCouponService(createAdminClient());
     const result = await couponService.validateCoupon(code, tenant.id, subtotal, tenant.currency);
 
-    return NextResponse.json(result);
+    // Reponse reduite a ce que le panier et la caisse utilisent. La fiche
+    // complete (plafond, nombre d'utilisations, dates) renseignait un anonyme
+    // sur le budget restant de la campagne de n'importe quel restaurant.
+    const { coupon, ...verdict } = result;
+    return NextResponse.json({
+      ...verdict,
+      ...(coupon
+        ? {
+            coupon: {
+              id: coupon.id,
+              code: coupon.code,
+              discount_type: coupon.discount_type,
+              discount_value: coupon.discount_value,
+            },
+          }
+        : {}),
+    });
   } catch (error: unknown) {
     // Mask internal error details from the client - log the real message
     // server-side only. Raw error.message can leak DB errors, timeouts, etc.

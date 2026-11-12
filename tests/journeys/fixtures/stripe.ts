@@ -221,13 +221,28 @@ export function buildInvoicePaymentFailedEvent(input: { customerId: string }): S
 }
 
 /** customer.subscription.deleted pour un customer. */
-export function buildSubscriptionDeletedEvent(input: { customerId: string }): StripeEvent {
+export function buildSubscriptionDeletedEvent(input: {
+  customerId: string;
+  /**
+   * Identifiant de l'abonnement supprime. Un vrai evenement Stripe le porte
+   * toujours, et le webhook ignore la suppression d'un abonnement qui n'est pas
+   * l'abonnement courant du restaurant (intrusion M-02): sans lui, le test
+   * mesurait un evenement que la production ne recoit jamais.
+   */
+  subscriptionId?: string;
+}): StripeEvent {
   return {
     id: newId('evt'),
     object: 'event',
     type: 'customer.subscription.deleted',
     created: nowSec(),
-    data: { object: { id: newId('sub'), object: 'subscription', customer: input.customerId } },
+    data: {
+      object: {
+        id: input.subscriptionId ?? newId('sub'),
+        object: 'subscription',
+        customer: input.customerId,
+      },
+    },
   };
 }
 
