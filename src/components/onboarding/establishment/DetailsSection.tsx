@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { LabeledSwitch, NumberStepper } from './controls';
+import { DEFAULT_CAPACITY } from '@/services/table-config.types';
 
 export function DetailsSection({
   data,
@@ -195,7 +196,9 @@ export function DetailsSection({
                   />
                   <NumberStepper
                     label={t('totalCapacity')}
-                    value={data.totalCapacity ?? 1}
+                    // C-079: sans saisie, "1" s'affichait pour 10 tables. On
+                    // affiche l'estimation des tables (2 places chacune).
+                    value={data.totalCapacity ?? Math.max(1, data.tableCount * DEFAULT_CAPACITY)}
                     min={1}
                     max={9999}
                     onChange={(val) => updateData({ totalCapacity: val })}

@@ -16,6 +16,9 @@ export interface ExportCard {
   logoUrl?: string;
 }
 
+const BATCH_CAPTURE_SCALE = 2;
+const BATCH_JPEG_QUALITY = 0.85;
+
 /** Poll until the async QR <svg> is appended to `el`, or resolve null on timeout. */
 async function waitForSvg(el: HTMLElement, timeoutMs = 2000): Promise<SVGElement | null> {
   const start = Date.now();
@@ -58,7 +61,12 @@ async function renderCardToCanvas(
     if (!svg) return null;
     // one more frame so qr-code-styling finishes painting into the SVG
     await new Promise((r) => requestAnimationFrame(() => r(null)));
-    return await captureElementToCanvas(container, html2canvas);
+    // Lot: echelle 2 (au lieu de 3) et fond blanc (le JPEG n'a pas de transparence).
+    // 10 pages pesaient 51 Mo avec des PNG a l'echelle 3 (audit C-066).
+    return await captureElementToCanvas(container, html2canvas, {
+      scale: BATCH_CAPTURE_SCALE,
+      backgroundColor: '#ffffff',
+    });
   } finally {
     root.unmount();
     container.remove();
@@ -73,6 +81,7 @@ async function renderCardToCanvas(
 export async function exportResolvedCardsToPdf(
   cards: ExportCard[],
   filename: string,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<{ skipped: string[] }> {
   const { default: jsPDF } = await import('jspdf');
   const html2canvas = (await import('html2canvas-pro')).default as unknown as Parameters<
@@ -83,7 +92,8 @@ export async function exportResolvedCardsToPdf(
   const skipped: string[] = [];
   let placed = 0;
 
-  for (const card of cards) {
+  for (const [index, card] of cards.entries()) {
+    onProgress?.(index, cards.length);
     const canvas = await renderCardToCanvas(card, html2canvas);
     if (!canvas) {
       skipped.push(card.tableName || card.url);
@@ -94,10 +104,20 @@ export async function exportResolvedCardsToPdf(
     const tiling = computeTiling(card.config.templateWidth, card.config.templateHeight, 1);
     if (placed > 0) pdf.addPage();
     const cell = tiling.cells[0];
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', cell.x, cell.y, cell.w, cell.h);
+    pdf.addImage(
+      canvas.toDataURL('image/jpeg', BATCH_JPEG_QUALITY),
+      'JPEG',
+      cell.x,
+      cell.y,
+      cell.w,
+      cell.h,
+      undefined,
+      'FAST',
+    );
     placed += 1;
   }
 
+  onProgress?.(cards.length, cards.length);
   if (placed === 0) return { skipped };
   pdf.save(filename);
   return { skipped };

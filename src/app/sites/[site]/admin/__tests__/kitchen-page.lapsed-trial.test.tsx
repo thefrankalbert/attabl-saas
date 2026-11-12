@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ReactElement } from 'react';
+import React, { isValidElement, type ReactElement } from 'react';
 
 // Fin d'essai sans abonnement (decision produit du 2026-11-09): la cuisine
 // finit les commandes passees avant `trial_ends_at`. Or a la fin de l'essai le
@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   billing: vi.fn(),
 }));
 
+vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/lib/cache', () => ({ getTenant: async () => state.tenant }));
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
@@ -39,7 +40,11 @@ async function rendu(tenant: Record<string, unknown>): Promise<string> {
   const { default: KitchenPage } = await import('../kitchen/page');
   const el = (await KitchenPage({ params: Promise.resolve({ site: 'resto' }) })) as ReactElement;
   const { default: KitchenClient } = await import('@/components/admin/KitchenClient');
-  return el.type === KitchenClient ? 'cuisine' : 'mur';
+  // La page rend un fragment (titre h1 masque + cuisine): on cherche la cuisine dedans.
+  const enfants = React.Children.toArray((el.props as { children?: React.ReactNode }).children);
+  const ouverte =
+    el.type === KitchenClient || enfants.some((c) => isValidElement(c) && c.type === KitchenClient);
+  return ouverte ? 'cuisine' : 'mur';
 }
 
 describe('Page cuisine - fin d essai', () => {

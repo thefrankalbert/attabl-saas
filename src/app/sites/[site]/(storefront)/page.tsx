@@ -33,7 +33,8 @@ export async function generateMetadata({
   const tenant = await getCachedTenant(site);
 
   if (!tenant) {
-    return { title: 'Menu | ATTABL' };
+    // C-024: restaurant inexistant: titre honnete, et jamais indexe.
+    return { title: 'Page introuvable | ATTABL', robots: { index: false, follow: false } };
   }
 
   const description = `Consultez le menu de ${tenant.name} et commandez en ligne.`;

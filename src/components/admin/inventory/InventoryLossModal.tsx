@@ -93,6 +93,14 @@ export default function InventoryLossModal({
                 placeholder="0"
                 autoFocus
               />
+              {parseFloat(lossQty) > selectedIngredient.current_stock && (
+                <p role="alert" className="text-xs text-status-warning mt-1">
+                  {t('exceedsStockWarning', {
+                    stock: selectedIngredient.current_stock,
+                    unit: INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort ?? '',
+                  })}
+                </p>
+              )}
             </div>
 
             <div>

@@ -81,24 +81,27 @@ export async function POST(request: Request) {
     const bucket = (formData.get('bucket') as string) || 'logos';
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: 'Aucun fichier reçu.' }, { status: 400 });
     }
 
     // Validate bucket (whitelist)
     const allowedBuckets = ['logos', 'menu-items'];
     if (!allowedBuckets.includes(bucket)) {
-      return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 });
+      return NextResponse.json({ error: "Destination d'envoi inconnue." }, { status: 400 });
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }, { status: 400 });
+      return NextResponse.json({ error: 'Image trop lourde (5 Mo maximum).' }, { status: 400 });
     }
 
     // Validate mime type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Format non accepté. Utilisez une image JPEG, PNG ou WebP.' },
+        { status: 400 },
+      );
     }
 
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
     // Validate magic bytes to prevent Content-Type spoofing (stored XSS prevention)
     if (!validateMagicBytes(buffer, file.type)) {
       return NextResponse.json(
-        { error: 'File content does not match declared type' },
+        { error: "Le contenu du fichier ne correspond pas à un format d'image valide." },
         { status: 400 },
       );
     }
@@ -124,7 +127,15 @@ export async function POST(request: Request) {
 
     if (uploadError) {
       logger.error('Upload failed', { error: uploadError, bucket });
-      return NextResponse.json({ error: 'Echec du televersement' }, { status: 500 });
+      const bucketMissing = /bucket not found/i.test(uploadError.message);
+      return NextResponse.json(
+        {
+          error: bucketMissing
+            ? "Le dossier de stockage des images n'est pas configuré. Contactez le support."
+            : "Echec de l'envoi de l'image. Réessayez.",
+        },
+        { status: 500 },
+      );
     }
 
     const {

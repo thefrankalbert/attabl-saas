@@ -9,6 +9,8 @@ import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { StockReportClient } from '@/components/admin/reports/inventory/StockReportClient';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { CurrencyCode } from '@/types/admin.types';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,7 @@ export default async function InventoryReportsPage({
   params: Promise<{ site: string }>;
 }) {
   const { site } = await params;
+  const tTitle = await getTranslations('sidebar');
   await requireAdminPermission(site, 'inventory.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
@@ -53,6 +56,7 @@ export default async function InventoryReportsPage({
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
+      <AdminSrTitle label={tTitle('navReports')} />
       <StockReportClient
         tenant={{
           name: tenant.name,

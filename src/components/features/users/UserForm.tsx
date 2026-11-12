@@ -60,6 +60,14 @@ export default function UserForm({
   const seg = useSegmentTerms();
 
   const ROLE_CONFIG = buildRoleConfig(t);
+  const ROLE_DESC_KEYS: Record<string, string> = {
+    admin: 'roleDescAdmin',
+    manager: 'roleDescManager',
+    cashier: 'roleDescCashier',
+    chef: 'roleDescChef',
+    waiter: 'roleDescWaiter',
+  };
+  const roleDescription = (role: string) => (ROLE_DESC_KEYS[role] ? t(ROLE_DESC_KEYS[role]) : '');
 
   const INVITABLE_ROLE_CONFIG = Object.fromEntries(
     Object.entries(ROLE_CONFIG).filter(([key]) => key !== 'owner'),
@@ -134,7 +142,7 @@ export default function UserForm({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-app-text-secondary mt-1">{t('roleDescription')}</p>
+            <p className="text-xs text-app-text-secondary mt-1">{roleDescription(inviteRole)}</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
@@ -220,7 +228,7 @@ export default function UserForm({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-app-text-secondary mt-1">{t('roleDescription')}</p>
+            <p className="text-xs text-app-text-secondary mt-1">{roleDescription(formData.role)}</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">

@@ -46,7 +46,11 @@ export default function LossesReportClient({
 
   const reasonLabel = useCallback((code: LossReasonCode) => t(`reason_${code}`), [t]);
 
+  // Dates au format YYYY-MM-DD: la comparaison de chaines suit l'ordre chronologique.
+  const invalidRange = startDate !== '' && endDate !== '' && startDate > endDate;
+
   const applyFilter = useCallback(async () => {
+    if (invalidRange) return;
     setLoading(true);
     setError(false);
     // Journees entieres: le jour "Au" est inclus (voir day-range.ts).
@@ -58,7 +62,7 @@ export default function LossesReportClient({
       setError(true);
     }
     setLoading(false);
-  }, [tenantId, startDate, endDate]);
+  }, [tenantId, startDate, endDate, invalidRange]);
 
   return (
     <RoleGuard permission="inventory.view">
@@ -90,10 +94,20 @@ export default function LossesReportClient({
                 className="h-9 w-40"
               />
             </div>
-            <Button onClick={applyFilter} disabled={loading} variant="default" className="h-9">
+            <Button
+              onClick={applyFilter}
+              disabled={loading || invalidRange}
+              variant="default"
+              className="h-9"
+            >
               {t('apply')}
             </Button>
           </div>
+          {invalidRange && (
+            <p role="alert" className="text-sm text-status-error">
+              {t('invalidRange')}
+            </p>
+          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">

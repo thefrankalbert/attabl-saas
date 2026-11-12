@@ -68,3 +68,23 @@ export function formatAmount(amount: number, currencyCode?: CurrencyCode | strin
 export function getCurrencySymbol(currencyCode?: CurrencyCode | string | null): string {
   return getCurrencyConfig(currencyCode).symbol;
 }
+
+/**
+ * Format a unit cost (per kg, per litre...) without rounding away real cents:
+ * 250.5 FCFA shows "250,5 FCFA" instead of "251 FCFA" (audit C-050).
+ * Shows at least the currency decimals, at most 2, and drops useless zeros beyond that.
+ */
+export function formatUnitCost(
+  amount: number,
+  currencyCode?: CurrencyCode | string | null,
+): string {
+  const config = getCurrencyConfig(currencyCode);
+  const formatted = new Intl.NumberFormat(config.locale, {
+    minimumFractionDigits: config.decimals,
+    maximumFractionDigits: Math.max(config.decimals, 2),
+  }).format(amount);
+
+  return config.position === 'before'
+    ? `${config.symbol}${formatted}`
+    : `${formatted} ${config.symbol}`;
+}

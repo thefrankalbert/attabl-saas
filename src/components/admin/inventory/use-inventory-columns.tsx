@@ -7,7 +7,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import { StatusBadge } from '@/components/admin/shared/StatusBadge';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatUnitCost } from '@/lib/utils/currency';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { Ingredient } from '@/types/inventory.types';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -83,7 +83,7 @@ export function useInventoryColumns(
         ),
         cell: ({ row }) => (
           <span className="text-app-text-secondary">
-            {formatCurrency(row.original.cost_per_unit, currency as CurrencyCode)}
+            {formatUnitCost(row.original.cost_per_unit, currency as CurrencyCode)}
           </span>
         ),
         meta: { className: 'text-right' },

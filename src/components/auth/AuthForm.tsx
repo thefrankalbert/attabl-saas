@@ -214,19 +214,9 @@ function AuthForm({ mode }: AuthFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password" className={labelClass}>
-                {tForm('passwordLabel')}
-              </Label>
-              {isLogin && (
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
-                >
-                  {tForm('forgotPassword')}
-                </Link>
-              )}
-            </div>
+            <Label htmlFor="password" className={labelClass}>
+              {tForm('passwordLabel')}
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -254,6 +244,16 @@ function AuthForm({ mode }: AuthFormProps) {
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
+              {/* Apres le champ dans le DOM (ordre de tabulation: email, mot de passe, oubli),
+                  replace visuellement sur la ligne du label. */}
+              {isLogin && (
+                <Link
+                  href="/forgot-password"
+                  className="absolute bottom-full right-0 mb-0 flex h-5 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
+                >
+                  {tForm('forgotPassword')}
+                </Link>
+              )}
             </div>
 
             {!isLogin && password.length > 0 && (

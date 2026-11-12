@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import '@/lib/validations/zod-fr-error-map';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createSuggestionService, generateAndSaveSuggestions } from '@/services/suggestion.service';

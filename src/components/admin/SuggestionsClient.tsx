@@ -12,6 +12,7 @@ import {
   actionBulkDeactivateSuggestions,
   actionGenerateAndSaveSuggestions,
 } from '@/app/actions/suggestions';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import type { MenuItem, Suggestion, SuggestionTypeConfig } from './suggestions/types';
@@ -49,6 +50,7 @@ export default function SuggestionsClient({
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
   const supabase = createClient();
   const [generating, setGenerating] = useState(false);
   const canAutoGenerate = canAccessFeature(
@@ -119,7 +121,7 @@ export default function SuggestionsClient({
       display_order: suggestions.length,
     });
     if (result.error) {
-      toast({ title: tc('error'), variant: 'destructive' });
+      toast({ title: tc('error'), description: result.error, variant: 'destructive' });
       return;
     }
     toast({ title: t('suggestionAdded') });
@@ -131,6 +133,14 @@ export default function SuggestionsClient({
   };
 
   const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: t('deleteSuggestionTitle'),
+      description: t('deleteSuggestionDesc'),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
     const result = await actionDeactivateSuggestion(tenantId, id);
     if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
@@ -171,6 +181,14 @@ export default function SuggestionsClient({
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    const ok = await confirm({
+      title: t('deleteSuggestionsTitle', { count: selectedIds.size }),
+      description: t('deleteSuggestionDesc'),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
     const result = await actionBulkDeactivateSuggestions(tenantId, Array.from(selectedIds));
     if (result.error) {
       toast({ title: tc('error'), variant: 'destructive' });
@@ -239,6 +257,7 @@ export default function SuggestionsClient({
             onDescriptionChange={setDescription}
             onSubmit={handleAdd}
           />
+          {ConfirmDialog}
         </>
       )}
     </div>

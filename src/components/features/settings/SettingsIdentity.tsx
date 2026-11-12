@@ -43,9 +43,7 @@ interface SettingsIdentityProps {
   form: UseFormReturn<SettingsFormValues>;
   tenant: { slug: string; custom_domain?: string | null };
   logoPreview: string | null;
-  uploading: boolean;
   saving: boolean;
-  onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onLogoChange?: (url: string) => void;
   onLogoRemove?: () => void;
   t: (key: string) => string;
@@ -57,7 +55,6 @@ export default function SettingsIdentity({
   form,
   tenant,
   logoPreview,
-  uploading,
   saving,
   onLogoChange,
   onLogoRemove,
@@ -165,7 +162,7 @@ export default function SettingsIdentity({
                 value={logoPreview || ''}
                 onChange={(url) => onLogoChange?.(url)}
                 onRemove={() => onLogoRemove?.()}
-                disabled={uploading || saving}
+                disabled={saving}
                 bucket="menu-items"
                 aspect={1}
                 maxWidth={512}

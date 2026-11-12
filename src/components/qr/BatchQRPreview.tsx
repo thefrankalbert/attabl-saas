@@ -46,6 +46,7 @@ export function BatchQRPreview({
 }: BatchQRPreviewProps) {
   const t = useTranslations('qrCodes');
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const selectedMenu = menus.find((m) => m.id === selectedMenuId);
 
@@ -74,6 +75,7 @@ export function BatchQRPreview({
       const { skipped } = await exportResolvedCardsToPdf(
         cards,
         `qrcodes-${tenantName.toLowerCase().replace(/\s/g, '-')}-toutes-tables.pdf`,
+        (done, total) => setProgress({ done, total }),
       );
 
       if (skipped.length > 0) {
@@ -86,6 +88,7 @@ export function BatchQRPreview({
       toast.error(t('exportError'));
     } finally {
       setGenerating(false);
+      setProgress(null);
     }
   };
 
@@ -120,7 +123,9 @@ export function BatchQRPreview({
       >
         <Download className="w-4 h-4" />
         {generating
-          ? t('batchGenerating', { count: tables.length })
+          ? progress
+            ? t('batchProgress', { done: progress.done, total: progress.total })
+            : t('batchGenerating', { count: tables.length })
           : t('batchDownload', { count: tables.length })}
       </Button>
       {selectedMenu && (

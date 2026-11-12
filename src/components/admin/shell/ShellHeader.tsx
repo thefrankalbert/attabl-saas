@@ -37,7 +37,9 @@ export function ShellHeader({
         <PanelLeft className="size-4" />
       </Button>
       <span className="mx-1 h-4 w-px bg-[var(--border)]" aria-hidden />
-      <div className="min-w-0 truncate text-sm font-medium text-[var(--foreground)]">{title}</div>
+      <div className="min-w-0 max-w-[45%] shrink truncate pr-2 text-sm font-medium text-[var(--foreground)] md:max-w-[40%]">
+        {title}
+      </div>
 
       <TopbarSearch />
 

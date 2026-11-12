@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deleteMenuItemScoped, updateMenuItemScoped } from '@/lib/menu-items-query';
 import { ServiceError } from './errors';
+import { assertNameAvailable } from './duplicate-name';
 
 /**
  * Columns a client is allowed to write on menu_items. Anything else in the
@@ -58,6 +59,17 @@ export function createMenuItemService(supabase: SupabaseClient): MenuItemService
      */
     async createMenuItem(tenantId: string, payload: Record<string, unknown>): Promise<string> {
       if (!tenantId) throw new ServiceError('tenant_id manquant', 'VALIDATION');
+      await assertNameAvailable(supabase, {
+        table: 'menu_items',
+        tenantId,
+        name: typeof payload.name === 'string' ? payload.name : '',
+        message: 'Un plat porte déjà ce nom dans cette catégorie.',
+        scope: {
+          column: 'category_id',
+          value: typeof payload.category_id === 'string' ? payload.category_id : null,
+        },
+        excludeSoftDeleted: true,
+      });
       const { data, error } = await supabase
         .from('menu_items')
         .insert([{ ...pickMenuItemColumns(payload), tenant_id: tenantId }])

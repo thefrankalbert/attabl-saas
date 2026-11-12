@@ -5,11 +5,14 @@ import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { getPlanLimits } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { EspacesManager, type EspaceRow } from '@/components/admin/settings/EspacesManager';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function EspacesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  const tTitle = await getTranslations('espaces');
   await requireAdminPermission(site, 'settings.view');
   const supabase = await createClient();
 
@@ -78,6 +81,7 @@ export default async function EspacesPage({ params }: { params: Promise<{ site: 
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full">
+      <AdminSrTitle label={tTitle('title')} />
       <EspacesManager
         espaces={espaces}
         maxEspaces={limits.maxVenues}

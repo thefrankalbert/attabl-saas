@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { billingCapabilities } from '@/lib/billing/provider';
 import { logger } from '@/lib/logger';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
+import { getTrialDaysRemaining } from '@/lib/plans/features';
 import { CurrentPlanPanel } from './subscription/CurrentPlanPanel';
 import { BillingIntervalToggle } from './subscription/BillingIntervalToggle';
 import { PlanCard } from './subscription/PlanCard';
@@ -21,6 +22,7 @@ interface Tenant {
   id: string;
   subscription_plan?: string;
   subscription_status?: string;
+  trial_ends_at?: string | null;
   subscription_current_period_end: string | null;
   billing_interval: string | null;
   stripe_subscription_id?: string | null;
@@ -126,7 +128,16 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
         <CurrentPlanPanel
           plan={currentPlan}
           status={currentStatus}
-          periodEnd={tenant.subscription_current_period_end}
+          periodEnd={
+            currentStatus === 'trial'
+              ? (tenant.trial_ends_at ?? null)
+              : tenant.subscription_current_period_end
+          }
+          trialDaysLeft={
+            currentStatus === 'trial' && tenant.trial_ends_at
+              ? getTrialDaysRemaining(tenant.trial_ends_at)
+              : null
+          }
           billingInterval={billingInterval}
           hasSubscription={hasSubscription}
           canOpenPortal={billingCapabilities().hostedPortal}

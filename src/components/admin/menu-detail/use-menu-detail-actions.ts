@@ -218,6 +218,8 @@ export function useMenuDetailActions(state: MenuDetailState) {
           prev.map((i) => (i.id === item.id ? { ...i, is_available: item.is_available } : i)),
         );
         toast({ title: result.error, variant: 'destructive' });
+      } else {
+        toast({ title: newValue ? t('itemAvailable') : t('itemUnavailable') });
       }
     } catch {
       // Rollback

@@ -16,6 +16,7 @@ import { OrderingPausedNotice } from '@/components/tenant/client/OrderingPausedN
 import { StorefrontUnavailable } from '@/components/tenant/StorefrontUnavailable';
 import { AnnouncementBanner } from '@/components/tenant/AnnouncementBanner';
 import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 
 /**
  * Storefront (convive) shell.
@@ -55,7 +56,14 @@ export default async function StorefrontLayout({
   // commande restant refusee en 403 par `tenantLockReason`. Les pages qui
   // chargent la carte relisent la meme regle: rendre `StorefrontUnavailable`
   // ici n'empeche pas leur payload de partir.
-  if (tenant && access === 'closed') {
+  // C-024: un sous-domaine sans restaurant repondait 200 ("Menu | ATTABL").
+  // Le refus se fait ici, AVANT tout rendu: une page qui appelle notFound()
+  // apres le debut du streaming ne peut plus changer le statut HTTP.
+  if (!tenant) {
+    notFound();
+  }
+
+  if (access === 'closed') {
     return <StorefrontUnavailable />;
   }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { WifiOff } from 'lucide-react';
+import { OfflineActions } from './OfflineActions';
 
 // Offline fallback document. Precached by the service worker (serwist.config.js
 // additionalPrecacheEntries) so a navigation attempted with no network still
@@ -23,6 +24,7 @@ export default function OfflinePage() {
           partent toutes seules des que le reseau revient.
         </p>
       </div>
+      <OfflineActions />
       <p className="text-xs text-muted-foreground">Reconnexion automatique...</p>
     </main>
   );

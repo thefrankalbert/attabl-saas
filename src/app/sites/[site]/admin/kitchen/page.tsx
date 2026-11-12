@@ -6,11 +6,14 @@ import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import { kitchenMayFinishForTenant } from '@/lib/billing/lapsed-trial';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function KitchenPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  const tTitle = await getTranslations('sidebar');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -43,10 +46,13 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
   }
 
   return (
-    <KitchenClient
-      tenantId={tenant.id}
-      tenantName={tenant.name}
-      barDisplayEnabled={tenant.bar_display_enabled ?? false}
-    />
+    <>
+      <AdminSrTitle label={tTitle('navKitchen')} />
+      <KitchenClient
+        tenantId={tenant.id}
+        tenantName={tenant.name}
+        barDisplayEnabled={tenant.bar_display_enabled ?? false}
+      />
+    </>
   );
 }

@@ -148,7 +148,10 @@ export async function POST(request: Request) {
       const parsed = createInvitationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
-          { error: 'Donnees invalides', details: parsed.error.flatten().fieldErrors },
+          {
+            error: parsed.error.issues[0]?.message ?? 'Donnees invalides',
+            details: parsed.error.flatten().fieldErrors,
+          },
           { status: 400 },
         );
       }

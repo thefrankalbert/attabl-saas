@@ -248,6 +248,7 @@ export default function ItemsClient({
       toast({ title: result.error, variant: 'destructive' });
       return;
     }
+    toast({ title: item.is_available ? t('itemUnavailable') : t('itemAvailable') });
     loadItems();
     router.refresh();
     revalidateMenuCache(tenantSlug);

@@ -143,7 +143,7 @@ export function StockReportClient({
             position: absolute; left: 0; top: 0;
             width: 100% !important; max-width: none !important;
           }
-          /* @page margin is the only page margin — drop the on-screen padding */
+          /* @page margin is the only page margin - drop the on-screen padding */
           #report-sheet .report-body { padding: 0 !important; }
           /* Force the table to fit the printable width (wide "detailed" model
              overflows A4 otherwise and the right columns get clipped) */

@@ -345,6 +345,16 @@ describe('POST /api/invitations', () => {
     expect(json.error).toContain('invalide');
   });
 
+  it('names the email field in the error when the address is invalid', async () => {
+    mockRateLimit(true);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+
+    const res = await POST(buildPostRequest({ email: 'not-an-email', role: 'waiter' }));
+    const json = (await res.json()) as { error: string };
+
+    expect(json.error).toBe('Adresse email invalide');
+  });
+
   it('returns 201 when invitation is created', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();

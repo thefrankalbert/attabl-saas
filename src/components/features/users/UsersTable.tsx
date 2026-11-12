@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getRoleConfig } from '@/lib/role-config';
@@ -56,9 +56,6 @@ export default function UsersTable({
             >
               <div className="flex min-w-0 items-center gap-4">
                 <Avatar className="h-10 w-10 shrink-0 border">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.full_name}`}
-                  />
                   <AvatarFallback>{user.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">

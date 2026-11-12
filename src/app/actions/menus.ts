@@ -3,6 +3,7 @@
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
+import '@/lib/validations/zod-fr-error-map';
 import { createMenuService } from '@/services/menu.service';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';

@@ -11,6 +11,8 @@ import { parseSettingsTab } from '@/lib/settings-tabs';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { DEFAULT_PAYMENT_METHODS } from '@/lib/payments/methods';
 import { parseEstablishmentDetails } from '@/lib/validations/establishment-details.schema';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -19,6 +21,7 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params, searchParams }: SettingsPageProps) {
   const { site } = await params;
+  const tTitle = await getTranslations('sidebar');
   await requireAdminPermission(site, 'settings.view');
   const sp = await searchParams;
   const initialTab = parseSettingsTab(sp.tab);
@@ -62,6 +65,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full">
+      <AdminSrTitle label={tTitle('navSettings')} />
       <SettingsForm
         initialTab={initialTab}
         initialPaymentMethods={tenant.enabled_payment_methods ?? DEFAULT_PAYMENT_METHODS}

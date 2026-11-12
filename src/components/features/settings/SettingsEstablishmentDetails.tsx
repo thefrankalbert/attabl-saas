@@ -7,6 +7,7 @@ import { LabeledSwitch, NumberStepper } from '@/components/onboarding/establishm
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 import type { EstablishmentDetails } from '@/lib/validations/establishment-details.schema';
+import { DEFAULT_CAPACITY } from '@/services/table-config.types';
 
 /**
  * The type-specific details asked during the onboarding (stars, restaurant,
@@ -36,7 +37,11 @@ export default function SettingsEstablishmentDetails({
     fields = (
       <NumberStepper
         label={t('totalCapacity')}
-        value={details.totalCapacity ?? 1}
+        // C-079: sans saisie, "1" s'affichait pour 10 tables. On affiche
+        // l'estimation des tables (2 places chacune).
+        value={
+          details.totalCapacity ?? Math.max(1, (form.watch('tableCount') ?? 0) * DEFAULT_CAPACITY)
+        }
         min={1}
         max={9999}
         onChange={(val) => update({ totalCapacity: val })}

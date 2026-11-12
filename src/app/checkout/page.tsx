@@ -122,6 +122,7 @@ function CheckoutWithPlan({
 
   return (
     <div className="fixed inset-0 flex flex-col md:flex-row">
+      <h1 className="sr-only">{t('page.title')}</h1>
       <CheckoutLeftPanel plan={plan} interval={interval} />
       <div className="flex-1 min-h-0 overflow-y-auto">
         <CheckoutRightPanel clientSecret={clientSecret} />

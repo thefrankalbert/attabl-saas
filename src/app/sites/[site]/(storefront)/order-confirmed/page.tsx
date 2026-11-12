@@ -296,9 +296,9 @@ function OrderConfirmedContent() {
         className="h-full bg-white flex flex-col items-center justify-center px-4 text-center"
         style={{ color: 'var(--color-ink)' }}
       >
-        <p className="mb-4" style={{ color: 'var(--color-ink-soft)' }}>
+        <h1 className="mb-4" style={{ color: 'var(--color-ink-soft)' }}>
           {fetchError ? t('errorHint') : t('orderNotFound')}
-        </p>
+        </h1>
         {fetchError ? (
           <Button
             onClick={() => {

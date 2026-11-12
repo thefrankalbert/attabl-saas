@@ -1,6 +1,7 @@
 import { after } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { formatCurrency } from '@/lib/utils/currency';
 import { getTranslations } from 'next-intl/server';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { determineOrderEventKey, sendOrderEmailForKey } from '@/services/trigger-emails.service';
@@ -102,7 +103,7 @@ export function scheduleOrderNotification(
 ): void {
   const { tenantId, tenantSlug, tableNumber, itemsCount, total, currency, orderId } = params;
   const titre = titreNouvelleCommande(tableNumber);
-  const corps = `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${total.toLocaleString('fr-FR')} ${currency || 'XAF'}`;
+  const corps = `${itemsCount} article${itemsCount > 1 ? 's' : ''} - ${formatCurrency(total, currency)}`;
 
   after(async () => {
     const { error: notifError } = await adminSupabase.from('notifications').insert({

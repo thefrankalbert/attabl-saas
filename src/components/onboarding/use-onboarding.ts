@@ -23,6 +23,9 @@ export function useOnboarding() {
   // Navigation state: phase 0 = welcome, 1-3 = studio phases
   const [phase, setPhase] = useState(0);
   const [subScreen, setSubScreen] = useState(0);
+  // C-012: passer la carte sans aucun plat lance un restaurant a la carte vide.
+  // Premier appui: on previent; second appui: on continue, c'est un choix.
+  const [emptyMenuWarned, setEmptyMenuWarned] = useState(false);
   const [loading, setLoading] = useState(true);
   /**
    * The saved state could not be read. The studio is NOT shown: with empty
@@ -410,6 +413,16 @@ export function useOnboarding() {
     const blocage = screenKey ? stepBlockingError(screenKey, data) : null;
     if (blocage) {
       setError(t(blocage));
+      return;
+    }
+
+    if (
+      screenKey === 'menu' &&
+      !emptyMenuWarned &&
+      !data.menuItems.some((item) => item.name.trim())
+    ) {
+      setEmptyMenuWarned(true);
+      setError(t('emptyMenuWarning'));
       return;
     }
 

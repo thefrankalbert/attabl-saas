@@ -12,6 +12,7 @@ import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { menuItemCreateSchema, menuItemUpdateSchema } from '@/lib/validations/menu-item.schema';
+import '@/lib/validations/zod-fr-error-map';
 
 const tenantIdSchema = z.string().uuid();
 const itemIdSchema = z.string().uuid();
@@ -49,7 +50,7 @@ export async function actionCreateMenuItem(
 
   const parsedPayload = menuItemCreateSchema.safeParse(payload);
   if (!parsedPayload.success) {
-    return { error: t('validationError') };
+    return { error: parsedPayload.error.issues[0]?.message ?? t('validationError') };
   }
 
   const adminClient = createAdminClient();
@@ -125,7 +126,7 @@ export async function actionUpdateMenuItem(
 
   const parsedPayload = menuItemUpdateSchema.safeParse(payload);
   if (!parsedPayload.success) {
-    return { error: t('validationError') };
+    return { error: parsedPayload.error.issues[0]?.message ?? t('validationError') };
   }
 
   try {

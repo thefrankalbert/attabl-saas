@@ -177,6 +177,7 @@ export function useMenusData({
         toast({ title: result.error, variant: 'destructive' });
         return;
       }
+      toast({ title: menu.is_active ? t('menuDeactivated') : t('menuActivated') });
       loadMenus();
       revalidateMenuCache(tenantSlug);
     } catch {
