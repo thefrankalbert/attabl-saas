@@ -67,7 +67,7 @@ test.describe.serial('04 - Service & commandes', () => {
       const res = await ctx.post('/api/orders', {
         data: {
           items: [{ id: item.menuItemId, name: item.itemName, price: item.price, quantity: 2 }],
-          tableNumber: '12',
+          tableNumber: '1',
           service_type: 'dine_in',
         },
       });
@@ -93,7 +93,7 @@ test.describe.serial('04 - Service & commandes', () => {
               quantity: 1,
             },
           ],
-          tableNumber: '12',
+          tableNumber: '1',
           service_type: 'dine_in',
         },
       });
