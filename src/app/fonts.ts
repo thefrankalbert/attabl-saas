@@ -26,6 +26,17 @@
  */
 import localFont from 'next/font/local';
 
+/*
+ * PRECHARGEMENT (audit C-028, 2026-11-12): `preload: false` sur TOUTES les
+ * familles. Declarees dans le layout racine, elles etaient sinon prechargees
+ * sur chaque page: 19 fichiers, 480 Ko, sur une page d'inscription a trois
+ * champs, avant meme d'afficher son titre (mesure: 4,1 s en reseau mobile).
+ * Sans prechargement, le navigateur ne telecharge une police que si la page
+ * l'affiche reellement, et `display: 'swap'` montre le texte tout de suite en
+ * police systeme. Les polices de theme d'un restaurant (Poppins, Lato...) ne
+ * sont plus telechargees ailleurs que sur sa vitrine.
+ */
+
 /**
  * Les graisses des polices variables reprennent EXACTEMENT la plage servie par
  * Google pour chaque famille. Une plage plus large que la realite ferait
@@ -38,6 +49,7 @@ export const geistSans = localFont({
   variable: '--font-geist-sans',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const geistMono = localFont({
@@ -45,6 +57,7 @@ export const geistMono = localFont({
   variable: '--font-geist-mono',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const dmSerifDisplay = localFont({
@@ -52,6 +65,7 @@ export const dmSerifDisplay = localFont({
   variable: '--font-dm-serif-display',
   weight: '400',
   display: 'swap',
+  preload: false,
   // Police a empattements : la police de secours doit l'etre aussi, sinon le
   // texte saute d'une forme a l'autre au moment ou la vraie police arrive.
   adjustFontFallback: 'Times New Roman',
@@ -62,6 +76,7 @@ export const instrumentSerif = localFont({
   variable: '--font-instrument-serif',
   weight: '400',
   display: 'swap',
+  preload: false,
   adjustFontFallback: 'Times New Roman',
 });
 
@@ -74,6 +89,7 @@ export const inter = localFont({
   variable: '--font-inter',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const poppins = localFont({
@@ -85,6 +101,7 @@ export const poppins = localFont({
   ],
   variable: '--font-poppins',
   display: 'swap',
+  preload: false,
 });
 
 export const montserrat = localFont({
@@ -92,6 +109,7 @@ export const montserrat = localFont({
   variable: '--font-montserrat',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const playfairDisplay = localFont({
@@ -99,6 +117,7 @@ export const playfairDisplay = localFont({
   variable: '--font-playfair-display',
   weight: '400 900',
   display: 'swap',
+  preload: false,
   adjustFontFallback: 'Times New Roman',
 });
 
@@ -107,6 +126,7 @@ export const raleway = localFont({
   variable: '--font-raleway',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const nunito = localFont({
@@ -114,6 +134,7 @@ export const nunito = localFont({
   variable: '--font-nunito',
   weight: '200 1000',
   display: 'swap',
+  preload: false,
 });
 
 export const roboto = localFont({
@@ -121,6 +142,7 @@ export const roboto = localFont({
   variable: '--font-roboto',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const lato = localFont({
@@ -130,6 +152,7 @@ export const lato = localFont({
   ],
   variable: '--font-lato',
   display: 'swap',
+  preload: false,
 });
 
 export const openSans = localFont({
@@ -137,6 +160,7 @@ export const openSans = localFont({
   variable: '--font-open-sans',
   weight: '300 800',
   display: 'swap',
+  preload: false,
 });
 
 export const sourceSans3 = localFont({
@@ -144,6 +168,7 @@ export const sourceSans3 = localFont({
   variable: '--font-source-sans-3',
   weight: '200 900',
   display: 'swap',
+  preload: false,
 });
 
 // Sora est la police d'affichage des pages marketing, des articles de blog et
@@ -153,4 +178,5 @@ export const sora = localFont({
   variable: '--font-sora',
   weight: '100 800',
   display: 'swap',
+  preload: false,
 });
