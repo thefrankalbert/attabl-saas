@@ -157,6 +157,9 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
     type: 'stock_alert',
     title: `Alerte stock: ${ingredient.name}`,
     body: `Stock bas: ${ingredient.current_stock} ${ingredient.unit} restant(s)`,
+    // C-048 (mineur): l'alerte menait nulle part. Meme cible que l'alerte
+    // "stock non deduit" (notifyDestockFailed).
+    link: '/inventory',
     read: false,
   }));
 
