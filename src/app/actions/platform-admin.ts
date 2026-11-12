@@ -7,6 +7,7 @@ import { AuthError } from '@/lib/auth/get-session';
 import { ServiceError } from '@/services/errors';
 import { createPlatformAdminService } from '@/services/platform-admin.service';
 import { tenantActionSchema, adminUserActionSchema } from '@/lib/validations/platform-admin.schema';
+import { domainVerifySchema } from '@/lib/validations/domain.schema';
 import { CACHE_TAG_TENANT_CONFIG, CACHE_TAG_TENANT_DOMAIN } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 
@@ -56,6 +57,38 @@ export async function actionSuspendTenant(
     return { success: true };
   } catch (err) {
     return { error: toMessage(err, 'Echec de la suspension') };
+  }
+}
+
+/**
+ * C-083: the platform (super-admin only) sets or removes a tenant's custom
+ * domain. Empty text removes it. The domain must also be added to the Vercel
+ * project so it actually serves (Vercel > Domains), see 04-REPRISE.md.
+ */
+export async function actionSetTenantCustomDomain(
+  tenantId: string,
+  domain: string,
+): Promise<ActionResponse> {
+  try {
+    const { user } = await requireSuperAdmin();
+    const parsedTenant = tenantActionSchema.safeParse({ tenantId });
+    if (!parsedTenant.success) return { error: 'Donnees invalides' };
+    const cleaned = domain.trim().toLowerCase();
+    if (cleaned) {
+      const parsedDomain = domainVerifySchema.safeParse({ domain: cleaned });
+      if (!parsedDomain.success) return { error: 'Domaine invalide (exemple: menu.monresto.com)' };
+    }
+
+    const service = createPlatformAdminService(createAdminClient());
+    await service.setCustomDomain(
+      parsedTenant.data.tenantId,
+      { userId: user.id, email: user.email },
+      cleaned || null,
+    );
+    bustTenantCaches();
+    return { success: true };
+  } catch (err) {
+    return { error: toMessage(err, "Echec de l'enregistrement du domaine") };
   }
 }
 

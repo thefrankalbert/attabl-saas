@@ -9,7 +9,6 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
-import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
@@ -168,15 +167,6 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
                 onLogoUpload={handleLogoUpload}
                 onLogoChange={handleLogoChange}
                 onLogoRemove={handleLogoRemove}
-                onDomainSave={async (domain) => {
-                  // Partial save: only the domain. The action/service skip every
-                  // field absent from the FormData, so this never writes the
-                  // (possibly unsaved/invalid) name or colors from the main form.
-                  const formData = new FormData();
-                  formData.append('customDomain', domain || '');
-                  const result = await actionUpdateTenantSettings(formData);
-                  if (!result.success) throw new Error(result.error);
-                }}
                 t={t}
               />
 

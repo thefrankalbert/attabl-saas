@@ -103,7 +103,6 @@ export async function actionUpdateTenantSettings(formData: FormData) {
         }
       })(),
       // Custom domain
-      customDomain: formData.has('customDomain') ? str('customDomain') || null : undefined,
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);

@@ -21,19 +21,19 @@ describe('tenant.service updateSettings (partial PATCH)', () => {
 
     await createTenantService(client).updateSettings('tenant-1', {
       ...base,
-      customDomain: 'shop.example.com',
+      openingHours: {},
     });
 
     const payload = update.mock.calls[0]![0] as Record<string, unknown>;
     expect(Object.keys(payload).sort()).toEqual(
-      ['custom_domain', 'name', 'primary_color', 'secondary_color', 'updated_at'].sort(),
+      ['name', 'opening_hours', 'primary_color', 'secondary_color', 'updated_at'].sort(),
     );
     // The bug: these unrelated columns must NOT be written on a partial save.
     expect(payload).not.toHaveProperty('currency');
     expect(payload).not.toHaveProperty('tax_rate');
     expect(payload).not.toHaveProperty('enable_tax');
     expect(payload).not.toHaveProperty('supported_currencies');
-    expect(payload.custom_domain).toBe('shop.example.com');
+    expect(payload.opening_hours).toEqual({});
     expect(eq).toHaveBeenCalledWith('id', 'tenant-1');
   });
 
@@ -58,18 +58,17 @@ describe('tenant.service updateSettings (partial PATCH)', () => {
     expect(payload).toHaveProperty('idle_timeout_minutes', null);
   });
 
-  it('writes only custom_domain on a domain-only quick-save (no name/colors)', async () => {
+  it('never writes custom_domain: only the platform sets a domain (C-083)', async () => {
     const { client, update } = mockSupabase();
 
     await createTenantService(client).updateSettings('tenant-1', {
-      customDomain: 'shop.example.com',
+      ...base,
+      // An old client still sending the field must not reach the column.
+      ...({ customDomain: 'shop.example.com' } as Record<string, unknown>),
     });
 
     const payload = update.mock.calls[0]![0] as Record<string, unknown>;
-    expect(Object.keys(payload).sort()).toEqual(['custom_domain', 'updated_at'].sort());
-    expect(payload).not.toHaveProperty('name');
-    expect(payload).not.toHaveProperty('primary_color');
-    expect(payload.custom_domain).toBe('shop.example.com');
+    expect(payload).not.toHaveProperty('custom_domain');
   });
 
   it('skips idle_timeout_minutes entirely when it is undefined', async () => {

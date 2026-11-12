@@ -33,8 +33,8 @@ interface TenantSettings {
   screenLockMode?: 'overlay' | 'password';
   // Opening hours
   openingHours?: OpeningHoursMap;
-  // Custom domain
-  customDomain?: string | null;
+  // Custom domain: NOT here on purpose. Only the platform sets it
+  // (platform-admin.service setCustomDomain, audit C-083).
 }
 
 /**
@@ -113,10 +113,6 @@ export function createTenantService(supabase: SupabaseClient): TenantService {
         ...(settings.screenLockMode !== undefined && { screen_lock_mode: settings.screenLockMode }),
         // Opening hours
         ...(settings.openingHours !== undefined && { opening_hours: settings.openingHours }),
-        // Custom domain
-        ...(settings.customDomain !== undefined && {
-          custom_domain: settings.customDomain || null,
-        }),
       };
 
       const { error } = await supabase.from('tenants').update(update).eq('id', tenantId);
