@@ -18,7 +18,10 @@ vi.mock('../order-annotation.service', () => ({
   createOrderAnnotationService: () => ({ settleHouseAccount: markSettled }),
 }));
 
-import { createHouseAccountSettlementService } from '../house-account-settlement.service';
+import {
+  createHouseAccountSettlementService,
+  settlementRequestId,
+} from '../house-account-settlement.service';
 
 const TENANT = 'tenant-1';
 const ACCOUNT = 'account-1';
@@ -59,9 +62,9 @@ describe('house-account-settlement.service', () => {
       orders: [{ id: 'o-1' }, { id: 'o-2' }],
     });
     getSummary
-      .mockResolvedValueOnce({ due: 3500, net: 0 })
+      .mockResolvedValueOnce({ due: 3500, net: 0, refunded: 0 })
       // Deja payee en partie: seul le reste est encaisse.
-      .mockResolvedValueOnce({ due: 2000, net: 500 });
+      .mockResolvedValueOnce({ due: 2000, net: 500, refunded: 0 });
 
     const resultat = await createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {
       settledBy: 'admin-9',
@@ -71,11 +74,13 @@ describe('house-account-settlement.service', () => {
       amount: 3500,
       method: 'cash',
       createdBy: 'admin-9',
+      clientRequestId: settlementRequestId(ACCOUNT, 'o-1'),
     });
     expect(recordTender).toHaveBeenNthCalledWith(2, 'o-2', TENANT, {
       amount: 1500,
       method: 'cash',
       createdBy: 'admin-9',
+      clientRequestId: settlementRequestId(ACCOUNT, 'o-2'),
     });
     expect(resultat).toEqual({ orders: 2, collected: 5000 });
     expect(markSettled).toHaveBeenCalledWith(ACCOUNT, TENANT, { settledBy: 'admin-9' });
@@ -102,13 +107,42 @@ describe('house-account-settlement.service', () => {
       account: { id: ACCOUNT, status: 'open' },
       orders: [{ id: 'o-1' }],
     });
-    getSummary.mockResolvedValue({ due: 3500, net: 0 });
+    getSummary.mockResolvedValue({ due: 3500, net: 0, refunded: 0 });
     recordTender.mockRejectedValue(new Error('registre indisponible'));
 
     await expect(
       createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
     ).rejects.toThrow('registre indisponible');
     expect(markSettled).not.toHaveBeenCalled();
+  });
+
+  it('ne re-encaisse pas une commande remboursee', async () => {
+    const { supabase } = client({
+      account: { id: ACCOUNT, status: 'open' },
+      orders: [{ id: 'o-1' }],
+    });
+    // 3 500 encaisses puis 1 000 rendus: le reste apparent n'est pas une dette.
+    getSummary.mockResolvedValue({ due: 3500, net: 2500, refunded: 1000 });
+
+    const resultat = await createHouseAccountSettlementService(supabase).settle(
+      ACCOUNT,
+      TENANT,
+      {},
+    );
+
+    expect(recordTender).not.toHaveBeenCalled();
+    expect(resultat).toEqual({ orders: 0, collected: 0 });
+  });
+
+  it('donne a chaque couple ardoise-commande une cle stable, au format UUID', () => {
+    const cle = settlementRequestId(ACCOUNT, 'o-1');
+
+    // Stable: deux "Solder" simultanes presentent la meme cle a l'index unique.
+    expect(settlementRequestId(ACCOUNT, 'o-1')).toBe(cle);
+    expect(cle).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    // Temoin negatif: une autre commande ou une autre ardoise change la cle.
+    expect(settlementRequestId(ACCOUNT, 'o-2')).not.toBe(cle);
+    expect(settlementRequestId('autre-ardoise', 'o-1')).not.toBe(cle);
   });
 
   it('n encaisse rien une seconde fois sur une ardoise deja soldee', async () => {

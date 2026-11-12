@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { createOrderAnnotationService } from './order-annotation.service';
@@ -31,6 +32,24 @@ export interface HouseAccountSettlement {
 // Le seul moyen de paiement actif (src/lib/payments/methods.ts). Une ardoise se
 // regle au comptoir; quand un second moyen sera actif, le demander a l'ecran.
 const SETTLEMENT_METHOD = 'cash';
+
+/**
+ * Cle d'idempotence STABLE d'un encaissement de solde: la meme ardoise et la
+ * meme commande donnent toujours la meme cle (au format UUID, exige par la
+ * colonne). Deux "Solder" simultanes (double clic, deux caisses) lisent le meme
+ * reste du avant que l'un des deux n'ecrive: sans cle, chacun inserait son
+ * paiement et la commande etait encaissee deux fois. Avec elle, l'index unique
+ * (tenant_id, client_request_id) refuse le second, et `recordTender` le traite
+ * comme un rejeu sans second mouvement de caisse.
+ */
+export function settlementRequestId(accountId: string, orderId: string): string {
+  const h = createHash('sha256')
+    .update(`house-account-settle:${accountId}:${orderId}`)
+    .digest('hex');
+  // Version 5 (derivee d'un nom) et variante RFC 4122, pour un UUID valide.
+  const variante = ((parseInt(h.slice(16, 18), 16) & 0x3f) | 0x80).toString(16);
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${variante}${h.slice(18, 20)}-${h.slice(20, 32)}`;
+}
 
 export function createHouseAccountSettlementService(supabase: SupabaseClient) {
   return {
@@ -78,12 +97,17 @@ export function createHouseAccountSettlementService(supabase: SupabaseClient) {
       let settledOrders = 0;
       for (const order of orders ?? []) {
         const summary = await payments.getSummary(order.id as string, tenantId);
+        // Un remboursement laisse aussi la commande 'partial', mais c'est de
+        // l'argent RENDU volontairement, pas une dette: la solder le ferait
+        // repayer au client. Meme regle que la liste "A encaisser" de la caisse.
+        if (summary.refunded > 0) continue;
         const remaining = summary.due - summary.net;
         if (remaining <= 0) continue;
         await payments.recordTender(order.id as string, tenantId, {
           amount: remaining,
           method: SETTLEMENT_METHOD,
           createdBy: settledBy ?? null,
+          clientRequestId: settlementRequestId(accountId, order.id as string),
         });
         collected += remaining;
         settledOrders += 1;
