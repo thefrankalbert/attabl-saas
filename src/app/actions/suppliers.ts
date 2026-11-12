@@ -7,6 +7,7 @@ import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { isFeatureEntitled } from '@/lib/plans/assert-feature';
+import { phoneSchema } from '@/lib/validations/common.schema';
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types/supplier.types';
 
 // Les fournisseurs font partie du module Inventaire, fonctionnalite Pro. Une
@@ -15,27 +16,38 @@ const SUPPLIERS_PLAN_ERROR = 'Le module Fournisseurs est reserve au plan Pro.';
 
 const uuidSchema = z.string().uuid();
 
-const createSupplierSchema = z.object({
-  tenantId: z.string().uuid(),
-  name: z.string().min(1),
-  contact_name: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  address: z.string().optional(),
-  notes: z.string().optional(),
+// C-046: nom de 400 caracteres et telephone "abc" etaient acceptes. Les
+// valeurs VALIDEES (rognees) sont celles transmises au service.
+const supplierName = z
+  .string()
+  .trim()
+  .min(1, 'Le nom est requis')
+  .max(100, 'Maximum 100 caractères');
+const shortText = z.string().trim().max(100, 'Maximum 100 caractères');
+const supplierEmail = z.union([z.literal(''), z.string().trim().email('Adresse e-mail invalide')]);
+
+const supplierFieldsSchema = z.object({
+  name: supplierName,
+  contact_name: shortText.optional(),
+  phone: phoneSchema.optional(),
+  email: supplierEmail.optional(),
+  address: z.string().trim().max(300, 'Maximum 300 caractères').optional(),
+  notes: z.string().trim().max(1000, 'Maximum 1000 caractères').optional(),
 });
 
-const updateSupplierSchema = z.object({
-  tenantId: z.string().uuid(),
-  supplierId: z.string().uuid(),
-  name: z.string().min(1).optional(),
-  contact_name: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
-  address: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
+const updateSupplierFieldsSchema = z.object({
+  name: supplierName.optional(),
+  contact_name: shortText.nullable().optional(),
+  phone: phoneSchema.nullable().optional(),
+  email: supplierEmail.nullable().optional(),
+  address: z.string().trim().max(300, 'Maximum 300 caractères').nullable().optional(),
+  notes: z.string().trim().max(1000, 'Maximum 1000 caractères').nullable().optional(),
   is_active: z.boolean().optional(),
 });
+
+function firstIssue(error: z.ZodError): string {
+  return error.issues[0]?.message ?? 'Données invalides';
+}
 
 type ActionResult<T = undefined> =
   | { success: true; data?: T; error?: never }
@@ -71,15 +83,16 @@ export async function actionCreateSupplier(
   tenantId: string,
   input: CreateSupplierInput,
 ): Promise<ActionResult<Supplier>> {
-  const parsed = createSupplierSchema.safeParse({ tenantId, ...input });
-  if (!parsed.success) return { error: 'Invalid input' };
+  const parsed = supplierFieldsSchema.safeParse(input);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  if (!uuidSchema.safeParse(tenantId).success) return { error: 'Invalid input' };
 
   const { error: permError, supabase } = await checkSupplierPermissions(tenantId);
   if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
 
   try {
     const service = createSupplierService(supabase);
-    const data = await service.createSupplier(tenantId, input);
+    const data = await service.createSupplier(tenantId, parsed.data);
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
@@ -96,15 +109,18 @@ export async function actionUpdateSupplier(
   supplierId: string,
   input: UpdateSupplierInput,
 ): Promise<ActionResult<Supplier>> {
-  const parsed = updateSupplierSchema.safeParse({ tenantId, supplierId, ...input });
-  if (!parsed.success) return { error: 'Invalid input' };
+  const parsed = updateSupplierFieldsSchema.safeParse(input);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  if (!uuidSchema.safeParse(tenantId).success || !uuidSchema.safeParse(supplierId).success) {
+    return { error: 'Invalid input' };
+  }
 
   const { error: permError, supabase } = await checkSupplierPermissions(tenantId);
   if (permError || !supabase) return { error: permError ?? 'Erreur serveur' };
 
   try {
     const service = createSupplierService(supabase);
-    const data = await service.updateSupplier(supplierId, tenantId, input);
+    const data = await service.updateSupplier(supplierId, tenantId, parsed.data);
     return { success: true, data };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };

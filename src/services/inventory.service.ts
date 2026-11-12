@@ -3,7 +3,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ServiceError } from '@/services/errors';
+import { ServiceError, uniqueConflictOr } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { withActiveMenuItems } from '@/lib/menu-items-query';
 import { convertToBaseUnit } from '@/lib/inventory/unit-conversion';
@@ -195,7 +195,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         )
         .single();
 
-      if (error) throw new ServiceError('Erreur création ingrédient', 'INTERNAL', error);
+      if (error)
+        throw uniqueConflictOr(
+          error,
+          'Un ingrédient porte déjà ce nom.',
+          'Erreur création ingrédient',
+        );
       const created = data as Ingredient;
 
       if (openingStock > 0) {
@@ -260,7 +265,12 @@ export function createInventoryService(supabase: SupabaseClient): InventoryServi
         )
         .single();
 
-      if (error) throw new ServiceError('Erreur mise à jour ingrédient', 'INTERNAL', error);
+      if (error)
+        throw uniqueConflictOr(
+          error,
+          'Un ingrédient porte déjà ce nom.',
+          'Erreur mise à jour ingrédient',
+        );
       return data as Ingredient;
     },
 

@@ -35,6 +35,7 @@ export function TableZonesPanel({
   onAddZone,
 }: TableZonesPanelProps) {
   const t = useTranslations('tables');
+  const tc = useTranslations('common');
 
   return (
     <div className="w-full lg:w-72 flex-shrink-0">
@@ -133,7 +134,7 @@ export function TableZonesPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Delete"
+                      aria-label={tc('delete')}
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteZone(zone);

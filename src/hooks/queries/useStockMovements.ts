@@ -53,7 +53,11 @@ export function useStockMovements(tenantId: string) {
   return {
     data: (pages?.flatMap((page) => page.rows) ?? []) as StockMovement[],
     totalCount: pages?.length ? pages[pages.length - 1].totalCount : null,
-    isLoading: query.isLoading,
+    // isPending, not isLoading (audit C-018): isLoading also needs fetchStatus,
+    // which query-core forces to 'idle' on the server and 'fetching' on the
+    // first client render, so the page rendered different branches (hydration
+    // error on the empty state).
+    isLoading: query.isPending,
     error: query.error,
     refetch: query.refetch,
     fetchNextPage: query.fetchNextPage,

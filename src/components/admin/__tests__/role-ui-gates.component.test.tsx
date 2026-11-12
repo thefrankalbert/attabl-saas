@@ -69,12 +69,12 @@ describe('Suppression groupee des commandes (owner/admin)', () => {
   );
   it('le gerant ne voit pas la corbeille', () => {
     withRole('manager', bar);
-    expect(screen.queryByLabelText('Delete')).toBeNull();
+    expect(screen.queryByLabelText('delete')).toBeNull();
     expect(screen.getByLabelText('Next')).toBeInTheDocument();
   });
   it('l admin la voit', () => {
     withRole('admin', bar);
-    expect(screen.getByLabelText('Delete')).toBeInTheDocument();
+    expect(screen.getByLabelText('delete')).toBeInTheDocument();
   });
   it('l admin a qui le proprietaire retire orders.pay ne la voit plus', () => {
     render(
@@ -85,7 +85,7 @@ describe('Suppression groupee des commandes (owner/admin)', () => {
         {bar}
       </PermissionsProvider>,
     );
-    expect(screen.queryByLabelText('Delete')).toBeNull();
+    expect(screen.queryByLabelText('delete')).toBeNull();
   });
 });
 

@@ -107,7 +107,7 @@ export default function UsersTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="More options"
+                        aria-label={tc('moreOptions')}
                         className="h-8 w-8"
                       >
                         <MoreVertical className="w-4 h-4" />

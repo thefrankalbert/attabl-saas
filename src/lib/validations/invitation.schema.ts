@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordSchema } from './common.schema';
 import { PERMISSION_CODES } from '@/types/permission.types';
 
 const INVITABLE_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
@@ -36,11 +37,7 @@ export const createInvitationSchema = z.object({
 export const acceptInvitationSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/, 'Token invalide'),
   full_name: z.string().min(2, 'Le nom doit contenir au moins 2 caracteres').max(100).optional(),
-  password: z
-    .string()
-    .min(8, 'Le mot de passe doit contenir au moins 8 caracteres')
-    .max(100)
-    .optional(),
+  password: passwordSchema.optional(),
 });
 
 // Token-only validation for the read-only on-mount check (no account creation).

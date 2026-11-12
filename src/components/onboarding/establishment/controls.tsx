@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Minus, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function LabeledSwitch({
   label,
@@ -34,6 +35,7 @@ export function NumberStepper({
   max: number;
   onChange: (val: number) => void;
 }) {
+  const tc = useTranslations('common');
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
@@ -41,7 +43,7 @@ export function NumberStepper({
         <Button
           variant="outline"
           size="icon"
-          aria-label="Decrease"
+          aria-label={tc('decrease')}
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
@@ -64,7 +66,7 @@ export function NumberStepper({
         <Button
           variant="outline"
           size="icon"
-          aria-label="Increase"
+          aria-label={tc('increase')}
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}

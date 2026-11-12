@@ -69,14 +69,14 @@ function renderPanel() {
 describe('OrderPaymentPanel', () => {
   it('renders the remaining amount with its value, not the raw key', async () => {
     renderPanel();
-    const line = await screen.findByText(/^Reste a payer : /);
+    const line = await screen.findByText(/^Reste à payer : /);
     expect(line.textContent).toMatch(/6\D?000/);
     expect(screen.queryByText('payment.remaining')).toBeNull();
   });
 
   it('translates the tender method instead of showing the raw id', async () => {
     renderPanel();
-    expect(await screen.findByText('Especes')).toBeInTheDocument();
+    expect(await screen.findByText('Espèces')).toBeInTheDocument();
     expect(screen.queryByText('cash')).toBeNull();
   });
 
@@ -99,7 +99,7 @@ describe('OrderPaymentPanel', () => {
       actor.role = 'waiter';
       actor.perms = { 'orders.pay': false };
       renderPanel();
-      expect(await screen.findByText('Especes')).toBeInTheDocument();
+      expect(await screen.findByText('Espèces')).toBeInTheDocument();
       expect(screen.queryByLabelText('Montant')).toBeNull();
       expect(screen.queryByRole('button', { name: /Rembourser/ })).toBeNull();
     });

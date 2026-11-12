@@ -14,6 +14,7 @@ import { ClientFloatingCart } from '@/components/tenant/client/FloatingCart';
 import { StorefrontOfflineIndicator } from '@/components/tenant/client/StorefrontOfflineIndicator';
 import { OrderingPausedNotice } from '@/components/tenant/client/OrderingPausedNotice';
 import { StorefrontUnavailable } from '@/components/tenant/StorefrontUnavailable';
+import { AnnouncementBanner } from '@/components/tenant/AnnouncementBanner';
 import { headers } from 'next/headers';
 
 /**
@@ -109,6 +110,7 @@ export default async function StorefrontLayout({
               >
                 <StorefrontOfflineIndicator />
                 <OrderingPausedNotice />
+                {tenantId && <AnnouncementBanner tenantId={tenantId} />}
                 <main
                   id="main-content"
                   className="relative flex-1 overflow-y-auto overscroll-contain"

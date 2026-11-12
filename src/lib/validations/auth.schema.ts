@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordSchema } from './common.schema';
 
 /**
  * Zod schemas for authentication-related validation.
@@ -11,10 +12,7 @@ export const signupSchema = z.object({
     .min(2, 'Le nom du restaurant doit contenir au moins 2 caractères')
     .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères'),
   email: z.string().email('Email invalide'),
-  password: z
-    .string()
-    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-    .max(100, 'Le mot de passe ne doit pas dépasser 100 caractères'),
+  password: passwordSchema,
   phone: z.string().max(20).optional(),
   plan: z.enum(['starter', 'pro', 'business']).optional(),
 });
@@ -45,10 +43,7 @@ export const loginSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, 'Le mot de passe doit contenir au moins 8 caracteres')
-      .max(100, 'Le mot de passe ne doit pas depasser 100 caracteres'),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, 'La confirmation est requise'),
   })
   .refine((data) => data.password === data.confirmPassword, {

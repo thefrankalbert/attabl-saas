@@ -189,7 +189,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Delete"
+                      aria-label={tc('delete')}
                       onClick={() => setCouponPendingDelete(coupon.id)}
                       className="text-[var(--destructive)] hover:text-[var(--destructive)] hover:bg-[var(--accent)]"
                       title={t('deleteAction')}

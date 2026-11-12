@@ -22,6 +22,7 @@ interface MenuStepProps {
 export function MenuStep({ data, updateData }: MenuStepProps) {
   const t = useTranslations('onboarding');
   const tSeg = useTranslations('segment');
+  const tc = useTranslations('common');
   const family = getSegmentFamily(data.establishmentType);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>(() =>
@@ -285,7 +286,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           size="icon"
                           onClick={() => toggleCategory(category.id)}
                           className="h-8 w-8 rounded-lg p-1.5 text-app-text-secondary transition-colors hover:bg-app-hover hover:text-app-text"
-                          aria-label={category.expanded ? 'Collapse' : 'Expand'}
+                          aria-label={category.expanded ? tc('collapse') : tc('expand')}
                         >
                           {category.expanded ? (
                             <ChevronDown className="h-4 w-4" />

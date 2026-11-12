@@ -3,7 +3,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ServiceError } from '@/services/errors';
+import { ServiceError, uniqueConflictOr } from '@/services/errors';
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types/supplier.types';
 
 export interface SupplierService {
@@ -64,7 +64,12 @@ export function createSupplierService(supabase: SupabaseClient): SupplierService
         )
         .single();
 
-      if (error) throw new ServiceError('Erreur création fournisseur', 'INTERNAL', error);
+      if (error)
+        throw uniqueConflictOr(
+          error,
+          'Un fournisseur porte déjà ce nom.',
+          'Erreur création fournisseur',
+        );
       return data as Supplier;
     },
 
@@ -83,7 +88,12 @@ export function createSupplierService(supabase: SupabaseClient): SupplierService
         )
         .single();
 
-      if (error) throw new ServiceError('Erreur mise à jour fournisseur', 'INTERNAL', error);
+      if (error)
+        throw uniqueConflictOr(
+          error,
+          'Un fournisseur porte déjà ce nom.',
+          'Erreur mise à jour fournisseur',
+        );
       return data as Supplier;
     },
 

@@ -6,6 +6,7 @@ import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import { createTableConfigService } from '@/services/table-config.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
+import { zoneSchema } from '@/lib/validations/table-config.schema';
 
 type ActionResponse<T = undefined> = {
   success?: boolean;
@@ -59,12 +60,21 @@ export async function actionCreateZone(
   const parsedVenueId = venueIdSchema.safeParse(venueId);
   if (!parsedTenant.success || !parsedVenueId.success) return { error: 'Invalid input' };
 
-  const parsedName = z.string().min(1).max(100).safeParse(name);
-  const parsedPrefix = z.string().min(1).max(5).safeParse(prefix);
+  // C-074: un prefixe avec espace ou ponctuation passait (il fabrique le numero
+  // de table que le QR recherche). Meme regle que l'onboarding: zoneSchema.
+  const parsedName = z
+    .string()
+    .trim()
+    .min(1, 'Le nom de la zone est requis')
+    .max(100)
+    .safeParse(name);
+  const parsedPrefix = zoneSchema.shape.prefix.safeParse(prefix.trim().toUpperCase());
   const parsedOrder = z.number().int().min(0).safeParse(displayOrder);
-  if (!parsedName.success || !parsedPrefix.success || !parsedOrder.success) {
-    return { error: 'Invalid input' };
+  if (!parsedName.success) return { error: parsedName.error.issues[0]?.message ?? 'Nom invalide' };
+  if (!parsedPrefix.success) {
+    return { error: parsedPrefix.error.issues[0]?.message ?? 'Préfixe invalide' };
   }
+  if (!parsedOrder.success) return { error: 'Invalid input' };
 
   const { error: permError } = await checkPermissions(tenantId);
   if (permError) return { error: permError };
@@ -72,7 +82,13 @@ export async function actionCreateZone(
   try {
     const supabase = await createClient();
     const tableConfigService = createTableConfigService(supabase);
-    await tableConfigService.createZone(tenantId, venueId, name, prefix, displayOrder);
+    await tableConfigService.createZone(
+      tenantId,
+      venueId,
+      parsedName.data,
+      parsedPrefix.data,
+      displayOrder,
+    );
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
@@ -94,8 +110,13 @@ export async function actionUpdateZoneName(
   const parsedZoneId = zoneIdSchema.safeParse(zoneId);
   if (!parsedTenant.success || !parsedZoneId.success) return { error: 'Invalid input' };
 
-  const parsedName = z.string().min(1).max(100).safeParse(name);
-  if (!parsedName.success) return { error: 'Invalid input' };
+  const parsedName = z
+    .string()
+    .trim()
+    .min(1, 'Le nom de la zone est requis')
+    .max(100)
+    .safeParse(name);
+  if (!parsedName.success) return { error: parsedName.error.issues[0]?.message ?? 'Nom invalide' };
 
   const { error: permError } = await checkPermissions(tenantId);
   if (permError) return { error: permError };
@@ -103,7 +124,7 @@ export async function actionUpdateZoneName(
   try {
     const supabase = await createClient();
     const tableConfigService = createTableConfigService(supabase);
-    await tableConfigService.updateZoneName(tenantId, zoneId, name);
+    await tableConfigService.updateZoneName(tenantId, zoneId, parsedName.data);
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };
