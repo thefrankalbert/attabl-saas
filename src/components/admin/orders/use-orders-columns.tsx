@@ -107,16 +107,27 @@ export function useOrdersColumns({
         header: () => ta('colStatus'),
         cell: ({ row }) => {
           const config = getStatusConfig(row.original.status);
+          const ps = row.original.payment_status;
+          const toCollect =
+            row.original.status === 'delivered' &&
+            (ps == null || ps === 'pending' || ps === 'partial');
           return (
-            <span
-              className={cn(
-                'px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap',
-                config.bg,
-                config.text,
+            <div className="flex flex-wrap items-center gap-1">
+              <span
+                className={cn(
+                  'px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap',
+                  config.bg,
+                  config.text,
+                )}
+              >
+                {config.label}
+              </span>
+              {toCollect && (
+                <span className="px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap bg-status-warning-bg text-status-warning">
+                  {ta(ps === 'partial' ? 'payPartial' : 'payPending')}
+                </span>
               )}
-            >
-              {config.label}
-            </span>
+            </div>
           );
         },
         enableSorting: false,

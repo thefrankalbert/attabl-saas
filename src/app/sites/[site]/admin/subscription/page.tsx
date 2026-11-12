@@ -5,11 +5,14 @@ import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  const tTitle = await getTranslations('sidebar');
   const { tenantId } = await requireAdminPermission(site, 'settings.view');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
@@ -53,6 +56,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
+      <AdminSrTitle label={tTitle('navSubscription')} />
       <SubscriptionManager tenant={tenantWithEmail} siteSlug={tenantSlug} />
     </div>
   );

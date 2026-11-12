@@ -119,6 +119,14 @@ describe('scheduleOrderNotification', () => {
     expect(envoyerPush).toHaveBeenCalledTimes(1);
   });
 
+  it('affiche le montant en FCFA et non en code ISO', async () => {
+    scheduleOrderNotification(fausseBase(), PARAMS);
+    await executerLesTaches();
+
+    expect(insertions[0].body).toMatch(/FCFA$/);
+    expect(insertions[0].body).not.toContain('XOF');
+  });
+
   it('les deux portent le meme texte', async () => {
     scheduleOrderNotification(fausseBase(), PARAMS);
     await executerLesTaches();

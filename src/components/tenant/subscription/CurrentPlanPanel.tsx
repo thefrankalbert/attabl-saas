@@ -33,6 +33,8 @@ interface CurrentPlanPanelProps {
   plan: SubscriptionPlan;
   status: string;
   periodEnd: string | null;
+  /** Jours d'essai restants (null hors essai). */
+  trialDaysLeft?: number | null;
   billingInterval: BillingInterval;
   hasSubscription: boolean;
   /**
@@ -55,6 +57,7 @@ export function CurrentPlanPanel({
   plan,
   status,
   periodEnd,
+  trialDaysLeft = null,
   billingInterval,
   hasSubscription,
   canOpenPortal,
@@ -153,6 +156,11 @@ export function CurrentPlanPanel({
               <div className="min-w-0">
                 <p className="text-[11px] text-app-text-muted">{dateLabel}</p>
                 <p className="text-sm font-medium text-app-text">{formattedDate}</p>
+                {trialDaysLeft !== null && (
+                  <p className="text-xs text-status-warning">
+                    {t('subscription.trialDaysLeft', { count: trialDaysLeft })}
+                  </p>
+                )}
               </div>
             </div>
           )}

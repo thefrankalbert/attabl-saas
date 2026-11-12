@@ -5,11 +5,14 @@ import ServiceManager from '@/components/admin/ServiceManager';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { getTranslations } from 'next-intl/server';
+import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ServicePage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
+  const tTitle = await getTranslations('sidebar');
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -41,5 +44,10 @@ export default async function ServicePage({ params }: { params: Promise<{ site: 
 
   // Devise de comptabilisation du tenant. Repli sur XAF, la devise par defaut du
   // produit, quand la colonne est vide - jamais une valeur en dur cote composant.
-  return <ServiceManager tenantId={tenant.id} currency={tenant.currency ?? 'XAF'} />;
+  return (
+    <>
+      <AdminSrTitle label={tTitle('navService')} />
+      <ServiceManager tenantId={tenant.id} currency={tenant.currency ?? 'XAF'} />
+    </>
+  );
 }

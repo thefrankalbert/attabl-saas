@@ -29,7 +29,7 @@ const order = {
   created_at: '2026-11-09T14:05:00Z',
 } as Order;
 
-function renderColumns(timeZone: string) {
+function renderColumns(timeZone: string, o: Order = order) {
   const { result } = renderHook(
     () =>
       useOrdersColumns({
@@ -47,7 +47,7 @@ function renderColumns(timeZone: string) {
   const cellOf = (key: string) => {
     const cell = result.current.find((c) => 'accessorKey' in c && c.accessorKey === key)?.cell;
     if (typeof cell !== 'function') throw new Error(`no cell for ${key}`);
-    return cell({ row: { original: order } } as CellContext<Order, unknown>);
+    return cell({ row: { original: o } } as CellContext<Order, unknown>);
   };
   render(
     <div>
@@ -65,6 +65,16 @@ describe('useOrdersColumns', () => {
     expect(screen.getByText('CMD-20261109-002')).toBeInTheDocument();
     expect(screen.getByText('14:05')).toBeInTheDocument();
     expect(screen.getByText(messages.orders.statusPreparingCard)).toBeInTheDocument();
+  });
+
+  it('flags a delivered but unpaid order as to collect, in the list', () => {
+    renderColumns('Africa/Abidjan', { ...order, status: 'delivered', payment_status: 'pending' });
+    expect(screen.getByText(messages.admin.payPending)).toBeInTheDocument();
+  });
+
+  it('does not flag a delivered and paid order', () => {
+    renderColumns('Africa/Abidjan', { ...order, status: 'delivered', payment_status: 'paid' });
+    expect(screen.queryByText(messages.admin.payPending)).not.toBeInTheDocument();
   });
 
   it('shows the time in the restaurant zone, not the server zone (UTC+1, N Djamena)', () => {

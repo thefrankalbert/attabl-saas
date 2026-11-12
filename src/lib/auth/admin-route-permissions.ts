@@ -7,7 +7,7 @@ import type { PermissionCode } from '@/types/permission.types';
  * before their parent (e.g. /settings/permissions before /settings).
  *
  * Routes that return null are open to any authenticated tenant member -
- * operational pages every role needs: dashboard home, orders, kitchen, menus,
+ * operational pages every role needs: dashboard home, kitchen, menus,
  * items, categories, service, qr-codes, support. Their EDIT actions are hidden
  * on screen without the matching permission (menu.edit, orders.pay...).
  *
@@ -32,6 +32,7 @@ const ROUTE_PERMISSIONS: ReadonlyArray<{ test: RegExp; permission: PermissionCod
   { test: /^\/pos(\/|$)/, permission: 'pos.use' },
   // Les ardoises sont de l'argent (decision du 2026-11-09): pas le serveur ni le chef.
   { test: /^\/orders\/house-accounts(\/|$)/, permission: 'orders.pay' },
+  { test: /^\/orders(\/|$)/, permission: 'orders.view' },
   { test: /^\/coupons(\/|$)/, permission: 'menu.edit' },
   { test: /^\/ads(\/|$)/, permission: 'menu.edit' },
   { test: /^\/announcements(\/|$)/, permission: 'menu.edit' },
