@@ -15,6 +15,7 @@ import { RESTAURANT_TEAM, loginPersona, newApiContext } from './fixtures/persona
 import {
   seedTenantWithMenu,
   seedStaffForTenant,
+  seedZoneAndTable,
   getOrderState,
   newRealtimeClient,
   setOrderStatus,
@@ -54,6 +55,8 @@ test.describe.serial('04 - Service & commandes', () => {
       );
       seeded = await seedTenantWithMenu();
       await seedStaffForTenant(seeded.tenantId, [CASHIER]);
+      // Une commande sur place exige une vraie table (C-009): la table 1.
+      await seedZoneAndTable(seeded.tenantId);
     });
 
     test.afterAll(async () => {
