@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import '@/lib/validations/zod-fr-error-map';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { PreparationZone } from '@/types/admin.types';
