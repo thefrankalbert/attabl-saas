@@ -76,7 +76,7 @@ export default function AttachToHouseAccount({
       toast({ title: res.error, variant: 'destructive' });
       return;
     }
-    toast({ title: t('attach') });
+    toast({ title: t('attached') });
     setSelected('');
     onAttached();
   };

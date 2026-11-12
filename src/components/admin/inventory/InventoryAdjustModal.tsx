@@ -170,6 +170,15 @@ export default function InventoryAdjustModal({
                 autoFocus
               />
               {convertedHint && <p className="text-xs text-app-text-muted mt-1">{convertedHint}</p>}
+              {adjustType === 'manual_remove' &&
+                parseFloat(adjustQty) > selectedIngredient.current_stock && (
+                  <p role="alert" className="text-xs text-status-warning mt-1">
+                    {t('exceedsStockWarning', {
+                      stock: selectedIngredient.current_stock,
+                      unit: baseUnitShort,
+                    })}
+                  </p>
+                )}
             </div>
 
             {adjustType === 'manual_add' && activeSuppliers.length > 0 && (

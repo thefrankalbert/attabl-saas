@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Tag, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
+import { Pencil, Plus, Trash2, Tag, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import CouponForm from '@/components/admin/CouponForm';
@@ -115,7 +115,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
         {coupons.length > 0 ? (
           <div className="grid gap-3">
             {/* Table Header (desktop) */}
-            <div className="hidden lg:grid lg:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
+            <div className="hidden lg:grid lg:grid-cols-[1fr_120px_120px_120px_100px_88px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
               <span>{t('codeField')}</span>
               <span>{t('type')}</span>
               <span>{t('valueColumn')}</span>
@@ -130,7 +130,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
                 onClick={() => openEdit(coupon)}
               >
-                <div className="lg:grid lg:grid-cols-[1fr_120px_120px_120px_100px_80px] lg:gap-4 lg:items-center space-y-3 lg:space-y-0">
+                <div className="lg:grid lg:grid-cols-[1fr_120px_120px_120px_100px_88px] lg:gap-4 lg:items-center space-y-3 lg:space-y-0">
                   {/* Code */}
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />
@@ -185,7 +185,16 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   </Button>
 
                   {/* Delete */}
-                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={tc('edit')}
+                      onClick={() => openEdit(coupon)}
+                      title={tc('edit')}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -200,7 +209,9 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 </div>
 
                 {/* Extra info row */}
-                {(coupon.valid_from || coupon.valid_until || coupon.min_order_amount) && (
+                {(coupon.valid_from ||
+                  coupon.valid_until ||
+                  (coupon.min_order_amount ?? 0) > 0) && (
                   <div className="mt-3 pt-3 border-t border-app-border flex flex-wrap gap-3 text-xs text-app-text-secondary">
                     {coupon.valid_from && (
                       <span>
@@ -212,17 +223,17 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                         {t('endLabel')} {new Date(coupon.valid_until).toLocaleDateString(locale)}
                       </span>
                     )}
-                    {coupon.min_order_amount && (
+                    {coupon.min_order_amount ? (
                       <span>
                         {t('minOrderLabel')} {formatCurrency(coupon.min_order_amount, currency)}
                       </span>
-                    )}
-                    {coupon.max_discount_amount && coupon.discount_type === 'percentage' && (
+                    ) : null}
+                    {coupon.max_discount_amount && coupon.discount_type === 'percentage' ? (
                       <span>
                         {t('maxDiscountLabel')}{' '}
                         {formatCurrency(coupon.max_discount_amount, currency)}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>

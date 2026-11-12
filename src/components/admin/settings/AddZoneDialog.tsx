@@ -33,7 +33,7 @@ export function AddZoneDialog({
 
   return (
     <AdminModal isOpen={isOpen} onClose={onClose} title={t('modalAddZoneTitle')}>
-      <form onSubmit={onSubmit} className="space-y-4 pt-2">
+      <form onSubmit={onSubmit} noValidate className="space-y-4 pt-2">
         <div className="space-y-2">
           <Label htmlFor="zone-name" className="text-sm text-app-text">
             {t('zoneNameLabel')}
@@ -58,7 +58,6 @@ export function AddZoneDialog({
             placeholder={t('zonePrefixPlaceholder')}
             className="rounded-lg focus:ring-accent"
             required
-            maxLength={5}
           />
           <p className="text-xs text-app-text-secondary">{t('zonePrefixHelp')}</p>
         </div>

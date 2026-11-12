@@ -7,6 +7,9 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+// Le controle de doublon est teste a part (duplicate-name.test.ts).
+vi.mock('../duplicate-name', () => ({ assertNameAvailable: vi.fn() }));
+
 function makeInsertMock(result: { data: unknown; error: unknown }) {
   const singleMock = vi.fn().mockResolvedValue(result);
   const selectMock = vi.fn().mockReturnValue({ single: singleMock });
@@ -130,5 +133,20 @@ describe('createMenuItemService.deleteMenuItem', () => {
     const service = createMenuItemService({ from: fromMock } as unknown as SupabaseClient);
 
     await expect(service.deleteMenuItem('item-1', 'tenant-1')).rejects.toBeInstanceOf(ServiceError);
+  });
+});
+
+describe('createMenuItemService.createMenuItem - doublon', () => {
+  it('refuse un nom deja pris dans la categorie sans rien inserer', async () => {
+    const { assertNameAvailable } = await import('../duplicate-name');
+    vi.mocked(assertNameAvailable).mockRejectedValueOnce(
+      new ServiceError('Un plat porte deja ce nom dans cette categorie.', 'VALIDATION'),
+    );
+    const from = vi.fn();
+    const service = createMenuItemService({ from } as unknown as SupabaseClient);
+    await expect(
+      service.createMenuItem('tenant-A', { name: 'Poulet', category_id: 'cat-1' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(from).not.toHaveBeenCalled();
   });
 });

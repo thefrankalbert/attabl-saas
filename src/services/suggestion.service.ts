@@ -56,6 +56,19 @@ export function createSuggestionService(supabase: SupabaseClient): SuggestionSer
      * Create a manual suggestion.
      */
     async createSuggestion(data: CreateSuggestionInput): Promise<void> {
+      // Doublon: meme plat source et meme plat suggere, deja actif pour ce tenant.
+      const { data: existing } = await supabase
+        .from('item_suggestions')
+        .select('id')
+        .eq('tenant_id', data.tenant_id)
+        .eq('menu_item_id', data.menu_item_id)
+        .eq('suggested_item_id', data.suggested_item_id)
+        .eq('is_active', true)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        throw new ServiceError('Cette suggestion existe déjà.', 'VALIDATION');
+      }
+
       const { error } = await supabase.from('item_suggestions').insert(data);
 
       if (error) {

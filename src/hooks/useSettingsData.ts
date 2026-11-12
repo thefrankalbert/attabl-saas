@@ -164,9 +164,20 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   };
 
   const onValidationError = (errors: FieldErrors<SettingsFormValues>) => {
-    const firstError = Object.values(errors)[0];
-    const message =
-      typeof firstError?.message === 'string' ? firstError.message : t('validationError');
+    // Les erreurs imbriquees (horaires, details) n'ont pas de `message` au premier niveau:
+    // on descend jusqu'au premier message reel (audit C-075).
+    const findMessage = (node: unknown): string | undefined => {
+      if (!node || typeof node !== 'object') return undefined;
+      const record = node as Record<string, unknown>;
+      if (typeof record.message === 'string' && record.message) return record.message;
+      for (const [key, value] of Object.entries(record)) {
+        if (key === 'ref') continue;
+        const found = findMessage(value);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    const message = findMessage(errors) ?? t('validationError');
     toast({
       title: t('validationErrorTitle'),
       description: message,

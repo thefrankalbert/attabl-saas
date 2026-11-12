@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Plus, Loader2, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -257,6 +257,16 @@ export default function AnnouncementsClient({
                     ) : (
                       <Eye className="w-3.5 h-3.5" />
                     )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    title={tc('edit')}
+                    aria-label={tc('edit')}
+                    onClick={() => openEdit(ann)}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     variant="ghost"

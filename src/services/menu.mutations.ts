@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CreateMenuInput, UpdateMenuInput } from '@/lib/validations/menu.schema';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
+import { assertNameAvailable } from './duplicate-name';
 import type { MenuRow } from './menu.service.types';
 
 /**
@@ -20,6 +21,13 @@ export async function createMenu(
   tenantId: string,
   input: CreateMenuInput,
 ): Promise<MenuRow> {
+  await assertNameAvailable(supabase, {
+    table: 'menus',
+    tenantId,
+    name: input.name,
+    message: 'Une carte porte déjà ce nom.',
+  });
+
   // Generate slug via RPC
   const { data: slugData, error: slugError } = await supabase.rpc('generate_menu_slug', {
     p_tenant_id: tenantId,

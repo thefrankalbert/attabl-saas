@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, PreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
+import { assertNameAvailable } from './duplicate-name';
 
 // Mass-assignment allowlist: only these columns are ever written, so a forged
 // server-action payload cannot set arbitrary category columns (mirrors the
@@ -83,6 +84,13 @@ export function createCategoryService(supabase: SupabaseClient): CategoryService
       options?: { returning?: boolean },
     ): Promise<Category | null> {
       const row = pickCategoryColumns(data as unknown as Record<string, unknown>);
+      await assertNameAvailable(supabase, {
+        table: 'categories',
+        tenantId: data.tenant_id,
+        name: data.name,
+        message: 'Une catégorie porte déjà ce nom.',
+        scope: { column: 'menu_id', value: data.menu_id },
+      });
       if (options?.returning) {
         const { data: category, error } = await supabase
           .from('categories')

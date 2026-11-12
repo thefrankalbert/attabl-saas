@@ -20,6 +20,7 @@ import {
 } from '@/app/actions/tables';
 import type { Zone, Table } from './tables.types';
 import { nextTableStartNumber } from './tables.utils';
+import { addTablesSchema, zoneSchema } from '@/lib/validations/table-config.schema';
 import { TableZonesPanel } from './TableZonesPanel';
 import { TableGrid } from './TableGrid';
 import { AddZoneDialog } from './AddZoneDialog';
@@ -129,6 +130,19 @@ export function TablesClient({
       return;
     }
 
+    // Le prefixe n'est plus tronque en silence: on le refuse avec le message du schema.
+    const parsedZone = zoneSchema
+      .pick({ name: true, prefix: true })
+      .safeParse({ name: zoneName.trim(), prefix: zonePrefix.trim().toUpperCase() });
+    if (!parsedZone.success) {
+      toast({
+        title: tc('required'),
+        description: parsedZone.error.issues[0]?.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSavingZone(true);
     const result = await actionCreateZone(
       tenantId,
@@ -139,7 +153,7 @@ export function TablesClient({
     );
     if (result.error) {
       logger.error('Failed to create zone', { error: result.error });
-      toast({ title: t('errorCreateZone'), variant: 'destructive' });
+      toast({ title: t('errorCreateZone'), description: result.error, variant: 'destructive' });
       setSavingZone(false);
       return;
     }
@@ -212,9 +226,22 @@ export function TablesClient({
 
   const handleAddTables = async (e: React.FormEvent) => {
     e.preventDefault();
-    const count = Math.max(1, Number(tableCount) || 1);
-    const capacity = Math.max(1, Number(tableCapacity) || 4);
-    if (!selectedZoneId || count < 1) return;
+    if (!selectedZoneId) return;
+    // Plus de valeur remplacee en silence (0 devenait 1, vide devenait 4): on refuse avec le message du schema.
+    const parsedAdd = addTablesSchema.safeParse({
+      zone_id: selectedZoneId,
+      count: Number(tableCount),
+      capacity: Number(tableCapacity),
+    });
+    if (!parsedAdd.success) {
+      toast({
+        title: t('errorCreateTables'),
+        description: parsedAdd.error.issues[0]?.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    const { count, capacity } = parsedAdd.data;
 
     setSavingTables(true);
 

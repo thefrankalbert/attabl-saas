@@ -84,6 +84,7 @@ export function useImageUpload({
   const handleCropAndUpload = async () => {
     if (!cropSrc || !croppedAreaPixels) return;
     setIsLoading(true);
+    let serverMessage = '';
     try {
       const croppedBlob = await getCroppedBlob(cropSrc, croppedAreaPixels);
 
@@ -103,8 +104,10 @@ export function useImageUpload({
       formData.append('bucket', bucket);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
-        throw new Error(err.error || 'Upload failed');
+        const err = await res.json().catch(() => ({ error: '' }));
+        // Message deja en francais renvoye par la route: on l'affiche tel quel.
+        serverMessage = typeof err.error === 'string' ? err.error : '';
+        throw new Error(serverMessage || 'Upload failed');
       }
       const { url } = await res.json();
 
@@ -112,7 +115,7 @@ export function useImageUpload({
       resetCrop();
     } catch (err: unknown) {
       logger.error('Upload error', err);
-      setError("Erreur lors du telechargement de l'image");
+      setError(serverMessage || "Erreur lors du telechargement de l'image");
     } finally {
       setIsLoading(false);
     }

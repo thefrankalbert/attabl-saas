@@ -33,6 +33,7 @@ const SEGMENT_LABEL_MAP: Record<string, string> = {
   reports: 'navReports',
   'stock-history': 'navStockHistory',
   'stock-losses': 'navStockLosses',
+  counts: 'navStockCounts',
   'qr-codes': 'navQrCodes',
   ads: 'navAds',
   settings: 'navSettings',
@@ -91,7 +92,7 @@ export function AdminBreadcrumbs() {
   });
 
   return (
-    <Breadcrumb className="overflow-hidden">
+    <Breadcrumb className="min-w-0 overflow-hidden">
       <BreadcrumbList className="flex-nowrap overflow-hidden">
         <BreadcrumbItem>
           <BreadcrumbLink asChild>

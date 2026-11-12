@@ -39,7 +39,7 @@ export function AddTablesDialog({
 
   return (
     <AdminModal isOpen={isOpen} onClose={onClose} title={t('modalAddTablesTitle')}>
-      <form onSubmit={onSubmit} className="space-y-4 pt-2">
+      <form onSubmit={onSubmit} noValidate className="space-y-4 pt-2">
         {selectedZone && (
           <p className="text-sm text-app-text-secondary">
             {t('addTablesZoneLabel')}{' '}

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/admin/shared/StatusBadge';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatUnitCost } from '@/lib/utils/currency';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 import type { Ingredient } from '@/types/inventory.types';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -52,7 +52,7 @@ export default function InventoryMobileCard({
           {unitLabel}
         </span>
         <span className="text-app-text-secondary">
-          {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}/{unitLabel}
+          {formatUnitCost(ing.cost_per_unit, currency as CurrencyCode)}/{unitLabel}
         </span>
       </div>
 

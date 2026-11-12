@@ -7,6 +7,9 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+// Le controle de doublon est teste a part (duplicate-name.test.ts).
+vi.mock('../duplicate-name', () => ({ assertNameAvailable: vi.fn() }));
+
 type QueryResult = {
   data?: unknown;
   error?: { message: string; code?: string } | null;
@@ -351,6 +354,25 @@ describe('menu.mutations reorderMenus', () => {
     const { client, from } = mockSupabase();
 
     await expect(reorderMenus(client, 'tenant-1', [])).resolves.toBeUndefined();
+    expect(from).not.toHaveBeenCalled();
+  });
+});
+
+describe('menu.mutations createMenu - doublon', () => {
+  it('refuse un nom deja pris sans rien inserer', async () => {
+    const { assertNameAvailable } = await import('../duplicate-name');
+    vi.mocked(assertNameAvailable).mockRejectedValueOnce(
+      new ServiceError('Une carte porte deja ce nom.', 'VALIDATION'),
+    );
+    const from = vi.fn();
+    await expect(
+      createMenu({ from } as unknown as SupabaseClient, 'tenant-A', {
+        name: 'Carte',
+        is_active: true,
+        is_transversal_menu: false,
+        display_order: 0,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
     expect(from).not.toHaveBeenCalled();
   });
 });
