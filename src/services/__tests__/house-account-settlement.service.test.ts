@@ -65,6 +65,10 @@ describe('house-account-settlement.service', () => {
       .mockResolvedValueOnce({ due: 3500, net: 0, refunded: 0 })
       // Deja payee en partie: seul le reste est encaisse.
       .mockResolvedValueOnce({ due: 2000, net: 500, refunded: 0 });
+    // Le registre relu apres chaque encaissement: tout est regle.
+    recordTender
+      .mockResolvedValueOnce({ due: 3500, net: 3500, refunded: 0 })
+      .mockResolvedValueOnce({ due: 2000, net: 2000, refunded: 0 });
 
     const resultat = await createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {
       settledBy: 'admin-9',
@@ -116,13 +120,45 @@ describe('house-account-settlement.service', () => {
     expect(markSettled).not.toHaveBeenCalled();
   });
 
-  it('ne re-encaisse pas une commande remboursee', async () => {
+  it('refuse de solder, sans rien encaisser, si une commande a ete remboursee en partie', async () => {
     const { supabase } = client({
       account: { id: ACCOUNT, status: 'open' },
       orders: [{ id: 'o-1' }],
     });
-    // 3 500 encaisses puis 1 000 rendus: le reste apparent n'est pas une dette.
+    // 3 500 encaisses puis 1 000 rendus: dette ou geste ? Un humain tranche.
     getSummary.mockResolvedValue({ due: 3500, net: 2500, refunded: 1000 });
+
+    await expect(
+      createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
+    ).rejects.toThrow(/remboursee en partie/);
+    expect(recordTender).not.toHaveBeenCalled();
+    // L'ardoise ne se ferme jamais sur un solde non regle.
+    expect(markSettled).not.toHaveBeenCalled();
+  });
+
+  it('laisse l ardoise ouverte si le registre montre encore un solde apres l encaissement', async () => {
+    const { supabase } = client({
+      account: { id: ACCOUNT, status: 'open' },
+      orders: [{ id: 'o-1' }],
+    });
+    getSummary.mockResolvedValue({ due: 3500, net: 0, refunded: 0 });
+    // La cle avait deja servi: aucun paiement n'est entre pour cette commande.
+    recordTender.mockResolvedValue({ due: 3500, net: 0, refunded: 0 });
+
+    await expect(
+      createHouseAccountSettlementService(supabase).settle(ACCOUNT, TENANT, {}),
+    ).rejects.toThrow(/reste ouverte/);
+    expect(markSettled).not.toHaveBeenCalled();
+  });
+
+  it('accepte le rejeu d un double clic: le registre est deja solde, rien n est compte en double', async () => {
+    const { supabase } = client({
+      account: { id: ACCOUNT, status: 'open' },
+      orders: [{ id: 'o-1' }],
+    });
+    // Les deux requetes ont lu 0 encaisse; l'autre a ecrit entre-temps.
+    getSummary.mockResolvedValue({ due: 3500, net: 0, refunded: 0 });
+    recordTender.mockResolvedValue({ due: 3500, net: 3500, refunded: 0 });
 
     const resultat = await createHouseAccountSettlementService(supabase).settle(
       ACCOUNT,
@@ -130,8 +166,8 @@ describe('house-account-settlement.service', () => {
       {},
     );
 
-    expect(recordTender).not.toHaveBeenCalled();
-    expect(resultat).toEqual({ orders: 0, collected: 0 });
+    expect(resultat).toEqual({ orders: 1, collected: 3500 });
+    expect(markSettled).toHaveBeenCalledTimes(1);
   });
 
   it('donne a chaque couple ardoise-commande une cle stable, au format UUID', () => {

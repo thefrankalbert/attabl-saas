@@ -97,19 +97,36 @@ export function createHouseAccountSettlementService(supabase: SupabaseClient) {
       let settledOrders = 0;
       for (const order of orders ?? []) {
         const summary = await payments.getSummary(order.id as string, tenantId);
-        // Un remboursement laisse aussi la commande 'partial', mais c'est de
-        // l'argent RENDU volontairement, pas une dette: la solder le ferait
-        // repayer au client. Meme regle que la liste "A encaisser" de la caisse.
-        if (summary.refunded > 0) continue;
         const remaining = summary.due - summary.net;
         if (remaining <= 0) continue;
-        await payments.recordTender(order.id as string, tenantId, {
+        // Un remboursement laisse aussi la commande 'partial'. Ce reste est-il
+        // une dette ou de l'argent rendu volontairement ? Le code ne peut pas
+        // le savoir: encaisser ferait repayer le client, ignorer fermerait
+        // l'ardoise sur un solde non regle. On refuse donc de solder et on
+        // laisse la decision a un humain, sur la fiche de la commande.
+        if (summary.refunded > 0) {
+          throw new ServiceError(
+            'Une commande de cette ardoise a ete remboursee en partie. Reglez-la ou retirez-la de l ardoise depuis sa fiche, puis soldez.',
+            'CONFLICT',
+          );
+        }
+        const apres = await payments.recordTender(order.id as string, tenantId, {
           amount: remaining,
           method: SETTLEMENT_METHOD,
           createdBy: settledBy ?? null,
           clientRequestId: settlementRequestId(accountId, order.id as string),
         });
-        collected += remaining;
+        // On juge sur le REGISTRE relu, pas sur l'appel: si la cle a deja servi
+        // (rejeu, ou cle prise par une autre ecriture), aucun paiement n'est
+        // entre et il reste un solde. Fermer l'ardoise la-dessus cacherait une
+        // dette.
+        if (apres.due - apres.net > 0) {
+          throw new ServiceError(
+            'Le solde d une commande n a pas pu etre encaisse. L ardoise reste ouverte.',
+            'CONFLICT',
+          );
+        }
+        collected += Math.max(0, apres.net - summary.net);
         settledOrders += 1;
       }
 
