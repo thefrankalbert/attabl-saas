@@ -26,6 +26,7 @@ import {
   scheduleMonthlyQuotaCheck,
 } from './route.helpers';
 import { scheduleDestock } from './schedule-destock';
+import { checkDineInTable } from '@/services/order/dine-in-table';
 
 export async function POST(request: Request) {
   let t: (key: string) => string;
@@ -134,6 +135,18 @@ export async function POST(request: Request) {
       { service_type, tip_amount, display_currency },
       tenant.currency || 'XAF',
     );
+
+    // C-009/C-061: sur place = une vraie table de ce restaurant.
+    const tableProblem = await checkDineInTable(adminSupabase, tenantId, service_type, tableNumber);
+    if (tableProblem) {
+      return NextResponse.json(
+        {
+          error: t(tableProblem === 'TABLE_REQUIRED' ? 'tableRequired' : 'unknownTable'),
+          code: tableProblem,
+        },
+        { status: 400 },
+      );
+    }
 
     // Idempotency: if this order was already created (offline replay), return it
     // unchanged BEFORE any side effect (coupon claim, order creation).

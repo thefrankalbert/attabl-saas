@@ -21,7 +21,15 @@ vi.mock('next-intl', () => ({
   NextIntlClientProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock('@/lib/supabase/server', () => {
-  const result = { data: [], error: null };
+  // The restaurant's active tables: the page now keeps only a KNOWN scanned
+  // table (C-061), so the fixtures used below must exist.
+  const result = {
+    data: [
+      { table_number: 'TER-1', is_active: true },
+      { table_number: 'SAL-2', is_active: true },
+    ],
+    error: null,
+  };
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'is', 'order', 'limit']) {
     builder[m] = () => builder;
@@ -118,6 +126,12 @@ describe('storefront root page - table QR', () => {
   it('honors the legacy short ?t= param like /menu does', async () => {
     const tree = await renderRoot('https://resto.attabl.com/?t=SAL-2');
     expect(findProps(tree, 'HomeHeaderClient')?.initialTable).toBe('SAL-2');
+  });
+
+  it('an unknown table in the url (?table=TAB-99) is ignored (C-061)', async () => {
+    const tree = await renderRoot('https://resto.attabl.com/?table=TAB-99');
+    expect(findProps(tree, 'HomeHeaderClient')?.initialTable).toBeUndefined();
+    expect(getTableOccupied).not.toHaveBeenCalled();
   });
 
   it('no table in the url: nothing to persist, no occupancy lookup', async () => {

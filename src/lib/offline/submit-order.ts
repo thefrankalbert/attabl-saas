@@ -51,7 +51,7 @@ async function registerOutboxSync(): Promise<void> {
 export type SubmitResult =
   | { status: 'sent'; data: unknown }
   | { status: 'queued' } // accepted into the durable outbox; will sync later
-  | { status: 'rejected'; error: string; details?: string[] } // server refused
+  | { status: 'rejected'; error: string; details?: string[]; code?: string } // server refused
   | { status: 'failed'; error: string }; // could not send AND could not queue
 
 export interface SubmitOrderArgs {
@@ -141,6 +141,7 @@ export async function submitOrder({
       status: 'rejected',
       error: errBody.error ?? `Erreur ${response.status}`,
       details: errBody.details,
+      code: typeof errBody.code === 'string' ? errBody.code : undefined,
     };
   }
   // transient (5xx / 429 / 408): queue for replay

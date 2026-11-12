@@ -5,7 +5,7 @@ import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant, getCachedMenuData, getTableOccupied, toPublicTenant } from '@/lib/cache';
-import { resolveTableParam } from '@/lib/qr/table-param';
+import { keepKnownTable, resolveTableParam } from '@/lib/qr/table-param';
 import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
 
 export const revalidate = 30;
@@ -52,7 +52,7 @@ export default async function MenuDetailPage({
 }) {
   const { site } = await params;
   const resolvedSearchParams = await searchParams;
-  const initialTable = resolveTableParam(resolvedSearchParams);
+  const scannedTable = resolveTableParam(resolvedSearchParams);
   const initialMenuSlug = resolvedSearchParams.menu || undefined;
   const initialVenueSlug = resolvedSearchParams.v || undefined;
   const initialSection = resolvedSearchParams.section || undefined;
@@ -91,6 +91,9 @@ export default async function MenuDetailPage({
     ...category,
     items: menuItems.filter((item) => item.category_id === category.id),
   }));
+
+  // C-061: an unknown table in the URL is ignored, never remembered.
+  const initialTable = keepKnownTable(scannedTable, tables);
 
   // Soft warning: does the scanned table already hold an open session (a likely
   // other party)? Server-side + briefly cached so the page stays ISR.
