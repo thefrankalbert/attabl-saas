@@ -2,38 +2,42 @@
 -- du chiffre d'affaires (20261112140000, audit C-041).
 --
 -- POURQUOI. La politique `payments_tenant_insert` (relue en production le
--- 2026-11-12) exige deja le droit d'encaisser et le statut 'completed' (sauf
--- pour un gerant). Elle laissait passer, mesure sur le banc en retirant cette
--- garde: un caissier qui encaisse une commande ANNULEE, une commande d'un
--- AUTRE restaurant (ligne au nom du sien), ou un montant AU-DELA du solde
--- (999 999 sur une note de 10 000); et un gerant qui ecrit un remboursement
--- directement, sans les controles de record_refund. Tant que le chiffre venait
--- du statut des commandes, ces lignes ne comptaient pas. Des que le chiffre
--- se lit dans le registre (20261112140000), elles le falsifient. Signale par
--- la revue de securite automatique du 2026-11-12; corrige avant toute mise en
--- production.
+-- 2026-11-12) exige deja le droit d'encaisser et, sans l'autorite sur
+-- l'argent, une ligne 'completed' de montant positif. Elle laissait passer,
+-- mesure sur le banc en retirant cette garde: un caissier qui encaisse une
+-- commande ANNULEE, une commande d'un AUTRE restaurant (ligne au nom du
+-- sien), ou un montant AU-DELA du solde (999 999 sur une note de 10 000), et
+-- toute ligne antidatee ou attribuee a un autre employe. Tant que le chiffre
+-- venait du statut des commandes, ces lignes ne comptaient pas. Des que le
+-- chiffre se lit dans le registre (20261112140000), elles le falsifient.
+-- Signale par la revue de securite automatique du 2026-11-12; corrige avant
+-- toute mise en production.
 --
 -- REGLE, pour les jetons d'utilisateur seulement (authenticated/anon). Les
 -- chemins de confiance passent sans changement: service_role (caisse POS,
 -- webhooks) et les fonctions SECURITY DEFINER (record_refund), ou
 -- current_user vaut leur proprietaire.
+-- Pour tous:
 --   1. Il faut le droit d'encaisser du restaurant de la ligne (orders.pay).
---   2. La commande existe et appartient a ce restaurant.
---   3. Elle n'est ni annulee ni offerte ('comp': jamais au registre).
---   4. Un remboursement ne s'ecrit que par record_refund (qui verifie le
---      montant deja paye): une ligne 'refunded' directe est refusee.
---   5. Un encaissement ne depasse pas le solde du (total + pourboire - net
---      deja encaisse). La ligne de la commande est verrouillee (FOR UPDATE)
---      pour que deux encaissements simultanes ne passent pas tous les deux.
---      Les chemins applicatifs respectent deja cette borne (recordTender
---      refuse le depassement; markPaid et la caisse ecrivent le total exact
---      sur une commande qui n'avait rien encaisse).
---   6. La date et l'auteur ne viennent pas du client: created_at := now(),
---      created_by := la fiche employe de la personne connectee. Sinon un
---      caissier antidatait une ligne (l'argent changeait de jour dans le
---      chiffre) ou l'attribuait a un collegue.
---   7. Le moyen de paiement est l'un des 6 connus (src/lib/payments/methods.ts,
+--   2. Le moyen de paiement est l'un des 6 connus (src/lib/payments/methods.ts,
 --      meme liste que la contrainte tenants_enabled_payment_methods_known).
+--   3. La date et l'auteur ne viennent pas du client: created_at := now(),
+--      created_by := la fiche employe de la personne connectee.
+--   4. La commande existe et appartient au restaurant de la ligne.
+-- Sans l'autorite sur l'argent (has_tenant_money_permission: le caissier):
+--   5. Pas de remboursement (ligne 'refunded', montant negatif ou nul):
+--      42501, comme la politique d'insertion.
+--   6. Commande ni annulee ni offerte ('comp': jamais au registre).
+--   7. Montant au plus le solde du (total + pourboire - net deja encaisse).
+--      La ligne de la commande est verrouillee (FOR UPDATE) pour que deux
+--      encaissements simultanes ne passent pas tous les deux. Les chemins
+--      applicatifs respectent deja cette borne (recordTender refuse le
+--      depassement; markPaid et la caisse ecrivent le total exact sur une
+--      commande qui n'avait rien encaisse).
+-- Avec cette autorite (gerant, admin, proprietaire), 5 a 7 ne s'appliquent
+-- pas: le contrat de supabase/tests/rls/garde_argent.test.sql (PR #373) lui
+-- reconnait le droit de rembourser directement, y compris par un montant
+-- negatif.
 --
 -- NON RETENU, revue de securite du 2026-11-12: borner le montant sur des
 -- valeurs que le caissier ne peut pas changer (pourboire plafonne). Le
@@ -88,11 +92,6 @@ BEGIN
   NEW.created_by := v_author;
   NEW.created_at := now();
 
-  IF NEW.status IS DISTINCT FROM 'completed' THEN
-    RAISE EXCEPTION 'Un remboursement passe par la fonction de remboursement'
-      USING ERRCODE = '42501';
-  END IF;
-
   SELECT o.total, o.tip_amount, o.status, o.payment_status
     INTO v_order
   FROM public.orders o
@@ -101,6 +100,15 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Commande introuvable pour ce restaurant'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF public.has_tenant_money_permission(NEW.tenant_id) THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.status IS DISTINCT FROM 'completed' OR NEW.amount <= 0 THEN
+    RAISE EXCEPTION 'Rembourser exige l''autorite sur l''argent'
       USING ERRCODE = '42501';
   END IF;
 
@@ -114,8 +122,7 @@ BEGIN
   FROM public.payments p
   WHERE p.order_id = NEW.order_id AND p.tenant_id = NEW.tenant_id;
 
-  IF NEW.amount <= 0
-     OR NEW.amount > (COALESCE(v_order.total, 0) + COALESCE(v_order.tip_amount, 0) - v_net) THEN
+  IF NEW.amount > (COALESCE(v_order.total, 0) + COALESCE(v_order.tip_amount, 0) - v_net) THEN
     RAISE EXCEPTION 'Montant superieur au solde du'
       USING ERRCODE = '22023';
   END IF;
