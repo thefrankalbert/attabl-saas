@@ -28,6 +28,21 @@
 --      Les chemins applicatifs respectent deja cette borne (recordTender
 --      refuse le depassement; markPaid et la caisse ecrivent le total exact
 --      sur une commande qui n'avait rien encaisse).
+--   6. La date et l'auteur ne viennent pas du client: created_at := now(),
+--      created_by := la fiche employe de la personne connectee. Sinon un
+--      caissier antidatait une ligne (l'argent changeait de jour dans le
+--      chiffre) ou l'attribuait a un collegue.
+--   7. Le moyen de paiement est l'un des 6 connus (src/lib/payments/methods.ts,
+--      meme liste que la contrainte tenants_enabled_payment_methods_known).
+--
+-- NON RETENU, revue de securite du 2026-11-12: borner le montant sur des
+-- valeurs que le caissier ne peut pas changer (pourboire plafonne). Le
+-- caissier a le droit d'encaisser (orders.pay), qui l'autorise deja a fixer
+-- la note et le pourboire d'une commande (trg_argent_exige_orders_pay ne
+-- garde ces colonnes que pour qui N'A PAS ce droit). Gonfler la note puis
+-- l'encaisser ne fait qu'ajouter au chiffre de l'argent qu'il devrait
+-- presenter en caisse: aucun gain pour lui. Le sens qui lui profiterait
+-- (faire baisser le chiffre) passe par un remboursement, refuse ici.
 --
 -- SECURITY INVOKER: en DEFINER, current_user vaudrait toujours le
 -- proprietaire et la garde ne se declencherait jamais (piege releve le
@@ -46,6 +61,7 @@ AS $function$
 DECLARE
   v_order RECORD;
   v_net NUMERIC;
+  v_author UUID;
 BEGIN
   IF current_user NOT IN ('authenticated', 'anon') THEN
     RETURN NEW;
@@ -55,6 +71,22 @@ BEGIN
     RAISE EXCEPTION 'Enregistrer un paiement exige le droit d''encaisser'
       USING ERRCODE = '42501';
   END IF;
+
+  IF NEW.method IS NULL OR NEW.method NOT IN
+     ('cash', 'card', 'wave', 'orange_money', 'mtn_momo', 'free_money') THEN
+    RAISE EXCEPTION 'Moyen de paiement inconnu'
+      USING ERRCODE = '22023';
+  END IF;
+
+  SELECT au.id INTO v_author
+  FROM public.admin_users au
+  WHERE au.user_id = (SELECT auth.uid())
+    AND au.tenant_id = NEW.tenant_id
+    AND (au.is_active IS NULL OR au.is_active = true)
+    AND au.deleted_at IS NULL
+  LIMIT 1;
+  NEW.created_by := v_author;
+  NEW.created_at := now();
 
   IF NEW.status IS DISTINCT FROM 'completed' THEN
     RAISE EXCEPTION 'Un remboursement passe par la fonction de remboursement'
