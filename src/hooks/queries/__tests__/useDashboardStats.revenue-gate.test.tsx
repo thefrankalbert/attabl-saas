@@ -19,10 +19,23 @@ vi.mock('@/lib/supabase/client', () => ({
         selects.push(cols);
         return c;
       });
-      for (const m of ['eq', 'gte', 'lt', 'order', 'limit']) c[m] = vi.fn(() => c);
+      for (const m of ['eq', 'gte', 'lt', 'order', 'limit', 'in']) c[m] = vi.fn(() => c);
       c.then = (ok: (v: { data: unknown[]; error: null; count: number }) => unknown) =>
         ok({
-          data: [{ id: 'o1', total: 5000, tip_amount: 0, payment_status: 'paid' }],
+          // One row that works both as an order and as a payments-ledger
+          // row (C-041: revenue is read from `payments`).
+          data: [
+            {
+              id: 'o1',
+              order_id: 'o1',
+              total: 5000,
+              tip_amount: 0,
+              payment_status: 'paid',
+              amount: 5000,
+              status: 'completed',
+              created_at: new Date().toISOString(),
+            },
+          ],
           error: null,
           count: 0,
         });
@@ -51,7 +64,7 @@ describe('useDashboardStats - argent selon reports.view', () => {
     const aggregates = selects.filter((cols) => !cols.includes('order_number'));
     expect(aggregates.length).toBeGreaterThan(0);
     for (const cols of aggregates) {
-      expect(cols).not.toMatch(/\btotal\b|tip_amount|price_at_order/);
+      expect(cols).not.toMatch(/\btotal\b|tip_amount|price_at_order|\bamount\b/);
     }
     expect(result.current.data?.stats.revenueToday).toBe(0);
     expect(result.current.data?.revenueSparkline).toEqual([]);
@@ -60,7 +73,7 @@ describe('useDashboardStats - argent selon reports.view', () => {
   it('avec reports.view: les montants sont lus', async () => {
     const { result } = renderHook(() => useDashboardStats('t1', true), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(selects.some((cols) => /\btotal\b/.test(cols))).toBe(true);
-    expect(result.current.data?.stats.revenueToday).toBeGreaterThan(0);
+    expect(selects.some((cols) => /\bamount\b/.test(cols))).toBe(true);
+    expect(result.current.data?.stats.revenueToday).toBe(5000);
   });
 });

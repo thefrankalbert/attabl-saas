@@ -1,52 +1,55 @@
 /**
  * Single source of truth for "what counts as restaurant revenue".
  *
- * Revenue = orders that were actually PAID (payment_status = 'paid'), gross of tip.
- * Before this, the product had three contradictory definitions (dashboard headline
- * filtered status='delivered', the charts counted every order, the reporting RPCs
- * filtered status != 'cancelled') so the same period reported different numbers and
- * unpaid/pending orders inflated the top line. Everything that reports money must go
- * through these helpers (and the matching RPC predicate payment_status='paid').
+ * Revenue = money actually RECEIVED, read from the `payments` ledger: every
+ * 'completed' row adds its amount, every 'refunded' row subtracts it (a refund
+ * is stored as its own row with a POSITIVE amount, see record_refund). A row
+ * counts on the day it was recorded (`payments.created_at`), tip included.
  *
- * orders.total is stored EXCLUDING tip (see api/orders/route.ts and
- * api/orders/pos/route.ts); tip lives in tip_amount. Gross revenue = total + tip.
+ * Owner decision 2026-11-12 (audit C-041): "encaisse aujourd'hui" = money
+ * received today. Before, revenue summed orders whose payment_status was
+ * 'paid', so a deposit on an open table and a partially refunded order both
+ * vanished from the figure (measured: 6 500 shown, 9 000 in the ledger).
  *
- * MONEY UNITS: orders.total and orders.tip_amount are integer MINOR units (the
- * currency's smallest unit). These helpers sum minor amounts and return a minor
- * integer - callers that DISPLAY the result must convert with fromMinorUnits /
- * formatCurrencyMinor (src/lib/utils/money.ts). No re-rounding to major here.
+ * The same predicate lives in the reporting RPCs (migration 20261112140000):
+ * anything that reports money goes through these helpers or those RPCs.
+ *
+ * MONEY UNITS: payments.amount is an integer in MINOR units. These helpers sum
+ * minor amounts and return a minor integer; callers that DISPLAY the result
+ * convert with fromMinorUnits / formatCurrencyMinor (src/lib/utils/money.ts).
  */
 
-export const PAID_PAYMENT_STATUS = 'paid';
-
-export interface RevenueOrder {
-  payment_status?: string | null;
-  total?: number | null;
-  tip_amount?: number | null;
+export interface LedgerRow {
+  amount?: number | null;
+  status?: string | null;
 }
 
-/** True when an order has been settled (its money is recognized revenue). */
-export function isPaidOrder(o: { payment_status?: string | null }): boolean {
-  return o.payment_status === PAID_PAYMENT_STATUS;
+/** Signed value of one ledger row: + received, - refunded. */
+export function ledgerValue(row: LedgerRow): number {
+  const amount = Number(row.amount || 0);
+  return row.status === 'refunded' ? -amount : amount;
 }
 
-/** Gross amount of one order, tip included. Not revenue unless the order is paid. */
-export function orderGross(o: RevenueOrder): number {
-  return Number(o.total || 0) + Number(o.tip_amount || 0);
-}
-
-/** Sum of gross amounts across only the PAID orders in the list. */
-export function sumPaidRevenue(orders: RevenueOrder[]): number {
-  return orders.reduce((sum, o) => (isPaidOrder(o) ? sum + orderGross(o) : sum), 0);
+/** Net money received across the rows (received minus refunded). */
+export function sumLedgerNet(rows: LedgerRow[]): number {
+  return rows.reduce((sum, row) => sum + ledgerValue(row), 0);
 }
 
 /**
- * Average ticket = paid revenue / number of PAID orders (minor units, rounded).
- * Dividing paid revenue by ALL orders (unpaid included) showed 333 for a single
- * paid order of 1000 among 3 orders: numerator and denominator must count the
- * same orders.
+ * Average ticket = net received / number of distinct orders that received a
+ * payment in the rows (minor units, rounded). A table that pays in two
+ * tenders is one ticket, not two.
  */
-export function averagePaidTicket(orders: RevenueOrder[]): number {
-  const paidCount = orders.filter(isPaidOrder).length;
-  return paidCount > 0 ? Math.round(sumPaidRevenue(orders) / paidCount) : 0;
+export function averageLedgerTicket(rows: Array<LedgerRow & { order_id?: string | null }>): number {
+  const paidOrders = new Set(
+    rows.filter((r) => r.status !== 'refunded' && r.order_id).map((r) => r.order_id),
+  );
+  return paidOrders.size > 0 ? Math.round(sumLedgerNet(rows) / paidOrders.size) : 0;
 }
+
+/**
+ * Orders that received money (fully or in part): the population used by the
+ * product-mix views (top dishes, categories). 'refunded' and 'pending' are
+ * excluded, 'partial' is kept (a deposit or a partial refund).
+ */
+export const PAYMENT_STATUSES_WITH_MONEY = ['paid', 'partial'] as const;

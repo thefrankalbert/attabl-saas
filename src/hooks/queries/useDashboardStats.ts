@@ -3,7 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
-import { averagePaidTicket, isPaidOrder, sumPaidRevenue } from '@/lib/orders/revenue';
+import {
+  averageLedgerTicket,
+  ledgerValue,
+  PAYMENT_STATUSES_WITH_MONEY,
+  sumLedgerNet,
+  type LedgerRow,
+} from '@/lib/orders/revenue';
 import { CHART_PALETTE, CHART_NEUTRAL } from '@/lib/design-tokens';
 import type {
   DashboardStats,
@@ -91,11 +97,7 @@ export function useDashboardStats(
               supabase
                 .from('orders')
                 // Colonnes d'argent lues seulement par qui a le droit de les voir.
-                .select(
-                  canViewRevenue
-                    ? 'id, total, tip_amount, status, payment_status, created_at'
-                    : 'id, status, payment_status, created_at',
-                )
+                .select('id, status, payment_status, created_at')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', today.toISOString()),
             'todayOrders',
@@ -151,11 +153,7 @@ export function useDashboardStats(
             () =>
               supabase
                 .from('orders')
-                .select(
-                  canViewRevenue
-                    ? 'id, total, tip_amount, status, payment_status'
-                    : 'id, status, payment_status',
-                )
+                .select('id, status, payment_status')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', yesterday.toISOString())
                 .lt('created_at', today.toISOString()),
@@ -166,16 +164,35 @@ export function useDashboardStats(
             () =>
               supabase
                 .from('orders')
-                .select(
-                  canViewRevenue
-                    ? 'id, total, tip_amount, created_at, status, payment_status'
-                    : 'id, created_at, status, payment_status',
-                )
+                .select('id, created_at, status, payment_status')
                 .eq('tenant_id', tenantId)
                 .gte('created_at', sevenDaysAgo.toISOString()),
             'weekOrders',
           ),
         ]);
+
+      // Money received (payments ledger, owner decision C-041 - see
+      // src/lib/orders/revenue.ts). Not even requested without `reports.view`.
+      type LedgerEntry = LedgerRow & { order_id?: string | null; created_at?: string };
+      const weekPaymentsRes = !canViewRevenue
+        ? { data: null, count: null }
+        : await safeQuery<LedgerEntry[]>(
+            () =>
+              supabase
+                .from('payments')
+                .select('order_id, amount, status, created_at')
+                .eq('tenant_id', tenantId)
+                .gte('created_at', sevenDaysAgo.toISOString()),
+            'weekPayments',
+          );
+      const weekPayments = weekPaymentsRes.data || [];
+      const paymentsBetween = (from: Date, to?: Date) =>
+        weekPayments.filter((p) => {
+          const at = p.created_at ? new Date(p.created_at) : null;
+          return !!at && at >= from && (!to || at < to);
+        });
+      const todayPayments = paymentsBetween(today);
+      const yesterdayPayments = paymentsBetween(yesterday, today);
 
       // Category query is non-critical - fire separately so it never blocks core data.
       // Bounded to today (matches revenueToday semantics: the donut breaks down today's
@@ -192,7 +209,7 @@ export function useDashboardStats(
                   'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at, payment_status)',
                 )
                 .eq('orders.tenant_id', tenantId)
-                .eq('orders.payment_status', 'paid')
+                .in('orders.payment_status', [...PAYMENT_STATUSES_WITH_MONEY])
                 .gte('orders.created_at', today.toISOString())
                 .limit(2000),
             'categoryBreakdown',
@@ -202,12 +219,12 @@ export function useDashboardStats(
       const ordersData = (ordersRes.data || []) as unknown as Array<Record<string, unknown>>;
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
-        // Revenue = paid orders only (single definition, shared with the SSR
+        // Revenue = money received today (payments ledger, shared with the SSR
         // dashboard and the reporting RPCs via src/lib/orders/revenue.ts).
-        // Sans `reports.view`, les colonnes d'argent ne sont pas lues: on
-        // l'ecrit aussi ici pour ne jamais dependre de ce detail de requete.
-        revenueToday: canViewRevenue ? sumPaidRevenue(ordersData) : 0,
-        avgTicketToday: canViewRevenue ? averagePaidTicket(ordersData) : 0,
+        // Sans `reports.view`, le registre n'est pas lu: on l'ecrit aussi ici
+        // pour ne jamais dependre de ce detail de requete.
+        revenueToday: canViewRevenue ? sumLedgerNet(todayPayments) : 0,
+        avgTicketToday: canViewRevenue ? averageLedgerTicket(todayPayments) : 0,
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -241,7 +258,7 @@ export function useDashboardStats(
       const yesterdayOrders = (yesterdayRes.data || []) as unknown as Array<
         Record<string, unknown>
       >;
-      const yesterdayRevenue = sumPaidRevenue(yesterdayOrders);
+      const yesterdayRevenue = sumLedgerNet(yesterdayPayments);
       const yesterdayCount = yesterdayOrders.length;
 
       if (yesterdayCount > 0) {
@@ -254,7 +271,7 @@ export function useDashboardStats(
           ((stats.revenueToday - yesterdayRevenue) / yesterdayRevenue) * 100,
         );
       }
-      const yesterdayTicket = averagePaidTicket(yesterdayOrders);
+      const yesterdayTicket = averageLedgerTicket(yesterdayPayments);
       if (canViewRevenue && yesterdayTicket > 0) {
         stats.avgTicketTrend = Math.round(
           ((stats.avgTicketToday - yesterdayTicket) / yesterdayTicket) * 100,
@@ -273,12 +290,14 @@ export function useDashboardStats(
       for (const o of weekOrders) {
         const key = (o.created_at as string)?.slice(0, 10);
         if (key && dayBuckets[key]) {
-          // count = orders placed (all); revenue = paid orders only.
+          // count = orders placed (all).
           dayBuckets[key].count++;
-          if (isPaidOrder(o as { payment_status?: string | null })) {
-            dayBuckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
-          }
         }
+      }
+      for (const p of weekPayments) {
+        // revenue = money received that day (ledger).
+        const key = p.created_at?.slice(0, 10);
+        if (key && dayBuckets[key]) dayBuckets[key].revenue += ledgerValue(p);
       }
       const bucketValues = Object.values(dayBuckets);
       const revenueSparkline: SparklinePoint[] = canViewRevenue
