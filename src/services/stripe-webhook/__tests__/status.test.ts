@@ -42,6 +42,13 @@ describe('detectBillingInterval', () => {
     expect(logger.warn).toHaveBeenCalledTimes(1);
   });
 
+  it('un abonnement de 2 ans reste annuel, avec un avertissement', () => {
+    expect(detectBillingInterval(abonnement({ interval: 'year', interval_count: 2 }))).toBe(
+      'yearly',
+    );
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+
   it('mensuel et annuel standards ne declenchent aucun avertissement', () => {
     detectBillingInterval(abonnement({ interval: 'month', interval_count: 1 }));
     detectBillingInterval(abonnement({ interval: 'year', interval_count: 1 }));

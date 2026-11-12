@@ -19,7 +19,7 @@
 -- `tenants` est lue a chaque requete par le proxy: on n'attend pas plus de 5 s
 -- un verrou tenu par une longue transaction, on echoue et on reessaie.
 
-SET lock_timeout = '5s';
+SET LOCAL lock_timeout = '5s';
 
 DO $$
 DECLARE

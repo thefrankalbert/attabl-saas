@@ -29,8 +29,9 @@ export function isValidInterval(value: string | undefined): value is BillingInte
  * Detect billing interval from Stripe subscription item.
  *
  * Seuls 1 mois et 1 an existent chez ATTABL. Toute autre periode (un ancien
- * prix de 6 mois, une semaine...) est ramenee a 'monthly' pour rester dans la
- * contrainte de la base, mais on le signale: sinon la base dirait "mensuel" a
+ * prix de 6 mois, une semaine...) est ramenee a la periode la plus proche
+ * (annuelle si elle se compte en annees, sinon mensuelle) pour rester dans la
+ * contrainte de la base, et on le signale: sinon la base dirait "mensuel" a
  * un client facture autrement, sans que personne le voie.
  */
 export function detectBillingInterval(subscription: Stripe.Subscription): BillingInterval {
@@ -38,15 +39,18 @@ export function detectBillingInterval(subscription: Stripe.Subscription): Billin
   if (!item?.plan) return 'monthly';
 
   const { interval, interval_count: intervalCount } = item.plan;
-  if (intervalCount === 1 && interval === 'year') return 'yearly';
   if (intervalCount === 1 && interval === 'month') return 'monthly';
+  if (intervalCount === 1 && interval === 'year') return 'yearly';
 
-  logger.warn('Periode Stripe non prise en charge, enregistree comme mensuelle', {
+  // Au plus proche: une periode en annees reste annuelle, le reste mensuel.
+  const approchee: BillingInterval = interval === 'year' ? 'yearly' : 'monthly';
+  logger.warn('Periode Stripe non prise en charge, enregistree au plus proche', {
     subscriptionId: subscription.id,
     interval,
     intervalCount,
+    enregistree: approchee,
   });
-  return 'monthly';
+  return approchee;
 }
 
 /**
