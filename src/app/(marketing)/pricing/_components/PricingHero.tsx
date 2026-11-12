@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 
-// `px-2.5` en dessous de `sm`: les trois onglets (Mensuel / Semestriel -15% /
-// Annuel -20%) mesuraient 370px dans une colonne de 335px sur un telephone de
+// `px-2.5` en dessous de `sm`: les onglets de periode mesuraient 370px dans une colonne de 335px sur un telephone de
 // 375, et "-20%" etait coupe au bord de l'ecran - sur la page des tarifs.
 // Mesure du 2026-11-06. L'aspect sur grand ecran ne bouge pas.
 const PILL =
@@ -37,11 +36,8 @@ export function PricingHero({
           {t('hero.subtitle')}
         </p>
 
-        {/* Selecteur de periode: Mensuel et Annuel seulement. Le semestriel a
-            ete retire de la page publique le 2026-11-06 (decision produit), en
-            meme temps que l'experimentation A/B qui l'affichait a un visiteur
-            sur deux. La periode reste supportee par la facturation et par
-            Stripe pour les abonnes qui l'ont deja. */}
+        {/* Selecteur de periode: Mensuel et Annuel, les deux seules periodes
+            d'abonnement d'ATTABL. */}
         {/* `flex-wrap` + `max-w-full`: filet de securite sous 360px, ou meme
             des onglets resserres ne tiennent pas sur une ligne. Mieux vaut
             deux lignes qu'un libelle coupe. */}

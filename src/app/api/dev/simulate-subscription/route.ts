@@ -27,7 +27,7 @@ import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
 const bodySchema = z.object({
   tenant_id: z.string().uuid(),
   plan: z.enum(['starter', 'pro', 'business']),
-  interval: z.enum(['monthly', 'semiannual', 'yearly']),
+  interval: z.enum(['monthly', 'yearly']),
 });
 
 function isEnabled(): boolean {

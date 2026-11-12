@@ -30,16 +30,13 @@ vi.mock('stripe', () => ({
   },
 }));
 
-/** Les 9 identifiants de prix, un par (plan, periodicite). */
+/** Les 6 identifiants de prix, un par (plan, periodicite). */
 const PRIX = {
   NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY: 'price_starter_m',
-  NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL: 'price_starter_s',
   NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY: 'price_starter_y',
   NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY: 'price_pro_m',
-  NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL: 'price_pro_s',
   NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY: 'price_pro_y',
   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY: 'price_business_m',
-  NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL: 'price_business_s',
   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY: 'price_business_y',
 };
 
@@ -114,13 +111,10 @@ describe('getStripePriceId', () => {
     const { getStripePriceId } = await chargerModule();
 
     expect(getStripePriceId('starter', 'monthly')).toBe('price_starter_m');
-    expect(getStripePriceId('starter', 'semiannual')).toBe('price_starter_s');
     expect(getStripePriceId('starter', 'yearly')).toBe('price_starter_y');
     expect(getStripePriceId('pro', 'monthly')).toBe('price_pro_m');
-    expect(getStripePriceId('pro', 'semiannual')).toBe('price_pro_s');
     expect(getStripePriceId('pro', 'yearly')).toBe('price_pro_y');
     expect(getStripePriceId('business', 'monthly')).toBe('price_business_m');
-    expect(getStripePriceId('business', 'semiannual')).toBe('price_business_s');
     expect(getStripePriceId('business', 'yearly')).toBe('price_business_y');
   });
 
@@ -145,7 +139,7 @@ describe('getPlanFromPriceId', () => {
 
     expect(getPlanFromPriceId('price_starter_m')).toBe('starter');
     expect(getPlanFromPriceId('price_starter_y')).toBe('starter');
-    expect(getPlanFromPriceId('price_pro_s')).toBe('pro');
+    expect(getPlanFromPriceId('price_pro_y')).toBe('pro');
     expect(getPlanFromPriceId('price_business_y')).toBe('business');
   });
 
@@ -166,7 +160,7 @@ describe('getIntervalFromPriceId', () => {
     const { getIntervalFromPriceId } = await chargerModule();
 
     expect(getIntervalFromPriceId('price_starter_m')).toBe('monthly');
-    expect(getIntervalFromPriceId('price_pro_s')).toBe('semiannual');
+    expect(getIntervalFromPriceId('price_pro_y')).toBe('yearly');
     expect(getIntervalFromPriceId('price_business_y')).toBe('yearly');
   });
 
@@ -185,7 +179,7 @@ describe('getIntervalFromPriceId', () => {
     const { getStripePriceId, getPlanFromPriceId, getIntervalFromPriceId } = await chargerModule();
 
     for (const plan of ['starter', 'pro', 'business'] as const) {
-      for (const intervalle of ['monthly', 'semiannual', 'yearly'] as const) {
+      for (const intervalle of ['monthly', 'yearly'] as const) {
         const id = getStripePriceId(plan, intervalle);
         expect(getPlanFromPriceId(id)).toBe(plan);
         expect(getIntervalFromPriceId(id)).toBe(intervalle);

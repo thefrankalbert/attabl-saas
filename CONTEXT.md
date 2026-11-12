@@ -60,16 +60,16 @@ nouveau dev (ou un agent IA) en 2 minutes.
 
 ### 💳 Stripe — Paiements & abonnements
 
-**Rôle** : abonnements mensuels/semestriels/annuels (plans Starter, Pro, Business, Enterprise), checkout sessions, customer portal, webhooks pour sync `subscription_status`.
+**Rôle** : abonnements mensuels/annuels (plans Starter, Pro, Business, Enterprise), checkout sessions, customer portal, webhooks pour sync `subscription_status`.
 
 **Env vars** :
 
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — clé publique
 - `STRIPE_SECRET_KEY` — clé serveur (CRITIQUE)
 - `STRIPE_WEBHOOK_SECRET` — vérification signature webhook
-- `NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Starter
-- `NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Pro
-- `NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY` / `_SEMIANNUAL` / `_YEARLY` — IDs prix Stripe plan Business
+- `NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY` / `_YEARLY` : IDs prix Stripe plan Starter
+- `NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY` / `_YEARLY` : IDs prix Stripe plan Pro
+- `NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY` / `_YEARLY` : IDs prix Stripe plan Business
 
 **Fichiers clés** :
 
@@ -219,13 +219,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...                  # ⚠️ NE JAMAIS COMMIT
 STRIPE_WEBHOOK_SECRET=whsec_...                 # ⚠️ NE JAMAIS COMMIT
 NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY=price_...
-NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL=price_...
 NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY=price_...
 NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY=price_...
-NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL=price_...
 NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY=price_...
 NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY=price_...
-NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL=price_...
 NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY=price_...
 
 # Resend (obligatoire pour tester signup/invitations)

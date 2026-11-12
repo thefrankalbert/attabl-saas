@@ -1,4 +1,4 @@
-export type BillingPeriod = 'monthly' | 'semiannual' | 'yearly';
+export type BillingPeriod = 'monthly' | 'yearly';
 
 export type ComparisonValue = boolean | { kind: 'unlimited' } | { kind: 'text'; value: string };
 

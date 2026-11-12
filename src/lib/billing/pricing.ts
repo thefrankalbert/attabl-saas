@@ -14,14 +14,14 @@
  */
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
-// Montant mensuel AFFICHE (le semestriel et l'annuel montrent l'equivalent par mois)
+// Montant mensuel AFFICHE (l'annuel montre l'equivalent par mois)
 export const PLAN_AMOUNTS: Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, number>
 > = {
-  starter: { monthly: 39000, semiannual: 33150, yearly: 31200 },
-  pro: { monthly: 79000, semiannual: 67150, yearly: 63200 },
-  business: { monthly: 149000, semiannual: 126650, yearly: 119200 },
+  starter: { monthly: 39000, yearly: 31200 },
+  pro: { monthly: 79000, yearly: 63200 },
+  business: { monthly: 149000, yearly: 119200 },
 };
 
 // Montant TOTAL reellement facture pour la periode
@@ -29,7 +29,7 @@ export const PLAN_TOTALS: Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, number>
 > = {
-  starter: { monthly: 39000, semiannual: 198900, yearly: 374400 },
-  pro: { monthly: 79000, semiannual: 402900, yearly: 758400 },
-  business: { monthly: 149000, semiannual: 759900, yearly: 1430400 },
+  starter: { monthly: 39000, yearly: 374400 },
+  pro: { monthly: 79000, yearly: 758400 },
+  business: { monthly: 149000, yearly: 1430400 },
 };

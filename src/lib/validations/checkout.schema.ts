@@ -13,7 +13,7 @@ export const checkoutBodySchema = z.object({
   plan: z.enum(['starter', 'pro', 'business'], {
     error: 'Plan invalide. Choisissez starter, pro ou business.',
   }),
-  billingInterval: z.enum(['monthly', 'semiannual', 'yearly']).optional().default('monthly'),
+  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
   /**
    * Restaurant a abonner. Designe la cible; l'autorisation est verifiee
    * cote serveur (appartenance active + role) dans `resolveCheckoutTenant`.
@@ -46,5 +46,5 @@ export const updateSubscriptionSchema = z.object({
   plan: z.enum(['starter', 'pro', 'business'], {
     error: 'Plan invalide. Choisissez starter, pro ou business.',
   }),
-  billingInterval: z.enum(['monthly', 'semiannual', 'yearly']).optional().default('monthly'),
+  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
 });
