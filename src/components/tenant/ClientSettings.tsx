@@ -40,7 +40,6 @@ interface ClientSettingsProps {
   isOpen: boolean;
   todayHours?: string | null;
   currency: string;
-  supportedCurrencies?: string[];
 }
 
 const CURRENCY_OPTIONS: { code: DisplayCurrency; label: string }[] = [
@@ -62,7 +61,6 @@ export default function ClientSettings({
   tenantPhone,
   isOpen,
   todayHours,
-  supportedCurrencies,
 }: ClientSettingsProps) {
   const locale = useLocale();
   const t = useTranslations('tenant');
@@ -70,6 +68,7 @@ export default function ClientSettings({
 
   const {
     displayCurrency,
+    supportedCurrencies,
     notificationsSupported,
     notificationsEnabled,
     orderCount,
@@ -98,12 +97,15 @@ export default function ClientSettings({
       .slice(0, 3)
       .toUpperCase() || 'A';
 
-  const currencyOptions = CURRENCY_OPTIONS.filter(
-    (c) =>
-      !supportedCurrencies ||
-      supportedCurrencies.length <= 1 ||
-      supportedCurrencies.includes(c.code),
-  );
+  // Une seule devise acceptee (ou forfait sans multi-devise): rien a choisir.
+  const currencyOptions =
+    supportedCurrencies.length <= 1
+      ? []
+      : CURRENCY_OPTIONS.filter(
+          (c) =>
+            supportedCurrencies.includes(c.code) ||
+            (c.code === 'XOF' && supportedCurrencies.includes('XAF')),
+        );
 
   // Render
 
@@ -113,6 +115,7 @@ export default function ClientSettings({
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="mx-auto max-w-lg">
+        <h1 className="sr-only">{t('settingsTitle')}</h1>
         {/* Header - restaurant identity */}
         <header className="relative overflow-hidden bg-[var(--color-ink)] px-[18px] pb-[22px] pt-5 text-white">
           <div

@@ -40,6 +40,7 @@ vi.mock('next/image', () => ({
 }));
 
 let mockDisplayCurrency = 'XAF';
+let mockSupportedCurrencies: string[] = ['XAF', 'EUR', 'USD'];
 const mockSetDisplayCurrency = vi.fn((code: string) => {
   mockDisplayCurrency = code;
   localStorage.setItem('attabl_display_currency', code);
@@ -49,6 +50,7 @@ vi.mock('@/contexts/CurrencyContext', () => ({
   useDisplayCurrency: () => ({
     displayCurrency: mockDisplayCurrency,
     setDisplayCurrency: mockSetDisplayCurrency,
+    supportedCurrencies: mockSupportedCurrencies,
     formatDisplayPrice: (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} FCFA`,
   }),
 }));
@@ -75,6 +77,7 @@ beforeEach(() => {
   mockPush.mockClear();
   mockSetDisplayCurrency.mockClear();
   mockDisplayCurrency = 'XAF';
+  mockSupportedCurrencies = ['XAF', 'EUR', 'USD'];
   mockLocale = 'fr-FR';
   localStorageStore = {};
 
@@ -164,6 +167,13 @@ describe('ClientSettings', () => {
     expect(screen.getByText(/FCFA/)).toBeInTheDocument();
     expect(screen.getByText(/^EUR$/)).toBeInTheDocument();
     expect(screen.getByText(/^USD$/)).toBeInTheDocument();
+  });
+
+  it('hides the currency choice when the restaurant supports a single currency', () => {
+    mockSupportedCurrencies = ['XAF'];
+    renderSettings();
+    expect(screen.queryByText(/^EUR$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^USD$/)).not.toBeInTheDocument();
   });
 
   it('defaults to XAF/XOF when no stored preference', () => {

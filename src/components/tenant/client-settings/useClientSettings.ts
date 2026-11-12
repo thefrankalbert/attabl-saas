@@ -13,7 +13,7 @@ const NOTIF_PREF_KEY = 'attabl_notif_pref';
 
 export function useClientSettings(tenantSlug: string) {
   const router = useRouter();
-  const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
+  const { displayCurrency, setDisplayCurrency, supportedCurrencies } = useDisplayCurrency();
 
   // Notifications
   const notificationsSupported = useSyncExternalStore(
@@ -126,6 +126,7 @@ export function useClientSettings(tenantSlug: string) {
 
   return {
     displayCurrency,
+    supportedCurrencies,
     notificationsSupported,
     notificationsEnabled,
     orderCount,

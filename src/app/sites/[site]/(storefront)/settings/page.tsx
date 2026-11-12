@@ -33,7 +33,6 @@ export default async function SettingsPage({ params }: { params: Promise<{ site:
       isOpen={isOpen}
       todayHours={todayHours}
       currency={tenant.currency || 'XAF'}
-      supportedCurrencies={(tenant.supported_currencies as string[]) || [tenant.currency || 'XAF']}
     />
   );
 }

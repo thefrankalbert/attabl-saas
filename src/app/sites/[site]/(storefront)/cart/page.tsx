@@ -394,9 +394,9 @@ export default function CartPage() {
           <div className="w-32 h-32 bg-[var(--color-surface-alt)] rounded-full flex items-center justify-center mb-6">
             <ShoppingBag className="w-16 h-16 text-[var(--color-ink-soft)]" strokeWidth={1.5} />
           </div>
-          <h2 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
+          <h1 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
             {t('emptyCart')}
-          </h2>
+          </h1>
           <p className="text-[13px] text-[var(--color-ink-muted)] text-center mb-8 max-w-[280px]">
             {t('emptyCartDesc')}
           </p>
@@ -435,9 +435,9 @@ export default function CartPage() {
           <div className="w-32 h-32 bg-[var(--color-surface-alt)] rounded-full flex items-center justify-center mb-6">
             <CirclePause className="w-16 h-16 text-[var(--color-ink-soft)]" strokeWidth={1.5} />
           </div>
-          <h2 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
+          <h1 className="text-[20px] font-bold text-[var(--color-ink)] mb-2 text-center">
             {t('orderingPaused')}
-          </h2>
+          </h1>
           <p className="text-[13px] text-[var(--color-ink-muted)] text-center mb-8 max-w-[280px]">
             {t('orderingPausedNotice')}
           </p>
