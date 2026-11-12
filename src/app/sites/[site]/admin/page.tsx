@@ -13,20 +13,27 @@ import type {
 import type { ServiceType } from '@/types/admin.types';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
-import { averagePaidTicket, isPaidOrder, orderGross, sumPaidRevenue } from '@/lib/orders/revenue';
+import {
+  averageLedgerTicket,
+  ledgerValue,
+  PAYMENT_STATUSES_WITH_MONEY,
+  sumLedgerNet,
+} from '@/lib/orders/revenue';
 
 export const dynamic = 'force-dynamic';
 
 type DayBucket = { date: string; revenue: number; count: number };
 
+type LedgerEntry = {
+  amount?: number | null;
+  status?: string | null;
+  created_at: string;
+  order_id?: string | null;
+};
+
 function buildBuckets(
-  orders: {
-    total?: number | null;
-    tip_amount?: number | null;
-    created_at: string;
-    status?: string;
-    payment_status?: string | null;
-  }[],
+  orders: { created_at: string }[],
+  payments: LedgerEntry[],
   days: number,
 ): DayBucket[] {
   const buckets: Record<string, DayBucket> = {};
@@ -39,9 +46,13 @@ function buildBuckets(
   for (const o of orders) {
     const key = o.created_at?.slice(0, 10);
     if (!key || !buckets[key]) continue;
-    // count = orders placed (all); revenue = only paid orders (single definition).
+    // count = orders placed (all).
     buckets[key].count += 1;
-    if (isPaidOrder(o)) buckets[key].revenue += orderGross(o);
+  }
+  for (const p of payments) {
+    // revenue = money received that day (ledger, src/lib/orders/revenue.ts).
+    const key = p.created_at?.slice(0, 10);
+    if (key && buckets[key]) buckets[key].revenue += ledgerValue(p);
   }
   return Object.values(buckets);
 }
@@ -49,13 +60,7 @@ function buildBuckets(
 type ChannelBucket = { date: string; surplace: number; emporter: number };
 
 function buildChannelBuckets(
-  orders: {
-    total?: number | null;
-    tip_amount?: number | null;
-    created_at: string;
-    service_type?: ServiceType | null;
-    payment_status?: string | null;
-  }[],
+  payments: Array<LedgerEntry & { orders?: { service_type?: ServiceType | null } | null }>,
   days: number,
 ): ChannelBucket[] {
   const buckets: Record<string, ChannelBucket> = {};
@@ -65,14 +70,14 @@ function buildChannelBuckets(
     const key = d.toISOString().slice(0, 10);
     buckets[key] = { date: key, surplace: 0, emporter: 0 };
   }
-  for (const o of orders) {
-    const key = o.created_at?.slice(0, 10);
+  for (const p of payments) {
+    const key = p.created_at?.slice(0, 10);
     if (!key || !buckets[key]) continue;
-    // Revenue split counts paid orders only (single revenue definition).
-    if (!isPaidOrder(o)) continue;
-    const amount = orderGross(o);
+    // Revenue split = money received that day, by the order's service mode.
+    const amount = ledgerValue(p);
+    const serviceType = p.orders?.service_type;
     // dine_in + room_service -> Sur place ; takeaway + delivery -> A emporter
-    const emporter = o.service_type === 'takeaway' || o.service_type === 'delivery';
+    const emporter = serviceType === 'takeaway' || serviceType === 'delivery';
     if (emporter) buckets[key].emporter += amount;
     else buckets[key].surplace += amount;
   }
@@ -151,6 +156,9 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       tablesRes,
       openSessionsRes,
       adminUserRes,
+      todayPaymentsRes,
+      yesterdayPaymentsRes,
+      quarterPaymentsRes,
     ] = await Promise.all([
       // Today's orders (stats)
       supabase
@@ -211,7 +219,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
            orders!inner(tenant_id, created_at, payment_status)`,
         )
         .eq('orders.tenant_id', tenant.id)
-        .eq('orders.payment_status', 'paid')
+        .in('orders.payment_status', [...PAYMENT_STATUSES_WITH_MONEY])
         .gte('orders.created_at', sevenDaysAgo.toISOString()),
 
       // Low stock alerts
@@ -249,24 +257,45 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
             .eq('tenant_id', tenant.id)
             .single()
         : Promise.resolve({ data: null as { full_name: string | null } | null }),
+
+      // Money received (payments ledger, owner decision C-041): today,
+      // yesterday, and the 90-day window for the charts.
+      supabase
+        .from('payments')
+        .select('order_id, amount, status, created_at')
+        .eq('tenant_id', tenant.id)
+        .gte('created_at', today.toISOString()),
+      supabase
+        .from('payments')
+        .select('order_id, amount, status, created_at')
+        .eq('tenant_id', tenant.id)
+        .gte('created_at', yesterday.toISOString())
+        .lt('created_at', today.toISOString()),
+      supabase
+        .from('payments')
+        .select('amount, status, created_at, orders(service_type)')
+        .eq('tenant_id', tenant.id)
+        .gte('created_at', ninetyDaysAgo.toISOString()),
     ]);
 
     userName = adminUserRes.data?.full_name || userName;
 
     // --- Today stats -------------------------------------
     const ordersData = ordersRes.data || [];
+    const todayPayments = todayPaymentsRes.data || [];
     initialStats = {
       ordersToday: ordersData.length,
-      // Revenue = paid orders only (single definition shared with the charts and RPCs).
-      revenueToday: sumPaidRevenue(ordersData),
-      avgTicketToday: averagePaidTicket(ordersData),
+      // Revenue = money received today (payments ledger, shared with the RPCs).
+      revenueToday: sumLedgerNet(todayPayments),
+      avgTicketToday: averageLedgerTicket(todayPayments),
       activeItems: itemsCountRes.count || 0,
       activeCards: venuesCountRes.count || 0,
     };
 
     // --- Trend -------------------------------------------
     const yesterdayOrders = yesterdayRes.data || [];
-    const yesterdayRevenue = sumPaidRevenue(yesterdayOrders);
+    const yesterdayPayments = yesterdayPaymentsRes.data || [];
+    const yesterdayRevenue = sumLedgerNet(yesterdayPayments);
     const yesterdayCount = yesterdayOrders.length;
     if (yesterdayCount > 0) {
       initialStats.ordersTrend = Math.round(
@@ -278,7 +307,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         ((initialStats.revenueToday - yesterdayRevenue) / yesterdayRevenue) * 100,
       );
     }
-    const yesterdayTicket = averagePaidTicket(yesterdayOrders);
+    const yesterdayTicket = averageLedgerTicket(yesterdayPayments);
     if (yesterdayTicket > 0) {
       initialStats.avgTicketTrend = Math.round(
         ((initialStats.avgTicketToday - yesterdayTicket) / yesterdayTicket) * 100,
@@ -286,14 +315,11 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     }
 
     // --- Chart buckets ----------------------------------
-    const quarterOrders = (quarterRes.data || []) as Array<{
-      total?: number | null;
-      tip_amount?: number | null;
-      created_at: string;
-      status?: string;
-      service_type?: ServiceType | null;
-    }>;
-    const dayBuckets90 = buildBuckets(quarterOrders, 90);
+    const quarterOrders = (quarterRes.data || []) as Array<{ created_at: string }>;
+    const quarterPayments = (quarterPaymentsRes.data || []) as unknown as Array<
+      LedgerEntry & { orders?: { service_type?: ServiceType | null } | null }
+    >;
+    const dayBuckets90 = buildBuckets(quarterOrders, quarterPayments, 90);
     const last7 = dayBuckets90.slice(-7);
     const last30 = dayBuckets90.slice(-30);
     initialBuckets = {
@@ -302,7 +328,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       quarter: dayBuckets90,
     };
 
-    const channelBuckets90 = buildChannelBuckets(quarterOrders, 90);
+    const channelBuckets90 = buildChannelBuckets(quarterPayments, 90);
     initialChannelBuckets = {
       week: channelBuckets90.slice(-7),
       month: channelBuckets90.slice(-30),

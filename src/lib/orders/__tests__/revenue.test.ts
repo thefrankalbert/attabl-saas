@@ -1,76 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { averagePaidTicket, isPaidOrder, orderGross, sumPaidRevenue } from '../revenue';
+import { averageLedgerTicket, ledgerValue, sumLedgerNet } from '../revenue';
 
-describe('orders/revenue', () => {
-  describe('isPaidOrder', () => {
-    it('is true only for payment_status="paid"', () => {
-      expect(isPaidOrder({ payment_status: 'paid' })).toBe(true);
-      expect(isPaidOrder({ payment_status: 'pending' })).toBe(false);
-      expect(isPaidOrder({ payment_status: 'refunded' })).toBe(false);
-      expect(isPaidOrder({ payment_status: null })).toBe(false);
-      expect(isPaidOrder({})).toBe(false);
-    });
+describe('revenue (payments ledger)', () => {
+  it('adds received rows and subtracts refunds', () => {
+    expect(ledgerValue({ amount: 3500, status: 'completed' })).toBe(3500);
+    expect(ledgerValue({ amount: 1000, status: 'refunded' })).toBe(-1000);
+    expect(ledgerValue({})).toBe(0);
   });
 
-  describe('orderGross', () => {
-    it('sums total + tip, tolerating null/undefined', () => {
-      expect(orderGross({ total: 1000, tip_amount: 200 })).toBe(1200);
-      expect(orderGross({ total: 1000 })).toBe(1000);
-      expect(orderGross({ total: null, tip_amount: null })).toBe(0);
-      expect(orderGross({})).toBe(0);
-    });
+  it('reproduces audit C-041: 3 500 - 1 000 + 6 500 = 9 000', () => {
+    const rows = [
+      { order_id: 'a', amount: 3500, status: 'completed' },
+      { order_id: 'a', amount: 1000, status: 'refunded' },
+      { order_id: 'b', amount: 6500, status: 'completed' },
+    ];
+    expect(sumLedgerNet(rows)).toBe(9000);
   });
 
-  describe('sumPaidRevenue', () => {
-    it('counts only paid orders, gross of tip', () => {
-      const orders = [
-        { payment_status: 'paid', total: 1000, tip_amount: 100 }, // 1100
-        { payment_status: 'pending', total: 5000, tip_amount: 500 }, // excluded
-        { payment_status: 'paid', total: 2000, tip_amount: 0 }, // 2000
-        { payment_status: 'refunded', total: 9000, tip_amount: 0 }, // excluded
-      ];
-      expect(sumPaidRevenue(orders)).toBe(3100);
-    });
-
-    it('returns 0 for an empty list or all-unpaid', () => {
-      expect(sumPaidRevenue([])).toBe(0);
-      expect(sumPaidRevenue([{ payment_status: 'pending', total: 1000 }])).toBe(0);
-    });
-
-    it('sums EUR minor-unit amounts as exact integers (no major re-rounding)', () => {
-      // EUR amounts are stored in minor units: 12.50 EUR -> total 1250, tip 0.50 -> 50.
-      // orderGross/sumPaidRevenue stay in minor integers; the caller converts for display.
-      expect(orderGross({ total: 1250, tip_amount: 50 })).toBe(1300);
-      const orders = [
-        { payment_status: 'paid', total: 1250, tip_amount: 50 }, // 1300 (13.00 EUR)
-        { payment_status: 'paid', total: 999, tip_amount: 1 }, // 1000 (10.00 EUR)
-        { payment_status: 'pending', total: 5000, tip_amount: 0 }, // excluded
-      ];
-      expect(sumPaidRevenue(orders)).toBe(2300); // 23.00 EUR in minor units
-    });
+  it('counts a deposit on an open table', () => {
+    expect(sumLedgerNet([{ amount: 500, status: 'completed' }])).toBe(500);
   });
 
-  describe('averagePaidTicket', () => {
-    it('divides paid revenue by PAID orders only (1 paid of 1000 among 3 -> 1000, not 333)', () => {
-      const orders = [
-        { payment_status: 'paid', total: 1000, tip_amount: 0 },
-        { payment_status: 'pending', total: 1000, tip_amount: 0 },
-        { payment_status: 'pending', total: 1000, tip_amount: 0 },
-      ];
-      expect(averagePaidTicket(orders)).toBe(1000);
-    });
-
-    it('averages gross (tip included) and rounds to a minor-unit integer', () => {
-      const orders = [
-        { payment_status: 'paid', total: 1000, tip_amount: 1 },
-        { payment_status: 'paid', total: 2000, tip_amount: 0 },
-      ];
-      expect(averagePaidTicket(orders)).toBe(1501); // 3001 / 2 = 1500.5
-    });
-
-    it('returns 0 when no order is paid', () => {
-      expect(averagePaidTicket([])).toBe(0);
-      expect(averagePaidTicket([{ payment_status: 'pending', total: 1000 }])).toBe(0);
-    });
+  it('counts one ticket per order, not per tender', () => {
+    const rows = [
+      { order_id: 'a', amount: 2000, status: 'completed' },
+      { order_id: 'a', amount: 1000, status: 'completed' },
+      { order_id: 'b', amount: 3000, status: 'completed' },
+    ];
+    expect(averageLedgerTicket(rows)).toBe(3000);
+    expect(averageLedgerTicket([])).toBe(0);
   });
 });
