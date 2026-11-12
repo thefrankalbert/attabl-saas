@@ -45,17 +45,14 @@ function getStripePricesInstance(): StripePriceMap {
     _stripePricesInstance = {
       starter: {
         monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY'),
-        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_SEMIANNUAL'),
         yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEARLY'),
       },
       pro: {
         monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY'),
-        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_SEMIANNUAL'),
         yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY'),
       },
       business: {
         monthly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_MONTHLY'),
-        semiannual: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_SEMIANNUAL'),
         yearly: requireEnv('NEXT_PUBLIC_STRIPE_PRICE_BUSINESS_YEARLY'),
       },
     };

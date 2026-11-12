@@ -10,7 +10,7 @@ ATTABL est un SaaS multi-tenant B2B permettant aux restaurants et hotels de cree
 - **Langage** : TypeScript 5 (mode strict active)
 - **Base de donnees** : Supabase (PostgreSQL) - requetes directes via SDK
 - **Auth** : Supabase Auth (email/password + OAuth Google/Azure)
-- **Paiements** : Stripe (abonnements mensuels/semestriels/annuels, plans Starter, Pro, Business, Enterprise)
+- **Paiements** : Stripe (abonnements mensuels/annuels, plans Starter, Pro, Business, Enterprise)
 - **UI** : Tailwind CSS v4 + Radix UI + shadcn/ui
 - **Formulaires** : React Hook Form + Zod
 - **Deploiement** : Vercel

@@ -99,7 +99,6 @@ export function CurrentPlanPanel({
   const chargeSuffix: Record<BillingInterval, string> = {
     monthly: t('subscription.perMonth'),
     yearly: t('subscription.perYear'),
-    semiannual: t('subscription.perSemiannual'),
   };
 
   return (

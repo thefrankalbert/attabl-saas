@@ -15,11 +15,6 @@ import { FaqSection } from './_components/FaqSection';
 export default function PricingPage() {
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
-  // Le semestriel n'est plus propose sur la page publique (decision produit du
-  // 2026-11-06): le selecteur n'offre que Mensuel et Annuel. La periode reste
-  // supportee par la facturation et par Stripe pour les abonnes qui l'ont
-  // deja - on ne retire que le CHOIX offert aux visiteurs.
-  //
   // La page ne lit plus de variante A/B: l'experimentation sur ce selecteur est
   // arretee. L'appel ci-dessous reste necessaire pour poser le cookie de la
   // duree d'essai, que l'inscription lit ensuite.

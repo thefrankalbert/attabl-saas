@@ -3,8 +3,8 @@
 //   trial:  7d vs 14d trial length (controls trial_ends_at at signup)
 //
 // L'experimentation `toggle` (2 ou 3 positions sur le selecteur de periode de
-// la page des tarifs) a ete ARRETEE le 2026-11-06: le semestriel ne figure
-// plus sur la page publique, decision produit. Son cookie n'est plus ni lu ni
+// la page des tarifs) a ete ARRETEE le 2026-11-06: ATTABL ne propose plus que
+// le mensuel et l'annuel, decision produit. Son cookie n'est plus ni lu ni
 // ecrit, donc un visiteur qui en porte encore un ne voit plus rien de
 // different - le cookie expire tout seul au bout de 60 jours.
 //

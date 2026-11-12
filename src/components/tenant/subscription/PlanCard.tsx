@@ -44,9 +44,7 @@ export function PlanCard({
   const subtitle = (() => {
     if (billingInterval === 'monthly') return null;
     const total = planBilledTotal(plan, billingInterval).toLocaleString(locale);
-    return billingInterval === 'yearly'
-      ? t('subscription.billedYearly', { total })
-      : t('subscription.billedSemiannual', { total });
+    return t('subscription.billedYearly', { total });
   })();
 
   return (

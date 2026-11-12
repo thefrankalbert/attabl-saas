@@ -15,7 +15,7 @@ import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/ty
  */
 
 const VALID_PLANS: readonly SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
-const VALID_INTERVALS: readonly BillingInterval[] = ['monthly', 'semiannual', 'yearly'];
+const VALID_INTERVALS: readonly BillingInterval[] = ['monthly', 'yearly'];
 
 export function isValidPlan(value: string | undefined): value is SubscriptionPlan {
   return !!value && (VALID_PLANS as readonly string[]).includes(value);
@@ -32,11 +32,7 @@ export function detectBillingInterval(subscription: Stripe.Subscription): Billin
   const item = subscription.items?.data?.[0];
   if (!item?.plan) return 'monthly';
 
-  const interval = item.plan.interval;
-  const intervalCount = item.plan.interval_count;
-
-  if (interval === 'year') return 'yearly';
-  if (interval === 'month' && intervalCount === 6) return 'semiannual';
+  if (item.plan.interval === 'year') return 'yearly';
   return 'monthly';
 }
 

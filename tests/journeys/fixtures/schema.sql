@@ -1946,7 +1946,7 @@ CREATE TABLE IF NOT EXISTS "public"."tenants" (
     "suspended_at" timestamp with time zone,
     "suspended_by" "uuid",
     "suspend_reason" "text",
-    CONSTRAINT "tenants_billing_interval_check" CHECK (("billing_interval" = ANY (ARRAY['monthly'::"text", 'semiannual'::"text", 'yearly'::"text"]))),
+    CONSTRAINT "tenants_billing_interval_check" CHECK (("billing_interval" = ANY (ARRAY['monthly'::"text", 'yearly'::"text"]))),
     CONSTRAINT "tenants_currency_check" CHECK ((("currency")::"text" = ANY ((ARRAY['XAF'::character varying, 'XOF'::character varying, 'EUR'::character varying, 'USD'::character varying])::"text"[]))),
     CONSTRAINT "tenants_screen_lock_mode_check" CHECK (("screen_lock_mode" = ANY (ARRAY['overlay'::"text", 'password'::"text"]))),
     CONSTRAINT "tenants_service_charge_rate_check" CHECK ((("service_charge_rate" >= (0)::numeric) AND ("service_charge_rate" <= (100)::numeric))),

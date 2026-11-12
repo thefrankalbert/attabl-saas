@@ -14,7 +14,7 @@ import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
 
 const VALID_PLANS: SelfServicePlan[] = ['starter', 'pro', 'business'];
-const VALID_INTERVALS: BillingInterval[] = ['monthly', 'yearly', 'semiannual'];
+const VALID_INTERVALS: BillingInterval[] = ['monthly', 'yearly'];
 
 function isValidPlan(value: string | null): value is SelfServicePlan {
   return VALID_PLANS.includes(value as SelfServicePlan);

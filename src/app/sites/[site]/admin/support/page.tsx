@@ -66,7 +66,7 @@ const QUICK_LINKS = [
   {
     icon: CreditCard,
     title: 'Abonnement & Facturation',
-    description: 'Plans Starter, Pro et Business. Facturation mensuelle, semestrielle ou annuelle.',
+    description: 'Plans Starter, Pro et Business. Facturation mensuelle ou annuelle.',
     href: '#',
   },
 ];

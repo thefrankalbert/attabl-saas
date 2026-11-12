@@ -55,20 +55,15 @@ export function CheckoutLeftPanel({ plan, interval }: CheckoutLeftPanelProps) {
   const intervalLabel: Record<BillingInterval, string> = {
     monthly: tc('page.monthly'),
     yearly: tc('page.yearly'),
-    semiannual: tc('page.semiannual'),
   };
 
   const savings = intervalSavingsPct(interval);
   const billedSubtitle =
     interval === 'monthly'
       ? null
-      : interval === 'yearly'
-        ? t('subscription.billedYearly', {
-            total: planBilledTotal(plan, interval).toLocaleString(locale),
-          })
-        : t('subscription.billedSemiannual', {
-            total: planBilledTotal(plan, interval).toLocaleString(locale),
-          });
+      : t('subscription.billedYearly', {
+          total: planBilledTotal(plan, interval).toLocaleString(locale),
+        });
 
   return (
     <div className="flex flex-col bg-[#0a0a0a] text-[#f5f5f4] p-8 md:p-12 md:w-[42%] shrink-0 overflow-hidden">

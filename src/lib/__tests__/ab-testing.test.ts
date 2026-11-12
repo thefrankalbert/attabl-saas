@@ -88,8 +88,8 @@ describe('parseAbTrialFromCookieHeader', () => {
 
 describe('getAbVariantsServerSnapshot', () => {
   it('returns the default 14d trial', () => {
-    // L'experimentation `toggle` a ete retiree le 2026-11-06 en meme temps que
-    // le semestriel sur la page publique des tarifs.
+    // L'experimentation `toggle` a ete retiree le 2026-11-06 avec la periode
+    // semestrielle, que ATTABL ne propose plus.
     expect(getAbVariantsServerSnapshot()).toEqual({ trial: '14d' });
   });
 

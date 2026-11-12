@@ -31,7 +31,7 @@ const FAQ_ITEMS = [
   {
     question: 'Comment changer mon abonnement ?',
     answer:
-      'Accédez à "Abonnement" depuis le menu de votre compte (en bas de la barre latérale). Vous pouvez passer du plan Starter au plan Pro ou Business, ou basculer entre facturation mensuelle, semestrielle et annuelle. Le changement prend effet immédiatement.',
+      'Accédez à "Abonnement" depuis le menu de votre compte (en bas de la barre latérale). Vous pouvez passer du plan Starter au plan Pro ou Business, ou basculer entre facturation mensuelle et annuelle. Le changement prend effet immédiatement.',
   },
   {
     question: 'Comment gérer les commandes en temps réel ?',

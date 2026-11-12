@@ -17,19 +17,17 @@ import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 type Plan = Exclude<SubscriptionPlan, 'enterprise'>;
 
 const PLANS: Plan[] = ['starter', 'pro', 'business'];
-const INTERVALLES: BillingInterval[] = ['monthly', 'semiannual', 'yearly'];
+const INTERVALLES: BillingInterval[] = ['monthly', 'yearly'];
 
 /** Nombre de mois factures d'un coup, par periodicite. */
 const MOIS_PAR_INTERVALLE: Record<BillingInterval, number> = {
   monthly: 1,
-  semiannual: 6,
   yearly: 12,
 };
 
 /** Remise annoncee sur la page de tarifs, par periodicite. */
 const REMISE: Record<BillingInterval, number> = {
   monthly: 0,
-  semiannual: 0.15,
   yearly: 0.2,
 };
 
@@ -62,9 +60,8 @@ describe('grille tarifaire', () => {
   });
 
   it.each(PLANS)('%s : engager plus longtemps ne coute jamais plus cher au mois', (plan) => {
-    const { monthly, semiannual, yearly } = PLAN_AMOUNTS[plan];
-    expect(semiannual).toBeLessThan(monthly);
-    expect(yearly).toBeLessThan(semiannual);
+    const { monthly, yearly } = PLAN_AMOUNTS[plan];
+    expect(yearly).toBeLessThan(monthly);
   });
 
   it('un plan superieur coute plus cher, a periodicite egale', () => {

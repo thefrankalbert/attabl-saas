@@ -12,8 +12,8 @@ interface BillingIntervalToggleProps {
 }
 
 /**
- * Segmented control for the billing interval. The yearly / semiannual options
- * surface their savings as a semantic success badge instead of baking "-20%"
+ * Segmented control for the billing interval. The yearly option
+ * surfaces its savings as a semantic success badge instead of baking "-20%"
  * into the label text.
  */
 export function BillingIntervalToggle({ value, onChange }: BillingIntervalToggleProps) {
@@ -22,7 +22,6 @@ export function BillingIntervalToggle({ value, onChange }: BillingIntervalToggle
   const label: Record<BillingInterval, string> = {
     monthly: t('subscription.monthly'),
     yearly: t('subscription.yearly'),
-    semiannual: t('subscription.semiannual'),
   };
 
   return (
