@@ -152,7 +152,12 @@ export async function POST(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
     const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
 
-    await sendWelcomeConfirmationEmail(email, { confirmationUrl });
+    // C-032: la reponse reste identique dans tous les cas (ne pas reveler si un
+    // compte existe), mais un envoi rate ne doit plus passer inapercu.
+    const delivered = await sendWelcomeConfirmationEmail(email, { confirmationUrl });
+    if (!delivered) {
+      logger.error('Resend confirmation: email not delivered', { emailHash: hashEmail(email) });
+    }
 
     return NextResponse.json({ success: true, message: SAFE_MSG });
   } catch (error) {
