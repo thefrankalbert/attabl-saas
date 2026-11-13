@@ -25,6 +25,26 @@ import {
  * essai bientot termine.
  */
 
+/**
+ * Intrusion M-02: l'evenement concerne-t-il un AUTRE abonnement que celui du
+ * restaurant ?
+ *
+ * Le restaurant etait retrouve par son client Stripe seul. Un evenement tardif
+ * d'un ancien abonnement, ou d'un abonnement en double sur le meme client,
+ * ecrivait donc l'etat du restaurant: la suppression de l'ancien gelait un
+ * restaurant qui paie. Un restaurant sans abonnement enregistre (`null`)
+ * accepte l'evenement: c'est le cas du tout premier, avant que
+ * `checkout.session.completed` n'ecrive l'identifiant. Quand l'identifiant
+ * differe, `checkout.session.completed` reste le seul a pouvoir le remplacer,
+ * et il relit lui-meme l'etat chez Stripe.
+ */
+function concerneUnAutreAbonnement(
+  tenant: { stripe_subscription_id?: string | null },
+  subscriptionId: string,
+): boolean {
+  return Boolean(tenant.stripe_subscription_id) && tenant.stripe_subscription_id !== subscriptionId;
+}
+
 export async function handleSubscriptionUpdated(
   { supabase, stripe }: StripeWebhookDeps,
   subscription: Stripe.Subscription,
@@ -36,13 +56,14 @@ export async function handleSubscriptionUpdated(
   // defaits par un evenement Stripe). CTR7-2: `freeze_reason`, pour ne
   // pas ecraser la cause d'un gel deja en place.
   const { data: tenant, error: tenantError } = await selectTolerantToMissingFreezeReason(
-    'id, subscription_status, subscription_plan, billing_interval, suspended_at, deleted_at, freeze_reason',
+    'id, subscription_status, subscription_plan, billing_interval, stripe_subscription_id, suspended_at, deleted_at, freeze_reason',
     (columns) =>
       supabase.from('tenants').select(columns).eq('stripe_customer_id', customerId).single<{
         id: string;
         subscription_status: string | null;
         subscription_plan: string | null;
         billing_interval: string | null;
+        stripe_subscription_id?: string | null;
         suspended_at?: string | null;
         deleted_at?: string | null;
         freeze_reason?: string | null;
@@ -52,6 +73,14 @@ export async function handleSubscriptionUpdated(
 
   if (tenantError || !tenant) {
     logger.warn('Subscription updated: tenant not found', { customerId });
+    return;
+  }
+
+  if (concerneUnAutreAbonnement(tenant, subscription.id)) {
+    logger.warn('subscription.updated ignore: ce n est pas l abonnement courant du restaurant', {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+    });
     return;
   }
 
@@ -217,12 +246,20 @@ export async function handleSubscriptionDeleted(
   // Geler le tenant
   const { data: tenant, error: tenantDeleteError } = await supabase
     .from('tenants')
-    .select('id, subscription_status')
+    .select('id, subscription_status, stripe_subscription_id')
     .eq('stripe_customer_id', customerId)
     .single();
 
   if (tenantDeleteError || !tenant) {
     logger.warn('Subscription deleted: tenant not found', { customerId });
+    return;
+  }
+
+  if (concerneUnAutreAbonnement(tenant, subscription.id)) {
+    logger.warn('subscription.deleted ignore: ce n est pas l abonnement courant du restaurant', {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+    });
     return;
   }
 
@@ -240,6 +277,10 @@ export async function handleSubscriptionDeleted(
       is_active: false,
       // La cause du gel: un litige gagne ne doit pas lever CE gel-la.
       freeze_reason: FREEZE_REASONS.SUBSCRIPTION_DELETED,
+      // L'abonnement n'existe plus: son identifiant ne doit pas rester. Avec la
+      // garde M-02, un identifiant perime ferait ignorer a vie les evenements
+      // d'un abonnement recree hors du parcours de paiement.
+      stripe_subscription_id: null,
     },
     (payload) => supabase.from('tenants').update(payload).eq('id', tenant.id),
     { tenantId: tenant.id, handler: 'customer.subscription.deleted' },

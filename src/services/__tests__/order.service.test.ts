@@ -623,6 +623,96 @@ describe('OrderService', () => {
     });
   });
 
+  describe('libelles verifies serveur (intrusion P-01)', () => {
+    it('enregistre le nom de la carte, pas celui envoye par le client', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Eau', name_en: 'Water', price: 500, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [{ id: 'mod-1', menu_item_id: 'item-1', name: 'Glacons', price: 0 }],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [{ id: 'var-1', menu_item_id: 'item-1', variant_name_fr: 'Petite', price: 500 }],
+        error: null,
+      });
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: 'CMD-1', error: null })
+        .mockResolvedValueOnce({
+          data: { orderId: 'order-1', orderNumber: 'CMD-1', total: 500 },
+          error: null,
+        });
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = rpc;
+
+      const service = createOrderService(asSupabase(supabase));
+      // Le convive paie l'eau mais envoie des libelles forges.
+      const items = [
+        {
+          id: 'item-1',
+          name: 'COTE DE BOEUF 1KG',
+          name_en: 'RIBEYE',
+          price: 500,
+          quantity: 1,
+          modifiers: [{ id: 'mod-1', name: 'DOUBLE PORTION', price: 15000 }],
+          selectedVariant: { id: 'var-1', name_fr: 'GRAND FORMAT', price: 500 },
+        },
+      ] as OrderItemInput[];
+
+      const { verifiedPrices, verifiedLabels } = await service.validateOrderItems(
+        'tenant-123',
+        items,
+      );
+      await service.createOrderWithItems({
+        tenantId: 'tenant-123',
+        items,
+        total: 500,
+        display_currency: 'XAF',
+        verifiedPrices,
+        verifiedLabels,
+      });
+
+      const sent = rpc.mock.calls.at(-1)?.[1] as { p_items: Record<string, unknown>[] };
+      expect(sent.p_items[0]).toMatchObject({
+        item_name: 'Eau',
+        item_name_en: 'Water',
+        customer_notes: 'Petite',
+        modifiers: [{ id: 'mod-1', name: 'Glacons', price: 0 }],
+      });
+      expect(JSON.stringify(sent.p_items)).not.toMatch(/BOEUF|DOUBLE PORTION|GRAND FORMAT|15000/);
+    });
+
+    it('refuse un supplement retire de la vente', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [
+          { id: 'mod-1', menu_item_id: 'item-1', name: 'Truffe', price: 3, is_available: false },
+        ],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({ data: [], error: null });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+          modifiers: [{ id: 'mod-1', name: 'Truffe', price: 3 }],
+        },
+      ] as OrderItemInput[];
+
+      await expect(service.validateOrderItems('tenant-123', items)).rejects.toThrow();
+    });
+  });
+
   describe('createOrderWithItems (idempotency key)', () => {
     it('forwards the client_request_id to the create RPC', async () => {
       const supabase = createMockSupabase();

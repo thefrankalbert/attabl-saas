@@ -103,9 +103,11 @@ describe('restaurant-group.service', () => {
     it('throws INTERNAL on a generic RPC error', async () => {
       const supabase = createMockSupabase({ addRestaurantError: 'generic' });
       const service = createRestaurantGroupService(supabase);
-      await expect(service.addRestaurantToGroup(validInput)).rejects.toThrow(
-        'Tenant insert failed',
-      );
+      // Le message de la base ('Tenant insert failed') ne part plus vers le
+      // client: il reste dans `details`, le texte renvoye est neutre.
+      const erreur = await service.addRestaurantToGroup(validInput).catch((e: unknown) => e);
+      expect(erreur).toMatchObject({ code: 'INTERNAL' });
+      expect((erreur as Error).message).not.toContain('Tenant insert failed');
     });
 
     it('throws CONFLICT (RESTAURANT_NAME_TAKEN) when the name is used by another group', async () => {

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
+import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import type { Order, ItemStatus, Course, CurrencyCode } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ interface PageProps {
 
 export default async function SingleOrderPage({ params }: PageProps) {
   const { site, id } = await params;
+  await requireAdminPermission(site, 'orders.view');
 
   // Resolve tenant from site slug to scope the query
   const tenant = await getTenant(site);

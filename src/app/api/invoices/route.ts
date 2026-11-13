@@ -55,6 +55,8 @@ export async function GET(request: Request) {
       .select('role')
       .eq('user_id', user.id)
       .eq('tenant_id', tenantCtx.id)
+      // Un membre desactive ne lit plus les factures.
+      .eq('is_active', true)
       .maybeSingle();
 
     if (!adminUser) {

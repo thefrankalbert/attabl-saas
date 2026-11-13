@@ -85,9 +85,10 @@ function createMockSupabase(overrides?: {
     error: null,
   };
 
-  // Chain: .select().eq('user_id').eq('tenant_id').maybeSingle()
+  // Chain: .select().eq('user_id').eq('tenant_id').eq('is_active').maybeSingle()
   const mockMaybeSingle = vi.fn().mockResolvedValue(adminUserResult);
-  const mockEqTenant = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+  const mockEqActive = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+  const mockEqTenant = vi.fn().mockReturnValue({ eq: mockEqActive });
   const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqTenant });
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
 

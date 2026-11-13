@@ -1,0 +1,22 @@
+# Mises a jour automatiques des dependances.
+# Une seule proposition groupee par semaine pour les correctifs et versions
+# mineures; les versions majeures restent des propositions separees, a relire.
+# Les alertes de securite ouvrent une proposition immediatement, hors calendrier.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      mineures-et-correctifs:
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2

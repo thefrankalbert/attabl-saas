@@ -51,6 +51,9 @@ export async function POST(request: Request) {
       .select('role, tenants(slug)')
       .eq('user_id', user.id)
       .eq('tenant_id', tenantCtx.id)
+      // Un membre desactive garde sa session: sans ce filtre il ouvrait encore
+      // le portail Stripe (resiliation, carte, factures).
+      .eq('is_active', true)
       .maybeSingle();
 
     // RBAC: managing billing is owner/admin only.

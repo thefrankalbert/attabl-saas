@@ -5,6 +5,11 @@ import { bulkImportMenuRows, type MenuBulkImportRow } from '@/lib/menu-bulk-impo
 
 // --- Types ----------------------------------------------------
 
+/** Plafond de lignes retenues d'un import par IA. */
+const MAX_EXTRACTED_ITEMS = 500;
+/** Au-dela, la colonne numeric(10,2) refuse la ligne et tout l'import echoue. */
+const MAX_EXTRACTED_PRICE = 99_999_999;
+
 export interface PdfExtractedItem {
   category: string;
   name: string;
@@ -116,7 +121,8 @@ export function createPdfImportService(supabase: SupabaseClient): PdfImportServi
 
       // Call Claude API for structured extraction
       const { default: Anthropic } = await import('@anthropic-ai/sdk');
-      const anthropic = new Anthropic({ apiKey });
+      // Le SDK attend 10 minutes par defaut: on borne a 60 s, une seule relance.
+      const anthropic = new Anthropic({ apiKey, timeout: 60_000, maxRetries: 1 });
 
       const prompt = `You are a menu data extraction assistant. Extract all menu items from the following restaurant menu text.
 
@@ -199,7 +205,18 @@ ${pdfText.substring(0, 15000)}
         // Skip items without a name or category
         if (!name || !category) continue;
 
-        items.push({ category, name, description, price });
+        // La sortie du modele n'est pas une entree de confiance: un PDF peut
+        // contenir des instructions. Longueurs et prix sont bornes ici, donc
+        // sur les deux chemins d'import (apercu puis import, ou import direct).
+        if (!Number.isFinite(price) || price < 0 || price > MAX_EXTRACTED_PRICE) price = 0;
+        if (items.length >= MAX_EXTRACTED_ITEMS) break;
+
+        items.push({
+          category: category.slice(0, 100),
+          name: name.slice(0, 200),
+          description: description ? description.slice(0, 1000) : null,
+          price,
+        });
       }
 
       logger.info('PDF extraction completed', {

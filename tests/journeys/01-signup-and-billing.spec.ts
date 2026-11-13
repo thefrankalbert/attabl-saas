@@ -86,7 +86,11 @@ test.describe.serial('01 - Signup & Billing', () => {
     const ctx = await loginPersona(OWNER);
     const res = await ctx.post('/api/create-checkout-session', {
       data: { plan: 'starter', billingInterval: 'monthly' },
-      headers: { 'x-tenant-slug': ownerTenantSlug },
+      // Le proxy supprime tout `x-tenant-slug` envoye par un client (anti
+      // usurpation): le restaurant vise se deduit de la page d'origine, comme
+      // dans un vrai navigateur. Le Referer par defaut du banc pointe sur le
+      // restaurant seede, pas sur celui que le signup vient de creer.
+      headers: { referer: `${journeyEnv.baseURL}/sites/${ownerTenantSlug}/admin/subscription` },
     });
     expect(res.ok(), `create-checkout-session: ${res.status()}`).toBeTruthy();
     const body = await res.json();

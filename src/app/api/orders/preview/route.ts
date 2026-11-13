@@ -67,7 +67,11 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
-        { error: error.message, details: error.details },
+        // `details` d'une erreur interne porte l'erreur brute de la base.
+        {
+          error: error.message,
+          ...(error.code === 'VALIDATION' ? { details: error.details } : {}),
+        },
         { status: serviceErrorToStatus(error.code) },
       );
     }

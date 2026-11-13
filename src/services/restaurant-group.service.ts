@@ -93,7 +93,9 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
         if (isTenantNameConflictError(error)) {
           throw new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT', error);
         }
-        throw new ServiceError(`Erreur création restaurant: ${error.message}`, 'INTERNAL', error);
+        // Le message de la base (contraintes, colonnes) reste dans `details`,
+        // jamais dans le texte renvoye au client.
+        throw new ServiceError('Erreur lors de la creation du restaurant', 'INTERNAL', error);
       }
 
       const result = data as { tenantId?: string; slug?: string } | null;

@@ -5,6 +5,7 @@ import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
+import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { readOnboardingSiteParam } from '@/lib/validations/onboarding.schema';
 
 /** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
@@ -90,6 +91,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Destination d'envoi inconnue." }, { status: 400 });
     }
 
+    // Etre membre ne suffit pas: sans ce controle, un serveur ou un chef pouvait
+    // remplacer (donc supprimer) le logo et les photos de la carte. Le bucket
+    // `logos` ne recoit que le logo (reglages). Le bucket `menu-items` recoit
+    // les photos de plats ET le logo envoye depuis la page Reglages: l'un ou
+    // l'autre des deux droits y suffit.
+    const admin = createAdminClient();
+    const droits =
+      bucket === 'logos' ? (['settings.edit'] as const) : (['menu.edit', 'settings.edit'] as const);
+    let peutEnvoyer = false;
+    for (const droit of droits) {
+      const { allowed: accorde } = await resolveAdminPermission(
+        admin,
+        session.userId,
+        session.adminUser.tenant_id,
+        droit,
+      );
+      if (accorde) {
+        peutEnvoyer = true;
+        break;
+      }
+    }
+    if (!peutEnvoyer) {
+      return NextResponse.json(
+        { error: "Votre role ne permet pas d'envoyer cette image." },
+        { status: 403 },
+      );
+    }
+
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'Image trop lourde (5 Mo maximum).' }, { status: 400 });
@@ -108,8 +137,6 @@ export async function POST(request: Request) {
     // Scope uploads to tenant directory for isolation
     const fileName = `${session.adminUser.tenant_id}/${crypto.randomUUID()}_${Date.now()}.${ext}`;
 
-    // Use admin client to bypass RLS
-    const admin = createAdminClient();
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Validate magic bytes to prevent Content-Type spoofing (stored XSS prevention)

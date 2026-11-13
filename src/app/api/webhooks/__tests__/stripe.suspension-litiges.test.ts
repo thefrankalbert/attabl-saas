@@ -196,8 +196,12 @@ function checkoutEvent(): Stripe.Event {
   });
 }
 
-function subscriptionUpdatedEvent(status: string): Stripe.Event {
+// Un vrai evenement porte toujours l'identifiant de l'abonnement. Il est celui
+// des restaurants de ce fichier: un evenement d'un AUTRE abonnement est ignore
+// (intrusion M-02, couvert dans stripe.test.ts).
+function subscriptionUpdatedEvent(status: string, subscriptionId = 'sub_old'): Stripe.Event {
   return makeStripeEvent('customer.subscription.updated', {
+    id: subscriptionId,
     customer: 'cus_1',
     status,
     items: { data: [] },
@@ -707,7 +711,7 @@ describe('CTR7-4 - etats de litige bloquants et coherence des trois gestionnaire
     const chain = setupMock({ tenant: frozenForDispute() });
     mockChargesList.mockResolvedValue({ data: [{ id: 'ch_1', disputed: true }] });
     mockDisputesList.mockResolvedValue({ data: [{ id: 'dp_9', status: 'needs_response' }] });
-    mockConstructEvent.mockReturnValue(subscriptionUpdatedEvent('active'));
+    mockConstructEvent.mockReturnValue(subscriptionUpdatedEvent('active', 'sub_1'));
 
     const response = await POST(makeRequest());
     expect(response.status).toBe(200);
@@ -787,6 +791,7 @@ describe('RES-2 - PGRST204 est traite comme 42703 (colonne absente)', () => {
     expect(chain.updatePayloads[1]).toEqual({
       subscription_status: 'frozen',
       is_active: false,
+      stripe_subscription_id: null,
     });
   });
 

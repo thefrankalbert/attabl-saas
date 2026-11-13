@@ -16,6 +16,10 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIp: () => '127.0.0.1',
 }));
 vi.mock('@/lib/csrf', () => ({ verifyOrigin: () => null }));
+const resolveAdminPermission = vi.fn(async () => ({ allowed: true }));
+vi.mock('@/lib/auth/resolve-admin-permission', () => ({
+  resolveAdminPermission: () => resolveAdminPermission(),
+}));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
@@ -88,6 +92,14 @@ describe('POST /api/upload - choix de l etablissement', () => {
     expect(resolve).toHaveBeenLastCalledWith(
       expect.not.objectContaining({ siteSlug: expect.anything() }),
     );
+  });
+
+  it('refuse un membre sans la permission (intrusion P-04)', async () => {
+    resolve.mockResolvedValue(ok('tenant-a'));
+    resolveAdminPermission.mockResolvedValueOnce({ allowed: false });
+    const res = await POST(req('http://localhost/api/upload'));
+    expect(res.status).toBe(403);
+    expect(upload).not.toHaveBeenCalled();
   });
 
   it('refuse un ?site= mal forme avant toute recherche', async () => {
