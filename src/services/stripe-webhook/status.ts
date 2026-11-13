@@ -270,3 +270,28 @@ export function freezeReasonPreservingCause(
   }
   return next;
 }
+
+/**
+ * Marque posee sur l'annulation d'un abonnement que NOUS remplacons par un
+ * autre (filet contre le double abonnement, intrusion M-01), dans
+ * `cancellation_details.comment`, suivie de l'identifiant du remplacant.
+ * Mesure contre Stripe en mode test: l'evenement
+ * `customer.subscription.deleted` qui suit porte ce commentaire.
+ *
+ * LA MARQUE SEULE NE PROUVE RIEN. Ce champ recoit aussi le commentaire libre
+ * que le client saisit en resiliant depuis le portail de facturation: un
+ * client qui y taperait la marque ne serait jamais gele. Elle ne sert donc
+ * qu'a designer un remplacant, que l'appelant DOIT verifier chez Stripe (voir
+ * `remplacantVerifie` dans etat-stripe.ts).
+ */
+export const MARQUE_REMPLACEMENT = 'remplace_par:';
+
+/** Identifiant du remplacant designe par la marque, ou `null`. Non verifie. */
+export function remplacantDesigne(subscription: {
+  cancellation_details?: { comment?: string | null } | null;
+}): string | null {
+  const commentaire = subscription.cancellation_details?.comment;
+  if (!commentaire?.startsWith(MARQUE_REMPLACEMENT)) return null;
+  const id = commentaire.slice(MARQUE_REMPLACEMENT.length).trim();
+  return /^sub_[A-Za-z0-9]+$/.test(id) ? id : null;
+}

@@ -12,6 +12,7 @@ import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
+import { expireOtherOpenCheckouts } from '@/lib/billing/expire-open-checkouts';
 
 export async function POST(request: Request) {
   try {
@@ -124,6 +125,14 @@ export async function POST(request: Request) {
       );
       return remaining > 0 ? remaining : undefined;
     })();
+
+    // M-01: une session ouverte plus tot reste payable 24 h. On la ferme avant
+    // d'en ouvrir une autre, sinon les deux peuvent etre payees.
+    await expireOtherOpenCheckouts(stripe, {
+      tenantId,
+      customerId: existingCustomerId,
+      email,
+    });
 
     // Créer la session Stripe Checkout
     const session = await withStripeBreaker(() =>

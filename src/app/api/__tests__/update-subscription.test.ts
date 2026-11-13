@@ -19,6 +19,10 @@ vi.mock('@/lib/stripe/server', () => ({
       retrieve: vi.fn(),
       update: vi.fn(),
     },
+    invoices: {
+      voidInvoice: vi.fn().mockResolvedValue({}),
+      retrieve: vi.fn().mockResolvedValue({ status: 'open' }),
+    },
   },
   getStripePriceId: vi.fn().mockReturnValue('price_pro_yearly'),
 }));
@@ -307,6 +311,111 @@ describe('POST /api/update-subscription', () => {
 
     expect(res.status).toBe(400);
     expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it('facture la difference tout de suite et refuse si le paiement echoue (intrusion M-03)', async () => {
+    setupAuthenticatedMocks();
+    vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
+      status: 'active',
+      items: { data: [{ id: 'si_1' }] },
+    } as never);
+    vi.mocked(stripe.subscriptions.update).mockResolvedValueOnce({
+      id: 'sub_1',
+      status: 'active',
+      pending_update: { expires_at: 1 },
+      latest_invoice: 'in_refusee',
+    } as never);
+
+    const res = await POST(buildRequest({ plan: 'business' }));
+    const json = (await res.json()) as { code?: string };
+
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        proration_behavior: 'always_invoice',
+        payment_behavior: 'pending_if_incomplete',
+      }),
+    );
+    expect(res.status).toBe(402);
+    expect(json.code).toBe('PAYMENT_REQUIRED');
+    // La facture refusee est annulee: elle ne doit ni etre relancee, ni etre
+    // payee plus tard sans que la formule soit appliquee.
+    expect(stripe.invoices.voidInvoice).toHaveBeenCalledWith('in_refusee');
+  });
+
+  it("dit de contacter le support quand la facture refusee n'a pas pu etre annulee", async () => {
+    setupAuthenticatedMocks();
+    vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
+      status: 'active',
+      items: { data: [{ id: 'si_1' }] },
+    } as never);
+    vi.mocked(stripe.subscriptions.update).mockResolvedValueOnce({
+      id: 'sub_1',
+      status: 'active',
+      pending_update: { expires_at: 1 },
+      latest_invoice: 'in_refusee',
+    } as never);
+    // Une seule fois par appel: une doublure qui rejetterait pour toujours
+    // polluerait les tests suivants (le disjoncteur Stripe garde son etat).
+    vi.mocked(stripe.invoices.voidInvoice)
+      .mockRejectedValueOnce(new Error('Stripe en panne'))
+      .mockRejectedValueOnce(new Error('Stripe en panne'));
+    vi.mocked(stripe.invoices.retrieve).mockResolvedValueOnce({ status: 'open' } as never);
+
+    const res = await POST(buildRequest({ plan: 'business' }));
+    const json = (await res.json()) as { error: string };
+
+    // Deux essais, puis un message qui ne promet pas que rien ne sera preleve.
+    expect(stripe.invoices.voidInvoice).toHaveBeenCalledTimes(2);
+    expect(res.status).toBe(402);
+    expect(json.error).toContain('support');
+  });
+
+  it('repond 200 quand la facture a ete payee entre-temps: le changement est applique', async () => {
+    setupAuthenticatedMocks();
+    vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
+      status: 'active',
+      items: { data: [{ id: 'si_1' }] },
+    } as never);
+    vi.mocked(stripe.subscriptions.update).mockResolvedValueOnce({
+      id: 'sub_1',
+      status: 'active',
+      pending_update: { expires_at: 1 },
+      latest_invoice: 'in_payee',
+    } as never);
+    vi.mocked(stripe.invoices.voidInvoice)
+      .mockRejectedValueOnce(new Error('facture deja payee'))
+      .mockRejectedValueOnce(new Error('facture deja payee'));
+    vi.mocked(stripe.invoices.retrieve).mockResolvedValueOnce({ status: 'paid' } as never);
+
+    const res = await POST(buildRequest({ plan: 'business' }));
+
+    expect(stripe.invoices.retrieve).toHaveBeenCalledWith('in_payee');
+    expect(res.status).toBe(200);
+  });
+
+  it('garde le message normal quand la facture etait deja annulee', async () => {
+    setupAuthenticatedMocks();
+    vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
+      status: 'active',
+      items: { data: [{ id: 'si_1' }] },
+    } as never);
+    vi.mocked(stripe.subscriptions.update).mockResolvedValueOnce({
+      id: 'sub_1',
+      status: 'active',
+      pending_update: { expires_at: 1 },
+      latest_invoice: 'in_annulee',
+    } as never);
+    vi.mocked(stripe.invoices.voidInvoice)
+      .mockRejectedValueOnce(new Error('deja annulee'))
+      .mockRejectedValueOnce(new Error('deja annulee'));
+    vi.mocked(stripe.invoices.retrieve).mockResolvedValueOnce({ status: 'void' } as never);
+
+    const res = await POST(buildRequest({ plan: 'business' }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(402);
+    expect(json.error).not.toContain('support');
   });
 
   it('returns 500 when subscription has no items', async () => {

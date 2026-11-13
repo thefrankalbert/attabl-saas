@@ -86,7 +86,19 @@ function setupSupabaseChain(options: {
   updateResult?: { error: unknown };
   idempotencyResult?: { data: { id: string } | null; error: unknown };
 }) {
-  const eqAfterUpdate = vi.fn().mockResolvedValue(options.updateResult ?? { error: null });
+  // Chainable ET attendable, comme un builder PostgREST: une ecriture peut
+  // porter plusieurs filtres (`.eq('id').is('stripe_subscription_id', null)`).
+  const resultatEcriture = options.updateResult ?? { error: null };
+  const chaineEcriture: {
+    eq: () => typeof chaineEcriture;
+    is: () => typeof chaineEcriture;
+    then: (ok: (v: { error: unknown }) => unknown) => Promise<unknown>;
+  } = {
+    eq: () => chaineEcriture,
+    is: () => chaineEcriture,
+    then: (ok) => Promise.resolve(resultatEcriture).then(ok),
+  };
+  const eqAfterUpdate = vi.fn().mockReturnValue(chaineEcriture);
   const updateFn = vi.fn().mockReturnValue({ eq: eqAfterUpdate });
 
   const singleFn = vi.fn().mockResolvedValue(options.selectResult ?? { data: null, error: null });
@@ -264,22 +276,27 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(body.received).toBe(true);
 
       // Verify the update call
-      expect(chain.updateFn).toHaveBeenCalledWith({
-        stripe_customer_id: 'cus_456',
-        stripe_subscription_id: 'sub_789',
-        subscription_status: 'active',
-        // Audit: un tenant gele qui souscrit doit retrouver sa vitrine. Sans
-        // is_active, il payait et restait eteint.
-        is_active: true,
-        past_due_since: null,
-        // LOT 7: la cause du gel est ecrite a CHAQUE ecriture de statut, et
-        // vaut null des que le statut n'est pas 'frozen'. C'est cet effacement
-        // systematique qui garantit qu'un gel futur n'heritera jamais de la
-        // cause d'un gel precedent (voir lib/billing/freeze-reason).
-        freeze_reason: null,
-        subscription_plan: 'pro',
-        billing_interval: 'yearly',
-      });
+      // Second argument: l'ecriture est conditionnelle et compte ses lignes
+      // (course entre deux paiements, intrusion M-01).
+      expect(chain.updateFn).toHaveBeenCalledWith(
+        {
+          stripe_customer_id: 'cus_456',
+          stripe_subscription_id: 'sub_789',
+          subscription_status: 'active',
+          // Audit: un tenant gele qui souscrit doit retrouver sa vitrine. Sans
+          // is_active, il payait et restait eteint.
+          is_active: true,
+          past_due_since: null,
+          // LOT 7: la cause du gel est ecrite a CHAQUE ecriture de statut, et
+          // vaut null des que le statut n'est pas 'frozen'. C'est cet effacement
+          // systematique qui garantit qu'un gel futur n'heritera jamais de la
+          // cause d'un gel precedent (voir lib/billing/freeze-reason).
+          freeze_reason: null,
+          subscription_plan: 'pro',
+          billing_interval: 'yearly',
+        },
+        { count: 'exact' },
+      );
 
       // Verify update targeted the correct tenant
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-abc');

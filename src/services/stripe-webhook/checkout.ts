@@ -5,9 +5,11 @@ import {
   selectTolerantToMissingFreezeReason,
   updateTolerantToMissingFreezeReason,
 } from '@/lib/billing/freeze-reason';
+import { expireOtherOpenCheckouts } from '@/lib/billing/expire-open-checkouts';
 import { ServiceError } from '../errors';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { StripeWebhookDeps } from './deps';
+import { arbitrerDoubleAbonnement } from './double-abonnement';
 import { unsettledDisputeBlocksUnfreeze } from './disputes';
 import {
   freezeReasonPreservingCause,
@@ -111,6 +113,17 @@ export async function handleCheckoutSessionCompleted(
     return;
   }
 
+  const abonnementCourant = existingTenant?.stripe_subscription_id;
+  const arbitrage = await arbitrerDoubleAbonnement(stripe, {
+    tenantId,
+    abonnementCourant,
+    subscriptionId,
+    customerId,
+    session,
+  });
+  if (!arbitrage.poursuivre) return;
+  const signalerRemplacementInacheve = arbitrage.signalerInacheve;
+
   // CTR-1: le defaut etait 'active'. Si la lecture chez Stripe echouait
   // - timeout, 429 - ce defaut partait en base avec is_active=true et
   // past_due_since=null, SANS qu'aucun etat n'ait ete lu: fail-OPEN,
@@ -154,6 +167,7 @@ export async function handleCheckoutSessionCompleted(
   // PERMANENTE: la rejouer pendant trois jours ne servirait a rien,
   // donc elle reste en 200.
   if (subscriptionUnreadable) {
+    signalerRemplacementInacheve('lecture du nouvel abonnement');
     throw new ServiceError('Subscription unreadable', 'INTERNAL');
   }
 
@@ -242,17 +256,43 @@ export async function handleCheckoutSessionCompleted(
     });
   }
 
-  const { error: updateError } = await updateTolerantToMissingFreezeReason(
+  // L'ecriture ne passe que si l'abonnement enregistre est toujours celui qui
+  // a ete lu plus haut. Deux paiements traites en meme temps lisaient tous
+  // deux "aucun abonnement" et le dernier ecrasait l'autre, qui continuait
+  // d'etre preleve sans etre vu. Le perdant n'ecrit rien et rejoue: au rejeu,
+  // le filet ci-dessus arbitre entre les deux abonnements.
+  const ecriture = await updateTolerantToMissingFreezeReason(
     updateData,
-    (payload) => supabase.from('tenants').update(payload).eq('id', tenantId),
+    (payload) => {
+      const requete = supabase
+        .from('tenants')
+        .update(payload, { count: 'exact' })
+        .eq('id', tenantId);
+      return abonnementCourant
+        ? requete.eq('stripe_subscription_id', abonnementCourant)
+        : requete.is('stripe_subscription_id', null);
+    },
     { tenantId, handler: 'checkout.session.completed' },
   );
+  const updateError = ecriture.error;
+
+  // Seul un ZERO explicite vaut "aucune ligne": PostgREST rend un nombre
+  // avec `count: 'exact'`. Une valeur absente n'est pas prise pour un echec.
+  if (!updateError && (ecriture as { count?: number | null }).count === 0) {
+    logger.warn('checkout.session.completed: abonnement enregistre entre-temps, rejeu', {
+      tenantId,
+      subscriptionId,
+    });
+    signalerRemplacementInacheve('ecriture: abonnement enregistre entre-temps');
+    throw new ServiceError('Concurrent subscription write', 'INTERNAL');
+  }
 
   if (updateError) {
     logger.error('DB update failed for checkout.session.completed', updateError, {
       tenantId,
       subscriptionId,
     });
+    signalerRemplacementInacheve('ecriture en base');
     // La route retire la ligne d'idempotence pour que le rejeu de Stripe
     // retraite cet evenement au lieu d'etre court-circuite.
     throw new ServiceError('DB update failed', 'INTERNAL');
@@ -263,5 +303,14 @@ export async function handleCheckoutSessionCompleted(
     plan,
     billingInterval,
     subscriptionStatus: mappedStatus,
+  });
+
+  // M-01: ce restaurant vient de payer. Les autres sessions qu'il avait
+  // laissees ouvertes ne doivent plus pouvoir l'etre.
+  await expireOtherOpenCheckouts(stripe, {
+    tenantId,
+    customerId,
+    email: session.customer_details?.email ?? session.customer_email,
+    exceptSessionId: session.id,
   });
 }
