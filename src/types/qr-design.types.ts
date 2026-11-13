@@ -20,21 +20,12 @@ export type QRCornerStyle = 'square' | 'rounded' | 'dot';
 type QRExportFormat = 'pdf' | 'png' | 'svg';
 
 export type QRCTAPreset =
-  | 'scannez-commander'
-  | 'scannez-menu'
-  | 'scannez-decouvrir'
-  | 'scannez-carte'
-  | 'custom';
+  'scannez-commander' | 'scannez-menu' | 'scannez-decouvrir' | 'scannez-carte' | 'custom';
 
 // Print / card format
 
 export type QRCardFormatId =
-  | 'standard-25x13'
-  | 'square-10'
-  | 'a6-chevalet'
-  | 'business-card'
-  | 'bare'
-  | 'custom';
+  'standard-25x13' | 'square-10' | 'a6-chevalet' | 'business-card' | 'bare' | 'custom';
 
 // How many cards are placed on one A4 sheet. 'auto' fills the page.
 export type QRPerPage = 1 | 2 | 4 | 'auto';

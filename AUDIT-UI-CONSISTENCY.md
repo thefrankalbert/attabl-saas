@@ -48,14 +48,15 @@ single-pricing-card, testimonials-columns, cobe-globe-analytics
 **Regle :** Remplacer CHAQUE `<button>` par `<Button>` de `@/components/ui/button` avec la variante appropriee.
 
 **Mapping des variantes :**
-| Usage | Variante shadcn/ui |
-|-------|-------------------|
-| Bouton principal / CTA | `<Button>` (default) |
-| Bouton secondaire | `<Button variant="outline">` |
-| Bouton danger / suppression | `<Button variant="destructive">` |
-| Bouton discret / navigation | `<Button variant="ghost">` |
-| Bouton icone seul | `<Button variant="ghost" size="icon">` |
-| Bouton texte / lien | `<Button variant="link">` |
+
+| Usage                       | Variante shadcn/ui                     |
+| --------------------------- | -------------------------------------- |
+| Bouton principal / CTA      | `<Button>` (default)                   |
+| Bouton secondaire           | `<Button variant="outline">`           |
+| Bouton danger / suppression | `<Button variant="destructive">`       |
+| Bouton discret / navigation | `<Button variant="ghost">`             |
+| Bouton icone seul           | `<Button variant="ghost" size="icon">` |
+| Bouton texte / lien         | `<Button variant="link">`              |
 
 ### ZONE TENANT (espace client) — 63 buttons
 

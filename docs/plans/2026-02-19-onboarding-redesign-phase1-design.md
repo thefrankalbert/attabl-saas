@@ -245,15 +245,15 @@ The last tile "Custom" opens/reveals the custom section below.
 
 ## Bug Fixes (included in Phase 1)
 
-| Bug                                      | Fix                                                                                            |
+| Bug | Fix |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------- | --- | ---------------------------------------- |
-| Logo upload sends blob URL to server     | Keep blob preview, add TODO comment for Supabase Storage upload in Phase 2                     |
-| Step 4 doesn't restore from parent state | Initialize `items` from `data.menuItems` grouped by category on mount                          |
-| `saveStep` errors swallowed silently     | Add toast notification on save failure                                                         |
-| Country default inconsistency            | Align to 'Cameroun' everywhere                                                                 |
-| Checklist "Menu initialise" always true  | Fix `data.menuOption !== 'skip'                                                                |     | true`to just`data.menuOption !== 'skip'` |
-| No i18n                                  | Add full i18n with `useTranslations('onboarding')` across all step components + 8 locale files |
-| Responsive: no tablet styles             | Add `md` breakpoint sidebar (compact), improve all grids for tablet                            |
+| Logo upload sends blob URL to server | Keep blob preview, add TODO comment for Supabase Storage upload in Phase 2 |
+| Step 4 doesn't restore from parent state | Initialize `items` from `data.menuItems` grouped by category on mount |
+| `saveStep` errors swallowed silently | Add toast notification on save failure |
+| Country default inconsistency | Align to 'Cameroun' everywhere |
+| Checklist "Menu initialise" always true | Fix `data.menuOption !== 'skip'                                                                |     | true`to just`data.menuOption !== 'skip'` |
+| No i18n | Add full i18n with `useTranslations('onboarding')` across all step components + 8 locale files |
+| Responsive: no tablet styles | Add `md` breakpoint sidebar (compact), improve all grids for tablet |
 
 ## Files to Modify
 

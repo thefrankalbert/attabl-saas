@@ -2,9 +2,4 @@
 export type SubscriptionPlan = 'starter' | 'pro' | 'business' | 'enterprise';
 export type BillingInterval = 'monthly' | 'yearly';
 export type SubscriptionStatus =
-  | 'trial'
-  | 'active'
-  | 'past_due'
-  | 'cancelled'
-  | 'paused'
-  | 'frozen';
+  'trial' | 'active' | 'past_due' | 'cancelled' | 'paused' | 'frozen';

@@ -167,8 +167,7 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       await POST(makeRequest());
 
       const updatePayload = chain.updateFn.mock.calls[0]?.[0] as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       return updatePayload?.subscription_status as string;
     }
 
@@ -189,8 +188,7 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       await POST(makeRequest());
 
       const updatePayload = chain.updateFn.mock.calls[0]?.[0] as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       return updatePayload?.is_active;
     }
 

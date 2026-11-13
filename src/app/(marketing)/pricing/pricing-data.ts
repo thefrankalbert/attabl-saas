@@ -11,14 +11,7 @@ export interface FeatureRow {
 }
 
 export type CategoryKey =
-  | 'menu'
-  | 'checkout'
-  | 'kitchen'
-  | 'stock'
-  | 'analytics'
-  | 'team'
-  | 'support'
-  | 'volumes';
+  'menu' | 'checkout' | 'kitchen' | 'stock' | 'analytics' | 'team' | 'support' | 'volumes';
 
 export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] = [
   {

@@ -414,9 +414,7 @@ export function createArgAwareSupabaseMock(): ArgAwareSupabaseMock {
       },
       then<TResult1 = MockQueryResult, TResult2 = never>(
         onfulfilled?:
-          | ((value: MockQueryResult) => TResult1 | PromiseLike<TResult1>)
-          | undefined
-          | null,
+          ((value: MockQueryResult) => TResult1 | PromiseLike<TResult1>) | undefined | null,
         onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | undefined | null,
       ): PromiseLike<TResult1 | TResult2> {
         return Promise.resolve(resolveList()).then(onfulfilled, onrejected);

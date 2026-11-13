@@ -37,11 +37,7 @@ export interface RefusEndpoint {
   autorise: false;
   /** Pourquoi, pour le journal. Jamais l'URL complete: elle identifie un appareil. */
   raison:
-    | 'url-illisible'
-    | 'pas-https'
-    | 'port-explicite'
-    | 'identifiants-dans-url'
-    | 'hote-inconnu';
+    'url-illisible' | 'pas-https' | 'port-explicite' | 'identifiants-dans-url' | 'hote-inconnu';
   /** L'hote seul: utile a diagnostiquer, et ce n'est pas un identifiant d'appareil. */
   hote: string | null;
 }

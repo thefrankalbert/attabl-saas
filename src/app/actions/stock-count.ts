@@ -19,8 +19,7 @@ import type { OpenStockCountInput, StockCountLineInput } from '@/types/inventory
 const STOCK_COUNT_PLAN_ERROR = "L'inventaire physique est reserve au plan Pro.";
 
 type ActionResult<T = undefined> =
-  | { success: true; data?: T; error?: never }
-  | { success?: never; error: string };
+  { success: true; data?: T; error?: never } | { success?: never; error: string };
 
 async function checkStockCountPermissions(
   tenantId: string,
