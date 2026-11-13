@@ -14,7 +14,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Order } from '@/types/admin.types';
-import { CELL_CLS, PAYMENT_META, STATUS_META, TONE, type ColKey } from './orders-table.constants';
+import {
+  CELL_CLS,
+  PAYMENT_COL_CLS,
+  PAYMENT_META,
+  STATUS_META,
+  TONE,
+  type ColKey,
+} from './orders-table.constants';
 
 interface OrdersTableRowProps {
   order: Order;
@@ -76,12 +83,21 @@ export function OrdersTableRow({
         />
       </TableCell>
       <TableCell className={CELL_CLS}>
-        <Link
-          href={`${adminBase}/orders/${o.id}`}
-          className="font-mono text-[13px] font-medium text-[var(--foreground)] hover:underline"
-        >
-          {o.order_number || o.id.slice(0, 8)}
-        </Link>
+        <span className="flex flex-col items-start gap-[3px]">
+          {/* Long numbers (CMD-20260403-001) shortened for display: #001 */}
+          <Link
+            href={`${adminBase}/orders/${o.id}`}
+            title={o.order_number || undefined}
+            className="font-mono text-[13px] font-medium text-[var(--foreground)] hover:underline"
+          >
+            {o.order_number ? `#${o.order_number.split('-').pop()}` : o.id.slice(0, 8)}
+          </Link>
+          {cols.items && (
+            <span className="max-w-[130px] truncate text-xs text-[var(--muted-foreground)]">
+              {(o.items ?? []).map((it) => it.name).join(', ') || '-'}
+            </span>
+          )}
+        </span>
       </TableCell>
       <TableCell className={CELL_CLS}>
         <span className="flex flex-col items-start gap-[3px]">
@@ -120,7 +136,7 @@ export function OrdersTableRow({
         </span>
       </TableCell>
       {cols.payment && (
-        <TableCell className={CELL_CLS}>
+        <TableCell className={cn(CELL_CLS, PAYMENT_COL_CLS)}>
           {pay ? (
             <span className="inline-flex items-center gap-[5px] rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
               <CreditCard className={cn('size-[13px]', pay.color)} />
@@ -134,13 +150,6 @@ export function OrdersTableRow({
       <TableCell className={cn(CELL_CLS, 'text-right tabular-nums')}>
         {formatValue(o.total_price)}
       </TableCell>
-      {cols.items && (
-        <TableCell
-          className={cn(CELL_CLS, 'max-w-[190px] truncate text-[var(--muted-foreground)]')}
-        >
-          {(o.items ?? []).map((it) => it.name).join(', ') || '-'}
-        </TableCell>
-      )}
       <TableCell className={cn(CELL_CLS, 'w-10')}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -646,7 +646,7 @@ export default function ItemDetailSheet({
                 <Button
                   onClick={handleAddToCart}
                   disabled={showSuccess || item?.is_available === false || orderingPaused}
-                  className="h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
+                  className="@container h-[54px] min-w-0 flex-1 justify-between rounded-full bg-[var(--color-ink)] px-5 text-[15px] font-semibold text-white hover:bg-black"
                 >
                   {showSuccess ? (
                     <motion.div
@@ -663,7 +663,12 @@ export default function ItemDetailSheet({
                     <span className="mx-auto min-w-0 truncate">{t('orderingPaused')}</span>
                   ) : (
                     <>
-                      <span className="min-w-0 truncate">{t('addToCart')}</span>
+                      {/* Full label only when it fits next to the price (measured
+                          2026-11-13: "Ajouter au p..." at 390px); short label below. */}
+                      <span className="min-w-0 truncate @[15rem]:hidden">{t('addShort')}</span>
+                      <span className="hidden min-w-0 truncate @[15rem]:inline">
+                        {t('addToCart')}
+                      </span>
                       <span className="shrink-0 tabular-nums">
                         {formatDisplayPrice(currentPrice, currency)}
                       </span>
