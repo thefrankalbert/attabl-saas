@@ -164,6 +164,10 @@ function AcceptInviteForm() {
 
       setSuccess(true);
       setTimeout(() => {
+        // Rechargement complet VOULU: l'invitation vient de creer une
+        // appartenance, et seul un chargement serveur neuf lit la session et
+        // les droits a jour. `router.push` garderait le cache client d'avant.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu apres acceptation d'une invitation (2026-11-13)
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {
@@ -204,6 +208,10 @@ function AcceptInviteForm() {
 
       setSuccess(true);
       setTimeout(() => {
+        // Rechargement complet VOULU: l'invitation vient de creer une
+        // appartenance, et seul un chargement serveur neuf lit la session et
+        // les droits a jour. `router.push` garderait le cache client d'avant.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu apres acceptation d'une invitation (2026-11-13)
         window.location.href = `/sites/${data.tenantSlug}/admin`;
       }, 2000);
     } catch {

@@ -60,11 +60,12 @@ const C = {
 - `color={active ? C.primary : C.textMuted}` → remplacer par `className={active ? 'text-app-text' : 'text-app-text-muted'}` et supprimer la prop `color=`
 
 **Etape 3** : Remplacer les hex dans les classNames :
-| Ligne | Avant | Apres |
-|-------|-------|-------|
-| 74 | `bg-[#FFFFFF] border-t border-[#EEEEEE]` | `bg-app-bg border-t border-app-border` |
-| 92 | `bg-[#1A1A1A] border-2 border-[#FFFFFF]` | `bg-app-text border-2 border-app-bg` |
-| 97 | `'text-[#1A1A1A]' : 'text-[#B0B0B0]'` | `'text-app-text' : 'text-app-text-muted'` |
+
+| Ligne | Avant                                    | Apres                                     |
+| ----- | ---------------------------------------- | ----------------------------------------- |
+| 74    | `bg-[#FFFFFF] border-t border-[#EEEEEE]` | `bg-app-bg border-t border-app-border`    |
+| 92    | `bg-[#1A1A1A] border-2 border-[#FFFFFF]` | `bg-app-text border-2 border-app-bg`      |
+| 97    | `'text-[#1A1A1A]' : 'text-[#B0B0B0]'`    | `'text-app-text' : 'text-app-text-muted'` |
 
 **Etape 4** : Remplacer les styles inline par des classes Tailwind (si des `style=` existent).
 
@@ -276,12 +277,13 @@ Convention a appliquer dans TOUS les composants admin (`src/components/admin/`) 
 | Mobile bottom sheet (haut)       | `rounded-t-2xl`     | OK, convention mobile                     |
 
 **Chercher et remplacer dans src/components/admin/ :**
-| Chercher | Remplacer par | Contexte |
-|----------|--------------|---------|
-| `rounded-sm` | `rounded-lg` | Partout sauf si c'est un cas tres specifique |
-| `rounded-md` | `rounded-lg` | Boutons, inputs, badges |
-| `rounded-2xl` | `rounded-xl` | Cartes (sauf bottom sheet mobile) |
-| `borderRadius: 8` (inline) | `rounded-lg` | ServiceManager (deja couvert chantier 2) |
+
+| Chercher                   | Remplacer par | Contexte                                     |
+| -------------------------- | ------------- | -------------------------------------------- |
+| `rounded-sm`               | `rounded-lg`  | Partout sauf si c'est un cas tres specifique |
+| `rounded-md`               | `rounded-lg`  | Boutons, inputs, badges                      |
+| `rounded-2xl`              | `rounded-xl`  | Cartes (sauf bottom sheet mobile)            |
+| `borderRadius: 8` (inline) | `rounded-lg`  | ServiceManager (deja couvert chantier 2)     |
 
 **Attention** : Ne PAS modifier les fichiers dans `src/components/ui/` — ce sont les composants shadcn generes.
 

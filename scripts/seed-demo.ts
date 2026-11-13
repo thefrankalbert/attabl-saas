@@ -803,7 +803,7 @@ async function createSalesOrders(): Promise<SeededOrder[]> {
     // Group shuffled lines into orders of 1-4 lines.
     const shuffled = shuffle(lines);
     const groups: Array<Array<{ slug: string; qty: number }>> = [];
-    for (let i = 0; i < shuffled.length; ) {
+    for (let i = 0; i < shuffled.length;) {
       const n = randomInt(1, 4);
       groups.push(shuffled.slice(i, i + n));
       i += n;

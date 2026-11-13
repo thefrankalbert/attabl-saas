@@ -17,12 +17,7 @@ const PUSH_SW_ENABLED = process.env.NODE_ENV === 'production';
  * restait sans reponse. Chaque cas a maintenant son message.
  */
 export type MotifPushIndisponible =
-  | 'developpement'
-  | 'cle-absente'
-  | 'ios-a-installer'
-  | 'navigateur'
-  | 'service-worker'
-  | null;
+  'developpement' | 'cle-absente' | 'ios-a-installer' | 'navigateur' | 'service-worker' | null;
 
 function estAppareilApple(): boolean {
   if (typeof navigator === 'undefined') return false;

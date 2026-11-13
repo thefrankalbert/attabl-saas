@@ -18,14 +18,7 @@ export type MovementType =
 
 // Structured motif for losses / reconciliation (stock_movements.reason_code).
 export type ReasonCode =
-  | 'expired'
-  | 'breakage'
-  | 'theft'
-  | 'spillage'
-  | 'prep_waste'
-  | 'recount'
-  | 'reconcile'
-  | 'other';
+  'expired' | 'breakage' | 'theft' | 'spillage' | 'prep_waste' | 'recount' | 'reconcile' | 'other';
 
 // Loss reasons are the subset of ReasonCode that a manual loss declaration can
 // carry (recount / reconcile belong to physical_count / reconciliation, not a

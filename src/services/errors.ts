@@ -6,12 +6,7 @@
  */
 
 export type ServiceErrorCode =
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'VALIDATION'
-  | 'INTERNAL'
-  | 'AUTH'
-  | 'UNAUTHORIZED';
+  'NOT_FOUND' | 'CONFLICT' | 'VALIDATION' | 'INTERNAL' | 'AUTH' | 'UNAUTHORIZED';
 
 export class ServiceError extends Error {
   constructor(

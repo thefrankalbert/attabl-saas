@@ -35,12 +35,7 @@ Replace `src/types/billing.ts` with:
 export type SubscriptionPlan = 'starter' | 'pro' | 'business' | 'enterprise';
 export type BillingInterval = 'monthly' | 'semiannual' | 'yearly';
 export type SubscriptionStatus =
-  | 'trial'
-  | 'active'
-  | 'past_due'
-  | 'cancelled'
-  | 'paused'
-  | 'frozen';
+  'trial' | 'active' | 'past_due' | 'cancelled' | 'paused' | 'frozen';
 
 export interface CreateCheckoutRequest {
   plan: Exclude<SubscriptionPlan, 'enterprise'>;

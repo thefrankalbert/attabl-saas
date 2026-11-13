@@ -286,8 +286,7 @@ export async function notifyDestockFailed(params: {
       .order('created_at', { ascending: false })
       .limit(1);
     const latest = recent?.[0] as
-      | { read?: boolean | null; notification_reads?: { user_id: string }[] | null }
-      | undefined;
+      { read?: boolean | null; notification_reads?: { user_id: string }[] | null } | undefined;
     if (latest && !latest.read && (latest.notification_reads?.length ?? 0) === 0) {
       logger.warn('notifyDestockFailed: deja signale recemment, pas de doublon', {
         tenantId,

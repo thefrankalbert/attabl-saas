@@ -69,9 +69,9 @@ export async function buildStyledWorkbook(input: StyledSheetInput): Promise<Buff
   const lastCol = String.fromCharCode(64 + Math.min(colCount, 26));
 
   // Column widths
-  ws.columns = input.columns.map(
-    (c): Partial<Column> => ({ width: c.width ?? 18 }),
-  ) as Partial<Column>[];
+  ws.columns = input.columns.map((c): Partial<Column> => ({
+    width: c.width ?? 18,
+  })) as Partial<Column>[];
 
   // --- Title band ---
   ws.mergeCells(`A1:${lastCol}1`);

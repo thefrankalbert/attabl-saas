@@ -50,8 +50,7 @@ function firstIssue(error: z.ZodError): string {
 }
 
 type ActionResult<T = undefined> =
-  | { success: true; data?: T; error?: never }
-  | { success?: never; error: string };
+  { success: true; data?: T; error?: never } | { success?: never; error: string };
 
 async function checkSupplierPermissions(
   tenantId: string,

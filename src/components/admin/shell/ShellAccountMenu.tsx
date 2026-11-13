@@ -107,6 +107,10 @@ export function ShellAccountMenu({
     } finally {
       setLoggingOut(false);
     }
+    // Rechargement complet VOULU: sur une tablette partagee, la deconnexion
+    // doit vider tout l'etat client (caches de requetes, file hors ligne). Une
+    // navigation `router.push` le garderait en memoire.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu a la deconnexion (2026-11-13)
     window.location.assign('/login');
   };
 

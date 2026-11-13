@@ -3,13 +3,7 @@ import { Palette } from 'lucide-react';
 // --- Phase / sub-screen definitions --------------------------------------------
 
 export type ScreenKey =
-  | 'establishment'
-  | 'branding'
-  | 'details'
-  | 'tables'
-  | 'menu'
-  | 'qr'
-  | 'summary';
+  'establishment' | 'branding' | 'details' | 'tables' | 'menu' | 'qr' | 'summary';
 
 export interface PhaseDefinition {
   labelKey: string;

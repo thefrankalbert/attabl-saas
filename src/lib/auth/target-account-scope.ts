@@ -21,8 +21,7 @@ import { logger } from '@/lib/logger';
 type TargetAccountScopeDenial = 'cross_tenant' | 'platform_account' | 'lookup_failed';
 
 export type TargetAccountScopeResult =
-  | { allowed: true }
-  | { allowed: false; reason: TargetAccountScopeDenial };
+  { allowed: true } | { allowed: false; reason: TargetAccountScopeDenial };
 
 interface MembershipRow {
   tenant_id: string | null;

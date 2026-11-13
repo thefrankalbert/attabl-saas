@@ -71,9 +71,7 @@ export default function AuditLogFilters({
                 <SelectItem key={a} value={a}>
                   {t(
                     `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
-                      | 'actionCreate'
-                      | 'actionUpdate'
-                      | 'actionDelete',
+                      'actionCreate' | 'actionUpdate' | 'actionDelete',
                   ) || a}
                 </SelectItem>
               ))}

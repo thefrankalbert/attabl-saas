@@ -80,12 +80,7 @@ export function SubscriptionProvider({ children, tenant, tenantSlug }: Subscript
       },
       isLimitReached: (
         limitKey:
-          | 'maxAdmins'
-          | 'maxVenues'
-          | 'maxMenus'
-          | 'maxItems'
-          | 'maxStaff'
-          | 'maxCategories',
+          'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxStaff' | 'maxCategories',
         currentCount: number,
       ) => {
         const limit = limits[limitKey];
