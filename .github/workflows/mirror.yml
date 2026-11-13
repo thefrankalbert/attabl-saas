@@ -28,6 +28,11 @@ env:
 
 jobs:
   mirror:
+    # GitHub ne donne pas les secrets du depot aux executions declenchees par
+    # Dependabot: ce travail echouait donc sur chacune de ses branches
+    # ("GITLAB_USERNAME and/or GITLAB_TOKEN secrets are not set"). Ses branches
+    # n'ont pas a etre recopiees: le miroir les reprend une fois fusionnees.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
