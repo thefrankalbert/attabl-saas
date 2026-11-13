@@ -15,6 +15,7 @@ import {
 } from '@/lib/billing/stale-subscription';
 import { toCheckoutApiError } from '@/lib/stripe/checkout-errors';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
+import { expireOtherOpenCheckouts } from '@/lib/billing/expire-open-checkouts';
 
 type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
 
@@ -183,6 +184,14 @@ export async function POST(request: Request) {
     const priceId = resolvePriceId(plan, billingInterval);
     const trialDays = tenantData ? buildTrialDays(tenantData) : undefined;
     const existingCustomerId = tenantData?.stripe_customer_id ?? null;
+
+    // M-01: une session ouverte plus tot reste payable 24 h. On la ferme avant
+    // d'en ouvrir une autre, sinon les deux peuvent etre payees.
+    await expireOtherOpenCheckouts(stripe, {
+      tenantId: resolved.tenant.tenant_id,
+      customerId: existingCustomerId,
+      email: resolved.email,
+    });
 
     let session: Stripe.Checkout.Session;
     try {

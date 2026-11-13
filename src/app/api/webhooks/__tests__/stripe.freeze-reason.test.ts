@@ -169,6 +169,17 @@ function setupMock(options: MockOptions = {}) {
   return { updatePayloads, updateFilters, selectedColumns };
 }
 
+/**
+ * Statut du NOUVEL abonnement ('sub_new', celui de la session payee). Tout autre
+ * identifiant est l'ancien abonnement du restaurant, mort chez Stripe: le filet
+ * contre le double abonnement (intrusion M-01) le relit, et une doublure qui
+ * rendait le meme statut pour les deux faisait passer un restaurant qui se
+ * reabonne pour un double paiement.
+ */
+function nouvelAbonnement(status: string) {
+  return (id: string) => Promise.resolve({ status: id === 'sub_new' ? status : 'canceled' });
+}
+
 function makeStripeEvent(type: string, object: Record<string, unknown>): Stripe.Event {
   return { id: 'evt_test', type, data: { object } } as unknown as Stripe.Event;
 }
@@ -218,7 +229,7 @@ describe('CTR-1 - checkout.session.completed applique la regle du fichier', () =
       },
     });
     // Paiement initial non confirme (3-D Secure abandonne, moyen asynchrone).
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'incomplete' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('incomplete'));
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());
@@ -317,7 +328,7 @@ describe('CTR-1 - checkout.session.completed applique la regle du fichier', () =
         subscription_status: 'frozen',
       },
     });
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'active' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('active'));
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());
@@ -334,7 +345,7 @@ describe('CTR-1 - checkout.session.completed applique la regle du fichier', () =
     const chain = setupMock({
       tenant: { id: 'tenant-1', stripe_subscription_id: 'sub_old', subscription_status: 'active' },
     });
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'unpaid' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('unpaid'));
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());

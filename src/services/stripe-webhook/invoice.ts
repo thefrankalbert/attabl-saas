@@ -46,10 +46,68 @@ function factureDUnAutreAbonnement(
 }
 
 export async function handleInvoicePaymentFailed(
-  { supabase }: StripeWebhookDeps,
+  { supabase, stripe }: StripeWebhookDeps,
   invoice: Stripe.Invoice,
 ): Promise<void> {
   const customerId = invoice.customer as string;
+
+  // La facture d'un CHANGEMENT DE FORMULE refuse n'est pas un impaye. Depuis
+  // M-03 la difference est facturee tout de suite: si la carte est refusee,
+  // Stripe garde l'abonnement `active` a l'ancien prix et n'applique pas le
+  // changement. Ecrire `past_due` ici mettait en impaye, puis faisait geler
+  // par le cron, un restaurant dont la periode en cours est payee. Mesure
+  // contre Stripe en mode test: `billing_reason = subscription_update`,
+  // abonnement `active`.
+  //
+  // On ne se fie pas a la raison seule: un changement fait HORS de notre route
+  // (portail de facturation, tableau de bord) peut appliquer la formule et
+  // laisser un vrai impaye. L'echec n'est donc tu que si Stripe confirme que
+  // l'abonnement est en regle; sinon il est traite comme tout impaye.
+  if (invoice.billing_reason === 'subscription_update') {
+    const abonnementId = abonnementDeLaFacture(invoice);
+    let abonnement: Stripe.Subscription | null = null;
+    if (abonnementId) {
+      try {
+        abonnement = await stripe.subscriptions.retrieve(abonnementId);
+      } catch (err) {
+        const introuvable =
+          typeof err === 'object' &&
+          err !== null &&
+          (err as { code?: string }).code === 'resource_missing';
+        // Introuvable est permanent: rejouer trois jours n'y changerait rien.
+        // L'echec suit alors le chemin ordinaire, que la garde M-02 filtre.
+        if (!introuvable) {
+          logger.error('invoice.payment_failed: abonnement illisible, evenement a rejouer', err, {
+            customerId,
+            invoiceId: invoice.id,
+          });
+          throw new ServiceError('Subscription unreadable', 'INTERNAL');
+        }
+      }
+    }
+
+    if (abonnement && (abonnement.status === 'active' || abonnement.status === 'trialing')) {
+      // Filet: la route annule deja cette facture. Si elle n'a pas pu, on le
+      // refait ici pour qu'elle ne soit ni relancee, ni payee plus tard sans
+      // que le changement soit applique.
+      if (abonnement.pending_update && invoice.id) {
+        try {
+          await stripe.invoices.voidInvoice(invoice.id);
+        } catch (err) {
+          // Deja annulee par la route: c'est le cas normal.
+          logger.info('invoice.payment_failed: facture de changement deja traitee', {
+            invoiceId: invoice.id,
+            raison: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      logger.info('invoice.payment_failed ignore: changement de formule, abonnement en regle', {
+        customerId,
+        invoiceId: invoice.id,
+      });
+      return;
+    }
+  }
 
   // Marquer comme "past_due"
   const { data: tenant, error: tenantPaymentError } = await supabase

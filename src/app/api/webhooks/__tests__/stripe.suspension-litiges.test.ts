@@ -177,6 +177,17 @@ function setupMock(options: MockOptions = {}) {
   return { updatePayloads, updateFilters, selectedColumns, deletedEventIds };
 }
 
+/**
+ * Statut du NOUVEL abonnement ('sub_new', celui de la session payee). Tout autre
+ * identifiant est l'ancien abonnement du restaurant, mort chez Stripe: le filet
+ * contre le double abonnement (intrusion M-01) le relit, et une doublure qui
+ * rendait le meme statut pour les deux faisait passer un restaurant qui se
+ * reabonne pour un double paiement.
+ */
+function nouvelAbonnement(status: string) {
+  return (id: string) => Promise.resolve({ status: id === 'sub_new' ? status : 'canceled' });
+}
+
 function makeStripeEvent(type: string, object: Record<string, unknown>): Stripe.Event {
   return { id: 'evt_test', type, data: { object } } as unknown as Stripe.Event;
 }
@@ -271,7 +282,7 @@ describe('CTR7-1 - le webhook ne leve jamais une suspension plateforme', () => {
 
   it('checkout.session.completed ne rallume pas un tenant suspendu qui paie', async () => {
     const chain = setupMock({ tenant: suspendedTenant('past_due') });
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'active' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('active'));
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());
@@ -534,7 +545,7 @@ describe('CTR7-2 - une cause de gel deja posee n est jamais ecrasee', () => {
         freeze_reason: 'dispute',
       },
     });
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'unpaid' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('unpaid'));
     mockConstructEvent.mockReturnValue(checkoutEvent());
 
     const response = await POST(makeRequest());
@@ -732,7 +743,7 @@ describe('CTR7-4 - etats de litige bloquants et coherence des trois gestionnaire
         deleted_at: null,
       },
     });
-    mockSubscriptionsRetrieve.mockResolvedValue({ status: 'active' });
+    mockSubscriptionsRetrieve.mockImplementation(nouvelAbonnement('active'));
     mockChargesList.mockResolvedValue({ data: [{ id: 'ch_1', disputed: true }] });
     mockDisputesList.mockResolvedValue({ data: [{ id: 'dp_9', status: 'under_review' }] });
     mockConstructEvent.mockReturnValue(checkoutEvent());

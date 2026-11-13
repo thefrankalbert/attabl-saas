@@ -9,6 +9,7 @@ import {
 import { ServiceError } from '../errors';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { StripeWebhookDeps } from './deps';
+import { lireEtatReel, remplacantVerifie } from './etat-stripe';
 import { unsettledDisputeBlocksUnfreeze } from './disputes';
 import {
   detectBillingInterval,
@@ -18,6 +19,7 @@ import {
   isHealthySubscriptionStatus,
   mapStripeStatus,
   refundFreezeBlocksUnfreeze,
+  remplacantDesigne,
 } from './status';
 
 /**
@@ -84,12 +86,23 @@ export async function handleSubscriptionUpdated(
     return;
   }
 
+  // Intrusion M-05: Stripe ne garantit pas l'ordre de livraison. Un evenement
+  // perime ecrivait son contenu tel quel: un "impaye" livre apres le "paye"
+  // remettait en impaye un restaurant qui venait de payer, et un ancien prix
+  // livre apres un changement de formule paye rendait l'ancienne formule.
+  //
+  // Tout ce gestionnaire travaille donc sur l'etat REEL de l'abonnement, relu
+  // chez Stripe, et non sur le contenu de l'evenement: statut, prix, periode
+  // et intervalle viennent du meme objet, a jour. L'evenement ne sert plus
+  // que de signal "quelque chose a change".
+  const etat = await lireEtatReel(stripe, subscription, tenant.id);
+
   // Acceder aux periodes via les items
-  const currentPeriodStart = subscription.items?.data?.[0]?.current_period_start;
-  const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
+  const currentPeriodStart = etat.items?.data?.[0]?.current_period_start;
+  const currentPeriodEnd = etat.items?.data?.[0]?.current_period_end;
 
   // Mapper le statut Stripe vers le statut interne
-  const mappedStatus = mapStripeStatus(subscription.status);
+  const mappedStatus = mapStripeStatus(etat.status);
 
   const updateData: Record<string, unknown> = {};
 
@@ -176,7 +189,7 @@ export async function handleSubscriptionUpdated(
   }
 
   // Detect plan/interval change via price ID
-  const currentPriceId = subscription.items?.data?.[0]?.price?.id;
+  const currentPriceId = etat.items?.data?.[0]?.price?.id;
   if (currentPriceId) {
     const detectedPlan = getPlanFromPriceId(currentPriceId);
     const detectedInterval = getIntervalFromPriceId(currentPriceId);
@@ -197,7 +210,7 @@ export async function handleSubscriptionUpdated(
 
   // Fallback: detect billing interval from Stripe subscription interval
   if (!updateData.billing_interval) {
-    const detectedInterval = detectBillingInterval(subscription);
+    const detectedInterval = detectBillingInterval(etat);
     if (detectedInterval !== tenant.billing_interval) {
       updateData.billing_interval = detectedInterval;
     }
@@ -224,7 +237,7 @@ export async function handleSubscriptionUpdated(
   if (updateError) {
     logger.error('DB update failed for customer.subscription.updated', updateError, {
       tenantId: tenant.id,
-      stripeStatus: subscription.status,
+      stripeStatus: etat.status,
     });
     // La route retire la ligne d'idempotence pour que Stripe retraite.
     throw new ServiceError('DB update failed', 'INTERNAL');
@@ -232,13 +245,13 @@ export async function handleSubscriptionUpdated(
 
   logger.info('Subscription updated', {
     tenantId: tenant.id,
-    stripeStatus: subscription.status,
+    stripeStatus: etat.status,
     mappedStatus,
   });
 }
 
 export async function handleSubscriptionDeleted(
-  { supabase }: StripeWebhookDeps,
+  { supabase, stripe }: StripeWebhookDeps,
   subscription: Stripe.Subscription,
 ): Promise<void> {
   const customerId = subscription.customer as string;
@@ -252,6 +265,21 @@ export async function handleSubscriptionDeleted(
 
   if (tenantDeleteError || !tenant) {
     logger.warn('Subscription deleted: tenant not found', { customerId });
+    return;
+  }
+
+  // Cet abonnement a ete annule par NOUS parce qu'un autre, paye, le remplace
+  // (filet contre le double abonnement). Ce n'est pas une resiliation: geler
+  // ici couperait le restaurant qui vient de payer, et effacer l'identifiant
+  // ferait echouer l'enregistrement du nouveau. Le remplacant est VERIFIE
+  // chez Stripe: la marque seule peut etre tapee par le client.
+  const remplacant = remplacantDesigne(subscription);
+  if (remplacant && (await remplacantVerifie(stripe, remplacant, tenant.id))) {
+    logger.info('subscription.deleted ignore: abonnement remplace par un autre', {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+      remplacant,
+    });
     return;
   }
 
