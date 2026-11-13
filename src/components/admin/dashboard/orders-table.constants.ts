@@ -5,10 +5,16 @@ export const PAGE_SIZE = 10;
 export const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 // Override the shadcn Table defaults (uppercase 12px th / 14px td) to match the
-// maquette: normal-case 13px/500 muted headers, 13px cells with 10px/12px padding.
+// maquette: normal-case 13px/500 muted headers, 13px cells with 10px padding.
 export const HEAD_CLS =
-  'h-10 px-3 text-[13px] font-medium normal-case tracking-normal whitespace-nowrap text-[var(--muted-foreground)]';
-export const CELL_CLS = 'px-3 py-2.5 text-[13px] whitespace-nowrap';
+  'h-10 px-2.5 text-[13px] font-medium normal-case tracking-normal whitespace-nowrap text-[var(--muted-foreground)]';
+export const CELL_CLS = 'px-2.5 py-2.5 text-[13px] whitespace-nowrap';
+
+// From xl the orders card shares the row with the KPI column and is too narrow
+// for every column (measured 2026-11-13: ~1000px of columns in a 668px card at
+// 1440 with the sidebar open). Payment steps aside between xl and 2xl instead of
+// clipping; the Type column is off by default (opt-in via the column picker).
+export const PAYMENT_COL_CLS = 'xl:max-2xl:hidden';
 
 // Elapsed-time pill tones (maquette u-gray / u-orange / u-red)
 export const TONE = {

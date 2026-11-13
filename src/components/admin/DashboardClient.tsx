@@ -215,7 +215,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     // Dashboard layout: the live orders table owns the full-height left column;
     // the KPI cards (2 across) sit top-right with the revenue chart beneath them.
     // Below xl everything stacks: KPI cards, then the orders, then the chart.
-    <div className="grid grid-cols-1 gap-6 py-6 xl:grid-cols-[minmax(0,1fr)_440px]">
+    <div className="grid grid-cols-1 gap-6 py-6 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
       {/* KPI cards - tablet: first; desktop: top-right */}
       <div className="order-1 xl:col-start-2 xl:row-start-1 xl:self-start">
         <SectionCards cards={sectionCards} />

@@ -14,6 +14,7 @@ import {
   HEAD_CLS,
   NEXT_STATUS,
   PAGE_SIZE,
+  PAYMENT_COL_CLS,
   PAYMENT_META,
   STATUS_META,
   TAB_FILTER,
@@ -60,7 +61,7 @@ export function OrdersTable({
   const [sortKey, setSortKey] = useState<'id' | 'time' | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
-    type: true,
+    type: false,
     payment: true,
     items: true,
   });
@@ -279,9 +280,10 @@ export function OrdersTable({
                 </TableHead>
                 {cols.type && <TableHead className={HEAD_CLS}>{t('colType')}</TableHead>}
                 <TableHead className={HEAD_CLS}>{t('colStatus')}</TableHead>
-                {cols.payment && <TableHead className={HEAD_CLS}>{t('colPayment')}</TableHead>}
+                {cols.payment && (
+                  <TableHead className={cn(HEAD_CLS, PAYMENT_COL_CLS)}>{t('colPayment')}</TableHead>
+                )}
                 <TableHead className={cn(HEAD_CLS, 'text-right')}>{t('colAmount')}</TableHead>
-                {cols.items && <TableHead className={HEAD_CLS}>{t('colItems')}</TableHead>}
                 <TableHead className={cn(HEAD_CLS, 'w-10')} />
               </TableRow>
             </TableHeader>

@@ -23,14 +23,26 @@ export type GetOrderStatusConfig = (status: string | null | undefined) => OrderS
 export function useOrderStatusConfig(): GetOrderStatusConfig {
   const t = useTranslations('orders');
 
-  const statusConfig: Record<string, OrderStatusConfigEntry> = useMemo(
-    () => ({
-      pending: {
-        label: t('statusPendingCard'),
-        bg: STATUS_STYLES.pending.bg,
-        text: STATUS_STYLES.pending.text,
-        nextStatus: 'preparing',
-        nextLabel: t('actionPrepare'),
+  const statusConfig: Record<string, OrderStatusConfigEntry> = useMemo(() => {
+    const pending: OrderStatusConfigEntry = {
+      label: t('statusPendingCard'),
+      bg: STATUS_STYLES.pending.bg,
+      text: STATUS_STYLES.pending.text,
+      nextStatus: 'preparing',
+      nextLabel: t('actionPrepare'),
+    };
+    return {
+      pending,
+      // The DB CHECK also allows `confirmed` and `served`, outside the app's
+      // OrderStatus union. Without these entries the raw English value was shown
+      // as the badge label ("confirmed", seen 2026-11-13).
+      confirmed: pending,
+      served: {
+        label: t('statusServedCard'),
+        bg: STATUS_STYLES.delivered.bg,
+        text: STATUS_STYLES.delivered.text,
+        nextStatus: null,
+        nextLabel: null,
       },
       preparing: {
         label: t('statusPreparingCard'),
@@ -60,9 +72,8 @@ export function useOrderStatusConfig(): GetOrderStatusConfig {
         nextStatus: null,
         nextLabel: null,
       },
-    }),
-    [t],
-  );
+    };
+  }, [t]);
 
   // Safe lookup: unknown/null status falls back to a neutral terminal config
   // so the component never crashes on unexpected DB values.

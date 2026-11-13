@@ -71,7 +71,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage === 0}
             onClick={() => setPage(0)}
-            aria-label={tc('firstPage')}
+            aria-label={tc('aria.firstPage')}
           >
             <ChevronsLeft className="size-[15px]" />
           </Button>
@@ -104,7 +104,7 @@ export function OrdersTableFooter({
             className="size-[30px]"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage(pageCount - 1)}
-            aria-label={tc('lastPage')}
+            aria-label={tc('aria.lastPage')}
           >
             <ChevronsRight className="size-[15px]" />
           </Button>

@@ -31,11 +31,14 @@ export function SectionCards({ cards }: SectionCardsProps) {
         return (
           <div
             key={i}
-            className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] [background-image:linear-gradient(to_top,var(--muted),var(--card))] dark:[background-image:none]"
+            className="flex min-w-0 flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] [background-image:linear-gradient(to_top,var(--muted),var(--card))] dark:[background-image:none]"
           >
             <div className="grid gap-1.5 px-4 pt-4 sm:px-5 sm:pt-5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 truncate text-[13px] text-[var(--muted-foreground)]">
+              {/* In the narrow 2-up KPI column the title wraps and, when one word
+                  plus the badge no longer fit, the badge drops under the title
+                  instead of overlapping it or leaving the card. */}
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                <div className="min-w-0 text-[13px] leading-snug text-[var(--muted-foreground)]">
                   {c.desc}
                 </div>
                 {c.deltaText && (
