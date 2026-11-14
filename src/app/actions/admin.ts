@@ -25,6 +25,7 @@ import { getTranslations } from 'next-intl/server';
 import { checkTenantAdminPermissions } from '@/lib/auth/check-tenant-admin';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { revalidateTenantUsersPath } from '@/lib/admin/revalidate-tenant-users';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 
 type ActionResponse = {
   success?: boolean;
@@ -277,6 +278,11 @@ export async function actionDeleteAdminUser(
     });
     return { error: t('serverError') };
   }
+
+  // Dernier membre: la fonction SQL a supprime le restaurant entier. Ses fichiers
+  // (logo, photos, sons) ne sont pas dans la base et restaient indefiniment. La
+  // purge ne s'execute que si la ligne du restaurant a bien disparu (R-05).
+  await getStorageCleanup().purgeTenant(tenantId);
 
   if (authDeleted) {
     logger.info('Auth user deleted (no remaining memberships)', {

@@ -22,6 +22,15 @@ vi.mock('@/lib/billing/assert-tenant-serving', async () => {
  * Vraie garde (get-session -> hasPermission); seul le client Supabase est simule.
  */
 
+vi.mock('@/services/storage-cleanup.service', () => ({
+  getStorageCleanup: () => ({
+    imageUrlsOf: async () => [],
+    logoUrlOf: async () => [],
+    release: async () => undefined,
+    releaseUnreferencedFiles: async () => undefined,
+    purgeTenant: async () => undefined,
+  }),
+}));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 vi.mock('@/lib/logger', () => ({

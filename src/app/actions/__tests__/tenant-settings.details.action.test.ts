@@ -20,6 +20,15 @@ vi.mock('@/lib/billing/assert-tenant-serving', async () => {
 
 const updateSettings = vi.fn();
 
+vi.mock('@/services/storage-cleanup.service', () => ({
+  getStorageCleanup: () => ({
+    imageUrlsOf: async () => [],
+    logoUrlOf: async () => [],
+    release: async () => undefined,
+    releaseUnreferencedFiles: async () => undefined,
+    purgeTenant: async () => undefined,
+  }),
+}));
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), revalidatePath: vi.fn() }));
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (k: string) => k }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));

@@ -6,6 +6,7 @@ import { onboardingSaveSchema, readOnboardingSiteParam } from '@/lib/validations
 import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 
@@ -75,7 +76,12 @@ export async function POST(request: Request) {
 
     // 4. Save step via service (pass full data as draft for complete restoration)
     const onboardingService = createOnboardingService(supabase);
-    await onboardingService.saveStep(session.adminUser.tenant_id, step, data, data);
+    const tenantId = session.adminUser.tenant_id;
+    // Etape 3 = logo: l'ancien fichier est libere apres l'ecriture (R-05).
+    const cleanup = getStorageCleanup();
+    const previousLogo = step === 3 ? await cleanup.logoUrlOf(tenantId) : [];
+    await onboardingService.saveStep(tenantId, step, data, data);
+    if (step === 3) await cleanup.release(tenantId, previousLogo);
 
     return NextResponse.json({ success: true });
   } catch (error) {
