@@ -1,118 +1,122 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**
- * A-09: le changement d'adresse d'un membre n'a lieu qu'apres confirmation par
- * la NOUVELLE adresse. Le jeton est signe, expire, et lie a l'adresse actuelle.
+ * A-09: une etape du changement d'adresse ne s'applique que par POST. Un GET
+ * (scanner de courriel, apercu de lien) n'a aucun effet. L'etat est relu a
+ * chaque etape (voir email-change.service.test.ts).
  */
 
-const getUserById = vi.fn();
-const updateUserById = vi.fn();
-const mirrorUpdate = vi.fn();
-const mirrorEq = vi.fn();
+const confirmStep = vi.fn();
+const limiterCheck = vi.fn();
 
-vi.mock('@/lib/logger', () => ({
-  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+vi.mock('@/lib/csrf', () => ({ verifyOrigin: () => null }));
+vi.mock('@/lib/rate-limit', () => ({
+  adminPasswordResetLinkLimiter: { check: (...a: unknown[]) => limiterCheck(...a) },
 }));
 vi.mock('@/services/email.service', () => ({ sendWelcomeOnboardingEmail: vi.fn() }));
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    auth: {
-      admin: {
-        getUserById: (...a: unknown[]) => getUserById(...a),
-        updateUserById: (...a: unknown[]) => updateUserById(...a),
-      },
-    },
-    from: (table: string) => ({
-      update: (payload: unknown) => {
-        mirrorUpdate(table, payload);
-        return { eq: (...a: unknown[]) => mirrorEq(...a) };
-      },
-    }),
-  }),
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
+vi.mock('@/services/email-change.service', () => ({
+  createEmailChangeService: () => ({ confirmStep: (...a: unknown[]) => confirmStep(...a) }),
 }));
 
-import { GET } from '../route';
-import { signEmailChangeToken } from '@/lib/auth/email-change-token';
+import { GET, POST } from '../route';
+import { signEmailChangeToken, type EmailChangeClaims } from '@/lib/auth/email-change-token';
 
 const ORIGINAL = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const CLAIMS: EmailChangeClaims = {
+  userId: 'u-1',
+  fromEmail: 'ancien@resto.test',
+  toEmail: 'nouveau@resto.test',
+  tenantId: 't-1',
+  requesterId: 'r-1',
+  nonce: 'n-1',
+  step: 'new',
+};
 
-async function suivre(token: string | null): Promise<URL> {
-  const q = token === null ? '' : `token=${encodeURIComponent(token)}&`;
-  const res = await GET(new Request(`https://attabl.com/auth/confirm?${q}type=email_change`));
+async function poster(token: string | null): Promise<URL> {
+  const body = new FormData();
+  if (token !== null) body.set('token', token);
+  const res = await POST(new Request('https://attabl.com/auth/confirm', { method: 'POST', body }));
+  expect(res.status).toBe(303);
   return new URL(res.headers.get('location') ?? '');
 }
 
-function validToken(over?: { fromEmail?: string }) {
-  return signEmailChangeToken({
-    userId: 'u-1',
-    fromEmail: over?.fromEmail ?? 'ancien@resto.test',
-    toEmail: 'nouveau@resto.test',
-  });
-}
-
-describe('GET /auth/confirm (email_change)', () => {
+describe('POST /auth/confirm (changement d adresse)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-secret-key';
-    getUserById.mockResolvedValue({
-      data: { user: { id: 'u-1', email: 'ancien@resto.test' } },
-      error: null,
-    });
-    updateUserById.mockResolvedValue({ error: null });
-    mirrorEq.mockResolvedValue({ error: null });
+    limiterCheck.mockResolvedValue({ success: true });
+    confirmStep.mockResolvedValue('applied');
   });
   afterEach(() => {
     if (ORIGINAL === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     else process.env.SUPABASE_SERVICE_ROLE_KEY = ORIGINAL;
   });
 
-  it('change l adresse du compte (confirmee) et le miroir quand le lien est valide', async () => {
-    const cible = await suivre(validToken());
+  it('applique l etape et renvoie a la connexion quand le changement est applique', async () => {
+    const cible = await poster(signEmailChangeToken(CLAIMS));
 
     expect(cible.pathname).toBe('/login');
     expect(cible.searchParams.get('confirmed')).toBe('true');
-    expect(updateUserById).toHaveBeenCalledWith('u-1', {
-      email: 'nouveau@resto.test',
-      email_confirm: true,
-    });
-    expect(mirrorUpdate).toHaveBeenCalledWith('admin_users', { email: 'nouveau@resto.test' });
-    expect(mirrorEq).toHaveBeenCalledWith('user_id', 'u-1');
+    expect(confirmStep).toHaveBeenCalledWith(CLAIMS);
   });
 
-  it('TEMOIN: un jeton falsifie ne change rien', async () => {
-    const [payload] = validToken().split('.');
-    const cible = await suivre(`${payload}.AAAA`);
+  it('etape current: renvoie vers la page de remerciement une fois la nouvelle adresse prevenue', async () => {
+    confirmStep.mockResolvedValue('new_address_notified');
 
-    expect(cible.searchParams.get('error')).toBe('expired_link');
-    expect(updateUserById).not.toHaveBeenCalled();
-    expect(mirrorUpdate).not.toHaveBeenCalled();
+    const cible = await poster(signEmailChangeToken({ ...CLAIMS, step: 'current' }));
+
+    expect(cible.pathname).toBe('/auth/confirm-email-change');
+    expect(cible.searchParams.get('done')).toBe('current');
+    expect(limiterCheck).toHaveBeenCalledWith('email-change-step:u-1');
   });
 
-  it('TEMOIN: sans jeton, rien ne change', async () => {
-    const cible = await suivre(null);
+  it('TEMOIN: un GET n applique rien (scanner de courriel)', async () => {
+    const token = signEmailChangeToken(CLAIMS);
+    await GET(
+      new Request(
+        `https://attabl.com/auth/confirm?token=${encodeURIComponent(token)}&type=email_change`,
+      ),
+    );
 
-    expect(cible.searchParams.get('error')).toBe('expired_link');
-    expect(updateUserById).not.toHaveBeenCalled();
+    expect(confirmStep).not.toHaveBeenCalled();
   });
 
-  it('TEMOIN: un lien perime (adresse deja changee depuis) ne change rien', async () => {
-    getUserById.mockResolvedValue({
-      data: { user: { id: 'u-1', email: 'deja-change@resto.test' } },
-      error: null,
-    });
-
-    const cible = await suivre(validToken());
-
-    expect(cible.searchParams.get('error')).toBe('expired_link');
-    expect(updateUserById).not.toHaveBeenCalled();
+  it('TEMOIN: un jeton falsifie ou absent ne change rien', async () => {
+    const [payload] = signEmailChangeToken(CLAIMS).split('.');
+    expect((await poster(`${payload}.AAAA`)).searchParams.get('error')).toBe('expired_link');
+    expect((await poster(null)).searchParams.get('error')).toBe('expired_link');
+    expect(confirmStep).not.toHaveBeenCalled();
   });
 
-  it('n ecrit pas le miroir quand le compte auth refuse la nouvelle adresse', async () => {
-    updateUserById.mockResolvedValue({ error: { message: 'email exists' } });
+  it('secret serveur absent: page d erreur propre, pas de 500', async () => {
+    const token = signEmailChangeToken(CLAIMS);
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const cible = await suivre(validToken());
+    const cible = await poster(token);
 
     expect(cible.searchParams.get('error')).toBe('auth_failed');
-    expect(mirrorUpdate).not.toHaveBeenCalled();
+    expect(confirmStep).not.toHaveBeenCalled();
+  });
+
+  it('refus du service: aucune confirmation affichee', async () => {
+    confirmStep.mockResolvedValue('refused');
+    expect((await poster(signEmailChangeToken(CLAIMS))).searchParams.get('error')).toBe(
+      'auth_failed',
+    );
+    confirmStep.mockResolvedValue('expired');
+    expect((await poster(signEmailChangeToken(CLAIMS))).searchParams.get('error')).toBe(
+      'expired_link',
+    );
+  });
+
+  it('l etape current est bornee: au-dela du quota, aucune etape n est jouee', async () => {
+    limiterCheck.mockResolvedValue({ success: false });
+
+    const cible = await poster(signEmailChangeToken({ ...CLAIMS, step: 'current' }));
+
+    expect(cible.searchParams.get('error')).toBe('auth_failed');
+    expect(confirmStep).not.toHaveBeenCalled();
   });
 });

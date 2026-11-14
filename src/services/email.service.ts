@@ -12,7 +12,8 @@ import {
   buildWelcomeEmail,
   buildPasswordResetEmail,
   buildEmailChangeEmail,
-  buildEmailChangeNoticeEmail,
+  buildEmailChangeApprovalEmail,
+  buildAccountExistsEmail,
   buildTeamInvitationEmail,
   buildOrderConfirmationEmail,
   buildLowStockAlertEmail,
@@ -27,6 +28,8 @@ import type {
   WelcomeEmailData,
   PasswordResetEmailData,
   EmailChangeEmailData,
+  EmailChangeApprovalEmailData,
+  AccountExistsEmailData,
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
@@ -114,8 +117,16 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
-    async sendEmailChangeNoticeEmail(to: string): Promise<EmailResult> {
-      const { subject, html, text } = buildEmailChangeNoticeEmail();
+    async sendEmailChangeApprovalEmail(
+      to: string,
+      data: EmailChangeApprovalEmailData,
+    ): Promise<EmailResult> {
+      const { subject, html, text } = buildEmailChangeApprovalEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendAccountExistsEmail(to: string, data: AccountExistsEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildAccountExistsEmail(data);
       return send(to, subject, html, text);
     },
 
@@ -195,8 +206,15 @@ export const sendEmailChangeConfirmationEmail = async (
   data: { confirmUrl: string },
 ): Promise<boolean> => (await _svc.sendEmailChangeEmail(to, data)).success;
 
-export const sendEmailChangeNoticeToCurrentAddress = async (to: string): Promise<boolean> =>
-  (await _svc.sendEmailChangeNoticeEmail(to)).success;
+export const sendEmailChangeApprovalToCurrentAddress = async (
+  to: string,
+  data: { approveUrl: string; newEmail: string },
+): Promise<boolean> => (await _svc.sendEmailChangeApprovalEmail(to, data)).success;
+
+export const sendSignupAccountExistsEmail = async (
+  to: string,
+  data: { loginUrl: string; forgotPasswordUrl: string },
+): Promise<boolean> => (await _svc.sendAccountExistsEmail(to, data)).success;
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,

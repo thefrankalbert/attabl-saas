@@ -1,61 +1,59 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { signPayload, verifyPayload } from './signed-payload';
 
 /**
- * Jeton de confirmation d'un changement d'adresse (A-09).
+ * Jeton d'une etape du changement d'adresse d'un membre (A-09).
  *
- * Un administrateur qui change l'adresse d'un membre ne doit pas reecrire
- * l'identite du compte auth sur sa seule parole: la nouvelle adresse doit
- * prouver qu'elle recoit le courrier. Le jeton est signe (HMAC-SHA256) et lie
- * au compte, a l'adresse ACTUELLE et a la nouvelle adresse:
- *  - lie a l'adresse actuelle, il devient inutilisable des que l'adresse a
- *    change (usage unique de fait, aucune table a tenir);
- *  - il expire en 24 h;
- *  - la signature emploie une cle derivee du secret serveur existant, avec une
- *    etiquette propre a cet usage: un jeton de ce type ne vaut rien ailleurs.
+ * Le changement exige l'accord des DEUX adresses, en chaine: l'adresse ACTUELLE
+ * approuve d'abord (etape `current`), puis un second lien part vers la NOUVELLE
+ * adresse (etape `new`) dont l'approbation applique le changement.
+ *
+ * Le jeton est signe (HMAC-SHA256) et lie:
+ *  - au compte, a l'adresse actuelle et a la nouvelle adresse (devient inutilisable
+ *    des que l'adresse a change);
+ *  - au restaurant demandeur et a la ligne admin_users du demandeur, relus
+ *    a la confirmation (le demandeur peut avoir perdu ses droits entre-temps);
+ *  - a un nonce stocke cote serveur (app_metadata du compte): une nouvelle
+ *    demande remplace le nonce et rend toutes les precedentes caduques.
+ * Il expire en 24 h.
  */
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-const DOMAIN_LABEL = 'attabl:email-change:v1:';
+const LABEL = 'attabl:email-change:v2:';
+
+export type EmailChangeStep = 'current' | 'new';
 
 export interface EmailChangeClaims {
   userId: string;
   fromEmail: string;
   toEmail: string;
-}
-
-interface SignedPayload extends EmailChangeClaims {
-  exp: number;
-}
-
-function secretKey(): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error('Missing signing secret for email change token');
-  return key;
-}
-
-function sign(encodedPayload: string): Buffer {
-  return createHmac('sha256', secretKey()).update(`${DOMAIN_LABEL}${encodedPayload}`).digest();
+  tenantId: string;
+  requesterId: string;
+  nonce: string;
+  step: EmailChangeStep;
 }
 
 export function signEmailChangeToken(claims: EmailChangeClaims, now: number = Date.now()): string {
-  const payload: SignedPayload = {
-    userId: claims.userId,
-    fromEmail: claims.fromEmail.trim().toLowerCase(),
-    toEmail: claims.toEmail.trim().toLowerCase(),
-    exp: now + TOKEN_TTL_MS,
-  };
-  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  return `${encoded}.${sign(encoded).toString('base64url')}`;
+  return signPayload(
+    LABEL,
+    {
+      ...claims,
+      fromEmail: claims.fromEmail.trim().toLowerCase(),
+      toEmail: claims.toEmail.trim().toLowerCase(),
+    },
+    TOKEN_TTL_MS,
+    now,
+  );
 }
 
-function isSignedPayload(value: unknown): value is SignedPayload {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
+function isClaims(v: Record<string, unknown>): v is Record<string, unknown> & EmailChangeClaims {
   return (
     typeof v.userId === 'string' &&
     typeof v.fromEmail === 'string' &&
     typeof v.toEmail === 'string' &&
-    typeof v.exp === 'number'
+    typeof v.tenantId === 'string' &&
+    typeof v.requesterId === 'string' &&
+    typeof v.nonce === 'string' &&
+    (v.step === 'current' || v.step === 'new')
   );
 }
 
@@ -64,20 +62,15 @@ export function verifyEmailChangeToken(
   token: string,
   now: number = Date.now(),
 ): EmailChangeClaims | null {
-  const parts = token.split('.');
-  if (parts.length !== 2) return null;
-  const [encoded, signature] = parts;
-
-  const expected = sign(encoded);
-  const given = Buffer.from(signature, 'base64url');
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
-
-  let payload: unknown;
-  try {
-    payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
-  } catch {
-    return null;
-  }
-  if (!isSignedPayload(payload) || payload.exp < now) return null;
-  return { userId: payload.userId, fromEmail: payload.fromEmail, toEmail: payload.toEmail };
+  const claims = verifyPayload(LABEL, token, now);
+  if (!claims || !isClaims(claims)) return null;
+  return {
+    userId: claims.userId,
+    fromEmail: claims.fromEmail,
+    toEmail: claims.toEmail,
+    tenantId: claims.tenantId,
+    requesterId: claims.requesterId,
+    nonce: claims.nonce,
+    step: claims.step,
+  };
 }

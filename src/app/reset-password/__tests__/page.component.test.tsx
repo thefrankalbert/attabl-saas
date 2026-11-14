@@ -5,14 +5,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 /**
- * A-06: le lien de reinitialisation ouvre une session sur le compte qui l'a
- * demande. Le mot de passe ne change que si la personne retape l'adresse de CE
- * compte (celle de `auth.getUser()`).
+ * A-06: la page n'ecrit plus le mot de passe elle-meme: elle poste au serveur
+ * (/api/reset-password), qui verifie le marqueur de recuperation et l'adresse.
+ * Sur EMAIL_MISMATCH elle coupe la session locale et renvoie a la connexion.
  */
 
 const getUser = vi.fn();
 const updateUser = vi.fn();
+const signOut = vi.fn();
 const push = vi.fn();
+const fetchMock = vi.fn();
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('next/navigation', () => ({
@@ -26,6 +28,7 @@ vi.mock('@/lib/supabase/client', () => ({
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
       getUser: (...a: unknown[]) => getUser(...a),
       updateUser: (...a: unknown[]) => updateUser(...a),
+      signOut: (...a: unknown[]) => signOut(...a),
     },
   }),
 }));
@@ -38,6 +41,10 @@ vi.mock('@/components/auth/AuthCard', () => ({
 vi.mock('@/components/auth/AuthFormSkeleton', () => ({ AuthFormSkeleton: () => <div /> }));
 
 import ResetPasswordPage from '../page';
+
+function reponse(status: number, body: unknown) {
+  return { ok: status >= 200 && status < 300, status, json: async () => body };
+}
 
 async function remplirEtEnvoyer(email: string) {
   render(<ResetPasswordPage />);
@@ -57,22 +64,42 @@ async function remplirEtEnvoyer(email: string) {
 describe('page de reinitialisation (A-06)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('fetch', fetchMock);
     getUser.mockResolvedValue({ data: { user: { email: 'titulaire@resto.test' } } });
-    updateUser.mockResolvedValue({ error: null });
+    signOut.mockResolvedValue({ error: null });
   });
 
-  it('refuse et ne change pas le mot de passe quand l adresse saisie n est pas celle du compte', async () => {
-    await remplirEtEnvoyer('victime@autre.test');
+  it('ne change jamais le mot de passe dans le navigateur: tout passe par le serveur', async () => {
+    fetchMock.mockResolvedValue(reponse(200, { success: true }));
 
-    await waitFor(() => expect(screen.getByText('accountEmailMismatch')).toBeInTheDocument());
+    await remplirEtEnvoyer('titulaire@resto.test');
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    expect(url).toBe('/api/reset-password');
+    expect(JSON.parse(init.body)).toEqual({
+      accountEmail: 'titulaire@resto.test',
+      password: 'MotDePasse-Solide-1',
+    });
     expect(updateUser).not.toHaveBeenCalled();
   });
 
-  it('TEMOIN: change le mot de passe quand l adresse du compte est retapee', async () => {
-    await remplirEtEnvoyer('  Titulaire@Resto.test ');
+  it('EMAIL_MISMATCH: deconnexion locale et retour a la connexion', async () => {
+    fetchMock.mockResolvedValue(reponse(403, { code: 'EMAIL_MISMATCH' }));
 
-    await waitFor(() =>
-      expect(updateUser).toHaveBeenCalledWith({ password: 'MotDePasse-Solide-1' }),
-    );
+    await remplirEtEnvoyer('victime@autre.test');
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login?error=access_denied'));
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('NO_RECOVERY: affiche l ecran de lien expire', async () => {
+    fetchMock.mockResolvedValue(reponse(403, { code: 'NO_RECOVERY' }));
+
+    await remplirEtEnvoyer('titulaire@resto.test');
+
+    await waitFor(() => expect(screen.getByText('expiredTitle')).toBeInTheDocument());
+    expect(push).not.toHaveBeenCalled();
   });
 });

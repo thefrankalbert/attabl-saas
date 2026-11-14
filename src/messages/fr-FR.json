@@ -1529,6 +1529,17 @@
       "emailPlaceholder": "vous@exemple.com",
       "submit": "Envoyer le lien"
     },
+    "emailChange": {
+      "title": "Confirmer le changement d'adresse",
+      "currentBody": "Un administrateur de votre restaurant demande que l'adresse de votre compte devienne {email}. Autorisez-vous ce changement ?",
+      "newBody": "Confirmez que {email} sera désormais l'adresse de votre compte ATTABL.",
+      "confirmButton": "Confirmer",
+      "doneTitle": "Merci",
+      "doneCurrentBody": "Votre accord est enregistré. Un lien de confirmation vient d'être envoyé à la nouvelle adresse.",
+      "invalidTitle": "Lien expiré",
+      "invalidBody": "Ce lien n'est plus valable. Si vous attendiez ce changement, demandez-en un nouveau à votre responsable.",
+      "backToLogin": "Retour à la connexion"
+    },
     "reset": {
       "checkingText": "Vérification du lien en cours...",
       "samePasswordError": "Le nouveau mot de passe doit être différent de l'ancien.",
@@ -1544,7 +1555,6 @@
       "accountEmailLabel": "Quelle est l'adresse de ce compte ?",
       "accountEmailPlaceholder": "vous@restaurant.com",
       "accountEmailHint": "Retapez l'adresse du compte à réinitialiser. Si ce lien ne vient pas de vous, fermez cette page.",
-      "accountEmailMismatch": "Cette adresse ne correspond pas au compte de ce lien.",
       "newPasswordLabel": "Nouveau mot de passe",
       "newPasswordPlaceholder": "Minimum 8 caractères",
       "confirmPasswordLabel": "Confirmer le mot de passe",
@@ -2843,7 +2853,7 @@
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
     "userAdded": "Utilisateur ajouté",
     "userUpdated": "Utilisateur mis à jour",
-    "emailChangeSent": "Lien envoyé à la nouvelle adresse. Elle ne change qu'après confirmation.",
+    "emailChangeSent": "Demande envoyée. Le changement a lieu après l'accord de l'adresse actuelle, puis de la nouvelle.",
     "userDeleted": "Utilisateur supprimé",
     "inviteUser": "Inviter un utilisateur",
     "inviteSent": "Invitation envoyée",
@@ -4785,11 +4795,10 @@
   "errors": {
     "notAuthenticated": "Non authentifié",
     "permissionDenied": "Permission refusée",
+    "invitationDailyLimit": "Limite d'invitations atteinte pour aujourd'hui. Réessayez demain.",
     "invalidData": "Données invalides",
     "tenantNotFound": "Tenant introuvable",
     "planLimitError": "Erreur lors de la vérification des limites du plan",
-    "userCreationError": "Ce compte n'a pas pu être créé. Si cette adresse a déjà un compte, invitez la personne par email.",
-    "tenantLinkError": "Erreur lors de la liaison au tenant",
     "userNotFound": "Utilisateur introuvable",
     "invalidEmail": "Email invalide",
     "rateLimited": "Trop de requêtes. Réessayez plus tard.",

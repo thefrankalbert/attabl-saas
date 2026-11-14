@@ -15,6 +15,8 @@ import { parseRouteUuid } from '@/lib/validations/common.schema';
 import { canActOnUser } from '@/lib/auth/role-hierarchy';
 import type { AdminRole } from '@/types/admin.types';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { getTranslations } from 'next-intl/server';
+import { retryAfterSeconds } from '@/lib/retry-after';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -97,13 +99,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // P-10: un renvoi envoie un courriel reel comme une creation: meme plafond
     // quotidien par restaurant (sinon un renvoi en boucle contourne la limite).
-    const { success: withinDailyQuota } = await invitationTenantDailyLimiter.check(
-      existingInvitation.tenant_id,
-    );
-    if (!withinDailyQuota) {
+    const daily = await invitationTenantDailyLimiter.check(existingInvitation.tenant_id);
+    if (!daily.success) {
+      const te = await getTranslations('errors');
       return NextResponse.json(
-        { error: "Limite d'invitations atteinte pour aujourd'hui. Reessayez demain." },
-        { status: 429, headers: { 'Retry-After': '3600' } },
+        { error: te('invitationDailyLimit') },
+        { status: 429, headers: { 'Retry-After': retryAfterSeconds(daily.reset) } },
       );
     }
 

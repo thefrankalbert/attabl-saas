@@ -34,7 +34,6 @@ vi.mock('@/lib/billing/assert-tenant-serving', async () => {
 const mockGetAuthForTenant = vi.fn();
 const mockSendPasswordResetEmail = vi.fn();
 const mockSendEmailChangeEmail = vi.fn();
-const mockSendEmailChangeNotice = vi.fn();
 
 type MembershipRow = {
   tenant_id: string | null;
@@ -187,8 +186,8 @@ vi.mock('@/services/audit.service', () => ({
 }));
 vi.mock('@/services/email.service', () => ({
   sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
-  sendEmailChangeConfirmationEmail: (...args: unknown[]) => mockSendEmailChangeEmail(...args),
-  sendEmailChangeNoticeToCurrentAddress: (...args: unknown[]) => mockSendEmailChangeNotice(...args),
+  sendEmailChangeApprovalToCurrentAddress: (...args: unknown[]) =>
+    mockSendEmailChangeEmail(...args),
 }));
 
 import {
@@ -233,7 +232,6 @@ describe('prise de controle de compte via les actions admin', () => {
     });
     mockSendPasswordResetEmail.mockResolvedValue(true);
     mockSendEmailChangeEmail.mockResolvedValue(true);
-    mockSendEmailChangeNotice.mockResolvedValue(true);
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-secret-key';
     resetLinkLimiterCheck.mockResolvedValue({ success: true });
     resetLinkIpLimiterCheck.mockResolvedValue({ success: true });
@@ -584,76 +582,82 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
 
-    // A-09: la nouvelle adresse doit prouver qu'elle recoit le courrier AVANT
-    // que l'identite du compte (ou le miroir) change.
-    it('A-09: n ecrit ni le compte auth ni le miroir, et envoie un lien signe a la NOUVELLE adresse', async () => {
+    // A-09: l'adresse ACTUELLE approuve d'abord. Rien n'est ecrit sur l'identite
+    // du compte ni sur le miroir tant que les deux adresses n'ont pas approuve.
+    function liveTarget() {
       actorIsOwnerOfTenantA();
       targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+    }
+
+    it('A-09: envoie un lien signe a l adresse ACTUELLE, sans rien ecrire sur l identite ni le miroir', async () => {
+      liveTarget();
 
       const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
 
       expect(res.success).toBe(true);
-      expect(updateUserById).not.toHaveBeenCalled();
       expect(adminUsersUpdate).not.toHaveBeenCalled();
+      // Seul le nonce de la demande est ecrit (app_metadata), jamais l'adresse.
+      expect(updateUserById).toHaveBeenCalledTimes(1);
+      const [, payload] = updateUserById.mock.calls[0] as [string, Record<string, unknown>];
+      expect(payload).not.toHaveProperty('email');
+      expect(payload).not.toHaveProperty('email_confirm');
+      const nonce = (payload.app_metadata as { email_change_nonce: string }).email_change_nonce;
+      expect(nonce).toBeTruthy();
+
       expect(mockSendEmailChangeEmail).toHaveBeenCalledTimes(1);
       const [sentTo, data] = mockSendEmailChangeEmail.mock.calls[0] as [
         string,
-        { confirmUrl: string },
+        { approveUrl: string; newEmail: string },
       ];
-      expect(sentTo).toBe('nouveau@resto-a.test');
-      const url = new URL(data.confirmUrl);
-      expect(url.pathname).toBe('/auth/confirm');
-      expect(url.searchParams.get('type')).toBe('email_change');
+      expect(sentTo).toBe('victime@autre-resto.test');
+      expect(data.newEmail).toBe('nouveau@resto-a.test');
+      const url = new URL(data.approveUrl);
+      expect(url.pathname).toBe('/auth/confirm-email-change');
       const claims = verifyEmailChangeToken(url.searchParams.get('token') ?? '');
       expect(claims).toEqual({
         userId: 'local-auth-id',
         fromEmail: 'victime@autre-resto.test',
         toEmail: 'nouveau@resto-a.test',
+        tenantId: TENANT_A,
+        requesterId: 'actor-admin-row',
+        nonce,
+        step: 'current',
       });
     });
 
-    it('A-09: previent aussi le titulaire de l adresse ACTUELLE, sans bloquer si l avis echoue', async () => {
-      actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
-      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+    it('A-09: une nouvelle demande remplace le nonce (une seule demande active)', async () => {
+      liveTarget();
+      await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'a@resto-a.test');
+      await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'b@resto-a.test');
 
-      const ok = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
-      expect(ok.success).toBe(true);
-      expect(mockSendEmailChangeNotice).toHaveBeenCalledWith('victime@autre-resto.test');
-
-      mockSendEmailChangeNotice.mockResolvedValue(false);
-      const degraded = await actionUpdateUserEmail(
-        TENANT_A,
-        'target-admin-row',
-        'autre@resto-a.test',
+      const nonces = updateUserById.mock.calls.map(
+        (c) =>
+          (c[1] as { app_metadata: { email_change_nonce: string } }).app_metadata
+            .email_change_nonce,
       );
-      expect(degraded.success).toBe(true);
+      expect(nonces).toHaveLength(2);
+      expect(nonces[0]).not.toBe(nonces[1]);
     });
 
     it('A-09: respecte le quota d envoi par membre (aucun courriel au-dela)', async () => {
-      actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
-      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+      liveTarget();
       resetLinkLimiterCheck.mockResolvedValue({ success: false });
 
       const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
 
       expect(res.error).toBe('permissionDenied');
       expect(mockSendEmailChangeEmail).not.toHaveBeenCalled();
+      expect(updateUserById).not.toHaveBeenCalled();
     });
 
-    it('A-09: un echec d envoi est signale et ne change rien', async () => {
-      actorIsOwnerOfTenantA();
-      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
-      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+    it('A-09: un echec d envoi est signale', async () => {
+      liveTarget();
       mockSendEmailChangeEmail.mockResolvedValue(false);
 
       const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
 
       expect(res.error).toBe('serverError');
-      expect(mockSendEmailChangeNotice).not.toHaveBeenCalled();
-      expect(updateUserById).not.toHaveBeenCalled();
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
   });

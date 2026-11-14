@@ -10,6 +10,8 @@ import { getTranslations } from 'next-intl/server';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 import { HONEYPOT_FIELD, isDevAuthBypassEnabled, isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
+import { isRestaurantNameTaken } from '@/services/restaurant-name.service';
+import { sendSignupAccountExistsEmail } from '@/services/email.service';
 
 /**
  * Corps de reponse unique pour "inscription acceptee". Le meme objet sert au
@@ -27,6 +29,7 @@ function signupAcceptedBody(emailDelivered: boolean, t: (key: string) => string)
 
 export async function POST(request: Request) {
   const t = await getTranslations('errors');
+  let signupEmail: string | null = null;
 
   try {
     const originErr = verifyOrigin(request);
@@ -93,8 +96,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: firstError, code: 'VALIDATION' }, { status: 400 });
     }
 
+    signupEmail = parseResult.data.email;
+
     // 3. Execute signup via service
     const supabase = createAdminClient();
+
+    // A-08: le refus "nom pris" est decide AVANT toute creation de compte, donc
+    // il est identique que l'adresse soit nouvelle ou deja inscrite. Apres la
+    // creation de l'utilisateur, il ne tombait que pour une adresse nouvelle.
+    if (await isRestaurantNameTaken(supabase, parseResult.data.restaurantName)) {
+      return NextResponse.json(
+        { error: t('restaurantNameTaken'), code: 'RESTAURANT_NAME_TAKEN' },
+        { status: 409 },
+      );
+    }
     const signupService = createSignupService(supabase);
 
     const result = await signupService.completeEmailSignup(parseResult.data);
@@ -130,6 +145,18 @@ export async function POST(request: Request) {
         logger.info('Signup: adresse deja inscrite, reponse neutre', {
           code: 'EMAIL_ALREADY_REGISTERED',
         });
+        if (signupEmail) {
+          // Meme travail cote serveur que pour un compte cree (un envoi), et le
+          // titulaire est prevenu qu'on a essaye son adresse. Meilleur effort.
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+          await sendSignupAccountExistsEmail(signupEmail, {
+            loginUrl: `${appUrl}/login`,
+            forgotPasswordUrl: `${appUrl}/forgot-password`,
+          }).catch((err: unknown) => {
+            logger.warn('Signup: courriel "compte existant" non envoye', { error: String(err) });
+            return false;
+          });
+        }
         return NextResponse.json(signupAcceptedBody(true, t));
       } else if (error.code === 'CONFLICT' && error.message === 'RESTAURANT_NAME_TAKEN') {
         errorMessage = t('restaurantNameTaken');

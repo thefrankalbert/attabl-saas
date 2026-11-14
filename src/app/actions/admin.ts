@@ -7,8 +7,7 @@ import { updateAdminUserSchema, updateUserEmailSchema } from '@/lib/validations/
 import { checkTargetAccountScope } from '@/lib/auth/target-account-scope';
 import {
   sendPasswordResetEmail,
-  sendEmailChangeConfirmationEmail,
-  sendEmailChangeNoticeToCurrentAddress,
+  sendEmailChangeApprovalToCurrentAddress,
 } from '@/services/email.service';
 import { signEmailChangeToken } from '@/lib/auth/email-change-token';
 import {
@@ -562,8 +561,10 @@ export async function actionUpdateUserEmail(
     error: permError,
     user: currentUser,
     role,
+    adminUserId: requesterId,
   } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
+  if (!requesterId) return { error: (await getTranslations('errors'))('permissionDenied') };
 
   const lockError = await tenantLockError(tenantId);
   if (lockError) return { error: lockError };
@@ -630,10 +631,12 @@ export async function actionUpdateUserEmail(
   // le miroir admin_users.email. Avant, `updateUserById({ email })` changeait
   // l'adresse du compte immediatement: l'administrateur choisissait une adresse
   // qu'il ne prouvait pas posseder, puis la reprenait via "mot de passe oublie".
-  // Desormais la NOUVELLE adresse recoit un lien signe et lie a l'adresse
-  // actuelle; le changement n'a lieu qu'au clic (route /auth/confirm, type
-  // email_change), qui met aussi le miroir a jour. Tant que personne n'a clique,
-  // rien ne bouge.
+  // Desormais le changement exige l'accord des DEUX adresses, en chaine: lien
+  // d'approbation a l'adresse ACTUELLE, puis lien a la NOUVELLE. Chaque etape est
+  // un POST explicite sur la page /auth/confirm-email-change (un scanner de
+  // courriel qui ouvre le lien ne fait rien), et releve droits du demandeur et
+  // perimetre du compte au moment du clic. Tant que personne n'a approuve, rien
+  // ne bouge.
   //
   // Quota par membre cible (3 par heure, fail-closed): l'action envoie un
   // courriel a une adresse libre, donc elle ne doit pas servir de relais. Cle
@@ -664,30 +667,45 @@ export async function actionUpdateUserEmail(
     return { error: t('serverError') };
   }
 
-  const token = signEmailChangeToken({
-    userId: targetUser.user_id,
-    fromEmail: currentAuthEmail,
-    toEmail: nextEmail,
+  // Une seule demande active par compte: le nonce est ecrit cote serveur (champ
+  // app_metadata, modifiable par l'API admin seulement) et releve a chaque etape.
+  // Une nouvelle demande le remplace: les liens des demandes precedentes meurent.
+  const nonce = crypto.randomUUID();
+  const { error: nonceError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
+    app_metadata: { email_change_nonce: nonce },
   });
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
-  const confirmUrl = `${appUrl}/auth/confirm?token=${encodeURIComponent(token)}&type=email_change`;
-  const emailSent = await sendEmailChangeConfirmationEmail(nextEmail, { confirmUrl });
-  if (!emailSent) {
-    logger.error('actionUpdateUserEmail: envoi du lien de confirmation echoue', {
+  if (nonceError) {
+    logger.error('actionUpdateUserEmail: nonce de demande non enregistre', {
       tenantId,
       adminUserId: userId,
+      error: nonceError.message,
     });
     return { error: t('serverError') };
   }
 
-  // A-09: prevenir aussi le titulaire ACTUEL du compte (meilleur effort: la
-  // demande est deja partie, un echec n'annule rien et n'est que journalise).
-  const noticeSent = await sendEmailChangeNoticeToCurrentAddress(currentAuthEmail);
-  if (!noticeSent) {
-    logger.warn('actionUpdateUserEmail: avis a l adresse actuelle non envoye', {
+  // Etape 1 de la chaine: l'adresse ACTUELLE approuve d'abord. Son approbation
+  // envoie ensuite le lien a la NOUVELLE adresse (voir /auth/confirm, POST).
+  const token = signEmailChangeToken({
+    userId: targetUser.user_id,
+    fromEmail: currentAuthEmail,
+    toEmail: nextEmail,
+    tenantId,
+    requesterId,
+    nonce,
+    step: 'current',
+  });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+  const approveUrl = `${appUrl}/auth/confirm-email-change?token=${encodeURIComponent(token)}`;
+  const emailSent = await sendEmailChangeApprovalToCurrentAddress(currentAuthEmail, {
+    approveUrl,
+    newEmail: nextEmail,
+  });
+  if (!emailSent) {
+    logger.error('actionUpdateUserEmail: envoi du lien d approbation echoue', {
       tenantId,
       adminUserId: userId,
     });
+    return { error: t('serverError') };
   }
 
   // Audit log

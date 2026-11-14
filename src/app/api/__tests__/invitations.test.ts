@@ -26,6 +26,10 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn().mockImplementation(async () => (key: string) => key),
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
@@ -387,33 +391,48 @@ describe('POST /api/invitations', () => {
   });
 
   // P-10: plafond quotidien d'invitations par restaurant (relais d'hameconnage).
-  it('P-10: refuse avec 429, sans rien creer ni envoyer, quand le plafond quotidien du restaurant est atteint', async () => {
+  it('P-10: refuse avec 429 (Retry-After tire du limiteur), sans creer ni envoyer, au plafond quotidien', async () => {
     mockRateLimit(true);
-    mockDailyQuota(false);
+    vi.mocked(invitationTenantDailyLimiter.check).mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 7_200_000,
+    });
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
     setupMockAdminClient();
 
     const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+    const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(429);
+    expect(json.error).toBe('invitationDailyLimit');
+    expect(Number(res.headers.get('Retry-After'))).toBeGreaterThan(7000);
     expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
-    const service = vi.mocked(createInvitationService).mock.results[0];
-    expect(service).toBeUndefined();
+    const service = vi.mocked(createInvitationService).mock.results[0].value as {
+      createInvitation: ReturnType<typeof vi.fn>;
+    };
+    expect(service.createInvitation).not.toHaveBeenCalled();
   });
 
-  // P-10: plafond quotidien d'invitations par restaurant (relais d'hameconnage).
-  it('P-10: refuse avec 429, sans rien creer ni envoyer, quand le plafond quotidien du restaurant est atteint', async () => {
+  it('P-10: un doublon refuse ne consomme pas le quota quotidien', async () => {
     mockRateLimit(true);
-    mockDailyQuota(false);
     vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
     setupMockAdminClient();
-    vi.mocked(createInvitationService).mockClear();
+    const service = vi.mocked(createInvitationService).mock.results[0]?.value;
+    expect(service).toBeUndefined();
+    vi.mocked(createInvitationService).mockReturnValue({
+      assertNotAlreadyMember: vi
+        .fn()
+        .mockRejectedValue(new ServiceError('Deja membre', 'VALIDATION')),
+      createInvitation: vi.fn(),
+    } as never);
+    vi.mocked(invitationTenantDailyLimiter.check).mockClear();
 
     const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
 
-    expect(res.status).toBe(429);
-    expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
-    expect(vi.mocked(createInvitationService)).not.toHaveBeenCalled();
+    expect(res.status).toBe(400);
+    expect(invitationTenantDailyLimiter.check).not.toHaveBeenCalled();
   });
 
   it('enforces the staff limit (canAddStaff) for a staff role', async () => {

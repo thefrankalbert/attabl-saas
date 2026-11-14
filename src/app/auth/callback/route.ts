@@ -7,6 +7,34 @@ import { ServiceError } from '@/services/errors';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 import { pickOnboardingTenantIndex } from '@/lib/onboarding/select-onboarding-tenant';
 import { mapMembershipRows, postLoginDestination } from '@/lib/auth/post-login-destination';
+import {
+  RECOVERY_MARKER_COOKIE,
+  RECOVERY_MARKER_TTL_SECONDS,
+  signRecoveryMarker,
+} from '@/lib/auth/recovery-marker';
+
+/**
+ * Redirection vers la page de reinitialisation, avec le marqueur de session de
+ * recuperation (A-06): cookie httpOnly signe, lie au compte du lien. Sans lui, le
+ * serveur refuse de changer le mot de passe depuis la page.
+ */
+function redirectToResetPassword(origin: string, userId: string | undefined): NextResponse {
+  const response = NextResponse.redirect(`${origin}/reset-password`);
+  if (userId) {
+    try {
+      response.cookies.set(RECOVERY_MARKER_COOKIE, signRecoveryMarker(userId), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: RECOVERY_MARKER_TTL_SECONDS,
+      });
+    } catch (err) {
+      logger.error('Recovery marker not set', { error: String(err) });
+    }
+  }
+  return response;
+}
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -19,7 +47,7 @@ export async function GET(request: Request) {
   // Handle token_hash-based recovery (custom password reset email flow)
   if (tokenHash && type === 'recovery') {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({
+    const { data: recoveryData, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: 'recovery',
     });
@@ -32,7 +60,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${requestUrl.origin}/reset-password?error=invalid_token`);
     }
 
-    return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
+    return redirectToResetPassword(requestUrl.origin, recoveryData?.user?.id);
   }
 
   if (code) {
@@ -58,7 +86,7 @@ export async function GET(request: Request) {
 
     // Password recovery flow - redirect to reset page
     if (type === 'recovery' && session) {
-      return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
+      return redirectToResetPassword(requestUrl.origin, session.user?.id);
     }
 
     if (session?.user) {

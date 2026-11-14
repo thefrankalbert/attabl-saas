@@ -31,6 +31,15 @@ vi.mock('@/services/signup.service', () => ({
   }),
 }));
 
+const mockNameTaken = vi.fn<() => Promise<boolean>>().mockResolvedValue(false);
+vi.mock('@/services/restaurant-name.service', () => ({
+  isRestaurantNameTaken: (...a: unknown[]) => mockNameTaken(...(a as [])),
+}));
+const mockAccountExistsEmail = vi.fn().mockResolvedValue(true);
+vi.mock('@/services/email.service', () => ({
+  sendSignupAccountExistsEmail: (...a: unknown[]) => mockAccountExistsEmail(...a),
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -82,6 +91,8 @@ describe('POST /api/signup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCheck.mockResolvedValue({ success: true });
+    mockNameTaken.mockResolvedValue(false);
+    mockAccountExistsEmail.mockResolvedValue(true);
   });
 
   // 1. Rate limited -> 429
@@ -133,6 +144,43 @@ describe('POST /api/signup', () => {
     expect(Object.keys(existingJson).sort()).toEqual(Object.keys(createdJson).sort());
     expect(existingJson).toEqual(createdJson);
     expect(JSON.stringify(existingJson)).not.toMatch(/already|deja|EMAIL_ALREADY_REGISTERED/i);
+  });
+
+  // A-08 (contre-audit H1): le refus "nom pris" ne depend pas de l'adresse.
+  it('answers a taken restaurant name identically for a new and an existing email (A-08)', async () => {
+    mockNameTaken.mockResolvedValue(true);
+
+    // Le service n'est jamais atteint: la reponse ne peut donc pas dependre de l'adresse.
+    const first = await POST(makeRequest({ ...validBody(), email: 'nouveau@bistrot.com' }));
+    const second = await POST(makeRequest({ ...validBody(), email: 'existant@bistrot.com' }));
+
+    expect(first.status).toBe(409);
+    expect(second.status).toBe(first.status);
+    expect(await second.json()).toEqual(await first.json());
+    expect(mockCompleteEmailSignup).not.toHaveBeenCalled();
+  });
+
+  it('A-08: previent le titulaire quand l adresse a deja un compte (un envoi)', async () => {
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(mockAccountExistsEmail).toHaveBeenCalledTimes(1);
+    expect(mockAccountExistsEmail.mock.calls[0][0]).toBe('owner@bistrot.com');
+  });
+
+  it('A-08: un echec d envoi du courriel ne change pas la reponse neutre', async () => {
+    mockAccountExistsEmail.mockRejectedValueOnce(new Error('resend down'));
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
   });
 
   // 4b. Other conflicts still map to their HTTP status

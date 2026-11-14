@@ -23,7 +23,6 @@ import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
-import { recoveryEmailMatches } from '@/lib/auth/recovery-email';
 
 const inputClass =
   'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
@@ -107,38 +106,39 @@ function ResetPasswordContent() {
 
   const onSubmit = async (data: ResetPasswordInput) => {
     try {
-      const supabase = createClient();
+      // A-06: le serveur verifie le marqueur de session de recuperation et
+      // l'adresse du compte (voir /api/reset-password). Le navigateur ne decide plus.
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountEmail: data.accountEmail, password: data.password }),
+      });
 
-      // A-06: le lien ouvre une session sur le compte qui l'a demande. On ne
-      // change le mot de passe que si la personne connait l'adresse de CE compte.
-      const {
-        data: { user: recoveryUser },
-      } = await supabase.auth.getUser();
-      if (!recoveryEmailMatches(data.accountEmail, recoveryUser?.email)) {
-        form.setError('accountEmail', { message: t('accountEmailMismatch') });
-        return;
-      }
-
-      const { error: updateError } = await supabase.auth.updateUser({ password: data.password });
-
-      if (updateError) {
-        const code = (updateError as { code?: string }).code;
-        const msg = updateError.message?.toLowerCase() ?? '';
-        logger.error('Password update failed', { error: updateError.message, code });
-        if (code === 'same_password' || msg.includes('same') || msg.includes('different')) {
-          form.setError('root', {
-            message: t('samePasswordError'),
-          });
-        } else {
-          form.setError('root', {
-            message: t('genericError'),
-          });
-        }
-      } else {
+      if (response.ok) {
         setSuccess(true);
         // Redirect to login after 3 seconds
         setTimeout(() => router.push('/login'), 3000);
+        return;
       }
+
+      const { code } = (await response.json().catch(() => ({}))) as { code?: string };
+      if (code === 'EMAIL_MISMATCH') {
+        // Ce lien n'est pas celui de cette personne: on coupe la session ouverte
+        // par le lien (le serveur l'a deja fait) et on renvoie a la connexion.
+        await createClient().auth.signOut({ scope: 'local' });
+        router.push('/login?error=access_denied');
+        return;
+      }
+      if (code === 'NO_RECOVERY') {
+        setSessionReady(false);
+        return;
+      }
+      if (code === 'SAME_PASSWORD') {
+        form.setError('root', { message: t('samePasswordError') });
+        return;
+      }
+      logger.error('Password update failed', { code });
+      form.setError('root', { message: t('genericError') });
     } catch {
       form.setError('root', { message: t('genericError') });
     }

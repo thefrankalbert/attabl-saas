@@ -18,8 +18,16 @@ export interface WelcomeEmailData {
 export interface PasswordResetEmailData {
   resetUrl: string;
 }
+export interface AccountExistsEmailData {
+  loginUrl: string;
+  forgotPasswordUrl: string;
+}
 export interface EmailChangeEmailData {
   confirmUrl: string;
+}
+export interface EmailChangeApprovalEmailData {
+  approveUrl: string;
+  newEmail: string;
 }
 export interface TeamInvitationEmailData {
   restaurantName: string;
@@ -50,7 +58,11 @@ export interface EmailService {
   sendWelcomeEmail(to: string, data: WelcomeEmailData): Promise<EmailResult>;
   sendPasswordResetEmail(to: string, data: PasswordResetEmailData): Promise<EmailResult>;
   sendEmailChangeEmail(to: string, data: EmailChangeEmailData): Promise<EmailResult>;
-  sendEmailChangeNoticeEmail(to: string): Promise<EmailResult>;
+  sendEmailChangeApprovalEmail(
+    to: string,
+    data: EmailChangeApprovalEmailData,
+  ): Promise<EmailResult>;
+  sendAccountExistsEmail(to: string, data: AccountExistsEmailData): Promise<EmailResult>;
   sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult>;
   sendOrderConfirmationEmail(to: string, data: OrderConfirmationEmailData): Promise<EmailResult>;
   sendLowStockAlertEmail(to: string | string[], data: LowStockAlertEmailData): Promise<EmailResult>;

@@ -3,56 +3,59 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { sendWelcomeOnboardingEmail } from '@/services/email.service';
 import { verifyEmailChangeToken } from '@/lib/auth/email-change-token';
+import { createEmailChangeService } from '@/services/email-change.service';
+import { adminPasswordResetLinkLimiter } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 
 /**
- * Confirmation d'un changement d'adresse demande par un administrateur (A-09).
- * Le clic prouve que la NOUVELLE adresse recoit le courrier. Aucune session
- * n'est ouverte: le client service_role n'en persiste aucune.
+ * POST /auth/confirm (champ `token`, A-09): une etape du changement d'adresse.
+ *
+ * Un POST et non un GET: un scanner de courriel ou un apercu de lien ouvre les
+ * liens en GET sans que la personne ait decide quoi que ce soit. La page
+ * /auth/confirm-email-change affiche le bouton "Confirmer" qui poste ici.
+ * Aucune session n'est ouverte: le client service_role n'en persiste aucune.
  */
-async function confirmEmailChange(requestUrl: URL, token: string | null): Promise<NextResponse> {
-  const claims = token ? verifyEmailChangeToken(token) : null;
-  if (!claims) {
-    logger.warn('Email change confirmation refused: invalid or expired token');
-    return NextResponse.redirect(`${requestUrl.origin}/login?error=expired_link`);
-  }
+export async function POST(request: Request) {
+  const origin = new URL(request.url).origin;
+  const redirect = (path: string) => NextResponse.redirect(`${origin}${path}`, 303);
+
+  const originErr = verifyOrigin(request);
+  if (originErr) return originErr;
 
   try {
-    const supabase = createAdminClient();
-
-    // Le jeton est lie a l'adresse ACTUELLE: si elle a change depuis, ce lien
-    // est perime (c'est ce qui le rend a usage unique).
-    const { data: current, error: lookupError } = await supabase.auth.admin.getUserById(
-      claims.userId,
-    );
-    if (lookupError || current?.user?.email?.toLowerCase() !== claims.fromEmail) {
-      logger.warn('Email change confirmation refused: account email changed or not found');
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=expired_link`);
+    const form = await request.formData();
+    const token = form.get('token');
+    // verifyEmailChangeToken peut lever si le secret serveur manque: dans le try,
+    // la personne voit une page d'erreur propre et non un 500.
+    const claims = typeof token === 'string' ? verifyEmailChangeToken(token) : null;
+    if (!claims) {
+      logger.warn('Email change confirmation refused: invalid or expired token');
+      return redirect('/login?error=expired_link');
     }
 
-    // email_confirm: la nouvelle adresse vient de prouver qu'elle recoit le courrier.
-    const { error: updateError } = await supabase.auth.admin.updateUserById(claims.userId, {
-      email: claims.toEmail,
-      email_confirm: true,
-    });
-    if (updateError) {
-      logger.error('Email change confirmation failed', { error: updateError.message });
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_failed`);
+    // L'etape `current` envoie un courriel: bornee par compte pour qu'un lien
+    // rejoue ne serve pas a arroser la nouvelle adresse.
+    if (claims.step === 'current') {
+      const { success } = await adminPasswordResetLinkLimiter.check(
+        `email-change-step:${claims.userId}`,
+      );
+      if (!success) return redirect('/login?error=auth_failed');
     }
 
-    // Miroir applicatif: les lignes admin_users de CE compte auth (la garde de
-    // perimetre a deja exige qu'il n'en ait que dans le tenant demandeur).
-    const { error: mirrorError } = await supabase
-      .from('admin_users')
-      .update({ email: claims.toEmail })
-      .eq('user_id', claims.userId);
-    if (mirrorError) {
-      logger.error('Email change: admin_users mirror not updated', { error: mirrorError.message });
+    const outcome = await createEmailChangeService(createAdminClient()).confirmStep(claims);
+    switch (outcome) {
+      case 'applied':
+        return redirect('/login?confirmed=true');
+      case 'new_address_notified':
+        return redirect('/auth/confirm-email-change?done=current');
+      case 'expired':
+        return redirect('/login?error=expired_link');
+      default:
+        return redirect('/login?error=auth_failed');
     }
-
-    return NextResponse.redirect(`${requestUrl.origin}/login?confirmed=true`);
   } catch (err) {
     logger.error('Unexpected error during email change confirmation', err);
-    return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_failed`);
+    return redirect('/login?error=auth_failed');
   }
 }
 
@@ -63,16 +66,12 @@ async function confirmEmailChange(requestUrl: URL, token: string | null): Promis
  * Verifies the OTP token, confirms the user, sends welcome email,
  * then redirects to login.
  *
- * GET /auth/confirm?token=...&type=email_change: voir confirmEmailChange.
+ * Le changement d'adresse (A-09) passe par POST /auth/confirm, voir plus haut.
  */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const tokenHash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
-
-  if (type === 'email_change') {
-    return confirmEmailChange(requestUrl, requestUrl.searchParams.get('token'));
-  }
 
   if (!tokenHash || type !== 'signup') {
     logger.warn('Invalid confirmation link parameters', { tokenHash: !!tokenHash, type });
