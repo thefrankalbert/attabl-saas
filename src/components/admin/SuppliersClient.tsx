@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, AlertTriangle, Upload } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Upload, Download } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,6 +38,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const { toast } = useToast();
   const t = useTranslations('suppliers');
   const tc = useTranslations('common');
+  const ti = useTranslations('inventoryImport');
   const queryClient = useQueryClient();
 
   const [isMounted, setIsMounted] = useState(false);
@@ -145,6 +146,13 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     </Button>
                   ))}
                 </div>
+
+                <Button asChild variant="outline" className="gap-2 shrink-0">
+                  <a href="/api/supplier-import" download>
+                    <Download className="w-4 h-4" />
+                    {ti('downloadTemplate')}
+                  </a>
+                </Button>
 
                 <Button
                   onClick={() => setShowImportModal(true)}

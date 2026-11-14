@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Upload } from 'lucide-react';
+import { Download, Search, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ export default function RecipesToolbar({
 }: RecipesToolbarProps) {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
+  const ti = useTranslations('inventoryImport');
 
   return (
     /* Toolbar on its own row (never crushes the title, like StockHistory) */
@@ -54,12 +55,25 @@ export default function RecipesToolbar({
         ))}
       </div>
 
+      {/* The filled workbook: edit in Excel, then re-import (round trip). */}
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="gap-2 shrink-0 whitespace-nowrap lg:ml-auto"
+      >
+        <a href="/api/recipe-import" download>
+          <Download className="w-4 h-4" />
+          {ti('downloadRecipes')}
+        </a>
+      </Button>
+
       {canEdit && (
         <Button
           variant="outline"
           size="sm"
           onClick={onImportClick}
-          className="gap-2 shrink-0 whitespace-nowrap lg:ml-auto"
+          className="gap-2 shrink-0 whitespace-nowrap"
         >
           <Upload className="w-4 h-4" />
           {t('importTechnicalSheets')}

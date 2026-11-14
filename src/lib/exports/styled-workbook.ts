@@ -1,4 +1,4 @@
-import type { Column, Worksheet } from 'exceljs';
+import type { Column, Workbook, Worksheet } from 'exceljs';
 
 /**
  * Shared styled-Excel helper (exceljs). One premium visual language for every
@@ -36,6 +36,42 @@ export interface StyledSheetInput {
    * The data sheet stays first: importers read the first sheet only.
    */
   guide?: { sheetName: string; lines: string[] };
+  /**
+   * Optional dropdowns on data columns. Values live on a hidden "Listes" sheet
+   * (an inline list is capped at 255 characters by Excel). `strict: false` lets
+   * the user type a value outside the list (a new ingredient, for instance).
+   * Applied to the data rows plus `LIST_EXTRA_ROWS` empty rows for additions.
+   */
+  lists?: Array<{ column: number; title: string; values: string[]; strict: boolean }>;
+}
+
+const LIST_EXTRA_ROWS = 200;
+
+function addListValidations(
+  wb: Workbook,
+  ws: Worksheet,
+  lists: NonNullable<StyledSheetInput['lists']>,
+  firstRow: number,
+  lastRow: number,
+): void {
+  const sheet = wb.addWorksheet('Listes', { state: 'hidden' });
+  lists.forEach((list, i) => {
+    const col = i + 1;
+    sheet.getCell(1, col).value = list.title;
+    list.values.forEach((v, r) => {
+      sheet.getCell(r + 2, col).value = v;
+    });
+    const letter = String.fromCharCode(64 + col);
+    const ref = `Listes!$${letter}$2:$${letter}$${Math.max(2, list.values.length + 1)}`;
+    for (let r = firstRow; r <= lastRow; r++) {
+      ws.getCell(r, list.column + 1).dataValidation = {
+        type: 'list',
+        allowBlank: true,
+        formulae: [ref],
+        showErrorMessage: list.strict,
+      };
+    }
+  });
 }
 
 const thinBorder = { style: 'thin' as const, color: { argb: LINE } };
@@ -105,6 +141,17 @@ export async function buildStyledWorkbook(input: StyledSheetInput): Promise<Buff
       if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUBTLE } };
     });
   });
+
+  if (input.lists && input.lists.length > 0) {
+    const firstDataRow = headerRowNumber + 1;
+    addListValidations(
+      wb,
+      ws,
+      input.lists,
+      firstDataRow,
+      firstDataRow + input.rows.length + LIST_EXTRA_ROWS - 1,
+    );
+  }
 
   if (input.guide) {
     const guide = wb.addWorksheet(input.guide.sheetName);

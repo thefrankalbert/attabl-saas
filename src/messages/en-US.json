@@ -4967,7 +4967,11 @@
     "itemsSkipped": "{count} row(s) skipped",
     "errorsFound": "{count} error(s) found",
     "rowError": "Row {row}: {message}",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "downloadRecipes": "Download my recipe sheets (Excel)",
+    "recipesRemoved": "{count} recipe line(s) removed",
+    "recipesUnchanged": "{count} line(s) already up to date",
+    "importUpToDate": "Your recipe sheets are already up to date: nothing changed."
   },
   "authShell": {
     "secure": "Secure connection"

@@ -12,6 +12,7 @@ import { createExcelImportService } from '../excel-import.service';
 import { createSupplierImportService } from '../supplier-import.service';
 import { createRecipeImportService } from '../recipe-import.service';
 import { readFirstSheetRows } from '@/lib/excel-parse';
+import { makeRecipeDb } from './recipe-supabase-mock';
 
 // Le parsing ne touche pas la base: un client vide suffit.
 const noDb = {} as SupabaseClient;
@@ -74,11 +75,16 @@ describe('modeles Excel: telecharger puis recharger', () => {
     expect(rows.length).toBeGreaterThan(0);
   });
 
-  it('modele fiches techniques: relu sans erreur', async () => {
-    const svc = createRecipeImportService(noDb);
-    const { rows, errors } = await svc.parseExcel(toArrayBuffer(await svc.generateTemplate()));
+  it('fiches techniques: relu sans erreur (le detail est dans recipe-import-roundtrip)', async () => {
+    const { supabase } = makeRecipeDb({
+      menu_items: [{ id: 'm1', name: 'Poulet DG' }],
+      ingredients: [{ id: 'i1', name: 'Poulet', unit: 'kg' }],
+      recipes: [{ menu_item_id: 'm1', ingredient_id: 'i1', quantity_needed: 0.3, notes: null }],
+    });
+    const svc = createRecipeImportService(supabase);
+    const { rows, errors } = await svc.parseExcel(toArrayBuffer(await svc.generateTemplate('t1')));
 
     expect(errors).toEqual([]);
-    expect(rows.length).toBeGreaterThan(0);
+    expect(rows).toHaveLength(1);
   });
 });

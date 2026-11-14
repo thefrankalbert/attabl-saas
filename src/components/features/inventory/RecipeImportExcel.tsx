@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 interface RecipeImportResult {
   recipesCreated: number;
   recipesUpdated: number;
+  recipesRemoved: number;
+  recipesUnchanged: number;
   ingredientsCreated: number;
   itemsSkipped: number;
   errors: Array<{ row: number; message: string }>;
@@ -97,6 +99,8 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
         setImportResult({
           recipesCreated: 0,
           recipesUpdated: 0,
+          recipesRemoved: 0,
+          recipesUnchanged: 0,
           ingredientsCreated: 0,
           itemsSkipped: 0,
           errors: data.errors || [],
@@ -107,14 +111,21 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
       const result: RecipeImportResult = {
         recipesCreated: data.recipesCreated ?? 0,
         recipesUpdated: data.recipesUpdated ?? 0,
+        recipesRemoved: data.recipesRemoved ?? 0,
+        recipesUnchanged: data.recipesUnchanged ?? 0,
         ingredientsCreated: data.ingredientsCreated ?? 0,
         itemsSkipped: data.itemsSkipped ?? 0,
         errors: data.errors ?? [],
       };
       setImportResult(result);
 
-      // Pas de "succes" annonce si aucune ligne n'a ete creee ni mise a jour.
-      if (result.recipesCreated + result.recipesUpdated === 0) {
+      // Pas de "succes" annonce si aucune ligne n'a ete creee, modifiee ni retiree.
+      if (result.recipesCreated + result.recipesUpdated + result.recipesRemoved === 0) {
+        // Fichier recharge sans modification: rien a ecrire, ce n'est pas un echec.
+        if (result.errors.length === 0 && result.recipesUnchanged > 0) {
+          toast({ title: t('importUpToDate') });
+          return;
+        }
         toast({ title: t('importNothing'), variant: 'destructive' });
         return;
       }
@@ -136,7 +147,7 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
         className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
       >
         <Download className="w-4 h-4" />
-        {t('downloadTemplate')}
+        {t('downloadRecipes')}
       </a>
 
       {/* File upload drop zone */}
@@ -191,6 +202,18 @@ export default function RecipeImportExcel({ onImportComplete, onCancel }: Recipe
             <div className="flex items-center gap-2 text-sm text-status-success">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('recipesUpdated', { count: importResult.recipesUpdated })}
+            </div>
+          )}
+          {importResult.recipesRemoved > 0 && (
+            <div className="flex items-center gap-2 text-sm text-status-success">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {t('recipesRemoved', { count: importResult.recipesRemoved })}
+            </div>
+          )}
+          {importResult.recipesUnchanged > 0 && (
+            <div className="flex items-center gap-2 text-sm text-app-text-secondary">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {t('recipesUnchanged', { count: importResult.recipesUnchanged })}
             </div>
           )}
           {importResult.ingredientsCreated > 0 && (

@@ -245,6 +245,13 @@ export interface ParsedRecipeRow {
   notes: string | null;
 }
 
+/** A line whose quantity is 0 in the sheet: remove that ingredient from the dish. */
+export interface ParsedRecipeRemoval {
+  rowNumber: number;
+  dishName: string;
+  ingredientName: string;
+}
+
 /**
  * A clean row sent to the import_recipes_tx RPC. The service pre-resolves the
  * dish name to a tenant-scoped menu_item_id and only forwards valid rows (the
@@ -258,10 +265,14 @@ export interface RecipeImportRpcRow {
   notes: string | null;
 }
 
-/** Result of a recipe Excel import (merge/upsert, get-or-create ingredients). */
+/** Result of a recipe Excel import (merge/upsert, get-or-create ingredients, 0 = remove). */
 export interface RecipeImportResult {
   recipesCreated: number;
   recipesUpdated: number;
+  /** Lines removed because their quantity was 0 in the sheet. */
+  recipesRemoved: number;
+  /** Lines identical to the stored recipe: not rewritten. */
+  recipesUnchanged: number;
   ingredientsCreated: number;
   itemsSkipped: number;
   errors: ImportRowError[];
