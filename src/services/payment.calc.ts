@@ -35,6 +35,35 @@ export function deriveStatus(net: number, refunded: number, due: number): Paymen
   return 'paid';
 }
 
+/**
+ * Moyen de paiement a inscrire sur `orders.payment_method` quand la commande
+ * devient soldee par le registre. Regle: on calcule le net par moyen
+ * (encaissements moins remboursements de ce moyen) et on retient le moyen au
+ * plus grand net strictement positif; a egalite, celui dont le dernier
+ * mouvement est le plus recent (le registre arrive trie par date croissante).
+ * Un moyen entierement rembourse ne peut donc pas l'emporter. Renvoie null si
+ * aucun moyen n'a de net positif.
+ */
+export function dominantMethod(tenders: PaymentTender[]): string | null {
+  const net = new Map<string, number>();
+  for (const tender of tenders) {
+    const signed = tender.status === 'refunded' ? -tender.amount : tender.amount;
+    // Reinsertion: l'ordre de la Map suit le dernier mouvement de chaque moyen.
+    const total = (net.get(tender.method) ?? 0) + signed;
+    net.delete(tender.method);
+    net.set(tender.method, total);
+  }
+  let best: string | null = null;
+  let bestNet = 0;
+  for (const [method, total] of net) {
+    if (total > 0 && total >= bestNet) {
+      best = method;
+      bestNet = total;
+    }
+  }
+  return best;
+}
+
 export function summarize(order: PaymentOrderRow, tenders: PaymentTender[]): PaymentSummary {
   const completed = tenders
     .filter((t) => t.status === 'completed')

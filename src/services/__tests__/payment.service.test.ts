@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createPaymentService } from '../payment.service';
 import { recompute } from '../payment.queries';
+import { dominantMethod } from '../payment.calc';
 import { ServiceError } from '../errors';
 
 // Mock the logger to avoid Sentry imports in tests.
@@ -688,5 +689,135 @@ describe('recompute - une commande offerte ne redevient jamais payante', () => {
     await recompute(asSupabase(mock), order, TENANT);
 
     expect(mock._order.payment_status).toBe('partial');
+  });
+});
+
+// orders.payment_method n'etait jamais ecrit par le chemin registre: une
+// commande soldee par encaissements partiels restait sans moyen de paiement.
+const methodOf = (mock: ReturnType<typeof createMockSupabase>) =>
+  (mock._order as OrderRow & { payment_method?: string }).payment_method;
+
+describe('recompute - orders.payment_method quand la commande devient soldee', () => {
+  it('un seul encaissement par carte -> payment_method = card', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 10000,
+      method: 'card',
+      createdBy: 'admin-1',
+    });
+    expect(methodOf(mock)).toBe('card');
+  });
+
+  it('encaissements mixtes -> le moyen du plus gros encaissement', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 7000,
+      method: 'cash',
+      createdBy: 'admin-1',
+    });
+    // Tant que la commande n'est pas soldee, aucun moyen n'est inscrit.
+    expect(methodOf(mock)).toBeUndefined();
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 3000,
+      method: 'card',
+      createdBy: 'admin-1',
+    });
+    expect(methodOf(mock)).toBe('cash');
+  });
+
+  it('egalite de montants -> le dernier encaissement en date', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(asSupabase(mock));
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 5000,
+      method: 'cash',
+      createdBy: 'admin-1',
+    });
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 5000,
+      method: 'card',
+      createdBy: 'admin-1',
+    });
+    expect(methodOf(mock)).toBe('card');
+  });
+
+  it('dominantMethod calcule le net par moyen: carte 8000 + especes 2000, remboursement carte 5000, especes 5000 -> especes', () => {
+    const tender = (
+      id: string,
+      method: string,
+      amount: number,
+      status: 'completed' | 'refunded',
+    ) => ({ id, amount, method, status, createdBy: null, createdAt: '2026-11-14T10:00:00Z' });
+    // net carte = 3000, net especes = 7000
+    expect(
+      dominantMethod([
+        tender('1', 'card', 8000, 'completed'),
+        tender('2', 'cash', 2000, 'completed'),
+        tender('3', 'card', 5000, 'refunded'),
+        tender('4', 'cash', 5000, 'completed'),
+      ]),
+    ).toBe('cash');
+    // Un moyen entierement rembourse ne gagne pas, meme s'il fut le plus gros.
+    expect(
+      dominantMethod([
+        tender('1', 'card', 9000, 'completed'),
+        tender('2', 'card', 9000, 'refunded'),
+        tender('3', 'cash', 1000, 'completed'),
+      ]),
+    ).toBe('cash');
+  });
+
+  it("un moyen historique hors registre n'est pas ecrit sur la commande", async () => {
+    const mock = createMockSupabase(baseOrder(), [
+      {
+        id: 'pay-legacy',
+        amount: 4000,
+        method: 'cheque',
+        status: 'completed',
+        created_by: null,
+        created_at: '2026-06-30T11:00:00.000Z',
+      },
+    ]);
+    const service = createPaymentService(asSupabase(mock));
+    await service.recordTender(ORDER_ID, TENANT, {
+      amount: 6000,
+      method: 'card',
+      createdBy: 'admin-1',
+    });
+    expect(mock._order.payment_status).toBe('paid');
+    // 'card' (6000) domine 'cheque' (4000): ecrit. Temoin: le legacy seul ne l'est pas.
+    expect(methodOf(mock)).toBe('card');
+
+    const legacyOnly = createMockSupabase(baseOrder(), [
+      {
+        id: 'pay-legacy',
+        amount: 10000,
+        method: 'cheque',
+        status: 'completed',
+        created_by: null,
+        created_at: '2026-06-30T11:00:00.000Z',
+      },
+    ]);
+    await recompute(asSupabase(legacyOnly), legacyOnly._order, TENANT);
+    expect(legacyOnly._order.payment_status).toBe('paid');
+    expect(methodOf(legacyOnly)).toBeUndefined();
+  });
+
+  it('dominantMethod deduit les remboursements de leur moyen et renvoie null sans encaissement', () => {
+    const tender = (method: string, amount: number, status: 'completed' | 'refunded') => ({
+      id: `${method}-${amount}`,
+      amount,
+      method,
+      status,
+      createdBy: null,
+      createdAt: '2026-11-14T10:00:00Z',
+    });
+    expect(dominantMethod([])).toBeNull();
+    expect(dominantMethod([tender('card', 9000, 'refunded')])).toBeNull();
+    expect(
+      dominantMethod([tender('cash', 4000, 'completed'), tender('card', 9000, 'refunded')]),
+    ).toBe('cash');
   });
 });
