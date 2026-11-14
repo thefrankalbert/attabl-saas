@@ -10,15 +10,7 @@ import type {
   OnboardingStepData,
 } from './onboarding.types';
 
-export type {
-  TableZoneData,
-  MenuItem,
-  OnboardingStepData,
-  OnboardingCompleteData,
-  OnboardingDraft,
-  OnboardingState,
-  OnboardingService,
-} from './onboarding.types';
+export type { OnboardingService } from './onboarding.types';
 
 /**
  * Onboarding service - handles the multi-step onboarding flow.

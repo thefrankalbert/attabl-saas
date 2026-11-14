@@ -57,7 +57,7 @@ export function initialsFor(name: string): string {
 }
 
 /** Coerce a possibly-string total into a finite number (0 on failure). */
-export function toAmount(value: number | string | null): number {
+function toAmount(value: number | string | null): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 }

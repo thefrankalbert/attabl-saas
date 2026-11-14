@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { renderableImageUrlSchema } from '@/lib/validations/image-url.schema';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
@@ -19,7 +20,8 @@ const adIdSchema = z.string().uuid();
 
 const createAdPayloadSchema = z.object({
   tenant_id: z.string().uuid(),
-  image_url: z.string().url(),
+  // Rendered by next/image: only our storage host renders (image-url.schema.ts).
+  image_url: renderableImageUrlSchema,
   link: z.string().nullable().optional(),
   sort_order: z.number().int().min(1),
   is_active: z.boolean(),

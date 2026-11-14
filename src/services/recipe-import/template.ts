@@ -19,7 +19,7 @@ export interface RecipeTemplateData {
 // aliases (Dish / Ingredient / Unit / Quantity), so files downloaded before
 // this change still import. "Catégorie" is for reading only: the import
 // ignores it (the dish name alone identifies the dish).
-export const RECIPE_COLUMNS: StyledColumn[] = [
+const RECIPE_COLUMNS: StyledColumn[] = [
   { header: 'Catégorie', width: 22 },
   { header: 'Plat', width: 30 },
   { header: 'Ingrédient', width: 26 },

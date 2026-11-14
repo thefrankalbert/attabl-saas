@@ -64,7 +64,7 @@ const KITCHEN_CSS = `
  * Genere le HTML d'un ticket cuisine premium (80mm). Gros caracteres, items
  * groupes par course, notes mises en evidence, aligne sur le shell de document.
  */
-export function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): string {
+function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): string {
   const { zoneFilter = 'all', barDisplayEnabled = false } = options;
   const items = filterItemsByZone(order.items, barDisplayEnabled, zoneFilter);
   const orderTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {

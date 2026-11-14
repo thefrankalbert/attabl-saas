@@ -16,9 +16,9 @@ import type { Outbox } from './outbox';
 import { classifyStatus, readJson, replayOrderEntry, OUTBOX_SYNC_TAG } from './outbox-replay';
 
 // replayOrderEntry / OUTBOX_SYNC_TAG live in the DOM-free outbox-replay module so
-// they can also run inside the service worker. Re-exported here to keep the
-// existing import path (`@/lib/offline/submit-order`) stable for page consumers.
-export { replayOrderEntry, OUTBOX_SYNC_TAG };
+// they can also run inside the service worker. replayOrderEntry is re-exported
+// here to keep the existing import path (`@/lib/offline/submit-order`) stable.
+export { replayOrderEntry };
 
 /** Dispatched on window after an order is queued, so the outbox UI updates now. */
 export const OUTBOX_CHANGED_EVENT = 'attabl:outbox-changed';
@@ -131,7 +131,7 @@ export async function submitOrder({
     return queue('network');
   }
 
-  const verdict = classifyStatus(response.status);
+  const verdict = classifyStatus(response.status, endpoint);
   if (verdict === 'success') {
     return { status: 'sent', data: await readJson(response) };
   }

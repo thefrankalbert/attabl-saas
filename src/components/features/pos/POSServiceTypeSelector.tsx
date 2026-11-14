@@ -78,14 +78,16 @@ export function POSServiceTypeSelector({
             variant={serviceType === st.value ? 'default' : 'outline'}
             onClick={() => setServiceType(st.value)}
             className={cn(
-              'flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 min-h-[44px] text-xs font-medium',
+              // whitespace-normal: in the narrow tablet cart a long label ("Room
+              // service") wraps on two lines instead of being cut with an ellipsis.
+              'flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 min-h-[44px] h-auto whitespace-normal text-xs font-medium',
               serviceType === st.value
                 ? 'bg-accent text-accent-text'
                 : 'text-app-text-secondary hover:bg-app-hover',
             )}
           >
             {st.icon}
-            <span className="truncate">{st.label}</span>
+            <span className="min-w-0 text-center leading-tight">{st.label}</span>
           </Button>
         ))}
       </div>

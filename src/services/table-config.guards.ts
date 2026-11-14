@@ -6,7 +6,7 @@ import type { ZoneOwnershipRow, TableOwnershipRow } from './table-config.types';
  * Normalize the tenant_id out of a possibly-array embedded relation.
  * Supabase typings allow embedded relations to be an object or an array.
  */
-export function extractTenantId(
+function extractTenantId(
   venue: { tenant_id: string } | { tenant_id: string }[] | null | undefined,
 ): string | null {
   if (!venue) return null;

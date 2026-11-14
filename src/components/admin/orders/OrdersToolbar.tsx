@@ -73,9 +73,10 @@ export default function OrdersToolbar({
   return (
     <div className="shrink-0">
       {/* Search + Tabs + actions. Only the tabs scroll (internally); the row
-          itself never scrolls, so the Ardoises + sound buttons stay visible
-          instead of being clipped off the right edge on tablet. */}
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3">
+          itself never scrolls, so the Ardoises + sound buttons stay visible.
+          From md to lg the tabs take their own full-width line (order-last):
+          squeezed between search and buttons they were cut mid-word. */}
+      <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3">
         <div className="relative w-full md:w-auto md:min-w-48 shrink-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
           <Input
@@ -90,7 +91,7 @@ export default function OrdersToolbar({
         <Tabs
           value={statusFilter}
           onValueChange={setStatusFilter}
-          className="w-full min-w-0 md:w-auto md:flex-1"
+          className="w-full min-w-0 md:order-last lg:order-none lg:w-auto lg:flex-1"
         >
           <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide">
             <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
@@ -115,7 +116,7 @@ export default function OrdersToolbar({
           <Button
             variant="outline"
             size="icon"
-            aria-label={tc('soundSettings')}
+            aria-label={tc('aria.soundSettings')}
             onPointerDown={handleSoundPointerDown}
             onPointerUp={handleSoundPointerUp}
             onPointerLeave={handleSoundPointerLeave}

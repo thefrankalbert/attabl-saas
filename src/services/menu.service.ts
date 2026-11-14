@@ -23,14 +23,7 @@ import { createMenu, deleteMenu, reorderMenus, updateMenu } from './menu.mutatio
  * shared types/interface in ./menu.service.types.
  */
 
-export type {
-  MenuRow,
-  MenuVenueRef,
-  MenuChildRef,
-  MenuWithRelations,
-  CategoryWithItemRefs,
-  MenuService,
-} from './menu.service.types';
+export type { MenuService } from './menu.service.types';
 
 export function createMenuService(supabase: SupabaseClient): MenuService {
   return {

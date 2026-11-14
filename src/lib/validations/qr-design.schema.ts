@@ -103,4 +103,3 @@ export const assignQrDesignSchema = z.object({
 });
 
 export type SaveQrDesignInput = z.infer<typeof saveQrDesignSchema>;
-export type AssignQrDesignInput = z.infer<typeof assignQrDesignSchema>;

@@ -6,6 +6,4 @@ export { useOrders } from './useOrders';
 export { useDashboardStats } from './useDashboardStats';
 export { useReportData } from './useReportData';
 export { useStockMovements } from './useStockMovements';
-export { useStaffStockReport } from './useStaffStockReport';
 export { useMenus } from './useMenus';
-export { useStockCounts, useStockCount } from './useStockCounts';

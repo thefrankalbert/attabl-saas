@@ -12,6 +12,11 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
+import { renderableImageUrlSchema } from '@/lib/validations/image-url.schema';
+
+// A category cover is rendered by next/image on the client menu: a foreign host
+// would throw at render and take the whole storefront down (image-url.schema.ts).
+const categoryImageSchema = renderableImageUrlSchema.nullish().or(z.literal(''));
 
 const toggleCategoryActiveSchema = z.object({
   tenantId: z.string().uuid(),
@@ -129,6 +134,10 @@ export async function actionCreateCategory(
   if (!parsedTenant.success) {
     return { error: 'Invalid tenant ID' };
   }
+  const parsedImage = categoryImageSchema.safeParse(input.image_url);
+  if (!parsedImage.success) {
+    return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
+  }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);
   if (permError) return { error: permError };
@@ -173,6 +182,10 @@ export async function actionUpdateCategory(
   const parsedCategory = categoryIdSchema.safeParse(categoryId);
   if (!parsedTenant.success || !parsedCategory.success) {
     return { error: 'Invalid input' };
+  }
+  const parsedImage = categoryImageSchema.safeParse(data.image_url);
+  if (!parsedImage.success) {
+    return { error: parsedImage.error.issues[0]?.message ?? 'Invalid input' };
   }
 
   const { error: permError } = await checkCategoryPermissions(tenantId);

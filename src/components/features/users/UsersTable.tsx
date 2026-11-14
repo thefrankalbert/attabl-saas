@@ -50,11 +50,11 @@ export default function UsersTable({
             <div
               key={user.id}
               className={cn(
-                'p-4 flex items-center justify-between hover:bg-app-hover transition-colors',
+                'p-4 flex items-center justify-between gap-3 hover:bg-app-hover transition-colors',
                 !user.is_active && 'opacity-60 bg-app-elevated',
               )}
             >
-              <div className="flex min-w-0 items-center gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
                 <Avatar className="h-10 w-10 shrink-0 border">
                   <AvatarFallback>{user.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
@@ -75,11 +75,17 @@ export default function UsersTable({
                   <p className="truncate text-sm text-app-text-secondary" title={user.email}>
                     {user.email}
                   </p>
+                  {/* Phone: the role sits under the email. Beside it, the badge
+                      squeezed the name and email down to a single letter. */}
+                  <div className="mt-1 inline-flex sm:hidden items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
+                    <RoleIcon className="w-3.5 h-3.5" />
+                    {roleConfig.label}
+                  </div>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-6">
-                <div className="inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
+                <div className="hidden sm:inline-flex items-center gap-1.5 rounded-[0.625rem] border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted-foreground)]">
                   <RoleIcon className="w-3.5 h-3.5" />
                   {roleConfig.label}
                 </div>

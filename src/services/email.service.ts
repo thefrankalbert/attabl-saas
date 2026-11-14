@@ -29,15 +29,7 @@ import type {
   LowStockAlertEmailData,
 } from './email.types';
 
-export type {
-  EmailResult,
-  EmailService,
-  WelcomeEmailData,
-  PasswordResetEmailData,
-  TeamInvitationEmailData,
-  OrderConfirmationEmailData,
-  LowStockAlertEmailData,
-} from './email.types';
+export type { EmailService } from './email.types';
 
 /** Delai maximum d'un envoi: le SDK Resend n'en a pas, un envoi bloque tiendrait la requete. */
 const DELAI_ENVOI_MS = 10_000;

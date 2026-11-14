@@ -23,7 +23,9 @@ export default function SingleOrderClient({
   const displayLabel = orderDisplayLabel(initialOrder);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    // Fixed-height split view from lg only: below it the panels stack and the
+    // page must scroll in main#main-content, or the items list collapses to 0.
+    <div className="flex flex-col lg:h-full lg:overflow-hidden">
       {/* Inline header - same line as breadcrumb text */}
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <Button

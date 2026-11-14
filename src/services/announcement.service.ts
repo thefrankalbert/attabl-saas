@@ -22,7 +22,7 @@ export interface AnnouncementService {
   listVisibleAnnouncements(tenantId: string, now?: Date): Promise<VisibleAnnouncement[]>;
 }
 
-export type VisibleAnnouncement = Pick<Announcement, 'id' | 'title' | 'description'>;
+type VisibleAnnouncement = Pick<Announcement, 'id' | 'title' | 'description'>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

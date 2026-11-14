@@ -76,7 +76,7 @@ export default function CartPage() {
     applyCoupon,
     removeCoupon,
   } = useCart();
-  const { slug: tenantSlug, tenant, orderingPaused } = useTenant();
+  const { slug: tenantSlug, tenant, orderingPaused, tipsEnabled } = useTenant();
 
   const tableNum = useScannedTable(tenantSlug);
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
@@ -183,13 +183,13 @@ export default function CartPage() {
 
   // Tip amount computation
   const tipAmount = useMemo(() => {
-    if (tipPreset === 0) return 0;
+    if (!tipsEnabled || tipPreset === 0) return 0;
     if (tipPreset === 'custom') {
       const parsed = parseFloat(customTipInput.replace(',', '.'));
       return Number.isFinite(parsed) && parsed > 0 ? roundForCurrency(parsed, currencyCode) : 0;
     }
     return tipPreset;
-  }, [tipPreset, customTipInput, currencyCode]);
+  }, [tipsEnabled, tipPreset, customTipInput, currencyCode]);
 
   // Smart suggestions (hook-owned)
   const { upsellItems, isLoadingUpsell } = useCartSuggestions(items, currentRestaurantId);
@@ -653,24 +653,26 @@ export default function CartPage() {
         />
 
         {/* TIP SELECTOR */}
-        <TipSection
-          tipOpen={tipOpen}
-          setTipOpen={setTipOpen}
-          tipPreset={tipPreset}
-          setTipPreset={setTipPreset}
-          customTipInput={customTipInput}
-          setCustomTipInput={setCustomTipInput}
-          tipAmount={tipAmount}
-          currencyCode={currencyCode}
-          formatDisplayPrice={formatDisplayPrice}
-          labels={{
-            tip: t('tip'),
-            tipNone: t('tipNone'),
-            tipCustom: t('tipCustom'),
-            tipCustomPlaceholder: t('tipCustomPlaceholder'),
-            close: t('ariaClose'),
-          }}
-        />
+        {tipsEnabled && (
+          <TipSection
+            tipOpen={tipOpen}
+            setTipOpen={setTipOpen}
+            tipPreset={tipPreset}
+            setTipPreset={setTipPreset}
+            customTipInput={customTipInput}
+            setCustomTipInput={setCustomTipInput}
+            tipAmount={tipAmount}
+            currencyCode={currencyCode}
+            formatDisplayPrice={formatDisplayPrice}
+            labels={{
+              tip: t('tip'),
+              tipNone: t('tipNone'),
+              tipCustom: t('tipCustom'),
+              tipCustomPlaceholder: t('tipCustomPlaceholder'),
+              close: t('ariaClose'),
+            }}
+          />
+        )}
 
         {/* ORDER SUMMARY */}
         <OrderSummary

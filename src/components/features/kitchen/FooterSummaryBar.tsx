@@ -112,7 +112,7 @@ function FooterSummaryBarInner({
   );
 
   return (
-    <footer className="h-14 shrink-0 z-[210] bg-app-card border-t border-app-border flex items-center px-4 gap-4">
+    <footer className="h-14 shrink-0 z-[210] bg-app-card border-t border-app-border flex items-center px-2 gap-2 sm:px-4 sm:gap-4">
       {/* Left: tenant name */}
       {tenantName && (
         <span className="text-sm font-semibold text-app-text truncate max-w-40 hidden sm:block">
@@ -121,7 +121,12 @@ function FooterSummaryBarInner({
       )}
 
       {/* Center: status filter tabs */}
-      <nav role="tablist" className="flex items-center gap-1.5 flex-1 justify-center">
+      {/* Phone: five filters + pagination do not fit in 375 px; the filters
+          scroll sideways in their own strip instead of colliding with "Page". */}
+      <nav
+        role="tablist"
+        className="flex min-w-0 items-center gap-1 sm:gap-1.5 flex-1 justify-start sm:justify-center overflow-x-auto scrollbar-hide"
+      >
         {tabs.map((tab) => {
           const isActive = tab.key === 'delayed' ? false : activeFilter === tab.key;
           const isDelayedTab = tab.key === 'delayed';
@@ -142,7 +147,7 @@ function FooterSummaryBarInner({
                 }
               }}
               className={cn(
-                'px-3 py-2 min-h-[40px] rounded-md text-xs font-medium normal-case h-auto',
+                'shrink-0 px-2 sm:px-3 py-2 min-h-[40px] rounded-md text-xs font-medium normal-case h-auto',
                 isActive ? tab.activeColor : tab.baseColor,
                 !isActive && !isDelayedTab && 'hover:bg-app-elevated/50',
                 isDelayedTab && 'cursor-default animate-pulse',
@@ -167,7 +172,7 @@ function FooterSummaryBarInner({
         >
           <ChevronUp className="w-4 h-4" />
         </Button>
-        <span className="text-xs font-medium text-app-text-secondary tabular-nums whitespace-nowrap">
+        <span className="sr-only sm:not-sr-only text-xs font-medium text-app-text-secondary tabular-nums whitespace-nowrap">
           {t('footerPage')} {currentPage}/{totalPages}
         </span>
         <Button

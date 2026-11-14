@@ -87,6 +87,13 @@ export default async function StorefrontLayout({
     tenant?.subscription_status as SubscriptionStatus | null,
     tenant?.trial_ends_at ?? null,
   );
+  // Pourboire: meme regle que la route de commande (assertOrderFeaturesAllowed).
+  const tipsEnabled = canAccessFeature(
+    'canAccessTips',
+    tenant?.subscription_plan as SubscriptionPlan | null,
+    tenant?.subscription_status as SubscriptionStatus | null,
+    tenant?.trial_ends_at ?? null,
+  );
   const supportedCurrencies = canMultiCurrency
     ? (tenant?.supported_currencies as string[]) || [defaultCurrency]
     : [defaultCurrency];
@@ -98,6 +105,7 @@ export default async function StorefrontLayout({
         tenantId={tenantId}
         tenant={tenant ? toPublicTenant(tenant) : null}
         orderingPaused={access === 'read_only'}
+        tipsEnabled={tipsEnabled}
       >
         <TenantBrandProvider
           initialColors={{

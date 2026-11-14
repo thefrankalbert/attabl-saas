@@ -24,7 +24,7 @@ export interface PaymentMethodMeta {
   countries?: readonly string[];
 }
 
-export const PAYMENT_METHODS = {
+const PAYMENT_METHODS = {
   cash: { active: true },
   card: { active: false },
   wave: { active: false, countries: ['SN', 'CI'] },

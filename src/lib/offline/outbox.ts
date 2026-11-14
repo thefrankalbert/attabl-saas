@@ -166,7 +166,7 @@ export interface DrainResult {
  * par tout le monde: on ne peut pas deviner a qui elle appartient, et la bloquer
  * definitivement serait pire que de la faire partir.
  */
-export function canReplayEntry(
+function canReplayEntry(
   entry: OutboxEntry,
   currentUserId?: string,
   currentTenantId?: string,

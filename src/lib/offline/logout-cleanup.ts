@@ -26,7 +26,7 @@
  *     n'est pas vide on BLOQUE la deconnexion avec un message explicite.
  */
 
-export const QUERY_CACHE_DB = 'attabl-query-cache';
+const QUERY_CACHE_DB = 'attabl-query-cache';
 
 export interface LogoutCleanupDeps {
   /** Nombre d'ecritures encore en file. */

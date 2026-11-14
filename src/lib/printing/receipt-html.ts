@@ -3,8 +3,6 @@ import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 import { formatAmountMinor } from '@/lib/utils/money';
 import { renderDocumentShell, renderBrandHeader, escapeHtml } from './document-shell';
 
-export { escapeHtml };
-
 const SERVICE_LABELS: Record<string, string> = {
   dine_in: 'Sur place',
   takeaway: 'A emporter',

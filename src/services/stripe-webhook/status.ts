@@ -105,7 +105,7 @@ export function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
  * La regle vit dans `isSubscriptionUsable`: une seconde table de verite ici
  * divergerait au premier statut ajoute.
  */
-export const isActiveForStatus = isSubscriptionUsable;
+const isActiveForStatus = isSubscriptionUsable;
 
 /** Statuts pour lesquels Stripe est REELLEMENT paye a l'instant present. */
 const HEALTHY_STATUSES: readonly SubscriptionStatus[] = ['active', 'trial'];

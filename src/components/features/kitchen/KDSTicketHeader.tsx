@@ -57,13 +57,15 @@ export default function KDSTicketHeader({
           )}
           {order.customer_name && (
             <>
-              <span aria-hidden="true">-</span>
+              {/* A separator only goes BETWEEN two parts: without a server name
+                  it used to print a dangling "- Sur place". */}
+              {serverName && <span aria-hidden="true">-</span>}
               <span className="truncate max-w-24">{order.customer_name}</span>
             </>
           )}
           {serviceLabel && (
             <>
-              <span aria-hidden="true">-</span>
+              {(serverName || order.customer_name) && <span aria-hidden="true">-</span>}
               <span>{serviceLabel}</span>
             </>
           )}

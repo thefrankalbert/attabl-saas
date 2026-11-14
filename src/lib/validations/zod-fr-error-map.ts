@@ -30,7 +30,7 @@ interface IssueLike {
  * Les messages deja ecrits dans les schemas gardent la priorite (customError
  * n'est appele que si le schema n'en fournit pas).
  */
-export function frenchZodMessage(issue: IssueLike): string | undefined {
+function frenchZodMessage(issue: IssueLike): string | undefined {
   const label = fieldLabel(issue.path);
   const isString = issue.origin === 'string';
   if (issue.code === 'too_big') {
