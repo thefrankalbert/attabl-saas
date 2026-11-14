@@ -146,8 +146,9 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password, c
 values ('eb111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'n2@test.local', 'x', now(), now(), null);
 select lives_ok($$update auth.users set email_confirmed_at = now() where id = 'eb111111-1111-4111-8111-111111111111'$$, 'N2: la confirmation passe sans registre');
 select lives_ok($$delete from auth.users where id = 'eb111111-1111-4111-8111-111111111111'$$, 'N2: la suppression passe sans registre');
-rollback to savepoint sans_registre;
-select is(to_regclass('public.owner_trial_ledger') is not null, true, 'N2: le registre est revenu apres le savepoint');
+alter table owner_trial_ledger_absent rename to owner_trial_ledger;
+release savepoint sans_registre;
+select is(to_regclass('public.owner_trial_ledger') is not null, true, 'N2: le registre a ete restaure a la main');
 
 select * from finish();
 rollback;

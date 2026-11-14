@@ -342,6 +342,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET lock_timeout = '2s'
 AS $$
 DECLARE
   v_row auth.users;
