@@ -480,6 +480,22 @@ export const invitationManageLimiter = createLimiter(
 );
 
 /**
+ * Invitation emails sent by one restaurant (P-10, audit du 2026-11-12). Chaque
+ * invitation ou renvoi envoie un courriel reel a une adresse choisie par le
+ * restaurant: sans plafond, un compte gratuit sert de relais d'hameconnage et
+ * use la reputation d'expedition du domaine. 30 envois par 24 h glissantes et
+ * PAR RESTAURANT (cle = tenant_id, jamais l'IP: un restaurant entier sort par
+ * une seule adresse, et un attaquant change d'IP). Fail-closed: l'action envoie
+ * un courriel a un tiers. Ajoute avec l'autorisation ecrite du proprietaire du
+ * 2026-11-14 (fichier protege).
+ */
+export const invitationTenantDailyLimiter = createLimiter(
+  'invitation-tenant-daily',
+  Ratelimit.slidingWindow(30, '24 h'),
+  true,
+);
+
+/**
  * Invitation token validation (public, read-only on-mount check).
  * 30 requests / 10 minutes per TOKEN, fail-OPEN: no side effects (no account
  * creation, no email), so a Redis blip must not block a legitimate invitee.

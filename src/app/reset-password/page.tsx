@@ -23,6 +23,7 @@ import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth.schema';
+import { recoveryEmailMatches } from '@/lib/auth/recovery-email';
 
 const inputClass =
   'h-10 rounded-lg border-[var(--border)] bg-[var(--card)] px-3 text-[16px] md:text-[14px] text-[var(--heading)] shadow-none placeholder:text-[var(--muted)] focus-visible:border-[var(--fg)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0';
@@ -63,7 +64,7 @@ function ResetPasswordContent() {
 
   const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { accountEmail: '', password: '', confirmPassword: '' },
   });
 
   // Detect recovery session via two mechanisms:
@@ -107,6 +108,17 @@ function ResetPasswordContent() {
   const onSubmit = async (data: ResetPasswordInput) => {
     try {
       const supabase = createClient();
+
+      // A-06: le lien ouvre une session sur le compte qui l'a demande. On ne
+      // change le mot de passe que si la personne connait l'adresse de CE compte.
+      const {
+        data: { user: recoveryUser },
+      } = await supabase.auth.getUser();
+      if (!recoveryEmailMatches(data.accountEmail, recoveryUser?.email)) {
+        form.setError('accountEmail', { message: t('accountEmailMismatch') });
+        return;
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({ password: data.password });
 
       if (updateError) {
@@ -200,6 +212,28 @@ function ResetPasswordContent() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
+                    name="accountEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className={labelClass}>{t('accountEmailLabel')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            autoComplete="email"
+                            placeholder={t('accountEmailPlaceholder')}
+                            autoFocus
+                            className={inputClass}
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-[var(--muted)]">{t('accountEmailHint')}</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -209,7 +243,6 @@ function ResetPasswordContent() {
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               placeholder={t('newPasswordPlaceholder')}
-                              autoFocus
                               className={`${inputClass} pr-10`}
                               {...field}
                             />

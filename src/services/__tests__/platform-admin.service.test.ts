@@ -3,6 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformAdminService } from '../platform-admin.service';
 import { ServiceError } from '../errors';
 
+const mockRevoke = vi.fn().mockResolvedValue('revoked');
+vi.mock('../member-session.service', () => ({
+  createMemberSessionService: () => ({
+    revokeSessionsAfterRemoval: (...a: unknown[]) => mockRevoke(...a),
+  }),
+}));
+
 interface TableState {
   row?: Record<string, unknown> | null;
   rowError?: unknown;
@@ -308,6 +315,24 @@ describe('createPlatformAdminService', () => {
     expect(audit.payload.action).toBe('ban_user');
     expect(audit.payload.target_label).toBe('staff@resto.com');
     expect(audit.payload.tenant_id).toBe('t-1');
+  });
+
+  // A-04: un retrait cote plateforme coupe aussi la session du compte.
+  it('A-04: banAdminUser et softDeleteAdminUser revoquent la session, unban non', async () => {
+    mockRevoke.mockClear();
+    const row = { email: 'staff@resto.com', tenant_id: 't-1', role: 'waiter', user_id: 'auth-9' };
+    const svc = () => createPlatformAdminService(makeAdmin({ admin_users: { row } }).client);
+
+    await svc().banAdminUser('u-1', actor, 'abus');
+    expect(mockRevoke).toHaveBeenLastCalledWith('t-1', 'auth-9');
+
+    mockRevoke.mockClear();
+    await svc().softDeleteAdminUser('u-1', actor);
+    expect(mockRevoke).toHaveBeenLastCalledWith('t-1', 'auth-9');
+
+    mockRevoke.mockClear();
+    await svc().unbanAdminUser('u-1', actor);
+    expect(mockRevoke).not.toHaveBeenCalled();
   });
 
   it('restoreAdminUser clears BOTH delete and ban metadata (no contradictory state)', async () => {

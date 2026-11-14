@@ -12,6 +12,7 @@ vi.mock('@/lib/billing/tenant-lock-response', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   invitationManageLimiter: { check: vi.fn() },
+  invitationTenantDailyLimiter: { check: vi.fn() },
   invitationValidateLimiter: { check: vi.fn() },
   invitationAcceptLimiter: { check: vi.fn() },
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
@@ -66,7 +67,7 @@ vi.mock('next/headers', () => ({
 import { GET, POST } from '../invitations/route';
 import { DELETE } from '../invitations/[id]/route';
 import { POST as RESEND_POST } from '../invitations/[id]/resend/route';
-import { invitationManageLimiter } from '@/lib/rate-limit';
+import { invitationManageLimiter, invitationTenantDailyLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInvitationService } from '@/services/invitation.service';
@@ -109,6 +110,7 @@ function buildParams(id = TEST_INVITATION_ID): { params: Promise<{ id: string }>
 
 beforeEach(() => {
   mockResolvePermission.mockResolvedValue({ allowed: true, role: 'owner' });
+  mockDailyQuota(true);
 });
 
 function mockRateLimit(allowed: boolean) {
@@ -117,6 +119,15 @@ function mockRateLimit(allowed: boolean) {
     limit: 30,
     remaining: allowed ? 29 : 0,
     reset: Date.now() + 600_000,
+  });
+}
+
+function mockDailyQuota(allowed: boolean) {
+  vi.mocked(invitationTenantDailyLimiter.check).mockResolvedValue({
+    success: allowed,
+    limit: 30,
+    remaining: allowed ? 29 : 0,
+    reset: Date.now() + 86_400_000,
   });
 }
 
@@ -375,6 +386,36 @@ describe('POST /api/invitations', () => {
     expect(json.invitation).not.toHaveProperty('token');
   });
 
+  // P-10: plafond quotidien d'invitations par restaurant (relais d'hameconnage).
+  it('P-10: refuse avec 429, sans rien creer ni envoyer, quand le plafond quotidien du restaurant est atteint', async () => {
+    mockRateLimit(true);
+    mockDailyQuota(false);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+
+    expect(res.status).toBe(429);
+    expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
+    const service = vi.mocked(createInvitationService).mock.results[0];
+    expect(service).toBeUndefined();
+  });
+
+  // P-10: plafond quotidien d'invitations par restaurant (relais d'hameconnage).
+  it('P-10: refuse avec 429, sans rien creer ni envoyer, quand le plafond quotidien du restaurant est atteint', async () => {
+    mockRateLimit(true);
+    mockDailyQuota(false);
+    vi.mocked(createClient).mockResolvedValue(createMockSupabase() as never);
+    setupMockAdminClient();
+    vi.mocked(createInvitationService).mockClear();
+
+    const res = await POST(buildPostRequest({ email: 'new@test.com', role: 'admin' }));
+
+    expect(res.status).toBe(429);
+    expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
+    expect(vi.mocked(createInvitationService)).not.toHaveBeenCalled();
+  });
+
   it('enforces the staff limit (canAddStaff) for a staff role', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();
@@ -543,6 +584,33 @@ describe('POST /api/invitations/[id]/resend', () => {
 
     expect(res.status).toBe(429);
     expect(json.error).toContain('Trop de requ');
+  });
+
+  it('P-10: un renvoi consomme le meme plafond quotidien et est refuse au-dela', async () => {
+    mockRateLimit(true);
+    mockDailyQuota(false);
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+    setupMockAdminClient();
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(429);
+    expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
+    expect(vi.mocked(createInvitationService)).not.toHaveBeenCalled();
+  });
+
+  it('P-10: un renvoi consomme le meme plafond quotidien et est refuse au-dela', async () => {
+    mockRateLimit(true);
+    mockDailyQuota(false);
+    vi.mocked(createClient).mockResolvedValue(createMockDeleteSupabase() as never);
+    setupMockAdminClient();
+    vi.mocked(createInvitationService).mockClear();
+
+    const res = await RESEND_POST(buildResendRequest(), buildParams());
+
+    expect(res.status).toBe(429);
+    expect(invitationTenantDailyLimiter.check).toHaveBeenCalledWith('tenant-1');
+    expect(vi.mocked(createInvitationService)).not.toHaveBeenCalled();
   });
 
   it('returns 401 when user is not authenticated', async () => {

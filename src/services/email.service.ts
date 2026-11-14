@@ -11,6 +11,8 @@ import { escapeHtml } from './email.render';
 import {
   buildWelcomeEmail,
   buildPasswordResetEmail,
+  buildEmailChangeEmail,
+  buildEmailChangeNoticeEmail,
   buildTeamInvitationEmail,
   buildOrderConfirmationEmail,
   buildLowStockAlertEmail,
@@ -24,6 +26,7 @@ import type {
   EmailService,
   WelcomeEmailData,
   PasswordResetEmailData,
+  EmailChangeEmailData,
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
@@ -106,6 +109,16 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
+    async sendEmailChangeEmail(to: string, data: EmailChangeEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildEmailChangeEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendEmailChangeNoticeEmail(to: string): Promise<EmailResult> {
+      const { subject, html, text } = buildEmailChangeNoticeEmail();
+      return send(to, subject, html, text);
+    },
+
     async sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTeamInvitationEmail(data);
       return send(to, subject, html, text);
@@ -176,6 +189,14 @@ export const sendPasswordResetEmail = async (
   to: string,
   data: { resetUrl: string },
 ): Promise<boolean> => (await _svc.sendPasswordResetEmail(to, data)).success;
+
+export const sendEmailChangeConfirmationEmail = async (
+  to: string,
+  data: { confirmUrl: string },
+): Promise<boolean> => (await _svc.sendEmailChangeEmail(to, data)).success;
+
+export const sendEmailChangeNoticeToCurrentAddress = async (to: string): Promise<boolean> =>
+  (await _svc.sendEmailChangeNoticeEmail(to)).success;
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,

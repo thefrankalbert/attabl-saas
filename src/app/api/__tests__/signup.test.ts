@@ -19,11 +19,14 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => mockCreateAdminClient(),
 }));
 
-const mockCompleteEmailSignup = vi.fn<() => Promise<{ slug: string; tenantId: string }>>();
+const mockCompleteEmailSignup =
+  vi.fn<() => Promise<{ slug: string; tenantId: string; emailDelivered?: boolean }>>();
 
 vi.mock('@/services/signup.service', () => ({
   createSignupService: () => ({
-    completeEmailSignup: (...args: unknown[]): Promise<{ slug: string; tenantId: string }> =>
+    completeEmailSignup: (
+      ...args: unknown[]
+    ): Promise<{ slug: string; tenantId: string; emailDelivered?: boolean }> =>
       mockCompleteEmailSignup(...(args as [])),
   }),
 }));
@@ -110,22 +113,42 @@ describe('POST /api/signup', () => {
     expect(json.error).toBeDefined();
   });
 
-  // 4. ServiceError maps to correct HTTP status
-  it('maps ServiceError CONFLICT to 409 with emailAlreadyRegistered message', async () => {
+  // 4. A-08: adresse deja inscrite -> reponse IDENTIQUE a une inscription reussie
+  it('answers an already-registered email exactly like a successful signup (A-08)', async () => {
+    mockCompleteEmailSignup.mockResolvedValueOnce({
+      slug: 'le-petit-bistrot',
+      tenantId: 'tenant-uuid-123',
+      emailDelivered: true,
+    });
+    const created = await POST(makeRequest(validBody()));
+    const createdJson = (await created.json()) as Record<string, unknown>;
+
     mockCompleteEmailSignup.mockRejectedValueOnce(
       new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+    const existing = await POST(makeRequest(validBody()));
+    const existingJson = (await existing.json()) as Record<string, unknown>;
+
+    expect(existing.status).toBe(created.status);
+    expect(Object.keys(existingJson).sort()).toEqual(Object.keys(createdJson).sort());
+    expect(existingJson).toEqual(createdJson);
+    expect(JSON.stringify(existingJson)).not.toMatch(/already|deja|EMAIL_ALREADY_REGISTERED/i);
+  });
+
+  // 4b. Other conflicts still map to their HTTP status
+  it('still maps RESTAURANT_NAME_TAKEN to 409', async () => {
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT'),
     );
 
     const res = await POST(makeRequest(validBody()));
 
     expect(res.status).toBe(409);
-    const json = (await res.json()) as { error: string };
-    expect(json.error).toBe('emailAlreadyRegistered');
-    expect((json as { code?: string }).code).toBe('EMAIL_ALREADY_REGISTERED');
+    expect(((await res.json()) as { code?: string }).code).toBe('RESTAURANT_NAME_TAKEN');
   });
 
-  // 5. Successful signup -> returns slug + tenantId
-  it('returns 200 with slug and tenantId on successful signup', async () => {
+  // 5. Successful signup -> neutral body, no account identifiers
+  it('returns 200 with the neutral body on successful signup', async () => {
     mockCompleteEmailSignup.mockResolvedValueOnce({
       slug: 'le-petit-bistrot',
       tenantId: 'tenant-uuid-123',
@@ -134,16 +157,12 @@ describe('POST /api/signup', () => {
     const res = await POST(makeRequest(validBody()));
 
     expect(res.status).toBe(200);
-    const json = (await res.json()) as {
-      success: boolean;
-      slug: string;
-      tenantId: string;
-      message: string;
-    };
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.success).toBe(true);
-    expect(json.slug).toBe('le-petit-bistrot');
-    expect(json.tenantId).toBe('tenant-uuid-123');
+    expect(json.requiresConfirmation).toBe(true);
     expect(json.message).toBeDefined();
+    expect(json).not.toHaveProperty('slug');
+    expect(json).not.toHaveProperty('tenantId');
   });
 
   // 6. Unknown error -> 500

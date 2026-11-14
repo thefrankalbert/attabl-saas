@@ -42,6 +42,7 @@ vi.mock('@/lib/rate-limit', () => {
     uploadLimiter: ok,
     excelImportLimiter: ok,
     invitationManageLimiter: ok,
+    invitationTenantDailyLimiter: ok,
     permissionLimiter: ok,
     assignmentLimiter: ok,
     getClientIp: () => '127.0.0.1',

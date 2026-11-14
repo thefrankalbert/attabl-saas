@@ -3,7 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  invitationManageLimiter,
+  invitationTenantDailyLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { sendInvitationEmail } from '@/services/email.service';
@@ -89,6 +93,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // canGrantRole gate on the create path.
     if (!canActOnUser(adminUser.role as AdminRole, existingInvitation.role as AdminRole)) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // P-10: un renvoi envoie un courriel reel comme une creation: meme plafond
+    // quotidien par restaurant (sinon un renvoi en boucle contourne la limite).
+    const { success: withinDailyQuota } = await invitationTenantDailyLimiter.check(
+      existingInvitation.tenant_id,
+    );
+    if (!withinDailyQuota) {
+      return NextResponse.json(
+        { error: "Limite d'invitations atteinte pour aujourd'hui. Reessayez demain." },
+        { status: 429, headers: { 'Retry-After': '3600' } },
+      );
     }
 
     const service = createInvitationService(adminClient);

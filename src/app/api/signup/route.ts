@@ -11,6 +11,20 @@ import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
 import { HONEYPOT_FIELD, isDevAuthBypassEnabled, isHoneypotTriggered } from '@/lib/honeypot';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 
+/**
+ * Corps de reponse unique pour "inscription acceptee". Le meme objet sert au
+ * compte cree et a l'adresse deja connue: aucun champ (ni slug, ni tenantId)
+ * ne doit pouvoir les distinguer.
+ */
+function signupAcceptedBody(emailDelivered: boolean, t: (key: string) => string) {
+  return {
+    success: true,
+    requiresConfirmation: true,
+    emailDelivered,
+    message: t('signupConfirmation'),
+  };
+}
+
 export async function POST(request: Request) {
   const t = await getTranslations('errors');
 
@@ -103,21 +117,20 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      slug: result.slug,
-      tenantId: result.tenantId,
-      requiresConfirmation: true,
-      emailDelivered: result.emailDelivered ?? false,
-      message: t('signupConfirmation'),
-    });
+    return NextResponse.json(signupAcceptedBody(result.emailDelivered ?? false, t));
   } catch (error) {
     if (error instanceof ServiceError) {
       let errorMessage = error.message;
       let code: string = error.code;
       if (error.code === 'CONFLICT' && error.message === 'EMAIL_ALREADY_REGISTERED') {
-        errorMessage = t('emailAlreadyRegistered');
-        code = 'EMAIL_ALREADY_REGISTERED';
+        // A-08: meme reponse qu'une inscription reussie. Dire "cette adresse a
+        // deja un compte" faisait de ce formulaire un oracle d'enumeration des
+        // comptes (les limites de debit et l'anti-robot ralentissent, elles
+        // n'empechent pas de sonder une liste d'adresses).
+        logger.info('Signup: adresse deja inscrite, reponse neutre', {
+          code: 'EMAIL_ALREADY_REGISTERED',
+        });
+        return NextResponse.json(signupAcceptedBody(true, t));
       } else if (error.code === 'CONFLICT' && error.message === 'RESTAURANT_NAME_TAKEN') {
         errorMessage = t('restaurantNameTaken');
         code = 'RESTAURANT_NAME_TAKEN';

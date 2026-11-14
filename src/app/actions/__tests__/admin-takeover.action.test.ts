@@ -33,6 +33,8 @@ vi.mock('@/lib/billing/assert-tenant-serving', async () => {
 
 const mockGetAuthForTenant = vi.fn();
 const mockSendPasswordResetEmail = vi.fn();
+const mockSendEmailChangeEmail = vi.fn();
+const mockSendEmailChangeNotice = vi.fn();
 
 type MembershipRow = {
   tenant_id: string | null;
@@ -174,11 +176,19 @@ vi.mock('@/services/plan-enforcement.service', () => ({
   STAFF_ROLES: ['manager', 'cashier', 'chef', 'waiter'],
   createPlanEnforcementService: () => ({ canAddStaff, canAddAdmin }),
 }));
+const mockRevokeSessions = vi.fn();
+vi.mock('@/services/member-session.service', () => ({
+  createMemberSessionService: () => ({
+    revokeSessionsAfterRemoval: (...args: unknown[]) => mockRevokeSessions(...args),
+  }),
+}));
 vi.mock('@/services/audit.service', () => ({
   createAuditService: () => ({ log: vi.fn() }),
 }));
 vi.mock('@/services/email.service', () => ({
   sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
+  sendEmailChangeConfirmationEmail: (...args: unknown[]) => mockSendEmailChangeEmail(...args),
+  sendEmailChangeNoticeToCurrentAddress: (...args: unknown[]) => mockSendEmailChangeNotice(...args),
 }));
 
 import {
@@ -186,8 +196,9 @@ import {
   actionUpdateUserEmail,
   actionDeleteAdminUser,
   actionUpdateAdminUser,
-  actionCreateAdminUser,
 } from '@/app/actions/admin';
+import * as adminActions from '@/app/actions/admin';
+import { verifyEmailChangeToken } from '@/lib/auth/email-change-token';
 import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
 const TENANT_A = 'tenant-a';
@@ -221,11 +232,15 @@ describe('prise de controle de compte via les actions admin', () => {
       error: null,
     });
     mockSendPasswordResetEmail.mockResolvedValue(true);
+    mockSendEmailChangeEmail.mockResolvedValue(true);
+    mockSendEmailChangeNotice.mockResolvedValue(true);
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-secret-key';
     resetLinkLimiterCheck.mockResolvedValue({ success: true });
     resetLinkIpLimiterCheck.mockResolvedValue({ success: true });
     adminRpc.mockResolvedValue({ data: false, error: null });
     canAddStaff.mockResolvedValue(undefined);
     canAddAdmin.mockResolvedValue(undefined);
+    mockRevokeSessions.mockResolvedValue('revoked');
   });
 
   describe('actionResetUserPassword', () => {
@@ -569,7 +584,9 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
 
-    it("n'auto-confirme jamais la nouvelle adresse (pas de email_confirm)", async () => {
+    // A-09: la nouvelle adresse doit prouver qu'elle recoit le courrier AVANT
+    // que l'identite du compte (ou le miroir) change.
+    it('A-09: n ecrit ni le compte auth ni le miroir, et envoie un lien signe a la NOUVELLE adresse', async () => {
       actorIsOwnerOfTenantA();
       targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
@@ -577,10 +594,67 @@ describe('prise de controle de compte via les actions admin', () => {
       const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
 
       expect(res.success).toBe(true);
-      expect(updateUserById).toHaveBeenCalledTimes(1);
-      const [, payload] = updateUserById.mock.calls[0] as [string, Record<string, unknown>];
-      expect(payload.email).toBe('nouveau@resto-a.test');
-      expect(payload).not.toHaveProperty('email_confirm');
+      expect(updateUserById).not.toHaveBeenCalled();
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+      expect(mockSendEmailChangeEmail).toHaveBeenCalledTimes(1);
+      const [sentTo, data] = mockSendEmailChangeEmail.mock.calls[0] as [
+        string,
+        { confirmUrl: string },
+      ];
+      expect(sentTo).toBe('nouveau@resto-a.test');
+      const url = new URL(data.confirmUrl);
+      expect(url.pathname).toBe('/auth/confirm');
+      expect(url.searchParams.get('type')).toBe('email_change');
+      const claims = verifyEmailChangeToken(url.searchParams.get('token') ?? '');
+      expect(claims).toEqual({
+        userId: 'local-auth-id',
+        fromEmail: 'victime@autre-resto.test',
+        toEmail: 'nouveau@resto-a.test',
+      });
+    });
+
+    it('A-09: previent aussi le titulaire de l adresse ACTUELLE, sans bloquer si l avis echoue', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+
+      const ok = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
+      expect(ok.success).toBe(true);
+      expect(mockSendEmailChangeNotice).toHaveBeenCalledWith('victime@autre-resto.test');
+
+      mockSendEmailChangeNotice.mockResolvedValue(false);
+      const degraded = await actionUpdateUserEmail(
+        TENANT_A,
+        'target-admin-row',
+        'autre@resto-a.test',
+      );
+      expect(degraded.success).toBe(true);
+    });
+
+    it('A-09: respecte le quota d envoi par membre (aucun courriel au-dela)', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+      resetLinkLimiterCheck.mockResolvedValue({ success: false });
+
+      const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
+
+      expect(res.error).toBe('permissionDenied');
+      expect(mockSendEmailChangeEmail).not.toHaveBeenCalled();
+    });
+
+    it('A-09: un echec d envoi est signale et ne change rien', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = { user_id: 'local-auth-id', email: 'equipier@resto-a.test', role: 'manager' };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+      mockSendEmailChangeEmail.mockResolvedValue(false);
+
+      const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'nouveau@resto-a.test');
+
+      expect(res.error).toBe('serverError');
+      expect(mockSendEmailChangeNotice).not.toHaveBeenCalled();
+      expect(updateUserById).not.toHaveBeenCalled();
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -860,18 +934,12 @@ describe('prise de controle de compte via les actions admin', () => {
       membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
     }
 
-    it('actionCreateAdminUser refuse et ne cree aucun compte', async () => {
-      lockedWithLiveTarget();
-      const res = await actionCreateAdminUser(TENANT_A, {
-        email: 'nouveau@resto-a.test',
-        password: 'Motdepasse-Solide-123',
-        full_name: 'Nouveau Membre',
-        role: 'waiter',
-      });
-      expect(res.error).toBe(LOCK_MESSAGE);
-      expect(mockAssertServing).toHaveBeenCalledWith(TENANT_A);
-      expect(createAuthUser).not.toHaveBeenCalled();
-      expect(adminUsersInsert).not.toHaveBeenCalled();
+    // A-03 (audit du 2026-11-12): la creation directe d'un compte confirme, avec
+    // un mot de passe choisi par le proprietaire pour une adresse qu'il ne
+    // possede pas, n'existe plus. Seule l'invitation (le titulaire de l'adresse
+    // choisit son mot de passe) fait entrer du personnel.
+    it('A-03: aucune action ne cree un compte auth deja confirme avec mot de passe', () => {
+      expect(Object.keys(adminActions)).not.toContain('actionCreateAdminUser');
     });
 
     it('actionUpdateAdminUser refuse un changement de role', async () => {
@@ -918,6 +986,28 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(res.success).toBe(true);
       expect(adminUsersUpdate).toHaveBeenCalledWith(expect.objectContaining({ is_active: false }));
       expect(mockAssertServing).not.toHaveBeenCalled();
+    });
+
+    // A-04: la desactivation coupe aussi la session du membre.
+    it('A-04: la desactivation revoque la session du compte du membre', async () => {
+      lockedWithLiveTarget();
+      await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { is_active: false });
+      expect(mockRevokeSessions).toHaveBeenCalledWith(TENANT_A, 'local-auth-id');
+    });
+
+    it('A-04 TEMOIN: un changement qui ne retire pas l acces ne coupe aucune session', async () => {
+      actorIsOwnerOfTenantA();
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'equipier@resto-a.test',
+        role: 'manager',
+        deleted_at: null,
+        is_active: true,
+      };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'cashier' });
+      expect(res.success).toBe(true);
+      expect(mockRevokeSessions).not.toHaveBeenCalled();
     });
 
     it('TEMOIN: retirer un membre reste permis', async () => {

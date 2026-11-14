@@ -5,7 +5,11 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  invitationManageLimiter,
+  invitationTenantDailyLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { canGrantRole } from '@/lib/auth/role-hierarchy';
@@ -219,6 +223,17 @@ export async function POST(request: Request) {
       }
 
       const tenantId = currentTenant.id;
+
+      // P-10: plafond quotidien de courriels d'invitation PAR RESTAURANT, pris
+      // apres les controles d'identite (un inconnu ne peut pas epuiser le quota
+      // d'un restaurant) et avant tout ecriture ou envoi.
+      const { success: withinDailyQuota } = await invitationTenantDailyLimiter.check(tenantId);
+      if (!withinDailyQuota) {
+        return NextResponse.json(
+          { error: "Limite d'invitations atteinte pour aujourd'hui. Reessayez demain." },
+          { status: 429, headers: { 'Retry-After': '3600' } },
+        );
+      }
 
       const adminClient = createAdminClient();
 

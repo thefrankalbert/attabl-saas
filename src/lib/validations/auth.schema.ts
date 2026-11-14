@@ -43,6 +43,8 @@ export const loginSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
+    // A-06: adresse du compte, retapee pour prouver que le lien est le sien.
+    accountEmail: z.string().trim().email('Email invalide'),
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'La confirmation est requise'),
   })
