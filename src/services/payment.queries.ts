@@ -3,7 +3,8 @@ import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 import { createOrderService } from './order.service';
 import { ORDER_COLUMNS, type PaymentOrderRow, type PaymentTender } from './payment.types';
-import { deriveStatus, dueFor } from './payment.calc';
+import { deriveStatus, dominantMethod, dueFor } from './payment.calc';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 
 /**
  * Ledger I/O for the payment service: tenant-scoped reads of the order and its
@@ -111,6 +112,17 @@ export async function recompute(
   const update: Record<string, unknown> = { payment_status: newStatus };
   if (becomesPaid && !order.paid_at) {
     update.paid_at = new Date().toISOString();
+  }
+  // Le chemin registre (encaissements partiels ou fractionnes) n'ecrivait jamais
+  // orders.payment_method: la commande soldee restait sans moyen de paiement.
+  if (becomesPaid) {
+    const method = dominantMethod(tenders);
+    // Un moyen hors registre (ligne historique en texte libre) violerait la
+    // contrainte orders_payment_method_check et ferait echouer l'ecriture
+    // APRES l'encaissement: on ne l'inscrit pas.
+    if (method && (ALL_PAYMENT_METHOD_IDS as readonly string[]).includes(method)) {
+      update.payment_method = method;
+    }
   }
 
   const { error } = await supabase

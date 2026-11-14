@@ -40,46 +40,60 @@ export function OrderActionsPanel({
   const t = useTranslations('orders');
   const seg = useSegmentTerms();
 
+  // L'encaissement ne depend pas du service: une commande servie mais impayee
+  // doit rester encaissable. Une note payee en partie se solde dans le registre
+  // ci-dessous (le bouton rapide ne sait regler qu'une note entiere intacte).
+  const paymentStatus = order.payment_status ?? 'pending';
+  const showStatusButtons = order.status !== 'delivered' && order.status !== 'cancelled';
+  const showCheckout =
+    !isComp && canPay && order.status !== 'cancelled' && paymentStatus === 'pending';
+
   return (
     <div className="lg:w-56 shrink-0 space-y-3">
       {/* Status Actions */}
-      {order.status !== 'delivered' && order.status !== 'cancelled' && (
+      {(showStatusButtons || showCheckout) && (
         <div className="rounded-xl border border-app-border p-3 space-y-2">
-          <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
-            {t('statusLabel')}
-          </p>
+          {showStatusButtons && (
+            <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
+              {t('statusLabel')}
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStatusUpdate('pending')}
-              disabled={loading || order.status === 'pending'}
-              className="justify-start h-8 text-xs"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
-              {t('statusButtonPending')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStatusUpdate('preparing')}
-              disabled={loading || order.status === 'preparing'}
-              className="justify-start h-8 text-xs"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
-              {t('statusButtonPreparing')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStatusUpdate('ready')}
-              disabled={loading || order.status === 'ready'}
-              className="justify-start h-8 text-xs"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
-              {t('statusButtonReady')}
-            </Button>
-            {!isComp && canPay && (
+            {showStatusButtons && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onStatusUpdate('pending')}
+                  disabled={loading || order.status === 'pending'}
+                  className="justify-start h-8 text-xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
+                  {t('statusButtonPending')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onStatusUpdate('preparing')}
+                  disabled={loading || order.status === 'preparing'}
+                  className="justify-start h-8 text-xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
+                  {t('statusButtonPreparing')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onStatusUpdate('ready')}
+                  disabled={loading || order.status === 'ready'}
+                  className="justify-start h-8 text-xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
+                  {t('statusButtonReady')}
+                </Button>
+              </>
+            )}
+            {showCheckout && (
               <Button
                 size="sm"
                 onClick={onShowPayment}
@@ -90,8 +104,10 @@ export function OrderActionsPanel({
               </Button>
             )}
             {/* Sans droit d'argent (serveur, chef): la commande se marque servie,
-                le caissier l'encaisse ensuite. */}
-            {!canPay && (
+                le caissier l'encaisse ensuite. Avec ce droit, le meme geste reste
+                offert des que rien n'est a encaisser par le bouton rapide
+                (payee, payee en partie, remboursee). */}
+            {showStatusButtons && (!canPay || paymentStatus !== 'pending') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -104,7 +120,7 @@ export function OrderActionsPanel({
             )}
           </div>
 
-          {canPay && order.status !== 'ready' && (
+          {showStatusButtons && canPay && order.status !== 'ready' && (
             <p className="text-[10px] text-status-warning flex items-start gap-1">
               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
               {t('warningReadyBeforeCheckout')}

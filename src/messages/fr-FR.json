@@ -3500,6 +3500,7 @@
     "paymentMethod": "Mode de paiement",
     "cash": "Espèces",
     "card": "Carte",
+    "cardTerminal": "Carte (terminal)",
     "mobile": "Mobile",
     "receipt": "Reçu",
     "change": "Rendu",

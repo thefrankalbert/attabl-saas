@@ -9,7 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrencyMinor, toMinorUnits, fromMinorUnits } from '@/lib/utils/money';
-import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
+import { ALL_PAYMENT_METHOD_IDS, type PaymentMethodId } from '@/lib/payments/methods';
+import {
+  PaymentMethodPicker,
+  effectivePaymentMethod,
+  usePaymentMethodChoices,
+} from '@/components/admin/payment/PaymentMethodPicker';
 import {
   actionGetPaymentSummary,
   actionRecordTender,
@@ -64,6 +69,12 @@ export default function OrderPaymentPanel({
   const [loading, setLoading] = useState(false);
   const [tenderAmount, setTenderAmount] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  // Moyen d'encaissement / de remboursement: especes ou carte (terminal).
+  const methodChoices = usePaymentMethodChoices();
+  const [tenderMethodChoice, setTenderMethodChoice] = useState<PaymentMethodId | null>(null);
+  const tenderMethod = effectivePaymentMethod(tenderMethodChoice, methodChoices);
+  // null = pas encore choisi: on propose le moyen du dernier encaissement.
+  const [refundMethodChoice, setRefundMethodChoice] = useState<PaymentMethodId | null>(null);
   // Cles d'idempotence, une par geste d'encaissement en cours. Declarees avec
   // les autres hooks: `if (!summary) return null` plus bas rend tout hook
   // ulterieur conditionnel (react-hooks/rules-of-hooks).
@@ -104,6 +115,14 @@ export default function OrderPaymentPanel({
       ? tMethod(`${method}.label`)
       : method;
   const remaining = Math.max(0, summary.due - summary.net);
+  // Rembourser par defaut avec le moyen du dernier encaissement abouti.
+  const lastTenderMethod = [...summary.tenders]
+    .reverse()
+    .find((tender) => tender.status === 'completed')?.method;
+  const refundMethod: PaymentMethodId = effectivePaymentMethod(
+    refundMethodChoice ?? methodChoices.find((id) => id === lastTenderMethod) ?? null,
+    methodChoices,
+  );
   const isComp = summary.paymentStatus === 'comp';
   // A comped order is closed for free: hide the settle/refund inputs.
   const canSettle = canPay && remaining > 0 && summary.paymentStatus !== 'paid' && !isComp;
@@ -127,7 +146,7 @@ export default function OrderPaymentPanel({
       tenantId,
       orderId,
       toMinorUnits(amount, currency),
-      'cash',
+      tenderMethod,
       tenderKeyRef.current,
     );
     setLoading(false);
@@ -153,7 +172,7 @@ export default function OrderPaymentPanel({
       tenantId,
       orderId,
       toMinorUnits(amount, currency),
-      'cash',
+      refundMethod,
       refundKeyRef.current,
     );
     setLoading(false);
@@ -230,6 +249,12 @@ export default function OrderPaymentPanel({
         {/* Record a (partial) payment */}
         {canSettle && (
           <div className="flex flex-wrap gap-1.5">
+            <PaymentMethodPicker
+              value={tenderMethod}
+              onChange={setTenderMethodChoice}
+              choices={methodChoices}
+              disabled={loading}
+            />
             <Input
               type="number"
               inputMode="numeric"
@@ -259,6 +284,12 @@ export default function OrderPaymentPanel({
         {/* Refund */}
         {canRefund && (
           <div className="flex flex-wrap gap-1.5">
+            <PaymentMethodPicker
+              value={refundMethod}
+              onChange={setRefundMethodChoice}
+              choices={methodChoices}
+              disabled={loading}
+            />
             <Input
               type="number"
               inputMode="numeric"

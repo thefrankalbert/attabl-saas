@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
+import { PaymentMethodsProvider } from '@/contexts/PaymentMethodsContext';
 import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
@@ -289,65 +290,70 @@ export default async function AdminLayout({
           {/* Au-dessus du shell: barre laterale, barre du bas, menu du compte et
               pages lisent tous les MEMES permissions effectives que le serveur. */}
           <PermissionsProvider role={userRole} permissions={navPermissions}>
-            <AdminLayoutClient
-              isDevMode={false}
-              basePath={`/sites/${tenantSlug}/admin`}
-              role={userRole}
-              navPermissions={navPermissions}
-              tenant={{
-                name: tenant.name,
-                slug: tenant.slug,
-                logo_url: tenant.logo_url ?? undefined,
-                subscription_plan: tenant.subscription_plan ?? undefined,
-                establishment_type: tenant.establishment_type ?? undefined,
-              }}
-              userName={adminUser?.name || user.email || ''}
-              userEmail={user.email ?? undefined}
-              ordersUsagePercent={ordersUsagePercent}
-              userTenants={userTenants}
-              notifications={
-                <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-              }
-              breadcrumbs={<AdminBreadcrumbs />}
-              appVersion={APP_VERSION}
-            >
-              <OfflineIndicator />
-              <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
-              <CommandPalette />
-              <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
-                <AdminIdleWrapper
-                  idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-                  screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-                  tenantName={tenant.name}
-                >
-                  <SubscriptionProvider
-                    tenant={
-                      tenant
-                        ? {
-                            subscription_plan: tenant.subscription_plan,
-                            subscription_status: displayedStatus,
-                            trial_ends_at: tenant.trial_ends_at,
-                          }
-                        : null
-                    }
-                    tenantSlug={tenantSlug}
+            <PaymentMethodsProvider methods={tenant.enabled_payment_methods ?? null}>
+              <AdminLayoutClient
+                isDevMode={false}
+                basePath={`/sites/${tenantSlug}/admin`}
+                role={userRole}
+                navPermissions={navPermissions}
+                tenant={{
+                  name: tenant.name,
+                  slug: tenant.slug,
+                  logo_url: tenant.logo_url ?? undefined,
+                  subscription_plan: tenant.subscription_plan ?? undefined,
+                  establishment_type: tenant.establishment_type ?? undefined,
+                }}
+                userName={adminUser?.name || user.email || ''}
+                userEmail={user.email ?? undefined}
+                ordersUsagePercent={ordersUsagePercent}
+                userTenants={userTenants}
+                notifications={
+                  <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+                }
+                breadcrumbs={<AdminBreadcrumbs />}
+                appVersion={APP_VERSION}
+              >
+                <OfflineIndicator />
+                <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
+                <CommandPalette />
+                <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+                  <AdminIdleWrapper
+                    idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                    screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                    tenantName={tenant.name}
                   >
-                    {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
-                    <LockedSubscriptionRedirect
-                      tenantSlug={tenantSlug}
-                      kitchenMayFinish={kitchenMayFinish}
-                    />
-                    <AdminContentWrapper
-                      chrome={
-                        <SubscriptionBanners tenantSlug={tenantSlug} menuDaysLeft={menuDaysLeft} />
+                    <SubscriptionProvider
+                      tenant={
+                        tenant
+                          ? {
+                              subscription_plan: tenant.subscription_plan,
+                              subscription_status: displayedStatus,
+                              trial_ends_at: tenant.trial_ends_at,
+                            }
+                          : null
                       }
+                      tenantSlug={tenantSlug}
                     >
-                      {children}
-                    </AdminContentWrapper>
-                  </SubscriptionProvider>
-                </AdminIdleWrapper>
-              </ShortcutsProvider>
-            </AdminLayoutClient>
+                      {/* Hors du wrapper: doit tourner sur TOUTES les routes, caisse et cuisine comprises. */}
+                      <LockedSubscriptionRedirect
+                        tenantSlug={tenantSlug}
+                        kitchenMayFinish={kitchenMayFinish}
+                      />
+                      <AdminContentWrapper
+                        chrome={
+                          <SubscriptionBanners
+                            tenantSlug={tenantSlug}
+                            menuDaysLeft={menuDaysLeft}
+                          />
+                        }
+                      >
+                        {children}
+                      </AdminContentWrapper>
+                    </SubscriptionProvider>
+                  </AdminIdleWrapper>
+                </ShortcutsProvider>
+              </AdminLayoutClient>
+            </PaymentMethodsProvider>
           </PermissionsProvider>
         </SoundProvider>
       </QueryProvider>
