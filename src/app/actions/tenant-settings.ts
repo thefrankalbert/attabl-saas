@@ -8,6 +8,7 @@ import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
 import { detailsForType } from '@/lib/validations/establishment-details.schema';
 import { createTenantService } from '@/services/tenant.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { createAuditService } from '@/services/audit.service';
 import { getTranslations } from 'next-intl/server';
 
@@ -126,7 +127,10 @@ export async function actionUpdateTenantSettings(formData: FormData) {
 
     // 3. Update via service
     const tenantService = createTenantService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousLogo = settings.logoUrl !== undefined ? await cleanup.logoUrlOf(tenantId) : [];
     await tenantService.updateSettings(tenantId, settings);
+    if (settings.logoUrl !== undefined) await cleanup.release(tenantId, previousLogo);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {

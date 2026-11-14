@@ -11,6 +11,7 @@ import {
 import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { isRoleAllowed, ONBOARDING_COMPLETE_ROLES } from '@/lib/admin-roles';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
@@ -73,6 +74,13 @@ export async function POST(request: Request) {
     // 4. Complete onboarding via service
     const onboardingService = createOnboardingService(supabase);
     const result = await onboardingService.completeOnboarding(session.adminUser.tenant_id, data);
+
+    // Les photos du brouillon qui n'ont pas servi (article retire, photo
+    // remplacee) sont maintenant orphelines: on les libere (R-05). Au mieux.
+    // Le garde des 24 h rend ce balayage presque sans effet pour un brouillon du
+    // jour meme: le script scripts/nettoyer-stockage-orphelin.ts nettoie ces
+    // fichiers plus tard.
+    await getStorageCleanup().releaseUnreferencedFiles(session.adminUser.tenant_id);
 
     revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
     revalidateTag(CACHE_TAG_MENUS, 'max');

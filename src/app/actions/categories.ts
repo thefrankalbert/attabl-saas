@@ -7,6 +7,7 @@ import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { PreparationZone } from '@/types/admin.types';
 import { createAuditService } from '@/services/audit.service';
 import { createCategoryService } from '@/services/category.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { ServiceError } from '@/services/errors';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
@@ -194,7 +195,13 @@ export async function actionUpdateCategory(
   try {
     const supabase = await createClient();
     const categoryService = createCategoryService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousImages =
+      data.image_url !== undefined
+        ? await cleanup.imageUrlsOf('categories', categoryId, tenantId)
+        : [];
     await categoryService.updateCategory(categoryId, { ...data, tenant_id: tenantId });
+    if (data.image_url !== undefined) await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
@@ -225,7 +232,10 @@ export async function actionDeleteCategory(
   try {
     const supabase = await createClient();
     const categoryService = createCategoryService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousImages = await cleanup.imageUrlsOf('categories', categoryId, tenantId);
     await categoryService.deleteCategory(categoryId, tenantId);
+    await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {

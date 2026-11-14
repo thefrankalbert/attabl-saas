@@ -7,6 +7,7 @@ import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-ten
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createAdService } from '@/services/ad.service';
 import { ServiceError } from '@/services/errors';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { createClient } from '@/lib/supabase/server';
 
 type ActionResponse<T = undefined> = {
@@ -93,7 +94,10 @@ export async function actionDeleteAd(tenantId: string, adId: string): Promise<Ac
   try {
     const supabase = await createClient();
     const adService = createAdService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousImages = await cleanup.imageUrlsOf('ads', adId, tenantId);
     await adService.deleteAd(adId, tenantId);
+    await cleanup.release(tenantId, previousImages);
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) return { error: err.message };

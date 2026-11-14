@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createMenuItemService } from '@/services/menu-item.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
@@ -143,7 +144,15 @@ export async function actionUpdateMenuItem(
   try {
     const supabase = await createClient();
     const menuItemService = createMenuItemService(supabase);
+    // Remplacement d'image: on retient les anciennes avant l'ecriture, on les
+    // libere apres (R-05). Un plat supprime en douceur garde sa photo.
+    const touchesImages = 'image_url' in parsedPayload.data || 'images' in parsedPayload.data;
+    const cleanup = getStorageCleanup();
+    const previousImages = touchesImages
+      ? await cleanup.imageUrlsOf('menu_items', itemId, tenantId)
+      : [];
     await menuItemService.updateMenuItem(itemId, tenantId, parsedPayload.data);
+    if (touchesImages) await cleanup.release(tenantId, previousImages);
     revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
