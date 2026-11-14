@@ -122,7 +122,7 @@ select is(
   'T-02 temoin: le super-administrateur lit toujours les restaurants actifs');
 
 set local role anon;
-reset request.jwt.claims;
+set local request.jwt.claims = '{}';
 select is(
   (select slug from public.tenants where id = 'f2000000-0000-0000-0000-00000000000a'),
   'reste-a',
@@ -193,7 +193,7 @@ select is(
   'T-04 temoin: le super-administrateur lit la carte d''un restaurant ferme');
 
 set local role anon;
-reset request.jwt.claims;
+set local request.jwt.claims = '{}';
 select is(
   (select count(*)::int from public.tables where tenant_id = 'f2000000-0000-0000-0000-00000000000a'),
   1,
@@ -247,7 +247,7 @@ select is(
 set local role anon;
 -- ------------------------------------------------------------------ T-05
 set local role anon;
-reset request.jwt.claims;
+set local request.jwt.claims = '{}';
 select is(
   (select count(*)::int from public.get_co_ordered_items(
      'f2000000-0000-0000-0000-00000000000c',
