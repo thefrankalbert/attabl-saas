@@ -14,6 +14,11 @@ interface TenantContextType {
    * n'est que l'explication a l'ecran.
    */
   orderingPaused: boolean;
+  /**
+   * Le forfait inclut-il le pourboire (`canAccessTips`) ? Sinon le panier ne
+   * propose pas de pourboire: le serveur refuserait la commande.
+   */
+  tipsEnabled: boolean;
 }
 
 const TenantContext = createContext<TenantContextType>({
@@ -21,6 +26,7 @@ const TenantContext = createContext<TenantContextType>({
   tenantId: null,
   tenant: null,
   orderingPaused: false,
+  tipsEnabled: false,
 });
 
 export function TenantProvider({
@@ -29,15 +35,17 @@ export function TenantProvider({
   tenantId,
   tenant,
   orderingPaused = false,
+  tipsEnabled = false,
 }: {
   children: ReactNode;
   slug: string | null;
   tenantId: string | null;
   tenant: Tenant | null;
   orderingPaused?: boolean;
+  tipsEnabled?: boolean;
 }) {
   return (
-    <TenantContext.Provider value={{ slug, tenantId, tenant, orderingPaused }}>
+    <TenantContext.Provider value={{ slug, tenantId, tenant, orderingPaused, tipsEnabled }}>
       {children}
     </TenantContext.Provider>
   );
