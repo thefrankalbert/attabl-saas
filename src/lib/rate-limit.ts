@@ -130,16 +130,32 @@ export function cleCompte(email: string): string {
  * IPv6, l unite reellement attribuee a un client.
  *
  * L IPv4 est rendue telle quelle: la grouper par /24 punirait des voisins qui
- * n ont rien en commun.
+ * n ont rien en commun. Une IPv4 encapsulee (::ffff:a.b.c.d) est ramenee a son
+ * IPv4.
+ *
+ * La forme abregee (::) est DEPLIEE avant regroupement. Constat P-03 du test
+ * d intrusion du 2026-11-12: elle etait rendue telle quelle, et un attaquant
+ * qui variait la fin de son adresse en forme courte (2001:db8:1:2::1, ::2...)
+ * obtenait une cle neuve a chaque requete.
+ *
+ * Idempotente: une cle deja regroupee ressort inchangee. Une valeur illisible
+ * ressort telle quelle plutot que d etre fusionnee avec d autres.
  */
 export function grouperAdresse(ip: string): string {
-  if (!ip.includes(':')) return ip;
-  // Forme abregee (::): on ne deplie pas. Les adresses d un meme /64 arrivent
-  // sous la meme forme dans les en-tetes de la plateforme, donc le
-  // regroupement reste correct en pratique.
-  if (ip.includes('::')) return ip;
-  const blocs = ip.split(':');
-  return blocs.length >= 4 ? `${blocs.slice(0, 4).join(':')}::/64` : ip;
+  if (!ip.includes(':') || ip.endsWith('::/64')) return ip;
+  const sansZone = ip.split('%')[0];
+  const ipv4 = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(sansZone);
+  if (ipv4) return ipv4[1];
+  const moities = sansZone.split('::');
+  if (moities.length > 2) return ip;
+  const gauche = moities[0] ? moities[0].split(':') : [];
+  const droite = moities.length === 2 && moities[1] ? moities[1].split(':') : [];
+  const manquants = 8 - gauche.length - droite.length;
+  if (moities.length === 2 ? manquants < 1 : manquants !== 0) return ip;
+  const blocs = [...gauche, ...Array<string>(manquants).fill('0'), ...droite];
+  if (!blocs.every((b) => /^[0-9a-f]{1,4}$/i.test(b))) return ip;
+  const prefixe = blocs.slice(0, 4).map((b) => parseInt(b, 16).toString(16));
+  return `${prefixe.join(':')}::/64`;
 }
 
 /**
@@ -755,16 +771,21 @@ export const revalidateMenuLimiter = createLimiter(
  * (Cloudflare, par exemple), ou quitter Vercel. Dans ce cas il faudrait lire
  * `x-vercel-forwarded-for`, ou l'en-tete du nouveau proxy, et surtout le
  * reverifier - pas le supposer.
+ *
+ * L'adresse rendue est deja regroupee par `grouperAdresse` (/64 en IPv6):
+ * chaque limiteur en profite sans y penser. Avant le 2026-11-14, seules 4
+ * routes le faisaient, les 50 autres points d'appel comptaient adresse par
+ * adresse.
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    return grouperAdresse(forwarded.split(',')[0].trim());
   }
 
   const realIp = request.headers.get('x-real-ip');
   if (realIp) {
-    return realIp.trim();
+    return grouperAdresse(realIp.trim());
   }
 
   return 'anonymous';
@@ -777,12 +798,12 @@ export function getClientIp(request: Request): string {
 export function getClientIpFromHeaders(headersList: Headers): string {
   const forwarded = headersList.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    return grouperAdresse(forwarded.split(',')[0].trim());
   }
 
   const realIp = headersList.get('x-real-ip');
   if (realIp) {
-    return realIp.trim();
+    return grouperAdresse(realIp.trim());
   }
 
   return 'anonymous';
