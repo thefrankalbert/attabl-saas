@@ -81,6 +81,8 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Slug d'un etablissement cree SANS essai: il demande un abonnement des le depart.
+  const [needsSubscriptionSlug, setNeedsSubscriptionSlug] = useState<string | null>(null);
 
   // Step 1 data
   const [name, setName] = useState('');
@@ -138,6 +140,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         throw new Error(data.error || t('addRestaurant.creationError'));
       }
 
+      if (data.trialMode === 'none') {
+        setNeedsSubscriptionSlug(data.slug);
+        setLoading(false);
+        return;
+      }
       onSuccess(data.slug);
     } catch (err) {
       logger.error('Restaurant creation failed', err);
@@ -188,7 +195,20 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6">
+        {needsSubscriptionSlug ? (
+          <div className="space-y-4 px-6 py-6">
+            <h3 className="text-base font-semibold text-app-text">
+              {t('addRestaurant.subscriptionNeededTitle')}
+            </h3>
+            <p className="text-sm text-app-text-secondary">
+              {t('addRestaurant.subscriptionNeededDesc')}
+            </p>
+            <Button onClick={() => onSuccess(needsSubscriptionSlug)} className="w-full">
+              {t('addRestaurant.subscriptionNeededCta')}
+            </Button>
+          </div>
+        ) : null}
+        <div className={needsSubscriptionSlug ? 'hidden' : 'px-6 py-6'}>
           {/* --- STEP 1: Info ------------------------------ */}
           {step === 1 && (
             <div className="space-y-4">
@@ -339,7 +359,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-app-border px-6 py-4">
+        <div
+          className={
+            needsSubscriptionSlug
+              ? 'hidden'
+              : 'flex items-center justify-between border-t border-app-border px-6 py-4'
+          }
+        >
           <Button
             variant="outline"
             onClick={step === 1 ? onClose : () => setStep(step - 1)}
