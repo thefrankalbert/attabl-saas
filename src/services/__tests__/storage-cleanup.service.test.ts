@@ -11,12 +11,13 @@ import { createStorageCleanupService, parseOwnedObject } from '../storage-cleanu
 const TENANT = '11111111-1111-1111-1111-111111111111';
 const OTHER = '22222222-2222-2222-2222-222222222222';
 const BASE = 'https://x.supabase.co/storage/v1/object/public';
+const OLD = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
 interface FakeOptions {
   referenced?: boolean;
   refError?: boolean;
   tenantRowExists?: boolean;
-  listings?: (string | { name: string; id: null })[][];
+  listings?: (string | { name: string; id: string | null; created_at?: string })[][];
 }
 
 /** Doublure minimale: toute lecture de reference rend `referenced`, le stockage est espionne. */
@@ -29,7 +30,7 @@ function fakeAdmin(opts: FakeOptions = {}) {
   const list = vi.fn().mockImplementation(async () => {
     const names = listings.shift() ?? [];
     return {
-      data: names.map((n) => (typeof n === 'string' ? { name: n } : n)),
+      data: names.map((n) => (typeof n === 'string' ? { name: n, created_at: OLD } : n)),
       error: null,
     };
   });
@@ -93,6 +94,26 @@ describe('release', () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
+  it('verifie toutes les sources de reference (logo QR, annonces, banniere, brouillons)', async () => {
+    const { admin } = fakeAdmin({ referenced: false });
+    await createStorageCleanupService(admin).release(TENANT, [url]);
+    const tables = (admin.from as unknown as { mock: { calls: string[][] } }).mock.calls.map(
+      (c) => c[0],
+    );
+    for (const t of [
+      'tenants',
+      'menu_items',
+      'categories',
+      'menus',
+      'ads',
+      'announcements',
+      'dish_photo_drafts',
+      'qr_designs',
+    ]) {
+      expect(tables).toContain(t);
+    }
+  });
+
   it('n efface pas quand la lecture des references echoue', async () => {
     const { admin, remove } = fakeAdmin({ refError: true });
     await createStorageCleanupService(admin).release(TENANT, [url]);
@@ -137,6 +158,15 @@ describe('purgeTenant', () => {
 });
 
 describe('releaseUnreferencedFiles', () => {
+  it('ne touche jamais un fichier de moins de 24 h (temoin negatif)', async () => {
+    const { admin, remove } = fakeAdmin({
+      referenced: false,
+      listings: [[{ name: 'recent.jpg', id: 'x', created_at: new Date().toISOString() }]],
+    });
+    await createStorageCleanupService(admin).releaseUnreferencedFiles(TENANT);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it('efface les fichiers du dossier que rien ne reference', async () => {
     const { admin, remove } = fakeAdmin({ referenced: false, listings: [['brouillon.jpg']] });
     await createStorageCleanupService(admin).releaseUnreferencedFiles(TENANT);

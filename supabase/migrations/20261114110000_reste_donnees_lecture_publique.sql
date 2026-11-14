@@ -34,6 +34,21 @@
 --      Reste ici : get_co_ordered_items repondait encore pour un restaurant ferme
 --      ou supprime ; elle est bornee a la meme regle de visibilite.
 --
+-- Cout : la policy RESTRICTIVE appelle storefront_tenant_visible() UNE FOIS PAR LIGNE
+-- lue (une recherche par cle primaire sur tenants). Les premiers termes du OR
+-- (appartenance, super-administrateur) sont des sous-requetes evaluees une seule
+-- fois par requete, donc un membre qui liste sa propre carte ne paie pas la
+-- fonction ; un visiteur anonyme la paie sur chaque ligne (quelques centaines de
+-- plats : de l'ordre de la dizaine de millisecondes). A surveiller si une carte
+-- depasse plusieurs milliers de lignes.
+--
+-- Les deux fonctions d'aide vivent dans le schema `private`, que PostgREST
+-- n'expose pas : elles ne sont pas appelables depuis /rest/v1/rpc. Les roles anon
+-- et authenticated y gardent USAGE et EXECUTE, car une policy s'evalue avec les
+-- droits du lecteur. create_order_with_items n'est pas concernee : elle est
+-- SECURITY INVOKER mais seul service_role (BYPASSRLS) peut l'executer
+-- (20260630030000), et l'application l'appelle avec le client admin.
+--
 -- Ordre de mise en production : le code (commit de cette PR) D'ABORD. Il remplace
 -- deux lectures de la ligne `tenants` faites avec la session du visiteur
 -- (page des commandes de la vitrine, manifeste PWA) par le cache service_role ;
@@ -54,8 +69,9 @@
 --   drop policy if exists "Catalogue: restaurant visible ou membre" on public.menu_items;
 --   (idem sur categories, menus, venues, tables)
 --   puis rejouer 20261105150000 pour get_co_ordered_items, et
---   drop function public.storefront_tenant_visible(uuid);
---   drop function public.viewer_owns_tenant_group(uuid);
+--   drop function private.storefront_tenant_visible(uuid);
+--   drop function private.viewer_owns_tenant_group(uuid);
+--   (le schema private peut rester)
 
 BEGIN;
 SET LOCAL lock_timeout = '5s';
@@ -65,7 +81,11 @@ SET LOCAL lock_timeout = '5s';
 -- subscription_status, freeze_reason, trial_ends_at et suspended_at ne sont pas
 -- lisibles par `anon`, or une policy s'evalue avec les droits du lecteur.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.storefront_tenant_visible(p_tenant_id uuid)
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC;
+GRANT USAGE ON SCHEMA private TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION private.storefront_tenant_visible(p_tenant_id uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO 'public'
@@ -87,7 +107,7 @@ AS $$
   );
 $$;
 
-CREATE OR REPLACE FUNCTION public.viewer_owns_tenant_group(p_tenant_id uuid)
+CREATE OR REPLACE FUNCTION private.viewer_owns_tenant_group(p_tenant_id uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO 'public'
@@ -101,15 +121,18 @@ AS $$
   );
 $$;
 
-REVOKE ALL ON FUNCTION public.storefront_tenant_visible(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.viewer_owns_tenant_group(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.storefront_tenant_visible(uuid) TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.viewer_owns_tenant_group(uuid) TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION private.storefront_tenant_visible(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.viewer_owns_tenant_group(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.storefront_tenant_visible(uuid) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION private.viewer_owns_tenant_group(uuid) TO anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- T-02 : la policy publique ne vaut plus que pour anon.
 -- ---------------------------------------------------------------------------
 DROP POLICY IF EXISTS "Public can read active tenants" ON public.tenants;
+-- Ancien nom de la meme policy (20260207000002), defensif: si elle subsistait
+-- sans clause TO, elle rouvrirait la lecture a tous les comptes connectes.
+DROP POLICY IF EXISTS "Public can view active tenants by slug" ON public.tenants;
 CREATE POLICY "Public can read active tenants" ON public.tenants
   FOR SELECT TO anon USING (is_active = true);
 
@@ -136,8 +159,8 @@ BEGIN
          USING (
            tenant_id = ANY ((SELECT public.get_my_tenant_ids_array()))
            OR (SELECT public.is_super_admin())
-           OR public.storefront_tenant_visible(tenant_id)
-           OR public.viewer_owns_tenant_group(tenant_id)
+           OR private.storefront_tenant_visible(tenant_id)
+           OR private.viewer_owns_tenant_group(tenant_id)
          )', t);
   END LOOP;
 END $$;
@@ -160,7 +183,7 @@ declare
   v_limit integer;
   v_cart uuid[];
 begin
-  if not public.storefront_tenant_visible(p_tenant_id) then
+  if not private.storefront_tenant_visible(p_tenant_id) then
     return;
   end if;
 
