@@ -11,6 +11,7 @@ const mockGetClientIp = vi.fn<(req: Request) => string>().mockReturnValue('127.0
 vi.mock('@/lib/rate-limit', () => ({
   signupLimiter: { check: (...args: unknown[]) => mockCheck(...(args as [])) },
   getClientIp: (req: Request) => mockGetClientIp(req),
+  getClientIpBrute: (req: Request) => mockGetClientIp(req),
 }));
 
 const mockCreateAdminClient = vi.fn().mockReturnValue({});

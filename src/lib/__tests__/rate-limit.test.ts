@@ -405,6 +405,14 @@ describe('grouperAdresse', () => {
  * fait a la source.
  */
 describe('getClientIp regroupe l IPv6 a la source', () => {
+  it('getClientIpBrute rend la vraie adresse, pour Turnstile', async () => {
+    const { getClientIpBrute } = await loadWithRedis();
+    const r = new Request('https://attabl.com/', {
+      headers: { 'x-forwarded-for': '2001:db8:1:2::7, 10.0.0.1' },
+    });
+    expect(getClientIpBrute(r)).toBe('2001:db8:1:2::7');
+  });
+
   it('rend la meme cle pour deux adresses du meme /64', async () => {
     const { getClientIp, getClientIpFromHeaders } = await loadWithRedis();
     const req = (ip: string) =>

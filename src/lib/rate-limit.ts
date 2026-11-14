@@ -778,32 +778,36 @@ export const revalidateMenuLimiter = createLimiter(
  * adresse.
  */
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return grouperAdresse(forwarded.split(',')[0].trim());
-  }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return grouperAdresse(realIp.trim());
-  }
-
-  return 'anonymous';
+  return grouperAdresse(adresseDesEntetes(request.headers));
 }
 
 /**
- * Extract client IP from a Headers object (Server Actions).
- * Use with `const headersList = await headers();`
+ * Adresse BRUTE du client, non regroupee. A n'utiliser que pour un service
+ * qui attend une vraie adresse, comme Turnstile (`remoteip`): une cle de
+ * comptage du type `2001:db8:1:2::/64` n'en est pas une. Pour compter des
+ * requetes, toujours `getClientIp`.
+ */
+export function getClientIpBrute(request: Request): string {
+  return adresseDesEntetes(request.headers);
+}
+
+/**
+ * Extract client IP from a Headers object (Server Actions), regroupee comme
+ * `getClientIp`. Use with `const headersList = await headers();`
  */
 export function getClientIpFromHeaders(headersList: Headers): string {
-  const forwarded = headersList.get('x-forwarded-for');
+  return grouperAdresse(adresseDesEntetes(headersList));
+}
+
+function adresseDesEntetes(entetes: Headers): string {
+  const forwarded = entetes.get('x-forwarded-for');
   if (forwarded) {
-    return grouperAdresse(forwarded.split(',')[0].trim());
+    return forwarded.split(',')[0].trim();
   }
 
-  const realIp = headersList.get('x-real-ip');
+  const realIp = entetes.get('x-real-ip');
   if (realIp) {
-    return grouperAdresse(realIp.trim());
+    return realIp.trim();
   }
 
   return 'anonymous';
