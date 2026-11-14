@@ -24,6 +24,7 @@ import {
 import { OrdersTableToolbar } from './OrdersTableToolbar';
 import { OrdersTableSelectionBar } from './OrdersTableSelectionBar';
 import { OrdersTableRow } from './OrdersTableRow';
+import { OrdersTableCard } from './OrdersTableCard';
 import { OrdersTableFooter } from './OrdersTableFooter';
 
 interface OrdersTableProps {
@@ -112,6 +113,24 @@ export function OrdersTable({
       setSortDir('asc');
     }
   };
+
+  // Sortable header label, shared by the desktop table head and the phone list head.
+  const sortButton = (key: 'id' | 'time', label: string) => (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={() => toggleSort(key)}
+      className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
+    >
+      {label}
+      {sortKey === key &&
+        (sortDir === 'asc' ? (
+          <ChevronUp className="size-3.5 opacity-70" />
+        ) : (
+          <ChevronDown className="size-3.5 opacity-70" />
+        ))}
+    </Button>
+  );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
@@ -236,73 +255,74 @@ export function OrdersTable({
             </div>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-[var(--muted)] hover:bg-[var(--muted)]">
-                <TableHead className={cn(HEAD_CLS, 'w-10')}>
-                  <Checkbox
-                    checked={allPageSelected}
-                    onCheckedChange={togglePage}
-                    aria-label="Select page"
-                  />
-                </TableHead>
-                <TableHead className={HEAD_CLS}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => toggleSort('id')}
-                    className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
-                  >
-                    {t('colOrder')}
-                    {sortKey === 'id' &&
-                      (sortDir === 'asc' ? (
-                        <ChevronUp className="size-3.5 opacity-70" />
-                      ) : (
-                        <ChevronDown className="size-3.5 opacity-70" />
-                      ))}
-                  </Button>
-                </TableHead>
-                <TableHead className={HEAD_CLS}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => toggleSort('time')}
-                    className="h-auto gap-1 p-0 text-[13px] font-medium text-[var(--muted-foreground)] hover:bg-transparent hover:text-[var(--foreground)]"
-                  >
-                    {t('colTime')}
-                    {sortKey === 'time' &&
-                      (sortDir === 'asc' ? (
-                        <ChevronUp className="size-3.5 opacity-70" />
-                      ) : (
-                        <ChevronDown className="size-3.5 opacity-70" />
-                      ))}
-                  </Button>
-                </TableHead>
-                {cols.type && <TableHead className={HEAD_CLS}>{t('colType')}</TableHead>}
-                <TableHead className={HEAD_CLS}>{t('colStatus')}</TableHead>
-                {cols.payment && (
-                  <TableHead className={cn(HEAD_CLS, PAYMENT_COL_CLS)}>{t('colPayment')}</TableHead>
-                )}
-                <TableHead className={cn(HEAD_CLS, 'text-right')}>{t('colAmount')}</TableHead>
-                <TableHead className={cn(HEAD_CLS, 'w-10')} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((o) => (
-                <OrdersTableRow
-                  key={o.id}
-                  order={o}
-                  cols={cols}
-                  selected={selected.has(o.id)}
-                  onToggle={toggleRow}
-                  adminBase={adminBase}
-                  locale={locale}
-                  nowMs={nowMs}
-                  formatValue={formatValue}
+          <>
+            {/* Phone: stacked cards, nothing scrolls sideways */}
+            <div className="md:hidden">
+              <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2">
+                <Checkbox
+                  checked={allPageSelected}
+                  onCheckedChange={togglePage}
+                  aria-label="Select page"
                 />
-              ))}
-            </TableBody>
-          </Table>
+                {sortButton('id', t('colOrder'))}
+                {sortButton('time', t('colTime'))}
+              </div>
+              <ul className="divide-y divide-[var(--border)]">
+                {rows.map((o) => (
+                  <OrdersTableCard
+                    key={o.id}
+                    order={o}
+                    cols={cols}
+                    selected={selected.has(o.id)}
+                    onToggle={toggleRow}
+                    adminBase={adminBase}
+                    locale={locale}
+                    nowMs={nowMs}
+                    formatValue={formatValue}
+                  />
+                ))}
+              </ul>
+            </div>
+            <Table className="hidden md:table">
+              <TableHeader>
+                <TableRow className="bg-[var(--muted)] hover:bg-[var(--muted)]">
+                  <TableHead className={cn(HEAD_CLS, 'w-10')}>
+                    <Checkbox
+                      checked={allPageSelected}
+                      onCheckedChange={togglePage}
+                      aria-label="Select page"
+                    />
+                  </TableHead>
+                  <TableHead className={HEAD_CLS}>{sortButton('id', t('colOrder'))}</TableHead>
+                  <TableHead className={HEAD_CLS}>{sortButton('time', t('colTime'))}</TableHead>
+                  {cols.type && <TableHead className={HEAD_CLS}>{t('colType')}</TableHead>}
+                  <TableHead className={HEAD_CLS}>{t('colStatus')}</TableHead>
+                  {cols.payment && (
+                    <TableHead className={cn(HEAD_CLS, PAYMENT_COL_CLS)}>
+                      {t('colPayment')}
+                    </TableHead>
+                  )}
+                  <TableHead className={cn(HEAD_CLS, 'text-right')}>{t('colAmount')}</TableHead>
+                  <TableHead className={cn(HEAD_CLS, 'w-10')} />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((o) => (
+                  <OrdersTableRow
+                    key={o.id}
+                    order={o}
+                    cols={cols}
+                    selected={selected.has(o.id)}
+                    onToggle={toggleRow}
+                    adminBase={adminBase}
+                    locale={locale}
+                    nowMs={nowMs}
+                    formatValue={formatValue}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </>
         )}
       </div>
     </div>
