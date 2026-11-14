@@ -821,3 +821,45 @@ describe('recompute - orders.payment_method quand la commande devient soldee', (
     ).toBe('cash');
   });
 });
+
+// ---------------------------------------------------------------------------
+// M-07 - deux appareils: la lecture du solde passe, la garde de la base refuse
+// ---------------------------------------------------------------------------
+function withFailingInsert(
+  mock: ReturnType<typeof createMockSupabase>,
+  error: { code: string; message: string },
+): SupabaseClient {
+  const client = {
+    ...mock,
+    from: (table: string) =>
+      table === 'payments'
+        ? { ...mock.from('payments'), insert: vi.fn(async () => ({ error })) }
+        : mock.from(table),
+  };
+  return client as unknown as SupabaseClient;
+}
+
+describe('recordTender - refus de la garde du registre (course entre deux appareils)', () => {
+  it('traduit le refus 22023 de la base en erreur de validation, sans ecriture', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(
+      withFailingInsert(mock, { code: '22023', message: 'Montant superieur au solde du' }),
+    );
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION', message: 'Montant superieur au solde du' });
+    expect(mock._ledger).toHaveLength(0);
+  });
+
+  it('temoin negatif: une autre erreur de base reste une erreur interne', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(
+      withFailingInsert(mock, { code: 'XX000', message: 'boom' }),
+    );
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
+    ).rejects.toMatchObject({ code: 'INTERNAL' });
+  });
+});

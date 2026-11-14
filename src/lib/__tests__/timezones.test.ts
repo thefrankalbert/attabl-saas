@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTenantMonthStart, resolveTenantTimezone } from '../timezones';
+import { getTenantDayStart, getTenantMonthStart, resolveTenantTimezone } from '../timezones';
 
 describe('resolveTenantTimezone', () => {
   it('returns the Douala zone for Cameroun (CM)', () => {
@@ -39,5 +39,37 @@ describe('getTenantMonthStart', () => {
     const now = new Date('2026-04-19T14:00:00Z');
     const start = getTenantMonthStart({}, now);
     expect(start.toISOString()).toBe('2026-04-01T00:00:00.000Z');
+  });
+});
+
+describe('resolveTenantTimezone - noms de pays', () => {
+  it('reconnait Cameroun et Tchad (UTC+1) par leur nom, accents et casse ignores', () => {
+    expect(resolveTenantTimezone({ country: 'Cameroun' })).toBe('Africa/Douala');
+    expect(resolveTenantTimezone({ country: 'tchad' })).toBe('Africa/Ndjamena');
+    expect(resolveTenantTimezone({ country: "Cote d'Ivoire" })).toBe('Africa/Abidjan');
+    expect(resolveTenantTimezone({ country: 'Burkina Faso' })).toBe('Africa/Ouagadougou');
+  });
+});
+
+describe('getTenantDayStart', () => {
+  // 2026-04-19 23:30 UTC = 00:30 le 20 avril a Douala (UTC+1)
+  const now = new Date('2026-04-19T23:30:00Z');
+
+  it('UTC+1: la journee du 20 avril commence le 19 a 23:00 UTC', () => {
+    expect(getTenantDayStart({ country: 'Cameroun' }, 0, now).toISOString()).toBe(
+      '2026-04-19T23:00:00.000Z',
+    );
+  });
+
+  it('temoin: UTC+0, il est encore le 19 avril', () => {
+    expect(getTenantDayStart({ country: 'Burkina Faso' }, 0, now).toISOString()).toBe(
+      '2026-04-19T00:00:00.000Z',
+    );
+  });
+
+  it('daysAgo recule de jours calendaires locaux', () => {
+    expect(getTenantDayStart({ country: 'Cameroun' }, 1, now).toISOString()).toBe(
+      '2026-04-18T23:00:00.000Z',
+    );
   });
 });

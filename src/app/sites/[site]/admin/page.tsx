@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
+import { getTenantDayStart, resolveTenantTimezone } from '@/lib/timezones';
 import { headers } from 'next/headers';
 import { getAdminPermission } from '@/lib/auth/require-admin-permission';
 import DashboardClient from '@/components/admin/DashboardClient';
@@ -132,20 +133,12 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   let activeTablesUsed = 0;
 
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
-
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    ninetyDaysAgo.setHours(0, 0, 0, 0);
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    // Journee de caisse = journee DU RESTAURANT (audit R-02), pas minuit du
+    // serveur (UTC) ni de l'appareil de la personne connectee.
+    const today = getTenantDayStart(tenant);
+    const yesterday = getTenantDayStart(tenant, 1);
+    const ninetyDaysAgo = getTenantDayStart(tenant, 90);
+    const sevenDaysAgo = getTenantDayStart(tenant, 7);
 
     const [
       ordersRes,
@@ -470,6 +463,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         initialStockAlerts={initialStockAlerts}
         initialActiveTables={{ used: activeTablesUsed, total: activeTablesTotal }}
         currency={tenant.currency}
+        timeZone={resolveTenantTimezone(tenant)}
         establishmentType={tenant.establishment_type ?? 'restaurant'}
       />
     </div>

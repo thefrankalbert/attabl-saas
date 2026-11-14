@@ -40,6 +40,8 @@ export interface UseDashboardDataParams {
   initialRevenueSparkline?: SparklinePoint[];
   initialOrdersSparkline?: SparklinePoint[];
   currency?: CurrencyCode;
+  /** Fuseau IANA du restaurant: la journee de caisse y commence a minuit (audit R-02). */
+  timeZone?: string;
 }
 
 export interface UseDashboardDataReturn {
@@ -63,6 +65,7 @@ export function useDashboardData({
   initialRecentOrders,
   initialRevenueSparkline = [],
   initialOrdersSparkline = [],
+  timeZone,
 }: UseDashboardDataParams): UseDashboardDataReturn {
   const { toast } = useToast();
   const ta = useTranslations('admin');
@@ -83,16 +86,21 @@ export function useDashboardData({
 
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
-  const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, canViewRevenue, {
-    stats: initialStats,
-    recentOrders: initialRecentOrders,
-    stockItems: [],
-    categoryBreakdown: [],
-    hourlyOrders: [],
-    revenueSparkline: initialRevenueSparkline,
-    ordersSparkline: initialOrdersSparkline,
-    itemsSparkline: [],
-  });
+  const { data: dashboardData, isLoading: loading } = useDashboardStats(
+    tenantId,
+    canViewRevenue,
+    {
+      stats: initialStats,
+      recentOrders: initialRecentOrders,
+      stockItems: [],
+      categoryBreakdown: [],
+      hourlyOrders: [],
+      revenueSparkline: initialRevenueSparkline,
+      ordersSparkline: initialOrdersSparkline,
+      itemsSparkline: [],
+    },
+    timeZone,
+  );
 
   const stats = dashboardData?.stats ?? initialStats;
   const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;

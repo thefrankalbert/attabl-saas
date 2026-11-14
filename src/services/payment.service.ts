@@ -106,6 +106,13 @@ export function createPaymentService(supabase: SupabaseClient) {
         if (error.code === '23505' && clientRequestId) {
           return this.getSummary(orderId, tenantId);
         }
+        // 22023 = la garde du registre (garder_ecriture_registre_paiements) a
+        // refuse sous verrou de la commande: un autre appareil a encaisse entre
+        // la lecture du solde ci-dessus et cette insertion (audit M-07). C'est
+        // une erreur d'entree, pas une panne, et le message est celui du plafond.
+        if (error.code === '22023') {
+          throw new ServiceError('Montant superieur au solde du', 'VALIDATION');
+        }
         throw new ServiceError('Erreur lors de l enregistrement du paiement', 'INTERNAL', error);
       }
 
@@ -146,6 +153,8 @@ export function createPaymentService(supabase: SupabaseClient) {
 
       if (error) {
         // La RPC leve check_violation quand le montant depasse le net encaisse:
+        // (la garde du registre, pour l'insertion directe, leve 22023 avec un
+        // autre message: ce chemin-ci passe toujours par la RPC)
         // c'est une erreur d'entree, pas une panne.
         if (error.code === '23514' || /depasse le montant encaisse/.test(error.message ?? '')) {
           throw new ServiceError(
