@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
+import { getDayStartInZone } from '@/lib/timezones';
 import {
   averageLedgerTicket,
   ledgerValue,
@@ -36,6 +37,15 @@ interface DashboardData {
   revenueSparkline: SparklinePoint[];
   ordersSparkline: SparklinePoint[];
   itemsSparkline: SparklinePoint[];
+}
+
+/** Debut de journee du restaurant; sans fuseau connu, minuit de l'appareil (ancien comportement). */
+function dayStart(timeZone: string | undefined, daysAgo: number): Date {
+  if (timeZone) return getDayStartInZone(timeZone, daysAgo);
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 /** Safely execute a Supabase query, returning null on failure instead of throwing. */
@@ -72,21 +82,16 @@ export function useDashboardStats(
    */
   canViewRevenue: boolean,
   initialData?: DashboardData,
+  timeZone?: string,
 ) {
   return useQuery<DashboardData>({
     queryKey: ['dashboard-stats', tenantId, canViewRevenue],
     queryFn: async () => {
       const supabase = createClient();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
+      // Meme journee que la page serveur: celle du restaurant (audit R-02).
+      const today = dayStart(timeZone, 0);
+      const yesterday = dayStart(timeZone, 1);
+      const sevenDaysAgo = dayStart(timeZone, 7);
 
       // -- Fire all queries in parallel with individual error isolation --
       const [ordersRes, itemsRes, venuesRes, recentRes, stockRes, yesterdayRes, weekRes] =
