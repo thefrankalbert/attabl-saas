@@ -35,6 +35,9 @@ vi.mock('next/headers', () => ({
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+}));
 vi.mock('@/lib/csrf', () => ({ verifyOrigin: () => null }));
 vi.mock('@/lib/rate-limit', () => {
   const ok = { check: async () => ({ success: true }) };
@@ -42,6 +45,7 @@ vi.mock('@/lib/rate-limit', () => {
     uploadLimiter: ok,
     excelImportLimiter: ok,
     invitationManageLimiter: ok,
+    invitationTenantDailyLimiter: ok,
     permissionLimiter: ok,
     assignmentLimiter: ok,
     getClientIp: () => '127.0.0.1',
@@ -284,6 +288,7 @@ describe('classement de toutes les routes API', () => {
     'signup',
     'signup-oauth',
     'forgot-password',
+    'reset-password',
     'resend-confirmation',
     'invitations/accept',
     'invitations/validate',

@@ -63,7 +63,7 @@ function ResetPasswordContent() {
 
   const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { accountEmail: '', password: '', confirmPassword: '' },
   });
 
   // Detect recovery session via two mechanisms:
@@ -106,27 +106,39 @@ function ResetPasswordContent() {
 
   const onSubmit = async (data: ResetPasswordInput) => {
     try {
-      const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password: data.password });
+      // A-06: le serveur verifie le marqueur de session de recuperation et
+      // l'adresse du compte (voir /api/reset-password). Le navigateur ne decide plus.
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountEmail: data.accountEmail, password: data.password }),
+      });
 
-      if (updateError) {
-        const code = (updateError as { code?: string }).code;
-        const msg = updateError.message?.toLowerCase() ?? '';
-        logger.error('Password update failed', { error: updateError.message, code });
-        if (code === 'same_password' || msg.includes('same') || msg.includes('different')) {
-          form.setError('root', {
-            message: t('samePasswordError'),
-          });
-        } else {
-          form.setError('root', {
-            message: t('genericError'),
-          });
-        }
-      } else {
+      if (response.ok) {
         setSuccess(true);
         // Redirect to login after 3 seconds
         setTimeout(() => router.push('/login'), 3000);
+        return;
       }
+
+      const { code } = (await response.json().catch(() => ({}))) as { code?: string };
+      if (code === 'EMAIL_MISMATCH') {
+        // Ce lien n'est pas celui de cette personne: on coupe la session ouverte
+        // par le lien (le serveur l'a deja fait) et on renvoie a la connexion.
+        await createClient().auth.signOut({ scope: 'local' });
+        router.push('/login?error=access_denied');
+        return;
+      }
+      if (code === 'NO_RECOVERY') {
+        setSessionReady(false);
+        return;
+      }
+      if (code === 'SAME_PASSWORD') {
+        form.setError('root', { message: t('samePasswordError') });
+        return;
+      }
+      logger.error('Password update failed', { code });
+      form.setError('root', { message: t('genericError') });
     } catch {
       form.setError('root', { message: t('genericError') });
     }
@@ -200,6 +212,28 @@ function ResetPasswordContent() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
+                    name="accountEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className={labelClass}>{t('accountEmailLabel')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            autoComplete="email"
+                            placeholder={t('accountEmailPlaceholder')}
+                            autoFocus
+                            className={inputClass}
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-[var(--muted)]">{t('accountEmailHint')}</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -209,7 +243,6 @@ function ResetPasswordContent() {
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               placeholder={t('newPasswordPlaceholder')}
-                              autoFocus
                               className={`${inputClass} pr-10`}
                               {...field}
                             />

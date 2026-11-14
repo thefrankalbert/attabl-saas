@@ -3,14 +3,13 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AdminRole, AdminUser } from '@/types/admin.types';
 import { canGrantRole, canActOnUser } from '@/lib/auth/role-hierarchy';
-import {
-  createAdminUserSchema,
-  updateAdminUserSchema,
-  updateUserEmailSchema,
-} from '@/lib/validations/admin-user.schema';
+import { updateAdminUserSchema, updateUserEmailSchema } from '@/lib/validations/admin-user.schema';
 import { checkTargetAccountScope } from '@/lib/auth/target-account-scope';
-import { isEmailAlreadyRegisteredAuthError } from '@/lib/auth/is-email-already-registered';
-import { sendPasswordResetEmail } from '@/services/email.service';
+import {
+  sendPasswordResetEmail,
+  sendEmailChangeApprovalToCurrentAddress,
+} from '@/services/email.service';
+import { signEmailChangeToken } from '@/lib/auth/email-change-token';
 import {
   adminPasswordResetLinkLimiter,
   adminPasswordResetLinkIpLimiter,
@@ -19,6 +18,7 @@ import {
 import { headers } from 'next/headers';
 import { createPlanEnforcementService, STAFF_ROLES } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
+import { createMemberSessionService } from '@/services/member-session.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { getTranslations } from 'next-intl/server';
@@ -35,8 +35,9 @@ type ActionResponse = {
  * Plan seat check for a member who is about to hold `role` while active.
  * Staff roles count against maxStaff, owner/admin against maxAdmins, as in the
  * invitation routes. Returns an error message, or null when a seat is free.
- * Shared by creation, role change and reactivation: a quota that only one of
- * those paths checks is not a quota.
+ * Shared by role change and reactivation: a quota that only one of those
+ * paths checks is not a quota. Joining the team goes through the invitation
+ * routes, which apply the same rule.
  */
 async function checkSeatQuota(
   adminClient: ReturnType<typeof createAdminClient>,
@@ -85,117 +86,6 @@ async function tenantLockError(tenantId: string): Promise<string | null> {
     if (err instanceof TenantLockedError) return err.message;
     throw err;
   }
-}
-
-/**
- * Creates a new admin user for a tenant.
- */
-export async function actionCreateAdminUser(
-  tenantId: string,
-  formData: { email: string; password: string; full_name: string; role: string },
-): Promise<ActionResponse> {
-  const {
-    error: permError,
-    user: currentUser,
-    role,
-    adminUserId: actorAdminUserId,
-  } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
-  if (permError) return { error: permError };
-
-  const lockError = await tenantLockError(tenantId);
-  if (lockError) return { error: lockError };
-
-  // Validation Zod des données d'entrée
-  const parsed = createAdminUserSchema.safeParse({
-    email: formData.email,
-    password: formData.password,
-    full_name: formData.full_name,
-    role: formData.role,
-  });
-  const t = await getTranslations('errors');
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || t('invalidData') };
-  }
-
-  // SECURITY: prevent privilege escalation (e.g. an admin creating an owner).
-  if (!canGrantRole(role, parsed.data.role)) {
-    return { error: t('permissionDenied') };
-  }
-
-  const adminClient = createAdminClient();
-
-  const quotaError = await checkSeatQuota(adminClient, tenantId, parsed.data.role, t);
-  if (quotaError) return { error: quotaError };
-
-  // 1. Create Auth User
-  const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: true,
-    user_metadata: { full_name: parsed.data.full_name },
-  });
-
-  if (authError) {
-    // SECURITE (reserve S5): le message GoTrue brut ("A user with this email
-    // address has already been registered") renvoye tel quel faisait de ce
-    // formulaire un oracle d'enumeration de comptes de la plateforme. Message
-    // generique au client, detail dans les logs serveur (sans l'adresse: PII).
-    logger.error('actionCreateAdminUser: creation du compte auth refusee', {
-      tenantId,
-      emailDejaUtilise: isEmailAlreadyRegisteredAuthError(authError),
-      error: authError.message,
-    });
-    return { error: t('userCreationError') };
-  }
-
-  if (!authUser.user) {
-    return { error: t('userCreationError') };
-  }
-
-  // 2. Insert into admin_users linked to tenant
-  const { error: dbError } = await adminClient.from('admin_users').insert({
-    id: crypto.randomUUID(),
-    user_id: authUser.user.id,
-    tenant_id: tenantId,
-    email: parsed.data.email,
-    full_name: parsed.data.full_name,
-    role: parsed.data.role,
-    is_active: true,
-    // FK admin_users_created_by_fkey references admin_users(id), NOT auth.users.
-    // currentUser.id is the auth user id; use the actor's membership-row PK.
-    created_by: actorAdminUserId,
-  });
-
-  if (dbError) {
-    // Rollback Auth User
-    await adminClient.auth.admin.deleteUser(authUser.user.id);
-    // Message generique: le detail Postgres (contrainte, colonne, table)
-    // renseignait le client sur le schema. Il reste dans les logs serveur.
-    logger.error('actionCreateAdminUser: liaison au tenant impossible', {
-      tenantId,
-      error: dbError.message,
-    });
-    return { error: t('tenantLinkError') };
-  }
-
-  // Fire-and-forget audit log
-  const audit = createAuditService(adminClient, {
-    tenantId,
-    userId: currentUser!.id,
-    userEmail: currentUser!.email ?? undefined,
-    userRole: role ?? undefined,
-  });
-  audit.log({
-    action: 'create',
-    entityType: 'user',
-    entityId: authUser.user.id,
-    newData: { email: parsed.data.email, full_name: parsed.data.full_name, role: parsed.data.role },
-  });
-
-  await revalidateTenantUsersPath(adminClient, tenantId);
-
-  return { success: true };
 }
 
 /**
@@ -372,7 +262,7 @@ export async function actionUpdateAdminUser(
   // service_role, qui ignore le RLS. Les deux couches sont necessaires.
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('role, is_active')
+    .select('role, is_active, user_id')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
@@ -425,6 +315,16 @@ export async function actionUpdateAdminUser(
       error: error.message,
     });
     return { error: t('serverError') };
+  }
+
+  // A-04: un membre desactive perd sa session, pas seulement sa ligne. Meilleur
+  // effort: la desactivation est deja ecrite et refusee par les gardes serveur,
+  // un echec de revocation est journalise par le service sans defaire le geste.
+  if (parsed.data.is_active === false && targetUser.user_id) {
+    await createMemberSessionService(adminClient).revokeSessionsAfterRemoval(
+      tenantId,
+      targetUser.user_id,
+    );
   }
 
   // Fire-and-forget audit log. A permission-only change is logged as a
@@ -649,7 +549,8 @@ export async function actionResetUserPassword(
 }
 
 /**
- * Updates a collaborator's email (admin-only).
+ * Requests a collaborator's email change (admin-only). The change only takes
+ * effect once the NEW address confirms (see /auth/confirm, type email_change).
  */
 export async function actionUpdateUserEmail(
   tenantId: string,
@@ -660,8 +561,10 @@ export async function actionUpdateUserEmail(
     error: permError,
     user: currentUser,
     role,
+    adminUserId: requesterId,
   } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
+  if (!requesterId) return { error: (await getTranslations('errors'))('permissionDenied') };
 
   const lockError = await tenantLockError(tenantId);
   if (lockError) return { error: lockError };
@@ -724,53 +627,83 @@ export async function actionUpdateUserEmail(
     return { error: t('permissionDenied') };
   }
 
-  // Update auth email.
-  // SECURITE (ACT-14): PAS de `email_confirm: true`. Auto-confirmer faisait
-  // basculer l'identite du compte auth sans que le titulaire valide quoi que ce
-  // soit. Supabase envoie maintenant une demande de confirmation a la nouvelle
-  // adresse: le changement ne prend effet sur le compte auth qu'apres son
-  // accord. La ligne admin_users, elle, reflete tout de suite l'adresse
-  // demandee (c'est l'affichage de l'equipe, pas l'identite de connexion).
+  // SECURITE (A-09). Cette action ne reecrit PLUS l'identite du compte auth, ni
+  // le miroir admin_users.email. Avant, `updateUserById({ email })` changeait
+  // l'adresse du compte immediatement: l'administrateur choisissait une adresse
+  // qu'il ne prouvait pas posseder, puis la reprenait via "mot de passe oublie".
+  // Desormais le changement exige l'accord des DEUX adresses, en chaine: lien
+  // d'approbation a l'adresse ACTUELLE, puis lien a la NOUVELLE. Chaque etape est
+  // un POST explicite sur la page /auth/confirm-email-change (un scanner de
+  // courriel qui ouvre le lien ne fait rien), et releve droits du demandeur et
+  // perimetre du compte au moment du clic. Tant que personne n'a approuve, rien
+  // ne bouge.
   //
-  // HYPOTHESE NON MESUREE (reserve S3 du contre-audit LOT 6), a ne pas lire
-  // comme un fait: on suppose que GoTrue REFUSE `updateUserById({ email })`
-  // vers une adresse deja prise par un autre compte, et que l'action s'arrete
-  // donc avant d'ecrire le miroir. Si GoTrue acceptait, deux comptes auth
-  // porteraient la meme adresse et le garde anti-doublon d'invitation
-  // (`invitation.service.ts`, unicite sur (tenant_id, email)) serait
-  // contournable. Il n'y a AUCUN controle d'unicite applicatif ici: en ajouter
-  // un exigerait d'interroger la liste des comptes auth, donc de rouvrir
-  // l'oracle d'enumeration que ces lots viennent de fermer. A trancher par une
-  // mesure sur base jetable, pas par du code.
-  const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
-    email: nextEmail,
-  });
-
-  if (authError) {
-    // SECURITE (reserve S5): meme oracle d'enumeration qu'a la creation - le
-    // message GoTrue dit si l'adresse visee est deja prise. Generique au
-    // client, detail dans les logs (sans l'adresse: PII).
-    logger.error('actionUpdateUserEmail: changement d adresse refuse par auth', {
+  // Quota par membre cible (3 par heure, fail-closed): l'action envoie un
+  // courriel a une adresse libre, donc elle ne doit pas servir de relais. Cle
+  // propre au changement d'adresse pour ne pas consommer celle de la
+  // reinitialisation de mot de passe.
+  const { success: withinEmailChangeQuota } = await adminPasswordResetLinkLimiter.check(
+    `email-change:${tenantId}:${userId}`,
+  );
+  if (!withinEmailChangeQuota) {
+    logger.warn('actionUpdateUserEmail refuse: quota d envoi atteint sur le compte cible', {
       tenantId,
       adminUserId: userId,
-      emailDejaUtilise: isEmailAlreadyRegisteredAuthError(authError),
-      error: authError.message,
+    });
+    return { error: t('permissionDenied') };
+  }
+
+  // L'adresse actuelle est celle du COMPTE AUTH (pas le miroir modifiable).
+  const { data: authTarget, error: authLookupError } = await adminClient.auth.admin.getUserById(
+    targetUser.user_id,
+  );
+  const currentAuthEmail = authTarget?.user?.email;
+  if (authLookupError || !currentAuthEmail) {
+    logger.error('actionUpdateUserEmail: compte auth introuvable', {
+      tenantId,
+      adminUserId: userId,
+      error: authLookupError?.message,
     });
     return { error: t('serverError') };
   }
 
-  // Update admin_users record
-  const { error: dbError } = await adminClient
-    .from('admin_users')
-    .update({ email: nextEmail })
-    .eq('id', userId)
-    .eq('tenant_id', tenantId);
-
-  if (dbError) {
-    logger.error('actionUpdateUserEmail: miroir admin_users non mis a jour', {
+  // Une seule demande active par compte: le nonce est ecrit cote serveur (champ
+  // app_metadata, modifiable par l'API admin seulement) et releve a chaque etape.
+  // Une nouvelle demande le remplace: les liens des demandes precedentes meurent.
+  const nonce = crypto.randomUUID();
+  const { error: nonceError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
+    app_metadata: { email_change_nonce: nonce },
+  });
+  if (nonceError) {
+    logger.error('actionUpdateUserEmail: nonce de demande non enregistre', {
       tenantId,
       adminUserId: userId,
-      error: dbError.message,
+      error: nonceError.message,
+    });
+    return { error: t('serverError') };
+  }
+
+  // Etape 1 de la chaine: l'adresse ACTUELLE approuve d'abord. Son approbation
+  // envoie ensuite le lien a la NOUVELLE adresse (voir /auth/confirm, POST).
+  const token = signEmailChangeToken({
+    userId: targetUser.user_id,
+    fromEmail: currentAuthEmail,
+    toEmail: nextEmail,
+    tenantId,
+    requesterId,
+    nonce,
+    step: 'current',
+  });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+  const approveUrl = `${appUrl}/auth/confirm-email-change?token=${encodeURIComponent(token)}`;
+  const emailSent = await sendEmailChangeApprovalToCurrentAddress(currentAuthEmail, {
+    approveUrl,
+    newEmail: nextEmail,
+  });
+  if (!emailSent) {
+    logger.error('actionUpdateUserEmail: envoi du lien d approbation echoue', {
+      tenantId,
+      adminUserId: userId,
     });
     return { error: t('serverError') };
   }
@@ -787,7 +720,7 @@ export async function actionUpdateUserEmail(
     entityType: 'user',
     entityId: userId,
     oldData: { email: targetUser.email },
-    newData: { email: nextEmail },
+    newData: { emailChangeRequestedTo: nextEmail },
   });
 
   return { success: true };

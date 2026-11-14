@@ -9,6 +9,9 @@ import { escapeHtml, sanitizeUrl, FOOTER, wrap, card, cta, formatCurrency } from
 import type {
   WelcomeEmailData,
   PasswordResetEmailData,
+  EmailChangeEmailData,
+  EmailChangeApprovalEmailData,
+  AccountExistsEmailData,
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
@@ -58,6 +61,67 @@ export function buildPasswordResetEmail(data: PasswordResetEmailData): EmailCont
   const text = `Reinitialiser votre mot de passe\n\nCliquez sur le lien ci-dessous :\n${data.resetUrl}\n\nCe lien expire dans 1 heure.\n\n${FOOTER}`;
 
   return { subject: 'Reinitialiser votre mot de passe', html, text };
+}
+
+export function buildEmailChangeEmail(data: EmailChangeEmailData): EmailContent {
+  const safeUrl = sanitizeUrl(data.confirmUrl);
+  const rawUrl = escapeHtml(data.confirmUrl);
+
+  const html = wrap(
+    'Confirmez votre nouvelle adresse ATTABL.',
+    card(
+      `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Confirmez votre nouvelle adresse</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Un administrateur de votre restaurant a demande que cette adresse devienne celle de votre compte ATTABL. Elle ne change qu'apres votre confirmation.</p>
+          ${cta(safeUrl, 'Confirmer cette adresse')}
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 24 heures. Si vous n'attendiez pas ce message, ignorez-le: rien ne change.</p>
+          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+    ),
+  );
+
+  const text = `Confirmez votre nouvelle adresse\n\nUn administrateur de votre restaurant a demande que cette adresse devienne celle de votre compte ATTABL. Elle ne change qu'apres votre confirmation :\n${data.confirmUrl}\n\nCe lien expire dans 24 heures. Si vous n'attendiez pas ce message, ignorez-le.\n\n${FOOTER}`;
+
+  return { subject: 'Confirmez votre nouvelle adresse', html, text };
+}
+
+export function buildEmailChangeApprovalEmail(data: EmailChangeApprovalEmailData): EmailContent {
+  const safeUrl = sanitizeUrl(data.approveUrl);
+  const rawUrl = escapeHtml(data.approveUrl);
+  const safeNew = escapeHtml(data.newEmail);
+
+  const html = wrap(
+    "Un changement d'adresse est demande pour votre compte ATTABL.",
+    card(
+      `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Changement d'adresse demande</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Un administrateur de votre restaurant demande que l'adresse de votre compte ATTABL devienne <strong style="color:#111827;">${safeNew}</strong>. Rien ne change sans votre accord.</p>
+          ${cta(safeUrl, 'Autoriser ce changement')}
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 24 heures. Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez votre responsable: rien ne change.</p>
+          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+    ),
+  );
+
+  const text = `Changement d'adresse demande\n\nUn administrateur de votre restaurant demande que l'adresse de votre compte ATTABL devienne ${data.newEmail}. Rien ne change sans votre accord :\n${data.approveUrl}\n\nCe lien expire dans 24 heures. Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez votre responsable.\n\n${FOOTER}`;
+
+  return { subject: "Autorisez le changement d'adresse de votre compte", html, text };
+}
+
+export function buildAccountExistsEmail(data: AccountExistsEmailData): EmailContent {
+  const safeLogin = sanitizeUrl(data.loginUrl);
+  const safeForgot = escapeHtml(data.forgotPasswordUrl);
+
+  const html = wrap(
+    'Vous avez deja un compte ATTABL.',
+    card(
+      `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Vous avez deja un compte</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Quelqu'un a essaye de creer un compte ATTABL avec votre adresse. Elle en a deja un: connectez-vous.</p>
+          ${cta(safeLogin, 'Me connecter')}
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Mot de passe oublie ? Reinitialisez-le ici : ${safeForgot}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#9ca3af;">Si ce n'etait pas vous, ignorez ce message.</p>`,
+    ),
+  );
+
+  const text = `Vous avez deja un compte\n\nQuelqu'un a essaye de creer un compte ATTABL avec votre adresse. Elle en a deja un.\n\nConnexion : ${data.loginUrl}\nMot de passe oublie : ${data.forgotPasswordUrl}\n\nSi ce n'etait pas vous, ignorez ce message.\n\n${FOOTER}`;
+
+  return { subject: 'Vous avez deja un compte ATTABL', html, text };
 }
 
 export function buildTeamInvitationEmail(data: TeamInvitationEmailData): EmailContent {

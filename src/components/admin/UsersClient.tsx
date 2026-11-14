@@ -174,15 +174,17 @@ export default function UsersClient({
           return;
         }
       }
-      // Update email if changed
+      // Update email if changed: la nouvelle adresse doit d'abord confirmer (A-09).
+      let emailChangeRequested = false;
       if (editEmail !== editingUser.email) {
         const res = await actionUpdateUserEmail(tenantId, editingUser.id, editEmail);
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return;
         }
+        emailChangeRequested = true;
       }
-      toast({ title: t('userUpdated') });
+      toast({ title: emailChangeRequested ? t('emailChangeSent') : t('userUpdated') });
       setEditingUser(null);
       window.location.reload();
     } catch {
@@ -251,18 +253,12 @@ export default function UsersClient({
           title={t('addMember')}
         >
           <UserForm
-            activeTab={data.activeTab}
-            setActiveTab={data.setActiveTab}
             inviteEmail={data.inviteEmail}
             setInviteEmail={data.setInviteEmail}
             inviteRole={data.inviteRole}
             setInviteRole={data.setInviteRole}
             inviting={data.inviting}
             onSendInvitation={data.handleSendInvitation}
-            formData={data.formData}
-            setFormData={data.setFormData}
-            loading={data.loading}
-            onCreateUser={data.handleCreateUser}
             onClose={() => data.setIsModalOpen(false)}
           />
         </AdminModal>

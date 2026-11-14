@@ -3,7 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  invitationManageLimiter,
+  invitationTenantDailyLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { sendInvitationEmail } from '@/services/email.service';
@@ -11,6 +15,8 @@ import { parseRouteUuid } from '@/lib/validations/common.schema';
 import { canActOnUser } from '@/lib/auth/role-hierarchy';
 import type { AdminRole } from '@/types/admin.types';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { getTranslations } from 'next-intl/server';
+import { retryAfterSeconds } from '@/lib/retry-after';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -89,6 +95,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // canGrantRole gate on the create path.
     if (!canActOnUser(adminUser.role as AdminRole, existingInvitation.role as AdminRole)) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    // P-10: un renvoi envoie un courriel reel comme une creation: meme plafond
+    // quotidien par restaurant (sinon un renvoi en boucle contourne la limite).
+    const daily = await invitationTenantDailyLimiter.check(existingInvitation.tenant_id);
+    if (!daily.success) {
+      const te = await getTranslations('errors');
+      return NextResponse.json(
+        { error: te('invitationDailyLimit') },
+        { status: 429, headers: { 'Retry-After': retryAfterSeconds(daily.reset) } },
+      );
     }
 
     const service = createInvitationService(adminClient);
