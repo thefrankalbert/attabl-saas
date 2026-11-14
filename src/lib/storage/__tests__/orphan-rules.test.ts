@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import {
   confirmWithFreshSnapshot,
   isTenantFolderName,
   objectKey,
   orphanReason,
+  REFERENCE_SOURCES,
+  referenceSelect,
+  referenceUrls,
   selectOrphans,
   type OrphanCandidate,
   type OrphanSnapshot,
@@ -95,5 +100,57 @@ describe('confirmWithFreshSnapshot', () => {
     const fresh = snap({ tenantIds: new Set([LIVE, GONE]) });
     // le restaurant existe a nouveau mais le fichier n est toujours pas reference
     expect(confirmWithFreshSnapshot(fresh, [c], NOW)).toEqual([c]);
+  });
+});
+
+describe('un dossier UUID qui n est pas un restaurant', () => {
+  it('garde un fichier reference, meme si l UUID n est dans aucun restaurant', () => {
+    const stranger = '33333333-3333-3333-3333-333333333333';
+    const c = cand({ tenantFolder: stranger, path: `${stranger}/x.jpg` });
+    const s = snap({ referenced: new Set([`menu-items/${c.path}`]) });
+    expect(orphanReason(s, c, NOW)).toBeNull();
+  });
+});
+
+describe('liste unique des references', () => {
+  it('couvre logo, banniere, plats, categories, cartes, pubs, annonces, brouillons, logo QR', () => {
+    const keys = REFERENCE_SOURCES.map((r) => `${r.table}.${r.column}`);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'tenants.logo_url',
+        'tenants.banner_url',
+        'menu_items.image_url',
+        'menu_items.images',
+        'categories.image_url',
+        'menus.image_url',
+        'ads.image_url',
+        'announcements.image_url',
+        'dish_photo_drafts.public_url',
+        'qr_designs.config->logo->>src',
+      ]),
+    );
+  });
+
+  it('lit les URL selon le type de colonne', () => {
+    const arr = REFERENCE_SOURCES.find((r) => r.kind === 'json-array')!;
+    const jsonPath = REFERENCE_SOURCES.find((r) => r.kind === 'json-path')!;
+    const text = REFERENCE_SOURCES[0];
+    expect(referenceUrls(arr, { images: ['a', 2, 'b'] })).toEqual(['a', 'b']);
+    expect(referenceUrls(jsonPath, { ref: 'https://x' })).toEqual(['https://x']);
+    expect(referenceUrls(text, { logo_url: '' })).toEqual([]);
+    expect(referenceSelect(jsonPath)).toBe('ref:config->logo->>src');
+  });
+
+  it('le service ET le script lisent cette meme liste, sans liste locale', () => {
+    const root = process.cwd();
+    const service = readFileSync(
+      path.join(root, 'src/services/storage-cleanup.service.ts'),
+      'utf8',
+    );
+    const script = readFileSync(path.join(root, 'scripts/nettoyer-stockage-orphelin.ts'), 'utf8');
+    for (const text of [service, script]) {
+      expect(text).toContain('REFERENCE_SOURCES');
+      expect(text).not.toMatch(/dish_photo_drafts|qr_designs|announcements/);
+    }
   });
 });

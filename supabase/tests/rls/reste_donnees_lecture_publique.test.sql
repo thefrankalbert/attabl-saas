@@ -21,7 +21,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(28);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -218,6 +218,20 @@ select is(
   (select count(*)::int from public.categories where tenant_id = 'f2000000-0000-0000-0000-00000000000e'),
   1,
   'T-04 temoin: categories d''un restaurant en periode de grace lisibles');
+
+-- zones: la policy RESTRICTIVE ne retire rien a un membre, et un non-membre ne lit rien.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000004"}';
+select is(
+  (select count(*)::int from public.zones where tenant_id = 'f2000000-0000-0000-0000-00000000000c'),
+  1,
+  'zones temoin: un membre lit toujours les zones de son restaurant ferme');
+set local request.jwt.claims = '{"sub":"f1000000-0000-0000-0000-000000000002"}';
+select is(
+  (select count(*)::int from public.zones where tenant_id = 'f2000000-0000-0000-0000-00000000000c'),
+  0,
+  'zones: un compte connecte non membre ne lit pas les zones d''un restaurant supprime');
+reset role;
 
 -- create_order_with_items n'est executable que par service_role (BYPASSRLS):
 -- la policy RESTRICTIVE ne peut pas casser la creation de commande.

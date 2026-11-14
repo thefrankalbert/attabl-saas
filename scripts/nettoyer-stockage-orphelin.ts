@@ -28,9 +28,12 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import {
+  REFERENCE_SOURCES,
   confirmWithFreshSnapshot,
   isTenantFolderName,
   objectKey,
+  referenceSelect,
+  referenceUrls,
   selectOrphans,
   type OrphanCandidate,
   type OrphanSnapshot,
@@ -95,26 +98,16 @@ async function listFiles(
 
 /** Restaurants existants et cles `bucket/chemin` de tout ce qui est reference. */
 async function readSnapshot(admin: SupabaseClient): Promise<OrphanSnapshot> {
-  const tenantRows = await selectAll(admin, 'tenants', 'id, logo_url, banner_url');
+  const tenantRows = await selectAll(admin, 'tenants', 'id');
   const referenced = new Set<string>();
-  const addRef = (value: unknown) => {
-    const k = objectKey(value);
-    if (k) referenced.add(k);
-  };
-  for (const r of tenantRows) {
-    addRef(r.logo_url);
-    addRef(r.banner_url);
-  }
-  for (const r of await selectAll(admin, 'menu_items', 'image_url, images')) {
-    addRef(r.image_url);
-    if (Array.isArray(r.images)) r.images.forEach(addRef);
-  }
-  for (const table of ['categories', 'menus', 'ads', 'announcements']) {
-    for (const r of await selectAll(admin, table, 'image_url')) addRef(r.image_url);
-  }
-  for (const r of await selectAll(admin, 'dish_photo_drafts', 'public_url')) addRef(r.public_url);
-  for (const r of await selectAll(admin, 'qr_designs', 'logo_src:config->logo->>src')) {
-    addRef(r.logo_src);
+  // Meme liste de colonnes que le service de nettoyage (orphan-rules.ts).
+  for (const source of REFERENCE_SOURCES) {
+    for (const row of await selectAll(admin, source.table, referenceSelect(source))) {
+      for (const url of referenceUrls(source, row)) {
+        const k = objectKey(url);
+        if (k) referenced.add(k);
+      }
+    }
   }
   return { tenantIds: new Set(tenantRows.map((r) => String(r.id))), referenced };
 }

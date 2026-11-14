@@ -67,7 +67,7 @@
 --   create policy "Public can read active tenants" on public.tenants
 --     for select using (is_active = true);
 --   drop policy if exists "Catalogue: restaurant visible ou membre" on public.menu_items;
---   (idem sur categories, menus, venues, tables)
+--   (idem sur categories, menus, venues, tables, zones)
 --   puis rejouer 20261105150000 pour get_co_ordered_items, et
 --   drop function private.storefront_tenant_visible(uuid);
 --   drop function private.viewer_owns_tenant_group(uuid);
@@ -150,7 +150,7 @@ CREATE POLICY "Tenants visibles: super-administrateur" ON public.tenants
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['menu_items', 'categories', 'menus', 'venues', 'tables']
+  FOREACH t IN ARRAY ARRAY['menu_items', 'categories', 'menus', 'venues', 'tables', 'zones']
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS "Catalogue: restaurant visible ou membre" ON public.%I', t);
     EXECUTE format(
@@ -164,6 +164,12 @@ BEGIN
          )', t);
   END LOOP;
 END $$;
+
+-- Si une version precedente de cette migration (fonctions dans le schema public,
+-- donc appelables par /rest/v1/rpc) avait ete appliquee quelque part, on les retire.
+-- Ces DROP viennent APRES la recreation des policies, qui n'en dependent plus.
+DROP FUNCTION IF EXISTS public.storefront_tenant_visible(uuid);
+DROP FUNCTION IF EXISTS public.viewer_owns_tenant_group(uuid);
 
 -- ---------------------------------------------------------------------------
 -- T-05 : get_co_ordered_items ne repond plus pour un restaurant non visible.

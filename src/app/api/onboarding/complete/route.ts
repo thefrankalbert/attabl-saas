@@ -77,6 +77,9 @@ export async function POST(request: Request) {
 
     // Les photos du brouillon qui n'ont pas servi (article retire, photo
     // remplacee) sont maintenant orphelines: on les libere (R-05). Au mieux.
+    // Le garde des 24 h rend ce balayage presque sans effet pour un brouillon du
+    // jour meme: le script scripts/nettoyer-stockage-orphelin.ts nettoie ces
+    // fichiers plus tard.
     await getStorageCleanup().releaseUnreferencedFiles(session.adminUser.tenant_id);
 
     revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');

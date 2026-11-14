@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { REFERENCE_SOURCES, oldEnough } from '@/lib/storage/orphan-rules';
 
 /**
  * Nettoyage du stockage (constat R-05).
@@ -26,9 +27,6 @@ type ImageBucket = (typeof IMAGE_BUCKETS)[number];
 
 /** Tous les buckets dont les objets sont ranges sous `<tenant_id>/`. */
 const TENANT_FOLDER_BUCKETS = ['logos', 'menu-items', 'images', 'tenant-sounds'] as const;
-
-/** Un fichier plus jeune que ca n'est jamais efface par le balayage (envoi en cours). */
-export const MIN_ORPHAN_AGE_MS = 24 * 60 * 60 * 1000;
 
 const MAX_PURGE_PASSES = 20;
 const PURGE_PAGE_SIZE = 1000;
@@ -63,13 +61,6 @@ export function parseOwnedObject(tenantId: string, url: unknown): OwnedObject | 
   return null;
 }
 
-/** Date inconnue ou invalide = trop jeune: dans le doute, on garde. */
-export function isOldEnough(createdAt: string | null | undefined, now: number): boolean {
-  if (!createdAt) return false;
-  const t = Date.parse(createdAt);
-  return Number.isFinite(t) && now - t >= MIN_ORPHAN_AGE_MS;
-}
-
 /** Les URLs d'une valeur `images` (jsonb: tableau de chaines attendu). */
 function urlsFromImages(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -95,41 +86,16 @@ export interface StorageCleanupService {
 
 export function createStorageCleanupService(admin: SupabaseClient): StorageCleanupService {
   async function stillReferenced(tenantId: string, url: string): Promise<boolean> {
-    const checks = await Promise.all([
-      admin.from('tenants').select('id').eq('id', tenantId).eq('logo_url', url).limit(1),
-      admin.from('menu_items').select('id').eq('tenant_id', tenantId).eq('image_url', url).limit(1),
-      admin
-        .from('menu_items')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .filter('images', 'cs', JSON.stringify([url]))
-        .limit(1),
-      admin.from('categories').select('id').eq('tenant_id', tenantId).eq('image_url', url).limit(1),
-      admin.from('menus').select('id').eq('tenant_id', tenantId).eq('image_url', url).limit(1),
-      admin.from('ads').select('id').eq('tenant_id', tenantId).eq('image_url', url).limit(1),
-      admin.from('tenants').select('id').eq('id', tenantId).eq('banner_url', url).limit(1),
-      admin
-        .from('announcements')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .eq('image_url', url)
-        .limit(1),
-      // Brouillons de photos de plats: aucun chemin du code n'y ecrit aujourd'hui,
-      // mais la table existe: une ligne qui pointe un fichier le garde.
-      admin
-        .from('dish_photo_drafts')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .eq('public_url', url)
-        .limit(1),
-      // Logo du QR: config jsonb -> logo -> src.
-      admin
-        .from('qr_designs')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .eq('config->logo->>src', url)
-        .limit(1),
-    ]);
+    const checks = await Promise.all(
+      REFERENCE_SOURCES.map((source) => {
+        const query = admin.from(source.table).select('id').eq(source.tenantColumn, tenantId);
+        const matching =
+          source.kind === 'json-array'
+            ? query.filter(source.column, 'cs', JSON.stringify([url]))
+            : query.eq(source.column, url);
+        return matching.limit(1);
+      }),
+    );
     // Une lecture en erreur compte comme "reference": dans le doute, on garde.
     return checks.some((r) => r.error !== null || (r.data?.length ?? 0) > 0);
   }
@@ -198,7 +164,7 @@ export function createStorageCleanupService(admin: SupabaseClient): StorageClean
           const now = Date.now();
           const urls = entries
             .filter((entry) => entry.id !== null)
-            .filter((entry) => isOldEnough(entry.created_at, now))
+            .filter((entry) => oldEnough(entry.created_at, now))
             .map(
               (entry) =>
                 admin.storage.from(bucket).getPublicUrl(`${tenantId}/${entry.name}`).data.publicUrl,

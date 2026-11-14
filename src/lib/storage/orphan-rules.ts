@@ -4,7 +4,58 @@
  * base et le stockage, puis appliquer ces regles.
  */
 
+/** Un fichier plus jeune que ca n'est jamais efface par un balayage (envoi en cours). */
 export const MIN_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * UNE seule liste des colonnes qui peuvent referencer un fichier du stockage.
+ * Le service (verification avant effacement) et le script (instantane) la lisent
+ * toutes les deux: ajouter une colonne ici protege les deux chemins.
+ *   - text: la colonne contient l'URL publique;
+ *   - json-array: la colonne jsonb est un tableau d'URL;
+ *   - json-path: `column` est un chemin jsonb `col->a->>b` qui rend l'URL.
+ */
+export interface ReferenceSource {
+  table: string;
+  /** Colonne qui porte l'identifiant du restaurant (`id` pour la table tenants). */
+  tenantColumn: 'id' | 'tenant_id';
+  column: string;
+  kind: 'text' | 'json-array' | 'json-path';
+}
+
+export const REFERENCE_SOURCES: readonly ReferenceSource[] = [
+  { table: 'tenants', tenantColumn: 'id', column: 'logo_url', kind: 'text' },
+  { table: 'tenants', tenantColumn: 'id', column: 'banner_url', kind: 'text' },
+  { table: 'menu_items', tenantColumn: 'tenant_id', column: 'image_url', kind: 'text' },
+  { table: 'menu_items', tenantColumn: 'tenant_id', column: 'images', kind: 'json-array' },
+  { table: 'categories', tenantColumn: 'tenant_id', column: 'image_url', kind: 'text' },
+  { table: 'menus', tenantColumn: 'tenant_id', column: 'image_url', kind: 'text' },
+  { table: 'ads', tenantColumn: 'tenant_id', column: 'image_url', kind: 'text' },
+  { table: 'announcements', tenantColumn: 'tenant_id', column: 'image_url', kind: 'text' },
+  // Aucun chemin du code n'ecrit dans cette table aujourd'hui, mais une ligne qui
+  // pointe un fichier le garde.
+  { table: 'dish_photo_drafts', tenantColumn: 'tenant_id', column: 'public_url', kind: 'text' },
+  {
+    table: 'qr_designs',
+    tenantColumn: 'tenant_id',
+    column: 'config->logo->>src',
+    kind: 'json-path',
+  },
+];
+
+/** Expression `select` d'une source (alias pour un chemin jsonb). */
+export function referenceSelect(source: ReferenceSource): string {
+  return source.kind === 'json-path' ? `ref:${source.column}` : source.column;
+}
+
+/** Les URL portees par une ligne lue avec `referenceSelect`. */
+export function referenceUrls(source: ReferenceSource, row: Record<string, unknown>): string[] {
+  const value = source.kind === 'json-path' ? row.ref : row[source.column];
+  if (source.kind === 'json-array') {
+    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+  }
+  return typeof value === 'string' && value.length > 0 ? [value] : [];
+}
 
 /** Buckets dont les fichiers sont verifies contre les lignes qui les referencent. */
 const REFERENCED_BUCKETS = new Set<string>(['logos', 'menu-items', 'images']);
@@ -26,7 +77,18 @@ export interface OrphanCandidate {
   createdAt: string | null;
 }
 
-/** Un dossier de premier niveau est un dossier de restaurant seulement si son nom est un UUID. */
+/**
+ * Un dossier de premier niveau est un dossier de restaurant seulement si son nom
+ * est un UUID.
+ *
+ * Limite acceptee: un dossier nomme par un UUID qui n'est PAS celui d'un
+ * restaurant (ayant existe) serait classe "restaurant supprime". Aucune source ne
+ * conserve la liste des restaurants passes (le journal plateforme met tenant_id a
+ * NULL a la suppression), et aucun code n'ecrit de dossier de ce genre: les
+ * envois sont tous ranges sous `<tenant_id>/` par /api/upload et les actions.
+ * Un tel fichier reste protege s'il est reference, a moins de 24 h, ou sous un
+ * autre nom que UUID.
+ */
 export function isTenantFolderName(name: string): boolean {
   return UUID_RE.test(name);
 }
