@@ -157,7 +157,7 @@ BEGIN
       'CREATE POLICY "Catalogue: restaurant visible ou membre" ON public.%I
          AS RESTRICTIVE FOR SELECT TO anon, authenticated
          USING (
-           tenant_id = ANY ((SELECT public.get_my_tenant_ids_array()))
+           tenant_id = ANY (public.get_my_tenant_ids_array())
            OR (SELECT public.is_super_admin())
            OR private.storefront_tenant_visible(tenant_id)
            OR private.viewer_owns_tenant_group(tenant_id)
