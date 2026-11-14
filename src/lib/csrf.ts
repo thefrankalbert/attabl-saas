@@ -89,6 +89,15 @@ export function verifyOrigin(request: Request): NextResponse | null {
     return null;
   }
 
+  // Meme origine: la page qui envoie est servie par le domaine qui recoit.
+  // C'est le cas d'un restaurant sur son propre nom de domaine, que la liste
+  // ci-dessus ne connait pas: toutes ses commandes etaient refusees en 403
+  // (audit du 2026-11-14). Un site tiers ne peut pas reproduire cette egalite.
+  const requestHost = parseHost(request.url);
+  if (requestHost && origin && parseHost(origin) === requestHost) {
+    return null;
+  }
+
   if (referer && isAllowedRefererUrl(referer, appDomain)) {
     return null;
   }

@@ -4,6 +4,18 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 const tableKey = (tenantSlug: string) => `attabl_${tenantSlug}_table`;
 
+/**
+ * Duree de vie d'une table scannee. Sans limite, un client revenu le
+ * lendemain par un simple lien envoyait sa commande a la table de la veille
+ * (audit du 2026-11-14). Six heures couvrent largement un repas.
+ */
+export const SCANNED_TABLE_TTL_MS = 6 * 60 * 60 * 1000;
+
+interface StoredTable {
+  table: string;
+  at: number;
+}
+
 // In-tab listeners: the `storage` event only fires in OTHER tabs, so a write
 // made here notifies the readers itself.
 const listeners = new Set<() => void>();
@@ -21,7 +33,8 @@ function subscribe(listener: () => void) {
  */
 export function saveScannedTable(tenantSlug: string, tableNumber: string) {
   try {
-    localStorage.setItem(tableKey(tenantSlug), tableNumber);
+    const stored: StoredTable = { table: tableNumber, at: Date.now() };
+    localStorage.setItem(tableKey(tenantSlug), JSON.stringify(stored));
   } catch {
     // localStorage unavailable (private mode) - nothing to persist
   }
@@ -43,16 +56,40 @@ export function clearScannedTable(tenantSlug: string) {
 
 /**
  * The persisted table for a tenant, read synchronously (e.g. at order time).
- * Returns null when the tenant is unknown, nothing is stored, or localStorage
- * is unavailable.
+ * Returns null when the tenant is unknown, nothing is stored, the table is
+ * older than SCANNED_TABLE_TTL_MS, or localStorage is unavailable.
  */
-export function readScannedTable(tenantSlug: string | null): string | null {
+export function readScannedTable(
+  tenantSlug: string | null,
+  now: number = Date.now(),
+): string | null {
   if (!tenantSlug) return null;
+  let raw: string | null;
   try {
-    return localStorage.getItem(tableKey(tenantSlug));
+    raw = localStorage.getItem(tableKey(tenantSlug));
   } catch {
     return null;
   }
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    // Ancien format (numero en clair, ecrit avant la duree de vie): garde tel
+    // quel, pour ne pas detacher de sa table un client deja assis.
+    return raw;
+  }
+  if (
+    parsed &&
+    typeof parsed === 'object' &&
+    typeof (parsed as StoredTable).table === 'string' &&
+    typeof (parsed as StoredTable).at === 'number'
+  ) {
+    const { table, at } = parsed as StoredTable;
+    return now - at <= SCANNED_TABLE_TTL_MS ? table : null;
+  }
+  // Valeur JSON qui n'est pas un objet (ex: un numero "12"): ancien format.
+  return typeof parsed === 'number' || typeof parsed === 'string' ? String(parsed) : null;
 }
 
 /**

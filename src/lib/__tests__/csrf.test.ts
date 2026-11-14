@@ -89,3 +89,30 @@ describe('verifyOrigin', () => {
     expect(response?.status).toBe(403);
   });
 });
+
+/**
+ * Audit du 2026-11-14: un restaurant sur son propre nom de domaine voyait
+ * toutes ses commandes refusees en 403, le domaine n'etant pas dans la liste.
+ */
+describe('verifyOrigin - nom de domaine du restaurant', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  function depuis(origin: string, url = 'https://menu.chez-awa.com/api/orders') {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://attabl.com');
+    vi.stubEnv('NEXT_PUBLIC_APP_DOMAIN', 'attabl.com');
+    return verifyOrigin(new Request(url, { method: 'POST', headers: { origin } }));
+  }
+
+  it('accepte une page servie par le domaine qui recoit la commande', () => {
+    expect(depuis('https://menu.chez-awa.com')).toBeNull();
+  });
+
+  it('refuse un site tiers qui vise ce domaine', () => {
+    expect(depuis('https://evil.tld')?.status).toBe(403);
+  });
+
+  it('refuse un domaine voisin qui ne fait que ressembler', () => {
+    expect(depuis('https://menu.chez-awa.com.evil.tld')?.status).toBe(403);
+  });
+});
