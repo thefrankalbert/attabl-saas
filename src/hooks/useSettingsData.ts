@@ -134,7 +134,11 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       tableCount: tenant.table_count ?? 10,
       establishmentDetails: tenant.establishment_details ?? {},
       currency: tenant.currency || 'XAF',
-      supportedCurrencies: tenant.supported_currencies || [tenant.currency || 'XAF'],
+      // The base currency is always accepted: add it if a stored list predates it,
+      // so the next save writes a consistent list.
+      supportedCurrencies: Array.from(
+        new Set<CurrencyCode>([tenant.currency || 'XAF', ...(tenant.supported_currencies ?? [])]),
+      ),
       enableTax: tenant.enable_tax ?? false,
       taxRate: tenant.tax_rate ?? 0,
       enableServiceCharge: tenant.enable_service_charge ?? false,
