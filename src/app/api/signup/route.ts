@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { signupSchema } from '@/lib/validations/auth.schema';
-import { signupLimiter, getClientIp } from '@/lib/rate-limit';
+import { signupLimiter, getClientIp, getClientIpBrute } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     // 2.6 Turnstile verification
     const bodyRecord = body as Record<string, unknown>;
     const cfToken = typeof bodyRecord.cfToken === 'string' ? bodyRecord.cfToken : '';
-    const turnstileOk = await verifyTurnstileToken(cfToken, ip);
+    const turnstileOk = await verifyTurnstileToken(cfToken, getClientIpBrute(request));
     if (!turnstileOk) {
       const hasTurnstileSecret = Boolean(process.env.TURNSTILE_SECRET_KEY?.trim());
       return NextResponse.json(

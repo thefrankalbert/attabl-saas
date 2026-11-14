@@ -26,7 +26,7 @@ vi.mock('@/lib/rate-limit', () => ({
       return compteur.adresse;
     }),
   },
-  getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+  getClientIpBrute: vi.fn().mockReturnValue('127.0.0.1'),
   // Regroupement IPv6 /64: l identite en test, le comportement est teste a part.
   grouperAdresse: (ip: string) => ip,
   // Intervalle minimum entre deux envois: libre par defaut.

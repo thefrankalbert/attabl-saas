@@ -5,7 +5,7 @@ import { loginSchema } from '@/lib/validations/auth.schema';
 import {
   loginPaireLimiter,
   loginAdresseLimiter,
-  getClientIp,
+  getClientIpBrute,
   grouperAdresse,
   cleCompte,
   minutesAvantLiberation,
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // essai: quatre employes qui se connectent le matin depuis le meme Wi-Fi,
     // un cinquieme qui se trompe une fois, et toute l'equipe etait dehors pour
     // 15 minutes. Une connexion reussie n'est pas une attaque.
-    const ip = getClientIp(request);
+    const ip = getClientIpBrute(request);
     // CLE DE COMPTAGE regroupee: en IPv6, un abonne ordinaire dispose d un /64,
     // soit des milliards d adresses - compter par adresse exacte ne le limite
     // en rien. `ip` brute reste utilisee pour Turnstile, qui attend une vraie

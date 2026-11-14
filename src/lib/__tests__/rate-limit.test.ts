@@ -360,6 +360,76 @@ describe('grouperAdresse', () => {
     const b = grouperAdresse('2001:0db8:85a3:0002:1111:2222:3333:4444');
     expect(a).not.toBe(b);
   });
+
+  /**
+   * Constat P-03 du test d intrusion du 2026-11-12: la forme abregee (::)
+   * etait rendue telle quelle. Un attaquant qui varie la fin de son adresse
+   * en forme courte (2001:db8:1:2::1, ::2, ::3...) obtenait une cle neuve a
+   * chaque requete.
+   */
+  it('regroupe les formes abregees d un meme /64 sur la MEME cle', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const attendu = grouperAdresse('2001:0db8:0001:0002:0000:0000:0000:0001');
+    expect(grouperAdresse('2001:db8:1:2::1')).toBe(attendu);
+    expect(grouperAdresse('2001:db8:1:2::2')).toBe(attendu);
+    expect(grouperAdresse('2001:db8:1:2:ffff::9')).toBe(attendu);
+    expect(grouperAdresse('2001:DB8:1:2::ABCD')).toBe(attendu);
+  });
+
+  it('distingue deux /64 differents meme en forme abregee', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    expect(grouperAdresse('2001:db8::1')).not.toBe(grouperAdresse('2001:db8:0:1::1'));
+  });
+
+  it('est idempotent: regrouper une cle deja regroupee ne la change pas', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    const cle = grouperAdresse('2001:db8:1:2::1');
+    expect(grouperAdresse(cle)).toBe(cle);
+  });
+
+  it('ramene une IPv4 encapsulee en IPv6 a son adresse IPv4', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    expect(grouperAdresse('::ffff:102.180.71.143')).toBe('102.180.71.143');
+  });
+
+  it('laisse une valeur illisible telle quelle plutot que de la fusionner', async () => {
+    const { grouperAdresse } = await loadWithRedis();
+    expect(grouperAdresse('anonymous')).toBe('anonymous');
+    expect(grouperAdresse('pas:une:adresse::zz')).toBe('pas:une:adresse::zz');
+  });
+});
+
+/**
+ * Constat P-03: le regroupement /64 n etait applique que par 4 routes. Les
+ * 50 autres points d appel comptaient adresse par adresse. Il est desormais
+ * fait a la source.
+ */
+describe('getClientIp regroupe l IPv6 a la source', () => {
+  it('getClientIpBrute rend la vraie adresse, pour Turnstile', async () => {
+    const { getClientIpBrute } = await loadWithRedis();
+    const r = new Request('https://attabl.com/', {
+      headers: { 'x-forwarded-for': '2001:db8:1:2::7, 10.0.0.1' },
+    });
+    expect(getClientIpBrute(r)).toBe('2001:db8:1:2::7');
+  });
+
+  it('rend la meme cle pour deux adresses du meme /64', async () => {
+    const { getClientIp, getClientIpFromHeaders } = await loadWithRedis();
+    const req = (ip: string) =>
+      new Request('https://attabl.com/', { headers: { 'x-forwarded-for': ip } });
+    expect(getClientIp(req('2001:db8:1:2::1'))).toBe(getClientIp(req('2001:db8:1:2::7, 10.0.0.1')));
+    expect(getClientIpFromHeaders(new Headers({ 'x-real-ip': '2001:db8:1:2::3' }))).toBe(
+      getClientIp(req('2001:db8:1:2::1')),
+    );
+  });
+
+  it('laisse une IPv4 intacte', async () => {
+    const { getClientIp } = await loadWithRedis();
+    const r = new Request('https://attabl.com/', {
+      headers: { 'x-forwarded-for': '102.180.71.143' },
+    });
+    expect(getClientIp(r)).toBe('102.180.71.143');
+  });
 });
 
 // --- Les plafonds, choisis sur mesure --------------------------------------
