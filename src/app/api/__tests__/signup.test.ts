@@ -6,10 +6,13 @@ import { ServiceError } from '@/services/errors';
 // ---------------------------------------------------------------------------
 
 const mockCheck = vi.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+const mockRecipientCheck = vi.fn().mockResolvedValue({ success: true });
 const mockGetClientIp = vi.fn<(req: Request) => string>().mockReturnValue('127.0.0.1');
 
 vi.mock('@/lib/rate-limit', () => ({
   signupLimiter: { check: (...args: unknown[]) => mockCheck(...(args as [])) },
+  adminPasswordResetLinkLimiter: { check: (...args: unknown[]) => mockRecipientCheck(...args) },
+  cleCompte: (email: string) => `h(${email.toLowerCase()})`,
   getClientIp: (req: Request) => mockGetClientIp(req),
   getClientIpBrute: (req: Request) => mockGetClientIp(req),
 }));
@@ -93,6 +96,7 @@ describe('POST /api/signup', () => {
     mockCheck.mockResolvedValue({ success: true });
     mockNameTaken.mockResolvedValue(false);
     mockAccountExistsEmail.mockResolvedValue(true);
+    mockRecipientCheck.mockResolvedValue({ success: true });
   });
 
   // 1. Rate limited -> 429
@@ -170,6 +174,36 @@ describe('POST /api/signup', () => {
     expect(res.status).toBe(200);
     expect(mockAccountExistsEmail).toHaveBeenCalledTimes(1);
     expect(mockAccountExistsEmail.mock.calls[0][0]).toBe('owner@bistrot.com');
+  });
+
+  it('A-08: plafond par destinataire: au-dela, aucun envoi, meme reponse 200', async () => {
+    const refus = new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT');
+    mockCompleteEmailSignup.mockRejectedValueOnce(refus);
+    const first = await POST(makeRequest(validBody()));
+    const firstJson = await first.json();
+    expect(mockAccountExistsEmail).toHaveBeenCalledTimes(1);
+    expect(mockRecipientCheck).toHaveBeenCalledWith('signup-exists:h(owner@bistrot.com)');
+
+    mockAccountExistsEmail.mockClear();
+    mockRecipientCheck.mockResolvedValue({ success: false });
+    mockCompleteEmailSignup.mockRejectedValueOnce(refus);
+    const capped = await POST(makeRequest(validBody()));
+
+    expect(capped.status).toBe(first.status);
+    expect(await capped.json()).toEqual(firstJson);
+    expect(mockAccountExistsEmail).not.toHaveBeenCalled();
+  });
+
+  it('A-08: lecture du nom impossible -> meme 503 pour une adresse nouvelle et deja inscrite (echec ferme)', async () => {
+    mockNameTaken.mockRejectedValue(new Error('db down'));
+
+    const a = await POST(makeRequest({ ...validBody(), email: 'nouveau@bistrot.com' }));
+    const b = await POST(makeRequest({ ...validBody(), email: 'existant@bistrot.com' }));
+
+    expect(a.status).toBe(503);
+    expect(b.status).toBe(503);
+    expect(await b.json()).toEqual(await a.json());
+    expect(mockCompleteEmailSignup).not.toHaveBeenCalled();
   });
 
   it('A-08: un echec d envoi du courriel ne change pas la reponse neutre', async () => {

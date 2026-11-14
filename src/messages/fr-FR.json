@@ -4795,6 +4795,7 @@
   "errors": {
     "notAuthenticated": "Non authentifié",
     "permissionDenied": "Permission refusée",
+    "signupTemporarilyUnavailable": "L'inscription est momentanément indisponible. Réessayez dans quelques instants.",
     "invitationDailyLimit": "Limite d'invitations atteinte pour aujourd'hui. Réessayez demain.",
     "invalidData": "Données invalides",
     "tenantNotFound": "Tenant introuvable",

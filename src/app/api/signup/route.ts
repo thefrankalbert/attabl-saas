@@ -2,7 +2,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { signupSchema } from '@/lib/validations/auth.schema';
-import { signupLimiter, getClientIp, getClientIpBrute } from '@/lib/rate-limit';
+import {
+  signupLimiter,
+  adminPasswordResetLinkLimiter,
+  cleCompte,
+  getClientIp,
+  getClientIpBrute,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
@@ -25,6 +31,19 @@ function signupAcceptedBody(emailDelivered: boolean, t: (key: string) => string)
     emailDelivered,
     message: t('signupConfirmation'),
   };
+}
+
+/**
+ * Plafond d'envoi du courriel "vous avez deja un compte", par destinataire. On
+ * reutilise le limiteur existant a 3 par heure (aucune fenetre de 24 h n'existe
+ * dans rate-limit.ts, fichier protege) avec un prefixe de cle dedie; il echoue
+ * ferme (Redis indisponible = pas d'envoi).
+ */
+async function signupExistsEmailAllowed(email: string): Promise<boolean> {
+  const { success } = await adminPasswordResetLinkLimiter.check(
+    `signup-exists:${cleCompte(email)}`,
+  );
+  return success;
 }
 
 export async function POST(request: Request) {
@@ -104,7 +123,17 @@ export async function POST(request: Request) {
     // A-08: le refus "nom pris" est decide AVANT toute creation de compte, donc
     // il est identique que l'adresse soit nouvelle ou deja inscrite. Apres la
     // creation de l'utilisateur, il ne tombait que pour une adresse nouvelle.
-    if (await isRestaurantNameTaken(supabase, parseResult.data.restaurantName)) {
+    let nameTaken: boolean;
+    try {
+      nameTaken = await isRestaurantNameTaken(supabase, parseResult.data.restaurantName);
+    } catch {
+      // Echec ferme, meme reponse pour une adresse nouvelle ou deja inscrite.
+      return NextResponse.json(
+        { error: t('signupTemporarilyUnavailable'), code: 'TEMPORARILY_UNAVAILABLE' },
+        { status: 503, headers: { 'Retry-After': '30' } },
+      );
+    }
+    if (nameTaken) {
       return NextResponse.json(
         { error: t('restaurantNameTaken'), code: 'RESTAURANT_NAME_TAKEN' },
         { status: 409 },
@@ -145,7 +174,10 @@ export async function POST(request: Request) {
         logger.info('Signup: adresse deja inscrite, reponse neutre', {
           code: 'EMAIL_ALREADY_REGISTERED',
         });
-        if (signupEmail) {
+        // Plafond par DESTINATAIRE (3 par heure, cle = empreinte de l'adresse): la
+        // route ne doit pas servir a arroser la boite d'un tiers. Au-dela, on
+        // n'envoie rien, en silence, et la reponse reste identique.
+        if (signupEmail && (await signupExistsEmailAllowed(signupEmail))) {
           // Meme travail cote serveur que pour un compte cree (un envoi), et le
           // titulaire est prevenu qu'on a essaye son adresse. Meilleur effort.
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';

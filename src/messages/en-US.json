@@ -4795,6 +4795,7 @@
   "errors": {
     "notAuthenticated": "Not authenticated",
     "permissionDenied": "Permission denied",
+    "signupTemporarilyUnavailable": "Sign-up is temporarily unavailable. Try again in a moment.",
     "invitationDailyLimit": "Daily invitation limit reached. Try again tomorrow.",
     "invalidData": "Invalid data",
     "tenantNotFound": "Tenant not found",
