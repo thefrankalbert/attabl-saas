@@ -8,6 +8,7 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { stockAlertLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request) {
   try {
@@ -70,6 +71,10 @@ export async function POST(request: Request) {
     if (!ALLOWED_ROLES.includes(adminUser.role)) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
+
+    // Coupure du restaurant: l'alerte ecrit des notifications et envoie des courriels.
+    const locked = await tenantLockResponse(tenant.id);
+    if (locked) return locked;
 
     // Feature gate
     const hasAlerts = canAccessFeature(

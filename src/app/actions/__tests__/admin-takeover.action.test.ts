@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, sa logique est testee
+// dans lib/billing/__tests__/assert-tenant-serving.test.ts.
+const { mockAssertServing } = vi.hoisted(() => ({ mockAssertServing: vi.fn() }));
+vi.mock('@/lib/billing/assert-tenant-serving', async () => {
+  const { AuthError } = await import('@/lib/auth/get-session');
+  class TenantLockedError extends AuthError {
+    constructor(message = 'Ce restaurant est temporairement indisponible') {
+      super(message, 403);
+    }
+  }
+  return { assertTenantServing: mockAssertServing, TenantLockedError };
+});
+
 /**
  * Prise de controle de compte (constats ACT-14 / SVC-12).
  *
@@ -54,6 +67,8 @@ const getUserById = vi.fn();
 const adminUsersUpdate = vi.fn();
 const adminUsersTargetIsFilter = vi.fn();
 const adminRpc = vi.fn();
+const createAuthUser = vi.fn();
+const adminUsersInsert = vi.fn();
 
 function buildAdminClient() {
   return {
@@ -61,6 +76,7 @@ function buildAdminClient() {
     auth: {
       admin: {
         updateUserById: (...args: unknown[]) => updateUserById(...args),
+        createUser: (...args: unknown[]) => createAuthUser(...args),
         generateLink: (...args: unknown[]) => generateLink(...args),
         getUserById: (...args: unknown[]) => getUserById(...args),
       },
@@ -99,6 +115,10 @@ function buildAdminClient() {
             return {
               eq: () => ({ eq: () => Promise.resolve({ error: null }) }),
             };
+          },
+          insert: (...args: unknown[]) => {
+            adminUsersInsert(...args);
+            return Promise.resolve({ error: null });
           },
         };
       }
@@ -166,7 +186,9 @@ import {
   actionUpdateUserEmail,
   actionDeleteAdminUser,
   actionUpdateAdminUser,
+  actionCreateAdminUser,
 } from '@/app/actions/admin';
+import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
 const TENANT_A = 'tenant-a';
 const TENANT_B = 'tenant-b';
@@ -185,6 +207,7 @@ function actorIsOwnerOfTenantA() {
 describe('prise de controle de compte via les actions admin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAssertServing.mockReset();
     adminClient = buildAdminClient();
     membershipRows = [];
     targetRow = null;
@@ -816,6 +839,96 @@ describe('prise de controle de compte via les actions admin', () => {
       expect(adminUsersUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ custom_permissions: { 'orders.pay': true } }),
       );
+    });
+  });
+  // Coupure du restaurant (A-02): tout est refuse sauf couper l'acces d'un
+  // membre (desactivation pure ou retrait), pour qu'un ex-employe perde la main
+  // meme quand le restaurant est coupe.
+  describe('restaurant coupe', () => {
+    const LOCK_MESSAGE = 'Ce restaurant est temporairement indisponible';
+
+    function lockedWithLiveTarget() {
+      actorIsOwnerOfTenantA();
+      mockAssertServing.mockRejectedValue(new TenantLockedError());
+      targetRow = {
+        user_id: 'local-auth-id',
+        email: 'equipier@resto-a.test',
+        role: 'manager',
+        deleted_at: null,
+        is_active: true,
+      };
+      membershipRows = [{ tenant_id: TENANT_A, role: 'manager', is_super_admin: false }];
+    }
+
+    it('actionCreateAdminUser refuse et ne cree aucun compte', async () => {
+      lockedWithLiveTarget();
+      const res = await actionCreateAdminUser(TENANT_A, {
+        email: 'nouveau@resto-a.test',
+        password: 'Motdepasse-Solide-123',
+        full_name: 'Nouveau Membre',
+        role: 'waiter',
+      });
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(mockAssertServing).toHaveBeenCalledWith(TENANT_A);
+      expect(createAuthUser).not.toHaveBeenCalled();
+      expect(adminUsersInsert).not.toHaveBeenCalled();
+    });
+
+    it('actionUpdateAdminUser refuse un changement de role', async () => {
+      lockedWithLiveTarget();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { role: 'cashier' });
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('actionUpdateAdminUser refuse une reactivation', async () => {
+      lockedWithLiveTarget();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { is_active: true });
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('actionUpdateAdminUser refuse une desactivation melangee a un autre changement', async () => {
+      lockedWithLiveTarget();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', {
+        is_active: false,
+        full_name: 'Autre Nom',
+      });
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(adminUsersUpdate).not.toHaveBeenCalled();
+    });
+
+    it('actionResetUserPassword refuse et n envoie aucun courriel', async () => {
+      lockedWithLiveTarget();
+      const res = await actionResetUserPassword(TENANT_A, 'target-admin-row');
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+
+    it('actionUpdateUserEmail refuse et ne touche pas au compte auth', async () => {
+      lockedWithLiveTarget();
+      const res = await actionUpdateUserEmail(TENANT_A, 'target-admin-row', 'neuf@resto-a.test');
+      expect(res.error).toBe(LOCK_MESSAGE);
+      expect(updateUserById).not.toHaveBeenCalled();
+    });
+
+    it('TEMOIN: la desactivation PURE reste permise (couper l acces d un ex-employe)', async () => {
+      lockedWithLiveTarget();
+      const res = await actionUpdateAdminUser(TENANT_A, 'target-admin-row', { is_active: false });
+      expect(res.success).toBe(true);
+      expect(adminUsersUpdate).toHaveBeenCalledWith(expect.objectContaining({ is_active: false }));
+      expect(mockAssertServing).not.toHaveBeenCalled();
+    });
+
+    it('TEMOIN: retirer un membre reste permis', async () => {
+      lockedWithLiveTarget();
+      const res = await actionDeleteAdminUser(TENANT_A, 'target-admin-row');
+      expect(res.success).toBe(true);
+      expect(adminRpc).toHaveBeenCalledWith('delete_admin_user_atomic', {
+        p_admin_user_id: 'target-admin-row',
+        p_user_id: 'local-auth-id',
+      });
+      expect(mockAssertServing).not.toHaveBeenCalled();
     });
   });
 });

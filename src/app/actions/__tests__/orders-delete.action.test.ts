@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, sa logique est testee
+// dans lib/billing/__tests__/assert-tenant-serving.test.ts.
+const { mockAssertServing } = vi.hoisted(() => ({ mockAssertServing: vi.fn() }));
+vi.mock('@/lib/billing/assert-tenant-serving', async () => {
+  const { AuthError } = await import('@/lib/auth/get-session');
+  class TenantLockedError extends AuthError {
+    constructor(message = 'Ce restaurant est temporairement indisponible') {
+      super(message, 403);
+    }
+  }
+  return { assertTenantServing: mockAssertServing, TenantLockedError };
+});
+
 // Supprimer une note impayee revient a l'annuler: un geste d'argent. La base
 // exige `orders.pay` pour supprimer une commande et ses articles; l'action doit
 // refuser AVANT, sinon un admin a qui le proprietaire a retire l'argent
@@ -50,6 +63,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 import { actionDeleteOrders } from '@/app/actions/orders';
+import { TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 
 describe('actionDeleteOrders: supprimer exige orders.pay', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -68,5 +82,15 @@ describe('actionDeleteOrders: supprimer exige orders.pay', () => {
     expect(res.success).toBe(true);
     expect(mockDelete).toHaveBeenCalledWith('order_items');
     expect(mockDelete).toHaveBeenCalledWith('orders');
+  });
+
+  it('restaurant coupe: refuse avec le message de coupure, rien n est supprime', async () => {
+    mockResolve.mockResolvedValue({ allowed: true, role: 'admin' });
+    mockAssertServing.mockRejectedValueOnce(new TenantLockedError());
+    const res = await actionDeleteOrders([ORDER_ID]);
+    expect(res.error).toBe('Ce restaurant est temporairement indisponible');
+    expect(res.success).toBeUndefined();
+    expect(mockAssertServing).toHaveBeenCalledWith(TENANT_ID);
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 });

@@ -21,6 +21,7 @@ import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import {
   assertTenantServing,
   assertTenantServingForKitchen,
+  TenantLockedError,
 } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES, ORDER_MONEY_ROLES, ORDER_PAY_PERMISSIONS } from '@/lib/admin-roles';
 
@@ -166,6 +167,17 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
     const { allowed } = await resolveAdminPermission(supabase, user.id, tid, 'orders.pay');
     if (!allowed) {
       return { error: "Votre role ne permet pas de supprimer une commande (droit d'encaisser)." };
+    }
+  }
+
+  // Coupure du restaurant: supprimer une commande est une ecriture. Place apres
+  // la preuve d'appartenance et de droit, avant tout DELETE.
+  for (const tid of tenantIds) {
+    try {
+      await assertTenantServing(tid);
+    } catch (err) {
+      if (err instanceof TenantLockedError) return { error: err.message };
+      throw err;
     }
   }
 

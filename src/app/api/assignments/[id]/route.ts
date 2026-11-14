@@ -7,6 +7,7 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 import { ASSIGNMENT_MANAGER_ROLES, isRoleAllowed } from '@/lib/admin-roles';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
 
@@ -53,6 +54,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (!isRoleAllowed(adminUser.role, ASSIGNMENT_MANAGER_ROLES)) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
+
+    // Coupure du restaurant: liberer une assignation est une ecriture de service.
+    const locked = await tenantLockResponse(tenant.id);
+    if (locked) return locked;
 
     const { id: rawId } = await params;
     const parsedId = parseRouteUuid(rawId);

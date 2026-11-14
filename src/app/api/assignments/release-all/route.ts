@@ -7,6 +7,7 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 import { claimOrderSchema } from '@/lib/validations/assignment.schema';
 
 export async function POST(request: Request) {
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
     if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
       return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
     }
+
+    // Coupure du restaurant: liberer les assignations est une ecriture de service.
+    const locked = await tenantLockResponse(tenant.id);
+    if (locked) return locked;
 
     const body = await request.json();
     const parsed = claimOrderSchema.safeParse(body);

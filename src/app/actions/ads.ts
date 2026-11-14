@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { createAdService } from '@/services/ad.service';
 import { ServiceError } from '@/services/errors';
@@ -27,8 +28,15 @@ const createAdPayloadSchema = z.object({
 async function checkPermissions(tenantId: string): Promise<{ error: string | null }> {
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
     return { error: null };
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) {
+      return { error: err.message };
+    }
     if (err instanceof AuthError) {
       return { error: err.status === 401 ? 'Non authentifie' : 'Permissions insuffisantes' };
     }

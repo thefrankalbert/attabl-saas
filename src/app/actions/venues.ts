@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { createRestaurantGroupService } from '@/services/restaurant-group.service';
 import { ServiceError } from '@/services/errors';
 import { restaurantCreateLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
@@ -40,6 +41,8 @@ export async function actionCreateVenue(input: unknown) {
     }
 
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = createVenueSchema.safeParse(input);
     if (!parsed.success) {
@@ -76,6 +79,8 @@ export async function actionCreateVenue(input: unknown) {
 export async function actionRenameVenue(input: unknown) {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = renameVenueSchema.safeParse(input);
     if (!parsed.success) {
@@ -101,6 +106,8 @@ export async function actionRenameVenue(input: unknown) {
 export async function actionReactivateVenue(input: unknown) {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = deactivateVenueSchema.safeParse(input);
     if (!parsed.success) {
@@ -140,6 +147,8 @@ export async function actionReactivateVenue(input: unknown) {
 export async function actionDeactivateVenue(input: unknown) {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = deactivateVenueSchema.safeParse(input);
     if (!parsed.success) {

@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 
 /**
  * Reassign a dine-in order to a different table.
@@ -30,6 +31,8 @@ export async function actionReassignOrderTable(
 
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('orders.manage');
+    // Coupure du restaurant: deplacer une commande est une ecriture de service.
+    await assertTenantServing(tenantId);
 
     const { error } = await supabase.rpc('reassign_order_table', {
       p_order_id: parsed.data.orderId,

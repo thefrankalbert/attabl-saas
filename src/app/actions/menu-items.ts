@@ -8,6 +8,7 @@ import { createMenuItemService } from '@/services/menu-item.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
@@ -40,7 +41,12 @@ export async function actionCreateMenuItem(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };
@@ -116,7 +122,12 @@ export async function actionUpdateMenuItem(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };
@@ -161,7 +172,12 @@ export async function actionDeleteMenuItem(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };
@@ -202,7 +218,12 @@ export async function actionToggleMenuItemAvailable(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };
@@ -243,7 +264,12 @@ export async function actionToggleMenuItemFeatured(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };
@@ -284,7 +310,12 @@ export async function actionUpdateMenuItemPrice(
 
   try {
     await getAuthenticatedUserForTenant(tenantId, ALL_ADMIN_ROLES, 'menu.edit');
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) return { error: err.message };
     if (err instanceof AuthError) {
       if (err.status === 401) return { error: t('notAuthenticated') };
       return { error: t('permissionDenied') };

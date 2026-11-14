@@ -11,6 +11,7 @@ import { parseRouteUuid } from '@/lib/validations/common.schema';
 import { canActOnUser } from '@/lib/auth/role-hierarchy';
 import type { AdminRole } from '@/types/admin.types';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -78,6 +79,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!canManageTeam) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
+
+    // Coupure du restaurant: renvoyer une invitation envoie un courriel reel.
+    const locked = await tenantLockResponse(existingInvitation.tenant_id);
+    if (locked) return locked;
 
     // Anti-escalation: an admin cannot resend an invitation for a peer/higher
     // role (e.g. one the owner created for another admin/owner). Mirrors the

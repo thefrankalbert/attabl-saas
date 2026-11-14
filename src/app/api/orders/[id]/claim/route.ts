@@ -9,6 +9,7 @@ import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { parseRouteUuid } from '@/lib/validations/common.schema';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -63,6 +64,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!canClaim) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
+
+    // Coupure du restaurant: prendre une commande en charge est une ecriture de service.
+    const locked = await tenantLockResponse(tenant.id);
+    if (locked) return locked;
 
     const { id: rawId } = await params;
     const parsedId = parseRouteUuid(rawId);
