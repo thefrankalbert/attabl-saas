@@ -112,7 +112,8 @@ type Call = [name: string, run: () => Promise<unknown>];
 
 const adPayload = {
   tenant_id: T,
-  image_url: 'https://x.test/a.png',
+  // Storage URL: ad images must be renderable by next/image (image-url.schema.ts).
+  image_url: 'https://abc.supabase.co/storage/v1/object/public/ads/a.png',
   link: null,
   sort_order: 1,
   is_active: true,
