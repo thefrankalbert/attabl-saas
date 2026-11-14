@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Plus, FileSpreadsheet, FileText, Search, Trash2 } from 'lucide-react';
+import { Plus, FileSpreadsheet, FileText, Search, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
@@ -162,6 +162,18 @@ export default function MenusClient({
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     )}
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 shrink-0"
+                      title={t('downloadTemplate')}
+                    >
+                      <a href="/api/menu-import" download aria-label={t('downloadTemplate')}>
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">{t('downloadTemplate')}</span>
+                      </a>
+                    </Button>
                     <Button
                       onClick={() => setShowImportModal(true)}
                       variant="outline"

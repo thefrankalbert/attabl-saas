@@ -135,19 +135,29 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Authenticate user via session
-    const { supabase } = await getAuthenticatedUserWithTenant();
+    // 2. Authenticate + role gate: the file contains the tenant's recipes, so it
+    // needs the same right as reading the Fiches techniques page.
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant('inventory.view');
 
-    // 3. Generate blank template
+    // 3. Workbook pre-filled with the tenant's dishes and recipe lines (round trip:
+    // download, edit, re-import).
     const importService = createRecipeImportService(supabase);
-    const templateBuffer = await importService.generateTemplate();
+    const templateBuffer = await importService.generateTemplate(tenantId);
+
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('slug')
+      .eq('id', tenantId)
+      .maybeSingle();
+    const slug = (tenant?.slug ?? '').replace(/[^a-z0-9-]/gi, '');
+    const fileName = slug ? `fiches-techniques-${slug}.xlsx` : 'fiches-techniques.xlsx';
 
     const bytes = new Uint8Array(templateBuffer);
     return new Response(bytes, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="recipe-import-template.xlsx"',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Content-Length': String(bytes.byteLength),
       },
     });

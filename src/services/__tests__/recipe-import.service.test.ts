@@ -1,42 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { createRecipeImportService } from '../recipe-import.service';
 import { ServiceError } from '../errors';
 import { buildXlsx } from './xlsx-fixture';
 import { readFirstSheetRows } from '@/lib/excel-parse';
 import type { RecipeImportRpcRow } from '@/types/inventory.types';
+import { makeRecipeDb, toArrayBuffer } from './recipe-supabase-mock';
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-interface MockOpts {
-  menuItems?: Array<{ id: string; name: string }>;
-  rpcResult?: { data: unknown; error: unknown };
-}
-
-function makeSupabase(opts: MockOpts = {}) {
-  const rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
-
-  const from = vi.fn(() => ({
-    select: () => ({
-      eq: () => ({
-        is: () => Promise.resolve({ data: opts.menuItems ?? [], error: null }),
-      }),
-    }),
-  }));
-
-  const rpc = vi.fn((fn: string, args: Record<string, unknown>) => {
-    rpcCalls.push({ fn, args });
-    return Promise.resolve(
-      opts.rpcResult ?? {
-        data: { recipes_created: 1, recipes_updated: 0, ingredients_created: 1 },
-        error: null,
-      },
-    );
-  });
-
-  return { supabase: { from, rpc } as unknown as SupabaseClient, rpcCalls };
+// Former single-query mock, kept as a thin adapter over the table-aware double.
+function makeSupabase(
+  opts: {
+    menuItems?: Array<{ id: string; name: string }>;
+    rpcResult?: { data: unknown; error: unknown };
+  } = {},
+) {
+  return makeRecipeDb({ menu_items: opts.menuItems, rpcResult: opts.rpcResult });
 }
 
 describe('recipe-import.service parseExcel', () => {
@@ -63,7 +44,7 @@ describe('recipe-import.service parseExcel', () => {
     const buffer = await buildXlsx([
       ['Dish', 'Ingredient', 'Unit', 'Quantity'],
       ['A', 'X', 'gallons', 1], // unknown unit
-      ['A', 'Y', 'kg', 0], // qty <= 0
+      ['A', 'Y', 'kg', -1], // negative qty
       ['A', '', 'kg', 1], // missing ingredient
     ]);
     const { rows, errors } = await svc.parseExcel(buffer);
@@ -159,20 +140,14 @@ describe('recipe-import.service importFromExcel', () => {
     });
   });
 
-  it('generateTemplate returns a Buffer with ASCII headers', async () => {
+  it('generateTemplate returns the tenant workbook with French headers', async () => {
     const { supabase } = makeSupabase();
     const svc = createRecipeImportService(supabase);
-    const buf = await svc.generateTemplate();
+    const buf = await svc.generateTemplate('tenant-1');
     expect(Buffer.isBuffer(buf)).toBe(true);
-    const aoa = await readFirstSheetRows(
-      buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
-    );
-    // Styled workbook adds a branded title band + subtitle before the header row,
-    // so locate the header row by its known first column rather than assuming row 0.
-    const headerRow = aoa.find((r) => (r as string[])?.includes('Dish')) as string[] | undefined;
-    expect(headerRow).toBeDefined();
-    const headers = headerRow!.join(',');
-    expect(/^[\x00-\x7F]*$/.test(headers)).toBe(true);
-    expect(headers).toContain('Dish');
+    const aoa = await readFirstSheetRows(toArrayBuffer(buf));
+    // Styled workbook adds a branded title band + subtitle before the header row.
+    const headerRow = aoa.find((r) => (r as string[])?.includes('Plat')) as string[] | undefined;
+    expect(headerRow).toEqual(['Catégorie', 'Plat', 'Ingrédient', 'Unité', 'Quantité', 'Notes']);
   });
 });

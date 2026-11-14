@@ -4967,7 +4967,11 @@
     "itemsSkipped": "{count} ligne(s) ignorée(s)",
     "errorsFound": "{count} erreur(s) trouvée(s)",
     "rowError": "Ligne {row} : {message}",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "downloadRecipes": "Télécharger mes fiches (Excel)",
+    "recipesRemoved": "{count} ligne(s) de fiche retirée(s)",
+    "recipesUnchanged": "{count} ligne(s) déjà à jour",
+    "importUpToDate": "Vos fiches sont déjà à jour : rien n'a changé."
   },
   "authShell": {
     "secure": "Connexion sécurisée"
