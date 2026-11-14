@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, ses refus sont testes
+// dans tenant-lock-routes.test.ts.
+vi.mock('@/lib/billing/tenant-lock-response', () => ({
+  tenantLockResponse: vi.fn(async () => null),
+}));
+
 /**
  * X12: POST /api/assignments ne verifiait que l'appartenance au restaurant, et
  * la prise en charge d'une commande (claim) une liste de roles qui oubliait

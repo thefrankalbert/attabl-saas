@@ -4,6 +4,7 @@ import { revalidateTag, revalidatePath } from 'next/cache';
 import { CACHE_TAG_TENANT_CONFIG, tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
 import { detailsForType } from '@/lib/validations/establishment-details.schema';
 import { createTenantService } from '@/services/tenant.service';
@@ -22,6 +23,8 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     // 1. Authenticate + get tenant from session (NOT from client)
     const { tenantId, supabase, user, role } =
       await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: modifier les reglages est une ecriture.
+    await assertTenantServing(tenantId);
 
     // Pas de liste de roles en plus de `settings.edit`: elle annulait le droit
     // que le proprietaire accorde dans /settings/permissions. Par defaut seuls

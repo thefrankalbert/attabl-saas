@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 /**
  * Reset API - lets the OWNER wipe orders (paid ones included, with their
@@ -49,6 +50,10 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+
+    // Coupure du restaurant: la remise a zero efface des donnees, c'est une ecriture.
+    const locked = await tenantLockResponse(tenantId);
+    if (locked) return locked;
 
     const adminSupabase = createAdminClient();
 

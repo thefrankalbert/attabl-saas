@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, ses refus sont testes
+// dans tenant-lock-routes.test.ts.
+vi.mock('@/lib/billing/tenant-lock-response', () => ({
+  tenantLockResponse: vi.fn(async () => null),
+}));
+
 // /api/admin/reset efface les commandes, payees comprises, avec l'historique
 // des paiements. Decision du 2026-11-09: seul le proprietaire touche a
 // l'historique de l'argent. Un admin passait, sans permission fine a lui

@@ -7,6 +7,7 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 import { createAssignmentSchema } from '@/lib/validations/assignment.schema';
 import { jsonWithCache } from '@/lib/cache-headers';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
@@ -127,6 +128,10 @@ export async function POST(request: Request) {
       if (!canAssign || !role || !isRoleAllowed(role, ASSIGNMENT_MANAGER_ROLES)) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
       }
+
+      // Coupure du restaurant: assigner un serveur est une ecriture de service.
+      const locked = await tenantLockResponse(tenant.id);
+      if (locked) return locked;
 
       const body = await request.json();
       const parsed = createAssignmentSchema.safeParse(body);

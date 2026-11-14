@@ -6,6 +6,7 @@ import { canAccessFeature } from '@/lib/plans/features';
 import { createRecipeImportService } from '@/services/recipe-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 // .xlsx uniquement: exceljs ne lit pas l'ancien format .xls (Excel 97-2003).
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
     // per-user overrides). Bulk recipe/ingredient writes must not be reachable by
     // cashier/waiter/chef.
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('inventory.edit');
+    // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
+    await assertTenantServing(tenantId);
 
     // 3. Parse FormData and extract file
     let formData: FormData;

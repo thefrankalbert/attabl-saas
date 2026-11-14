@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, ses refus sont testes
+// dans tenant-lock-routes.test.ts.
+vi.mock('@/lib/billing/assert-tenant-serving', () => ({
+  assertTenantServing: vi.fn(async () => undefined),
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------

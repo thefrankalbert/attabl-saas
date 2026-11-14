@@ -8,6 +8,7 @@ import { createPdfImportService } from '@/services/pdf-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import type { Tenant } from '@/types/admin.types';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
 import { z } from 'zod';
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
 
     // 2. Authenticate user and derive tenant from session (not from header)
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('menu.edit');
+    // Coupure du restaurant: un import est une ecriture (403 + message via AuthError).
+    await assertTenantServing(tenantId);
 
     // 3. Parse FormData
     let formData: FormData;

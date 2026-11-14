@@ -4,6 +4,7 @@ import { revalidateTag, revalidatePath } from 'next/cache';
 import { tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant } from '@/lib/auth/get-session';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { z } from 'zod';
 import { ACTIVE_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 
@@ -24,6 +25,8 @@ export async function actionUpdatePaymentMethods(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: changer les moyens de paiement est une ecriture.
+    await assertTenantServing(tenantId);
 
     const validated = updatePaymentMethodsSchema.safeParse({ methods });
     if (!validated.success) {
@@ -54,6 +57,10 @@ export async function actionUpdatePaymentMethods(
     }
     return { success: true };
   } catch (err) {
+    // Avant le message generique: un restaurant coupe doit voir la vraie raison.
+    if (err instanceof TenantLockedError) {
+      return { success: false, error: err.message };
+    }
     logger.error('actionUpdatePaymentMethods: unexpected error', { err });
     return { success: false, error: 'Erreur serveur' };
   }

@@ -23,6 +23,7 @@ import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { getTranslations } from 'next-intl/server';
 import { checkTenantAdminPermissions } from '@/lib/auth/check-tenant-admin';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { revalidateTenantUsersPath } from '@/lib/admin/revalidate-tenant-users';
 
 type ActionResponse = {
@@ -68,6 +69,25 @@ async function checkSeatQuota(
 const isStaffRole = (role: string): boolean => (STAFF_ROLES as readonly string[]).includes(role);
 
 /**
+ * Coupure du restaurant: renvoie le message de refus, ou null s'il sert encore.
+ * Appelee APRES la preuve d'appartenance (un inconnu ne doit pas apprendre
+ * l'etat d'un restaurant). Retirer ou desactiver un membre n'appelle PAS cette
+ * garde: couper l'acces d'un ex-employe reste permis meme restaurant coupe.
+ * C'est la seule sortie d'equipe (une retrogradation est refusee), et un super
+ * admin est refuse aussi depuis le tableau de bord: on deverrouille par la
+ * console plateforme.
+ */
+async function tenantLockError(tenantId: string): Promise<string | null> {
+  try {
+    await assertTenantServing(tenantId);
+    return null;
+  } catch (err) {
+    if (err instanceof TenantLockedError) return err.message;
+    throw err;
+  }
+}
+
+/**
  * Creates a new admin user for a tenant.
  */
 export async function actionCreateAdminUser(
@@ -81,6 +101,9 @@ export async function actionCreateAdminUser(
     adminUserId: actorAdminUserId,
   } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
+
+  const lockError = await tenantLockError(tenantId);
+  if (lockError) return { error: lockError };
 
   // Validation Zod des données d'entrée
   const parsed = createAdminUserSchema.safeParse({
@@ -302,6 +325,19 @@ export async function actionUpdateAdminUser(
     return { error: parsed.error.issues[0]?.message || t('invalidData') };
   }
 
+  // Coupure du restaurant: seule la desactivation PURE d'un membre reste permise
+  // (securite: couper l'acces d'un ex-employe). Tout autre changement (role,
+  // nom, permissions, reactivation) est une ecriture refusee.
+  const isPureDeactivation =
+    parsed.data.is_active === false &&
+    parsed.data.role === undefined &&
+    parsed.data.full_name === undefined &&
+    parsed.data.custom_permissions === undefined;
+  if (!isPureDeactivation) {
+    const lockError = await tenantLockError(tenantId);
+    if (lockError) return { error: lockError };
+  }
+
   // SECURITY: prevent privilege escalation when changing a role.
   if (parsed.data.role && !canGrantRole(currentRole, parsed.data.role)) {
     return { error: t('permissionDenied') };
@@ -471,6 +507,11 @@ export async function actionResetUserPassword(
   } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
+  // Coupure du restaurant: envoyer un lien de reinitialisation est une ecriture
+  // de service (un courriel reel part vers la boite du collaborateur).
+  const lockError = await tenantLockError(tenantId);
+  if (lockError) return { error: lockError };
+
   // 2. LIMITATION DE DEBIT, DEUXIEME ETAPE: par COMPTE CIBLE, une fois
   // l'appelant authentifie et reconnu owner/admin du tenant. Le prejudice est
   // par boite aux lettres (harcelement du titulaire, usure de la reputation
@@ -621,6 +662,9 @@ export async function actionUpdateUserEmail(
     role,
   } = await checkTenantAdminPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
+
+  const lockError = await tenantLockError(tenantId);
+  if (lockError) return { error: lockError };
 
   const t = await getTranslations('errors');
 

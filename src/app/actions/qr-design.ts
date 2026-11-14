@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing } from '@/lib/billing/assert-tenant-serving';
 import { createQrDesignService } from '@/services/qr-design.service';
 import { createAuditService } from '@/services/audit.service';
 import { saveQrDesignSchema, assignQrDesignSchema } from '@/lib/validations/qr-design.schema';
@@ -43,6 +44,8 @@ export async function actionSaveQrDesign(input: unknown) {
 
     const { tenantId, supabase, user, role } =
       await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: enregistrer, supprimer ou assigner un design est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = saveQrDesignSchema.safeParse(input);
     if (!parsed.success) {
@@ -90,6 +93,8 @@ export async function actionDeleteQrDesign(id: unknown) {
 
     const { tenantId, supabase, user, role } =
       await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: enregistrer, supprimer ou assigner un design est une ecriture.
+    await assertTenantServing(tenantId);
 
     if (typeof id !== 'string' || id.length === 0) {
       return { success: false as const, error: 'Invalid input' };
@@ -125,6 +130,8 @@ export async function actionAssignQrDesign(input: unknown) {
     if (!allowed) return { success: false as const, error: t('rateLimited') };
 
     const { tenantId, supabase } = await getAuthenticatedUserWithTenant('settings.edit');
+    // Coupure du restaurant: enregistrer, supprimer ou assigner un design est une ecriture.
+    await assertTenantServing(tenantId);
 
     const parsed = assignQrDesignSchema.safeParse(input);
     if (!parsed.success) {

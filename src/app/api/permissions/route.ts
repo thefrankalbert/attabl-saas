@@ -8,6 +8,7 @@ import { permissionLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { z } from 'zod';
 import { PERMISSION_CODES } from '@/types/permission.types';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 const VALID_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 
@@ -100,6 +101,11 @@ export async function PUT(request: Request) {
     if (!adminUser) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
+
+    // Coupure du restaurant: regler des permissions est une ecriture. Le DELETE
+    // (revoquer) reste permis: c'est une sortie de securite.
+    const locked = await tenantLockResponse(adminUser.tenant_id);
+    if (locked) return locked;
 
     const { error } = await supabase.from('role_permissions').upsert(
       {

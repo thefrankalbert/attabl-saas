@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Coupure du restaurant (A-02): la garde est simulee ici, sa logique est testee
+// dans lib/billing/__tests__/assert-tenant-serving.test.ts.
+const { mockAssertServing } = vi.hoisted(() => ({ mockAssertServing: vi.fn() }));
+vi.mock('@/lib/billing/assert-tenant-serving', async () => {
+  const { AuthError } = await import('@/lib/auth/get-session');
+  class TenantLockedError extends AuthError {
+    constructor(message = 'Ce restaurant est temporairement indisponible') {
+      super(message, 403);
+    }
+  }
+  return { assertTenantServing: mockAssertServing, TenantLockedError };
+});
+
 const mockAuth = vi.fn();
 const mockCreateVenue = vi.fn();
 const mockRenameVenue = vi.fn();

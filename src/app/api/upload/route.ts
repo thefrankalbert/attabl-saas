@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger';
 import { readTenantSlug } from '@/lib/auth/tenant-header';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { readOnboardingSiteParam } from '@/lib/validations/onboarding.schema';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 /** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
 function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
@@ -118,6 +119,10 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+
+    // Coupure du restaurant: un televersement est une ecriture (403 + message).
+    const locked = await tenantLockResponse(session.adminUser.tenant_id);
+    if (locked) return locked;
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {

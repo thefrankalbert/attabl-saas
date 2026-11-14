@@ -17,6 +17,7 @@ import type { Tenant } from '@/types/admin.types';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
@@ -197,6 +198,10 @@ export async function POST(request: Request) {
       if (!canManageTeam) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
       }
+
+      // Coupure du restaurant: inviter est une ecriture (revoquer, lui, reste permis).
+      const locked = await tenantLockResponse(currentTenant.id);
+      if (locked) return locked;
 
       // Seul le proprietaire regle des permissions (decision du 2026-11-09).
       // Une surcharge individuelle prime sur tout: l'accepter d'un admin lui

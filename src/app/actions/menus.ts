@@ -9,6 +9,7 @@ import { createPlanEnforcementService } from '@/services/plan-enforcement.servic
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { ALL_ADMIN_ROLES } from '@/lib/admin-roles';
 
 type ActionResponse = {
@@ -30,8 +31,15 @@ async function checkMenuPermissions(tenantId: string) {
       ALL_ADMIN_ROLES,
       'menu.edit',
     );
+    // Coupure du restaurant: toute action de ce fichier est une ecriture.
+    await assertTenantServing(tenantId);
     return { error: null, supabase, user, role };
   } catch (err) {
+    // Avant AuthError: un restaurant coupe n'a pas un probleme de permission,
+    // et le message generique ci-dessous l'enverrait chercher un droit manquant.
+    if (err instanceof TenantLockedError) {
+      return { error: err.message, supabase: null, user: null, role: undefined };
+    }
     if (err instanceof AuthError) {
       if (err.status === 401)
         return { error: 'Non authentifie', supabase: null, user: null, role: undefined };
