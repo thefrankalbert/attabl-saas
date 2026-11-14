@@ -33,7 +33,7 @@ const HOTES_AUTORISES = [
   'push.services.microsoft.com',
 ] as const;
 
-export interface RefusEndpoint {
+interface RefusEndpoint {
   autorise: false;
   /** Pourquoi, pour le journal. Jamais l'URL complete: elle identifie un appareil. */
   raison:
@@ -66,6 +66,3 @@ export function verifierEndpointPush(endpoint: string): VerdictEndpoint {
   const connu = HOTES_AUTORISES.some((a) => hote === a || hote.endsWith(`.${a}`));
   return connu ? { autorise: true } : { autorise: false, raison: 'hote-inconnu', hote };
 }
-
-/** Pour les messages d'erreur destines a l'utilisateur et la documentation. */
-export const HOTES_PUSH_CONNUS: readonly string[] = HOTES_AUTORISES;

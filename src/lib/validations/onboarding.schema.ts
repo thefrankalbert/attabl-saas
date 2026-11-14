@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isRenderableImageUrl } from './image-url.schema';
 import { QR_MESSAGE_MAX_LENGTH } from '@/types/qr-design.types';
 import { coerceTemplateId } from '@/lib/qr/onboarding-qr-config';
 import { establishmentDetailsSchema } from './establishment-details.schema';
@@ -14,7 +15,7 @@ import { establishmentDetailsSchema } from './establishment-details.schema';
  * unfinished). It only selects among the user's own memberships (see
  * resolveSessionAdminUser), so a slug shape check is all it needs here.
  */
-export const onboardingSiteParamSchema = z
+const onboardingSiteParamSchema = z
   .string()
   .max(100)
   .regex(/^[a-z0-9-]+$/)
@@ -44,7 +45,13 @@ const menuItemSchema = z.object({
   name: z.string().max(200),
   price: z.number().min(0).optional().default(0),
   category: z.string().max(100).optional(),
-  imageUrl: z.string().max(500).optional(),
+  // A draft saved by an older version may hold a dead `blob:` URL: drop an
+  // unrenderable address instead of failing the very last onboarding step.
+  imageUrl: z
+    .string()
+    .max(500)
+    .optional()
+    .transform((v) => (v && isRenderableImageUrl(v) ? v : undefined)),
 });
 
 const tableZoneSchema = z.object({

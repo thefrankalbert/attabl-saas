@@ -55,7 +55,7 @@ const INVOICE_CSS = `
  * Facture A4 app-generee (distincte des factures d'abonnement Stripe).
  * Une facture par commande, imprimable ou exportable en PDF via le navigateur.
  */
-export function generateInvoiceHTML(order: Order, tenant: Tenant): string {
+function generateInvoiceHTML(order: Order, tenant: Tenant): string {
   const currency = tenant.currency || 'XAF';
   const currencySymbol = getCurrencySymbol(currency);
   const items = order.items || [];

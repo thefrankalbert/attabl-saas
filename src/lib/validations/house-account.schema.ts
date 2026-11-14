@@ -31,7 +31,3 @@ export const attachHouseAccountSchema = z.object({
 export const settleHouseAccountSchema = z.object({
   accountId: z.string().uuid(),
 });
-
-export type CompOrderInput = z.infer<typeof compOrderSchema>;
-export type OrderNoteInput = z.infer<typeof orderNoteSchema>;
-export type HouseAccountInput = z.infer<typeof houseAccountSchema>;

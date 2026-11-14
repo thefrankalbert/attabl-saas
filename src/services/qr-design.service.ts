@@ -6,7 +6,7 @@ import { qrDesignConfigSchema, type SaveQrDesignInput } from '@/lib/validations/
 /** Upper bound on saved QR designs per tenant (anti-abuse, SEC-02). */
 const MAX_DESIGNS_PER_TENANT = 50;
 
-export interface QrDesignRow {
+interface QrDesignRow {
   id: string;
   tenant_id: string;
   name: string;

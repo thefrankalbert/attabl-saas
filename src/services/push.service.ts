@@ -43,7 +43,7 @@ import { verifierEndpointPush } from '@/lib/push/endpoints-autorises';
  */
 
 /** Ce que le service worker sait afficher (voir `src/app/sw.ts`). */
-export interface ChargePush {
+interface ChargePush {
   /** Titre. Jamais une donnee personnelle d'un convive, jamais son texte brut. */
   titre: string;
   /** Corps. Meme regle. */
@@ -65,7 +65,7 @@ export interface ChargePush {
   slug: string;
 }
 
-export interface ResultatEnvoiPush {
+interface ResultatEnvoiPush {
   envoyees: number;
   /** Abonnements REELLEMENT supprimes parce que l'appareil ne les reconnait plus. */
   expirees: number;

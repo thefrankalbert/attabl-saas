@@ -207,7 +207,7 @@ export default function KitchenClient({
     >
       {!soundUnlocked && (
         <div
-          className="fixed inset-0 z-[250] bg-app-bg/95 flex items-center justify-center cursor-pointer"
+          className="fixed inset-0 z-[250] bg-app-bg flex items-center justify-center cursor-pointer"
           onClick={handleUnlock}
           onTouchStart={handleUnlock}
         >

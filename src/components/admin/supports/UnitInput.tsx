@@ -4,13 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { UnitSystem } from '@/types/supports.types';
 
-export function cmToUnit(cm: number, unit: UnitSystem): number {
+function cmToUnit(cm: number, unit: UnitSystem): number {
   if (unit === 'mm') return Math.round(cm * 10 * 100) / 100;
   if (unit === 'px') return Math.round(cm * 118.11);
   return Math.round(cm * 100) / 100;
 }
 
-export function unitToCm(value: number, unit: UnitSystem): number {
+function unitToCm(value: number, unit: UnitSystem): number {
   if (unit === 'mm') return value / 10;
   if (unit === 'px') return value / 118.11;
   return value;

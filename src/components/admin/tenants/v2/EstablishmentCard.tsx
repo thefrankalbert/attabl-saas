@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { TrendDelta } from '@/components/admin/tenants/v2/TrendDelta';
 import type { LocationStat } from '@/types/command-center.types';
 
-export interface EstablishmentCardLabels {
+interface EstablishmentCardLabels {
   manage: string;
   viewMenu: string;
   qr: string;

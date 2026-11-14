@@ -12,14 +12,14 @@ import type { CreateMenuInput, UpdateMenuInput } from '@/lib/validations/menu.sc
 export type MenuRow = Omit<Menu, 'venue' | 'children' | 'categories'>;
 
 /** Partial venue projection embedded in some menu queries (id, name, slug only). */
-export interface MenuVenueRef {
+interface MenuVenueRef {
   id: string;
   name: string;
   slug: string;
 }
 
 /** Partial child-menu projection embedded via the self-referencing FK. */
-export interface MenuChildRef {
+interface MenuChildRef {
   id: string;
   name: string;
   name_en?: string;

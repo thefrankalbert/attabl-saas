@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { renderableImageUrlSchema } from './image-url.schema';
 
 // --- Create Menu Schema ----------------------------------
 
@@ -9,7 +10,7 @@ export const createMenuSchema = z.object({
   description_en: z.string().max(500).optional(),
   venue_id: z.string().uuid().nullable().optional(),
   parent_menu_id: z.string().uuid().nullable().optional(),
-  image_url: z.string().url().optional().or(z.literal('')),
+  image_url: renderableImageUrlSchema.optional().or(z.literal('')),
   is_active: z.boolean().default(true),
   is_transversal_menu: z.boolean().optional().default(false),
   display_order: z.number().int().min(0).default(0),

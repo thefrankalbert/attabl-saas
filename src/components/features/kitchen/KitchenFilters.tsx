@@ -164,7 +164,8 @@ export default function KitchenFilters({
               variant="ghost"
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium h-auto',
+                // px-2.5 below @sm: at 375 px the fullscreen button was pushed off-screen.
+                'flex items-center gap-1.5 px-2.5 @sm:px-4 py-1 rounded-full text-xs font-medium h-auto',
                 viewMode === mode
                   ? 'bg-app-bg text-app-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text-secondary',
@@ -195,7 +196,7 @@ export default function KitchenFilters({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={tc('aria.minimize')}
+          aria-label={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
           onClick={toggleFullscreen}
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}

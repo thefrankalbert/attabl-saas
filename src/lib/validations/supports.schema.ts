@@ -46,6 +46,3 @@ export const exportRequestSchema = z.object({
   menuUrl: z.string().url(),
   tenantSlug: z.string().min(1).max(100),
 });
-
-export type ChevaletConfigInput = z.infer<typeof chevaletConfigSchema>;
-export type ExportRequestInput = z.infer<typeof exportRequestSchema>;
