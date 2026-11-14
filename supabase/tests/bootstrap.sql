@@ -71,6 +71,7 @@ create table if not exists auth.users (
   role               text,
   email              text,
   encrypted_password text,
+  email_confirmed_at timestamptz,
   created_at         timestamptz default now(),
   updated_at         timestamptz default now()
 );

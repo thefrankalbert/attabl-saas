@@ -32,6 +32,7 @@ export default function OnboardingPage() {
     subScreen,
     loading,
     loadError,
+    needsSubscription,
     saving,
     error,
     setError,
@@ -107,7 +108,12 @@ export default function OnboardingPage() {
     return (
       /* Standalone page - h-dvh is intentional */
       <div className="onboarding-brand h-dvh overflow-hidden flex flex-col bg-app-bg relative">
-        <WelcomeStep tenantName={data.tenantName} onStart={startStudio} />
+        <WelcomeStep
+          tenantName={data.tenantName}
+          tenantSlug={data.tenantSlug}
+          needsSubscription={needsSubscription}
+          onStart={startStudio}
+        />
       </div>
     );
   }

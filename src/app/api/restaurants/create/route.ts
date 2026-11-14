@@ -111,6 +111,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       tenantId: result.tenantId,
       slug: result.slug,
+      trialMode: result.trialMode,
     });
   } catch (err) {
     if (err instanceof ServiceError) {
