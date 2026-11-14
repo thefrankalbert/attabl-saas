@@ -2,16 +2,16 @@ export type UnitSystem = 'cm' | 'mm' | 'px';
 
 export type VersoMode = 'none' | 'logo' | 'mirror';
 
-export type QrStyle = 'classic' | 'branded' | 'inverted' | 'dark';
+type QrStyle = 'classic' | 'branded' | 'inverted' | 'dark';
 
-export interface LogoConfig {
+interface LogoConfig {
   visible: boolean;
   x: number;
   y: number;
   width: number;
 }
 
-export interface TextConfig {
+interface TextConfig {
   visible: boolean;
   x: number;
   y: number;
@@ -19,7 +19,7 @@ export interface TextConfig {
   text: string;
 }
 
-export interface QrConfig {
+interface QrConfig {
   x: number;
   y: number;
   width: number;

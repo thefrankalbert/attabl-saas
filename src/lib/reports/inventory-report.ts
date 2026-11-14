@@ -11,7 +11,7 @@ import type { CurrencyCode } from '@/types/admin.types';
 
 export type StockReportModel = 'simple' | 'detailed' | 'count-sheet';
 
-export interface ReportColumn {
+interface ReportColumn {
   key: string;
   label: string;
   align: 'left' | 'right';

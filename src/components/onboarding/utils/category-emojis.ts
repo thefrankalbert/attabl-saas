@@ -1,6 +1,6 @@
 // --- Emoji mapping (mirrors CategoryGrid/ClientMenuPage) --------------------
 
-export const CATEGORY_EMOJIS: Record<string, string> = {
+const CATEGORY_EMOJIS: Record<string, string> = {
   entree: '🥗',
   entrée: '🥗',
   starters: '🥗',

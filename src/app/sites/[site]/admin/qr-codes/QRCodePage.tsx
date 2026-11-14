@@ -79,12 +79,34 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus, designs }: Q
 
       {/* --- Tabs Navigation --- */}
       <Tabs defaultValue="choose" className="flex flex-col flex-1 min-h-0">
-        <div className="flex items-center gap-2">
-          <TabsList className="flex-1 min-w-0 justify-start overflow-x-auto scrollbar-hide">
-            <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
-            <TabsTrigger value="customize">{t('tabCustomize')}</TabsTrigger>
-            <TabsTrigger value="assign">{t('tabAssign')}</TabsTrigger>
-            <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
+        {/* Phone: the four tabs share a full-width line (smaller text) and the
+            Guide button wraps below; next to it they were cut mid-word. */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+          <TabsList className="w-full sm:w-auto sm:flex-1 min-w-0 justify-start overflow-x-auto scrollbar-hide">
+            <TabsTrigger
+              value="choose"
+              className="flex-1 sm:flex-none px-1.5 sm:px-3 text-xs sm:text-sm"
+            >
+              {t('tabChoose')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="customize"
+              className="flex-1 sm:flex-none px-1.5 sm:px-3 text-xs sm:text-sm"
+            >
+              {t('tabCustomize')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="assign"
+              className="flex-1 sm:flex-none px-1.5 sm:px-3 text-xs sm:text-sm"
+            >
+              {t('tabAssign')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="download"
+              className="flex-1 sm:flex-none px-1.5 sm:px-3 text-xs sm:text-sm"
+            >
+              {t('tabDownload')}
+            </TabsTrigger>
           </TabsList>
           <QRGuideDialog />
         </div>

@@ -52,10 +52,10 @@ export default function KDSTicketActionBar({
       <Button
         variant="ghost"
         size="icon"
-        aria-label={tc('print')}
+        aria-label={tc('aria.print')}
         onClick={() => printKitchenTicket(order, { zoneFilter, barDisplayEnabled })}
         className="w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover rounded-none"
-        title="Print"
+        title={tc('aria.print')}
       >
         <Printer className="w-4 h-4 text-app-text-muted" />
       </Button>

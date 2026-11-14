@@ -30,7 +30,7 @@ export type QRCardFormatId =
 // How many cards are placed on one A4 sheet. 'auto' fills the page.
 export type QRPerPage = 1 | 2 | 4 | 'auto';
 
-export interface QRPrintLayout {
+interface QRPrintLayout {
   // Physical card format. Drives templateWidth/Height when not 'custom'.
   cardFormat: QRCardFormatId;
   // Tiling on A4 at export time (design format vs print format).

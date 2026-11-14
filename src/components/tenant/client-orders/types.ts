@@ -1,7 +1,7 @@
 // --- Types --------------------------------------------------
 
 // Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
-export interface TrackedClientItemRow {
+interface TrackedClientItemRow {
   item_name: string;
   item_name_en?: string | null;
   quantity: number;
@@ -22,7 +22,7 @@ export interface TrackedClientRow {
   order_items: TrackedClientItemRow[] | null;
 }
 
-export interface OrderItem {
+interface OrderItem {
   name: string;
   name_en?: string;
   quantity: number;
@@ -72,7 +72,7 @@ export const TERMINAL_STATUSES = new Set(['delivered', 'served', 'completed', 'c
 // nombre total de commandes passees. L'elaguer rognerait ce compteur. Borner
 // ici protege le RPC sans rien retirer a l'interface, et les clients fideles
 // qui ont deja une liste plus longue restent servis (les plus recentes).
-export const MAX_TRACKED_ORDER_IDS = 200;
+const MAX_TRACKED_ORDER_IDS = 200;
 
 // --- Helpers ------------------------------------------------
 

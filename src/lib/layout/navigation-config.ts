@@ -23,7 +23,7 @@ import {
 
 // --- Types ----------------------------------------------
 
-export type NavItemConfig = {
+type NavItemConfig = {
   /** Relative path appended to basePath (e.g. '/menus') */
   path: string;
   icon: typeof LayoutDashboard;

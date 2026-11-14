@@ -169,9 +169,11 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                   <TableRow className="border-b border-app-border">
                     <TableCell
                       colSpan={2 + EDITABLE_ROLES.length}
-                      className="px-5 py-2.5 bg-app-card sticky left-0"
+                      className="px-5 py-2.5 bg-app-card"
                     >
-                      <span className="text-xs font-medium text-app-text-secondary uppercase tracking-wide">
+                      {/* The cell spans every column and scrolls with them: only the
+                          label is pinned, so the group name stays readable. */}
+                      <span className="sticky left-5 text-xs font-medium text-app-text-secondary uppercase tracking-wide">
                         {categoryLabel(category.key)}
                       </span>
                     </TableCell>
@@ -182,8 +184,10 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                     <TableRow
                       key={perm}
                       className={cn(
-                        'border-b border-app-border transition-colors hover:bg-app-bg/80',
-                        rowIdx % 2 === 0 ? 'bg-app-card' : 'bg-app-bg/50',
+                        // Opaque colours only: the pinned label cell inherits them, and a
+                        // translucent fill let the switches show through it on scroll.
+                        'border-b border-app-border transition-colors hover:bg-app-elevated',
+                        rowIdx % 2 === 0 ? 'bg-app-card' : 'bg-app-bg',
                       )}
                     >
                       {/* Permission label (no code column) */}

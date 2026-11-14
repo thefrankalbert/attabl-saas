@@ -11,7 +11,7 @@ export const A4_SHORT = 210; // mm
 export const A4_LONG = 297; // mm
 const MARGIN = 10; // mm page margin
 
-export interface TileCell {
+interface TileCell {
   x: number;
   y: number;
   w: number;

@@ -25,7 +25,7 @@ import { fetchOrder, fetchTenders, recompute } from './payment.queries';
  */
 
 // Re-export the public types so callers keep importing them from this module.
-export type { PaymentTender, PaymentSummary, CompResult } from './payment.types';
+export type { PaymentSummary, CompResult } from './payment.types';
 
 export function createPaymentService(supabase: SupabaseClient) {
   return {

@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import { menuItemCreateSchema, menuItemUpdateSchema } from '@/lib/validations/menu-item.schema';
+
+// Pin the storage host: the image rule reads it from the environment, so a
+// developer shell exporting another project URL must not change the outcome.
+beforeAll(() => vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://abc.supabase.co'));
+afterAll(() => vi.unstubAllEnvs());
 
 const validCategoryId = '11111111-1111-4111-8111-111111111111';
 
@@ -10,7 +15,8 @@ const validCreate = {
   description_en: null,
   price: 3500,
   category_id: validCategoryId,
-  image_url: 'https://cdn.attabl.com/x.jpg',
+  // A storage URL: next/image only renders our Supabase host (image-url.schema.ts).
+  image_url: 'https://abc.supabase.co/storage/v1/object/public/menu-items/t1/x.jpg',
   is_available: true,
   is_featured: false,
   allergens: ['gluten'],

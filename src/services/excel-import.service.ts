@@ -10,8 +10,6 @@ import { parseExcelBuffer } from './excel-import/parser';
 import { generateExcelTemplate } from './excel-import/template';
 import type { ImportResult, ImportRowError, ParsedRow } from './excel-import/types';
 
-export type { ImportResult, ImportRowError, ParsedRow } from './excel-import/types';
-
 // --- Service --------------------------------------------------
 
 export interface ExcelImportService {

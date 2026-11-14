@@ -16,6 +16,3 @@ export const adminUserActionSchema = z.object({
   adminUserId: z.string().uuid(),
   reason,
 });
-
-export type TenantActionInput = z.infer<typeof tenantActionSchema>;
-export type AdminUserActionInput = z.infer<typeof adminUserActionSchema>;

@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Validation d'un espace de restauration (table `venues`).
  * "Espace" cote UI ; `venue` cote DB/code.
  */
-export const venueNameSchema = z
+const venueNameSchema = z
   .string()
   .trim()
   .min(1, 'Le nom de l espace est requis.')
@@ -22,7 +22,3 @@ export const renameVenueSchema = z.object({
 export const deactivateVenueSchema = z.object({
   id: z.string().uuid('Identifiant invalide.'),
 });
-
-export type CreateVenueInput = z.infer<typeof createVenueSchema>;
-export type RenameVenueInput = z.infer<typeof renameVenueSchema>;
-export type DeactivateVenueInput = z.infer<typeof deactivateVenueSchema>;

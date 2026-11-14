@@ -8,7 +8,7 @@
  * and print rules so every exported document looks consistent.
  */
 
-export type DocumentFormat = 'thermal80' | 'a4';
+type DocumentFormat = 'thermal80' | 'a4';
 
 /** Escape user-controlled strings before interpolating into HTML. */
 export function escapeHtml(str: string): string {

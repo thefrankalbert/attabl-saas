@@ -1,4 +1,4 @@
-export interface TableZoneData {
+interface TableZoneData {
   name: string;
   prefix: string;
   tableCount: number;
