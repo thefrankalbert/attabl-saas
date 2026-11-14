@@ -354,14 +354,14 @@ export function TablesClient({
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="shrink-0 space-y-4">
         <AdminPageHeader title={t('title')} />
       </div>
 
-      {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      {/* Main Layout - its own scroll area: the admin content frame clips overflow */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 flex flex-col lg:flex-row gap-6">
         {/* Left Panel: Zone List */}
         <TableZonesPanel
           zones={zones}

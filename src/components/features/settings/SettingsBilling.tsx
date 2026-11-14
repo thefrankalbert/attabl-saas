@@ -92,7 +92,9 @@ export default function SettingsBilling({ form, t, initialPaymentMethods }: Sett
           <div className="flex flex-wrap gap-3 pt-1">
             {ALL_CURRENCIES.map(({ code, labelKey }) => {
               const isBase = code === watchCurrency;
-              const isChecked = (watchSupportedCurrencies as string[]).includes(code);
+              // The base currency is always accepted (see the Select handler above),
+              // even when a stored list predates the current base: show it checked.
+              const isChecked = isBase || (watchSupportedCurrencies as string[]).includes(code);
               return (
                 <Label
                   key={code}
@@ -238,52 +240,53 @@ export default function SettingsBilling({ form, t, initialPaymentMethods }: Sett
             </div>
           )}
         </div>
-      </div>
-      {/* Coupons Toggle */}
-      <div className="space-y-3 p-4 rounded-lg border border-app-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="enableCoupons" className="text-sm font-medium text-app-text">
-              {t('enableCoupons')}
-            </Label>
-            <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
-          </div>
-          <Label className="relative inline-flex items-center cursor-pointer">
-            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
-            <input
-              type="checkbox"
-              id="enableCoupons"
-              {...register('enableCoupons')}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-          </Label>
-        </div>
-      </div>
 
-      {/* Bar Display / Preparation Zones Toggle */}
-      <div className="space-y-3 p-4 rounded-lg border border-app-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="barDisplayEnabled" className="text-sm font-medium text-app-text">
-              {t('enableBarDisplay')}
+        {/* Coupons Toggle */}
+        <div className="space-y-3 p-4 rounded-lg border border-app-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="enableCoupons" className="text-sm font-medium text-app-text">
+                {t('enableCoupons')}
+              </Label>
+              <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
+            </div>
+            <Label className="relative inline-flex items-center cursor-pointer">
+              {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
+              <input
+                type="checkbox"
+                id="enableCoupons"
+                {...register('enableCoupons')}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
             </Label>
-            <p className="text-xs text-app-text-secondary mt-0.5">{t('enableBarDisplayDesc')}</p>
           </div>
-          <Label className="relative inline-flex items-center cursor-pointer">
-            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
-            <input
-              type="checkbox"
-              id="barDisplayEnabled"
-              {...register('barDisplayEnabled')}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-          </Label>
         </div>
-      </div>
 
-      <PaymentMethodsSettings initialMethods={initialPaymentMethods} />
+        {/* Bar Display / Preparation Zones Toggle */}
+        <div className="space-y-3 p-4 rounded-lg border border-app-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="barDisplayEnabled" className="text-sm font-medium text-app-text">
+                {t('enableBarDisplay')}
+              </Label>
+              <p className="text-xs text-app-text-secondary mt-0.5">{t('enableBarDisplayDesc')}</p>
+            </div>
+            <Label className="relative inline-flex items-center cursor-pointer">
+              {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
+              <input
+                type="checkbox"
+                id="barDisplayEnabled"
+                {...register('barDisplayEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+            </Label>
+          </div>
+        </div>
+
+        <PaymentMethodsSettings initialMethods={initialPaymentMethods} />
+      </div>
     </TabsContent>
   );
 }
