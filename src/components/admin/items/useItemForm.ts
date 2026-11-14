@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger';
 import { actionCreateMenuItem, actionUpdateMenuItem } from '@/app/actions/menu-items';
 import type { MenuItem, CurrencyCode } from '@/types/admin.types';
 import type { FormStep } from './ItemFormModal';
+import { galleryExtras } from './gallery-extras';
 
 interface UseItemFormParams {
   tenantId: string;
@@ -71,7 +72,7 @@ export function useItemForm({ tenantId, secondaryCurrencies, onSaved }: UseItemF
     setPrice(item.price);
     setCategoryId(item.category_id);
     setImageUrl(item.image_url || '');
-    setGalleryImages((item.images || []).filter((u) => u && u !== (item.image_url || '')));
+    setGalleryImages(galleryExtras(item.images, item.image_url));
     setIsAvailable(item.is_available);
     setIsFeatured(item.is_featured);
     setAllergens(item.allergens || []);
