@@ -59,25 +59,53 @@ const DEFAULT_TIMEZONE = 'Africa/Abidjan';
 // "aujourd'hui" basculait une heure trop tard (audit R-02).
 const NAME_TO_CODE: Record<string, string> = {
   CAMEROUN: 'CM',
+  CAMEROON: 'CM',
+  'REPUBLIQUE DU CAMEROUN': 'CM',
   TCHAD: 'TD',
+  CHAD: 'TD',
   CENTRAFRIQUE: 'CF',
+  'REPUBLIQUE CENTRAFRICAINE': 'CF',
+  'CENTRAL AFRICAN REPUBLIC': 'CF',
   CONGO: 'CG',
+  'REPUBLIQUE DU CONGO': 'CG',
+  'CONGO BRAZZAVILLE': 'CG',
+  RDC: 'CD',
+  DRC: 'CD',
+  'RD CONGO': 'CD',
+  'CONGO KINSHASA': 'CD',
+  'REPUBLIQUE DEMOCRATIQUE DU CONGO': 'CD',
   GABON: 'GA',
+  'GUINEE EQUATORIALE': 'GQ',
+  'EQUATORIAL GUINEA': 'GQ',
+  NIGERIA: 'NG',
+  NIGER: 'NE',
   "COTE D'IVOIRE": 'CI',
+  'IVORY COAST': 'CI',
   SENEGAL: 'SN',
   'BURKINA FASO': 'BF',
   MALI: 'ML',
   GUINEE: 'GN',
+  GUINEA: 'GN',
+  GHANA: 'GH',
   TOGO: 'TG',
   BENIN: 'BJ',
-  NIGER: 'NE',
+  MAURITANIE: 'MR',
+  MAURITANIA: 'MR',
   FRANCE: 'FR',
+  BELGIQUE: 'BE',
+  BELGIUM: 'BE',
+  SUISSE: 'CH',
+  SWITZERLAND: 'CH',
 };
 
+/** Accents, apostrophes typographiques, tirets et espaces multiples ignores. */
 function normalizeCountry(raw: string): string {
   const up = raw
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019`]/g, "'")
+    .replace(/[-_\u2010-\u2015]/g, ' ')
+    .replace(/\s+/g, ' ')
     .toUpperCase()
     .trim();
   return NAME_TO_CODE[up] ?? up;

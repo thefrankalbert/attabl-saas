@@ -50,9 +50,95 @@
 -- deja ces montants; la migration est purement restrictive pour l'API
 -- directe, donc elle peut etre appliquee avant ou apres le deploiement.
 --
--- Rejouable (CREATE OR REPLACE, DROP TRIGGER IF EXISTS).
+-- Rejouable (CREATE OR REPLACE FUNCTION; le declencheur existe deja depuis
+-- 20261112135000 et appelle la fonction par son nom, il n'est pas recree).
 --
--- Rollback: reposer le corps de 20261112135000_payments_insert_guard.sql.
+-- REJEU IDEMPOTENT: une ligne qui porte une cle client_request_id deja
+-- utilisee pour ce restaurant est laissee passer par la garde, pour que
+-- l'index unique leve 23505 (le chemin applicatif le traite comme un rejeu,
+-- voir recordTender et house-account-settlement). Sans cela, un doublon
+-- concurrent recevrait 22023 au lieu de 23505.
+--
+-- Rollback (reposer le corps litteral de 20261112135000, le declencheur
+-- trg_payments_insert_guard n'est pas touche par cette migration):
+--
+-- CREATE OR REPLACE FUNCTION public.garder_ecriture_registre_paiements()
+--  RETURNS trigger
+--  LANGUAGE plpgsql
+--  SECURITY INVOKER
+--  SET search_path TO 'public'
+-- AS $function$
+-- DECLARE
+--   v_order RECORD;
+--   v_net NUMERIC;
+--   v_author UUID;
+-- BEGIN
+--   IF current_user NOT IN ('authenticated', 'anon') THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   IF NOT public.has_tenant_write_permission(NEW.tenant_id, 'orders.pay') THEN
+--     RAISE EXCEPTION 'Enregistrer un paiement exige le droit d''encaisser'
+--       USING ERRCODE = '42501';
+--   END IF;
+--
+--   IF NEW.method IS NULL OR NEW.method NOT IN
+--      ('cash', 'card', 'wave', 'orange_money', 'mtn_momo', 'free_money') THEN
+--     RAISE EXCEPTION 'Moyen de paiement inconnu'
+--       USING ERRCODE = '22023';
+--   END IF;
+--
+--   SELECT au.id INTO v_author
+--   FROM public.admin_users au
+--   WHERE au.user_id = (SELECT auth.uid())
+--     AND au.tenant_id = NEW.tenant_id
+--     AND (au.is_active IS NULL OR au.is_active = true)
+--     AND au.deleted_at IS NULL
+--   LIMIT 1;
+--   NEW.created_by := v_author;
+--   NEW.created_at := now();
+--
+--   SELECT o.total, o.tip_amount, o.status, o.payment_status
+--     INTO v_order
+--   FROM public.orders o
+--   WHERE o.id = NEW.order_id AND o.tenant_id = NEW.tenant_id
+--   FOR UPDATE;
+--
+--   IF NOT FOUND THEN
+--     RAISE EXCEPTION 'Commande introuvable pour ce restaurant'
+--       USING ERRCODE = '42501';
+--   END IF;
+--
+--   IF public.has_tenant_money_permission(NEW.tenant_id) THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   IF NEW.status IS DISTINCT FROM 'completed' OR NEW.amount <= 0 THEN
+--     RAISE EXCEPTION 'Rembourser exige l''autorite sur l''argent'
+--       USING ERRCODE = '42501';
+--   END IF;
+--
+--   IF v_order.status = 'cancelled' OR v_order.payment_status = 'comp' THEN
+--     RAISE EXCEPTION 'Impossible d''encaisser une commande annulee ou offerte'
+--       USING ERRCODE = '22023';
+--   END IF;
+--
+--   SELECT COALESCE(SUM(CASE WHEN p.status = 'refunded' THEN -p.amount ELSE p.amount END), 0)
+--     INTO v_net
+--   FROM public.payments p
+--   WHERE p.order_id = NEW.order_id AND p.tenant_id = NEW.tenant_id;
+--
+--   IF NEW.amount > (COALESCE(v_order.total, 0) + COALESCE(v_order.tip_amount, 0) - v_net) THEN
+--     RAISE EXCEPTION 'Montant superieur au solde du'
+--       USING ERRCODE = '22023';
+--   END IF;
+--
+--   RETURN NEW;
+-- END;
+-- $function$;
+--
+
+BEGIN;
 
 CREATE OR REPLACE FUNCTION public.garder_ecriture_registre_paiements()
  RETURNS trigger
@@ -112,6 +198,14 @@ BEGIN
     END IF;
   END IF;
 
+  -- Rejeu: la cle existe deja, l'index unique leve 23505 apres la garde.
+  IF NEW.client_request_id IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.payments p
+    WHERE p.tenant_id = NEW.tenant_id AND p.client_request_id = NEW.client_request_id
+  ) THEN
+    RETURN NEW;
+  END IF;
+
   -- Valeur signee de la ligne, comme dans le registre: + encaisse, - rembourse.
   v_delta := CASE WHEN NEW.status = 'refunded' THEN -NEW.amount ELSE NEW.amount END;
 
@@ -128,20 +222,17 @@ BEGIN
 
   IF v_delta < 0 AND -v_delta > v_net THEN
     RAISE EXCEPTION 'Remboursement superieur au montant encaisse'
-      USING ERRCODE = '22023';
+      USING ERRCODE = '22023', HINT = 'payments_bound_refund';
   END IF;
 
   IF v_delta > 0
      AND v_delta > (COALESCE(v_order.total, 0) + COALESCE(v_order.tip_amount, 0) - v_net) THEN
     RAISE EXCEPTION 'Montant superieur au solde du'
-      USING ERRCODE = '22023';
+      USING ERRCODE = '22023', HINT = 'payments_bound_balance';
   END IF;
 
   RETURN NEW;
 END;
 $function$;
 
-DROP TRIGGER IF EXISTS trg_payments_insert_guard ON public.payments;
-CREATE TRIGGER trg_payments_insert_guard
-  BEFORE INSERT ON public.payments
-  FOR EACH ROW EXECUTE FUNCTION public.garder_ecriture_registre_paiements();
+COMMIT;

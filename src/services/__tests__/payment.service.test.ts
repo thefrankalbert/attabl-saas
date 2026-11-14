@@ -827,7 +827,7 @@ describe('recompute - orders.payment_method quand la commande devient soldee', (
 // ---------------------------------------------------------------------------
 function withFailingInsert(
   mock: ReturnType<typeof createMockSupabase>,
-  error: { code: string; message: string },
+  error: { code: string; message: string; hint?: string },
 ): SupabaseClient {
   const client = {
     ...mock,
@@ -843,13 +843,31 @@ describe('recordTender - refus de la garde du registre (course entre deux appare
   it('traduit le refus 22023 de la base en erreur de validation, sans ecriture', async () => {
     const mock = createMockSupabase(baseOrder());
     const service = createPaymentService(
-      withFailingInsert(mock, { code: '22023', message: 'Montant superieur au solde du' }),
+      withFailingInsert(mock, {
+        code: '22023',
+        message: 'Montant superieur au solde du',
+        hint: 'payments_bound_balance',
+      }),
     );
 
     await expect(
       service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
     ).rejects.toMatchObject({ code: 'VALIDATION', message: 'Montant superieur au solde du' });
     expect(mock._ledger).toHaveLength(0);
+  });
+
+  it('un autre 22023 (commande annulee, moyen inconnu) ne devient pas un refus de solde', async () => {
+    const mock = createMockSupabase(baseOrder());
+    const service = createPaymentService(
+      withFailingInsert(mock, {
+        code: '22023',
+        message: 'Impossible d encaisser une commande annulee ou offerte',
+      }),
+    );
+
+    await expect(
+      service.recordTender(ORDER_ID, TENANT, { amount: 10000, method: 'cash', createdBy: 'a' }),
+    ).rejects.toMatchObject({ code: 'INTERNAL' });
   });
 
   it('temoin negatif: une autre erreur de base reste une erreur interne', async () => {

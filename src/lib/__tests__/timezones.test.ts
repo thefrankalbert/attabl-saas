@@ -73,3 +73,54 @@ describe('getTenantDayStart', () => {
     );
   });
 });
+
+describe('normalisation des noms de pays', () => {
+  it('apostrophe typographique, tirets, espaces et casse', () => {
+    expect(resolveTenantTimezone({ country: 'C\u00f4te d\u2019Ivoire' })).toBe('Africa/Abidjan');
+    expect(resolveTenantTimezone({ country: "  COTE-D'IVOIRE " })).toBe('Africa/Abidjan');
+    expect(resolveTenantTimezone({ country: 'Burkina-Faso' })).toBe('Africa/Ouagadougou');
+  });
+
+  it('noms anglais et formes francaises longues', () => {
+    expect(resolveTenantTimezone({ country: 'Cameroon' })).toBe('Africa/Douala');
+    expect(resolveTenantTimezone({ country: 'Chad' })).toBe('Africa/Ndjamena');
+    expect(resolveTenantTimezone({ country: 'Nigeria' })).toBe('Africa/Lagos');
+    expect(resolveTenantTimezone({ country: 'Central African Republic' })).toBe('Africa/Bangui');
+    expect(resolveTenantTimezone({ country: 'Equatorial Guinea' })).toBe('Africa/Malabo');
+    expect(resolveTenantTimezone({ country: 'Ghana' })).toBe('Africa/Accra');
+    expect(resolveTenantTimezone({ country: 'Ivory Coast' })).toBe('Africa/Abidjan');
+    expect(resolveTenantTimezone({ country: 'RDC' })).toBe('Africa/Kinshasa');
+    expect(resolveTenantTimezone({ country: 'DRC' })).toBe('Africa/Kinshasa');
+    expect(resolveTenantTimezone({ country: 'Republique du Congo' })).toBe('Africa/Brazzaville');
+    expect(resolveTenantTimezone({ country: 'Republique du Cameroun' })).toBe('Africa/Douala');
+    expect(resolveTenantTimezone({ country: 'Guin\u00e9e \u00e9quatoriale' })).toBe(
+      'Africa/Malabo',
+    );
+  });
+
+  it('un UTC+0 dont la zone differe du defaut: Senegal -> Africa/Dakar', () => {
+    expect(resolveTenantTimezone({ country: 'Senegal' })).toBe('Africa/Dakar');
+  });
+
+  it('nom inconnu -> zone par defaut', () => {
+    expect(resolveTenantTimezone({ country: 'Atlantide' })).toBe('Africa/Abidjan');
+  });
+
+  it('getTenantMonthStart utilise la meme normalisation (nom de pays, UTC+1)', () => {
+    const now = new Date('2026-04-19T14:00:00Z');
+    expect(getTenantMonthStart({ country: 'Cameroun' }, now).toISOString()).toBe(
+      '2026-03-31T23:00:00.000Z',
+    );
+    expect(getTenantMonthStart({ country: 'Cameroon' }, now).toISOString()).toBe(
+      '2026-03-31T23:00:00.000Z',
+    );
+  });
+
+  it('getTenantDayStart: reculer au-dela du debut de mois', () => {
+    // 2026-03-02 12:00 UTC, Douala UTC+1: 5 jours avant = 25 fevrier local
+    const now = new Date('2026-03-02T12:00:00Z');
+    expect(getTenantDayStart({ country: 'Cameroun' }, 5, now).toISOString()).toBe(
+      '2026-02-24T23:00:00.000Z',
+    );
+  });
+});
