@@ -72,7 +72,14 @@ export function PaymentMethodPicker({
       className="w-full shrink-0"
     >
       {choices.map((id) => (
-        <ToggleGroupItem key={id} value={id} className="min-h-[44px] flex-1 text-sm font-bold">
+        // Choix actif aux couleurs des pastilles de l'admin (ReportsSummaryHeader,
+        // StockHistoryFilters): `bg-accent` y est presque noir et le texte par
+        // defaut le rendait illisible (constate au navigateur le 2026-11-14).
+        <ToggleGroupItem
+          key={id}
+          value={id}
+          className="min-h-[44px] flex-1 text-sm font-bold data-[state=on]:border-app-text data-[state=on]:bg-app-text data-[state=on]:text-app-bg"
+        >
           {label(id)}
         </ToggleGroupItem>
       ))}
