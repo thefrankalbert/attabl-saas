@@ -14,6 +14,7 @@ import SubMenuTabs from '@/components/tenant/client-menu-detail/SubMenuTabs';
 import MenuItemsList from '@/components/tenant/client-menu-detail/MenuItemsList';
 import MenuSelectionSheet from '@/components/tenant/client-menu-detail/MenuSelectionSheet';
 import { STICKY_TITLE_ID } from '@/components/tenant/category-scroll-spy';
+import { getTranslatedContent } from '@/lib/utils/translate';
 
 // - Component -
 
@@ -59,7 +60,7 @@ export default function ClientMenuDetailPage(props: ClientMenuDetailPageProps) {
   // never moves). Derive the nav from the same list, keeping only non-empty.
   const navCategories = menuFilteredByCategory
     .filter((c) => c.items.length > 0)
-    .map((c) => ({ id: c.id, name: c.name }));
+    .map((c) => ({ id: c.id, name: getTranslatedContent(lang, c.name, c.name_en) }));
 
   // - Render -
   return (

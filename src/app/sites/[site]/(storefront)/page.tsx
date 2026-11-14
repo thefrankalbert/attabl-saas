@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getTranslatedContent } from '@/lib/utils/translate';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant, getTableOccupied } from '@/lib/cache';
 import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
@@ -50,12 +51,16 @@ export async function generateMetadata({
   };
 }
 
-function toClientCategory(cat: Category): ClientCategory {
+function toClientCategory(cat: Category, lang: 'fr' | 'en'): ClientCategory {
   const iconKey = cat.icon ?? deriveCategoryIconKey(cat.name);
   const colors = getCategoryColors(iconKey);
   return {
     id: cat.id,
-    label: cat.name,
+    // Libelle affiche dans la langue du client (audit du 2026-11-14: le nom
+    // anglais saisi par le restaurant etait charge mais jamais affiche).
+    label: getTranslatedContent(lang, cat.name, cat.name_en),
+    // La section de /menu se retrouve par le nom d'origine, pas par le libelle.
+    section: cat.name,
     icon: iconKey,
     bgColor: colors.bg,
     fgColor: colors.fg,
@@ -91,7 +96,12 @@ export default async function HomePage({
   // A table QR without a menu slug points at this root page (buildQRUrl), and
   // codes are already printed that way: honor ?table here exactly like /menu.
   const scannedTable = resolveTableParam(await searchParams);
-  const [messages, t] = await Promise.all([getMessages(), getTranslations('homePage')]);
+  const [messages, t, locale] = await Promise.all([
+    getMessages(),
+    getTranslations('homePage'),
+    getLocale(),
+  ]);
+  const lang = locale.startsWith('en') ? 'en' : 'fr';
 
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
@@ -190,7 +200,7 @@ export default async function HomePage({
   const menus = (menusResult.data || []) as unknown as Menu[];
   const tables = (tablesResult.data || []) as unknown as Table[];
 
-  const clientCategories = allCategories.slice(0, 8).map(toClientCategory);
+  const clientCategories = allCategories.slice(0, 8).map((cat) => toClientCategory(cat, lang));
 
   const featuredLabel = t('featured');
   const featuredFull = featuredItems.slice(0, 6);
@@ -303,7 +313,7 @@ export default async function HomePage({
                 <CategoryTile
                   key={cat.id}
                   category={cat}
-                  href={`/sites/${site}/menu?section=${encodeURIComponent(cat.label)}`}
+                  href={`/sites/${site}/menu?section=${encodeURIComponent(cat.section)}`}
                 />
               ))}
             </div>

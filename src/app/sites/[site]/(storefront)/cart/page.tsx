@@ -82,6 +82,11 @@ export default function CartPage() {
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
   const t = useTranslations('tenant');
   const locale = useLocale();
+  // Les refus du serveur sont rediges en francais. Un client en anglais voyait
+  // donc un message francais (audit du 2026-11-14): hors francais, on affiche
+  // le message traduit generique.
+  const serverMessage = (message?: string | null) =>
+    message && locale.startsWith('fr') ? message : t('orderError');
   const router = useRouter();
   const language = locale.startsWith('en') ? 'en' : 'fr';
   const menuPath = `/sites/${tenantSlug}/menu`;
@@ -268,7 +273,7 @@ export default function CartPage() {
           });
           const previewData = await previewResponse.json();
           if (!previewResponse.ok) {
-            setError(previewData.error || t('orderError'));
+            setError(serverMessage(previewData.error));
             if (previewData.details && Array.isArray(previewData.details)) {
               setPreviewErrors(previewData.details);
             }
@@ -320,7 +325,7 @@ export default function CartPage() {
         if (result.details && Array.isArray(result.details)) {
           setPreviewErrors(result.details);
         }
-        setError(result.error || t('orderError'));
+        setError(serverMessage(result.error));
         return;
       }
 

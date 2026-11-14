@@ -121,3 +121,43 @@ describe('MenuItemsList', () => {
     expect(screen.queryAllByTestId('plat')).toHaveLength(0);
   });
 });
+
+/**
+ * Audit du 2026-11-14: le nom anglais d'une categorie, saisi par le restaurant,
+ * etait charge mais jamais affiche. Un client en anglais lisait "Plats".
+ */
+describe('MenuItemsList - nom de categorie traduit', () => {
+  const BILINGUE = [
+    { id: 'c1', name: 'Entrees', name_en: 'Starters', items: [plat('i1', 'Salade')] },
+    { id: 'c2', name: 'Plats', name_en: 'Mains', items: [plat('i2', 'Poulet')] },
+    { id: 'c3', name: 'Desserts', items: [plat('i3', 'Glace')] },
+  ];
+
+  function rendreEn(lang: 'fr' | 'en') {
+    return render(
+      <MenuItemsList
+        categories={BILINGUE}
+        availabilityOverride={new Map()}
+        restaurantId="t1"
+        currency="XOF"
+        lang={lang}
+        onOpenDetail={() => {}}
+      />,
+    );
+  }
+
+  it('en anglais: le titre de section est le nom anglais', () => {
+    rendreEn('en');
+    expect(within(section('c2')).getByRole('heading').textContent).toBe('Mains');
+  });
+
+  it('en anglais sans nom anglais: repli sur le nom francais', () => {
+    rendreEn('en');
+    expect(within(section('c3')).getByRole('heading').textContent).toBe('Desserts');
+  });
+
+  it('en francais: le nom francais reste affiche', () => {
+    rendreEn('fr');
+    expect(within(section('c2')).getByRole('heading').textContent).toBe('Plats');
+  });
+});
