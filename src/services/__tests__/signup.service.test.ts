@@ -11,6 +11,7 @@ function createMockSupabase(
     tenantInsertError?: boolean;
     adminInsertError?: boolean;
     authCreateError?: boolean;
+    rpcTrialMode?: string;
   } = {},
 ) {
   const mockDeleteUser = vi.fn().mockResolvedValue({ error: null });
@@ -71,7 +72,12 @@ function createMockSupabase(
   });
 
   const mockRpc = vi.fn().mockResolvedValue({
-    data: { tenantId: 'tenant-xyz', slug: 'mon-restaurant', groupId: 'group-abc-123' },
+    data: {
+      tenantId: 'tenant-xyz',
+      slug: 'mon-restaurant',
+      groupId: 'group-abc-123',
+      ...(options.rpcTrialMode ? { trialMode: options.rpcTrialMode } : {}),
+    },
     error: null,
   });
 
@@ -117,6 +123,28 @@ describe('SignupService', () => {
         'provision_signup_tenant',
         expect.objectContaining({ p_plan: 'starter' }),
       );
+    });
+
+    it('transmet trialMode "none" quand la base refuse l essai (P-05)', async () => {
+      const service = createSignupService(createMockSupabase({ rpcTrialMode: 'none' }));
+      const result = await service.completeEmailSignup({
+        restaurantName: 'Test',
+        email: 'test@example.com',
+        password: 'securepass123',
+      });
+      expect(result.trialMode).toBe('none');
+    });
+
+    it('temoin: sans trialMode ou avec une valeur inconnue, le mode reste "started"', async () => {
+      for (const rpcTrialMode of [undefined, 'bidon']) {
+        const service = createSignupService(createMockSupabase({ rpcTrialMode }));
+        const result = await service.completeEmailSignup({
+          restaurantName: 'Test',
+          email: 'test@example.com',
+          password: 'securepass123',
+        });
+        expect(result.trialMode).toBe('started');
+      }
     });
 
     it('should throw CONFLICT when auth user email already exists', async () => {

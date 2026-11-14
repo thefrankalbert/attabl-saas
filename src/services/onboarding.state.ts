@@ -26,7 +26,7 @@ export async function getOnboardingState(
   const { data: tenant, error: tenantError } = await lookupClient
     .from('tenants')
     .select(
-      'id, slug, name, establishment_type, address, city, country, phone, table_count, logo_url, primary_color, secondary_color, description, currency, default_locale, establishment_details, onboarding_completed',
+      'id, slug, name, establishment_type, address, city, country, phone, table_count, logo_url, primary_color, secondary_color, description, currency, default_locale, establishment_details, onboarding_completed, subscription_status',
     )
     .eq('id', tenantId)
     .maybeSingle();
@@ -95,6 +95,7 @@ export async function getOnboardingState(
     // layout: two sources could disagree and bounce the user between the
     // onboarding and the "resume" dialog.
     completed,
+    needsSubscription: tenant.subscription_status === 'frozen',
     data: mergedData,
   };
 }

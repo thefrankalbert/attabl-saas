@@ -2,10 +2,13 @@
 
 import { Building2, UtensilsCrossed, Rocket, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 interface WelcomeStepProps {
   tenantName: string;
+  tenantSlug?: string;
+  needsSubscription?: boolean;
   onStart: () => void;
 }
 
@@ -15,7 +18,12 @@ const PHASES = [
   { icon: Rocket, label: 'phaseLaunch', desc: 'phaseLaunchDesc', num: '03' },
 ] as const;
 
-export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
+export function WelcomeStep({
+  tenantName,
+  tenantSlug,
+  needsSubscription,
+  onStart,
+}: WelcomeStepProps) {
   const t = useTranslations('onboarding');
 
   return (
@@ -104,11 +112,27 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
             <ArrowRight className="h-4 w-4" />
           </Button>
 
-          {/* Trial reminder */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
-          </div>
+          {needsSubscription && tenantSlug ? (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                {t('subscriptionNeededTitle')}
+              </p>
+              <p className="max-w-sm text-xs text-muted-foreground">
+                {t('subscriptionNeededDesc')}
+              </p>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href={`/sites/${tenantSlug}/admin/subscription`}>
+                  {t('subscriptionNeededCta')}
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            /* Trial reminder */
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <p className="text-[10px] font-medium text-muted-foreground">{t('trialReminder')}</p>
+            </div>
+          )}
         </div>
       </div>
 

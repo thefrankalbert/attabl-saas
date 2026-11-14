@@ -11,10 +11,12 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(33);
+select plan(41);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at, email_confirmed_at)
 values
+  ('e9999999-9999-4999-8999-999999999999', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'x+1@test.local', 'x', now(), now(), now()),
+  ('ea111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bd@test.local', 'x', now(), now(), null),
   ('e1111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'fatou@test.local', 'x', now(), now(), now()),
   ('e2222222-2222-4222-8222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'amadou@test.local', 'x', now(), now(), now()),
   ('e3333333-3333-4333-8333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c@test.local', 'x', now(), now(), now()),
@@ -119,6 +121,33 @@ select is((select confirmed_at is not null from owner_trial_ledger where email_k
 -- 11. SEC-1: l'adresse passee en parametre n'alimente pas le registre.
 select lives_ok($$select provision_signup_tenant('attaque', 'attaque', 'starter', 'e8888888-8888-4888-8888-888888888888', 'victime@test.local', 'N', null)$$, 'attaquant: cree');
 select is((select count(*)::int from owner_trial_ledger where email_key = 'victime@test.local'), 0, 'SEC-1: aucune ligne au nom de la victime');
+
+-- 12. Alias +1: cle distincte de x@test.local, donc nouvel essai ('started').
+select lives_ok($$select provision_signup_tenant('x-plus', 'x-plus', 'starter', 'e9999999-9999-4999-8999-999999999999', 'x@x.local', 'N', null)$$, 'alias +1: cree');
+select is((select subscription_status from tenants where slug = 'x-plus'), 'trial', 'alias +1: nouvel essai (cle exacte)');
+
+-- 13. BEFORE DELETE: un compte non confirme au moment de la decision, confirme
+--     juste avant sa suppression, laisse une ligne qui compte. Ici la
+--     confirmation passe par le declencheur UPDATE puis la suppression.
+select lives_ok($$select provision_signup_tenant('bd-un', 'bd-un', 'starter', 'ea111111-1111-4111-8111-111111111111', 'x@x.local', 'N', null)$$, 'bd: essai cree');
+select is((select confirmed_at is null from owner_trial_ledger where email_key = 'bd@test.local'), true, 'bd: ligne non confirmee au depart');
+update auth.users set email_confirmed_at = now() where id = 'ea111111-1111-4111-8111-111111111111';
+update owner_trial_ledger set confirmed_at = null where email_key = 'bd@test.local';
+delete from admin_users where user_id = 'ea111111-1111-4111-8111-111111111111';
+delete from tenants where group_id in (select id from restaurant_groups where owner_user_id = 'ea111111-1111-4111-8111-111111111111');
+delete from restaurant_groups where owner_user_id = 'ea111111-1111-4111-8111-111111111111';
+delete from auth.users where id = 'ea111111-1111-4111-8111-111111111111';
+select is((select confirmed_at is not null from owner_trial_ledger where email_key = 'bd@test.local'), true, 'BEFORE DELETE: la suppression d un compte confirme fait compter la ligne');
+
+-- 14. N2: les declencheurs ne bloquent jamais auth.users, meme si le registre disparait.
+savepoint sans_registre;
+alter table owner_trial_ledger rename to owner_trial_ledger_absent;
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at, email_confirmed_at)
+values ('eb111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'n2@test.local', 'x', now(), now(), null);
+select lives_ok($$update auth.users set email_confirmed_at = now() where id = 'eb111111-1111-4111-8111-111111111111'$$, 'N2: la confirmation passe sans registre');
+select lives_ok($$delete from auth.users where id = 'eb111111-1111-4111-8111-111111111111'$$, 'N2: la suppression passe sans registre');
+rollback to savepoint sans_registre;
+select is(to_regclass('public.owner_trial_ledger') is not null, true, 'N2: le registre est revenu apres le savepoint');
 
 select * from finish();
 rollback;

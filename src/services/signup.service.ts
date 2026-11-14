@@ -39,6 +39,11 @@ interface SignupResult {
    * When false, the UI must tell the user the email could not be sent.
    */
   emailDelivered?: boolean;
+  /**
+   * Issue du choix d'essai fait par la base (P-05): 'none' = essai deja
+   * consomme, l'etablissement nait gele et demande un abonnement.
+   */
+  trialMode?: 'started' | 'shared' | 'none';
 }
 
 /**
@@ -52,6 +57,7 @@ interface ProvisionSignupRpcResult {
   tenantId: string;
   slug: string;
   groupId?: string;
+  trialMode?: string;
 }
 
 export function createSignupService(supabase: SupabaseClient) {
@@ -88,7 +94,11 @@ export function createSignupService(supabase: SupabaseClient) {
       throw new ServiceError('Erreur provisionnement: reponse invalide', 'INTERNAL');
     }
 
-    return { tenantId: row.tenantId, slug: row.slug };
+    // Modification de ce fichier protege approuvee par le proprietaire le
+    // 2026-11-14 (P-05, point L5 uniquement): transmettre trialMode.
+    const trialMode: 'started' | 'shared' | 'none' =
+      row.trialMode === 'none' || row.trialMode === 'shared' ? row.trialMode : 'started';
+    return { tenantId: row.tenantId, slug: row.slug, trialMode };
   }
 
   return {
@@ -229,7 +239,12 @@ export function createSignupService(supabase: SupabaseClient) {
       // delivery fails, emailDelivered=false is surfaced to the UI, which shows
       // a warning and offers the "Resend confirmation" action (POST
       // /api/resend-confirmation, which re-attempts via the same channel).
-      return { slug: tenant.slug, tenantId: tenant.tenantId, emailDelivered };
+      return {
+        slug: tenant.slug,
+        tenantId: tenant.tenantId,
+        emailDelivered,
+        trialMode: tenant.trialMode,
+      };
     },
 
     /**

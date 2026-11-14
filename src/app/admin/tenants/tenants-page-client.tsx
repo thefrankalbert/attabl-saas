@@ -511,7 +511,10 @@ export default function TenantsPageClient({
 
       {showWizard && (
         <AddRestaurantWizard
-          onClose={() => setShowWizard(false)}
+          onClose={() => {
+            setShowWizard(false);
+            void refresh();
+          }}
           onSuccess={(slug) => {
             setShowWizard(false);
             router.push(`/sites/${slug}/admin`);

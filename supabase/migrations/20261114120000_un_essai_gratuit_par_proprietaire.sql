@@ -35,6 +35,11 @@
 -- suppression du compte. Limite connue: un autre e-mail reste un autre
 -- proprietaire (les alias +x et les points Gmail ne sont pas fusionnes).
 --
+-- Limites connues: (a) changer d'e-mail apres l'inscription contourne le registre
+-- (la cle est celle de l'e-mail au moment de la decision); (b) decide_owner_trial
+-- leve 'owner_without_email' (SQLSTATE 22023) si le compte n'a pas d'e-mail:
+-- aucun essai n'est accorde dans ce cas, et la creation echoue.
+--
 -- ATTENTION donnees existantes (L6): le retro-remplissage marque l'e-mail de
 -- CHAQUE proprietaire existant comme ayant deja consomme son essai (compte
 -- confirme ou non au moment de la migration: seuls les comptes confirmes comptent).
@@ -342,12 +347,20 @@ DECLARE
   v_row auth.users;
 BEGIN
   v_row := CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
-  IF v_row.email_confirmed_at IS NOT NULL AND v_row.email IS NOT NULL THEN
-    UPDATE public.owner_trial_ledger
-       SET confirmed_at = coalesce(confirmed_at, now())
-     WHERE email_key = lower(btrim(v_row.email))
-       AND first_user_id = v_row.id;
-  END IF;
+  -- Ce declencheur est greffe sur auth.users: il ne doit JAMAIS faire echouer
+  -- une confirmation ou une suppression de compte (GoTrue). Toute erreur est
+  -- journalisee en avertissement et la ligne d'origine est toujours rendue.
+  BEGIN
+    IF v_row.email_confirmed_at IS NOT NULL AND v_row.email IS NOT NULL THEN
+      UPDATE public.owner_trial_ledger
+         SET confirmed_at = now()
+       WHERE email_key = lower(btrim(v_row.email))
+         AND first_user_id = v_row.id
+         AND confirmed_at IS NULL;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'owner_trial_ledger_sync: %', SQLERRM;
+  END;
   RETURN v_row;
 END;
 $$;
@@ -357,7 +370,9 @@ REVOKE ALL ON FUNCTION public.owner_trial_ledger_sync_confirmation() FROM PUBLIC
 DROP TRIGGER IF EXISTS tg_owner_trial_ledger_confirm_upd ON auth.users;
 CREATE TRIGGER tg_owner_trial_ledger_confirm_upd
   AFTER UPDATE OF email_confirmed_at ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.owner_trial_ledger_sync_confirmation();
+  FOR EACH ROW
+  WHEN (OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL)
+  EXECUTE FUNCTION public.owner_trial_ledger_sync_confirmation();
 
 DROP TRIGGER IF EXISTS tg_owner_trial_ledger_confirm_del ON auth.users;
 CREATE TRIGGER tg_owner_trial_ledger_confirm_del
