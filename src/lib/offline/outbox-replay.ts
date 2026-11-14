@@ -13,9 +13,22 @@ import type { ReplayOutcome } from './outbox';
 /** Background Sync tag the SW listens on to drain the outbox on reconnect. */
 export const OUTBOX_SYNC_TAG = 'attabl-outbox';
 
+/** Route de commande du convive, sans session. */
+export const GUEST_ORDER_ENDPOINT = '/api/orders';
+
 /** HTTP status -> what the outbox should do with the entry. */
-export function classifyStatus(status: number): 'success' | 'permanent' | 'retry' {
+export function classifyStatus(
+  status: number,
+  endpoint?: string,
+): 'success' | 'permanent' | 'retry' {
   if (status >= 200 && status < 300) return 'success';
+  // La commande CONVIVE (/api/orders) n'a pas de session a rafraichir: un 401
+  // ou un 403 y est un refus metier (restaurant coupe, option hors forfait,
+  // origine refusee). Le garder en file affichait "Commande enregistree" au
+  // client alors que la cuisine ne la recevrait jamais (audit du 2026-11-14).
+  if (endpoint === GUEST_ORDER_ENDPOINT && (status === 401 || status === 403)) {
+    return 'permanent';
+  }
   // Auth failures are transient for a queued order: an offline tablet's session
   // can expire mid-outage, then recover (refresh / re-login). Dropping a real
   // paid order on a 401/403 would lose it - keep and retry instead.
@@ -71,7 +84,7 @@ export async function replayOrderEntry(
     };
   }
 
-  const verdict = classifyStatus(response.status);
+  const verdict = classifyStatus(response.status, entry.endpoint);
   if (verdict === 'success') return { kind: 'success' };
   if (verdict === 'retry') {
     // All server-answered transient statuses (401/403/408/413/429/5xx) count
