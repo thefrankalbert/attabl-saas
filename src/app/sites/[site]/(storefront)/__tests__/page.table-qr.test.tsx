@@ -15,6 +15,7 @@ vi.mock('next/headers', () => ({
 }));
 vi.mock('next-intl/server', () => ({
   getMessages: async () => ({}),
+  getLocale: async () => 'fr-FR',
   getTranslations: async () => (key: string) => key,
 }));
 vi.mock('next-intl', () => ({

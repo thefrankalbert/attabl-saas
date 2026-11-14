@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
+import { getTranslatedContent } from '@/lib/utils/translate';
 import { MenuItem } from '@/types/admin.types';
 
 interface MenuItemsListProps {
@@ -69,11 +70,11 @@ export default function MenuItemsList({
                   et le client lisait les plats, les desserts et les boissons
                   sous le nom de la premiere categorie. Il defile avec la liste
                   et passe sous la barre collante, qui prend le relais.
-                  `category.name` comme les pastilles et la barre collante: les
+                  le meme libelle traduit que les pastilles et la barre collante: les
                   trois doivent dire la meme chose. */}
               {catIndex !== firstRenderedIndex && (
                 <h3 className="bg-white px-4 pt-5 text-[17px] font-bold leading-[1.4] tracking-[-0.4px] text-[#1A1A1A]">
-                  {category.name}
+                  {getTranslatedContent(lang, category.name, category.name_en)}
                 </h3>
               )}
 
