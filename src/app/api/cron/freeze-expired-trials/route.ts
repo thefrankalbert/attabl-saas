@@ -195,8 +195,10 @@ async function executer(request: Request): Promise<Response> {
     // planifiees, et les deux sont prises (ce cron et `reconcile-payments`). Une
     // troisieme entree dans vercel.json ferait echouer le deploiement. Plutot
     // qu'un fichier de plus qui ne tournerait jamais, la purge s'accroche au
-    // passage de 02h00. Quand le projet passera en Pro, lui donner sa propre
-    // ligne dans vercel.json et retirer cet appel.
+    // passage de 02h00. Le projet est passe en Pro (verifie le 2026-11-15) et
+    // la limite de DEUX taches ne s'applique plus: les rappels Flutterwave ont
+    // deja leur propre ligne (`flutterwave-renewals`). La purge reste ici, sans
+    // changement de comportement: lui donner sa propre ligne est un lot a part.
     //
     // Elle ne doit JAMAIS faire echouer le gel: ce sont deux obligations
     // distinctes, et un restaurant qui ne paie plus doit etre gele meme si la

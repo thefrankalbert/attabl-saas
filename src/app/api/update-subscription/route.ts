@@ -8,6 +8,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { updateSubscriptionSchema } from '@/lib/validations/checkout.schema';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
+import { refuseIfPaidByFlutterwave } from '@/lib/billing/flutterwave/guard';
 
 export async function POST(request: Request) {
   try {
@@ -72,6 +73,10 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+
+    // Deja paye par Flutterwave (mobile money, carte): pas de changement de plan Stripe.
+    const refusFlutterwave = await refuseIfPaidByFlutterwave(tenant.id);
+    if (refusFlutterwave) return refusFlutterwave;
 
     // Membership + role verified above with the session client: the Stripe id
     // is now read with the service role (column not readable by `authenticated`).

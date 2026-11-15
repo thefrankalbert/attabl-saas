@@ -44,6 +44,13 @@ vi.mock('@/lib/billing/checkout-tenant', () => ({
   resolveCheckoutTenant: (...args: unknown[]) => mockResolveCheckoutTenant(...(args as [unknown])),
 }));
 
+// Garde Flutterwave: lit la base en service_role (`server-only`), donc remplacee ici.
+// La regle elle-meme est testee a part (flutterwave-guard.test.ts).
+const mockRefuseFlutterwave = vi.fn(async (): Promise<Response | null> => null);
+vi.mock('@/lib/billing/flutterwave/guard', () => ({
+  refuseIfPaidByFlutterwave: () => mockRefuseFlutterwave(),
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -278,6 +285,18 @@ describe('POST /api/create-checkout-session', () => {
     expect(response.status).toBe(200);
     expect(json.sessionId).toBe('cs_test_session_123');
     expect(json.url).toBe('https://checkout.stripe.com/pay/cs_test_session_123');
+  });
+
+  it('refuse (409) un restaurant deja paye par Flutterwave, sans ouvrir de session Stripe', async () => {
+    setupAuthenticatedMocks();
+    mockRefuseFlutterwave.mockResolvedValueOnce(
+      Response.json({ code: 'EXISTING_FLUTTERWAVE_SUBSCRIPTION' }, { status: 409 }),
+    );
+
+    const response = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(response.status).toBe(409);
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   // 7. Stripe error -> 500

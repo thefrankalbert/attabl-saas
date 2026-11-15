@@ -95,6 +95,8 @@ import * as menuItems from '@/app/actions/menu-items';
 import * as menus from '@/app/actions/menus';
 import * as modifiers from '@/app/actions/modifiers';
 import * as paymentMethods from '@/app/actions/payment-methods';
+import * as reminders from '@/app/actions/reminders';
+import { DEFAULT_REMINDER_SETTINGS } from '@/lib/validations/reminders.schema';
 import * as qrDesign from '@/app/actions/qr-design';
 import * as stockCount from '@/app/actions/stock-count';
 import * as suggestions from '@/app/actions/suggestions';
@@ -212,6 +214,11 @@ const writes: Call[] = [
 
   ['actionUpdatePaymentMethods', () => paymentMethods.actionUpdatePaymentMethods(['cash'])],
 
+  [
+    'actionUpdateReminderSettings',
+    () => reminders.actionUpdateReminderSettings(DEFAULT_REMINDER_SETTINGS),
+  ],
+
   ['actionSaveQrDesign', () => qrDesign.actionSaveQrDesign({})],
   ['actionDeleteQrDesign', () => qrDesign.actionDeleteQrDesign(X)],
   ['actionAssignQrDesign', () => qrDesign.actionAssignQrDesign({})],
@@ -296,7 +303,8 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionListHouseAccounts',
     ]);
     // Retirer ou desactiver un membre reste permis restaurant coupe (securite).
-    const stayOpen = new Set(['actionDeleteAdminUser']);
+    // Couper un rappel pour soi: etat personnel, comme "lu" (notifications.ts).
+    const stayOpen = new Set(['actionDeleteAdminUser', 'actionSetReminderMute']);
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.
     const lockedElsewhere = new Set([

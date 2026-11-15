@@ -278,8 +278,16 @@ describe('classement de toutes les routes API', () => {
     'verify-checkout',
     'invoices',
     'webhooks/stripe',
+    // Paiement mobile money / carte: necessaire pour payer et rouvrir un restaurant gele.
+    'billing/flutterwave/checkout',
+    'billing/flutterwave/confirm',
+    'webhooks/flutterwave',
+    'cron/flutterwave-renewals',
+    'cron/flutterwave-reconcile',
     'cron/freeze-expired-trials',
     'cron/reconcile-payments',
+    // Ne lit que les restaurants actifs (is_active, suspended_at), n'ecrit que ses rappels.
+    'cron/reminders',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

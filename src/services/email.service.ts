@@ -21,6 +21,7 @@ import {
   buildTenthOrderTriggerEmail,
   buildTrialIdleEmail,
   buildTrialEndgameEmail,
+  buildRenewalReminderEmail,
 } from './email.templates';
 import type {
   EmailResult,
@@ -33,6 +34,7 @@ import type {
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
+  RenewalReminderEmailData,
 } from './email.types';
 
 export type { EmailService } from './email.types';
@@ -172,6 +174,14 @@ export function createEmailService(): EmailService {
       data: { restaurantName: string; dashboardUrl: string },
     ): Promise<EmailResult> {
       const { subject, html, text } = buildTrialIdleEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendRenewalReminderEmail(
+      to: string,
+      data: RenewalReminderEmailData,
+    ): Promise<EmailResult> {
+      const { subject, html, text } = buildRenewalReminderEmail(data);
       return send(to, subject, html, text);
     },
 

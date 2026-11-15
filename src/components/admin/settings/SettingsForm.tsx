@@ -24,6 +24,8 @@ import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
 import SettingsOpeningHours from '@/components/features/settings/SettingsOpeningHours';
 import { PushOptIn } from '@/components/admin/PushOptIn';
+import { ReminderSettingsPanel } from './ReminderSettingsPanel';
+import type { ReminderSettings } from '@/lib/validations/reminders.schema';
 
 // --- Types -------------------------------------------------
 
@@ -31,6 +33,7 @@ interface SettingsFormProps {
   tenant: SettingsTenant;
   initialPaymentMethods: string[];
   initialTab: SettingsTab;
+  initialReminderSettings: ReminderSettings;
 }
 
 const MANAGEMENT_BTN_CLS =
@@ -44,11 +47,17 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'sounds', labelKey: 'tabSounds' },
   { key: 'security', labelKey: 'tabSecurity' },
   { key: 'contact', labelKey: 'tabContact' },
+  { key: 'reminders', labelKey: 'tabReminders' },
 ];
 
 // --- Main Component ----------------------------------------
 
-export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: SettingsFormProps) {
+export function SettingsForm({
+  tenant,
+  initialPaymentMethods,
+  initialTab,
+  initialReminderSettings,
+}: SettingsFormProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
   const pathname = usePathname();
@@ -203,6 +212,13 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
 
               {/* Contact tab */}
               <SettingsContact form={form} t={t} />
+
+              {/* Reminders tab: its own save (the reminders live outside this form). */}
+              <ReminderSettingsPanel
+                initial={initialReminderSettings}
+                hasOpeningHours={Object.keys(tenant.opening_hours ?? {}).length > 0}
+                canEdit={canEdit}
+              />
             </fieldset>
           </div>
         </Tabs>

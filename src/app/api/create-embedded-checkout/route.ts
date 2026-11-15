@@ -9,6 +9,7 @@ import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { resolveCheckoutTenant } from '@/lib/billing/checkout-tenant';
 import { classifyExistingSubscription } from '@/lib/billing/existing-subscription';
+import { refuseIfPaidByFlutterwave } from '@/lib/billing/flutterwave/guard';
 import {
   clearStaleSubscriptionId,
   retrieveStripeSubscriptionStatus,
@@ -141,6 +142,10 @@ export async function POST(request: Request) {
         { status: resolved.status },
       );
     }
+
+    // Deja paye par Flutterwave (mobile money, carte): pas de second abonnement.
+    const refusFlutterwave = await refuseIfPaidByFlutterwave(resolved.tenant.tenant_id);
+    if (refusFlutterwave) return refusFlutterwave;
 
     const tenantData = resolved.tenant.tenants;
     // Un abonnement MORT laissait son identifiant en base, et cette route
