@@ -109,6 +109,8 @@ export interface OnboardingState {
   tenantName: string;
   step: number;
   completed: boolean;
+  /** Etablissement gele a la naissance (essai deja consomme): abonnement requis. */
+  needsSubscription: boolean;
   data: OnboardingDraft;
 }
 

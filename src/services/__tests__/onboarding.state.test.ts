@@ -75,6 +75,22 @@ describe('getOnboardingState', () => {
     expect(s.completed).toBe(false);
   });
 
+  it('annonce un abonnement requis seulement pour un gel trial_expired (P-05)', async () => {
+    tenantResult.data = tenant({ subscription_status: 'frozen', freeze_reason: 'trial_expired' });
+    expect((await getOnboardingState(userClient(), 't1')).needsSubscription).toBe(true);
+  });
+
+  it('temoin: essai en cours, ou autre cause de gel, ne declenche pas le message', async () => {
+    for (const over of [
+      { subscription_status: 'trial', freeze_reason: null },
+      { subscription_status: 'frozen', freeze_reason: 'dispute' },
+      {},
+    ]) {
+      tenantResult.data = tenant(over);
+      expect((await getOnboardingState(userClient(), 't1')).needsSubscription).toBe(false);
+    }
+  });
+
   it('garde le choix enregistre dans le brouillon', async () => {
     progressResult.data = {
       step: 1,

@@ -15,9 +15,13 @@ interface AddRestaurantInput {
   plan: string;
 }
 
+export type TrialMode = 'started' | 'shared' | 'none';
+
 interface AddRestaurantResult {
   tenantId: string;
   slug: string;
+  /** 'none' = pas d'essai: l'etablissement demande un abonnement des sa creation. */
+  trialMode: TrialMode;
 }
 
 /**
@@ -98,12 +102,14 @@ export function createRestaurantGroupService(supabase: SupabaseClient): Restaura
         throw new ServiceError('Erreur lors de la creation du restaurant', 'INTERNAL', error);
       }
 
-      const result = data as { tenantId?: string; slug?: string } | null;
+      const result = data as { tenantId?: string; slug?: string; trialMode?: string } | null;
       if (!result?.tenantId || !result?.slug) {
         throw new ServiceError('Erreur création restaurant: Données manquantes', 'INTERNAL');
       }
 
-      return { tenantId: result.tenantId, slug: result.slug };
+      const trialMode: TrialMode =
+        result.trialMode === 'none' || result.trialMode === 'shared' ? result.trialMode : 'started';
+      return { tenantId: result.tenantId, slug: result.slug, trialMode };
     },
 
     /**

@@ -32,6 +32,7 @@ export function useOnboarding() {
    * fields, the first keystroke would auto-save them over the real draft.
    */
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [needsSubscription, setNeedsSubscription] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
@@ -163,6 +164,7 @@ export function useOnboarding() {
             leaveToAdmin(state.tenantSlug);
             return;
           }
+          setNeedsSubscription(state.needsSubscription === true);
           const restoredData = state.data || {};
 
           // Extract navigation position metadata from the draft (if saved)
@@ -542,6 +544,7 @@ export function useOnboarding() {
     subScreen,
     loading,
     loadError,
+    needsSubscription,
     saving,
     error,
     setError,
