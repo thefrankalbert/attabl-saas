@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { runApiRoute } from '@/lib/api-route-context';
 import { surveillerCron } from '@/lib/cron-monitor';
+import { CRON_JOBS } from '@/lib/cron-jobs';
 import { runFlutterwaveRenewals } from '@/lib/billing/flutterwave/wiring';
 
 /**
@@ -13,7 +14,9 @@ import { runFlutterwaveRenewals } from '@/lib/billing/flutterwave/wiring';
  */
 export async function GET(request: Request) {
   // L'horaire doit rester identique a celui de vercel.json.
-  return surveillerCron(request, 'flutterwave-renewals', '0 2 * * *', () => executer(request));
+  return surveillerCron(request, 'flutterwave-renewals', CRON_JOBS['flutterwave-renewals'], () =>
+    executer(request),
+  );
 }
 
 async function executer(request: Request): Promise<Response> {

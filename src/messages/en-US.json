@@ -1700,7 +1700,32 @@
       "typeToConfirm": "Type \"{name}\" to confirm",
       "cancel": "Cancel",
       "working": "Working...",
-      "done": "Done"
+      "done": "Done",
+      "settings": {
+        "tab": "Settings",
+        "cronTitle": "Scheduled jobs",
+        "cronIntro": "Every run of a job is recorded here. It proves the job runs in production.",
+        "cronUnavailable": "Job status cannot be read right now.",
+        "jobs": {
+          "reminders": "Reminders (every minute)",
+          "freeze-expired-trials": "Freeze expired trials (nightly)",
+          "reconcile-payments": "Payment reconciliation (nightly)",
+          "flutterwave-renewals": "Flutterwave renewals (nightly)",
+          "flutterwave-reconcile": "Flutterwave reconciliation (every 6 h)"
+        },
+        "running": "Running normally",
+        "silent": "Not running anymore: check it",
+        "lastError": "Last run failed",
+        "neverSeen": "Never seen running",
+        "lastRun": "Last run: {date} ({ms} ms)",
+        "expected": "Expected schedule (UTC): {schedule}",
+        "supportTitle": "Support number",
+        "supportIntro": "The WhatsApp and phone number shown on the help page of every restaurant.",
+        "supportLabel": "Number with country code",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Support number saved"
+      }
     },
     "tenants": {
       "commandCenter": {
@@ -2676,7 +2701,6 @@
     "whatsappMessage": "Hello ATTABL, I need help with my restaurant {restaurant}.",
     "callCta": "Call"
   },
-
   "notifications": {
     "muteError": "Could not change this reminder",
     "muteReminder": "Stop this reminder",
@@ -2709,6 +2733,13 @@
       "ios-a-installer": "On iPhone and iPad, first add ATTABL to your home screen (Share button, then Add to Home Screen). Notifications will then be available.",
       "navigateur": "This browser does not support push notifications. Try Chrome, Edge or Firefox.",
       "service-worker": "Notifications could not start on this device. Reload the page, and contact support if it persists."
+    },
+    "test": "Test the alert",
+    "testSent": "Test alert sent. Your phone should vibrate and keep the message on screen. On iPhone, vibration follows the device sound and vibration settings.",
+    "testErrors": {
+      "noDevice": "No device subscribed to this restaurant received the test. Turn on notifications on this phone, then try again.",
+      "tooMany": "Too many tries at once. Wait a minute.",
+      "failed": "Sending the test failed. Try again in a moment."
     }
   },
   "sidebar": {

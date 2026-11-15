@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { runApiRoute } from '@/lib/api-route-context';
 import { surveillerCron } from '@/lib/cron-monitor';
+import { CRON_JOBS } from '@/lib/cron-jobs';
 import {
   FREEZE_REASONS,
   updateTolerantToMissingFreezeReason,
@@ -50,7 +51,9 @@ const TRIAL_FREEZE_DELAY_HOURS = 12;
 
 export async function GET(request: Request) {
   // L'horaire doit rester identique a celui de vercel.json.
-  return surveillerCron(request, 'freeze-expired-trials', '0 2 * * *', () => executer(request));
+  return surveillerCron(request, 'freeze-expired-trials', CRON_JOBS['freeze-expired-trials'], () =>
+    executer(request),
+  );
 }
 
 async function executer(request: Request): Promise<Response> {

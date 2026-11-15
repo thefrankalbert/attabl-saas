@@ -1700,7 +1700,32 @@
       "typeToConfirm": "Tapez \"{name}\" pour confirmer",
       "cancel": "Annuler",
       "working": "En cours...",
-      "done": "Action effectuée"
+      "done": "Action effectuée",
+      "settings": {
+        "tab": "Réglages",
+        "cronTitle": "Tâches planifiées",
+        "cronIntro": "Chaque passage d'une tâche est noté ici. C'est la preuve qu'elle tourne en production.",
+        "cronUnavailable": "Impossible de lire l'état des tâches pour le moment.",
+        "jobs": {
+          "reminders": "Rappels (chaque minute)",
+          "freeze-expired-trials": "Gel des essais expirés (chaque nuit)",
+          "reconcile-payments": "Rapprochement des paiements (chaque nuit)",
+          "flutterwave-renewals": "Renouvellements Flutterwave (chaque nuit)",
+          "flutterwave-reconcile": "Rapprochement Flutterwave (toutes les 6 h)"
+        },
+        "running": "Tourne normalement",
+        "silent": "Ne passe plus : à vérifier",
+        "lastError": "Dernier passage en erreur",
+        "neverSeen": "Jamais vue passer",
+        "lastRun": "Dernier passage : {date} ({ms} ms)",
+        "expected": "Fréquence prévue (UTC) : {schedule}",
+        "supportTitle": "Numéro du support",
+        "supportIntro": "Le numéro WhatsApp et d'appel affiché sur la page d'aide de tous les restaurants.",
+        "supportLabel": "Numéro avec indicatif",
+        "save": "Enregistrer",
+        "saving": "Enregistrement...",
+        "saved": "Numéro du support enregistré"
+      }
     },
     "tenants": {
       "commandCenter": {
@@ -2676,7 +2701,6 @@
     "whatsappMessage": "Bonjour ATTABL, j'ai besoin d'aide pour mon restaurant {restaurant}.",
     "callCta": "Appeler"
   },
-
   "notifications": {
     "muteError": "Impossible de modifier ce rappel",
     "muteReminder": "Ne plus recevoir ce rappel",
@@ -2709,6 +2733,13 @@
       "ios-a-installer": "Sur iPhone et iPad, ajoutez d'abord ATTABL à votre écran d'accueil (bouton Partager, puis Sur l'écran d'accueil). Les notifications seront alors disponibles.",
       "navigateur": "Ce navigateur ne gere pas les notifications push. Essayez Chrome, Edge ou Firefox.",
       "service-worker": "Les notifications n'ont pas pu démarrer sur cet appareil. Rechargez la page, et si cela persiste contactez le support."
+    },
+    "test": "Tester l'alerte",
+    "testSent": "Alerte de test envoyée. Votre téléphone doit vibrer et garder le message affiché. Sur iPhone, la vibration suit les réglages de son et de vibration de l'appareil.",
+    "testErrors": {
+      "noDevice": "Aucun appareil abonné à ce restaurant n'a reçu le test. Activez les notifications sur ce téléphone, puis réessayez.",
+      "tooMany": "Trop d'essais d'un coup. Attendez une minute.",
+      "failed": "L'envoi du test a échoué. Réessayez dans un instant."
     }
   },
   "sidebar": {

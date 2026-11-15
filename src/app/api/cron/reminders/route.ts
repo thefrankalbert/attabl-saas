@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { runApiRoute } from '@/lib/api-route-context';
 import { surveillerCron } from '@/lib/cron-monitor';
+import { CRON_JOBS } from '@/lib/cron-jobs';
 import { createPushService } from '@/services/push.service';
 import { createReminderService } from '@/services/reminders/reminder.service';
 
@@ -14,7 +15,7 @@ import { createReminderService } from '@/services/reminders/reminder.service';
  */
 export async function GET(request: Request) {
   // L'horaire doit rester identique a celui de vercel.json.
-  return surveillerCron(request, 'reminders', '* * * * *', () => executer(request));
+  return surveillerCron(request, 'reminders', CRON_JOBS['reminders'], () => executer(request));
 }
 
 async function executer(request: Request): Promise<Response> {

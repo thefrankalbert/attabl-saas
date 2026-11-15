@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { runApiRoute } from '@/lib/api-route-context';
 import { surveillerCron } from '@/lib/cron-monitor';
+import { CRON_JOBS } from '@/lib/cron-jobs';
 
 const DEFAULT_MAX_AGE_MINUTES = 30;
 
@@ -11,7 +12,9 @@ const DEFAULT_MAX_AGE_MINUTES = 30;
 // run - keep this as GET so the scheduled job actually fires.
 export async function GET(request: Request) {
   // L'horaire doit rester identique a celui de vercel.json.
-  return surveillerCron(request, 'reconcile-payments', '0 3 * * *', () => executer(request));
+  return surveillerCron(request, 'reconcile-payments', CRON_JOBS['reconcile-payments'], () =>
+    executer(request),
+  );
 }
 
 async function executer(request: Request): Promise<Response> {

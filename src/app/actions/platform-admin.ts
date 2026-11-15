@@ -6,7 +6,12 @@ import { requireSuperAdmin } from '@/lib/auth/require-super-admin';
 import { AuthError } from '@/lib/auth/get-session';
 import { ServiceError } from '@/services/errors';
 import { createPlatformAdminService } from '@/services/platform-admin.service';
-import { tenantActionSchema, adminUserActionSchema } from '@/lib/validations/platform-admin.schema';
+import {
+  tenantActionSchema,
+  adminUserActionSchema,
+  supportContactSchema,
+} from '@/lib/validations/platform-admin.schema';
+import { saveSupportContact } from '@/services/platform-settings.service';
 import { domainVerifySchema } from '@/lib/validations/domain.schema';
 import { CACHE_TAG_TENANT_CONFIG, CACHE_TAG_TENANT_DOMAIN } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
@@ -242,5 +247,22 @@ export async function actionImpersonateTenant(tenantId: string): Promise<Imperso
     return { success: true, slug: data?.slug };
   } catch (err) {
     return { error: toMessage(err, "Echec de l'acces") };
+  }
+}
+
+/** Numero du support affiche sur la page d'aide de tous les restaurants. */
+export async function actionUpdateSupportContact(phone: string): Promise<ActionResponse> {
+  try {
+    const { user } = await requireSuperAdmin();
+    const parsed = supportContactSchema.safeParse({ phone });
+    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Numero invalide' };
+    await saveSupportContact(createAdminClient(), parsed.data.phone, {
+      userId: user.id,
+      email: user.email,
+    });
+    revalidatePath('/admin/platform');
+    return { success: true };
+  } catch (err) {
+    return { error: toMessage(err, 'Enregistrement impossible') };
   }
 }
