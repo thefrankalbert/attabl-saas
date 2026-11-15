@@ -98,6 +98,11 @@ vi.mock('@/lib/plans/features', async (importActual) => ({
 }));
 
 // --- Menu items query mock -------------------------------------
+const mockAssignIfFree = vi.fn();
+vi.mock('@/services/assignment.service', () => ({
+  createAssignmentService: vi.fn(() => ({ assignIfFree: mockAssignIfFree })),
+}));
+
 const mockFetchMenuItems = vi.fn();
 vi.mock('@/lib/menu-items-query', () => ({
   fetchMenuItemsByIds: (...args: unknown[]) => mockFetchMenuItems(...args),
@@ -332,6 +337,63 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
    * caisse (`pos.use`) mais n'encaisse pas (`orders.pay`). Avant, `pos.use`
    * suffisait pour creer la commande ET l'inscrire payee dans `payments`.
    */
+  describe('table rattachee au serveur (decision du 14/11/2026)', () => {
+    afterEach(() => {
+      mockAdminUserRow.data.role = 'cashier';
+      ordersChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    });
+
+    const placeOn = (tableId: string | null) => {
+      ordersChain.maybeSingle = vi.fn().mockResolvedValue({
+        data: tableId ? { table_id: tableId } : null,
+        error: null,
+      });
+    };
+
+    it('a waiter dine-in ticket assigns the table to that waiter', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+      placeOn('tb-5');
+      const { POST } = await import('@/app/api/orders/pos/route');
+
+      const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+
+      expect(status).toBe(200);
+      expect(mockAssignIfFree).toHaveBeenCalledWith('tenant-abc', 'tb-5', 'server-1');
+    });
+
+    it('a cashier ticket does not touch assignments', async () => {
+      placeOn('tb-5');
+      const { POST } = await import('@/app/api/orders/pos/route');
+
+      await POST(createMockRequest(validPosBody()));
+
+      expect(mockAssignIfFree).not.toHaveBeenCalled();
+    });
+
+    it('a waiter takeaway ticket does not touch assignments', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+      placeOn('tb-5');
+      const { POST } = await import('@/app/api/orders/pos/route');
+
+      await POST(
+        createMockRequest({ ...validPosBody(), service_type: 'takeaway', table_number: undefined }),
+      );
+
+      expect(mockAssignIfFree).not.toHaveBeenCalled();
+    });
+
+    it('an assignment failure never fails the order', async () => {
+      mockAdminUserRow.data.role = 'waiter';
+      placeOn('tb-5');
+      mockAssignIfFree.mockRejectedValueOnce(new Error('db down'));
+      const { POST } = await import('@/app/api/orders/pos/route');
+
+      const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+
+      expect(status).toBe(200);
+    });
+  });
+
   describe('argent a la caisse', () => {
     afterEach(() => {
       mockAdminUserRow.data.role = 'cashier';

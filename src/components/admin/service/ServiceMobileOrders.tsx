@@ -3,6 +3,7 @@
 import { CheckCircle2, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatTimeHHMM, getElapsedMinutes } from './service-status';
+import { orderDisplayLabel } from '@/components/admin/orders/order-display-label';
 import type { Order } from '@/types/admin.types';
 
 interface Props {
@@ -21,7 +22,7 @@ interface Props {
 
 export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered }: Props) {
   return (
-    <section className="shrink-0 border-t border-app-border/50 bg-app-card px-4 py-3 lg:hidden">
+    <section className="shrink-0 border-b border-app-border/50 bg-app-card px-4 py-3 lg:hidden">
       <header className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[1.2px] text-app-text-muted">
         <Utensils className="h-3 w-3 text-status-warning" />
         <span>{labels.title}</span>
@@ -35,7 +36,7 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
           {labels.empty}
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5 max-h-[40vh] overflow-y-auto [scrollbar-width:none]">
+        <div className="flex flex-col gap-1.5">
           {readyOrders.map((order) => {
             const items = order.items ?? [];
             const minutes = getElapsedMinutes(order.created_at, now);
@@ -47,9 +48,13 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-semibold text-app-text">
-                      {labels.tableShort} {order.table_number}
+                      {/* No table (dine-in sent without one): a bare "T." told the waiter
+                          nothing, the order number at least identifies the ticket. */}
+                      {order.table_number
+                        ? `${labels.tableShort} ${order.table_number}`
+                        : orderDisplayLabel(order)}
                     </span>
-                    <span className="font-mono text-[10px] text-app-text-muted">
+                    <span className="text-[10px] tabular-nums text-app-text-muted">
                       {formatTimeHHMM(order.created_at)} - {labels.minutesAgoShort(minutes)}
                     </span>
                   </div>

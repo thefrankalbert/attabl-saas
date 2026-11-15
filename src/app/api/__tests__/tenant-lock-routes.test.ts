@@ -286,6 +286,8 @@ describe('classement de toutes les routes API', () => {
     'cron/flutterwave-reconcile',
     'cron/freeze-expired-trials',
     'cron/reconcile-payments',
+    // Ne lit que les restaurants actifs (is_active, suspended_at), n'ecrit que ses rappels.
+    'cron/reminders',
     'dev/simulate-subscription',
     // Publiques / authentification / convive.
     'auth/[...supabase]',

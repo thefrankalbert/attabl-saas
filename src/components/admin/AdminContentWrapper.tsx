@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { isImmersivePage } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { BottomNavSpacer } from '@/components/admin/bottom-nav-context';
 
 interface AdminContentWrapperProps {
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
       <div className="flex-1 min-h-0 w-full flex flex-col">
         {chrome}
         {children}
+        <BottomNavSpacer />
       </div>
     );
   }
@@ -45,7 +47,12 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   return (
     <div
       className={cn(
-        'flex-1 min-h-0 w-full flex flex-col overflow-hidden',
+        // overflow-x-clip, NOT overflow-hidden: `hidden` also cut the vertical
+        // overflow, so the end of a page taller than the screen could not be
+        // reached at all (measured 2026-11-14: Permissions lost its last rows at
+        // every width, Tables and Service on phones). `clip` keeps sideways
+        // overflow out while main#main-content scrolls the rest (rule 12).
+        'flex-1 min-h-0 w-full flex flex-col overflow-x-clip',
         isFullBleed
           ? 'px-2 py-2 sm:px-3 sm:py-3'
           : 'px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-12 lg:py-10 2xl:px-16 2xl:py-12',
@@ -68,6 +75,9 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
           transition={{ duration, ease: 'easeOut' }}
         >
           {children}
+          {/* After the content, so it stays after the last row even when a long
+              page overflows this column. */}
+          <BottomNavSpacer />
         </motion.div>
       </AnimatePresence>
     </div>

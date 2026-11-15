@@ -318,3 +318,58 @@ describe('AssignmentService', () => {
     });
   });
 });
+
+describe('assignIfFree (waiter takes the table of the order they send)', () => {
+  /** table_assignments read answers `read`; the filters it received are recorded. */
+  function clientReading(read: { data: unknown; error: unknown }) {
+    const filters: [string, unknown][] = [];
+    const chain = {
+      select: () => chain,
+      eq: (c: string, v: unknown) => (filters.push([c, v]), chain),
+      is: (c: string, v: unknown) => (filters.push([c, v]), chain),
+      limit: () => chain,
+      maybeSingle: async () => read,
+    };
+    return { client: { from: () => chain } as unknown as SupabaseClient, filters };
+  }
+
+  it('assigns the waiter when the table has no active server', async () => {
+    const { client, filters } = clientReading({ data: null, error: null });
+    const svc = createAssignmentService(client);
+    const assign = vi.spyOn(svc, 'assignServerToTable').mockResolvedValue({} as never);
+    await expect(svc.assignIfFree('t1', 'table-5', 'waiter-1')).resolves.toBe(true);
+    expect(assign).toHaveBeenCalledWith('t1', 'table-5', 'waiter-1');
+    expect(filters).toEqual([
+      ['tenant_id', 't1'],
+      ['table_id', 'table-5'],
+      ['ended_at', null],
+    ]);
+  });
+
+  it('leaves a table that already has a server untouched', async () => {
+    const { client } = clientReading({ data: { id: 'a-1' }, error: null });
+    const svc = createAssignmentService(client);
+    const assign = vi.spyOn(svc, 'assignServerToTable').mockResolvedValue({} as never);
+    await expect(svc.assignIfFree('t1', 'table-5', 'waiter-1')).resolves.toBe(false);
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('a failed read is NOT a free table: no second server stacked', async () => {
+    const { client } = clientReading({ data: null, error: { message: 'timeout' } });
+    const svc = createAssignmentService(client);
+    const assign = vi.spyOn(svc, 'assignServerToTable').mockResolvedValue({} as never);
+    await expect(svc.assignIfFree('t1', 'table-5', 'waiter-1')).rejects.toBeInstanceOf(
+      ServiceError,
+    );
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('propagates an assignment failure so the caller can log it', async () => {
+    const { client } = clientReading({ data: null, error: null });
+    const svc = createAssignmentService(client);
+    vi.spyOn(svc, 'assignServerToTable').mockRejectedValue(
+      new ServiceError('Table introuvable', 'NOT_FOUND'),
+    );
+    await expect(svc.assignIfFree('t1', 'gone', 'waiter-1')).rejects.toBeInstanceOf(ServiceError);
+  });
+});

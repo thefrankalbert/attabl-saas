@@ -38,7 +38,7 @@ select is(
        and not has_column_privilege('authenticated', 'public.tenants', c.attname, 'SELECT')
      order by 1
   ),
-  array['activation_events', 'stripe_customer_id', 'stripe_subscription_id']::text[],
+  array['activation_events', 'anonymized_at', 'stripe_customer_id', 'stripe_subscription_id']::text[],
   'tenants: seules les colonnes privees sont illisibles pour authenticated (nouvelle colonne = GRANT SELECT a authenticated)'
 );
 

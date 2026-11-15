@@ -18,14 +18,10 @@ import PaymentModal from '@/components/admin/PaymentModal';
 import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { usePermissions } from '@/hooks/usePermissions';
-import { ReassignTableDialog } from '@/components/admin/service/ReassignTableDialog';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
-import { createClient } from '@/lib/supabase/client';
-import { createOrderService } from '@/services/order.service';
 import { useToast } from '@/components/ui/use-toast';
-import { logger } from '@/lib/logger';
-import type { Order, Table } from '@/types/admin.types';
+import type { Order } from '@/types/admin.types';
 
 interface POSClientProps {
   tenantId: string;
@@ -58,48 +54,42 @@ export default function POSClient({ tenantId }: POSClientProps) {
   );
 
   const ts = useTranslations('shortcuts');
-  const tsvc = useTranslations('service');
-  const { toast } = useToast();
   const pos = usePOSData(tenantId);
 
-  // -- Clicking an occupied table in the picker: move its current order to a
-  // free table instead of stacking a new order on top of the open session. --
-  const [reassignOrderId, setReassignOrderId] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const freeTables = useMemo(
-    () =>
-      pos.allTables
-        .filter(
-          (tbl) =>
-            !pos.occupiedTableNumbers.has(tbl.table_number) &&
-            !pos.occupiedTableNumbers.has(tbl.display_name),
-        )
-        .map((tbl) => ({
-          tableNumber: tbl.table_number,
-          label: tbl.display_name || tbl.table_number,
-        })),
-    [pos.allTables, pos.occupiedTableNumbers],
-  );
-
-  const handleReassignOccupied = useCallback(
-    async (table: Table) => {
-      try {
-        const orderService = createOrderService(createClient());
-        const order = (await orderService.getCurrentOrderForTable(tenantId, table.id)) as {
-          id?: string;
-        } | null;
-        if (order?.id) {
-          setReassignOrderId(order.id);
-        } else {
-          toast({ title: tsvc('reassignError'), variant: 'destructive' });
-        }
-      } catch (err) {
-        logger.error('POSClient: load occupied table order failed', { err, tableId: table.id });
-        toast({ title: tsvc('reassignError'), variant: 'destructive' });
-      }
-    },
-    [tenantId, toast, tsvc],
-  );
+  // Everything a ticket needs to reach its destination, checked BEFORE the
+  // payment step: the server (or the kitchen table rule) used to refuse it only
+  // after the money was taken. Dine-in needs a table (owner decision
+  // 2026-11-14) - unless no table is configured or loaded (offline) - a
+  // delivery an address, a room service a room number.
+  const destinationReady = useCallback((): boolean => {
+    if (pos.serviceType === 'dine_in' && !pos.selectedTable && pos.allTables.length > 0) {
+      toast({
+        title: t('tableRequired'),
+        description: t('tableRequiredDesc'),
+        variant: 'destructive',
+      });
+      return false;
+    }
+    if (pos.serviceType === 'delivery' && !pos.deliveryAddress.trim()) {
+      toast({ title: t('deliveryAddressRequired'), variant: 'destructive' });
+      return false;
+    }
+    if (pos.serviceType === 'room_service' && !pos.roomNumber.trim()) {
+      toast({ title: t('roomNumberRequired'), variant: 'destructive' });
+      return false;
+    }
+    return true;
+  }, [
+    pos.serviceType,
+    pos.selectedTable,
+    pos.allTables.length,
+    pos.deliveryAddress,
+    pos.roomNumber,
+    toast,
+    t,
+  ]);
 
   // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
@@ -124,11 +114,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         section: 'contextual',
         keys: ['p'],
         action: () => {
-          if (canPay && cart.length > 0) setShowPaymentModal(true);
+          if (canPay && cart.length > 0 && destinationReady()) setShowPaymentModal(true);
         },
       },
     ],
-    [ts, cart, menuItems, addToCart, canPay],
+    [ts, cart, menuItems, addToCart, canPay, destinationReady],
   );
   useContextualShortcuts(shortcuts);
 
@@ -255,7 +245,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   zones={pos.zones}
                   allTables={pos.allTables}
                   occupiedTableNumbers={pos.occupiedTableNumbers}
-                  onReassignOccupied={handleReassignOccupied}
+                  onTablePickerOpen={pos.refreshOccupancy}
                   onUpdateQuantity={pos.updateQuantity}
                   onClearCart={pos.clearCart}
                   onEditNotes={(itemId, currentNotes) => {
@@ -272,8 +262,18 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   couponError={pos.couponError}
                   onValidateCoupon={pos.validateCoupon}
                   onRemoveCoupon={pos.removeCoupon}
-                  onPrintOrder={() => pos.handleOrder('pending')}
-                  onCheckout={canPay ? () => setShowPaymentModal(true) : undefined}
+                  // Refresh "A encaisser" right away: realtime alone misses the new
+                  // unpaid order whenever the websocket is down (weak network).
+                  onPrintOrder={() => {
+                    if (destinationReady()) pos.handleOrder({ onCreated: refreshUnpaid });
+                  }}
+                  onCheckout={
+                    canPay
+                      ? () => {
+                          if (destinationReady()) setShowPaymentModal(true);
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </div>
@@ -308,29 +308,6 @@ export default function POSClient({ tenantId }: POSClientProps) {
               </div>
             )}
 
-            {/* Reassign the occupied table's order to a free one */}
-            <ReassignTableDialog
-              open={reassignOrderId !== null}
-              onOpenChange={(open) => {
-                if (!open) setReassignOrderId(null);
-              }}
-              orderId={reassignOrderId ?? ''}
-              freeTables={freeTables}
-              onReassigned={() => setReassignOrderId(null)}
-              toast={toast}
-              labels={{
-                title: tsvc('reassignTitle'),
-                description: tsvc('reassignDescription'),
-                placeholder: tsvc('reassignPlaceholder'),
-                noFreeTables: tsvc('reassignNoFreeTables'),
-                confirm: tsvc('reassignConfirm'),
-                cancel: tc('cancel'),
-                moving: tsvc('reassignMoving'),
-                success: tsvc('reassignSuccess'),
-                error: tsvc('reassignError'),
-              }}
-            />
-
             {/* Payment Modal Reuse */}
             {canPay && showPaymentModal && (
               <PaymentModal
@@ -350,7 +327,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 }))}
                 currency={pos.currency}
                 onSuccess={(paymentData?: PaymentData) =>
-                  pos.handleOrder('delivered', {
+                  pos.handleOrder({
                     onPaymentModalClose: () => setShowPaymentModal(false),
                     paymentData,
                   })

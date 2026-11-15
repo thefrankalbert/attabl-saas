@@ -1,7 +1,8 @@
 import { headers } from 'next/headers';
 import ClientSettings from '@/components/tenant/ClientSettings';
 import { getCachedTenant } from '@/lib/cache';
-import { computeOpeningState } from '@/lib/opening-hours';
+import { computeOpeningState, localClock } from '@/lib/opening-hours';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import { notFound } from 'next/navigation';
 import type { OpeningHoursDay } from '@/types/admin.types';
 
@@ -16,8 +17,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ site:
   if (!tenant) return notFound();
 
   const now = new Date();
-  const { isOpen } = computeOpeningState(tenant.opening_hours, now);
-  const todaySlot = tenant.opening_hours?.[DAY_KEYS[now.getDay()]];
+  const timeZone = resolveTenantTimezone(tenant);
+  const { isOpen } = computeOpeningState(tenant.opening_hours, now, timeZone);
+  // Le jour DU restaurant, pas celui du serveur (UTC sur Vercel).
+  const todaySlot = tenant.opening_hours?.[DAY_KEYS[localClock(now, timeZone).day]];
   const todayHours = todaySlot ? `${todaySlot.open} - ${todaySlot.close}` : null;
 
   return (

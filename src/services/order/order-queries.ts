@@ -58,9 +58,12 @@ export function createQueryMethods(supabase: SupabaseClient) {
     async listReadyOrdersToday(tenantId: string): Promise<unknown[]> {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
+      // The ready-to-serve cards read `order.items[].name` (OrderItem). Selecting
+      // the raw relation (`order_items`, column `item_name`) left both undefined:
+      // every card showed "0 article" and no dish (measured 2026-11-14).
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_items(*)')
+        .select('*, items:order_items(id, quantity, name:item_name)')
         .eq('tenant_id', tenantId)
         .eq('status', 'ready')
         .gte('created_at', todayStart.toISOString())

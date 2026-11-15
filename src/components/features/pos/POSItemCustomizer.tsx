@@ -174,6 +174,7 @@ export default function POSItemCustomizer({
                       key={modifier.id}
                       type="button"
                       variant="outline"
+                      aria-pressed={isSelected}
                       onClick={() => toggleModifier(modifier.id)}
                       className={cn(
                         'w-full flex items-center justify-between rounded-lg px-3 py-2.5 min-h-[44px] text-sm h-auto',

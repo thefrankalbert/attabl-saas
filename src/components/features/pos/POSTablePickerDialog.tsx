@@ -20,8 +20,6 @@ interface POSTablePickerDialogProps {
   onSelectTable: (tableNumber: string) => void;
   /** table_number of tables that currently hold an OPEN session (occupied). */
   occupiedTableNumbers?: Set<string>;
-  /** Clicking an occupied table routes here (reassign its order) instead of selecting it. */
-  onReassignOccupied?: (table: Table) => void;
 }
 
 export function POSTablePickerDialog({
@@ -34,7 +32,6 @@ export function POSTablePickerDialog({
   selectedTable,
   onSelectTable,
   occupiedTableNumbers,
-  onReassignOccupied,
 }: POSTablePickerDialogProps) {
   const t = useTranslations('pos');
 
@@ -95,11 +92,10 @@ export function POSTablePickerDialog({
                             key={table.id}
                             type="button"
                             variant={isSelected ? 'default' : 'outline'}
-                            onClick={() =>
-                              isOccupiedRaw && onReassignOccupied
-                                ? onReassignOccupied(table)
-                                : onSelectTable(table.table_number)
-                            }
+                            // Owner decision 2026-11-15: an occupied table takes a second
+                            // round (the order joins the table's open bill). Moving a table
+                            // stays on the Service screen.
+                            onClick={() => onSelectTable(table.table_number)}
                             className={cn(
                               'relative flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
                               isSelected

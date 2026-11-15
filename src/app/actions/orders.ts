@@ -12,6 +12,7 @@ import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { createOrderService } from '@/services/order.service';
 import { createPaymentService, type PaymentSummary } from '@/services/payment.service';
 import { createInventoryService } from '@/services/inventory.service';
+import { createOrderReadyService } from '@/services/order-ready.service';
 import { createOrderAnnotationService, type OrderNote } from '@/services/order-annotation.service';
 import type { PaymentStatus } from '@/types/admin.types';
 import { ServiceError } from '@/services/errors';
@@ -313,7 +314,28 @@ export async function actionUpdateOrderStatus(
         });
       }
     } else {
-      await service.updateStatus(parsed.data.orderId, parsed.data.tenantId, parsed.data.status);
+      const changed = await service.updateStatus(
+        parsed.data.orderId,
+        parsed.data.tenantId,
+        parsed.data.status,
+      );
+      // A second tap or an outbox replay is a no-op: no second push.
+      if (changed && parsed.data.status === 'ready') {
+        // Owner decision 2026-11-14: the waiter's phone rings and vibrates when
+        // the kitchen marks the order ready, even screen off (push). after():
+        // the kitchen tap answers first, the push never delays it.
+        const { orderId: readyOrderId, tenantId: readyTenantId } = parsed.data;
+        after(async () => {
+          try {
+            await createOrderReadyService(createAdminClient()).notifyReady(
+              readyTenantId,
+              readyOrderId,
+            );
+          } catch (err) {
+            logger.error('Order ready push could not start', err, { orderId: readyOrderId });
+          }
+        });
+      }
     }
     return { success: true };
   } catch (err) {

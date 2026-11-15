@@ -55,6 +55,12 @@ interface ChargePush {
    * evenement (par commande, par ingredient).
    */
   tag: string;
+  /**
+   * Alerte a traiter tout de suite (commande prete): le service worker fait
+   * vibrer et sonner meme si une notification du meme tag est deja affichee,
+   * et la laisse a l'ecran jusqu'a ce que le serveur la touche.
+   */
+  alerte?: boolean;
   /** Chemin dans l'espace admin, ex: /admin/orders. */
   url: string;
   /**
@@ -63,6 +69,14 @@ interface ChargePush {
    * `<slug>.attabl.com`, la meme page admin n'a pas le meme chemin.
    */
   slug: string;
+}
+
+/**
+ * Restreint l'envoi a certains membres (ids `admin_users`), par exemple le
+ * serveur d'une table. Absent: tous les membres vivants du restaurant.
+ */
+interface DestinatairesPush {
+  membres: string[];
 }
 
 interface ResultatEnvoiPush {
@@ -75,7 +89,11 @@ interface ResultatEnvoiPush {
 }
 
 export interface ServicePush {
-  envoyerAuxAppareilsDuTenant(tenantId: string, charge: ChargePush): Promise<ResultatEnvoiPush>;
+  envoyerAuxAppareilsDuTenant(
+    tenantId: string,
+    charge: ChargePush,
+    destinataires?: DestinatairesPush,
+  ): Promise<ResultatEnvoiPush>;
 }
 
 const RESULTAT_VIDE: ResultatEnvoiPush = { envoyees: 0, expirees: 0, echecs: 0, refuses: 0 };
@@ -176,6 +194,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
     async envoyerAuxAppareilsDuTenant(
       tenantId: string,
       charge: ChargePush,
+      destinataires?: DestinatairesPush,
     ): Promise<ResultatEnvoiPush> {
       try {
         const cles = lireClesVapid();
@@ -187,12 +206,15 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
         // 1. Les membres VIVANTS du restaurant. Memes criteres que la garde
         //    unifiee des pages admin (`resolve-admin-permission.ts`): un membre
         //    desactive ou supprime en douceur n'est plus destinataire.
-        const { data: membres, error: erreurMembres } = await supabase
+        if (destinataires && destinataires.membres.length === 0) return RESULTAT_VIDE;
+        let requeteMembres = supabase
           .from('admin_users')
           .select('user_id')
           .eq('tenant_id', tenantId)
           .eq('is_active', true)
           .is('deleted_at', null);
+        if (destinataires) requeteMembres = requeteMembres.in('id', destinataires.membres);
+        const { data: membres, error: erreurMembres } = await requeteMembres;
 
         if (erreurMembres) {
           logger.error('Lecture des membres du restaurant impossible', erreurMembres, { tenantId });
@@ -254,6 +276,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
           tag: charge.tag,
           url: charge.url,
           slug: charge.slug,
+          alert: charge.alerte,
         });
 
         // @types/web-push est en retard sur la bibliotheque: `timeout`, `TTL` et
@@ -265,6 +288,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
         } as unknown as Parameters<typeof webpush.sendNotification>[2];
 
         const expirees: string[] = [];
+        const reussies: string[] = [];
         let envoyees = 0;
         let echecs = 0;
 
@@ -279,6 +303,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
               options,
             );
             envoyees += 1;
+            reussies.push(abonnement.id);
           } catch (erreur) {
             const code = (erreur as { statusCode?: number }).statusCode;
             if (code !== undefined && CODES_ABONNEMENT_MORT.includes(code)) {
@@ -290,6 +315,30 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
             logger.warn('Envoi push refuse par le service de push', { tenantId, code });
           }
         });
+
+        // 3 bis. Un appareil joint avec succes est un appareil vivant: on
+        //    rafraichit `last_used_at`, que la purge des abonnements inactifs
+        //    (180 jours) lit. Un echec ici ne doit jamais gener l'envoi.
+        if (reussies.length > 0) {
+          try {
+            const { error: erreurMaj } = await supabase
+              .from('push_subscriptions')
+              .update({ last_used_at: new Date().toISOString() })
+              .eq('tenant_id', tenantId)
+              .in('id', reussies);
+            if (erreurMaj) {
+              logger.warn('Rafraichissement de last_used_at impossible', {
+                tenantId,
+                code: erreurMaj.code,
+              });
+            }
+          } catch (erreurMaj) {
+            logger.warn('Rafraichissement de last_used_at impossible', {
+              tenantId,
+              raison: erreurMaj instanceof Error ? erreurMaj.message : 'inconnue',
+            });
+          }
+        }
 
         // 4. Nettoyage. On ne compte comme "expiree" que ce qui a VRAIMENT ete
         //    supprime: annoncer des suppressions qui n'ont pas eu lieu rendrait

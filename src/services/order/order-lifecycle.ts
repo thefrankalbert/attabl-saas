@@ -68,7 +68,8 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * Always tenant-scoped. markPaid/cancelOrder set their states directly and do
      * not go through here.
      */
-    async updateStatus(orderId: string, tenantId: string, status: string): Promise<void> {
+    /** Returns false when the order already had this status (no-op), true on a real change. */
+    async updateStatus(orderId: string, tenantId: string, status: string): Promise<boolean> {
       const { data: current, error: fetchError } = await supabase
         .from('orders')
         .select('status')
@@ -84,7 +85,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       }
 
       const from = current.status as string;
-      if (from === status) return; // idempotent no-op
+      if (from === status) return false; // idempotent no-op
 
       if (from === 'delivered' || from === 'cancelled') {
         throw new ServiceError('Cette commande est finalisee', 'CONFLICT');
@@ -138,6 +139,7 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         }
         throw new ServiceError('La commande a deja ete mise a jour', 'CONFLICT');
       }
+      return true;
     },
 
     /**

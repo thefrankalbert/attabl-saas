@@ -188,6 +188,31 @@ describe('createPushService', () => {
     expect(envoyer).not.toHaveBeenCalled();
   });
 
+  /**
+   * Alerte "commande prete": seuls les serveurs concernes doivent sonner,
+   * pas toute l'equipe. Sans ce filtre, chaque commande prete ferait vibrer
+   * tous les telephones du restaurant.
+   */
+  it('avec une liste de destinataires, ne lit que ces membres', async () => {
+    await createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE, {
+      membres: ['m-1'],
+    });
+
+    const membres = lecture('admin_users');
+    expect(membres.filtresEq).toContainEqual(['tenant_id', TENANT]);
+    expect(membres.filtreIn).toEqual(['id', ['m-1']]);
+  });
+
+  it('une liste de destinataires vide: aucun envoi, aucune lecture', async () => {
+    const r = await createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE, {
+      membres: [],
+    });
+
+    expect(r.envoyees).toBe(0);
+    expect(appels).toEqual([]);
+    expect(envoyer).not.toHaveBeenCalled();
+  });
+
   it('plafonne le nombre d appareils contactes par envoi', async () => {
     await createPushService(fausseBase()).envoyerAuxAppareilsDuTenant(TENANT, CHARGE);
     expect(lecture('push_subscriptions').limite).toBe(100);

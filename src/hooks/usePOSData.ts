@@ -458,14 +458,18 @@ export function usePOSData(tenantId: string) {
   // PaymentModal le fait deja pour l'encaissement.
   const orderRequestIdRef = useRef<string | null>(null);
 
-  const handleOrder = (
-    status: 'pending' | 'delivered',
-    options?: {
-      onPaymentModalClose?: () => void;
-      paymentData?: { paymentMethod: string; tipAmount: number };
-    },
-  ) => {
+  // Every caisse order goes to the kitchen ('pending'), paid or not: a paid sale
+  // used to be created 'delivered' and never showed on the kitchen screen
+  // (live test 2026-11-15). Payment is recorded separately (payment_status).
+  const handleOrder = (options?: {
+    onPaymentModalClose?: () => void;
+    paymentData?: { paymentMethod: string; tipAmount: number };
+    /** Called once the server has recorded the order (not when only queued offline). */
+    onCreated?: () => void;
+  }) => {
     if (cart.length === 0) return;
+    // Destination (table, address, room) is checked by POSClient before the
+    // payment step, so a paid sale is never refused after the money is taken.
     // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
     // two taps would create two distinct orders. Block while a submit is in
     // flight (the idempotency key only dedupes one submit's network retries).
@@ -494,7 +498,7 @@ export function usePOSData(tenantId: string) {
         // (the server order_number is the ticket id). The old fallback also
         // created ghost table_sessions for nonexistent "CMD-n" tables.
         table_number: serviceType === 'dine_in' && selectedTable ? selectedTable : undefined,
-        status,
+        status: 'pending',
         total,
         service_type: serviceType,
         room_number: serviceType === 'room_service' && roomNumber ? roomNumber : undefined,
@@ -526,9 +530,10 @@ export function usePOSData(tenantId: string) {
           } else {
             const serverNum = order?.orderNumber;
             toast({
-              title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
+              title: options?.paymentData ? t('saleRecorded') : t('sentToKitchen'),
               description: serverNum ? `#${serverNum}` : undefined,
             });
+            options?.onCreated?.();
           }
           // La commande est partie (ou est durablement en file): la prochaine
           // composition est une commande DIFFERENTE, elle merite sa propre cle.
@@ -589,6 +594,7 @@ export function usePOSData(tenantId: string) {
     zones,
     allTables,
     occupiedTableNumbers,
+    refreshOccupancy: loadOccupancy,
 
     // Cart actions
     addToCart,

@@ -233,25 +233,28 @@ export default function DashboardClient(props: DashboardClientProps) {
         />
       </div>
 
-      {/* Revenue chart - tablet: last; desktop: bottom-right */}
-      <div className="order-3 min-w-0 px-3 sm:px-5 xl:col-start-2 xl:row-start-2 xl:self-start">
-        <RevenueChart
-          series={initialChannelBuckets}
-          formatValue={fmtF}
-          locale={locale}
-          labels={{
-            title: t('chartRevenueTitle'),
-            desc: t('chartRevenueDesc'),
-            empty: t('chartRevenueEmpty'),
-            surplace: t('channelSurplace'),
-            emporter: t('channelEmporter'),
-            range90d: t('range90d'),
-            range30d: t('range30d'),
-            range7d: t('range7d'),
-            totalLabel: t('total90d'),
-          }}
-        />
-      </div>
+      {/* Revenue chart - tablet: last; desktop: bottom-right. Money: hidden like
+          the revenue KPI (reports.view), it showed an empty card to waiters. */}
+      {showFin && (
+        <div className="order-3 min-w-0 px-3 sm:px-5 xl:col-start-2 xl:row-start-2 xl:self-start">
+          <RevenueChart
+            series={initialChannelBuckets}
+            formatValue={fmtF}
+            locale={locale}
+            labels={{
+              title: t('chartRevenueTitle'),
+              desc: t('chartRevenueDesc'),
+              empty: t('chartRevenueEmpty'),
+              surplace: t('channelSurplace'),
+              emporter: t('channelEmporter'),
+              range90d: t('range90d'),
+              range30d: t('range30d'),
+              range7d: t('range7d'),
+              totalLabel: t('total90d'),
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
