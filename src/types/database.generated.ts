@@ -2899,6 +2899,15 @@ export type Database = {
         Returns: boolean;
       };
       claim_coupon_usage: { Args: { p_coupon_id: string }; Returns: boolean };
+      close_table_session_if_settled: {
+        Args: {
+          p_require_served?: boolean;
+          p_session_id: string;
+          p_stale_before?: string;
+          p_tenant_id: string;
+        };
+        Returns: string;
+      };
       commit_stock_count: {
         Args: {
           p_committed_by?: string;
