@@ -3,56 +3,51 @@ import { logger } from '@/lib/logger';
 import { PLAN_TOTALS } from '@/lib/billing/pricing';
 import { isFlutterwaveCurrency } from '@/lib/billing/flutterwave/config';
 import type { FlutterwaveClient } from '@/lib/billing/flutterwave/client';
-import { computeNewPeriod } from '@/lib/billing/flutterwave/period';
 import { buildTxRef, parseTxRef } from '@/lib/billing/flutterwave/tx-ref';
-import { FREEZE_REASONS, updateTolerantToMissingFreezeReason } from '@/lib/billing/freeze-reason';
-import { isActiveUnlessLocked } from '@/services/stripe-webhook/status';
+import { classifyExistingSubscription } from '@/lib/billing/existing-subscription';
 import { ServiceError } from './errors';
-import type { BillingInterval, SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import type { BillingInterval, SubscriptionPlan } from '@/types/billing';
 
 type PayablePlan = Exclude<SubscriptionPlan, 'enterprise'>;
 
-/** Gels qu'un paiement verifie a le droit de lever. `dispute` et les causes inconnues restent geles. */
-const UNFREEZABLE_REASONS: readonly string[] = [
-  FREEZE_REASONS.TRIAL_EXPIRED,
-  FREEZE_REASONS.PAST_DUE_OVERDUE,
-  FREEZE_REASONS.STRIPE_UNPAID,
-  FREEZE_REASONS.SUBSCRIPTION_DELETED,
-  FREEZE_REASONS.REFUND,
-  FREEZE_REASONS.FLUTTERWAVE_UNPAID,
-];
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Statuts Stripe qui interdisent un second encaissement par un autre prestataire. */
-const STRIPE_LIVE_STATUSES: readonly string[] = ['active', 'trial', 'past_due'];
+/**
+ * Duree de vie d'une tentative `pending`. Meme valeur que dans
+ * `apply_flutterwave_payment` (SQL): au-dela, la tentative n'est plus reutilisee
+ * et un paiement tardif doit couvrir le prix ACTUEL.
+ */
+export const PENDING_TTL_DAYS = 7;
 
-const MAX_PERIOD_WRITE_ATTEMPTS = 3;
+/** Un changement de plan n'est admis qu'a moins d'un jour de l'echeance (meme valeur que le SQL). */
+const PLAN_CHANGE_WINDOW_MS = DAY_MS;
 
 interface TenantRow {
   id: string;
   slug: string;
   name: string;
   currency: string | null;
-  subscription_status: SubscriptionStatus | null;
+  subscription_status: string | null;
+  subscription_plan: string | null;
   subscription_current_period_end: string | null;
-  trial_ends_at: string | null;
-  freeze_reason: string | null;
   stripe_subscription_id: string | null;
-  suspended_at: string | null;
   deleted_at: string | null;
 }
 
 interface PaymentRow {
   id: string;
   tenant_id: string;
-  status: 'pending' | 'successful';
+  tx_ref: string;
+  status: string;
   plan: PayablePlan;
   billing_interval: BillingInterval;
   amount: number | string;
   currency: string;
+  payment_link: string | null;
 }
 
 const TENANT_COLUMNS =
-  'id, slug, name, currency, subscription_status, subscription_current_period_end, trial_ends_at, freeze_reason, stripe_subscription_id, suspended_at, deleted_at';
+  'id, slug, name, currency, subscription_status, subscription_plan, subscription_current_period_end, stripe_subscription_id, deleted_at';
 
 export type PaymentRejection =
   | 'NOT_SUCCESSFUL'
@@ -60,7 +55,13 @@ export type PaymentRejection =
   | 'WRONG_TENANT'
   | 'AMOUNT_MISMATCH'
   | 'CURRENCY_MISMATCH'
-  | 'TENANT_NOT_FOUND';
+  | 'TENANT_NOT_FOUND'
+  /** Argent pris, NON applique: abonnement Stripe vivant. Remboursement a faire. */
+  | 'STRIPE_CONFLICT'
+  /** Argent pris, NON applique: autre plan avec plus d'un jour restant. Remboursement a faire. */
+  | 'PLAN_CHANGE_NOT_ALLOWED'
+  /** Argent pris, NON applique: tentative expiree payee sous le prix actuel. Remboursement a faire. */
+  | 'EXPIRED_UNDERPAID';
 
 export type ProcessOutcome =
   | {
@@ -92,7 +93,30 @@ export interface FlutterwaveBillingDeps {
   client: FlutterwaveClient;
   /** Origine publique de l'application (pour l'URL de retour). */
   baseUrl: string;
+  /** Statut de l'abonnement chez Stripe, `null` si Stripe ne le connait plus. Leve en cas de panne. */
+  retrieveStripeStatus: (subscriptionId: string) => Promise<string | null>;
   now?: () => Date;
+}
+
+/** Issues de `apply_flutterwave_payment` qui sont un refus: (issue SQL) -> (raison, message du journal). */
+const SQL_REJECTIONS: Record<string, PaymentRejection> = {
+  tenant_not_found: 'TENANT_NOT_FOUND',
+  rejected_conflict: 'STRIPE_CONFLICT',
+  rejected_plan_change: 'PLAN_CHANGE_NOT_ALLOWED',
+  rejected_expired: 'EXPIRED_UNDERPAID',
+};
+
+interface ApplyResult {
+  outcome: string;
+  period_end?: string;
+  unfrozen?: boolean;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getUTCFullYear()}`;
 }
 
 /**
@@ -101,6 +125,8 @@ export interface FlutterwaveBillingDeps {
  * Flutterwave n'a pas de prelevement automatique fiable: UN paiement par
  * periode. Ce service lance le paiement (`startPayment`) puis l'applique
  * (`processTransaction`) apres l'avoir RELU aupres de l'API Flutterwave.
+ * L'application elle-meme (reserver le paiement ET prolonger l'abonnement) est
+ * UNE fonction SQL, donc UNE transaction: voir la migration.
  * Le client recu est service_role: chaque requete filtre donc par tenant.
  */
 export function createFlutterwaveBillingService(
@@ -119,95 +145,22 @@ export function createFlutterwaveBillingService(
     return (data as TenantRow | null) ?? null;
   }
 
-  async function revertClaim(paymentId: string, tenantId: string): Promise<void> {
-    const { error } = await supabase
-      .from('flutterwave_payments')
-      .update({
-        status: 'pending',
-        flw_transaction_id: null,
-        period_start: null,
-        period_end: null,
-      })
-      .eq('id', paymentId)
-      .eq('tenant_id', tenantId);
-    if (error) {
-      logger.error('Flutterwave: annulation de la reservation impossible', error, {
-        paymentId,
-        tenantId,
-      });
-    }
-  }
-
-  /** Ecrit plan + periode, en ne supposant pas que personne d'autre n'a touche la periode entre-temps. */
-  async function applyToTenant(
-    tenantId: string,
-    plan: PayablePlan,
-    interval: BillingInterval,
-  ): Promise<{ periodStart: Date; periodEnd: Date; unfrozen: boolean } | null> {
-    for (let attempt = 0; attempt < MAX_PERIOD_WRITE_ATTEMPTS; attempt += 1) {
-      const tenant = await loadTenant(tenantId);
-      if (!tenant || tenant.deleted_at) return null;
-
-      const period = computeNewPeriod({
-        now: now(),
-        currentPeriodEnd: tenant.subscription_current_period_end,
-        trialEndsAt: tenant.trial_ends_at,
-        status: tenant.subscription_status,
-        interval,
-      });
-
-      const frozenWithKeptCause =
-        tenant.subscription_status === 'frozen' &&
-        !UNFREEZABLE_REASONS.includes(tenant.freeze_reason ?? '');
-
-      const base: Record<string, unknown> = {
-        subscription_plan: plan,
-        billing_interval: interval,
-        subscription_current_period_start: period.start.toISOString(),
-        subscription_current_period_end: period.end.toISOString(),
-      };
-      const payload: Record<string, unknown> = frozenWithKeptCause
-        ? base
-        : {
-            ...base,
-            subscription_status: 'active',
-            is_active: isActiveUnlessLocked('active', tenant),
-            past_due_since: null,
-            freeze_reason: null,
-          };
-      if (frozenWithKeptCause) {
-        logger.warn('Flutterwave: paiement recu sur un gel qui ne se leve pas par paiement', {
-          tenantId,
-          freezeReason: tenant.freeze_reason,
-        });
-      }
-
-      const { data, error } = await updateTolerantToMissingFreezeReason(
-        payload,
-        (body) => {
-          const query = supabase.from('tenants').update(body).eq('id', tenantId);
-          const guarded = tenant.subscription_current_period_end
-            ? query.eq('subscription_current_period_end', tenant.subscription_current_period_end)
-            : query.is('subscription_current_period_end', null);
-          return guarded.select('id');
-        },
-        { tenantId },
-      );
-      if (error) throw new ServiceError('Mise a jour de l abonnement impossible', 'INTERNAL');
-      if (Array.isArray(data) && data.length > 0) {
-        return {
-          periodStart: period.start,
-          periodEnd: period.end,
-          unfrozen: tenant.subscription_status === 'frozen' && !frozenWithKeptCause,
-        };
-      }
-      // Zero ligne: la periode a bouge sous nos pieds (second paiement simultane). On relit.
-    }
-    throw new ServiceError('Mise a jour de l abonnement en conflit', 'CONFLICT');
+  /** Un abonnement Stripe attache au restaurant VIT-il ? Une panne Stripe leve: on ne conclut jamais "mort" dans le doute. */
+  async function stripeIsLive(tenant: TenantRow): Promise<boolean> {
+    const verdict = await classifyExistingSubscription({
+      subscriptionId: tenant.stripe_subscription_id,
+      status: tenant.subscription_status,
+      retrieveStripeStatus: deps.retrieveStripeStatus,
+    });
+    return verdict.kind === 'live';
   }
 
   return {
-    /** Cree la ligne `pending` (prix attendu) puis le lien de paiement heberge. */
+    /**
+     * Cree la ligne `pending` (prix attendu) puis le lien de paiement heberge.
+     * Une tentative non expiree du meme plan/periode au meme prix est REUTILISEE
+     * (meme lien): cliquer dix fois ne cree pas dix lignes.
+     */
     async startPayment(input: StartPaymentInput): Promise<StartPaymentResult> {
       const tenant = await loadTenant(input.tenantId);
       if (!tenant || tenant.deleted_at) {
@@ -216,16 +169,67 @@ export function createFlutterwaveBillingService(
       if (!isFlutterwaveCurrency(tenant.currency)) {
         throw new ServiceError('Devise non prise en charge par le paiement mobile', 'VALIDATION');
       }
-      if (
-        tenant.stripe_subscription_id &&
-        STRIPE_LIVE_STATUSES.includes(tenant.subscription_status ?? '')
-      ) {
+
+      // Un identifiant Stripe encore present n'est ecarte que si Stripe confirme
+      // que l'abonnement est mort (canceled, incomplete_expired, introuvable).
+      let live: boolean;
+      try {
+        live = await stripeIsLive(tenant);
+      } catch (error) {
+        logger.error('Flutterwave: statut d abonnement Stripe illisible', error, {
+          tenantId: tenant.id,
+        });
+        throw new ServiceError(
+          'Verification de l abonnement impossible. Reessayez dans un instant.',
+          'INTERNAL',
+        );
+      }
+      if (live) {
         throw new ServiceError('Ce restaurant a deja un abonnement par carte actif', 'CONFLICT');
       }
 
-      const amount = PLAN_TOTALS[input.plan][input.interval];
-      const txRef = buildTxRef(tenant.id, input.plan, input.interval);
+      // Meme plan: renouvellement possible a tout moment. Autre plan: seulement
+      // a moins d'un jour de l'echeance (ou sans periode payee en cours).
+      const periodEnd = tenant.subscription_current_period_end;
+      if (
+        tenant.subscription_status === 'active' &&
+        tenant.subscription_plan !== input.plan &&
+        periodEnd &&
+        new Date(periodEnd).getTime() > now().getTime() + PLAN_CHANGE_WINDOW_MS
+      ) {
+        throw new ServiceError(
+          `Changement d'offre possible a l'echeance du ${formatDate(periodEnd)}.`,
+          'CONFLICT',
+        );
+      }
 
+      const amount = PLAN_TOTALS[input.plan][input.interval];
+
+      const cutoff = new Date(now().getTime() - PENDING_TTL_DAYS * DAY_MS).toISOString();
+      const { data: reusable, error: reuseError } = await supabase
+        .from('flutterwave_payments')
+        .select('tx_ref, payment_link, amount, currency')
+        .eq('tenant_id', tenant.id)
+        .eq('status', 'pending')
+        .eq('plan', input.plan)
+        .eq('billing_interval', input.interval)
+        .eq('amount', amount)
+        .eq('currency', tenant.currency)
+        .gt('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (reuseError) throw new ServiceError('Paiement indisponible', 'INTERNAL');
+      const existing = ((reusable ?? []) as PaymentRow[]).find((row) => !!row.payment_link);
+      if (existing?.payment_link) {
+        return {
+          link: existing.payment_link,
+          txRef: existing.tx_ref,
+          amount,
+          currency: tenant.currency,
+        };
+      }
+
+      const txRef = buildTxRef(tenant.id, input.plan, input.interval);
       const { error: insertError } = await supabase.from('flutterwave_payments').insert({
         tenant_id: tenant.id,
         tx_ref: txRef,
@@ -234,6 +238,7 @@ export function createFlutterwaveBillingService(
         amount,
         currency: tenant.currency,
         status: 'pending',
+        created_at: now().toISOString(),
       });
       if (insertError) {
         logger.error('Flutterwave: enregistrement de la tentative impossible', insertError, {
@@ -242,8 +247,21 @@ export function createFlutterwaveBillingService(
         throw new ServiceError('Paiement indisponible', 'INTERNAL');
       }
 
+      const removeAttempt = async () => {
+        const { error } = await supabase
+          .from('flutterwave_payments')
+          .delete()
+          .eq('tx_ref', txRef)
+          .eq('tenant_id', tenant.id)
+          .eq('status', 'pending');
+        if (error) {
+          logger.warn('Flutterwave: tentative orpheline non nettoyee', { tenantId: tenant.id });
+        }
+      };
+
+      let link: string;
       try {
-        const link = await deps.client.createPaymentLink({
+        link = await deps.client.createPaymentLink({
           txRef,
           amount,
           currency: tenant.currency,
@@ -253,26 +271,30 @@ export function createFlutterwaveBillingService(
           description: `Abonnement ${input.plan} (${input.interval === 'yearly' ? 'annuel' : 'mensuel'})`,
           meta: { tenant_id: tenant.id, plan: input.plan, interval: input.interval },
         });
-        return { link, txRef, amount, currency: tenant.currency };
       } catch (error) {
-        const { error: cleanupError } = await supabase
-          .from('flutterwave_payments')
-          .delete()
-          .eq('tx_ref', txRef)
-          .eq('tenant_id', tenant.id)
-          .eq('status', 'pending');
-        if (cleanupError) {
-          logger.warn('Flutterwave: tentative orpheline non nettoyee', { tenantId: tenant.id });
-        }
+        await removeAttempt();
         logger.error('Flutterwave: creation du lien impossible', error, { tenantId: tenant.id });
         throw new ServiceError('Paiement indisponible', 'INTERNAL');
       }
+
+      const { error: linkError } = await supabase
+        .from('flutterwave_payments')
+        .update({ payment_link: link })
+        .eq('tx_ref', txRef)
+        .eq('tenant_id', tenant.id);
+      if (linkError) {
+        // Le lien fonctionne quand meme; seule la reutilisation est perdue.
+        logger.warn('Flutterwave: lien non memorise', { tenantId: tenant.id });
+      }
+      return { link, txRef, amount, currency: tenant.currency };
     },
 
     /**
      * Applique un paiement apres l'avoir RELU chez Flutterwave. Idempotent: la
-     * reservation `pending -> successful` est atomique, donc un webhook rejoue
-     * ou concurrent de la page de retour ne prolonge qu'UNE fois.
+     * fonction SQL reserve le paiement ET prolonge l'abonnement dans UNE
+     * transaction, donc un webhook rejoue ou concurrent de la page de retour ne
+     * prolonge qu'UNE fois, et une panne ne laisse jamais un paiement a moitie
+     * applique.
      *
      * @param expectedTenantId Restaurant de la session (route de confirmation).
      *   Absent pour le webhook, ou seule la ligne enregistree fait foi.
@@ -289,7 +311,7 @@ export function createFlutterwaveBillingService(
 
       const { data: found, error: findError } = await supabase
         .from('flutterwave_payments')
-        .select('id, tenant_id, status, plan, billing_interval, amount, currency')
+        .select('id, tenant_id, tx_ref, status, plan, billing_interval, amount, currency')
         .eq('tx_ref', tx.tx_ref)
         .eq('tenant_id', parsedRef.tenantId)
         .maybeSingle();
@@ -303,78 +325,69 @@ export function createFlutterwaveBillingService(
       if (tx.currency !== payment.currency) {
         return { kind: 'rejected', reason: 'CURRENCY_MISMATCH' };
       }
-      // Doc officielle (verification): le montant paye doit etre superieur OU EGAL
-      // au montant attendu. Un sous-paiement est rejete; un surplus ne bloque pas
-      // un client qui a deja paye (le lien est a montant fixe, le cas est rare).
+      // Doc officielle (verification): montant paye superieur OU EGAL a l'attendu.
       if (tx.amount < Number(payment.amount)) {
         return { kind: 'rejected', reason: 'AMOUNT_MISMATCH' };
       }
-      if (payment.status === 'successful') return { kind: 'duplicate' };
+      if (payment.status !== 'pending') return { kind: 'duplicate' };
 
       const tenant = await loadTenant(payment.tenant_id);
       if (!tenant || tenant.deleted_at) return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
 
-      // Reservation atomique. La periode exacte est ecrite apres, une fois lue la
-      // fin de periode courante; ici on pose l'identifiant, ce qui scelle le paiement.
-      const provisional = now().toISOString();
-      const { data: claimed, error: claimError } = await supabase
-        .from('flutterwave_payments')
-        .update({
-          status: 'successful',
-          flw_transaction_id: tx.id,
-          period_start: provisional,
-          period_end: provisional,
-        })
-        .eq('id', payment.id)
-        .eq('tenant_id', payment.tenant_id)
-        .eq('status', 'pending')
-        .select('id');
-      if (claimError) {
-        // 23505: cette transaction Flutterwave a deja regle une autre ligne.
-        if ((claimError as { code?: string }).code === '23505') return { kind: 'duplicate' };
-        throw new ServiceError('Reservation du paiement impossible', 'INTERNAL');
-      }
-      if (!Array.isArray(claimed) || claimed.length === 0) return { kind: 'duplicate' };
+      // Une panne Stripe leve: le webhook repondra 500 et Flutterwave relancera.
+      const stripeLive = await stripeIsLive(tenant);
 
-      let applied: Awaited<ReturnType<typeof applyToTenant>>;
-      try {
-        applied = await applyToTenant(payment.tenant_id, payment.plan, payment.billing_interval);
-      } catch (error) {
-        await revertClaim(payment.id, payment.tenant_id);
-        throw error;
-      }
-      if (!applied) {
-        await revertClaim(payment.id, payment.tenant_id);
-        return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
-      }
-
-      const { error: periodError } = await supabase
-        .from('flutterwave_payments')
-        .update({
-          period_start: applied.periodStart.toISOString(),
-          period_end: applied.periodEnd.toISOString(),
-        })
-        .eq('id', payment.id)
-        .eq('tenant_id', payment.tenant_id);
-      if (periodError) {
-        logger.error('Flutterwave: periode du registre non ecrite', periodError, {
+      const { data, error } = await supabase.rpc('apply_flutterwave_payment', {
+        p_payment_id: payment.id,
+        p_flw_transaction_id: tx.id,
+        p_paid_amount: tx.amount,
+        p_current_price: PLAN_TOTALS[payment.plan][payment.billing_interval],
+        p_stripe_live: stripeLive,
+        p_now: now().toISOString(),
+      });
+      if (error) {
+        logger.error('Flutterwave: application du paiement impossible', error, {
           tenantId: payment.tenant_id,
+          paymentId: payment.id,
+        });
+        throw new ServiceError('Application du paiement impossible', 'INTERNAL');
+      }
+
+      const result = data as ApplyResult | null;
+      const outcome = result?.outcome ?? '';
+      if (outcome === 'duplicate') return { kind: 'duplicate' };
+      if (outcome === 'applied' && result?.period_end) {
+        logger.info('Flutterwave: abonnement prolonge', {
+          tenantId: payment.tenant_id,
+          plan: payment.plan,
+          interval: payment.billing_interval,
+        });
+        return {
+          kind: 'applied',
+          tenantId: payment.tenant_id,
+          plan: payment.plan,
+          interval: payment.billing_interval,
+          periodEnd: result.period_end,
+          unfrozen: result.unfrozen === true,
+        };
+      }
+
+      const reason = SQL_REJECTIONS[outcome];
+      if (!reason) {
+        throw new ServiceError('Reponse inattendue de l application du paiement', 'INTERNAL');
+      }
+      if (outcome !== 'tenant_not_found') {
+        // L'argent est PRIS et rien n'est applique: a rembourser a la main.
+        logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
+          tenantId: payment.tenant_id,
+          paymentId: payment.id,
+          flwTransactionId: tx.id,
+          amount: tx.amount,
+          currency: tx.currency,
+          reason,
         });
       }
-
-      logger.info('Flutterwave: abonnement prolonge', {
-        tenantId: payment.tenant_id,
-        plan: payment.plan,
-        interval: payment.billing_interval,
-      });
-      return {
-        kind: 'applied',
-        tenantId: payment.tenant_id,
-        plan: payment.plan,
-        interval: payment.billing_interval,
-        periodEnd: applied.periodEnd.toISOString(),
-        unfrozen: applied.unfrozen,
-      };
+      return { kind: 'rejected', reason };
     },
   };
 }

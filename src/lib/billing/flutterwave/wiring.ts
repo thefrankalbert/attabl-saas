@@ -5,6 +5,7 @@ import {
   createFlutterwaveRenewalService,
   type RenewalRunResult,
 } from '@/services/flutterwave-renewal.service';
+import { retrieveStripeSubscriptionStatus } from '@/lib/billing/stale-subscription';
 import { createFlutterwaveClient } from './client';
 import { getFlutterwaveConfig, type FlutterwaveConfig } from './config';
 
@@ -26,6 +27,7 @@ export function buildFlutterwaveBilling(): {
   const billing = createFlutterwaveBillingService(createAdminClient(), {
     client: createFlutterwaveClient(config.secretKey),
     baseUrl: appBaseUrl(),
+    retrieveStripeStatus: retrieveStripeSubscriptionStatus,
   });
   return { config, billing };
 }

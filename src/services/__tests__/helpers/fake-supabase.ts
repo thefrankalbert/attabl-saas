@@ -2,13 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 type Row = Record<string, unknown>;
 type Filter = (row: Row) => boolean;
-type Result = { data: unknown; error: { code?: string; message: string } | null };
+export type Result = { data: unknown; error: { code?: string; message: string } | null };
 
 export interface FakeSupabaseOptions {
   /** Colonnes uniques par table (une violation rend l'erreur Postgres 23505). */
   uniques?: Record<string, string[]>;
   /** Fait echouer une ecriture: appele avant chaque insert/update/delete. */
   failWrite?: (table: string, op: 'insert' | 'update' | 'delete', payload: Row | null) => boolean;
+  /** Fonctions SQL appelees par `.rpc()`: la logique reelle est testee en pgTAP, pas ici. */
+  rpc?: Record<string, (args: Row, db: Record<string, Row[]>) => Result>;
 }
 
 /**
@@ -139,6 +141,16 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
     }
   }
 
-  const client = { from: (table: string) => new Query(table) };
+  const client = {
+    from: (table: string) => new Query(table),
+    rpc: (name: string, args: Row) => {
+      const handler = options.rpc?.[name];
+      return Promise.resolve(
+        handler
+          ? handler(args, db)
+          : { data: null, error: { code: '42883', message: `fonction inconnue: ${name}` } },
+      );
+    },
+  };
   return { client: client as unknown as SupabaseClient, db };
 }

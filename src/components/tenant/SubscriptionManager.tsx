@@ -91,12 +91,15 @@ export function SubscriptionManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, billingInterval }),
       });
-      const data = (await res.json()) as { url?: string };
+      const data = (await res.json()) as { url?: string; error?: string };
       if (res.ok && data.url) {
         window.location.href = data.url;
         return;
       }
-      toast.error(t('subscription.mobileMoneyError'));
+      // 409: refus voulu et lisible (ex: changement d'offre possible a l'echeance).
+      toast.error(
+        res.status === 409 && data.error ? data.error : t('subscription.mobileMoneyError'),
+      );
     } catch (error) {
       logger.error('Failed to start mobile money payment', error);
       toast.error(t('subscription.mobileMoneyError'));
