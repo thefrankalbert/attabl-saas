@@ -201,4 +201,64 @@ describe('client Flutterwave', () => {
       await expect(client.verifyByReference('ref')).rejects.toBeInstanceOf(FlutterwaveApiError);
     });
   });
+
+  describe('listTransactionsByReference', () => {
+    const item = (over: Record<string, unknown>) => ({
+      id: '989226',
+      tx_ref: 'ref1',
+      status: 'successful',
+      amount: 79000,
+      currency: 'XOF',
+      ...over,
+    });
+
+    it('appelle GET /transactions?tx_ref=, convertit l identifiant (chaine -> nombre) et ne garde que la reference EXACTE', async () => {
+      const fetchImpl = vi.fn().mockResolvedValue(
+        okJson({
+          status: 'success',
+          data: [
+            item({}),
+            item({ id: 5, tx_ref: 'autre-reference' }),
+            item({ id: 7, status: 'failed' }),
+          ],
+        }),
+      );
+      const client = createFlutterwaveClient('k', fetchImpl as unknown as typeof fetch);
+      const list = await client.listTransactionsByReference('ref1');
+      expect((fetchImpl.mock.calls[0] as [string])[0]).toBe(
+        'https://api.flutterwave.com/v3/transactions?tx_ref=ref1',
+      );
+      expect(list.map((t) => t.id)).toEqual([989226, 7]);
+    });
+
+    it('inconnue (400, 404, status error): liste vide; vraie panne ou corps mal forme: leve', async () => {
+      for (const res of [
+        okJson({}, 404),
+        okJson({}, 400),
+        okJson({ status: 'error', data: null }),
+      ]) {
+        const client = createFlutterwaveClient(
+          'k',
+          vi.fn().mockResolvedValue(res) as unknown as typeof fetch,
+        );
+        expect(await client.listTransactionsByReference('ref1')).toEqual([]);
+      }
+      const down = createFlutterwaveClient(
+        'k',
+        vi.fn().mockResolvedValue(okJson({}, 500)) as unknown as typeof fetch,
+      );
+      await expect(down.listTransactionsByReference('ref1')).rejects.toBeInstanceOf(
+        FlutterwaveApiError,
+      );
+      const odd = createFlutterwaveClient(
+        'k',
+        vi
+          .fn()
+          .mockResolvedValue(okJson({ status: 'success', data: 'x' })) as unknown as typeof fetch,
+      );
+      await expect(odd.listTransactionsByReference('ref1')).rejects.toBeInstanceOf(
+        FlutterwaveApiError,
+      );
+    });
+  });
 });

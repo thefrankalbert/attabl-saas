@@ -78,6 +78,7 @@ function setup(opts: {
     createPaymentLink: vi.fn().mockResolvedValue('https://checkout.flutterwave.com/pay/xyz'),
     verifyTransaction: vi.fn(),
     verifyByReference: vi.fn(),
+    listTransactionsByReference: vi.fn().mockResolvedValue([]),
   };
   const retrieveStripeStatus = vi.fn().mockResolvedValue(opts.stripeStatus ?? null);
   const service = createFlutterwaveBillingService(fake.client, {
@@ -437,6 +438,50 @@ describe('processTransaction: rejets avant la base (temoins negatifs)', () => {
     }
   });
 
+  describe('reference deja reglee (L-1)', () => {
+    it('la MEME transaction rejouee est un doublon ordinaire, sans journal d erreur (temoin negatif)', async () => {
+      vi.mocked(logger.error).mockClear();
+      const { service, client, rpc } = setup({
+        payments: [payment(REF, { status: 'successful', flw_transaction_id: 7001 })],
+      });
+      vi.mocked(client.verifyTransaction).mockResolvedValue(verified({ tx_ref: REF, id: 7001 }));
+      expect(await service.processTransaction(7001)).toEqual({ kind: 'duplicate' });
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it('UNE AUTRE transaction sur une reference deja reglee: rejet + journal avec les deux identifiants', async () => {
+      vi.mocked(logger.error).mockClear();
+      const { service, client, rpc } = setup({
+        payments: [payment(REF, { status: 'successful', flw_transaction_id: 7001 })],
+      });
+      vi.mocked(client.verifyTransaction).mockResolvedValue(verified({ tx_ref: REF, id: 7002 }));
+      expect(await service.processTransaction(7002)).toEqual({
+        kind: 'rejected',
+        reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION',
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('remboursement a faire'),
+        expect.objectContaining({
+          txRef: REF,
+          recordedFlwTransactionId: 7001,
+          flwTransactionId: 7002,
+        }),
+      );
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it('une ligne rejetee dont la transaction enregistree differe est signalee de la meme facon', async () => {
+      vi.mocked(logger.error).mockClear();
+      const { service, client } = setup({
+        payments: [payment(REF, { status: 'rejected_conflict', flw_transaction_id: 7001 })],
+      });
+      vi.mocked(client.verifyTransaction).mockResolvedValue(verified({ tx_ref: REF, id: 7003 }));
+      expect((await service.processTransaction(7003)).kind).toBe('rejected');
+      expect(logger.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('restaurant supprime: rejete', async () => {
     const { service, client, rpc } = setup({
       tenants: [tenant({ deleted_at: iso(-DAY) })],
@@ -670,6 +715,44 @@ describe('reconcilePending (rattrapage)', () => {
     expect(db.flutterwave_payments.find((p) => p.tx_ref === REF2)?.last_checked_at).toBe(
       NOW.toISOString(),
     );
+  });
+
+  it('derniere tentative echouee mais une plus ancienne reussie (L-2): la liste la retrouve et l applique', async () => {
+    const { service, client, rpc } = setup({ payments: [payment(REF)] });
+    vi.mocked(client.verifyByReference).mockResolvedValue(
+      verified({ tx_ref: REF, id: 7100, status: 'failed' }),
+    );
+    vi.mocked(client.listTransactionsByReference).mockResolvedValue([
+      verified({ tx_ref: REF, id: 7100, status: 'failed' }),
+      verified({ tx_ref: REF, id: 7099, status: 'successful' }),
+    ]);
+    expect(await service.reconcilePending()).toEqual({ checked: 1, applied: 1, errors: 0 });
+    expect(client.listTransactionsByReference).toHaveBeenCalledWith(REF);
+    expect(rpc.mock.calls[0][0]).toMatchObject({ p_flw_transaction_id: 7099 });
+  });
+
+  it('derniere tentative echouee et aucune reussie dans la liste: rien n est applique (temoin negatif)', async () => {
+    const { service, client, rpc } = setup({ payments: [payment(REF)] });
+    vi.mocked(client.verifyByReference).mockResolvedValue(
+      verified({ tx_ref: REF, status: 'failed' }),
+    );
+    vi.mocked(client.listTransactionsByReference).mockResolvedValue([
+      verified({ tx_ref: REF, status: 'failed' }),
+    ]);
+    expect((await service.reconcilePending()).applied).toBe(0);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('la liste n est consultee que si une tentative existe et n est pas reussie (pas de requete inutile)', async () => {
+    const never = setup({ payments: [payment(REF)] });
+    vi.mocked(never.client.verifyByReference).mockResolvedValue(null);
+    await never.service.reconcilePending();
+    expect(never.client.listTransactionsByReference).not.toHaveBeenCalled();
+
+    const ok = setup({ payments: [payment(REF)] });
+    vi.mocked(ok.client.verifyByReference).mockResolvedValue(verified({ tx_ref: REF }));
+    await ok.service.reconcilePending();
+    expect(ok.client.listTransactionsByReference).not.toHaveBeenCalled();
   });
 
   it('une ligne qui echoue est comptee, marquee, et n arrete pas les suivantes', async () => {

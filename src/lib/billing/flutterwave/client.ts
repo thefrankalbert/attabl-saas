@@ -1,5 +1,9 @@
 import { logger } from '@/lib/logger';
-import { paymentLinkResponseSchema, verifyTransactionResponseSchema } from './schemas';
+import {
+  listTransactionsResponseSchema,
+  paymentLinkResponseSchema,
+  verifyTransactionResponseSchema,
+} from './schemas';
 import type { VerifiedTransaction } from './schemas';
 
 /**
@@ -14,6 +18,12 @@ import type { VerifiedTransaction } from './schemas';
  *   flutterwave-node-v3 1.3.1 (services/transactions/rave.verify-by-txref.js) et sa
  *   documentation (documentation/transactions.md, section "Verify transaction with
  *   reference"); la page de reference de developer.flutterwave.com n'a pas pu etre lue.
+ * - liste: GET /v3/transactions (SDK flutterwave-node-v3 1.3.1, documentation/transactions.md,
+ *   "Get all transactions": reponse { status, meta, data: [ { id, tx_ref, status, amount,
+ *   currency, ... } ] }). La documentation du SDK ne cite que les filtres from/to: le filtre
+ *   `tx_ref` n'y est PAS confirme. Par prudence le resultat est refiltre ici sur la reference
+ *   exacte: si le filtre etait ignore, on ne verrait rien d'utile mais on n'appliquerait jamais
+ *   la transaction d'un autre.
  * - webhook: en-tete `verif-hash`, evenement `charge.completed`
  *   (https://developer.flutterwave.com/docs/webhooks)
  */
@@ -48,6 +58,12 @@ export interface FlutterwaveClient {
   verifyTransaction(transactionId: number): Promise<VerifiedTransaction>;
   /** Verification par reference (`tx_ref`): `null` si Flutterwave ne connait pas cette reference. */
   verifyByReference(txRef: string): Promise<VerifiedTransaction | null>;
+  /**
+   * Toutes les transactions d'une reference (un client peut retenter sur le meme
+   * lien: un echec recent n'efface pas un paiement reussi plus ancien). Ne rend
+   * que les elements dont la reference est EXACTEMENT celle demandee.
+   */
+  listTransactionsByReference(txRef: string): Promise<VerifiedTransaction[]>;
 }
 
 export function createFlutterwaveClient(
@@ -137,6 +153,28 @@ export function createFlutterwaveClient(
         throw new FlutterwaveApiError('Reponse Flutterwave inattendue', null);
       }
       return parsed.data.data;
+    },
+
+    async listTransactionsByReference(txRef) {
+      let raw: unknown;
+      try {
+        raw = await call(`/transactions?tx_ref=${encodeURIComponent(txRef)}`, { method: 'GET' });
+      } catch (error) {
+        if (
+          error instanceof FlutterwaveApiError &&
+          (error.httpStatus === 404 || error.httpStatus === 400)
+        ) {
+          return [];
+        }
+        throw error;
+      }
+      if ((raw as { status?: unknown } | null)?.status === 'error') return [];
+      const parsed = listTransactionsResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        logger.error('Flutterwave: reponse de liste inattendue', parsed.error);
+        throw new FlutterwaveApiError('Reponse Flutterwave inattendue', null);
+      }
+      return parsed.data.data.filter((t) => t.tx_ref === txRef);
     },
   };
 }

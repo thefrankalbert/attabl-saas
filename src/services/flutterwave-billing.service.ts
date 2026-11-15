@@ -61,6 +61,7 @@ interface PaymentRow {
   amount: number | string;
   currency: string;
   payment_link: string | null;
+  flw_transaction_id?: number | string | null;
 }
 
 const TENANT_COLUMNS =
@@ -80,7 +81,9 @@ export type PaymentRejection =
   /** Argent pris, NON applique: tentative expiree payee sous le prix actuel. Remboursement a faire. */
   | 'EXPIRED_UNDERPAID'
   /** Argent pris, NON applique: restaurant suspendu ou gele pour une cause qu'un paiement ne leve pas. Remboursement a faire. */
-  | 'TENANT_BLOCKED';
+  | 'TENANT_BLOCKED'
+  /** Argent pris: la reference etait deja reglee par UNE AUTRE transaction. Remboursement a faire. */
+  | 'ALREADY_SETTLED_BY_OTHER_TRANSACTION';
 
 export type ProcessOutcome =
   | {
@@ -192,7 +195,9 @@ export function createFlutterwaveBillingService(
 
     const { data: found, error: findError } = await supabase
       .from('flutterwave_payments')
-      .select('id, tenant_id, tx_ref, status, plan, billing_interval, amount, currency')
+      .select(
+        'id, tenant_id, tx_ref, status, plan, billing_interval, amount, currency, flw_transaction_id',
+      )
       .eq('tx_ref', tx.tx_ref)
       .eq('tenant_id', parsedRef.tenantId)
       .maybeSingle();
@@ -210,7 +215,26 @@ export function createFlutterwaveBillingService(
     if (tx.amount < Number(payment.amount)) {
       return { kind: 'rejected', reason: 'AMOUNT_MISMATCH' };
     }
-    if (payment.status !== 'pending') return { kind: 'duplicate' };
+    if (payment.status !== 'pending') {
+      // Meme transaction rejouee: doublon ordinaire. UNE AUTRE transaction sur une
+      // reference deja reglee (le client a paye deux fois sur le meme lien): son
+      // argent est pris et rien ne s'applique, comme les autres rejets.
+      const recorded = payment.flw_transaction_id;
+      if (recorded != null && Number(recorded) !== tx.id) {
+        logger.error('Flutterwave: paiement encaisse mais NON applique, remboursement a faire', {
+          tenantId: payment.tenant_id,
+          paymentId: payment.id,
+          txRef: payment.tx_ref,
+          recordedFlwTransactionId: Number(recorded),
+          flwTransactionId: tx.id,
+          amount: tx.amount,
+          currency: tx.currency,
+          reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION',
+        });
+        return { kind: 'rejected', reason: 'ALREADY_SETTLED_BY_OTHER_TRANSACTION' };
+      }
+      return { kind: 'duplicate' };
+    }
 
     const tenant = await loadTenant(payment.tenant_id);
     if (!tenant || tenant.deleted_at) return { kind: 'rejected', reason: 'TENANT_NOT_FOUND' };
@@ -472,8 +496,18 @@ export function createFlutterwaveBillingService(
           .eq('tenant_id', row.tenant_id);
         try {
           const tx = await deps.client.verifyByReference(row.tx_ref);
-          if (!tx || tx.status !== 'successful') continue;
-          const outcome = await applyVerified(tx);
+          if (!tx) continue;
+          // La verification par reference rend la transaction la plus RECENTE: un
+          // echec posterieur sur le meme lien cacherait un paiement reussi plus
+          // ancien. On relit alors la liste de la reference.
+          const paid =
+            tx.status === 'successful'
+              ? tx
+              : (await deps.client.listTransactionsByReference(row.tx_ref)).find(
+                  (t) => t.status === 'successful',
+                );
+          if (!paid) continue;
+          const outcome = await applyVerified(paid);
           if (outcome.kind === 'applied') applied += 1;
         } catch (err) {
           errors += 1;
