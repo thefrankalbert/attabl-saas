@@ -101,6 +101,21 @@ export default function POSClient({ tenantId }: POSClientProps) {
     [tenantId, toast, tsvc],
   );
 
+  // A delivery needs an address and a room service a room number. The server
+  // refuses the order without them, but only after the whole payment step:
+  // check up front so the cashier fixes it before taking the money.
+  const destinationReady = useCallback((): boolean => {
+    if (pos.serviceType === 'delivery' && !pos.deliveryAddress.trim()) {
+      toast({ title: t('deliveryAddressRequired'), variant: 'destructive' });
+      return false;
+    }
+    if (pos.serviceType === 'room_service' && !pos.roomNumber.trim()) {
+      toast({ title: t('roomNumberRequired'), variant: 'destructive' });
+      return false;
+    }
+    return true;
+  }, [pos.serviceType, pos.deliveryAddress, pos.roomNumber, toast, t]);
+
   // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
   const shortcuts = useMemo<ShortcutDefinition[]>(
@@ -124,11 +139,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         section: 'contextual',
         keys: ['p'],
         action: () => {
-          if (canPay && cart.length > 0) setShowPaymentModal(true);
+          if (canPay && cart.length > 0 && destinationReady()) setShowPaymentModal(true);
         },
       },
     ],
-    [ts, cart, menuItems, addToCart, canPay],
+    [ts, cart, menuItems, addToCart, canPay, destinationReady],
   );
   useContextualShortcuts(shortcuts);
 
@@ -272,8 +287,18 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   couponError={pos.couponError}
                   onValidateCoupon={pos.validateCoupon}
                   onRemoveCoupon={pos.removeCoupon}
-                  onPrintOrder={() => pos.handleOrder('pending')}
-                  onCheckout={canPay ? () => setShowPaymentModal(true) : undefined}
+                  // Refresh "A encaisser" right away: realtime alone misses the new
+                  // unpaid order whenever the websocket is down (weak network).
+                  onPrintOrder={() => {
+                    if (destinationReady()) pos.handleOrder({ onCreated: refreshUnpaid });
+                  }}
+                  onCheckout={
+                    canPay
+                      ? () => {
+                          if (destinationReady()) setShowPaymentModal(true);
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </div>
@@ -350,7 +375,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 }))}
                 currency={pos.currency}
                 onSuccess={(paymentData?: PaymentData) =>
-                  pos.handleOrder('delivered', {
+                  pos.handleOrder({
                     onPaymentModalClose: () => setShowPaymentModal(false),
                     paymentData,
                   })
