@@ -17,6 +17,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * ne pourrait que confirmer ce qu'on lui dit.
  */
 
+// actions/orders.ts reaches push.service (server-only) via order-ready.service.
+vi.mock('server-only', () => ({}));
 vi.mock('next/server', async (importActual) => ({
   ...(await importActual<typeof import('next/server')>()),
   after: () => {},

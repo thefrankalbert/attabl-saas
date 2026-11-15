@@ -131,7 +131,9 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
+    // A document page: it grows with its content (no flex-1 min-h-0), so its
+    // last rows stay reachable above the mobile bottom nav.
+    <div className="flex flex-col">
       <TablesClient
         tenantId={tenantId}
         venueId={venueId}

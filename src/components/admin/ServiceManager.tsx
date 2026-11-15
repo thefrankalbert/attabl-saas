@@ -320,10 +320,33 @@ export default function ServiceManager({ tenantId, currency }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <ServiceMetricsBar tables={tableVMs} avgDurationMin={avgDurationMin} labels={metricsLabels} />
+    // Fixed-height split view from lg only. Below it (the waiter's phone) the
+    // page flows and main#main-content scrolls: the nested scroll areas left
+    // room for a single table, with the ready orders pushed to the bottom.
+    <div className="flex flex-col lg:h-full lg:overflow-hidden">
+      <ServiceMetricsBar
+        tables={tableVMs}
+        avgDurationMin={avgDurationMin}
+        assignmentsCount={assignments.length}
+        labels={metricsLabels}
+      />
 
-      <div className="flex flex-1 min-h-0">
+      {/* Phone/tablet: what the waiter must act on comes first. */}
+      <ServiceMobileOrders
+        readyOrders={readyOrders}
+        now={now}
+        labels={{
+          title: t('ordersActiveTitle'),
+          empty: t('ordersEmpty'),
+          markDelivered: t('markDelivered'),
+          tableShort: t('tableShort'),
+          minutesAgoShort: (min: number) => t('minutesAgoShort', { min }),
+          itemsCount: (n: number) => t('itemsCount', { count: n }),
+        }}
+        onMarkDelivered={handleMarkDelivered}
+      />
+
+      <div className="flex lg:flex-1 lg:min-h-0">
         <ServiceFloorPlan
           zones={zones}
           tables={tableVMs}
@@ -367,20 +390,6 @@ export default function ServiceManager({ tenantId, currency }: Props) {
           />
         </div>
       </div>
-
-      <ServiceMobileOrders
-        readyOrders={readyOrders}
-        now={now}
-        labels={{
-          title: t('ordersActiveTitle'),
-          empty: t('ordersEmpty'),
-          markDelivered: t('markDelivered'),
-          tableShort: t('tableShort'),
-          minutesAgoShort: (min: number) => t('minutesAgoShort', { min }),
-          itemsCount: (n: number) => t('itemsCount', { count: n }),
-        }}
-        onMarkDelivered={handleMarkDelivered}
-      />
 
       <ServiceTableDetail
         vm={selectedVM}

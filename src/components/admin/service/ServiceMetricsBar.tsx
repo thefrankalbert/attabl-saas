@@ -6,6 +6,8 @@ import type { ServiceTableVM } from './service.types';
 interface Props {
   tables: ServiceTableVM[];
   avgDurationMin: number;
+  /** Server-to-table assignments the average is computed over. */
+  assignmentsCount: number;
   labels: {
     occupationRate: string;
     waitTime: string;
@@ -63,7 +65,7 @@ function Tile({
   );
 }
 
-export function ServiceMetricsBar({ tables, avgDurationMin, labels }: Props) {
+export function ServiceMetricsBar({ tables, avgDurationMin, assignmentsCount, labels }: Props) {
   const total = tables.length;
   const occ = tables.filter((t) => t.status === 'occupied').length;
   const free = tables.filter((t) => t.status === 'free').length;
@@ -85,18 +87,25 @@ export function ServiceMetricsBar({ tables, avgDurationMin, labels }: Props) {
         barPct={occPct}
       />
       <Tile
+        // Last visible tile on phones (the next two are hidden there).
+        className="max-sm:border-r-0"
         label={labels.waitTime}
         value={String(avgDurationMin)}
         unit={labels.minShort}
-        sub={`${occ} ${labels.activeAssignments}`}
+        // Same population as the average above: assignments, not occupied tables.
+        sub={`${assignmentsCount} ${labels.activeAssignments}`}
       />
+      {/* Covers and table count restate the occupancy tile: hidden on phones,
+          where four tiles in one row squeezed the labels into each other. */}
       <Tile
+        className="hidden sm:flex"
         label={labels.coversLabel}
         value={String(occupiedCovers)}
         unit={`/${totalCovers}`}
         sub={labels.coversSub}
       />
       <Tile
+        className="hidden sm:flex"
         label={labels.tablesTotal}
         value={String(total)}
         sub={`${occ} ${labels.occupiedSummary} / ${total} ${labels.tablesTotal.toLowerCase()}`}

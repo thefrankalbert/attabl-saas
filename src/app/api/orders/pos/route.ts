@@ -6,6 +6,7 @@ import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
+import { createAssignmentService } from '@/services/assignment.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import {
@@ -532,6 +533,33 @@ export async function POST(request: Request) {
         orderId: redeemedOrderId,
         discountAmount,
       });
+    }
+
+    // 10c. Owner decision 2026-11-14: the waiter who sends a dine-in ticket to the
+    // kitchen becomes that table's server (unless it already has one), so the
+    // Service floor shows who to call when it is ready. Best-effort: an
+    // assignment problem must never fail an order that is already created.
+    if (status === 'pending' && service_type === 'dine_in' && adminUser.role === 'waiter') {
+      try {
+        const { data: placed } = await adminSupabase
+          .from('orders')
+          .select('table_id')
+          .eq('id', result.orderId)
+          .eq('tenant_id', tenant_id)
+          .maybeSingle();
+        if (placed?.table_id) {
+          await createAssignmentService(adminSupabase).assignIfFree(
+            tenant_id,
+            placed.table_id,
+            adminUser.id,
+          );
+        }
+      } catch (assignError) {
+        logger.warn('POS order: table auto-assignment failed', {
+          orderId: result.orderId,
+          assignError,
+        });
+      }
     }
 
     // 11. Create in-app notification (fire-and-forget, non-blocking)

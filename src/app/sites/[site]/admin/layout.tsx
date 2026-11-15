@@ -11,6 +11,7 @@ import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import { OutboxIdentity } from '@/components/shared/OutboxIdentity';
+import { OrderReadyAlert } from '@/components/admin/OrderReadyAlert';
 import { APP_VERSION } from '@/lib/app-version';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
@@ -313,6 +314,7 @@ export default async function AdminLayout({
             >
               <OfflineIndicator />
               <OutboxIdentity userId={adminUser?.user_id} tenantId={tenant.id} />
+              <OrderReadyAlert tenantId={tenant.id} adminUserId={adminUser?.id} />
               <CommandPalette />
               <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
                 <AdminIdleWrapper

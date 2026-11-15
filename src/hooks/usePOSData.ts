@@ -466,6 +466,23 @@ export function usePOSData(tenantId: string) {
     },
   ) => {
     if (cart.length === 0) return;
+    // Owner decision 2026-11-14: a dine-in ticket sent to the kitchen must carry
+    // its table, or the waiter cannot tell where to bring it once it is ready.
+    // (A paid-at-the-counter sale, status 'delivered', never reaches the floor.)
+    // No tables configured or loaded (offline): nothing to pick, do not block.
+    if (
+      status === 'pending' &&
+      serviceType === 'dine_in' &&
+      !selectedTable &&
+      allTables.length > 0
+    ) {
+      toast({
+        title: t('tableRequired'),
+        description: t('tableRequiredDesc'),
+        variant: 'destructive',
+      });
+      return;
+    }
     // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
     // two taps would create two distinct orders. Block while a submit is in
     // flight (the idempotency key only dedupes one submit's network retries).
@@ -589,6 +606,7 @@ export function usePOSData(tenantId: string) {
     zones,
     allTables,
     occupiedTableNumbers,
+    refreshOccupancy: loadOccupancy,
 
     // Cart actions
     addToCart,
