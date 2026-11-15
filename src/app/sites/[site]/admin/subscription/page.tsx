@@ -6,12 +6,21 @@ import TenantNotFound from '@/components/admin/TenantNotFound';
 import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { getTenantBillingIds } from '@/lib/billing/tenant-billing-ids';
 import { getTranslations } from 'next-intl/server';
+import { isFlutterwaveConfigured, isFlutterwaveCurrency } from '@/lib/billing/flutterwave/config';
+import { FlutterwaveReturnHandler } from '@/components/tenant/subscription/FlutterwaveReturnHandler';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function SubscriptionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ fw?: string; status?: string; transaction_id?: string }>;
+}) {
   const { site } = await params;
+  const { fw, status: fwStatus, transaction_id: fwTransactionId } = await searchParams;
   const tTitle = await getTranslations('sidebar');
   const { tenantId } = await requireAdminPermission(site, 'settings.view');
   const headersList = await headers();
@@ -54,10 +63,23 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
     stripe_subscription_id: billingIds?.stripe_subscription_id ?? null,
   };
 
+  // Mobile money et carte (Flutterwave): devise XOF/XAF et cles presentes.
+  const mobileMoney = isFlutterwaveConfigured() && isFlutterwaveCurrency(tenant.currency);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <AdminSrTitle label={tTitle('navSubscription')} />
-      <SubscriptionManager tenant={tenantWithEmail} siteSlug={tenantSlug} />
+      {mobileMoney && fw === 'return' && (
+        <FlutterwaveReturnHandler
+          status={fwStatus ?? null}
+          transactionId={fwTransactionId ?? null}
+        />
+      )}
+      <SubscriptionManager
+        tenant={tenantWithEmail}
+        siteSlug={tenantSlug}
+        mobileMoney={mobileMoney}
+      />
     </div>
   );
 }

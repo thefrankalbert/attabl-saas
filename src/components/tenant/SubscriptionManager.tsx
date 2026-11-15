@@ -57,7 +57,16 @@ const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
 
 const RECOMMENDED_PLAN: SelfServicePlan = 'pro';
 
-export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; siteSlug: string }) {
+export function SubscriptionManager({
+  tenant,
+  siteSlug,
+  mobileMoney = false,
+}: {
+  tenant: Tenant;
+  siteSlug: string;
+  /** Paiement par mobile money ou carte (Flutterwave) propose: devise XOF/XAF et cles configurees. */
+  mobileMoney?: boolean;
+}) {
   const t = useTranslations('admin');
   const router = useRouter();
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(() =>
@@ -68,11 +77,38 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
   const [isLoading, setIsLoading] = useState<SelfServicePlan | null>(null);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
   const hasSubscription = Boolean(tenant.stripe_subscription_id);
+  // Un abonnement Stripe en cours garde son circuit (changement de plan, portail).
+  const payByMobileMoney = mobileMoney && !hasSubscription;
 
   const currentPlan = (tenant.subscription_plan || 'starter') as SubscriptionPlan;
   const currentStatus = tenant.subscription_status || 'trial';
 
+  const handleMobileMoney = async (plan: SelfServicePlan) => {
+    setIsLoading(plan);
+    try {
+      const res = await fetch('/api/billing/flutterwave/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, billingInterval }),
+      });
+      const data = (await res.json()) as { url?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast.error(t('subscription.mobileMoneyError'));
+    } catch (error) {
+      logger.error('Failed to start mobile money payment', error);
+      toast.error(t('subscription.mobileMoneyError'));
+    }
+    setIsLoading(null);
+  };
+
   const handleChangePlan = async (plan: SelfServicePlan) => {
+    if (payByMobileMoney) {
+      await handleMobileMoney(plan);
+      return;
+    }
     setIsLoading(plan);
     // Existing subscriber: change plan in place (proration). Otherwise start a checkout.
     if (hasSubscription) {
@@ -153,6 +189,9 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
           </h2>
           <BillingIntervalToggle value={billingInterval} onChange={setBillingInterval} />
         </div>
+        {payByMobileMoney && (
+          <p className="mb-4 text-xs text-app-text-muted">{t('subscription.mobileMoneyHint')}</p>
+        )}
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {SELF_SERVICE_PLANS.map((plan) => (
@@ -166,6 +205,16 @@ export function SubscriptionManager({ tenant, siteSlug }: { tenant: Tenant; site
               isLoading={isLoading === plan}
               disabled={isLoading !== null || isBillingLoading}
               onChoose={() => handleChangePlan(plan)}
+              ctaLabel={
+                payByMobileMoney
+                  ? t(
+                      currentPlan === plan && currentStatus === 'active'
+                        ? 'subscription.renewMobileMoney'
+                        : 'subscription.payMobileMoney',
+                    )
+                  : undefined
+              }
+              repayable={payByMobileMoney}
             />
           ))}
         </div>

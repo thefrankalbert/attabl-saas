@@ -278,6 +278,11 @@ describe('classement de toutes les routes API', () => {
     'verify-checkout',
     'invoices',
     'webhooks/stripe',
+    // Paiement mobile money / carte: necessaire pour payer et rouvrir un restaurant gele.
+    'billing/flutterwave/checkout',
+    'billing/flutterwave/confirm',
+    'webhooks/flutterwave',
+    'cron/flutterwave-renewals',
     'cron/freeze-expired-trials',
     'cron/reconcile-payments',
     'dev/simulate-subscription',

@@ -49,6 +49,12 @@ export const FREEZE_REASONS = {
    * n'est pas un litige gagne.
    */
   REFUND: 'refund',
+  /**
+   * Abonnement Flutterwave (mobile money, carte) non renouvele: la periode payee
+   * est terminee depuis plus que le delai de grace (cron `flutterwave-renewals`).
+   * Reversible: un paiement verifie leve ce gel.
+   */
+  FLUTTERWAVE_UNPAID: 'flutterwave_unpaid',
 } as const;
 
 export type FreezeReason = (typeof FREEZE_REASONS)[keyof typeof FREEZE_REASONS];

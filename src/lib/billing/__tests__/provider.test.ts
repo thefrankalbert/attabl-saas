@@ -36,6 +36,18 @@ describe('capacites du prestataire d encaissement', () => {
     });
   });
 
+  it('Flutterwave (mobile money, carte) ne renouvelle rien seul: ATTABL porte l horloge', () => {
+    expect(billingCapabilities('flutterwave')).toEqual({
+      autoRenew: false,
+      hostedPortal: false,
+      providerInvoices: false,
+    });
+  });
+
+  it('Stripe reste le prestataire actif: ajouter Flutterwave ne change pas le defaut', () => {
+    expect(ACTIVE_BILLING_PROVIDER).toBe('stripe');
+  });
+
   it('sans argument, les capacites sont celles du prestataire actif', () => {
     expect(billingCapabilities()).toEqual(billingCapabilities(ACTIVE_BILLING_PROVIDER));
   });

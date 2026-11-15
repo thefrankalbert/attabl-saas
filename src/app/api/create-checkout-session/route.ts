@@ -13,6 +13,7 @@ import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 import { expireOtherOpenCheckouts } from '@/lib/billing/expire-open-checkouts';
+import { refuseIfPaidByFlutterwave } from '@/lib/billing/flutterwave/guard';
 
 export async function POST(request: Request) {
   try {
@@ -45,6 +46,10 @@ export async function POST(request: Request) {
     }
 
     const tenantId = resolved.tenant.tenant_id;
+
+    // Deja paye par Flutterwave (mobile money, carte): pas de second abonnement.
+    const refusFlutterwave = await refuseIfPaidByFlutterwave(tenantId);
+    if (refusFlutterwave) return refusFlutterwave;
 
     const email = resolved.email;
     const tenantData = resolved.tenant.tenants;
