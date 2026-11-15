@@ -35,6 +35,8 @@ function tenant(overrides: Row = {}): Row {
     subscription_plan: 'starter',
     subscription_current_period_end: null,
     stripe_subscription_id: null,
+    freeze_reason: null,
+    suspended_at: null,
     deleted_at: null,
     ...overrides,
   };
@@ -75,6 +77,7 @@ function setup(opts: {
   const client: FlutterwaveClient = {
     createPaymentLink: vi.fn().mockResolvedValue('https://checkout.flutterwave.com/pay/xyz'),
     verifyTransaction: vi.fn(),
+    verifyByReference: vi.fn(),
   };
   const retrieveStripeStatus = vi.fn().mockResolvedValue(opts.stripeStatus ?? null);
   const service = createFlutterwaveBillingService(fake.client, {
@@ -147,6 +150,48 @@ describe('startPayment', () => {
     expect(db.flutterwave_payments).toHaveLength(0);
   });
 
+  describe('restaurant suspendu ou gele (MEDIUM-A)', () => {
+    it('suspendu par le super-admin: CONFLICT lisible, aucune ligne', async () => {
+      const { service, db } = setup({ tenants: [tenant({ suspended_at: iso(-DAY) })] });
+      await expect(service.startPayment({ ...START, plan: 'pro' })).rejects.toMatchObject({
+        code: 'CONFLICT',
+        message: expect.stringContaining('suspendu'),
+      });
+      expect(db.flutterwave_payments).toHaveLength(0);
+    });
+
+    it.each(['dispute', null, 'cause_inventee'])(
+      'gele pour %s (un paiement ne le leve pas): CONFLICT, aucune ligne',
+      async (reason) => {
+        const { service, db } = setup({
+          tenants: [tenant({ subscription_status: 'frozen', freeze_reason: reason })],
+        });
+        await expect(service.startPayment({ ...START, plan: 'pro' })).rejects.toMatchObject({
+          code: 'CONFLICT',
+          message: expect.stringContaining('gele'),
+        });
+        expect(db.flutterwave_payments).toHaveLength(0);
+      },
+    );
+
+    it.each([
+      'trial_expired',
+      'past_due_overdue',
+      'stripe_unpaid',
+      'subscription_deleted',
+      'refund',
+      'flutterwave_unpaid',
+    ])(
+      'gele pour %s (un paiement le leve): le paiement est ouvert (temoin positif)',
+      async (reason) => {
+        const { service } = setup({
+          tenants: [tenant({ subscription_status: 'frozen', freeze_reason: reason })],
+        });
+        await expect(service.startPayment({ ...START, plan: 'pro' })).resolves.toBeDefined();
+      },
+    );
+  });
+
   describe('abonnement Stripe (HIGH-1)', () => {
     it('Stripe vivant (statut local utilisable + identifiant): CONFLICT, aucune ligne', async () => {
       const { service, db } = setup({
@@ -171,7 +216,13 @@ describe('startPayment', () => {
 
     it('identifiant perime, Stripe ne le connait plus (404): le paiement est ouvert', async () => {
       const { service } = setup({
-        tenants: [tenant({ subscription_status: 'frozen', stripe_subscription_id: 'sub_gone' })],
+        tenants: [
+          tenant({
+            subscription_status: 'frozen',
+            freeze_reason: 'subscription_deleted',
+            stripe_subscription_id: 'sub_gone',
+          }),
+        ],
         stripeStatus: null,
       });
       await expect(service.startPayment({ ...START, plan: 'pro' })).resolves.toBeDefined();
@@ -179,7 +230,13 @@ describe('startPayment', () => {
 
     it('identifiant present, statut local gele, Stripe dit unpaid (vivant): CONFLICT (temoin negatif)', async () => {
       const { service } = setup({
-        tenants: [tenant({ subscription_status: 'frozen', stripe_subscription_id: 'sub_1' })],
+        tenants: [
+          tenant({
+            subscription_status: 'frozen',
+            freeze_reason: 'stripe_unpaid',
+            stripe_subscription_id: 'sub_1',
+          }),
+        ],
         stripeStatus: 'unpaid',
       });
       await expect(service.startPayment({ ...START, plan: 'pro' })).rejects.toMatchObject({
@@ -230,7 +287,13 @@ describe('startPayment', () => {
       const { service } = setup({ tenants: [tenant()] });
       await expect(service.startPayment({ ...START, plan: 'business' })).resolves.toBeDefined();
       const frozen = setup({
-        tenants: [tenant({ subscription_status: 'frozen', subscription_plan: 'pro' })],
+        tenants: [
+          tenant({
+            subscription_status: 'frozen',
+            freeze_reason: 'trial_expired',
+            subscription_plan: 'pro',
+          }),
+        ],
       });
       await expect(
         frozen.service.startPayment({ ...START, plan: 'starter' }),
@@ -452,6 +515,7 @@ describe('processTransaction: appel de la fonction SQL atomique', () => {
     ['rejected_plan_change', 'PLAN_CHANGE_NOT_ALLOWED'],
     ['rejected_expired', 'EXPIRED_UNDERPAID'],
     ['rejected_conflict', 'STRIPE_CONFLICT'],
+    ['rejected_blocked', 'TENANT_BLOCKED'],
   ])('issue SQL %s: rejet %s, journalise en ERREUR pour remboursement', async (outcome, reason) => {
     vi.mocked(logger.error).mockClear();
     const { service, client } = setup({
@@ -540,5 +604,85 @@ describe('cycle de vie: identifiant Stripe perime -> paiement -> renouvellement'
     ).startPayment({ ...START, plan: 'pro' });
     expect(renewal.amount).toBe(79000);
     expect(retrieveStripeStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('reconcilePending (rattrapage)', () => {
+  const REF2 = buildTxRef(TENANT_A, 'pro', 'monthly', 'dddddddddddddddd');
+
+  it('une tentative payee mais jamais confirmee par webhook est appliquee, par reference', async () => {
+    const { service, client, rpc } = setup({ payments: [payment(REF)] });
+    vi.mocked(client.verifyByReference).mockResolvedValue(verified({ tx_ref: REF }));
+    expect(await service.reconcilePending()).toEqual({ checked: 1, applied: 1, errors: 0 });
+    expect(client.verifyByReference).toHaveBeenCalledWith(REF);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('reference inconnue de Flutterwave, ou transaction non reussie: rien n est applique (temoin negatif)', async () => {
+    const unknown = setup({ payments: [payment(REF)] });
+    vi.mocked(unknown.client.verifyByReference).mockResolvedValue(null);
+    expect(await unknown.service.reconcilePending()).toEqual({ checked: 1, applied: 0, errors: 0 });
+    expect(unknown.rpc).not.toHaveBeenCalled();
+
+    const failed = setup({ payments: [payment(REF)] });
+    vi.mocked(failed.client.verifyByReference).mockResolvedValue(
+      verified({ tx_ref: REF, status: 'failed' }),
+    );
+    expect((await failed.service.reconcilePending()).applied).toBe(0);
+    expect(failed.rpc).not.toHaveBeenCalled();
+  });
+
+  it('ne regarde que les tentatives pending des 7 derniers jours', async () => {
+    const { service, client } = setup({
+      payments: [
+        payment(REF, { created_at: iso(-8 * DAY) }),
+        payment(REF2, { status: 'successful' }),
+      ],
+    });
+    expect(await service.reconcilePending()).toEqual({ checked: 0, applied: 0, errors: 0 });
+    expect(client.verifyByReference).not.toHaveBeenCalled();
+  });
+
+  it('idempotent: un second passage ne reapplique pas (la ligne n est plus pending)', async () => {
+    const { service, client, rpc } = setup({
+      payments: [payment(REF)],
+      rpc: (_args, state) => {
+        Object.assign(state.flutterwave_payments[0], { status: 'successful' });
+        return APPLIED;
+      },
+    });
+    vi.mocked(client.verifyByReference).mockResolvedValue(verified({ tx_ref: REF }));
+    expect((await service.reconcilePending()).applied).toBe(1);
+    expect((await service.reconcilePending()).checked).toBe(0);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('le lot tourne: les lignes jamais verifiees passent avant, et chaque ligne est marquee', async () => {
+    const { service, client, db } = setup({
+      payments: [
+        payment(REF, { last_checked_at: iso(-DAY) }),
+        payment(REF2, { last_checked_at: null }),
+      ],
+    });
+    vi.mocked(client.verifyByReference).mockResolvedValue(null);
+    await service.reconcilePending(1);
+    expect(client.verifyByReference).toHaveBeenCalledWith(REF2);
+    expect(db.flutterwave_payments.find((p) => p.tx_ref === REF2)?.last_checked_at).toBe(
+      NOW.toISOString(),
+    );
+  });
+
+  it('une ligne qui echoue est comptee, marquee, et n arrete pas les suivantes', async () => {
+    const { service, client, db } = setup({
+      payments: [payment(REF, { created_at: iso(-2 * DAY) }), payment(REF2)],
+    });
+    vi.mocked(client.verifyByReference)
+      .mockRejectedValueOnce(new Error('flutterwave down'))
+      .mockResolvedValueOnce(null);
+    const result = await service.reconcilePending();
+    expect(result).toEqual({ checked: 2, applied: 0, errors: 1 });
+    expect(db.flutterwave_payments.every((p) => p.last_checked_at === NOW.toISOString())).toBe(
+      true,
+    );
   });
 });

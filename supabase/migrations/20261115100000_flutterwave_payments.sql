@@ -14,7 +14,9 @@
 --   rejected_plan_change paye pour un AUTRE plan alors que la periode en cours
 --                        a plus d'un jour restant
 --   rejected_expired     tentative de plus de 7 jours, payee moins que le prix actuel
--- Les trois `rejected_*` portent l'identifiant Flutterwave: l'argent est PRIS et
+--   rejected_blocked     restaurant suspendu par le super-admin, ou gele pour une
+--                        cause qu'un paiement ne leve pas (litige, cause inconnue)
+-- Les `rejected_*` portent l'identifiant Flutterwave: l'argent est PRIS et
 -- n'a PAS ete applique. C'est le drapeau de remboursement (le code le journalise
 -- en erreur). Rien n'est rembourse automatiquement.
 --
@@ -53,6 +55,12 @@ CREATE TABLE IF NOT EXISTS public.flutterwave_payments (
   -- Une colonne par rappel: l'ecriture est atomique, sans lecture-modification.
   reminder_d7_at timestamptz,
   reminder_d1_at timestamptz,
+  -- Jour du mois sur lequel la periode est ancree: un abonnement commence un 31
+  -- retombe sur le 31 apres un mois court (31 jan -> 28 fev -> 31 mars).
+  anchor_day smallint,
+  -- Derniere relecture chez Flutterwave d'une tentative `pending` (cron de
+  -- rattrapage): fait tourner le lot, aucune ligne n'affame les autres.
+  last_checked_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT flutterwave_payments_tx_ref_key UNIQUE (tx_ref),
   CONSTRAINT flutterwave_payments_flw_transaction_id_key UNIQUE (flw_transaction_id),
@@ -61,7 +69,8 @@ CREATE TABLE IF NOT EXISTS public.flutterwave_payments (
   CONSTRAINT flutterwave_payments_amount_check CHECK (amount > 0),
   CONSTRAINT flutterwave_payments_currency_check CHECK (currency IN ('XOF', 'XAF')),
   CONSTRAINT flutterwave_payments_status_check CHECK (
-    status IN ('pending', 'successful', 'rejected_conflict', 'rejected_plan_change', 'rejected_expired')
+    status IN ('pending', 'successful', 'rejected_conflict', 'rejected_plan_change',
+               'rejected_expired', 'rejected_blocked')
   ),
   -- Pas d'etat intermediaire ambigu: en attente = rien de regle; applique =
   -- transaction ET periode; rejete = transaction (l'argent est pris), jamais de periode.
@@ -135,7 +144,10 @@ DECLARE
   v_t public.tenants%ROWTYPE;
   v_base timestamptz;
   v_end timestamptz;
-  v_kept boolean;
+  v_anchor integer;
+  v_ts timestamp;
+  v_first timestamp;
+  v_last integer;
   v_unfreezable text[] := ARRAY[
     'trial_expired', 'past_due_overdue', 'stripe_unpaid',
     'subscription_deleted', 'refund', 'flutterwave_unpaid'
@@ -189,6 +201,19 @@ BEGIN
     RETURN jsonb_build_object('outcome', 'rejected_expired');
   END IF;
 
+  -- Suspendu par le super-admin, ou gele pour une cause qu'un paiement ne leve
+  -- pas (litige, cause inconnue): on n'encaisse pas pour un acces qui restera
+  -- ferme. L'argent est pris: drapeau de remboursement, rien n'est applique.
+  IF v_t.suspended_at IS NOT NULL OR (
+    v_t.subscription_status = 'frozen'
+    AND NOT (coalesce(v_t.freeze_reason, '') = ANY (v_unfreezable))
+  ) THEN
+    UPDATE public.flutterwave_payments
+       SET status = 'rejected_blocked', flw_transaction_id = p_flw_transaction_id
+     WHERE id = p_payment_id;
+    RETURN jsonb_build_object('outcome', 'rejected_blocked');
+  END IF;
+
   -- Debut de periode: essai en cours = ses jours restants sont conserves; meme
   -- plan = fin de periode en cours (aucun jour perdu); autre plan (admis
   -- seulement a moins d'un jour de l'echeance, ou sans periode payee) = maintenant.
@@ -198,13 +223,20 @@ BEGIN
   ELSIF v_t.subscription_plan = v_pay.plan AND v_t.subscription_current_period_end IS NOT NULL THEN
     v_base := greatest(v_base, v_t.subscription_current_period_end);
   END IF;
-  v_end := ((v_base AT TIME ZONE 'UTC')
-    + CASE v_pay.billing_interval WHEN 'yearly' THEN interval '12 months' ELSE interval '1 month' END
-  ) AT TIME ZONE 'UTC';
 
-  -- Un gel pour litige (ou de cause inconnue) ne se leve pas par un paiement.
-  v_kept := v_t.subscription_status = 'frozen'
-    AND NOT (coalesce(v_t.freeze_reason, '') = ANY (v_unfreezable));
+  -- Fin de periode ANCREE sur le jour du premier mois: la periode qui suit une
+  -- periode contigue garde son jour d'ancrage (31 jan -> 28 fev -> 31 mars).
+  v_anchor := coalesce(
+    (SELECT p.anchor_day FROM public.flutterwave_payments p
+      WHERE p.tenant_id = v_t.id AND p.status = 'successful' AND p.period_end = v_base
+      ORDER BY p.created_at DESC LIMIT 1),
+    extract(day FROM (v_base AT TIME ZONE 'UTC'))::int
+  );
+  v_ts := v_base AT TIME ZONE 'UTC';
+  v_first := date_trunc('month', v_ts)
+    + CASE v_pay.billing_interval WHEN 'yearly' THEN interval '12 months' ELSE interval '1 month' END;
+  v_last := extract(day FROM (v_first + interval '1 month' - interval '1 day'))::int;
+  v_end := ((v_first::date + (least(v_anchor, v_last) - 1)) + v_ts::time) AT TIME ZONE 'UTC';
 
   UPDATE public.tenants SET
     subscription_plan = v_pay.plan,
@@ -213,23 +245,22 @@ BEGIN
     subscription_current_period_end = v_end,
     -- L'identifiant Stripe restant ici est celui d'un abonnement MORT (verifie).
     stripe_subscription_id = NULL,
-    subscription_status = CASE WHEN v_kept THEN subscription_status ELSE 'active' END,
-    is_active = CASE WHEN v_kept THEN is_active
-                     ELSE (suspended_at IS NULL AND deleted_at IS NULL) END,
-    past_due_since = CASE WHEN v_kept THEN past_due_since ELSE NULL END,
-    freeze_reason = CASE WHEN v_kept THEN freeze_reason ELSE NULL END
+    subscription_status = 'active',
+    is_active = true,
+    past_due_since = NULL,
+    freeze_reason = NULL
   WHERE id = v_t.id;
 
   UPDATE public.flutterwave_payments
      SET status = 'successful', flw_transaction_id = p_flw_transaction_id,
-         period_start = v_base, period_end = v_end
+         period_start = v_base, period_end = v_end, anchor_day = v_anchor
    WHERE id = p_payment_id;
 
   RETURN jsonb_build_object(
     'outcome', 'applied',
     'period_start', v_base,
     'period_end', v_end,
-    'unfrozen', v_t.subscription_status = 'frozen' AND NOT v_kept
+    'unfrozen', v_t.subscription_status = 'frozen'
   );
 END;
 $$;
@@ -265,6 +296,7 @@ AS $$
      AND t.deleted_at IS NULL
      AND t.suspended_at IS NULL
      AND t.stripe_subscription_id IS NULL
+     AND t.currency IN ('XOF', 'XAF')
      AND t.subscription_current_period_end = p.period_end
      AND p.period_end > p_now
      AND p.period_end <= p_now + interval '7 days'

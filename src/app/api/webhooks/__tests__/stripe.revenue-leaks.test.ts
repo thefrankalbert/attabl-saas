@@ -28,6 +28,13 @@ const { mockConstructEvent, mockSubscriptionsRetrieve, mockChargesList } = vi.ho
 }));
 
 const mockFrom = vi.fn();
+// Un restaurant paye par Flutterwave n'a pas d'identifiant Stripe: la garde lit la table
+// `flutterwave_payments`, que ces doublures de `tenants` ne simulent pas (mesuree a part
+// dans stripe-webhook/__tests__/flutterwave-evenements-abonnement.test.ts).
+vi.mock('@/lib/billing/flutterwave/active-period', () => ({
+  hasActiveFlutterwavePeriod: vi.fn().mockResolvedValue(false),
+}));
+
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({ from: mockFrom })),
 }));

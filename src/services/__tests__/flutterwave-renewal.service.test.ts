@@ -8,6 +8,7 @@ import {
   createFlutterwaveRenewalService,
   FLUTTERWAVE_GRACE_DAYS,
 } from '../flutterwave-renewal.service';
+import { ServiceError } from '../errors';
 import { createFakeSupabase } from './helpers/fake-supabase';
 
 // La SELECTION (qui est a relancer, qui est a geler) est faite en SQL et mesuree par
@@ -141,6 +142,26 @@ describe('rappels de renouvellement', () => {
     expect(email.sendRenewalReminderEmail).not.toHaveBeenCalled();
     expect(billing.startPayment).not.toHaveBeenCalled();
     expect(payment(db, 'pay-11').reminder_d7_at).toBe(NOW.toISOString());
+  });
+
+  it.each(['VALIDATION', 'CONFLICT'] as const)(
+    'startPayment refuse (%s): la fenetre est fermee, aucun courriel, pas de nouvel essai demain',
+    async (code) => {
+      const { service, billing, email, db } = setup({ dues: [due(T1)] });
+      billing.startPayment.mockRejectedValueOnce(new ServiceError('refus metier', code));
+      expect(await service.sendReminders()).toEqual({ reminded: 0, skipped: 1 });
+      expect(email.sendRenewalReminderEmail).not.toHaveBeenCalled();
+      expect(payment(db, 'pay-11').reminder_d7_at).toBe(NOW.toISOString());
+    },
+  );
+
+  it('une panne passagere (INTERNAL) ne ferme PAS la fenetre: le prochain passage reessaie', async () => {
+    const { service, billing, db } = setup({ dues: [due(T1)] });
+    billing.startPayment.mockRejectedValueOnce(
+      new ServiceError('Paiement indisponible', 'INTERNAL'),
+    );
+    expect(await service.sendReminders()).toEqual({ reminded: 0, skipped: 1 });
+    expect(payment(db, 'pay-11').reminder_d7_at).toBeNull();
   });
 
   it('un echec sur un restaurant (lien impossible) n empeche pas les suivants', async () => {

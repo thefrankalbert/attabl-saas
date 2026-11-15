@@ -41,3 +41,13 @@ export async function runFlutterwaveRenewals(): Promise<RenewalRunResult | null>
     email: createEmailService(),
   }).run();
 }
+
+/** Rattrapage des tentatives `pending` non confirmees par webhook. `null` quand la fonctionnalite est eteinte. */
+export async function runFlutterwaveReconcile(): Promise<{
+  checked: number;
+  applied: number;
+  errors: number;
+} | null> {
+  const wired = buildFlutterwaveBilling();
+  return wired ? wired.billing.reconcilePending() : null;
+}

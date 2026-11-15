@@ -9,6 +9,11 @@ import type { VerifiedTransaction } from './schemas';
  * - verification: GET /v3/transactions/{id}/verify, reponse { status, data: { id,
  *   tx_ref, status, amount, currency, charged_amount, ... } }
  *   (https://developer.flutterwave.com/docs/transaction-verification)
+ * - verification par reference: GET /v3/transactions/verify_by_reference?tx_ref=... meme
+ *   reponse que par identifiant. Chemin releve dans la source officielle du SDK
+ *   flutterwave-node-v3 1.3.1 (services/transactions/rave.verify-by-txref.js) et sa
+ *   documentation (documentation/transactions.md, section "Verify transaction with
+ *   reference"); la page de reference de developer.flutterwave.com n'a pas pu etre lue.
  * - webhook: en-tete `verif-hash`, evenement `charge.completed`
  *   (https://developer.flutterwave.com/docs/webhooks)
  */
@@ -41,6 +46,8 @@ export interface CreatePaymentLinkInput {
 export interface FlutterwaveClient {
   createPaymentLink(input: CreatePaymentLinkInput): Promise<string>;
   verifyTransaction(transactionId: number): Promise<VerifiedTransaction>;
+  /** Verification par reference (`tx_ref`): `null` si Flutterwave ne connait pas cette reference. */
+  verifyByReference(txRef: string): Promise<VerifiedTransaction | null>;
 }
 
 export function createFlutterwaveClient(
@@ -101,6 +108,32 @@ export function createFlutterwaveClient(
       const parsed = verifyTransactionResponseSchema.safeParse(raw);
       if (!parsed.success) {
         logger.error('Flutterwave: reponse de verification inattendue', parsed.error);
+        throw new FlutterwaveApiError('Reponse Flutterwave inattendue', null);
+      }
+      return parsed.data.data;
+    },
+
+    async verifyByReference(txRef) {
+      let raw: unknown;
+      try {
+        raw = await call(`/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`, {
+          method: 'GET',
+        });
+      } catch (error) {
+        // Reference inconnue (tentative jamais payee, cas le plus courant): refus 400/404
+        // de Flutterwave, ou un corps `status: error`. Ce n'est pas une panne.
+        if (
+          error instanceof FlutterwaveApiError &&
+          (error.httpStatus === 404 || error.httpStatus === 400)
+        ) {
+          return null;
+        }
+        throw error;
+      }
+      if ((raw as { status?: unknown } | null)?.status === 'error') return null;
+      const parsed = verifyTransactionResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        logger.error('Flutterwave: reponse de verification par reference inattendue', parsed.error);
         throw new FlutterwaveApiError('Reponse Flutterwave inattendue', null);
       }
       return parsed.data.data;

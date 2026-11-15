@@ -30,7 +30,7 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
     private filters: Filter[] = [];
     private returning = false;
     private limitN: number | null = null;
-    private orders: { col: string; asc: boolean }[] = [];
+    private orders: { col: string; asc: boolean; nullsFirst: boolean }[] = [];
     private mode: 'many' | 'maybeSingle' = 'many';
 
     constructor(private table: string) {}
@@ -77,8 +77,12 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
       this.filters.push((r) => r[col] != null && String(r[col]) > value);
       return this;
     }
-    order(col: string, opts?: { ascending?: boolean }) {
-      this.orders.push({ col, asc: opts?.ascending ?? true });
+    order(col: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) {
+      this.orders.push({
+        col,
+        asc: opts?.ascending ?? true,
+        nullsFirst: opts?.nullsFirst ?? false,
+      });
       return this;
     }
     limit(n: number) {
@@ -125,8 +129,13 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
       }
 
       let out = matched.map((r) => ({ ...r }));
-      for (const { col, asc } of [...this.orders].reverse()) {
-        out = out.sort((a, b) => (String(a[col]) < String(b[col]) ? -1 : 1) * (asc ? 1 : -1));
+      for (const { col, asc, nullsFirst } of [...this.orders].reverse()) {
+        out = out.sort((a, b) => {
+          const an = a[col] == null;
+          const bn = b[col] == null;
+          if (an || bn) return an === bn ? 0 : an === nullsFirst ? -1 : 1;
+          return (String(a[col]) < String(b[col]) ? -1 : 1) * (asc ? 1 : -1);
+        });
       }
       if (this.limitN !== null) out = out.slice(0, this.limitN);
       if (this.mode === 'maybeSingle') return { data: out[0] ?? null, error: null };

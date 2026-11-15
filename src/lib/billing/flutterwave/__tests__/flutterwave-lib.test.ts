@@ -146,4 +146,59 @@ describe('client Flutterwave', () => {
     const client = createFlutterwaveClient('k', fetchImpl as unknown as typeof fetch);
     await expect(client.verifyTransaction(1)).rejects.toBeInstanceOf(FlutterwaveApiError);
   });
+
+  describe('verifyByReference', () => {
+    const body = {
+      status: 'success',
+      data: { id: 42, tx_ref: 'ref1', status: 'successful', amount: 79000, currency: 'XOF' },
+    };
+
+    it('appelle verify_by_reference avec la reference encodee', async () => {
+      const fetchImpl = vi.fn().mockResolvedValue(okJson(body));
+      const client = createFlutterwaveClient('k', fetchImpl as unknown as typeof fetch);
+      expect(await client.verifyByReference('atb_a b')).toMatchObject({ id: 42 });
+      expect((fetchImpl.mock.calls[0] as [string])[0]).toBe(
+        'https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=atb_a%20b',
+      );
+    });
+
+    it('reference inconnue (404, 400 ou corps status error): null, pas une panne', async () => {
+      for (const res of [
+        okJson({ message: 'x' }, 404),
+        okJson({ message: 'x' }, 400),
+        okJson({ status: 'error', data: null }),
+      ]) {
+        const client = createFlutterwaveClient(
+          'k',
+          vi.fn().mockResolvedValue(res) as unknown as typeof fetch,
+        );
+        expect(await client.verifyByReference('ref')).toBeNull();
+      }
+    });
+
+    it('une vraie panne (500, reseau) leve (temoin negatif)', async () => {
+      const server = createFlutterwaveClient(
+        'k',
+        vi.fn().mockResolvedValue(okJson({}, 500)) as unknown as typeof fetch,
+      );
+      await expect(server.verifyByReference('ref')).rejects.toBeInstanceOf(FlutterwaveApiError);
+      const network = createFlutterwaveClient(
+        'k',
+        vi.fn().mockRejectedValue(new Error('x')) as unknown as typeof fetch,
+      );
+      await expect(network.verifyByReference('ref')).rejects.toBeInstanceOf(FlutterwaveApiError);
+    });
+
+    it('une reponse mal formee leve', async () => {
+      const client = createFlutterwaveClient(
+        'k',
+        vi
+          .fn()
+          .mockResolvedValue(
+            okJson({ status: 'success', data: { id: 'x' } }),
+          ) as unknown as typeof fetch,
+      );
+      await expect(client.verifyByReference('ref')).rejects.toBeInstanceOf(FlutterwaveApiError);
+    });
+  });
 });

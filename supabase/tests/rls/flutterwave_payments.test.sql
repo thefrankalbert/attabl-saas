@@ -18,7 +18,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(72);
+select plan(81);
 
 -- ---------------------------------------------------------------------------
 -- Aides (temporaires, detruites avec la transaction)
@@ -259,15 +259,24 @@ select is((select row(subscription_status, is_active, freeze_reason)::text from 
 
 select pg_temp.mk_tenant(16, 'frozen', 'pro', null, null, null, 'dispute');
 select pg_temp.mk_pending(16, 'pro', 'monthly', 79000);
-select is(pg_temp.go(16, 1016, 79000, 79000) -> 'unfrozen', 'false'::jsonb, 'S17: gel pour litige -> NON leve');
-select is((select row(subscription_status, is_active, freeze_reason)::text from pg_temp.ten(16)),
-  row('frozen', false, 'dispute')::text, 'S17: reste gele, inactif, cause conservee');
+select is(pg_temp.go(16, 1016, 79000, 79000) ->> 'outcome', 'rejected_blocked',
+  'S17: gel pour litige -> rejected_blocked (argent pris, a rembourser)');
+select is((select row(subscription_status, is_active, freeze_reason, subscription_current_period_end)::text from pg_temp.ten(16)),
+  row('frozen', false, 'dispute', null::timestamptz)::text, 'S17: reste gele, aucune periode ecrite');
+select is((select row(status, flw_transaction_id)::text from pg_temp.pay(16)),
+  row('rejected_blocked', 1016::bigint)::text, 'S17: la ligne porte la transaction (drapeau de remboursement)');
+
+select pg_temp.mk_tenant(23, 'frozen', 'pro', null, null, null, null);
+select pg_temp.mk_pending(23, 'pro', 'monthly', 79000);
+select is(pg_temp.go(23, 1023, 79000, 79000) ->> 'outcome', 'rejected_blocked',
+  'S17b: gele sans cause connue -> rejected_blocked (cause inconnue = gel qui ne se leve pas)');
 
 select pg_temp.mk_tenant(17, 'trial', 'starter', null, null, null, null, '2026-11-01T00:00:00Z');
 select pg_temp.mk_pending(17, 'pro', 'monthly', 79000);
-select pg_temp.go(17, 1017, 79000, 79000);
+select is(pg_temp.go(17, 1017, 79000, 79000) ->> 'outcome', 'rejected_blocked',
+  'S18: restaurant suspendu par le super-admin -> rejected_blocked');
 select is((select row(subscription_status, is_active)::text from pg_temp.ten(17)),
-  row('active', false)::text, 'S18: restaurant suspendu par le super-admin: actif mais is_active reste faux');
+  row('trial', false)::text, 'S18: le restaurant suspendu n est pas reactive par un paiement');
 
 select pg_temp.mk_tenant(18, 'active', 'pro', null, null, null, null, null, '2026-11-01T00:00:00Z');
 select pg_temp.mk_pending(18, 'pro', 'monthly', 79000);
@@ -333,6 +342,41 @@ select is(public.apply_flutterwave_payment(pg_temp.pid(91), 2009, 79000, 79000, 
 select is((select row(subscription_status, is_active, freeze_reason, subscription_current_period_end)::text from pg_temp.ten(9)),
   row('active', true, null::text, '2027-01-19T02:00:00Z'::timestamptz)::text,
   'L9: actif, la periode repart de maintenant');
+
+-- ===========================================================================
+-- 7b. Ancrage du jour de periode (LOW-3) et devise (LOW-4)
+-- ===========================================================================
+-- Restaurant 6 (S6): premiere periode 31 jan -> 28 fev. Le renouvellement contigu
+-- retombe sur le 31 (et non sur le 28).
+insert into public.flutterwave_payments (id, tenant_id, tx_ref, plan, billing_interval, amount, currency, status, created_at)
+  values (pg_temp.pid(96), pg_temp.tid(6), 'atb_t6b', 'pro', 'monthly', 79000, 'XOF', 'pending', '2027-02-19T10:00:00Z');
+select pg_temp.go(96, 2096, 79000, 79000, false, '2027-02-20T10:00:00Z');
+select is((select subscription_current_period_end from pg_temp.ten(6)), '2027-03-31T10:00:00Z'::timestamptz,
+  'A1: 31 jan -> 28 fev -> 31 mars (jour d ancrage conserve)');
+select is((select anchor_day from pg_temp.pay(6)), 31::smallint, 'A1: la premiere ligne porte le jour d ancrage 31');
+
+-- Apres une interruption (periode finie, on repart de maintenant), l'ancrage repart aussi.
+select pg_temp.mk_tenant(24, 'active', 'pro', '2026-08-31T00:00:00Z');
+select pg_temp.mk_pending(24, 'pro', 'monthly', 79000);
+select pg_temp.go(24, 1024, 79000, 79000);
+select is((select period_end from pg_temp.pay(24)), '2026-12-15T10:00:00Z'::timestamptz,
+  'A2: apres une interruption, la periode repart de maintenant avec le jour de maintenant');
+
+-- Un restaurant dont la devise n'est plus XOF/XAF n'est pas relance.
+select pg_temp.mk_tenant(25, 'active', 'pro', null);
+select pg_temp.mk_pending(25, 'pro', 'monthly', 79000);
+select pg_temp.go(25, 1025, 79000, 79000, false, '2026-11-01T00:00:00Z');
+select is((select count(*)::int from public.flutterwave_renewals_due('2026-11-28T00:00:00Z', 50) where tenant_id = pg_temp.tid(25)),
+  1, 'D1: temoin positif, un restaurant XOF paye est relance');
+update public.tenants set currency = 'EUR' where id = pg_temp.tid(25);
+select is((select count(*)::int from public.flutterwave_renewals_due('2026-11-28T00:00:00Z', 50) where tenant_id = pg_temp.tid(25)),
+  0, 'D2: meme restaurant passe en EUR -> exclu des rappels (aucun paiement Flutterwave possible)');
+
+select ok(
+  (select count(*) = 2 from information_schema.columns
+    where table_schema = 'public' and table_name = 'flutterwave_payments'
+      and column_name in ('anchor_day', 'last_checked_at')),
+  'colonnes anchor_day et last_checked_at presentes');
 
 -- ===========================================================================
 -- 8. Lecture: proprietaires et admins du restaurant seulement (L4)

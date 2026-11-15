@@ -5,6 +5,7 @@ import { PLAN_TOTALS } from '@/lib/billing/pricing';
 import type { BillingInterval, SubscriptionPlan } from '@/types/billing';
 import type { EmailService } from './email.types';
 import type { FlutterwaveBillingService } from './flutterwave-billing.service';
+import { ServiceError } from './errors';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -101,12 +102,27 @@ export function createFlutterwaveRenewalService(
       return false;
     }
 
-    const payment = await deps.billing.startPayment({
-      tenantId: due.tenant_id,
-      customerEmail: recipients[0],
-      plan: due.plan,
-      interval: due.billing_interval,
-    });
+    let payment: Awaited<ReturnType<FlutterwaveBillingService['startPayment']>>;
+    try {
+      payment = await deps.billing.startPayment({
+        tenantId: due.tenant_id,
+        customerEmail: recipients[0],
+        plan: due.plan,
+        interval: due.billing_interval,
+      });
+    } catch (err) {
+      // Refus metier (devise, abonnement Stripe vivant, gel, suspension): le
+      // reessayer demain donnerait la meme reponse. On ferme la fenetre.
+      if (err instanceof ServiceError && (err.code === 'VALIDATION' || err.code === 'CONFLICT')) {
+        logger.warn('Flutterwave: rappel non envoye, paiement impossible pour ce restaurant', {
+          tenantId: due.tenant_id,
+          reason: err.message,
+        });
+        await markReminded(due);
+        return false;
+      }
+      throw err;
+    }
     const { data: tenantRow } = await supabase
       .from('tenants')
       .select('name')

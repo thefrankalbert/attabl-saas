@@ -1,31 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
-
-/** Postgres `undefined_table` et son equivalent PostgREST: la migration n'est pas encore appliquee. */
-const MISSING_TABLE_CODES = ['42P01', 'PGRST205'];
-
-/**
- * Le restaurant est-il PAYE par Flutterwave en ce moment ? (une ligne reglee
- * dont la periode n'est pas finie.) Lecture service_role, filtree par restaurant.
- *
- * Le code part en production avant la migration (regle du depot): tant que la
- * table n'existe pas, personne n'a paye par Flutterwave, la reponse est `false`.
- */
-async function hasActiveFlutterwavePeriod(tenantId: string, now: Date): Promise<boolean> {
-  const { data, error } = await createAdminClient()
-    .from('flutterwave_payments')
-    .select('id')
-    .eq('tenant_id', tenantId)
-    .eq('status', 'successful')
-    .gt('period_end', now.toISOString())
-    .limit(1);
-  if (error) {
-    if (MISSING_TABLE_CODES.includes((error as { code?: string }).code ?? '')) return false;
-    throw new Error('Lecture des paiements Flutterwave impossible');
-  }
-  return (data ?? []).length > 0;
-}
+import { hasActiveFlutterwavePeriod } from './active-period';
 
 /**
  * Garde des routes Stripe (checkout, checkout integre, changement de plan): un
@@ -40,7 +16,7 @@ export async function refuseIfPaidByFlutterwave(
   now: Date = new Date(),
 ): Promise<NextResponse | null> {
   try {
-    if (!(await hasActiveFlutterwavePeriod(tenantId, now))) return null;
+    if (!(await hasActiveFlutterwavePeriod(createAdminClient(), tenantId, now))) return null;
   } catch (error) {
     logger.error('Garde Flutterwave: lecture impossible', error, { tenantId });
     return NextResponse.json(

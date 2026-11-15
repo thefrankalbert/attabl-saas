@@ -283,6 +283,7 @@ describe('classement de toutes les routes API', () => {
     'billing/flutterwave/confirm',
     'webhooks/flutterwave',
     'cron/flutterwave-renewals',
+    'cron/flutterwave-reconcile',
     'cron/freeze-expired-trials',
     'cron/reconcile-payments',
     'dev/simulate-subscription',
