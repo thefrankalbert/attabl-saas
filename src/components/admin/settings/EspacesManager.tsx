@@ -178,7 +178,9 @@ export function EspacesManager({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              {/* flex-wrap: in a narrow card (3 columns at 1024 px) the second button
+                  overflowed the card and slid under its neighbour. */}
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"

@@ -39,7 +39,7 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
           <Input
             id="city"
             {...register('city')}
-            placeholder={t('cityPlaceholder') ?? 'ex: Douala'}
+            placeholder={t('cityPlaceholder')}
             className="min-h-[44px]"
           />
           {errors.city && <p className="text-xs text-status-error">{errors.city.message}</p>}
@@ -49,7 +49,7 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
           <Input
             id="country"
             {...register('country')}
-            placeholder={t('countryPlaceholder') ?? 'ex: Cameroun'}
+            placeholder={t('countryPlaceholder')}
             className="min-h-[44px]"
           />
           {errors.country && <p className="text-xs text-status-error">{errors.country.message}</p>}

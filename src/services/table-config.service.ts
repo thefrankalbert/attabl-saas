@@ -12,6 +12,7 @@ import {
   type TableConfigService,
 } from './table-config.types';
 import { createTableConfigGuards } from './table-config.guards';
+import { sortByTableNumber } from '@/lib/utils/table-order';
 
 /**
  * Service for managing restaurant zones and table configurations.
@@ -160,25 +161,24 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       // 0. Ownership guard: zone must belong to the verified tenant
       await assertZoneOwnedByTenant(tenantId, zoneId);
 
-      // 1. Find the max existing table number for this prefix
-      const { data: maxTable } = await supabase
+      // 1. Find the max existing table number for this prefix. Numeric max, not a
+      // text sort: "BAR-9" sorts after "BAR-10" as text, which restarted the
+      // numbering on an existing table once a zone had 10 tables.
+      const { data: existing } = await supabase
         .from('tables')
         .select('table_number')
         .eq('zone_id', zoneId)
-        .like('table_number', `${prefix}-%`)
-        .order('table_number', { ascending: false })
-        .limit(1)
-        .single();
+        .like('table_number', `${prefix}-%`);
 
-      let startIndex = 1;
-
-      if (maxTable?.table_number) {
-        const parts = (maxTable.table_number as string).split('-');
-        const lastNum = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(lastNum)) {
-          startIndex = lastNum + 1;
-        }
-      }
+      const lastNum = Math.max(
+        0,
+        ...(existing ?? []).map((row) => {
+          const parts = String(row.table_number).split('-');
+          const n = parseInt(parts[parts.length - 1], 10);
+          return Number.isNaN(n) ? 0 : n;
+        }),
+      );
+      const startIndex = lastNum + 1;
 
       // 2. Build new table rows
       const tableRows = Array.from({ length: count }, (_, i) => {
@@ -427,7 +427,7 @@ export function createTableConfigService(supabase: SupabaseClient): TableConfigS
       if (error) {
         throw new ServiceError(`Erreur chargement tables: ${error.message}`, 'INTERNAL', error);
       }
-      return (data as TableWithZoneRef[]) || [];
+      return sortByTableNumber((data as TableWithZoneRef[]) || []);
     },
   };
 }

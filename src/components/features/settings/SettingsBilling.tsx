@@ -109,6 +109,7 @@ export default function SettingsBilling({ form, t, initialPaymentMethods }: Sett
                     type="checkbox"
                     checked={isChecked}
                     disabled={isBase}
+                    aria-label={t(labelKey)}
                     onChange={() => handleSupportedCurrencyToggle(code)}
                     className="sr-only"
                   />

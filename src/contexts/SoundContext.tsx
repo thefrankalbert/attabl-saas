@@ -160,19 +160,24 @@ interface SoundProviderProps {
 export function SoundProvider({ children, notificationSoundId, tenantId }: SoundProviderProps) {
   const lsPrefix = tenantId ? `${tenantId}_` : '';
 
-  // State - default to enabled (critical for restaurant order alerts)
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const stored = localStorage.getItem(`${lsPrefix}${LS_ENABLED_KEY}`);
-    if (stored === null) return true;
-    return stored === 'true';
-  });
+  // State starts from the SERVER values (enabled - critical for order alerts - and
+  // the tenant's sound) so the first client render matches the server HTML. Reading
+  // localStorage in the initializer gave the <audio> a different src on the server
+  // and the client: a hydration mismatch (rule 03, seen live 2026-11-14).
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [currentSoundId, setCurrentSoundId] = useState(notificationSoundId || DEFAULT_SOUND_ID);
 
-  const [currentSoundId, setCurrentSoundId] = useState(() => {
-    if (typeof window === 'undefined') return notificationSoundId || DEFAULT_SOUND_ID;
-    const stored = localStorage.getItem(`${lsPrefix}${LS_KEY}`);
-    return stored || notificationSoundId || DEFAULT_SOUND_ID;
-  });
+  // Then apply this device's stored choices, after hydration.
+  useEffect(() => {
+    try {
+      const storedEnabled = localStorage.getItem(`${lsPrefix}${LS_ENABLED_KEY}`);
+      if (storedEnabled !== null) setSoundEnabled(storedEnabled === 'true');
+      const storedSound = localStorage.getItem(`${lsPrefix}${LS_KEY}`);
+      if (storedSound) setCurrentSoundId(storedSound);
+    } catch {
+      // Storage unavailable (private mode): keep the server values.
+    }
+  }, [lsPrefix]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);

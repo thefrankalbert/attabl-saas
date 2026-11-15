@@ -697,7 +697,6 @@
               "desc": "Digital tickets per table, with a timer."
             },
             "tables": {
-              "zoneNameAndPrefixRequired": "Give the zone a name and a prefix (e.g. Terrace, TER).",
               "title": "Table plan",
               "desc": "The state of each table, live."
             },
@@ -2036,6 +2035,7 @@
       "paymentMethodsTitle": "Payment methods",
       "paymentMethodsDesc": "Enable the payment methods available to your customers.",
       "paymentMethodsSaved": "Payment methods saved",
+      "paymentMethodsAtLeastOne": "Keep at least one payment method on.",
       "paymentMethodsError": "Error saving payment methods",
       "savePaymentMethods": "Save",
       "paymentMethod": {
@@ -2379,10 +2379,10 @@
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 Main Street...",
     "city": "City",
-    "cityPlaceholder": "ex: Douala",
+    "cityPlaceholder": "e.g. Ouagadougou",
     "country": "Country",
-    "countryPlaceholder": "ex: Cameroon",
-    "phonePlaceholder": "+1 555 123 4567",
+    "countryPlaceholder": "e.g. Burkina Faso",
+    "phonePlaceholder": "+226 70 00 00 00",
     "modify": "Edit",
     "recommendedFormat": "Recommended format: PNG or JPG",
     "maxSize": "Max size: 10 MB",
@@ -4311,6 +4311,7 @@
     "zonePrefixLabel": "Table prefix",
     "zonePrefixPlaceholder": "E.g.: MAN",
     "zonePrefixHelp": "The prefix will be used to name tables (e.g.: MAN-1, MAN-2)",
+    "zoneNameAndPrefixRequired": "Give the zone a name and a prefix (e.g. Terrace, TER).",
     "cancel": "Cancel",
     "createZoneSubmit": "Create zone",
     "tableCountLabel": "Number of tables",

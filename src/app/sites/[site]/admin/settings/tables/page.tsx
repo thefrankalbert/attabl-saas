@@ -6,6 +6,7 @@ import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { sortByTableNumber } from '@/lib/utils/table-order';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,7 +128,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
       .eq('zone_id', zones[0].id)
       .order('table_number');
 
-    initialTables = (tablesData || []) as typeof initialTables;
+    initialTables = sortByTableNumber((tablesData || []) as typeof initialTables);
   }
 
   return (

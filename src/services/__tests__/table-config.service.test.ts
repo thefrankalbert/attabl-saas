@@ -11,7 +11,8 @@ import { ServiceError } from '../errors';
  * After bulk refactor:
  * - Zone inserts use `.insert(array).select()` (bulk, no .single())
  * - Table inserts use `.insert(array).select()` (bulk, no .single())
- * - Table lookups use `.select().eq().like().order().limit().single()`
+ * - addTablesToZone reads every `PREFIX-n` of the zone via `.select().eq().like()`
+ *   (awaited) and takes the NUMERIC max
  */
 interface MockChain {
   single: ReturnType<typeof vi.fn>;
@@ -22,6 +23,10 @@ interface MockChain {
   deleteIn: ReturnType<typeof vi.fn>;
   /** `.delete().in(...).eq(col, val)` - awaited result of the delete. */
   deleteEq: ReturnType<typeof vi.fn>;
+  /** `.select().eq('zone_id').like('table_number', 'PFX-%')` - awaited rows. */
+  like: ReturnType<typeof vi.fn>;
+  /** Rows passed to the last `.insert(rows)`. */
+  inserted: unknown;
 }
 
 function createMockSupabase() {
@@ -47,6 +52,8 @@ function createMockSupabase() {
         bulkResult: vi.fn(),
         deleteIn: vi.fn(),
         deleteEq: vi.fn().mockResolvedValue({ error: null }),
+        like: vi.fn().mockResolvedValue({ data: [], error: null }),
+        inserted: undefined,
       };
       chains[table].deleteIn.mockReturnValue({ eq: chains[table].deleteEq });
     }
@@ -62,23 +69,26 @@ function createMockSupabase() {
 
       // insert().select() - bulk inserts for both zones and tables
       // Also supports .single() for addTablesToZone lookup pattern
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockImplementation(() => {
-          const bulkFn = chain.bulkResult as (...args: unknown[]) => {
-            data: unknown;
-            error: unknown;
-          } | null;
-          const selectResult = bulkFn();
-          return {
-            single: chain.single,
-            data: selectResult?.data,
-            error: selectResult?.error,
-          };
-        }),
+      insert: vi.fn().mockImplementation((rows: unknown) => {
+        chain.inserted = rows;
+        return {
+          select: vi.fn().mockImplementation(() => {
+            const bulkFn = chain.bulkResult as (...args: unknown[]) => {
+              data: unknown;
+              error: unknown;
+            } | null;
+            const selectResult = bulkFn();
+            return {
+              single: chain.single,
+              data: selectResult?.data,
+              error: selectResult?.error,
+            };
+          }),
+        };
       }),
 
       // select(...) supports several read shapes:
-      // - addTablesToZone max-number lookup: .eq().like().order().limit().single()
+      // - addTablesToZone max-number lookup: .eq().like() (awaited)
       // - ownership guards: .eq('id', x).maybeSingle() (zones/tables)
       //   and .eq('id', x).eq('tenant_id', y).maybeSingle() (venues)
       // - insertTables guard: .in('id', ids).eq('venues.tenant_id', y) (awaited)
@@ -93,13 +103,7 @@ function createMockSupabase() {
             }),
             maybeSingle: chain.maybeSingle,
           }),
-          like: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                single: chain.single,
-              }),
-            }),
-          }),
+          like: chain.like,
           // zones/tables ownership guard: single .eq('id', x).maybeSingle()
           maybeSingle: chain.maybeSingle,
         }),
@@ -384,9 +388,9 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      // First call: select max table_number for the zone - returns INT-5
-      supabase._getChain('tables').single.mockResolvedValueOnce({
-        data: { table_number: 'INT-5' },
+      // Existing tables of the zone with this prefix
+      supabase._getChain('tables').like.mockResolvedValueOnce({
+        data: [{ table_number: 'INT-5' }, { table_number: 'INT-2' }],
         error: null,
       });
 
@@ -403,6 +407,31 @@ describe('TableConfigService', () => {
 
       expect(result).toHaveLength(2);
       expect(supabase.from).toHaveBeenCalledWith('tables');
+      expect(supabase._getChain('tables').inserted).toEqual([
+        expect.objectContaining({ table_number: 'INT-6' }),
+        expect.objectContaining({ table_number: 'INT-7' }),
+      ]);
+    });
+
+    it('continues after the NUMERIC max once a zone has 10+ tables', async () => {
+      const supabase = createMockSupabase();
+      const service = createTableConfigService(asSupabase(supabase));
+
+      // As text, "BAR-9" sorts after "BAR-10": the old lookup restarted at 10.
+      supabase._getChain('tables').like.mockResolvedValueOnce({
+        data: [{ table_number: 'BAR-9' }, { table_number: 'BAR-10' }, { table_number: 'BAR-1' }],
+        error: null,
+      });
+      supabase._getChain('tables').bulkResult.mockReturnValueOnce({
+        data: [{ id: 't11', table_number: 'BAR-11' }],
+        error: null,
+      });
+
+      await service.addTablesToZone(TENANT_ID, ZONE_ID, 'BAR', 1);
+
+      expect(supabase._getChain('tables').inserted).toEqual([
+        expect.objectContaining({ table_number: 'BAR-11' }),
+      ]);
     });
 
     it('should start from 1 when no existing tables', async () => {
@@ -410,10 +439,7 @@ describe('TableConfigService', () => {
       const service = createTableConfigService(asSupabase(supabase));
 
       // No existing tables found
-      supabase._getChain('tables').single.mockResolvedValueOnce({
-        data: null,
-        error: null,
-      });
+      supabase._getChain('tables').like.mockResolvedValueOnce({ data: [], error: null });
 
       // Insert new tables
       supabase._getChain('tables').bulkResult.mockReturnValueOnce({
@@ -435,8 +461,8 @@ describe('TableConfigService', () => {
       const service = createTableConfigService(asSupabase(supabase));
 
       // Find max succeeds
-      supabase._getChain('tables').single.mockResolvedValueOnce({
-        data: { table_number: 'INT-2' },
+      supabase._getChain('tables').like.mockResolvedValueOnce({
+        data: [{ table_number: 'INT-2' }],
         error: null,
       });
 
@@ -451,8 +477,8 @@ describe('TableConfigService', () => {
       );
 
       // Reset mock for second assertion
-      supabase._getChain('tables').single.mockResolvedValueOnce({
-        data: { table_number: 'INT-2' },
+      supabase._getChain('tables').like.mockResolvedValueOnce({
+        data: [{ table_number: 'INT-2' }],
         error: null,
       });
 
@@ -470,10 +496,7 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('tables').single.mockResolvedValueOnce({
-        data: null,
-        error: null,
-      });
+      supabase._getChain('tables').like.mockResolvedValueOnce({ data: [], error: null });
 
       supabase._getChain('tables').bulkResult.mockReturnValueOnce({
         data: [{ id: 't1', table_number: 'BAR-1' }],

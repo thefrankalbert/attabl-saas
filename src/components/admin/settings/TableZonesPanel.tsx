@@ -85,7 +85,7 @@ export function TableZonesPanel({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Confirm"
+                    aria-label={tc('confirm')}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSaveZoneName(zone.id);
@@ -97,7 +97,7 @@ export function TableZonesPanel({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Cancel edit"
+                    aria-label={tc('cancel')}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCancelEditZone();
@@ -118,11 +118,11 @@ export function TableZonesPanel({
                     {zone.name}
                   </span>
                   <span className="text-xs text-app-text-muted font-mono">{zone.prefix}</span>
-                  <div className="flex items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+                  <div className="flex items-center gap-0.5 opacity-100 transition-opacity lg:pointer-fine:opacity-0 lg:pointer-fine:group-hover:opacity-100 focus-within:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Edit"
+                      aria-label={tc('edit')}
                       onClick={(e) => {
                         e.stopPropagation();
                         onStartEditZone(zone);
@@ -139,7 +139,7 @@ export function TableZonesPanel({
                         e.stopPropagation();
                         onDeleteZone(zone);
                       }}
-                      title="Supprimer"
+                      title={tc('delete')}
                       className="h-7 w-7 text-[var(--destructive)] hover:opacity-90"
                     >
                       <Trash2 className="w-3 h-3" />
