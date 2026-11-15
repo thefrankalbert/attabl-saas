@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRightLeft, X as CloseIcon } from 'lucide-react';
+import { ArrowRightLeft, DoorOpen, X as CloseIcon } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -12,10 +12,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { useCanManageFloor } from '@/hooks/usePermissions';
+import { useCanManageFloor, usePermissions } from '@/hooks/usePermissions';
 import { formatAmountMinor } from '@/lib/utils/money';
 import { formatInitials, formatTimeHHMM } from './service-status';
 import { ReassignTableDialog, type ReassignFreeTable } from './ReassignTableDialog';
+import { actionReleaseTable } from '@/app/actions/table-release';
 import type { ServiceServerVM, ServiceTableStatus, ServiceTableVM } from './service.types';
 import type { Order } from '@/types/admin.types';
 
@@ -51,6 +52,8 @@ interface Props {
     orderOpened: string;
     orderTotal: string;
     moveTableBtn: string;
+    freeTableBtn: string;
+    freeTableSuccess: string;
     reassignTitle: string;
     reassignDescription: string;
     reassignPlaceholder: string;
@@ -82,7 +85,11 @@ export function ServiceTableDetail({
 }: Props) {
   const { toast } = useToast();
   const [reassignOpen, setReassignOpen] = useState(false);
+  const [freeing, setFreeing] = useState(false);
   const canAssign = useCanManageFloor();
+  // Freeing a table is a floor gesture (waiter, cashier): same check as the
+  // server action (orders.manage), not the manager-only assignment gate.
+  const canFreeTable = usePermissions().can('orders.manage');
 
   useEffect(() => {
     if (!vm) return;
@@ -301,6 +308,33 @@ export function ServiceTableDetail({
               <div className="rounded border border-dashed border-app-border px-4 py-4 text-center text-[11px] text-app-text-muted">
                 {labels.orderEmpty}
               </div>
+            )}
+            {/* Guests left: free the table (refused while money is still due). */}
+            {status === 'occupied' && canFreeTable && (
+              <Button
+                variant="outline"
+                className="mt-2 w-full gap-2 min-h-[44px]"
+                disabled={freeing}
+                onClick={async () => {
+                  setFreeing(true);
+                  try {
+                    const res = await actionReleaseTable(table.table_number, table.display_name);
+                    if (res.success) {
+                      toast({ title: labels.freeTableSuccess });
+                      onReassigned();
+                    } else {
+                      toast({ title: res.error, variant: 'destructive' });
+                    }
+                  } catch {
+                    toast({ title: labels.reassignError, variant: 'destructive' });
+                  } finally {
+                    setFreeing(false);
+                  }
+                }}
+              >
+                <DoorOpen className="h-3.5 w-3.5" />
+                {labels.freeTableBtn}
+              </Button>
             )}
           </Section>
         </div>

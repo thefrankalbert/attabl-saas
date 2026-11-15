@@ -23,6 +23,9 @@ export { replayOrderEntry };
 /** Dispatched on window after an order is queued, so the outbox UI updates now. */
 export const OUTBOX_CHANGED_EVENT = 'attabl:outbox-changed';
 
+/** Longest wait for the order POST before it is queued for a later replay. */
+export const SUBMIT_TIMEOUT_MS = 15_000;
+
 /**
  * Best-effort registration of a Background Sync so the service worker replays
  * the outbox when connectivity returns, even if no tab is open. Silently no-ops
@@ -125,9 +128,14 @@ export async function submitOrder({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fullBody),
+      // A half-dead connection (captive portal, weak 2G) can leave fetch pending
+      // forever: the till's submit lock never released and every next order was
+      // swallowed in silence. After the timeout the order is queued; the
+      // idempotency key makes the later replay safe even if the server did get it.
+      signal: AbortSignal.timeout(SUBMIT_TIMEOUT_MS),
     });
   } catch {
-    // Offline / DNS / connection refused: durable-queue it.
+    // Offline / DNS / connection refused / timeout: durable-queue it.
     return queue('network');
   }
 

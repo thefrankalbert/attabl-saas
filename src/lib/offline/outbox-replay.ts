@@ -60,6 +60,9 @@ export async function readJson(
   }
 }
 
+/** Longest wait for one replayed POST (kept local: this module runs in the SW too). */
+const REPLAY_TIMEOUT_MS = 15_000;
+
 /** Drain-side replay of one queued order entry. */
 export async function replayOrderEntry(
   entry: { endpoint: string; body: unknown },
@@ -71,6 +74,8 @@ export async function replayOrderEntry(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry.body),
+      // Same bound as the first send: a hung request must not block the drain.
+      signal: AbortSignal.timeout(REPLAY_TIMEOUT_MS),
     });
   } catch (err) {
     // Could not reach the server at all (offline / captive portal / DNS). This

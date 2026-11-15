@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
 
 /**
  * Plafond du pourboire, en unites de la devise du restaurant. Sans plafond, un
@@ -149,11 +150,17 @@ export const createPOSOrderSchema = z
     // The whole chain accepts NULL (service tableNumber?, RPC p_table_number DEFAULT NULL,
     // nullable column); requiring it here forced the POS to invent "CMD-<n>" pseudo-tables.
     table_number: z.string().min(1).max(50).optional(),
-    status: z.enum(['pending', 'delivered']),
+    // Every caisse order goes to the kitchen (PR #416). 'delivered' is still
+    // ACCEPTED so an offline outbox entry queued by an older client replays, but
+    // it is coerced to 'pending': a POS order never skips the kitchen.
+    status: z.enum(['pending', 'delivered']).transform((): 'pending' => 'pending'),
     service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
     room_number: z.string().max(20).optional(),
     delivery_address: z.string().max(500).optional(),
-    payment_method: z.string().max(50).optional(),
+    // Same closed list as the orders.payment_method CHECK constraint: a free
+    // string passed validation, created the order, then failed the paid update
+    // in silence while the cashier was told the sale was recorded.
+    payment_method: z.enum(ALL_PAYMENT_METHOD_IDS as [string, ...string[]]).optional(),
     tip_amount: z.number().min(0).max(MAX_TIP_AMOUNT).optional(),
     notes: z.string().max(500).optional(),
     coupon_code: z.string().max(50).optional(),

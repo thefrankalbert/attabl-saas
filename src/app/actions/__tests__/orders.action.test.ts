@@ -63,12 +63,14 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => mockAuthedSupabase) }));
 
 const mockCancelOrder = vi.fn();
+const mockCloseSession = vi.fn();
 const mockUpdateStatus = vi.fn();
 const mockSetCourseHeld = vi.fn();
 vi.mock('@/services/order.service', () => ({
   createOrderService: vi.fn(() => ({
     cancelOrder: mockCancelOrder,
     updateStatus: mockUpdateStatus,
+    closeSessionIfFullySettled: mockCloseSession,
     setCourseHeld: mockSetCourseHeld,
   })),
 }));
@@ -132,6 +134,40 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
     afterCallbacks.length = 0;
   });
 
+  // Audit caisse 2026-11-15: a chef or waiter cannot close a table session
+  // under RLS (orders.pay); the release runs with the service role.
+  it('frees the table with the service role once the order is served', async () => {
+    mockUpdateStatus.mockResolvedValue(true);
+    mockAuthedSupabase.from.mockReturnValue(
+      makeChain({
+        data: {
+          session_id: 'session-1',
+          subscription_plan: 'business',
+          subscription_status: 'active',
+          trial_ends_at: null,
+          is_active: true,
+          suspended_at: null,
+        },
+      }),
+    );
+
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'delivered');
+    await runScheduled();
+
+    expect(mockCloseSession).toHaveBeenCalledWith('session-1', TENANT_ID);
+  });
+
+  it('does not touch the table when the status did not change (witness)', async () => {
+    mockUpdateStatus.mockResolvedValue(false);
+
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'delivered');
+    await runScheduled();
+
+    expect(mockCloseSession).not.toHaveBeenCalled();
+  });
+
   it('restocks after cancel when the plan grants inventory, via after()', async () => {
     vi.mocked(canAccessFeature).mockReturnValue(true);
     mockRestockOrder.mockResolvedValue(1);
@@ -141,9 +177,10 @@ describe('actionUpdateOrderStatus - cancel auto-restock wiring', () => {
 
     expect(result.success).toBe(true);
     expect(mockCancelOrder).toHaveBeenCalledWith(ORDER_ID, TENANT_ID);
-    // Queued, not raced: nothing has run when the action returns.
+    // Queued, not raced: nothing has run when the action returns. Two jobs:
+    // the table release (audit caisse 2026-11-15) and the restock.
     expect(mockRestockOrder).not.toHaveBeenCalled();
-    expect(afterCallbacks).toHaveLength(1);
+    expect(afterCallbacks).toHaveLength(2);
 
     await runScheduled();
 

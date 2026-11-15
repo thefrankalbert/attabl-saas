@@ -106,6 +106,8 @@ export function useServiceLabels() {
       orderOpened: t('orderOpened'),
       orderTotal: tc('total'),
       moveTableBtn: t('moveTableBtn'),
+      freeTableBtn: t('freeTableBtn'),
+      freeTableSuccess: t('freeTableSuccess'),
       reassignTitle: t('reassignTitle'),
       reassignDescription: t('reassignDescription'),
       reassignPlaceholder: t('reassignPlaceholder'),

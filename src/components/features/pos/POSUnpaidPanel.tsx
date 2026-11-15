@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useId, useRef } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useTranslations } from 'next-intl';
 import { X, Receipt } from 'lucide-react';
 import { ListRowsSkeleton } from '@/components/admin/skeletons/ListRowsSkeleton';
@@ -13,6 +15,11 @@ interface POSUnpaidPanelProps {
   onClose: () => void;
   orders: Order[];
   loading: boolean;
+  /** The list failed to load: say so (an empty list read as "nothing to settle"). */
+  loadFailed?: boolean;
+  /** More unpaid orders than the list shows (only the newest are kept). */
+  truncatedAt?: number;
+  onRetry?: () => void;
   currency: CurrencyCode;
   onSelect: (order: Order) => void;
 }
@@ -28,11 +35,29 @@ export default function POSUnpaidPanel({
   onClose,
   orders,
   loading,
+  loadFailed = false,
+  truncatedAt,
+  onRetry,
   currency,
   onSelect,
 }: POSUnpaidPanelProps) {
   const t = useTranslations('pos');
   const tc = useTranslations('common');
+
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Focus stays inside the panel while open and returns on close; Escape closes.
+  useFocusTrap(panelRef, open);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -41,13 +66,20 @@ export default function POSUnpaidPanel({
       className="fixed inset-0 z-50 flex justify-end bg-black/60"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div aria-hidden className="absolute inset-0 h-full w-full" onClick={onClose} />
-      <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden border-l border-app-border bg-app-card animate-in slide-in-from-right">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative flex h-full w-full max-w-md flex-col overflow-hidden border-l border-app-border bg-app-card pb-[env(safe-area-inset-bottom)] outline-none animate-in slide-in-from-right"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-app-border px-4 py-3 shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-app-text">{t('toSettle')}</h2>
+            <h2 id={titleId} className="text-base font-semibold text-app-text">
+              {t('toSettle')}
+            </h2>
             <p className="text-xs text-app-text-muted">{t('toSettleSubtitle')}</p>
           </div>
           <Button
@@ -63,8 +95,25 @@ export default function POSUnpaidPanel({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-3">
+          {truncatedAt !== undefined && !loading && (
+            <p className="mb-2 text-xs text-app-text-muted">
+              {t('toSettleTruncated', { count: truncatedAt })}
+            </p>
+          )}
           {loading ? (
             <ListRowsSkeleton rows={4} />
+          ) : loadFailed ? (
+            <div
+              role="alert"
+              className="flex flex-col items-center justify-center gap-3 py-16 text-center text-app-text-muted"
+            >
+              <p className="text-sm">{t('toSettleLoadError')}</p>
+              {onRetry && (
+                <Button variant="outline" className="min-h-[44px]" onClick={onRetry}>
+                  {tc('retry')}
+                </Button>
+              )}
+            </div>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-app-text-muted">
               <Receipt className="h-8 w-8 opacity-40" />

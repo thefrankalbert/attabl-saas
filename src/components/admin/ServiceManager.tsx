@@ -1,5 +1,6 @@
 'use client';
 
+import { releaseStaleTablesThrottled } from '@/lib/pos/release-stale-tables';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
@@ -82,6 +83,8 @@ export default function ServiceManager({ tenantId, currency }: Props) {
 
   const loadOpenSessions = useCallback(async () => {
     try {
+      // Paid tables never marked served free themselves after a delay.
+      await releaseStaleTablesThrottled();
       const svc = createServiceManagerService(createClient());
       setOpenSessions(await svc.listOpenSessions(tenantId));
     } catch (error) {

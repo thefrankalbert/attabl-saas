@@ -57,6 +57,8 @@ interface POSCartProps {
 
   // Payment
   onPrintOrder: () => void;
+  /** An order is being sent: send and pay are locked until it settles. */
+  busy?: boolean;
   /** Absent quand le membre n'encaisse pas (`orders.pay`): seul "Envoyer" reste. */
   onCheckout?: () => void;
 }
@@ -92,6 +94,7 @@ export default function POSCart({
   onValidateCoupon,
   onRemoveCoupon,
   onPrintOrder,
+  busy = false,
   onCheckout,
 }: POSCartProps) {
   const {
@@ -163,6 +166,7 @@ export default function POSCart({
         onValidateCoupon={onValidateCoupon}
         onRemoveCoupon={onRemoveCoupon}
         onPrintOrder={onPrintOrder}
+        busy={busy}
         onCheckout={onCheckout}
       />
 

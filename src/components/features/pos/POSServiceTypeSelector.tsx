@@ -102,7 +102,7 @@ export function POSServiceTypeSelector({
           type="button"
           variant="outline"
           onClick={onOpenTablePicker}
-          className="flex items-center gap-2 h-9 px-3 rounded-lg bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text animate-in fade-in slide-in-from-top-1"
+          className="flex items-center gap-2 min-h-[44px] px-3 rounded-lg bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text animate-in fade-in slide-in-from-top-1"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
           <span>{selectedTable || t('selectTable')}</span>
@@ -112,15 +112,17 @@ export function POSServiceTypeSelector({
       {serviceType === 'room_service' && (
         <Input
           placeholder={t('roomNumberPlaceholder')}
+          aria-label={t('roomNumber')}
           value={roomNumber}
           onChange={(e) => setRoomNumber(e.target.value)}
-          className="h-9 animate-in fade-in slide-in-from-top-1"
+          className="min-h-[44px] animate-in fade-in slide-in-from-top-1"
         />
       )}
 
       {serviceType === 'delivery' && (
         <Textarea
           placeholder={t('deliveryAddressPlaceholder')}
+          aria-label={t('deliveryAddressPlaceholder')}
           value={deliveryAddress}
           onChange={(e) => setDeliveryAddress(e.target.value)}
           className="w-full h-16 p-2 text-base md:text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"

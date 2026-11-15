@@ -63,6 +63,8 @@ function renderPOS(overrides: Record<string, unknown>) {
     occupiedTableNumbers: new Set<string>(),
     enableCoupons: false,
     pricing: { total: 1000 },
+    extrasLoaded: true,
+    extrasError: false,
     serviceType: 'takeaway',
     deliveryAddress: '',
     roomNumber: '',
@@ -102,6 +104,14 @@ describe('Caisse: destination verifiee avant envoi et paiement', () => {
     fireEvent.click(screen.getByText('send'));
     expect(handleOrder).not.toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'roomNumberRequired' }));
+  });
+
+  it('reglages jamais charges: ni envoi ni paiement (taxes inconnues)', () => {
+    renderPOS({ serviceType: 'takeaway', extrasLoaded: false });
+    fireEvent.click(screen.getByText('send'));
+    fireEvent.click(screen.getByText('pay'));
+    expect(handleOrder).not.toHaveBeenCalled();
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'settingsLoading' }));
   });
 
   it("livraison avec adresse: le paiement s'ouvre (temoin positif)", () => {

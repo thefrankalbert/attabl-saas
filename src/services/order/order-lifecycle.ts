@@ -15,6 +15,14 @@ const ORDER_STATUS_RANK: Record<string, number> = {
   delivered: 3,
 };
 
+/**
+ * A paid order still not marked served after this delay is treated as served:
+ * many floors never tap "servi", and the table must not stay "occupied" for
+ * good (owner decision 2026-11-15: follow the market's usage - occupied while
+ * the order is in progress, with a manual release and this automatic one).
+ */
+export const STALE_PAID_ORDER_MS = 2 * 60 * 60 * 1000;
+
 export function createLifecycleMethods(supabase: SupabaseClient) {
   /**
    * Close a table session once none of its orders are still awaiting payment
@@ -33,14 +41,27 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       // comptait pas: la table se fermait comme "entierement reglee" et le
       // reliquat etait perdu en silence. 'paid', 'refunded' et 'comp' sont bien
       // des etats soldes, eux.
-      .in('payment_status', ['pending', 'partial'])
+      //
+      // ET une table n'est libre que quand tout y est aussi SERVI. Depuis #416,
+      // une vente payee a la caisse part en cuisine ('pending'): payee ne veut
+      // plus dire servie. Sans ce second critere, payer d'avance liberait la
+      // table pendant la cuisson (audit caisse 2026-11-15). La fermeture se
+      // refait donc aussi au passage a 'delivered' et a l'annulation
+      // (actionUpdateOrderStatus, en service_role: la RLS reserve la fermeture
+      // a `orders.pay`).
+      //
+      // Un ordre paye non marque servi depuis STALE_PAID_ORDER_MS compte comme
+      // servi (filet de securite, decision du 2026-11-15).
+      .or(
+        `payment_status.in.(pending,partial),and(status.not.in.(delivered,served),created_at.gt."${new Date(Date.now() - STALE_PAID_ORDER_MS).toISOString()}")`,
+      )
       .neq('status', 'cancelled');
 
     if (error) {
       logger.error('Failed to check session settlement', { sessionId, tenantId, error });
       return;
     }
-    if ((count ?? 0) > 0) return; // still has unpaid orders -> keep open
+    if ((count ?? 0) > 0) return; // still unpaid or not yet served -> keep open
 
     const { error: closeError } = await supabase
       .from('table_sessions')
@@ -53,10 +74,130 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
     }
   }
 
+  /**
+   * Undo a payment flip whose ledger row could not be written: back to unpaid,
+   * so the order shows again in "A encaisser" instead of being 'paid' with no
+   * money in the takings. Scoped to the `paid_at` THIS flip wrote, so it never
+   * undoes a concurrent settlement that did book its money. `tipBefore`
+   * restores the tip this payment overwrote (undefined = leave it). A revert
+   * that fails or matches nothing leaves a paid order without its ledger row:
+   * logged as an error to be fixed by hand.
+   */
+  async function revertPaidFlip(
+    orderId: string,
+    tenantId: string,
+    paidAt: string,
+    tipBefore?: number,
+  ): Promise<void> {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'pending',
+        payment_method: null,
+        paid_at: null,
+        ...(tipBefore !== undefined ? { tip_amount: tipBefore } : {}),
+      })
+      .eq('id', orderId)
+      .eq('tenant_id', tenantId)
+      .eq('payment_status', 'paid')
+      .eq('paid_at', paidAt)
+      .select('id');
+    if (error || !Array.isArray(data) || data.length === 0) {
+      logger.error('Payment undo failed: order paid WITHOUT ledger row', {
+        orderId,
+        tenantId,
+        error,
+      });
+    }
+  }
+
+  /**
+   * "Liberer la table" (Service screen): closes the table's open session when
+   * nothing on it is still owed, served or not - the staff knows the guests
+   * left. Refused while money is due: closing would hide an unpaid bill.
+   */
+  async function releaseTableSession(
+    tenantId: string,
+    tableNumber: string,
+    displayName?: string,
+  ): Promise<void> {
+    // The floor shows a table occupied when a session matches its number OR its
+    // display name (older sessions): look both up, or the button would say
+    // "freed" while the table stays occupied.
+    const keys = [...new Set([tableNumber, displayName].filter((k): k is string => !!k))];
+    const { data: sessions, error } = await supabase
+      .from('table_sessions')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .in('table_number', keys)
+      .eq('status', 'open');
+    if (error) throw new ServiceError('Erreur de lecture de la table', 'INTERNAL', error);
+    const session = (sessions ?? [])[0] as { id: string } | undefined;
+    if (!session) throw new ServiceError('Cette table est deja libre', 'NOT_FOUND');
+
+    const { count, error: countError } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('session_id', session.id)
+      .in('payment_status', ['pending', 'partial'])
+      .neq('status', 'cancelled');
+    if (countError)
+      throw new ServiceError('Erreur de lecture des commandes', 'INTERNAL', countError);
+    if ((count ?? 0) > 0) {
+      throw new ServiceError(
+        "Il reste de l'argent du sur cette table: encaissez-la avant de la liberer",
+        'CONFLICT',
+      );
+    }
+
+    const { error: closeError } = await supabase
+      .from('table_sessions')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', session.id)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'open');
+    if (closeError)
+      throw new ServiceError('Erreur de liberation de la table', 'INTERNAL', closeError);
+  }
+
+  /**
+   * Automatic release: re-checks every table open for longer than the delay,
+   * so a paid table whose order was never marked served frees itself. Run on
+   * the screens that show occupancy and before an order is placed. Bounded by
+   * the open sessions of ONE tenant.
+   */
+  async function releaseStaleSessions(tenantId: string, tableNumber?: string): Promise<void> {
+    let query = supabase
+      .from('table_sessions')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'open');
+    // An order only needs ITS table checked, not every table of the restaurant.
+    if (tableNumber) query = query.eq('table_number', tableNumber);
+    const { data, error } = await query.lt(
+      'opened_at',
+      new Date(Date.now() - STALE_PAID_ORDER_MS).toISOString(),
+    );
+    if (error) {
+      logger.error('Failed to list stale table sessions', { tenantId, error });
+      return;
+    }
+    for (const row of (data ?? []) as Array<{ id: string }>) {
+      await closeSessionIfFullySettled(row.id, tenantId);
+    }
+  }
+
   return {
+    releaseTableSession,
+    releaseStaleSessions,
+
+    /** Undo a paid flip whose ledger insert failed (also used by the POS route). */
+    revertPaidFlip,
+
     /**
      * Public wrapper so non-markPaid settle paths (the POS route's
-     * applyPosFinalState) can also close a fully-settled table session (audit C1).
+     * applyPosPayment) can also close a fully-settled table session (audit C1).
      */
     closeSessionIfFullySettled,
 
@@ -238,13 +379,13 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      *
      * C3 (Phase 3): payment is DECOUPLED from fulfillment. markPaid no longer
      * touches orders.status - the fulfillment axis is driven solely by the KDS/POS
-     * fulfillment actions (updateStatus / applyPosFinalState). This makes "paid but
+     * fulfillment action (updateStatus). This makes "paid but
      * not yet served" and "served but unpaid" representable, and keeps a paid-but-
      * unprepared order on the KDS active board (which filters on status, not
      * payment) instead of wrongly dropping it.
      *
      * Idempotent: the update is scoped to payment_status='pending' (same guard as
-     * the POS route applyPosFinalState). A double-tap / network retry on an
+     * the POS route applyPosPayment). A double-tap / network retry on an
      * already-paid order matches 0 rows and is a no-op - it never re-stamps
      * paid_at nor overwrites the recorded tip. Returns whether the order was
      * actually flipped from pending to paid by this call.
@@ -257,13 +398,23 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       // payload.tipAmount is in integer MINOR units (orders.tip_amount is BIGINT
       // minor). The caller (PaymentModal -> actionMarkOrderPaid) converts the
       // major keypad amount with the order currency before sending.
+      const paidAt = new Date().toISOString();
       const update: Record<string, unknown> = {
         payment_method: payload.method,
         payment_status: 'paid',
-        paid_at: new Date().toISOString(),
+        paid_at: paidAt,
       };
+      // Tip before this payment, restored if the ledger write fails below.
+      let tipBefore: number | undefined;
       if (payload.tipAmount && payload.tipAmount > 0) {
         update.tip_amount = payload.tipAmount;
+        const { data: before } = await supabase
+          .from('orders')
+          .select('tip_amount')
+          .eq('id', orderId)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        tipBefore = before ? Number(before.tip_amount || 0) : undefined;
       }
 
       const { data, error } = await supabase
@@ -287,8 +438,11 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
 
       if (paidRow) {
         // Append the tender to the ledger (audit H2/H8): who/what/when, append-only.
-        // Best-effort - payment_status is already flipped; a ledger failure must not
-        // un-settle the order. The amount tendered = order total (excl. tip) + tip.
+        // Revenue is read from this ledger: a 'paid' order WITHOUT its row would be
+        // missing from the day's takings for good (the guarded flip above can never
+        // run again). So a failed insert UNDOES the flip: the order goes back to
+        // "A encaisser" and the cashier is told the payment did not go through
+        // (audit caisse 2026-11-15). The amount = order total (excl. tip) + tip.
         const amount = Number(paidRow.total || 0) + Number(paidRow.tip_amount || 0);
         const { error: tenderError } = await supabase.from('payments').insert({
           tenant_id: tenantId,
@@ -298,11 +452,13 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
           status: 'completed',
         });
         if (tenderError) {
-          logger.error('Failed to record payment tender', {
+          logger.error('Failed to record payment tender, payment undone', {
             orderId,
             tenantId,
             error: tenderError,
           });
+          await revertPaidFlip(orderId, tenantId, paidAt, tipBefore);
+          throw new ServiceError("Le paiement n'a pas pu etre enregistre", 'INTERNAL', tenderError);
         }
 
         // Close the table session once every order on it is settled (audit C1).

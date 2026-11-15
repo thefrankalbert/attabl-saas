@@ -240,6 +240,34 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
  * Updates the status of an order.
  * Verifies the current user is a staff member (server or above) for the tenant.
  */
+/**
+ * Frees the table once all its orders are paid AND served (or cancelled), as a
+ * system consequence of the kitchen/floor gesture. Runs with the service role:
+ * closing a session is gated by `orders.pay` under RLS, which the chef and the
+ * waiter do not have - with their client the close matched 0 rows in silence
+ * and a table paid up front stayed "occupied" for good (audit caisse
+ * 2026-11-15). Tenant-scoped explicitly. Never fails the gesture itself.
+ */
+function releaseTableWhenDone(tenantId: string, orderId: string): void {
+  after(async () => {
+    try {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from('orders')
+        .select('session_id')
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+      const sessionId = (data as { session_id?: string | null } | null)?.session_id;
+      if (sessionId) {
+        await createOrderService(admin).closeSessionIfFullySettled(sessionId, tenantId);
+      }
+    } catch (err) {
+      logger.error('Table release after order status failed', { err, orderId });
+    }
+  });
+}
+
 export async function actionUpdateOrderStatus(
   tenantId: string,
   orderId: string,
@@ -279,6 +307,8 @@ export async function actionUpdateOrderStatus(
       //    feature): restock_order is service_role-only, so it runs via the admin
       //    client + inventory.service, gated by the inventory plan feature. Non-blocking.
       await service.cancelOrder(parsed.data.orderId, parsed.data.tenantId);
+      // A cancelled order no longer holds its table.
+      releaseTableWhenDone(parsed.data.tenantId, parsed.data.orderId);
 
       // Fin d'essai: le plan effectif retombe sur le plan stocke (souvent sans
       // stock), mais la commande a ete destockee pendant l'essai. Sans ce cas,
@@ -319,6 +349,10 @@ export async function actionUpdateOrderStatus(
         parsed.data.tenantId,
         parsed.data.status,
       );
+      // Served: the table may now be free (paid AND served).
+      if (changed && parsed.data.status === 'delivered') {
+        releaseTableWhenDone(parsed.data.tenantId, parsed.data.orderId);
+      }
       // A second tap or an outbox replay is a no-op: no second push.
       if (changed && parsed.data.status === 'ready') {
         // Owner decision 2026-11-14: the waiter's phone rings and vibrates when

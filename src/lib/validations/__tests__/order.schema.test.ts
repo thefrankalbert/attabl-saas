@@ -281,3 +281,27 @@ describe('order schema - destination required per service type (H5)', () => {
     expect(result.success).toBe(false);
   });
 });
+
+// Audit caisse 2026-11-15.
+describe('createPOSOrderSchema: paiement et statut', () => {
+  const base = {
+    status: 'pending',
+    service_type: 'takeaway',
+    items: [{ menu_item_id: '550e8400-e29b-41d4-a716-446655440000', quantity: 1 }],
+  };
+
+  it('refuse un moyen de paiement hors de la liste de la base', () => {
+    expect(
+      createPOSOrderSchema.safeParse({ ...base, payment_method: 'mobile_money' }).success,
+    ).toBe(false);
+  });
+
+  it('accepte un moyen connu (temoin)', () => {
+    expect(createPOSOrderSchema.safeParse({ ...base, payment_method: 'cash' }).success).toBe(true);
+  });
+
+  it("ramene un ancien statut 'delivered' a 'pending': la caisse passe toujours par la cuisine", () => {
+    const result = createPOSOrderSchema.safeParse({ ...base, status: 'delivered' });
+    expect(result.success && result.data.status).toBe('pending');
+  });
+});

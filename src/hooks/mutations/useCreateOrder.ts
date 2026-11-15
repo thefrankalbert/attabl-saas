@@ -1,8 +1,6 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 import { submitOrder } from '@/lib/offline/submit-order';
 
@@ -12,7 +10,8 @@ interface CreateOrderInput {
   clientRequestId: string;
   /** Absent for tableless orders (takeaway, delivery, room service, counter sales). */
   table_number?: string;
-  status: 'pending' | 'delivered';
+  /** Every caisse order goes to the kitchen; payment is recorded separately. */
+  status: 'pending';
   service_type: string;
   room_number?: string;
   delivery_address?: string;
@@ -26,6 +25,7 @@ interface CreateOrderInput {
     customer_notes?: string | null;
     modifiers?: Array<{ name: string; price: number }>;
     selected_variant?: string;
+    selected_variant_id?: string;
   }[];
   // Legacy fields kept for caller compatibility but not sent to API
   total?: number;
@@ -42,6 +42,8 @@ interface POSOrderResponse {
   details?: string[];
   /** True when the network was unreachable and the order was durably queued to sync later. */
   queued?: boolean;
+  /** Present when a payment was sent: whether the server really booked it. */
+  paid?: boolean;
 }
 
 /**
@@ -55,8 +57,6 @@ interface POSOrderResponse {
  */
 export function useCreateOrder(tenantId: string) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const tc = useTranslations('common');
 
   return useMutation({
     mutationKey: ['create-order', tenantId],
@@ -80,6 +80,9 @@ export function useCreateOrder(tenantId: string) {
           customer_notes: item.customer_notes || undefined,
           modifiers: item.modifiers,
           selected_variant: item.selected_variant,
+          // Stable id: the server prefers it over the name (audit H4); it was
+          // dropped here, so a renamed or homonym variant got the wrong price.
+          selected_variant_id: item.selected_variant_id,
         })),
       };
 
@@ -108,15 +111,11 @@ export function useCreateOrder(tenantId: string) {
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
     },
+    // The caller (usePOSData) shows the cashier the error: a toast here too
+    // made two red toasts for one refusal.
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'object' && error !== null && 'message' in error
-            ? String((error as { message: string }).message)
-            : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       logger.error('Failed to create POS order', { message });
-      toast({ title: tc('error'), description: message, variant: 'destructive' });
     },
     // No TanStack retry: transient network failures are durably queued by
     // submitOrder (and replayed idempotently by the outbox), and the only errors

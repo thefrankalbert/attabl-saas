@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse, after } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
-import { orderLimiter, getClientIp } from '@/lib/rate-limit';
+import { orderLimiter } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
@@ -15,6 +15,8 @@ import {
 } from '@/services/plan-enforcement.service';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import { scheduleDestock } from '../schedule-destock';
+import { applyPosPayment, type PosPaymentOutcome } from './apply-pos-payment';
+import { checkDineInTable } from '@/services/order/dine-in-table';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
 import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
@@ -23,91 +25,26 @@ import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 /**
- * Applies POS status/payment fields to an order. Idempotent: the payment flip is
- * scoped to payment_status='pending', so re-running it on a replay (or an order
- * already paid) is a no-op and never re-stamps paid_at. This lets a replayed POS
- * order HEAL an earlier non-fatal update failure instead of staying stuck unpaid.
- * Non-fatal on error (the order itself already exists).
+ * Final answer of the route. A payment that could not be booked answers 503:
+ * the till's outbox then keeps the sale and replays it (deduplicated: the
+ * order is found and only the payment is retried) instead of dropping it as
+ * done while the cash is already in the drawer.
  */
-async function applyPosFinalState(
-  supabase: ReturnType<typeof createAdminClient>,
-  orderId: string,
-  tenantId: string,
-  status: string,
-  paymentMethod: string | undefined,
-): Promise<void> {
-  if (paymentMethod) {
-    const { data, error } = await supabase
-      .from('orders')
-      .update({
-        payment_method: paymentMethod,
-        payment_status: 'paid',
-        paid_at: new Date().toISOString(),
-        // C3: status here is the POS fulfillment intent (decoupled from payment);
-        // stamp served_at when it reaches the terminal fulfillment state.
-        ...(status !== 'pending'
-          ? { status, ...(status === 'delivered' ? { served_at: new Date().toISOString() } : {}) }
-          : {}),
-      })
-      .eq('id', orderId)
-      // Belt filter: service-role client bypasses RLS, so scope to the tenant.
-      .eq('tenant_id', tenantId)
-      // Idempotent guard: only flip an unpaid order, never re-stamp a paid one.
-      .eq('payment_status', 'pending')
-      // A cancelled order keeps payment_status='pending', so the guard above does
-      // NOT cover it: without this filter the POS could settle a cancelled order,
-      // insert a tender row into `payments`, and book the amount as revenue.
-      // Filtering inside the same UPDATE makes it atomic - a cancellation racing
-      // this call either lands first (zero rows matched, nothing recorded) or
-      // after (it sees an order already paid, which is the pre-existing path).
-      .neq('status', 'cancelled')
-      .select('id, total, tip_amount, session_id');
-    if (error) {
-      logger.error('POS order: failed to apply payment/status', error, { orderId });
-      return;
-    }
-    // Append the tender to the ledger (audit H2/H8), only when this call actually
-    // flipped the order to paid - keeps the ledger idempotent (no duplicate tender
-    // on replay). amount = total (excl. tip) + tip.
-    const flipped = Array.isArray(data) && data.length > 0 ? data[0] : null;
-    if (flipped) {
-      const amount = Number(flipped.total || 0) + Number(flipped.tip_amount || 0);
-      const { error: tenderError } = await supabase.from('payments').insert({
-        tenant_id: tenantId,
-        order_id: orderId,
-        amount,
-        method: paymentMethod,
-        status: 'completed',
-      });
-      if (tenderError) {
-        logger.error('POS order: failed to record payment tender', tenderError, { orderId });
-      }
-      // Close the table session once fully settled (audit C1) - the POS create+pay
-      // path does not go through markPaid, so it must close the session here too,
-      // otherwise sessions stay open forever and tomorrow's orders attach to today's.
-      const sessionId = (flipped as { session_id?: string | null }).session_id;
-      if (sessionId) {
-        await createOrderService(supabase).closeSessionIfFullySettled(sessionId, tenantId);
-      }
-    }
-    return;
+function orderResponse(
+  body: { orderId: string; orderNumber: string; total: number; deduplicated?: boolean },
+  payment: PosPaymentOutcome | undefined,
+) {
+  if (payment === 'failed') {
+    return NextResponse.json(
+      { error: "Le paiement n'a pas pu etre enregistre, nouvel essai automatique", ...body },
+      { status: 503 },
+    );
   }
-  if (status !== 'pending') {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status,
-        ...(status === 'delivered' ? { served_at: new Date().toISOString() } : {}),
-      })
-      .eq('id', orderId)
-      .eq('tenant_id', tenantId)
-      // Same reason as the paid branch: never move a cancelled order forward
-      // (it would reappear in the kitchen, or be stamped served_at).
-      .neq('status', 'cancelled');
-    if (error) {
-      logger.error('POS order: failed to apply status', error, { orderId });
-    }
-  }
+  return NextResponse.json({
+    success: true,
+    ...body,
+    ...(payment !== undefined ? { paid: payment === 'paid' } : {}),
+  });
 }
 
 export async function POST(request: Request) {
@@ -115,19 +52,22 @@ export async function POST(request: Request) {
     const originErr = verifyOrigin(request);
     if (originErr) return originErr;
 
-    // 1. Rate limiting
-    const ip = getClientIp(request);
-    const { success: allowed } = await orderLimiter.check(ip);
+    // 1. Authenticate user + derive tenant from session (IDOR prevention).
+    // 'pos.use' gates by fine-grained permission (role defaults + per-user overrides).
+    const { tenantId: tenant_id, user } = await getAuthenticatedUserWithTenant('pos.use');
+
+    // 2. Rate limiting, keyed by the authenticated cashier, not the IP. This
+    // route is staff-only (auth above), and keying by IP made restaurants behind
+    // the same mobile carrier NAT - and the storefront preview/coupon calls that
+    // share this bucket - starve each other: past 20 req/min the till queued its
+    // orders as "offline" while online (audit caisse 2026-11-15).
+    const { success: allowed } = await orderLimiter.check(`pos:${tenant_id}:${user.id}`);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },
         { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
-
-    // 2. Authenticate user + derive tenant from session (IDOR prevention).
-    // 'pos.use' gates by fine-grained permission (role defaults + per-user overrides).
-    const { tenantId: tenant_id, user } = await getAuthenticatedUserWithTenant('pos.use');
 
     // 3. Parse and validate input with Zod
     let body: unknown;
@@ -148,7 +88,6 @@ export async function POST(request: Request) {
 
     const {
       table_number,
-      status,
       service_type,
       room_number,
       delivery_address,
@@ -180,11 +119,11 @@ export async function POST(request: Request) {
     // Decision du proprietaire (2026-11-09): le serveur prend les commandes a
     // la caisse mais ne touche pas a l'argent. Cette route cree la commande ET,
     // si un moyen de paiement est fourni, la passe a `paid` et inscrit le tender
-    // dans `payments` (applyPosFinalState). Avec `pos.use` seul, donner la
+    // dans `payments` (applyPosPayment). Avec `pos.use` seul, donner la
     // caisse au serveur lui donnait aussi l'encaissement et les pourboires.
     // Un moyen de paiement ou un pourboire exige donc `orders.pay`; sans lui,
     // la commande part en cuisine impayee et le caissier l'encaisse ensuite.
-    // Place AVANT le rejeu hors ligne, qui rappelle aussi applyPosFinalState.
+    // Place AVANT le rejeu hors ligne, qui rappelle aussi applyPosPayment.
     // Un coupon aussi: c'est une remise sur l'addition, et le proprietaire a
     // exclu toute remise pour le serveur. Sans ce droit, le serveur baissait le
     // total avec n'importe quel coupon actif.
@@ -218,7 +157,7 @@ export async function POST(request: Request) {
     // pouvait pas rattraper ca: il ne garde que les PAGES, jamais `/api/*`.
     //
     // LE PLACEMENT EST LA MOITIE DU CORRECTIF: le rejeu hors ligne
-    // (`client_request_id`) rappelle `applyPosFinalState` AVANT la lecture de
+    // (`client_request_id`) rappelle `applyPosPayment` AVANT la lecture de
     // configuration ci-dessous. Une coupure posee la-bas laisserait donc une
     // file d'attente hors ligne continuer a encaisser apres le gel. Le verrou
     // doit rester ici, en amont de l'idempotence.
@@ -255,21 +194,45 @@ export async function POST(request: Request) {
     if (client_request_id) {
       const existing = await orderService.findOrderByClientRequestId(tenant_id, client_request_id);
       if (existing) {
-        await applyPosFinalState(
-          adminSupabase,
-          existing.orderId,
-          tenant_id,
-          status,
-          payment_method,
+        const payment = payment_method
+          ? await applyPosPayment(adminSupabase, existing.orderId, tenant_id, payment_method)
+          : undefined;
+        return orderResponse(
+          {
+            orderId: existing.orderId,
+            orderNumber: existing.orderNumber,
+            total: existing.total,
+            deduplicated: true,
+          },
+          payment,
         );
-        return NextResponse.json({
-          success: true,
-          orderId: existing.orderId,
-          orderNumber: existing.orderNumber,
-          total: existing.total,
-          deduplicated: true,
-        });
       }
+    }
+
+    // A table sent with the order must exist and be active here: an invented
+    // number created an orphan table session and printed a fake table on the
+    // kitchen ticket. "Sur place" without a table stays allowed at the till
+    // (no table configured, or counter sale); POSClient asks for one when
+    // tables exist.
+    const tableProblem = await checkDineInTable(
+      adminSupabase,
+      tenant_id,
+      service_type,
+      table_number,
+    );
+    // Not refused: an order queued offline before the table was removed or
+    // renamed would otherwise be dropped for good by the outbox (a 400 is
+    // final), cash already taken. The unknown table leaves the ticket fields
+    // and stays readable in the order note for the staff.
+    let ticketTable = table_number;
+    let ticketNotes = notes;
+    if (tableProblem === 'UNKNOWN_TABLE') {
+      logger.warn('POS order: unknown table, sent without it', {
+        tenantId: tenant_id,
+        tableNumber: table_number,
+      });
+      ticketTable = undefined;
+      ticketNotes = [`Table ${table_number}`, notes].filter(Boolean).join(' - ');
     }
 
     // 5. Fetch menu items AND tenant config in PARALLEL (independent queries)
@@ -451,6 +414,13 @@ export async function POST(request: Request) {
       }
     }
 
+    // A paid table never marked served frees itself after a delay: run that
+    // rule now so this order opens a NEW session instead of joining the old
+    // bill (owner decision 2026-11-15). Best-effort, never blocks the order.
+    if (service_type === 'dine_in' && ticketTable) {
+      await orderService.releaseStaleSessions(tenant_id, ticketTable);
+    }
+
     // 11. Create order with items via service
     const tipValue = tip_amount && tip_amount > 0 ? tip_amount : 0;
 
@@ -464,8 +434,8 @@ export async function POST(request: Request) {
         // tip_amount); storing total+tip here too double-counted POS tips. Keeping a
         // single consistent semantic is what makes the channels reconcile.
         total: pricing.total,
-        tableNumber: table_number,
-        notes,
+        tableNumber: ticketTable,
+        notes: ticketNotes,
         service_type,
         room_number,
         delivery_address,
@@ -509,19 +479,26 @@ export async function POST(request: Request) {
           });
         }
       }
-      await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
-      return NextResponse.json({
-        success: true,
-        orderId: result.orderId,
-        orderNumber: result.orderNumber,
-        total: result.total,
-        deduplicated: true,
-      });
+      const dedupPayment = payment_method
+        ? await applyPosPayment(adminSupabase, result.orderId, tenant_id, payment_method)
+        : undefined;
+      return orderResponse(
+        {
+          orderId: result.orderId,
+          orderNumber: result.orderNumber,
+          total: result.total,
+          deduplicated: true,
+        },
+        dedupPayment,
+      );
     }
 
-    // 10. Apply POS-specific status/payment fields (idempotent). The service
-    // always creates with status='pending'; POS may need 'delivered' + payment.
-    await applyPosFinalState(adminSupabase, result.orderId, tenant_id, status, payment_method);
+    // 10. Record the payment, if any (idempotent). The order itself stays
+    // 'pending': it goes to the kitchen whether paid or not. `paid` tells the
+    // till whether the money is really booked.
+    const payment = payment_method
+      ? await applyPosPayment(adminSupabase, result.orderId, tenant_id, payment_method)
+      : undefined;
 
     // 10b. Record an auditable coupon redemption (audit H11), best-effort.
     const redeemedCouponId = couponResult?.couponId;
@@ -539,7 +516,7 @@ export async function POST(request: Request) {
     // kitchen becomes that table's server (unless it already has one), so the
     // Service floor shows who to call when it is ready. Best-effort: an
     // assignment problem must never fail an order that is already created.
-    if (status === 'pending' && service_type === 'dine_in' && adminUser.role === 'waiter') {
+    if (service_type === 'dine_in' && adminUser.role === 'waiter') {
       try {
         const { data: placed } = await adminSupabase
           .from('orders')
@@ -577,8 +554,8 @@ export async function POST(request: Request) {
         tenant_id,
         user_id: null,
         type: 'info',
-        title: table_number
-          ? `Nouvelle commande POS - Table ${table_number}`
+        title: ticketTable
+          ? `Nouvelle commande POS - Table ${ticketTable}`
           : `Nouvelle commande POS - ${result.orderNumber}`,
         body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
         link: '/orders',
@@ -647,12 +624,10 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      orderId: result.orderId,
-      orderNumber: result.orderNumber,
-      total: result.total,
-    });
+    return orderResponse(
+      { orderId: result.orderId, orderNumber: result.orderNumber, total: result.total },
+      payment,
+    );
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
