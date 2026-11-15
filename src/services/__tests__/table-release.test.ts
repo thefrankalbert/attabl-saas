@@ -6,81 +6,65 @@ import { STALE_PAID_ORDER_MS } from '../order/order-lifecycle';
 // Owner decision 2026-11-15 (market usage): a table stays occupied while its
 // order is in progress, even paid; staff can free it by hand, refused while
 // money is due; a paid table frees itself after a delay.
+//
+// The check-and-close runs in ONE locked database function
+// (close_table_session_if_settled); its rule is proven against Postgres by
+// supabase/tests/rls/fermeture_table_verrouillee.test.sql. Here: which session
+// the service hands it, with which arguments, and how the answer is reported.
 
 type Call = { table: string; method: string; args: unknown[] };
 
-/**
- * Recording client: every chained call is logged; awaiting a chain resolves
- * with the result configured for its table (and operation: select / update).
- */
-function makeClient(results: { sessions?: unknown[]; unpaid?: number; settling?: number }) {
+function makeClient(results: { sessions?: unknown[]; outcome?: string }) {
   const calls: Call[] = [];
+  const rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   const from = (table: string) => {
-    let op = 'select';
-    let isCount = false;
     const chain: Record<string, unknown> = {};
-    for (const method of ['select', 'eq', 'in', 'neq', 'lt', 'or', 'update']) {
+    for (const method of ['select', 'eq', 'in', 'lt']) {
       chain[method] = (...args: unknown[]) => {
         calls.push({ table, method, args });
-        if (method === 'update') op = 'update';
-        if (method === 'select' && (args[1] as { count?: string } | undefined)?.count) {
-          isCount = true;
-        }
         return chain;
       };
     }
-    chain.then = (resolve: (v: unknown) => void) => {
-      if (op === 'update') return resolve({ error: null });
-      if (table === 'table_sessions') return resolve({ data: results.sessions ?? [], error: null });
-      // orders: the manual release counts unpaid orders (`in`), the automatic
-      // close counts unsettled ones (`or`).
-      const usesOr = calls.some((c) => c.table === 'orders' && c.method === 'or');
-      return resolve({
-        count: isCount ? (usesOr ? (results.settling ?? 0) : (results.unpaid ?? 0)) : 0,
-        error: null,
-      });
-    };
+    chain.then = (resolve: (v: unknown) => void) =>
+      resolve({ data: results.sessions ?? [], error: null });
     return chain;
   };
-  return { client: { from } as unknown as SupabaseClient, calls };
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
+    rpcCalls.push({ fn, args });
+    return { data: results.outcome ?? 'closed', error: null };
+  };
+  return { client: { from, rpc } as unknown as SupabaseClient, calls, rpcCalls };
 }
 
-const updates = (calls: Call[]) =>
-  calls.filter((c) => c.table === 'table_sessions' && c.method === 'update');
-
 describe('releaseTableSession ("Liberer la table")', () => {
-  it('frees a paid table, served or not, scoped to the tenant everywhere', async () => {
-    const m = makeClient({ sessions: [{ id: 's1' }], unpaid: 0 });
+  it('asks for a money-only close of the open session, tenant-scoped', async () => {
+    const m = makeClient({ sessions: [{ id: 's1' }], outcome: 'closed' });
     await createOrderService(m.client).releaseTableSession('t1', '5', 'Salle 5');
 
-    expect(updates(m.calls)).toHaveLength(1);
     // The session is found by number OR display name (older sessions).
     expect(m.calls).toContainEqual({
       table: 'table_sessions',
       method: 'in',
       args: ['table_number', ['5', 'Salle 5']],
     });
-    // Money still due = pending AND partial.
     expect(m.calls).toContainEqual({
-      table: 'orders',
-      method: 'in',
-      args: ['payment_status', ['pending', 'partial']],
+      table: 'table_sessions',
+      method: 'eq',
+      args: ['tenant_id', 't1'],
     });
-    const tenantFilters = m.calls.filter((c) => c.method === 'eq' && c.args[0] === 'tenant_id');
-    expect(tenantFilters.every((c) => c.args[1] === 't1')).toBe(true);
-    // Every table touched (session read, order count, close) is tenant-filtered.
-    expect(new Set(tenantFilters.map((c) => c.table))).toEqual(
-      new Set(['table_sessions', 'orders']),
-    );
-    expect(tenantFilters.length).toBeGreaterThanOrEqual(3);
+    expect(m.rpcCalls).toEqual([
+      {
+        fn: 'close_table_session_if_settled',
+        args: { p_session_id: 's1', p_tenant_id: 't1', p_require_served: false },
+      },
+    ]);
   });
 
   it('refuses while money is still due on the table (witness)', async () => {
-    const m = makeClient({ sessions: [{ id: 's1' }], unpaid: 1 });
+    const m = makeClient({ sessions: [{ id: 's1' }], outcome: 'unsettled' });
     await expect(createOrderService(m.client).releaseTableSession('t1', '5')).rejects.toMatchObject(
       { code: 'CONFLICT' },
     );
-    expect(updates(m.calls)).toHaveLength(0);
   });
 
   it('says so when the table is already free (no false "freed")', async () => {
@@ -88,32 +72,43 @@ describe('releaseTableSession ("Liberer la table")', () => {
     await expect(createOrderService(m.client).releaseTableSession('t1', '5')).rejects.toMatchObject(
       { code: 'NOT_FOUND' },
     );
-    expect(updates(m.calls)).toHaveLength(0);
+    expect(m.rpcCalls).toHaveLength(0);
+  });
+
+  it('a session closed meanwhile by someone else is reported as already free', async () => {
+    const m = makeClient({ sessions: [{ id: 's1' }], outcome: 'not_open' });
+    await expect(createOrderService(m.client).releaseTableSession('t1', '5')).rejects.toMatchObject(
+      { code: 'NOT_FOUND' },
+    );
   });
 });
 
 describe('releaseStaleSessions (automatic release)', () => {
-  it('closes a stale table whose orders are all settled', async () => {
-    const m = makeClient({ sessions: [{ id: 's1' }], settling: 0 });
+  it('re-checks each table open longer than the delay, with the stale cutoff', async () => {
+    const m = makeClient({ sessions: [{ id: 's1' }, { id: 's2' }] });
     await createOrderService(m.client).releaseStaleSessions('t1');
 
-    // Only tables open longer than the delay are looked at.
     const lt = m.calls.find((c) => c.method === 'lt')!;
-    const cutoff = new Date(lt.args[1] as string).getTime();
-    expect(Math.abs(Date.now() - STALE_PAID_ORDER_MS - cutoff)).toBeLessThan(5_000);
-    // The settlement check treats a paid order older than the delay as served.
-    const or = m.calls.find((c) => c.table === 'orders' && c.method === 'or')!;
-    expect(or.args[0]).toMatch(/payment_status\.in\.\(pending,partial\)/);
-    expect(or.args[0]).toMatch(
-      /and\(status\.not\.in\.\(delivered,served\),created_at\.gt\."[^"]+"\)/,
-    );
-    expect(updates(m.calls)).toHaveLength(1);
+    expect(lt.args[0]).toBe('opened_at');
+    const openedBefore = new Date(lt.args[1] as string).getTime();
+    expect(Math.abs(Date.now() - STALE_PAID_ORDER_MS - openedBefore)).toBeLessThan(5_000);
+    expect(m.calls).toContainEqual({
+      table: 'table_sessions',
+      method: 'eq',
+      args: ['tenant_id', 't1'],
+    });
+    expect(m.rpcCalls.map((c) => c.args.p_session_id)).toEqual(['s1', 's2']);
+    for (const c of m.rpcCalls) {
+      expect(c.fn).toBe('close_table_session_if_settled');
+      expect(c.args.p_tenant_id).toBe('t1');
+      expect(typeof c.args.p_stale_before).toBe('string');
+    }
   });
 
-  it('keeps a stale table open while something is still unsettled (witness)', async () => {
-    const m = makeClient({ sessions: [{ id: 's1' }], settling: 1 });
+  it('touches nothing when no table is stale (witness)', async () => {
+    const m = makeClient({ sessions: [] });
     await createOrderService(m.client).releaseStaleSessions('t1');
-    expect(updates(m.calls)).toHaveLength(0);
+    expect(m.rpcCalls).toHaveLength(0);
   });
 
   it("checks only the order's own table when one is given", async () => {

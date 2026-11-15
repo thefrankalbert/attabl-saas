@@ -21,56 +21,31 @@ const ORDER_STATUS_RANK: Record<string, number> = {
  * good (owner decision 2026-11-15: follow the market's usage - occupied while
  * the order is in progress, with a manual release and this automatic one).
  */
+// Same value hard-coded for non-server callers in close_table_session_if_settled
+// (migration 20261115200000): change both together.
 export const STALE_PAID_ORDER_MS = 2 * 60 * 60 * 1000;
 
 export function createLifecycleMethods(supabase: SupabaseClient) {
   /**
-   * Close a table session once none of its orders are still awaiting payment
-   * (every order paid or cancelled). Tenant-scoped. Best-effort: a failure here
-   * must not fail the payment, so it only logs.
+   * Close a table session once everything on it is settled: paid (a 'partial'
+   * bill still owes money) AND served - since #416 a sale paid at the till is
+   * still cooking - unless the order is older than STALE_PAID_ORDER_MS (paid
+   * but never marked served: owner decision 2026-11-15, market usage).
+   *
+   * The check and the close run in ONE database function that takes the same
+   * table lock as create_order_with_items (migration 20261115200000): before,
+   * an order placed between the count and the close landed on a closed
+   * session. Tenant-scoped. Best-effort: a failure here must not fail the
+   * payment or the kitchen gesture, so it only logs.
    */
   async function closeSessionIfFullySettled(sessionId: string, tenantId: string): Promise<void> {
-    const { count, error } = await supabase
-      .from('orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .eq('session_id', sessionId)
-      // "Reste-t-il de l'argent du sur cette table ?" se compte sur DEUX etats,
-      // pas un seul. Ce filtre ne regardait que 'pending', donc une note
-      // PARTIELLEMENT payee (payment_status='partial', il reste un solde) ne
-      // comptait pas: la table se fermait comme "entierement reglee" et le
-      // reliquat etait perdu en silence. 'paid', 'refunded' et 'comp' sont bien
-      // des etats soldes, eux.
-      //
-      // ET une table n'est libre que quand tout y est aussi SERVI. Depuis #416,
-      // une vente payee a la caisse part en cuisine ('pending'): payee ne veut
-      // plus dire servie. Sans ce second critere, payer d'avance liberait la
-      // table pendant la cuisson (audit caisse 2026-11-15). La fermeture se
-      // refait donc aussi au passage a 'delivered' et a l'annulation
-      // (actionUpdateOrderStatus, en service_role: la RLS reserve la fermeture
-      // a `orders.pay`).
-      //
-      // Un ordre paye non marque servi depuis STALE_PAID_ORDER_MS compte comme
-      // servi (filet de securite, decision du 2026-11-15).
-      .or(
-        `payment_status.in.(pending,partial),and(status.not.in.(delivered,served),created_at.gt."${new Date(Date.now() - STALE_PAID_ORDER_MS).toISOString()}")`,
-      )
-      .neq('status', 'cancelled');
-
+    const { error } = await supabase.rpc('close_table_session_if_settled', {
+      p_session_id: sessionId,
+      p_tenant_id: tenantId,
+      p_stale_before: new Date(Date.now() - STALE_PAID_ORDER_MS).toISOString(),
+    });
     if (error) {
-      logger.error('Failed to check session settlement', { sessionId, tenantId, error });
-      return;
-    }
-    if ((count ?? 0) > 0) return; // still unpaid or not yet served -> keep open
-
-    const { error: closeError } = await supabase
-      .from('table_sessions')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('id', sessionId)
-      .eq('tenant_id', tenantId)
-      .eq('status', 'open');
-    if (closeError) {
-      logger.error('Failed to close table session', { sessionId, tenantId, error: closeError });
+      logger.error('Failed to close table session', { sessionId, tenantId, error });
     }
   }
 
@@ -135,30 +110,24 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
     const session = (sessions ?? [])[0] as { id: string } | undefined;
     if (!session) throw new ServiceError('Cette table est deja libre', 'NOT_FOUND');
 
-    const { count, error: countError } = await supabase
-      .from('orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .eq('session_id', session.id)
-      .in('payment_status', ['pending', 'partial'])
-      .neq('status', 'cancelled');
-    if (countError)
-      throw new ServiceError('Erreur de lecture des commandes', 'INTERNAL', countError);
-    if ((count ?? 0) > 0) {
+    // Locked check-and-close in the database: only money due counts here (the
+    // staff knows the guests left), and only the service role may ask for that.
+    const { data: outcome, error: closeError } = await supabase.rpc(
+      'close_table_session_if_settled',
+      { p_session_id: session.id, p_tenant_id: tenantId, p_require_served: false },
+    );
+    if (closeError) {
+      throw new ServiceError('Erreur de liberation de la table', 'INTERNAL', closeError);
+    }
+    if (outcome === 'unsettled') {
       throw new ServiceError(
         "Il reste de l'argent du sur cette table: encaissez-la avant de la liberer",
         'CONFLICT',
       );
     }
-
-    const { error: closeError } = await supabase
-      .from('table_sessions')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('id', session.id)
-      .eq('tenant_id', tenantId)
-      .eq('status', 'open');
-    if (closeError)
-      throw new ServiceError('Erreur de liberation de la table', 'INTERNAL', closeError);
+    if (outcome !== 'closed') {
+      throw new ServiceError('Cette table est deja libre', 'NOT_FOUND');
+    }
   }
 
   /**

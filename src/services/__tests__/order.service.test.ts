@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createOrderService } from '../order.service';
+import { STALE_PAID_ORDER_MS } from '../order/order-lifecycle';
 import { ServiceError } from '../errors';
 import type { OrderItemInput } from '@/lib/validations/order.schema';
 
@@ -960,24 +961,13 @@ describe('OrderService', () => {
   });
 
   describe('markPaid - table session closing (C1)', () => {
-    // Multi-table mock: orders.update().eq().eq().eq().neq().select() returns a paid
-    // row with a session; orders.select(count).eq().eq().in().neq() returns the
-    // number of orders still owing money on the session (pending OR partial);
-    // table_sessions.update().eq().eq().eq().
-    function makeSupabase(remainingUnpaid: number, tenderError: unknown = null) {
-      const tsUpdateEq3 = vi.fn().mockResolvedValue({ error: null });
-      const tsUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: tsUpdateEq3 }) }),
-      });
-
-      const countNeq = vi.fn().mockResolvedValue({ count: remainingUnpaid, error: null });
-      const countOr = vi.fn().mockReturnValue({ neq: countNeq });
-      const ordersSelectCount = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({ or: countOr }),
-        }),
-      });
-
+    // orders.update().eq().eq().eq().neq().select() returns a paid row with a
+    // session. The settle-and-close itself is ONE locked database function
+    // (close_table_session_if_settled, migration 20261115200000): its rule is
+    // proven by supabase/tests/rls/fermeture_table_verrouillee.test.sql; here
+    // we check markPaid asks for it, with the stale-order cutoff.
+    function makeSupabase(tenderError: unknown = null) {
+      const rpc = vi.fn().mockResolvedValue({ data: 'closed', error: null });
       const updateSelect = vi
         .fn()
         .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
@@ -996,73 +986,42 @@ describe('OrderService', () => {
           }),
         }),
       });
-
       const from = vi.fn((table: string) => {
-        if (table === 'orders') return { update: ordersUpdate, select: ordersSelectCount };
-        if (table === 'table_sessions') return { update: tsUpdate };
+        if (table === 'orders') return { update: ordersUpdate };
         if (table === 'payments')
           return { insert: vi.fn().mockResolvedValue({ error: tenderError }) };
         return {};
       });
       return {
-        client: { from } as unknown as SupabaseClient,
-        tsUpdate,
-        countOr,
+        client: { from, rpc } as unknown as SupabaseClient,
+        rpc,
         ordersUpdate,
         revertPaidAtEq,
       };
     }
 
-    it('closes the session when no unpaid orders remain', async () => {
-      const m = makeSupabase(0);
-      const service = createOrderService(m.client);
-
-      const res = await service.markPaid('o1', 't1', { method: 'cash' });
+    it('asks the database to close the table, tenant-scoped, with the 2 h cutoff', async () => {
+      const m = makeSupabase();
+      const res = await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' });
 
       expect(res).toEqual({ paid: true });
-      expect(m.tsUpdate).toHaveBeenCalledWith({ status: 'closed', closed_at: expect.any(String) });
+      expect(m.rpc).toHaveBeenCalledWith('close_table_session_if_settled', {
+        p_session_id: 's1',
+        p_tenant_id: 't1',
+        p_stale_before: expect.any(String),
+      });
+      const cutoff = new Date(
+        (m.rpc.mock.calls[0][1] as { p_stale_before: string }).p_stale_before,
+      ).getTime();
+      expect(Math.abs(Date.now() - STALE_PAID_ORDER_MS - cutoff)).toBeLessThan(5_000);
     });
 
-    it('keeps the session open while other orders are unpaid', async () => {
-      const m = makeSupabase(1);
-      const service = createOrderService(m.client);
+    it('annule le passage a paye si la ligne du registre echoue, sans toucher a la table', async () => {
+      const m = makeSupabase({ message: 'ledger down' });
 
-      await service.markPaid('o1', 't1', { method: 'cash' });
-
-      expect(m.tsUpdate).not.toHaveBeenCalled();
-    });
-
-    it("compte aussi les notes PARTIELLEMENT payees comme de l'argent du", async () => {
-      const m = makeSupabase(0);
-      const service = createOrderService(m.client);
-
-      await service.markPaid('o1', 't1', { method: 'cash' });
-
-      // Ce filtre ne regardait que 'pending': une note 'partial' (il reste un
-      // solde) ne comptait pas, la table se fermait comme entierement reglee et
-      // le reliquat etait perdu.
-      expect(m.countOr).toHaveBeenCalledWith(
-        expect.stringContaining('payment_status.in.(pending,partial)'),
-      );
-    });
-
-    // Audit caisse 2026-11-15: since #416 a paid caisse sale is still cooking.
-    it('garde la table occupee tant qu une commande n est pas servie, meme payee', async () => {
-      const m = makeSupabase(0);
-      const service = createOrderService(m.client);
-
-      await service.markPaid('o1', 't1', { method: 'cash' });
-
-      expect(m.countOr).toHaveBeenCalledWith(
-        expect.stringContaining('status.not.in.(delivered,served)'),
-      );
-    });
-
-    it('annule le passage a paye si la ligne du registre echoue, et le signale', async () => {
-      const m = makeSupabase(0, { message: 'ledger down' });
-      const service = createOrderService(m.client);
-
-      await expect(service.markPaid('o1', 't1', { method: 'cash' })).rejects.toThrow();
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toThrow();
 
       expect(m.ordersUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ payment_status: 'pending', paid_at: null }),
@@ -1070,7 +1029,7 @@ describe('OrderService', () => {
       // Only ITS OWN flip is undone: scoped to the paid_at this call wrote.
       const written = (m.ordersUpdate.mock.calls[0][0] as { paid_at: string }).paid_at;
       expect(m.revertPaidAtEq).toHaveBeenCalledWith('paid_at', written);
-      expect(m.tsUpdate).not.toHaveBeenCalled();
+      expect(m.rpc).not.toHaveBeenCalled();
     });
   });
 
