@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { isSubscriptionUsable } from '@/lib/plans/features';
+import { RETENTION } from '@/lib/legal/retention';
 import type { SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
 import { createMemberSessionService } from './member-session.service';
@@ -291,18 +292,51 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
     async restoreTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
       assertAbonnementUtilisable(label, 'restaurer ce restaurant');
-      const { error } = await admin
+      // Passe le delai de grace de la politique de conservation, les donnees
+      // personnelles du restaurant sont (ou vont etre) anonymisees: le remettre en
+      // service donnerait un compte vide et des membres sans adresse. La garde
+      // porte sur la DATE de suppression, pas seulement sur `anonymized_at`: le
+      // cron peut ne pas avoir encore tourne.
+      const { data: cycle, error: erreurCycle } = await admin
         .from('tenants')
-        .update({
-          deleted_at: null,
-          deleted_by: null,
-          is_active: true,
-          suspended_at: null,
-          suspended_by: null,
-          suspend_reason: null,
-        })
-        .eq('id', tenantId);
+        .select('deleted_at, anonymized_at')
+        .eq('id', tenantId)
+        .maybeSingle();
+      if (erreurCycle) throw new ServiceError('Echec de la restauration', 'INTERNAL', erreurCycle);
+      const limite = new Date(
+        Date.now() - RETENTION.closedTenantAnonymizeDays * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const refus = () =>
+        new ServiceError(
+          'Ce restaurant a ete supprime depuis trop longtemps: ses donnees sont anonymisees, il ne peut plus etre restaure',
+          'CONFLICT',
+        );
+      if (
+        cycle?.anonymized_at ||
+        (cycle?.deleted_at && new Date(cycle.deleted_at) < new Date(limite))
+      )
+        throw refus();
+
+      // L'ecriture rejoue la garde (course avec le cron entre la lecture et ici):
+      // zero ligne touchee = le cron est passe entre-temps.
+      const { error, count } = await admin
+        .from('tenants')
+        .update(
+          {
+            deleted_at: null,
+            deleted_by: null,
+            is_active: true,
+            suspended_at: null,
+            suspended_by: null,
+            suspend_reason: null,
+          },
+          { count: 'exact' },
+        )
+        .eq('id', tenantId)
+        .is('anonymized_at', null)
+        .or(`deleted_at.is.null,deleted_at.gte.${limite}`);
       if (error) throw new ServiceError('Echec de la restauration', 'INTERNAL', error);
+      if (count === 0) throw refus();
       await audit(actor, {
         action: 'restore_tenant',
         targetType: 'tenant',

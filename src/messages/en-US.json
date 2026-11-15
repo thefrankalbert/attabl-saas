@@ -594,25 +594,99 @@
     },
     "privacy": {
       "metaTitle": "Privacy Policy",
-      "metaDescription": "Privacy policy and personal data protection for ATTABL.",
+      "metaDescription": "What data ATTABL collects, who hosts it, how long we keep it and how to exercise your rights.",
       "heading": "Privacy Policy",
-      "lastUpdate": "Last updated: November 8, 2026",
-      "section1Title": "1. Data controller",
-      "section1Body": "ATTABL, a SaaS platform for digital restaurant management, is the data controller for personal data collected via the attabl.com website.",
-      "section2Title": "2. Data collected",
-      "section2Body": "We collect the following data: name, email address, establishment information (name, address, phone), and browsing data (analytics cookies). Payment data is handled directly by Stripe and is not stored on our servers.",
-      "section3Title": "3. Purposes",
-      "section3Body": "Data is used for: managing your account, providing the service, billing, customer support, and improving the platform.",
-      "section4Title": "4. Hosting and security",
-      "section4Body": "Data is hosted in the European Union: the database with Supabase in Ireland (eu-west-1 region), the application with Vercel in Paris (cdg1 region). All communications are encrypted (HTTPS).",
-      "section5Title": "5. Your rights",
-      "section5Body": "Under the GDPR, you have a right of access, rectification, deletion and portability of your data. Contact us at",
-      "section6Title": "6. Cookies",
-      "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used.",
-      "section7Title": "7. Retention period",
-      "section7Body": "Your account and venue data is kept for as long as your subscription lasts. A diner's personal details on an order (name, phone, delivery address) are erased automatically 90 days after the order: the order itself is kept without those details, because commercial law requires accounting records to be retained. Login logs are deleted after 90 days. After your subscription ends, you may request deletion of your account at any time.",
-      "section8Title": "8. Atfood mobile app",
-      "section8Body": "Atfood is the ATTABL iPhone app for restaurant staff. It uses the camera only to photograph dishes. Photos are uploaded to the restaurant's menu storage (Supabase) and shown publicly on the restaurant's menu. Optional background removal and photo quality checks run on the phone (Apple Vision): nothing is sent to third parties. The app uses your account data: email address, user ID and the restaurant you belong to. If the app crashes, an anonymous crash report with no personal data may be sent to Sentry so we can fix the problem. You can request the deletion of your account from the app: Profil > Supprimer mon compte (Profile > Delete my account)."
+      "lastUpdate": "Last updated: November 15, 2026",
+      "section1Title": "1. Who is responsible for your data",
+      "section1Body": "ATTABL is the data controller for its website and for the accounts of restaurant and hotel owners (account, subscription, login). For a restaurant's customers (name, phone, delivery address on an order) and for a restaurant's team, the restaurant decides how the data is used. ATTABL then acts on its behalf, as a processor.",
+      "companyHeading": "Company details",
+      "companyLegalName": "Company name",
+      "companyLegalForm": "Legal form",
+      "companyRccm": "RCCM",
+      "companyNiu": "NIU",
+      "companyHeadOffice": "Head office",
+      "companyBurkinaAddress": "Establishment in Burkina Faso",
+      "section2Title": "2. Data we collect",
+      "section2Body": "Account: name, email address, phone, role. Venue: name, address, phone, settings. Login: IP address, browser and device. Orders: the customer's name, phone and delivery address when the restaurant asks for them, notes, amounts. Team: the email address of the invited person. Notifications: a technical device identifier if you turn them on. Payment data is entered at Stripe and never goes through our servers. We do not ask for any sensitive data: avoid writing an allergy or a belief in a free notes field.",
+      "section3Title": "3. Why we use it",
+      "section3Body": "To create and protect your account, run the menu, orders and till, bill the subscription, answer your messages, detect abuse and fix errors. We do not use your data for advertising and we do not sell it.",
+      "section4Title": "4. Who hosts or processes your data",
+      "section4Intro": "These providers handle personal data on our behalf. Each is limited to the task listed.",
+      "section4Transfers": "Some providers are located outside Cameroon and Burkina Faso, notably in the European Union and the United States. These transfers rely on the contractual commitments the providers make in their data processing terms (European Union standard contractual clauses or equivalent), on encryption in transit (HTTPS) and on sending them only what their task requires. Database content is stored in Ireland, in the European Union. You can ask us for the current list of safeguards that apply to each provider.",
+      "processors": {
+        "supabase": {
+          "name": "Supabase",
+          "role": "Database, accounts and photo storage",
+          "country": "Ireland (European Union)"
+        },
+        "vercel": {
+          "name": "Vercel",
+          "role": "Application hosting",
+          "country": "Paris, France (US company, global network)"
+        },
+        "resend": {
+          "name": "Resend",
+          "role": "Sending emails (welcome, invitation, forgotten password, confirmation)",
+          "country": "United States"
+        },
+        "sentry": {
+          "name": "Sentry",
+          "role": "Error detection and session replay (10% of sessions, 100% of those with errors)",
+          "country": "European Union or United States depending on the collection region"
+        },
+        "upstash": {
+          "name": "Upstash",
+          "role": "Limiting login attempts and abuse (IP address, very short lifetime)",
+          "country": "European Union or United States depending on the database region"
+        },
+        "cloudflare": {
+          "name": "Cloudflare Turnstile",
+          "role": "Bot protection on login and sign-up",
+          "country": "Global network (US company)"
+        },
+        "stripe": {
+          "name": "Stripe",
+          "role": "Subscription payment, responsible for its own payment data",
+          "country": "United States and Ireland"
+        },
+        "push": {
+          "name": "Browser notification services (Google, Apple, Mozilla, Microsoft)",
+          "role": "Delivering a push notification to your device if you turn it on",
+          "country": "United States and global network"
+        },
+        "improvmx": {
+          "name": "ImprovMX",
+          "role": "Receiving mail sent to @attabl.com addresses",
+          "country": "Depends on the provider"
+        }
+      },
+      "section5Title": "5. Applicable laws",
+      "section5Body": "In Cameroon, law no. 2024/017 on personal data protection. In Burkina Faso, law no. 001-2021/AN on the protection of persons with regard to the processing of personal data, under the supervision of the CIL. The European regulation (GDPR) is not the law that governs us: it frames our providers located in the European Union.",
+      "section6Title": "6. Your rights",
+      "section6Body": "You can ask for access to your data, correction, deletion, transfer, or object to a use. Write to us from the address linked to your account and state your request: we answer within 30 days. If a restaurant is responsible for your data (you ordered from it), we pass your request on to it. You can also contact the data protection authority of your country. Contact:",
+      "section7Title": "7. Cookies and browser storage",
+      "section7Intro": "No advertising cookies and no third-party analytics tool. Here is exactly what is stored on your device.",
+      "cookieAuth": "Login cookies (Supabase): keep your session open. Essential.",
+      "cookieLocale": "NEXT_LOCALE: remembers the language you chose, one year.",
+      "cookieRecovery": "attabl_recovery: secures the password change, 15 minutes, hidden from the site's scripts.",
+      "cookieAb": "attabl_ab_id and attabl_ab_trial: used once, to test the length of the free trial (7 or 14 days) on sign-up pages, 60 days. No information about you is attached.",
+      "cookieStorage": "Browser local storage: light or dark theme, display preferences, currency, a customer's cart. This data stays on your device.",
+      "cookieSentry": "If an error occurs, Sentry may record the current session to help us fix it.",
+      "section8Title": "8. How long we keep your data",
+      "section8Intro": "Automatic purges run every night. These are the periods we apply.",
+      "retentionGuests": "A customer's name, phone, delivery address and free-text notes (on the order and on its items, managers' annotations on the order): erased {days} days after the order. The order and its amounts are kept without the customer's identity, because commercial law requires accounting records to be retained.",
+      "retentionSessions": "Login logs (IP address, browser): {days} days.",
+      "retentionInvitations": "Expired or cancelled team invitations: deleted {days} days after their expiry date.",
+      "retentionPush": "Notification subscriptions of an unused device: deleted after {days} days without activity.",
+      "retentionAudit": "Audit logs of sensitive actions: {months} months. After that, entries with no accounting value are deleted. Those that concern orders, coupons and prices are kept without the person's identity.",
+      "retentionClosed": "Deleted restaurant, {days} days after deletion: the team's email address, name and phone (sign-in accounts are deleted, including Google or Microsoft sign-in), credit customer accounts, supplier contacts, the restaurant's audit logs, and the restaurant's phone and address. After that, the restaurant can no longer be restored.",
+      "retentionAccount": "Active account and venue: kept for the duration of the subscription.",
+      "retentionAccounting": "Payments, invoices and payment events: never erased before the legal retention period for accounting records ends.",
+      "retentionContact": "Messages sent through the contact form: they reach us by email, we do not store them in our database and we delete them from our mailbox after {months} months.",
+      "retentionNewsletter": "Newsletter: until you unsubscribe.",
+      "section9Title": "9. Atfood mobile app",
+      "section9Body": "Atfood is the ATTABL iPhone app for restaurant staff. It uses the camera only to photograph dishes. Photos are uploaded to the restaurant's menu storage (Supabase) and shown publicly on the restaurant's menu. Optional background removal and photo quality checks run on the phone (Apple Vision): nothing is sent to third parties. The app uses your account data: email address, user ID and the restaurant you belong to. If the app crashes, an anonymous crash report with no personal data may be sent to Sentry so we can fix the problem. You can request the deletion of your account from the app: Profil > Supprimer mon compte (Profile > Delete my account).",
+      "cookieCc": "attabl-cc-theme: remembers the theme of the ATTABL administration console, one year. Reserved for the ATTABL team."
     },
     "features": {
       "metaTitle": "Features - Attabl",
