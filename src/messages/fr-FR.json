@@ -1639,6 +1639,23 @@
   },
   "admin": {
     "platform": {
+      "reminders": {
+        "tab": "Rappels",
+        "intro": "Ce que chaque rappel a produit sur les 30 derniers jours. Rien n'est coupé automatiquement : à vous de décider d'ajuster ou d'arrêter une règle.",
+        "sent": "Rappels envoyés",
+        "restaurants": "Restaurants concernés",
+        "escalated": "Dont escalades au responsable",
+        "resolvedWithin": "Réglés en moins de 5 min",
+        "medianResolve": "Temps médian pour régler",
+        "opened": "Ouverts par le destinataire",
+        "muted": "Personnes qui l'ont coupé",
+        "rules": {
+          "order_ready_not_served": "Commande prête, pas servie",
+          "order_not_started": "Commande pas encore lancée",
+          "pre_service_stock": "Stock avant l'ouverture",
+          "weekly_coach": "Bilan du lundi"
+        }
+      },
       "banner": "Console plateforme",
       "title": "Console plateforme",
       "subtitle": "Gérer les restaurants et les comptes",
@@ -2509,6 +2526,37 @@
     "tabSounds": "Sons",
     "tabSecurity": "Sécurité",
     "tabContact": "Contact",
+    "tabReminders": "Rappels",
+    "reminders": {
+      "intro": "Un rappel part seulement s'il reste quelque chose à faire, et seulement à la personne qui peut agir. Il disparaît dès que c'est réglé. Chacun peut aussi couper un rappel pour lui-même, depuis sa cloche.",
+      "after": "Après",
+      "minutes": "{count} min",
+      "saved": "Rappels enregistrés",
+      "saveError": "Impossible d'enregistrer les rappels",
+      "needsHours": "Renseignez vos horaires d'ouverture (onglet Horaires) : sans eux, ce rappel ne part pas.",
+      "rules": {
+        "order_ready_not_served": {
+          "title": "Commande prête, pas encore servie",
+          "desc": "Le serveur est prévenu quand une commande prête attend. Sans réaction au double du délai, le responsable est prévenu.",
+          "who": "Reçu par : le serveur de la commande ou de la table, puis le responsable."
+        },
+        "order_not_started": {
+          "title": "Commande reçue, pas encore lancée",
+          "desc": "La cuisine est prévenue quand une commande attend d'être lancée. Sans réaction au double du délai, le responsable est prévenu.",
+          "who": "Reçu par : la cuisine, puis le responsable."
+        },
+        "pre_service_stock": {
+          "title": "Avant l'ouverture : le stock",
+          "desc": "30 minutes avant l'ouverture, la liste des ingrédients épuisés ou bientôt à court, et des plats retirés de la carte. Rien n'est envoyé si tout va bien.",
+          "who": "Reçu par : le propriétaire et les responsables."
+        },
+        "weekly_coach": {
+          "title": "Le bilan du lundi",
+          "desc": "Le lundi à 9 h, votre créneau le plus chargé et les plats qui ne se vendent plus, calculés sur vos 4 dernières semaines. Il faut au moins 4 semaines d'activité et 80 commandes, sinon rien n'est envoyé.",
+          "who": "Reçu par : le propriétaire."
+        }
+      }
+    },
     "tabHours": "Horaires",
     "management": {
       "title": "Gestion",
@@ -2614,7 +2662,25 @@
     "settings": "Paramètres",
     "users": "Utilisateurs"
   },
+  "adminSupport": {
+    "whatsappTitle": "Un souci ? Écrivez-nous ou appelez-nous",
+    "whatsappBody": "Une personne de l'équipe ATTABL vous répond au {phone}. Dites-nous ce qui bloque, on s'en occupe.",
+    "whatsappCta": "Écrire sur WhatsApp",
+    "whatsappMessage": "Bonjour ATTABL, j'ai besoin d'aide pour mon restaurant {restaurant}.",
+    "callCta": "Appeler"
+  },
+
   "notifications": {
+    "muteError": "Impossible de modifier ce rappel",
+    "muteReminder": "Ne plus recevoir ce rappel",
+    "unmuteReminder": "Réactiver",
+    "mutedTitle": "Rappels que vous avez coupés",
+    "reminderRules": {
+      "order_ready_not_served": "Commande prête, pas servie",
+      "order_not_started": "Commande pas encore lancée",
+      "pre_service_stock": "Stock avant l'ouverture",
+      "weekly_coach": "Bilan du lundi"
+    },
     "title": "Notifications",
     "empty": "Aucune notification",
     "markAllRead": "Tout marquer comme lu",

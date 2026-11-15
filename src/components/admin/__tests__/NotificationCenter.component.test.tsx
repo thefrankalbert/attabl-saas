@@ -12,6 +12,13 @@ const mockMarkAsRead = vi.fn();
 const mockMarkAllAsRead = vi.fn();
 const mockNotifications: Notification[] = [];
 
+const mockSetMuted = vi.fn(async () => ({ success: true }));
+const mockToast = vi.fn();
+vi.mock('@/components/ui/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
+const mockMuted: string[] = [];
+vi.mock('@/hooks/queries/useReminderMutes', () => ({
+  useReminderMutes: () => ({ muted: mockMuted, setMuted: mockSetMuted }),
+}));
 vi.mock('@/hooks/useNotifications', () => ({
   useNotifications: () => ({
     notifications: mockNotifications,
@@ -84,6 +91,9 @@ function makeNotification(overrides: Partial<Notification> = {}): Notification {
 describe('NotificationCenter', () => {
   beforeEach(() => {
     mockNotifications.length = 0;
+    mockMuted.length = 0;
+    mockSetMuted.mockClear();
+    mockToast.mockClear();
     mockMarkAsRead.mockClear();
     mockMarkAllAsRead.mockClear();
     mockPush.mockClear();
@@ -191,5 +201,62 @@ describe('NotificationCenter', () => {
     render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
 
     expect(screen.getByText('99+')).toBeInTheDocument();
+  });
+
+  describe('rappels du moteur', () => {
+    it('un rappel propose de le couper, sans bouton imbrique dans un bouton', async () => {
+      mockNotifications.push(
+        makeNotification({
+          id: 'r1',
+          type: 'reminder:order_ready_not_served',
+          title: 'Commande prete',
+        }),
+      );
+      const user = userEvent.setup();
+      render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
+      await user.click(screen.getByRole('button', { name: 'title' }));
+
+      const mute = await screen.findByRole('button', { name: 'muteReminder' });
+      expect(mute.closest('button')?.parentElement?.closest('button')).toBeNull();
+      await user.click(mute);
+      expect(mockSetMuted).toHaveBeenCalledWith('order_ready_not_served', true);
+    });
+
+    it('une coupure en echec le dit, au lieu de faire croire qu elle a marche', async () => {
+      mockNotifications.push(
+        makeNotification({ id: 'r1', type: 'reminder:order_not_started', title: 'En attente' }),
+      );
+      mockSetMuted.mockResolvedValueOnce({ success: false, error: 'non autorise' } as never);
+      const user = userEvent.setup();
+      render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
+      await user.click(screen.getByRole('button', { name: 'title' }));
+      await user.click(await screen.findByRole('button', { name: 'muteReminder' }));
+      await waitFor(() =>
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'muteError', variant: 'destructive' }),
+        ),
+      );
+    });
+
+    it('une notification ordinaire ne propose pas de couper', async () => {
+      mockNotifications.push(makeNotification({ id: 'n1', type: 'info' }));
+      const user = userEvent.setup();
+      render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
+      await user.click(screen.getByRole('button', { name: 'title' }));
+
+      await screen.findByText('New order received');
+      expect(screen.queryByRole('button', { name: 'muteReminder' })).toBeNull();
+    });
+
+    it('un rappel coupe se reactive depuis la cloche', async () => {
+      mockMuted.push('weekly_coach');
+      const user = userEvent.setup();
+      render(<NotificationCenter tenantId="tenant-1" userId="user-1" />);
+      await user.click(screen.getByRole('button', { name: 'title' }));
+
+      expect(await screen.findByText('reminderRules.weekly_coach')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'unmuteReminder' }));
+      expect(mockSetMuted).toHaveBeenCalledWith('weekly_coach', false);
+    });
   });
 });

@@ -10,6 +10,7 @@ import { getStorefrontTenant } from '@/lib/billing/storefront-tenant';
 import { keepKnownTable, resolveTableParam } from '@/lib/qr/table-param';
 import { TableOccupiedNotice } from '@/components/tenant/TableOccupiedNotice';
 import { computeOpeningState } from '@/lib/opening-hours';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import Link from 'next/link';
 import type { MenuItem, Category, Menu, Table } from '@/types/admin.types';
 import { HomeHeaderClient } from '@/components/tenant/client/HomeHeaderClient';
@@ -208,7 +209,11 @@ export default async function HomePage({
   const featuredClients = featuredFull.map((item) => toClientMenuItem(item, featuredLabel));
   const recentClients = recentFull.map((item) => toClientMenuItem(item, featuredLabel));
 
-  const openingState = computeOpeningState(tenant.opening_hours, new Date());
+  const openingState = computeOpeningState(
+    tenant.opening_hours,
+    new Date(),
+    resolveTenantTimezone(tenant),
+  );
 
   // Plat du jour: prefer a featured dish, else fall back to the most recent
   // available item so the hero dish card (maquette) always shows.

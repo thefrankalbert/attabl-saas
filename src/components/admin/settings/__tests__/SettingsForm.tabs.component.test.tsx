@@ -8,6 +8,7 @@ import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
 import { SettingsForm } from '../SettingsForm';
+import { DEFAULT_REMINDER_SETTINGS } from '@/lib/validations/reminders.schema';
 
 // A tab click must not navigate: every tab is already on the page. router.push
 // re-fetched the whole settings page from the server on each click (slow on a
@@ -21,6 +22,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 vi.mock('@/app/actions/tenant-settings', () => ({ actionUpdateTenantSettings: vi.fn() }));
+vi.mock('@/app/actions/reminders', () => ({ actionUpdateReminderSettings: vi.fn() }));
 vi.mock('@/hooks/useSettingsData', () => ({
   useSettingsData: () => ({
     form: { handleSubmit: () => () => {} },
@@ -48,6 +50,7 @@ function renderForm() {
         tenant={{ id: 't1', slug: 'demo' } as SettingsTenant}
         initialPaymentMethods={[]}
         initialTab="identity"
+        initialReminderSettings={DEFAULT_REMINDER_SETTINGS}
       />
     </PermissionsProvider>,
   );

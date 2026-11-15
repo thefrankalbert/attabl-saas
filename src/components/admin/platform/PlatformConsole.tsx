@@ -12,6 +12,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConfirmActionDialog, type ConfirmActionState } from './ConfirmActionDialog';
 import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner';
 import type { PlatformTenantRow, PlatformUserRow } from '@/types/platform-admin.types';
+import type { ReminderRuleStats } from '@/services/reminders/reminder-stats';
+import { ReminderStatsPanel } from './ReminderStatsPanel';
 import {
   actionSuspendTenant,
   actionUnsuspendTenant,
@@ -30,16 +32,22 @@ interface PlatformConsoleProps {
   users: PlatformUserRow[];
   /** Deploy sha this bundle was built from; drives the update-available control. */
   appVersion?: string;
+  reminderStats: ReminderRuleStats[];
 }
 
 type ActionResult = { success?: boolean; error?: string };
 
-export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleProps) {
+export function PlatformConsole({
+  tenants,
+  users,
+  appVersion,
+  reminderStats,
+}: PlatformConsoleProps) {
   const t = useTranslations('admin.platform');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [tab, setTab] = useState<'active' | 'trash'>('active');
+  const [tab, setTab] = useState<'active' | 'trash' | 'reminders'>('active');
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmActionState | null>(null);
@@ -121,7 +129,7 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
 
       <main id="main-content" className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'trash')}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'trash' | 'reminders')}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <TabsList>
                 <TabsTrigger value="active">{t('tabActive')}</TabsTrigger>
@@ -129,14 +137,17 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                   {t('tabTrash')}
                   {deletedTenants.length > 0 ? ` (${deletedTenants.length})` : ''}
                 </TabsTrigger>
+                <TabsTrigger value="reminders">{t('reminders.tab')}</TabsTrigger>
               </TabsList>
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                aria-label={t('searchPlaceholder')}
-                className="sm:max-w-xs"
-              />
+              {tab !== 'reminders' && (
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  aria-label={t('searchPlaceholder')}
+                  className="sm:max-w-xs"
+                />
+              )}
             </div>
 
             <TabsContent value="active" className="mt-4">
@@ -391,6 +402,9 @@ export function PlatformConsole({ tenants, users, appVersion }: PlatformConsoleP
                   ))}
                 </ul>
               )}
+            </TabsContent>
+            <TabsContent value="reminders" className="mt-4">
+              <ReminderStatsPanel stats={reminderStats} />
             </TabsContent>
           </Tabs>
         </div>
