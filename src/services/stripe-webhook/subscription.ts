@@ -6,6 +6,7 @@ import {
   selectTolerantToMissingFreezeReason,
   updateTolerantToMissingFreezeReason,
 } from '@/lib/billing/freeze-reason';
+import { hasActiveFlutterwavePeriod } from '@/lib/billing/flutterwave/active-period';
 import { ServiceError } from '../errors';
 import type { SubscriptionStatus } from '@/types/billing';
 import type { StripeWebhookDeps } from './deps';
@@ -47,6 +48,21 @@ function concerneUnAutreAbonnement(
   return Boolean(tenant.stripe_subscription_id) && tenant.stripe_subscription_id !== subscriptionId;
 }
 
+/**
+ * Un restaurant SANS abonnement Stripe enregistre accepte tout evenement (le
+ * tout premier, avant `checkout.session.completed`). Mais un restaurant paye par
+ * Flutterwave a lui aussi un identifiant null (efface a l'application du
+ * paiement): un evenement tardif d'un ancien abonnement Stripe ne doit PAS
+ * ecrire son etat (la suppression de l'ancien gelerait un restaurant qui paie).
+ */
+async function payeParFlutterwave(
+  supabase: StripeWebhookDeps['supabase'],
+  tenant: { id: string; stripe_subscription_id?: string | null },
+): Promise<boolean> {
+  if (tenant.stripe_subscription_id) return false;
+  return hasActiveFlutterwavePeriod(supabase, tenant.id);
+}
+
 export async function handleSubscriptionUpdated(
   { supabase, stripe }: StripeWebhookDeps,
   subscription: Stripe.Subscription,
@@ -80,6 +96,14 @@ export async function handleSubscriptionUpdated(
 
   if (concerneUnAutreAbonnement(tenant, subscription.id)) {
     logger.warn('subscription.updated ignore: ce n est pas l abonnement courant du restaurant', {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  if (await payeParFlutterwave(supabase, tenant)) {
+    logger.info('subscription.updated ignore: restaurant paye par Flutterwave', {
       tenantId: tenant.id,
       subscriptionId: subscription.id,
     });
@@ -285,6 +309,14 @@ export async function handleSubscriptionDeleted(
 
   if (concerneUnAutreAbonnement(tenant, subscription.id)) {
     logger.warn('subscription.deleted ignore: ce n est pas l abonnement courant du restaurant', {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  if (await payeParFlutterwave(supabase, tenant)) {
+    logger.info('subscription.deleted ignore: restaurant paye par Flutterwave', {
       tenantId: tenant.id,
       subscriptionId: subscription.id,
     });

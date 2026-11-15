@@ -12,6 +12,14 @@
       "schedule": "0 2 * * *"
     },
     {
+      "path": "/api/cron/flutterwave-renewals",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/flutterwave-reconcile",
+      "schedule": "0 */6 * * *"
+    },
+    {
       "path": "/api/cron/reminders",
       "schedule": "* * * * *"
     }

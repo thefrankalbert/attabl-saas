@@ -31,6 +31,13 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+// Garde Flutterwave: lit la base en service_role (`server-only`), donc remplacee ici.
+// La regle elle-meme est testee a part (flutterwave-guard.test.ts).
+const mockRefuseFlutterwave = vi.fn(async (): Promise<Response | null> => null);
+vi.mock('@/lib/billing/flutterwave/guard', () => ({
+  refuseIfPaidByFlutterwave: () => mockRefuseFlutterwave(),
+}));
+
 vi.mock('@/lib/billing/tenant-billing-ids', () => ({
   getTenantBillingIds: vi.fn(),
 }));
@@ -284,6 +291,18 @@ describe('POST /api/update-subscription', () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toContain('Plan invalide');
+  });
+
+  it('refuse (409) le changement de plan Stripe a un restaurant paye par Flutterwave', async () => {
+    setupAuthenticatedMocks();
+    mockRefuseFlutterwave.mockResolvedValueOnce(
+      Response.json({ code: 'EXISTING_FLUTTERWAVE_SUBSCRIPTION' }, { status: 409 }),
+    );
+
+    const res = await POST(buildRequest({ plan: 'pro' }));
+
+    expect(res.status).toBe(409);
+    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
   });
 
   it('returns 400 when subscription is already canceled', async () => {

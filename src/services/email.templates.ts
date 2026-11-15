@@ -15,6 +15,7 @@ import type {
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
+  RenewalReminderEmailData,
 } from './email.types';
 
 export interface EmailContent {
@@ -313,5 +314,34 @@ export function buildTrialEndgameEmail(data: {
     ),
   );
   const text = `${data.restaurantName} - Il reste ${data.daysLeft} jour(s) sur votre essai.\n\n${data.dashboardUrl}\n\n${FOOTER}`;
+  return { subject, html, text };
+}
+
+/** Espaces simples (pas d'espace insecable): le courriel reste en ASCII. */
+function groupThousands(amount: number): string {
+  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+export function buildRenewalReminderEmail(data: RenewalReminderEmailData): EmailContent {
+  const safeName = escapeHtml(data.restaurantName);
+  const safeUrl = sanitizeUrl(data.paymentUrl);
+  const safePlan = escapeHtml(data.planLabel);
+  const amount = `${groupThousands(data.amount)} FCFA`;
+  const urgent = data.daysLeft <= 1;
+  const title = urgent
+    ? 'Votre abonnement se termine demain.'
+    : `Votre abonnement se termine dans ${data.daysLeft} jours.`;
+  const subject = `${data.restaurantName} - ${title}`;
+  const html = wrap(
+    `Payez ${amount} en 2 minutes pour garder votre menu et vos commandes.`,
+    card(
+      `<p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">${safeName}</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">${escapeHtml(title)}</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#4b5563;">Votre plan ${safePlan} court jusqu'au ${escapeHtml(data.periodEndLabel)}. Pour continuer sans coupure, payez ${escapeHtml(amount)} par Orange Money, MTN MoMo, Moov ou carte.</p>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#4b5563;">Le paiement prend 2 minutes. Vous validez sur votre telephone.</p>
+          ${cta(safeUrl, 'Payer mon abonnement')}`,
+    ),
+  );
+  const text = `${data.restaurantName} - ${title}\n\nVotre plan ${data.planLabel} court jusqu'au ${data.periodEndLabel}. Pour continuer sans coupure, payez ${amount} par Orange Money, MTN MoMo, Moov ou carte.\n\n${data.paymentUrl}\n\n${FOOTER}`;
   return { subject, html, text };
 }

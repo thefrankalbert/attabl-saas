@@ -50,6 +50,18 @@ export interface LowStockAlertEmailData {
   dashboardUrl: string;
 }
 
+export interface RenewalReminderEmailData {
+  restaurantName: string;
+  /** Lien de paiement Flutterwave, valable pour cette echeance. */
+  paymentUrl: string;
+  daysLeft: number;
+  /** Date de fin de periode, deja formatee (JJ/MM/AAAA). */
+  periodEndLabel: string;
+  /** Montant en unites entieres (XOF/XAF n'ont pas de decimales). */
+  amount: number;
+  planLabel: string;
+}
+
 // ---------------------------------------------------------------------------
 // Factory contract
 // ---------------------------------------------------------------------------
@@ -78,6 +90,7 @@ export interface EmailService {
     to: string,
     data: { restaurantName: string; dashboardUrl: string },
   ): Promise<EmailResult>;
+  sendRenewalReminderEmail(to: string, data: RenewalReminderEmailData): Promise<EmailResult>;
   sendTrialEndgameEmail(
     to: string,
     data: { restaurantName: string; dashboardUrl: string; ordersCount: number; daysLeft: number },

@@ -39,7 +39,7 @@
  */
 
 /** Prestataires d'encaissement envisages. `manual` = activation a la main. */
-export type BillingProviderId = 'stripe' | 'manual';
+export type BillingProviderId = 'stripe' | 'flutterwave' | 'manual';
 
 export interface BillingCapabilities {
   /**
@@ -62,6 +62,9 @@ export interface BillingCapabilities {
 
 const CAPABILITIES: Record<BillingProviderId, BillingCapabilities> = {
   stripe: { autoRenew: true, hostedPortal: true, providerInvoices: true },
+  // Mobile money et carte par lien de paiement: UN paiement par periode, c'est
+  // ATTABL qui porte l'horloge (relances, delai de grace, gel).
+  flutterwave: { autoRenew: false, hostedPortal: false, providerInvoices: false },
   manual: { autoRenew: false, hostedPortal: false, providerInvoices: false },
 };
 

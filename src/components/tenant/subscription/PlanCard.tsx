@@ -23,6 +23,10 @@ interface PlanCardProps {
   isLoading: boolean;
   disabled: boolean;
   onChoose: () => void;
+  /** Libelle du bouton a la place de "Choisir ce plan" (ex: paiement mobile money). */
+  ctaLabel?: string;
+  /** Le plan actuel reste payable (renouvellement par lien de paiement). */
+  repayable?: boolean;
 }
 
 export function PlanCard({
@@ -34,11 +38,14 @@ export function PlanCard({
   isLoading,
   disabled,
   onChoose,
+  ctaLabel,
+  repayable = false,
 }: PlanCardProps) {
   const t = useTranslations('admin');
   const locale = useLocale();
 
   const PlanIcon = PLAN_ICON_MAP[plan];
+  const locked = isCurrent && !repayable;
   const price = planMonthlyPrice(plan, billingInterval).toLocaleString(locale);
 
   const subtitle = (() => {
@@ -102,12 +109,12 @@ export function PlanCard({
 
       {/* CTA */}
       <Button
-        onClick={() => !isCurrent && onChoose()}
-        disabled={disabled || isCurrent}
+        onClick={() => !locked && onChoose()}
+        disabled={disabled || locked}
         variant={isRecommended ? 'default' : 'outline'}
         className={cn(
           'h-10 w-full rounded-lg text-sm font-semibold',
-          isCurrent
+          locked
             ? 'cursor-default border-app-border bg-transparent text-app-text-muted hover:bg-transparent'
             : isRecommended
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -116,13 +123,13 @@ export function PlanCard({
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
-        ) : isCurrent ? (
+        ) : locked ? (
           <span className="flex items-center gap-1.5">
             <Check className="h-4 w-4" />
             {t('subscription.currentPlan')}
           </span>
         ) : (
-          t('subscription.choosePlan')
+          (ctaLabel ?? t('subscription.choosePlan'))
         )}
       </Button>
     </div>
