@@ -113,8 +113,8 @@ export function TableGrid({
                       size="icon"
                       aria-label={tc('delete')}
                       onClick={() => onDeleteTable(table)}
-                      title="Supprimer"
-                      className="h-7 w-7 text-app-text-muted transition-opacity hover:text-[var(--destructive)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                      title={tc('delete')}
+                      className="h-7 w-7 text-app-text-muted transition-opacity hover:text-[var(--destructive)] opacity-100 lg:pointer-fine:opacity-0 lg:pointer-fine:group-hover:opacity-100 focus-visible:opacity-100"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
@@ -136,7 +136,7 @@ export function TableGrid({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Confirm"
+                        aria-label={tc('confirm')}
                         onClick={() => onSaveTableName(table.id)}
                         className="h-7 w-7 text-[var(--success)] hover:opacity-80"
                       >
@@ -145,7 +145,7 @@ export function TableGrid({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Cancel edit"
+                        aria-label={tc('cancel')}
                         onClick={() => onCancelEditTable()}
                         className="h-7 w-7 text-app-text-muted hover:text-app-text-secondary"
                       >
@@ -164,8 +164,10 @@ export function TableGrid({
                   )}
 
                   {/* Capacity */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs text-app-text-secondary">{t('capacity')}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+                    <span className="text-xs text-app-text-secondary whitespace-nowrap">
+                      {t('capacity')}
+                    </span>
                     <Select
                       value={String(table.capacity)}
                       onValueChange={(val) => onUpdateCapacity(table, parseInt(val, 10))}

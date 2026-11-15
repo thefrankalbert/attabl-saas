@@ -115,8 +115,9 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
 
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
   const [saving, setSaving] = useState(false);
-  const initialSoundId = tenant.notification_sound_id || 'classic-bell';
-  const [selectedSoundId, setSelectedSoundId] = useState(initialSoundId);
+  // Last SAVED sound: the baseline that says whether the sound choice is unsaved.
+  const [savedSoundId, setSavedSoundId] = useState(tenant.notification_sound_id || 'classic-bell');
+  const [selectedSoundId, setSelectedSoundId] = useState(savedSoundId);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -238,6 +239,10 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       const result = await actionUpdateTenantSettings(formData);
 
       if (result.success) {
+        // What was just saved becomes the new baseline: the "save changes" bar
+        // must disappear instead of claiming unsaved changes.
+        form.reset(data);
+        setSavedSoundId(selectedSoundId);
         toast({
           title: t('settingsUpdated'),
           description: t('settingsSavedSuccess'),
@@ -265,7 +270,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     }
   };
 
-  const soundChanged = selectedSoundId !== initialSoundId;
+  const soundChanged = selectedSoundId !== savedSoundId;
   const hasUnsavedChanges = form.formState.isDirty || soundChanged;
 
   return {
