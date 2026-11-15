@@ -1565,6 +1565,23 @@
   },
   "admin": {
     "platform": {
+      "reminders": {
+        "tab": "Reminders",
+        "intro": "What each reminder produced over the last 30 days. Nothing is switched off automatically: you decide whether to adjust or stop a rule.",
+        "sent": "Reminders sent",
+        "restaurants": "Restaurants reached",
+        "escalated": "Escalated to a manager",
+        "resolvedWithin": "Settled within 5 min",
+        "medianResolve": "Median time to settle",
+        "opened": "Opened by the recipient",
+        "muted": "People who muted it",
+        "rules": {
+          "order_ready_not_served": "Order ready, not served",
+          "order_not_started": "Order not started",
+          "pre_service_stock": "Stock before opening",
+          "weekly_coach": "Monday summary"
+        }
+      },
       "banner": "Platform console",
       "title": "Platform console",
       "subtitle": "Manage restaurants and accounts",
@@ -2435,6 +2452,37 @@
     "tabSounds": "Sounds",
     "tabSecurity": "Security",
     "tabContact": "Contact",
+    "tabReminders": "Reminders",
+    "reminders": {
+      "intro": "A reminder goes out only when something is still left to do, and only to the person who can act. It disappears as soon as it is handled. Anyone can also mute a reminder for themselves, from their bell.",
+      "after": "After",
+      "minutes": "{count} min",
+      "saved": "Reminders saved",
+      "saveError": "Could not save the reminders",
+      "needsHours": "Set your opening hours (Hours tab): without them, this reminder never goes out.",
+      "rules": {
+        "order_ready_not_served": {
+          "title": "Order ready, not served yet",
+          "desc": "The waiter is alerted when a ready order is waiting. With no reaction after twice the delay, the manager is alerted.",
+          "who": "Sent to: the waiter of the order or table, then the manager."
+        },
+        "order_not_started": {
+          "title": "Order received, not started yet",
+          "desc": "The kitchen is alerted when an order is waiting to be started. With no reaction after twice the delay, the manager is alerted.",
+          "who": "Sent to: the kitchen, then the manager."
+        },
+        "pre_service_stock": {
+          "title": "Before opening: stock",
+          "desc": "30 minutes before opening, the ingredients that ran out or are running low, and the dishes taken off the menu. Nothing is sent when everything is fine.",
+          "who": "Sent to: the owner and managers."
+        },
+        "weekly_coach": {
+          "title": "Monday summary",
+          "desc": "On Monday at 9 am, your busiest time slot and the dishes that stopped selling, based on your last 4 weeks. It needs at least 4 weeks of activity and 80 orders, otherwise nothing is sent.",
+          "who": "Sent to: the owner."
+        }
+      }
+    },
     "tabHours": "Hours",
     "management": {
       "title": "Management",
@@ -2540,7 +2588,25 @@
     "settings": "Settings",
     "users": "Users"
   },
+  "adminSupport": {
+    "whatsappTitle": "Stuck? Message or call us",
+    "whatsappBody": "Someone from the ATTABL team answers you at {phone}. Tell us what is blocking you, we will handle it.",
+    "whatsappCta": "Write on WhatsApp",
+    "whatsappMessage": "Hello ATTABL, I need help with my restaurant {restaurant}.",
+    "callCta": "Call"
+  },
+
   "notifications": {
+    "muteError": "Could not change this reminder",
+    "muteReminder": "Stop this reminder",
+    "unmuteReminder": "Turn back on",
+    "mutedTitle": "Reminders you muted",
+    "reminderRules": {
+      "order_ready_not_served": "Order ready, not served",
+      "order_not_started": "Order not started",
+      "pre_service_stock": "Stock before opening",
+      "weekly_coach": "Monday summary"
+    },
     "title": "Notifications",
     "empty": "No notifications",
     "markAllRead": "Mark all as read",

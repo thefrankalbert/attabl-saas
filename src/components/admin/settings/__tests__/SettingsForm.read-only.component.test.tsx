@@ -8,6 +8,7 @@ import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { DEFAULT_PERMISSIONS, type PermissionCode } from '@/types/permission.types';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
 import { SettingsForm } from '../SettingsForm';
+import { DEFAULT_REMINDER_SETTINGS } from '@/lib/validations/reminders.schema';
 
 // /settings s'ouvre sur `settings.view`. Un role a qui le proprietaire donne
 // `settings.view` sans `settings.edit` voyait "Acces refuse": la page doit
@@ -20,6 +21,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock('@/app/actions/tenant-settings', () => ({ actionUpdateTenantSettings: vi.fn() }));
+vi.mock('@/app/actions/reminders', () => ({ actionUpdateReminderSettings: vi.fn() }));
 vi.mock('@/hooks/useSettingsData', () => ({
   useSettingsData: () => ({
     form: { handleSubmit: () => () => {} },
@@ -53,6 +55,7 @@ function renderWith(
         tenant={{ id: 't1', slug: 'demo' } as SettingsTenant}
         initialPaymentMethods={[]}
         initialTab="identity"
+        initialReminderSettings={DEFAULT_REMINDER_SETTINGS}
       />
     </PermissionsProvider>,
   );

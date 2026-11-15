@@ -10,9 +10,18 @@ import {
   Users,
   Package,
   BarChart3,
+  MessageCircle,
+  Phone,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SupportFAQ } from '@/components/admin/support/SupportFAQ';
+import { getTranslations } from 'next-intl/server';
+import { getTenant } from '@/lib/cache';
+import {
+  SUPPORT_PHONE_DISPLAY,
+  SUPPORT_PHONE_LINK,
+  supportWhatsAppLink,
+} from '@/lib/support-contact';
 
 const QUICK_LINKS = [
   {
@@ -71,7 +80,12 @@ const QUICK_LINKS = [
   },
 ];
 
-export default function SupportPage() {
+export default async function SupportPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
+  const t = await getTranslations('adminSupport');
+  const tenant = await getTenant(site);
+  const whatsapp = supportWhatsAppLink(t('whatsappMessage', { restaurant: tenant?.name ?? site }));
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
@@ -79,6 +93,43 @@ export default function SupportPage() {
           {/* Title kept for screen readers only - the nav already identifies
               the page, so we don't repeat a heading + subtitle on screen. */}
           <h1 className="sr-only">Support &amp; Aide</h1>
+
+          {/* Human help first: WhatsApp is where restaurateurs already are. */}
+          <section>
+            <Card className="border-accent/20 bg-accent-muted/30">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-accent-muted flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-6 h-6 text-accent" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold text-app-text">{t('whatsappTitle')}</h2>
+                    <p className="text-sm text-app-text-secondary mt-1">
+                      {t('whatsappBody', { phone: SUPPORT_PHONE_DISPLAY })}
+                    </p>
+                  </div>
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row shrink-0">
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-accent text-accent-text font-semibold text-sm hover:bg-accent-hover transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {t('whatsappCta')}
+                    </a>
+                    <a
+                      href={SUPPORT_PHONE_LINK}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl border border-app-border text-app-text font-semibold text-sm hover:bg-app-hover transition-colors"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {t('callCta')}
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
 
           {/* Quick Links */}
           <section>

@@ -8,12 +8,16 @@ import {
   actionMarkNotificationRead,
   actionMarkAllNotificationsRead,
 } from '@/app/actions/notifications';
+import type { ReminderRule } from '@/lib/validations/reminders.schema';
+
+export type NotificationBaseType = 'info' | 'warning' | 'success' | 'error' | 'stock_alert';
 
 export interface Notification {
   id: string;
   tenant_id: string;
   user_id: string | null;
-  type: 'info' | 'warning' | 'success' | 'error' | 'stock_alert';
+  /** `reminder:<regle>` = rappel du moteur (src/services/reminders). */
+  type: NotificationBaseType | `reminder:${ReminderRule}`;
   title: string;
   body: string | null;
   link: string | null;
@@ -72,6 +76,9 @@ export function useNotifications({
       return ((data ?? []) as NotificationRow[]).map(toNotification);
     },
     enabled: enabled && !!tenantId,
+    // Realtime does not deliver tenant-filtered DELETEs: a settled reminder (row
+    // deleted by the engine) leaves the bell on this refresh, within the minute.
+    refetchInterval: 60_000,
   });
 
   // Realtime subscription - invalidate on any change + fire callback on INSERT

@@ -13,6 +13,7 @@ import { DEFAULT_PAYMENT_METHODS } from '@/lib/payments/methods';
 import { parseEstablishmentDetails } from '@/lib/validations/establishment-details.schema';
 import { getTranslations } from 'next-intl/server';
 import AdminSrTitle from '@/components/admin/AdminSrTitle';
+import { parseReminderSettings } from '@/lib/validations/reminders.schema';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -63,11 +64,24 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
     throw new Error(`settings: establishment_details read failed: ${detailsError.message}`);
   }
 
+  // Absent row = defaults (the restaurant never changed its reminders).
+  // A failed read THROWS, like the details above: showing defaults here would
+  // overwrite the stored reminder settings at the next save.
+  const { data: reminderRow, error: reminderError } = await supabase
+    .from('reminder_settings')
+    .select('config')
+    .eq('tenant_id', tenant.id)
+    .maybeSingle();
+  if (reminderError) {
+    throw new Error(`settings: reminder_settings read failed: ${reminderError.message}`);
+  }
+
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full">
       <AdminSrTitle label={tTitle('navSettings')} />
       <SettingsForm
         initialTab={initialTab}
+        initialReminderSettings={parseReminderSettings(reminderRow?.config)}
         initialPaymentMethods={tenant.enabled_payment_methods ?? DEFAULT_PAYMENT_METHODS}
         tenant={{
           id: tenant.id,

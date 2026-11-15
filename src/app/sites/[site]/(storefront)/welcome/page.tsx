@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getCachedTenant } from '@/lib/cache';
 import { computeOpeningState } from '@/lib/opening-hours';
+import { resolveTenantTimezone } from '@/lib/timezones';
 import WelcomeSplash from '@/components/tenant/client/WelcomeSplash';
 
 export default async function WelcomePage({ params }: { params: Promise<{ site: string }> }) {
@@ -15,7 +16,11 @@ export default async function WelcomePage({ params }: { params: Promise<{ site: 
   if (!tenant) return notFound();
 
   const messages = await getMessages();
-  const { isOpen } = computeOpeningState(tenant.opening_hours, new Date());
+  const { isOpen } = computeOpeningState(
+    tenant.opening_hours,
+    new Date(),
+    resolveTenantTimezone(tenant),
+  );
   const location = [tenant.city, tenant.country].filter(Boolean).join(', ');
 
   return (
