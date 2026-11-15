@@ -4,6 +4,15 @@ const mockRateLimitCheck = vi.fn();
 const mockSaveStep = vi.fn();
 const mockResolveSessionAdminUser = vi.fn();
 
+vi.mock('@/services/storage-cleanup.service', () => ({
+  getStorageCleanup: () => ({
+    imageUrlsOf: async () => [],
+    logoUrlOf: async () => [],
+    release: async () => undefined,
+    releaseUnreferencedFiles: async () => undefined,
+    purgeTenant: async () => undefined,
+  }),
+}));
 vi.mock('@/lib/rate-limit', () => ({
   onboardingSaveLimiter: { check: mockRateLimitCheck },
   getClientIp: () => '127.0.0.1',

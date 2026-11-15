@@ -5,6 +5,7 @@ import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
 import '@/lib/validations/zod-fr-error-map';
 import { createMenuService } from '@/services/menu.service';
+import { getStorageCleanup } from '@/services/storage-cleanup.service';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
@@ -152,7 +153,13 @@ export async function actionUpdateMenu(
 
   try {
     const menuService = createMenuService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousImages =
+      parsed.data.image_url !== undefined
+        ? await cleanup.imageUrlsOf('menus', parsed.data.id, tenantId)
+        : [];
     const menu = await menuService.updateMenu(tenantId, parsed.data);
+    if (parsed.data.image_url !== undefined) await cleanup.release(tenantId, previousImages);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {
@@ -187,7 +194,10 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
 
   try {
     const menuService = createMenuService(supabase);
+    const cleanup = getStorageCleanup();
+    const previousImages = await cleanup.imageUrlsOf('menus', menuId, tenantId);
     await menuService.deleteMenu(menuId, tenantId);
+    await cleanup.release(tenantId, previousImages);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {

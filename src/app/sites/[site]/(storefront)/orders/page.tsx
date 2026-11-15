@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientOrders from '@/components/tenant/ClientOrders';
@@ -20,15 +20,12 @@ export default async function OrdersPage({
 
   if (!tenantSlug) return notFound();
 
-  const supabase = await createClient();
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id, currency')
-    .eq('slug', tenantSlug)
-    .is('deleted_at', null)
-    .single();
+  // Lecture par le cache service_role: un convive connecte (autre restaurant,
+  // compte de test) n'a pas le droit de lire la ligne `tenants` d'un restaurant
+  // dont il n'est pas membre (policy resserree, constat T-02).
+  const tenant = await getCachedTenant(tenantSlug);
 
-  if (!tenant) return notFound();
+  if (!tenant || !tenant.is_active) return notFound();
 
   const t = await getTranslations('tenant');
 

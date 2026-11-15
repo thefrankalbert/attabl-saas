@@ -174,31 +174,9 @@ export async function POST(request: Request) {
       data: { publicUrl },
     } = admin.storage.from(bucket).getPublicUrl(fileName);
 
-    // Remplacement: supprimer l'objet precedent.
-    //
-    // L'ancien upload de logo utilisait un nom STABLE (`<tenant>/logo.png`) avec
-    // upsert, donc il etait auto-nettoyant. Cette route genere un nom aleatoire:
-    // sans suppression explicite, chaque changement de logo laissait un fichier
-    // mort, public et facture, indefiniment. Le chemin est verifie contre le
-    // prefixe du tenant de la SESSION avant toute suppression - sinon un client
-    // pourrait faire effacer le fichier d'un autre restaurant en le declarant
-    // comme le sien.
-    const replaces = formData.get('replaces');
-    if (typeof replaces === 'string' && replaces.length > 0) {
-      const prefix = `/storage/v1/object/public/${bucket}/`;
-      const idx = replaces.indexOf(prefix);
-      const previousPath =
-        idx >= 0 ? decodeURIComponent(replaces.slice(idx + prefix.length)) : null;
-
-      if (previousPath && previousPath.startsWith(`${session.adminUser.tenant_id}/`)) {
-        const { error: removeError } = await admin.storage.from(bucket).remove([previousPath]);
-        // Un echec de nettoyage ne doit pas faire echouer un televersement
-        // reussi: le nouveau fichier est deja en place et son URL est valide.
-        if (removeError) {
-          logger.warn('Ancien fichier non supprime', { bucket, previousPath });
-        }
-      }
-    }
+    // Le remplacement d'une image est nettoye cote serveur au moment ou l'ecriture
+    // en base change l'URL (storage-cleanup.service, R-05): supprimer ici, avant
+    // l'enregistrement, effacerait un fichier encore utilise si l'envoi est annule.
 
     return NextResponse.json({ url: publicUrl });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 
 // Per-tenant PWA manifest. Served as a route handler (Next.js only serves the
 // special `manifest` file at the app root, not in nested dynamic segments).
@@ -7,13 +7,10 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(_request: Request, { params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
 
-  const supabase = await createClient();
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('name, logo_url, primary_color')
-    .eq('slug', site)
-    .is('deleted_at', null)
-    .single();
+  // Cache service_role: la ligne `tenants` d'un autre restaurant n'est plus
+  // lisible par un compte connecte non membre (constat T-02).
+  const cached = await getCachedTenant(site);
+  const tenant = cached?.is_active ? cached : null;
 
   const name = tenant?.name || 'Attabl Menu';
   const shortName = name.length > 12 ? name.substring(0, 12) : name;

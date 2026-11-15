@@ -6,6 +6,15 @@ const mockVerifyOrigin = vi.fn(() => null);
 const mockCompleteOnboarding = vi.fn();
 const mockRevalidateTag = vi.fn();
 
+vi.mock('@/services/storage-cleanup.service', () => ({
+  getStorageCleanup: () => ({
+    imageUrlsOf: async () => [],
+    logoUrlOf: async () => [],
+    release: async () => undefined,
+    releaseUnreferencedFiles: async () => undefined,
+    purgeTenant: async () => undefined,
+  }),
+}));
 vi.mock('@/lib/rate-limit', () => ({
   onboardingCompleteLimiter: { check: mockRateLimitCheck },
   getClientIp: mockGetClientIp,
