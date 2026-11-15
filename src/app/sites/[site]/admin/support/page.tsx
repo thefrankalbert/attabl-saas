@@ -17,11 +17,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SupportFAQ } from '@/components/admin/support/SupportFAQ';
 import { getTranslations } from 'next-intl/server';
 import { getTenant } from '@/lib/cache';
-import {
-  SUPPORT_PHONE_DISPLAY,
-  SUPPORT_PHONE_LINK,
-  supportWhatsAppLink,
-} from '@/lib/support-contact';
+import { createClient } from '@/lib/supabase/server';
+import { supportPhoneLink, supportWhatsAppLink } from '@/lib/support-contact';
+import { loadSupportContact } from '@/services/platform-settings.service';
 
 const QUICK_LINKS = [
   {
@@ -83,8 +81,14 @@ const QUICK_LINKS = [
 export default async function SupportPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const t = await getTranslations('adminSupport');
-  const tenant = await getTenant(site);
-  const whatsapp = supportWhatsAppLink(t('whatsappMessage', { restaurant: tenant?.name ?? site }));
+  const [tenant, contact] = await Promise.all([
+    getTenant(site),
+    createClient().then(loadSupportContact),
+  ]);
+  const whatsapp = supportWhatsAppLink(
+    contact,
+    t('whatsappMessage', { restaurant: tenant?.name ?? site }),
+  );
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -105,7 +109,7 @@ export default async function SupportPage({ params }: { params: Promise<{ site: 
                   <div className="flex-1">
                     <h2 className="text-base font-semibold text-app-text">{t('whatsappTitle')}</h2>
                     <p className="text-sm text-app-text-secondary mt-1">
-                      {t('whatsappBody', { phone: SUPPORT_PHONE_DISPLAY })}
+                      {t('whatsappBody', { phone: contact.display })}
                     </p>
                   </div>
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row shrink-0">
@@ -119,7 +123,7 @@ export default async function SupportPage({ params }: { params: Promise<{ site: 
                       {t('whatsappCta')}
                     </a>
                     <a
-                      href={SUPPORT_PHONE_LINK}
+                      href={supportPhoneLink(contact)}
                       className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl border border-app-border text-app-text font-semibold text-sm hover:bg-app-hover transition-colors"
                     >
                       <Phone className="w-4 h-4" />

@@ -7,6 +7,11 @@ import { APP_VERSION } from '@/lib/app-version';
 import type { PlatformTenantRow, PlatformUserRow } from '@/types/platform-admin.types';
 import { loadReminderStats, type ReminderRuleStats } from '@/services/reminders/reminder-stats';
 import { logger } from '@/lib/logger';
+import {
+  loadCronHeartbeats,
+  loadSupportContact,
+  type CronHeartbeat,
+} from '@/services/platform-settings.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +61,13 @@ export default async function PlatformConsolePage() {
   } catch (err) {
     logger.error('Platform console: reminder stats failed', err);
   }
+  let heartbeats: CronHeartbeat[] = [];
+  try {
+    heartbeats = await loadCronHeartbeats(admin, new Date());
+  } catch (err) {
+    logger.error('Platform console: cron heartbeats failed', err);
+  }
+  const supportContact = await loadSupportContact(admin);
 
   return (
     <PlatformConsole
@@ -63,6 +75,8 @@ export default async function PlatformConsolePage() {
       users={users}
       appVersion={APP_VERSION}
       reminderStats={reminderStats}
+      heartbeats={heartbeats}
+      supportPhone={supportContact.display}
     />
   );
 }

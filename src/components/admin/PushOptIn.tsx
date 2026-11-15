@@ -1,9 +1,12 @@
 'use client';
 
+import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Bell, BellOff, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { actionSendTestAlert } from '@/app/actions/push-test';
 
 interface PushOptInProps {
   tenantId: string;
@@ -14,6 +17,13 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
   const { isSubscribed, isSupported, isLoading, motifIndisponible, subscribe, unsubscribe } =
     usePushSubscription({
       tenantId,
+    });
+  const [isTesting, startTest] = useTransition();
+  const sendTest = () =>
+    startTest(async () => {
+      const res = await actionSendTestAlert();
+      if (res.success) toast.success(t('testSent'));
+      else toast.error(t(`testErrors.${res.error}`));
     });
 
   // DISPARAITRE SANS UN MOT N'EST PAS ACCEPTABLE. Le composant rendait `null`
@@ -34,7 +44,7 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-app-border p-4">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-app-border p-4">
       <div className="flex items-center gap-3">
         {isSubscribed ? (
           <Bell className="h-5 w-5 text-[var(--success)]" />
@@ -48,14 +58,21 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
           </p>
         </div>
       </div>
-      <Button
-        variant={isSubscribed ? 'outline' : 'default'}
-        size="sm"
-        onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
-        disabled={isLoading}
-      >
-        {isLoading ? t('loading') : isSubscribed ? t('disable') : t('enable')}
-      </Button>
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+        {isSubscribed && (
+          <Button variant="outline" size="sm" onClick={sendTest} disabled={isTesting}>
+            {isTesting ? t('loading') : t('test')}
+          </Button>
+        )}
+        <Button
+          variant={isSubscribed ? 'outline' : 'default'}
+          size="sm"
+          onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
+          disabled={isLoading}
+        >
+          {isLoading ? t('loading') : isSubscribed ? t('disable') : t('enable')}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -14,6 +14,8 @@ import { UpdateAvailableBanner } from '@/components/admin/UpdateAvailableBanner'
 import type { PlatformTenantRow, PlatformUserRow } from '@/types/platform-admin.types';
 import type { ReminderRuleStats } from '@/services/reminders/reminder-stats';
 import { ReminderStatsPanel } from './ReminderStatsPanel';
+import { PlatformSettingsPanel } from './PlatformSettingsPanel';
+import type { CronHeartbeat } from '@/services/platform-settings.service';
 import {
   actionSuspendTenant,
   actionUnsuspendTenant,
@@ -33,21 +35,28 @@ interface PlatformConsoleProps {
   /** Deploy sha this bundle was built from; drives the update-available control. */
   appVersion?: string;
   reminderStats: ReminderRuleStats[];
+  heartbeats: CronHeartbeat[];
+  supportPhone: string;
 }
 
 type ActionResult = { success?: boolean; error?: string };
+// Quatre onglets tiennent a 375 px seulement en partageant la largeur.
+const TAB_TRIGGER = 'flex-1 px-2 sm:flex-none sm:px-3';
+type ConsoleTab = 'active' | 'trash' | 'reminders' | 'settings';
 
 export function PlatformConsole({
   tenants,
   users,
   appVersion,
   reminderStats,
+  heartbeats,
+  supportPhone,
 }: PlatformConsoleProps) {
   const t = useTranslations('admin.platform');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [tab, setTab] = useState<'active' | 'trash' | 'reminders'>('active');
+  const [tab, setTab] = useState<ConsoleTab>('active');
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmActionState | null>(null);
@@ -129,17 +138,24 @@ export function PlatformConsole({
 
       <main id="main-content" className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'trash' | 'reminders')}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as ConsoleTab)}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList>
-                <TabsTrigger value="active">{t('tabActive')}</TabsTrigger>
-                <TabsTrigger value="trash">
+              <TabsList className="w-full sm:w-fit">
+                <TabsTrigger value="active" className={TAB_TRIGGER}>
+                  {t('tabActive')}
+                </TabsTrigger>
+                <TabsTrigger value="trash" className={TAB_TRIGGER}>
                   {t('tabTrash')}
                   {deletedTenants.length > 0 ? ` (${deletedTenants.length})` : ''}
                 </TabsTrigger>
-                <TabsTrigger value="reminders">{t('reminders.tab')}</TabsTrigger>
+                <TabsTrigger value="reminders" className={TAB_TRIGGER}>
+                  {t('reminders.tab')}
+                </TabsTrigger>
+                <TabsTrigger value="settings" className={TAB_TRIGGER}>
+                  {t('settings.tab')}
+                </TabsTrigger>
               </TabsList>
-              {tab !== 'reminders' && (
+              {(tab === 'active' || tab === 'trash') && (
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -405,6 +421,9 @@ export function PlatformConsole({
             </TabsContent>
             <TabsContent value="reminders" className="mt-4">
               <ReminderStatsPanel stats={reminderStats} />
+            </TabsContent>
+            <TabsContent value="settings" className="mt-4">
+              <PlatformSettingsPanel heartbeats={heartbeats} supportPhone={supportPhone} />
             </TabsContent>
           </Tabs>
         </div>

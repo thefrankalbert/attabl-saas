@@ -304,7 +304,12 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
     ]);
     // Retirer ou desactiver un membre reste permis restaurant coupe (securite).
     // Couper un rappel pour soi: etat personnel, comme "lu" (notifications.ts).
-    const stayOpen = new Set(['actionDeleteAdminUser', 'actionSetReminderMute']);
+    // Alerte de test: aucune ecriture, un push vers ses propres appareils.
+    const stayOpen = new Set([
+      'actionDeleteAdminUser',
+      'actionSetReminderMute',
+      'actionSendTestAlert',
+    ]);
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.
     const lockedElsewhere = new Set([
