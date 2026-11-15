@@ -293,6 +293,26 @@ export default function PaymentModal({
   const hasExtras =
     (taxAmount ?? 0) > 0 || (serviceChargeAmount ?? 0) > 0 || (discountAmount ?? 0) > 0;
   const hasBreakdown = hasExtras || (!showItemsReceipt && subtotal !== undefined);
+  // With a tip, the receipt's "Total" (order only) and the "Amount to pay"
+  // headline (order + tip) differ: spell the gap out under the Total row so
+  // the two figures never look contradictory (live test 2026-11-15).
+  const tipRows =
+    tipAmount > 0 ? (
+      <>
+        <div className="flex justify-between text-app-text-secondary text-xs pt-1.5">
+          <span>{t('tip')}</span>
+          <span className="tabular-nums font-mono">
+            +{formatCurrency(tipAmount, displayCurrency)}
+          </span>
+        </div>
+        <div className="flex justify-between font-bold text-app-text text-sm">
+          <span>{t('totalWithTip')}</span>
+          <span className="tabular-nums font-mono">
+            {formatCurrency(totalWithTip, displayCurrency)}
+          </span>
+        </div>
+      </>
+    ) : null;
 
   // PORTAIL VERS LE CORPS DU DOCUMENT. Ce calque se declare plein ecran
   // (`fixed inset-0`), mais depuis le detail d'une commande il est rendu DANS
@@ -387,6 +407,7 @@ export default function PaymentModal({
                   </span>
                 </div>
               )}
+              {!hasBreakdown && tipRows}
             </div>
           )}
 
@@ -431,6 +452,7 @@ export default function PaymentModal({
                   {formatCurrency(finalTotal, displayCurrency)}
                 </span>
               </div>
+              {tipRows}
             </div>
           )}
 

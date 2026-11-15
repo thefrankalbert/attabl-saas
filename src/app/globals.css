@@ -369,6 +369,13 @@
   --app-accent-hover: oklch(0.85 0 0);
   --app-accent-muted: oklch(0.269 0 0);
   --app-accent-text: oklch(0.205 0 0);
+  /* Status backgrounds: without them the dark shell inherited the LIGHT ones
+     (#fffbeb...) from the system light-mode fallback - near-white text on a
+     cream tile (occupied tables in the POS, live test 2026-11-15). */
+  --app-status-success-bg: color-mix(in oklch, var(--success) 14%, transparent);
+  --app-status-warning-bg: color-mix(in oklch, var(--warning) 14%, transparent);
+  --app-status-error-bg: color-mix(in oklch, var(--destructive) 12%, transparent);
+  --app-status-info-bg: color-mix(in oklch, var(--c-emporter) 12%, transparent);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

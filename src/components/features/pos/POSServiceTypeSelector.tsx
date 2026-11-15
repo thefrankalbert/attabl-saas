@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useTenant } from '@/contexts/TenantContext';
 import type { ServiceType } from '@/types/admin.types';
 
 interface POSServiceTypeSelectorProps {
@@ -35,6 +36,9 @@ export function POSServiceTypeSelector({
 }: POSServiceTypeSelectorProps) {
   const t = useTranslations('pos');
   const { canAccess } = useSubscription();
+  // Room service only makes sense where there are rooms: a restaurant on a
+  // plan that includes it must not see a "room" button at its till.
+  const hasRooms = useTenant().tenant?.establishment_type === 'hotel';
 
   // Delivery + room service are plan-gated (Business+, see pricing-data.ts). Hide the
   // buttons the plan does not include so staff never pick a mode the order route
@@ -62,10 +66,10 @@ export function POSServiceTypeSelector({
           value: 'room_service' as const,
           label: t('serviceRoomService'),
           icon: <BellRing className="w-3.5 h-3.5" />,
-          enabled: canAccess('canAccessRoomService'),
+          enabled: hasRooms && canAccess('canAccessRoomService'),
         },
       ].filter((st) => st.enabled !== false),
-    [t, canAccess],
+    [t, canAccess, hasRooms],
   );
 
   return (
@@ -76,6 +80,7 @@ export function POSServiceTypeSelector({
             key={st.value}
             type="button"
             variant={serviceType === st.value ? 'default' : 'outline'}
+            aria-pressed={serviceType === st.value}
             onClick={() => setServiceType(st.value)}
             className={cn(
               // whitespace-normal: in the narrow tablet cart a long label ("Room
