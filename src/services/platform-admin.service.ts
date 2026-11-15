@@ -311,7 +311,11 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
           'Ce restaurant a ete supprime depuis trop longtemps: ses donnees sont anonymisees, il ne peut plus etre restaure',
           'CONFLICT',
         );
-      if (cycle?.anonymized_at || (cycle?.deleted_at && cycle.deleted_at < limite)) throw refus();
+      if (
+        cycle?.anonymized_at ||
+        (cycle?.deleted_at && new Date(cycle.deleted_at) < new Date(limite))
+      )
+        throw refus();
 
       // L'ecriture rejoue la garde (course avec le cron entre la lecture et ici):
       // zero ligne touchee = le cron est passe entre-temps.

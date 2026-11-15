@@ -674,7 +674,7 @@
       "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
       "section8Title": "8. Combien de temps nous gardons vos données",
       "section8Intro": "Des purges automatiques tournent chaque nuit. Voici les durées appliquées.",
-      "retentionGuests": "Nom, téléphone, adresse de livraison et notes libres d'un client (sur la commande et sur ses articles) : effacés {days} jours après la commande. La commande et ses montants sont conservés, sans l'identité du client, car le droit commercial impose de garder les pièces comptables.",
+      "retentionGuests": "Nom, téléphone, adresse de livraison et notes libres d'un client (sur la commande et sur ses articles, annotations des managers sur la commande) : effacés {days} jours après la commande. La commande et ses montants sont conservés, sans l'identité du client, car le droit commercial impose de garder les pièces comptables.",
       "retentionSessions": "Journaux de connexion (adresse IP, navigateur) : {days} jours.",
       "retentionInvitations": "Invitations d'équipe expirées ou annulées : supprimées {days} jours après leur date d'expiration.",
       "retentionPush": "Abonnements aux notifications d'un appareil inutilisé : supprimés après {days} jours sans activité.",

@@ -17,7 +17,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(39);
+select plan(43);
 
 -- ---------------------------------------------------------------------------
 -- 1. Privileges
@@ -74,10 +74,10 @@ select ok(
 -- Restaurants: A clos depuis 40 jours (du), B clos depuis 10 jours (en delai),
 -- C actif.
 -- ---------------------------------------------------------------------------
-insert into public.tenants (id, slug, name, is_active, currency, subscription_status, phone, address, deleted_at) values
-  ('cccc0001-0000-0000-0000-00000000000a', 'purge-a', 'Resto A', false, 'XOF', 'active', '+22670000001', 'Rue A', now() - interval '40 days'),
-  ('cccc0002-0000-0000-0000-00000000000b', 'purge-b', 'Resto B', false, 'XOF', 'active', '+22670000002', 'Rue B', now() - interval '10 days'),
-  ('cccc0003-0000-0000-0000-00000000000c', 'purge-c', 'Resto C', true,  'XOF', 'active', '+22670000003', 'Rue C', null);
+insert into public.tenants (id, slug, name, is_active, currency, subscription_status, subscription_plan, phone, address, deleted_at) values
+  ('cccc0001-0000-0000-0000-00000000000a', 'purge-a', 'Resto A', false, 'XOF', 'active', 'business', '+22670000001', 'Rue A', now() - interval '40 days'),
+  ('cccc0002-0000-0000-0000-00000000000b', 'purge-b', 'Resto B', false, 'XOF', 'active', 'business', '+22670000002', 'Rue B', now() - interval '10 days'),
+  ('cccc0003-0000-0000-0000-00000000000c', 'purge-c', 'Resto C', true,  'XOF', 'active', 'business', '+22670000003', 'Rue C', null);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at) values
   ('eeee0001-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seul-a@exemple.test', 'x', now(), now()),
@@ -145,6 +145,18 @@ insert into public.house_accounts (id, tenant_id, name, description) values
 
 insert into public.orders (tenant_id, house_account_id, order_number, subtotal, total, status) values
   ('cccc0001-0000-0000-0000-00000000000a', 'aaaa0001-0000-0000-0000-00000000000a', 'RET-0001', 12500, 12500, 'served');
+insert into public.orders (tenant_id, order_number, subtotal, total, status) values
+  ('cccc0002-0000-0000-0000-00000000000b', 'RET-0002', 900, 900, 'served');
+
+insert into public.order_notes (tenant_id, order_id, note) values
+  ('cccc0001-0000-0000-0000-00000000000a', (select id from public.orders where order_number = 'RET-0001'), 'Client M. Dupont, table 4'),
+  ('cccc0002-0000-0000-0000-00000000000b', (select id from public.orders where order_number = 'RET-0002'), 'Client Mme Traore');
+
+insert into public.audit_log (id, tenant_id, user_email, action, entity_type, old_data, new_data, metadata) values
+  ('bbbb0010-0000-0000-0000-00000000000a', 'cccc0001-0000-0000-0000-00000000000a', 'seul-a@exemple.test', 'update', 'user',
+    '{"email":"a@x.test"}', '{"full_name":"Seul A","role":"waiter"}', '{"emailChangeRequestedTo":"n@x.test"}'),
+  ('bbbb0011-0000-0000-0000-00000000000b', 'cccc0001-0000-0000-0000-00000000000a', 'seul-a@exemple.test', 'update', 'order',
+    '{"customer_name":"C","total":50,"reason":"r"}', '{"total":60}', null);
 
 select is(
   (select count(*)::int from public.closed_tenant_auth_users(now() - interval '30 days')
@@ -187,10 +199,26 @@ select is(
   (select count(*)::int from public.push_subscriptions where tenant_id = 'cccc0002-0000-0000-0000-00000000000b'),
   1, 'les abonnements push du restaurant en delai sont conserves');
 
+select ok(
+  (select count(*) = 3 and bool_and(user_email is null and user_id is null)
+     from public.audit_log where tenant_id = 'cccc0001-0000-0000-0000-00000000000a'),
+  'les lignes d audit du restaurant A restent mais sans adresse ni acteur');
+
+select ok(
+  (select old_data is null and new_data is null and metadata is null
+     from public.audit_log where id = 'bbbb0010-0000-0000-0000-00000000000a'),
+  'une entree d audit NON financiere du restaurant A perd tout son contenu');
+select ok(
+  (select old_data = '{"total":50}'::jsonb and new_data = '{"total":60}'::jsonb
+     from public.audit_log where id = 'bbbb0011-0000-0000-0000-00000000000b'),
+  'une entree d audit financiere du restaurant A garde ses montants, sans cles personnelles ni motif');
+
 select is(
-  (select count(*)::int from public.audit_log
-    where tenant_id = 'cccc0001-0000-0000-0000-00000000000a' and user_email is null),
-  1, 'la ligne d audit du restaurant A reste mais sans adresse e-mail');
+  (select string_agg(note, '|') from public.order_notes where tenant_id = 'cccc0001-0000-0000-0000-00000000000a'),
+  'Note effacee', 'les annotations de commande du restaurant A sont effacees');
+select is(
+  (select note from public.order_notes where tenant_id = 'cccc0002-0000-0000-0000-00000000000b'),
+  'Client Mme Traore', 'les annotations du restaurant en delai sont intactes');
 select is(
   (select user_email from public.audit_log where tenant_id = 'cccc0002-0000-0000-0000-00000000000b'),
   'seul-b@exemple.test', 'la ligne d audit du restaurant en delai garde son adresse');
@@ -256,7 +284,7 @@ select is(
 insert into public.audit_log (id, tenant_id, user_email, action, entity_type, new_data, created_at) values
   ('bbbb0001-0000-0000-0000-00000000000a', 'cccc0003-0000-0000-0000-00000000000c', 'x@exemple.test', 'update', 'setting', '{}', now() - interval '400 days'),
   ('bbbb0002-0000-0000-0000-00000000000b', 'cccc0003-0000-0000-0000-00000000000c', 'x@exemple.test', 'update', 'order',
-    '{"customer_name":"Client","total":100}', now() - interval '400 days'),
+    '{"customer_name":"Client","total":100,"reason":"x"}', now() - interval '400 days'),
   ('bbbb0003-0000-0000-0000-00000000000c', 'cccc0003-0000-0000-0000-00000000000c', 'y@exemple.test', 'update', 'setting', '{}', now() - interval '10 days');
 
 select * from public.purge_audit_logs(now() - interval '365 days');

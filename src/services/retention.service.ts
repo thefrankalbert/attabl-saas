@@ -61,6 +61,7 @@ const COLONNES_PERSONNELLES = [
 export interface ResultatPurge {
   commandesAnonymisees: number;
   notesArticlesEffacees: number;
+  annotationsEffacees: number;
   sessionsSupprimees: number;
   invitationsSupprimees: number;
   abonnementsPushSupprimes: number;
@@ -191,6 +192,29 @@ export function createRetentionService(supabase: SupabaseClient) {
     },
 
     /**
+     * Efface le texte des annotations de commande (`order_notes`) apres 90 jours.
+     * Texte libre des managers, susceptible de nommer un convive. La table est en
+     * ajout seul pour `authenticated` (aucun droit UPDATE ni DELETE, aucun
+     * declencheur): seul service_role peut la modifier, ce qui est le cas ici. La
+     * ligne (qui, quand) est gardee pour la tracabilite; seul le texte part.
+     */
+    async effacerNotesCommandesAnciennes(maintenant = new Date()): Promise<number> {
+      const limite = dateLimite(maintenant);
+
+      const { count, error } = await supabase
+        .from('order_notes')
+        .update({ note: 'Note effacee' }, { count: 'exact' })
+        .lt('created_at', limite)
+        .neq('note', 'Note effacee');
+
+      if (error) {
+        logger.error('Effacement des annotations de commande impossible', error);
+        throw error;
+      }
+      return count ?? 0;
+    },
+
+    /**
      * Journaux d'audit de plus de 12 mois.
      *
      *   - journal de la plateforme (actions de suppression, suspension...):
@@ -288,6 +312,7 @@ export function createRetentionService(supabase: SupabaseClient) {
       const resultat: ResultatPurge = {
         commandesAnonymisees: 0,
         notesArticlesEffacees: 0,
+        annotationsEffacees: 0,
         sessionsSupprimees: 0,
         invitationsSupprimees: 0,
         abonnementsPushSupprimes: 0,
@@ -300,6 +325,7 @@ export function createRetentionService(supabase: SupabaseClient) {
       const etapes: [keyof ResultatPurge, (m: Date) => Promise<number>][] = [
         ['commandesAnonymisees', (m) => this.anonymiserCommandesAnciennes(m)],
         ['notesArticlesEffacees', (m) => this.effacerNotesArticlesAnciennes(m)],
+        ['annotationsEffacees', (m) => this.effacerNotesCommandesAnciennes(m)],
         ['sessionsSupprimees', (m) => this.purgerSessionsAnciennes(m)],
         ['invitationsSupprimees', (m) => this.purgerInvitationsPerimees(m)],
         ['abonnementsPushSupprimes', (m) => this.purgerAbonnementsPushInactifs(m)],

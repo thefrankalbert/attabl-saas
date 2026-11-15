@@ -195,6 +195,7 @@ describe('createRetentionService', () => {
     await expect(createRetentionService(fausseBase()).executer(LE_15_MAI)).resolves.toEqual({
       commandesAnonymisees: 0,
       notesArticlesEffacees: 0,
+      annotationsEffacees: 0,
       sessionsSupprimees: 0,
       invitationsSupprimees: 0,
       abonnementsPushSupprimes: 0,

@@ -60,6 +60,10 @@ function fausseBase(): SupabaseClient {
               appel.filtres.push(['lt', c, v]);
               return chaine;
             },
+            neq: (c: string, v: string) => {
+              appel.filtres.push(['neq', c, v]);
+              return Promise.resolve(reponse);
+            },
             not: (c: string, op: string, v: unknown) => {
               appel.filtres.push(['not', c, `${op}:${String(v)}`]);
               return Promise.resolve(reponse);
@@ -146,6 +150,18 @@ describe('purges de conservation', () => {
     expect(a.filtres).toContainEqual(['set', '{"customer_notes":null}', '']);
     expect(a.filtres).toContainEqual(['lt', 'created_at', '2026-08-17T10:00:00.000Z']);
     expect(a.filtres).toContainEqual(['not', 'customer_notes', 'is:null']);
+  });
+
+  it('annotations de commande: texte remplace (jamais supprime), 90 jours, hors deja efface', async () => {
+    const n = await createRetentionService(fausseBase()).effacerNotesCommandesAnciennes(MAINTENANT);
+
+    expect(n).toBe(4);
+    const a = appels[0];
+    expect(a.table).toBe('order_notes');
+    expect(a.kind).toBe('update');
+    expect(a.filtres).toContainEqual(['set', '{"note":"Note effacee"}', '']);
+    expect(a.filtres).toContainEqual(['lt', 'created_at', '2026-08-17T10:00:00.000Z']);
+    expect(a.filtres).toContainEqual(['neq', 'note', 'Note effacee']);
   });
 
   it('sessions: lues sur RETENTION.sessionsDays', async () => {

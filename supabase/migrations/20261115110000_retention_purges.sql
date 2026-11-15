@@ -21,7 +21,7 @@
 --    et qui ne sont super administrateur sur AUCUNE ligne). Lecture seule.
 -- 6. anonymize_closed_tenants(p_cutoff): anonymise en une transaction les membres,
 --    les comptes clients a credit (nom, description), les contacts fournisseurs,
---    les journaux d'audit du restaurant et de la plateforme, supprime invitations,
+--    les journaux d'audit du restaurant et de la plateforme, les annotations de commande, supprime invitations,
 --    abonnements push et sessions, vide telephone et adresse du restaurant.
 --    Les commandes, paiements et factures ne sont PAS touches.
 --
@@ -59,7 +59,7 @@ AS $$
   SELECT ARRAY[
     'customer_name', 'customer_phone', 'delivery_address', 'notes',
     'customer_notes', 'email', 'user_email', 'phone', 'full_name',
-    'contact_name', 'address'
+    'contact_name', 'address', 'emailChangeRequestedTo', 'reason'
   ];
 $$;
 
@@ -179,13 +179,32 @@ BEGIN
   DELETE FROM public.push_subscriptions WHERE tenant_id = ANY (v_ids);
   DELETE FROM public.user_sessions WHERE tenant_id = ANY (v_ids);
 
+  -- Entrees non financieres: tout le contenu part (la ligne reste, sans charge).
+  UPDATE public.audit_log
+  SET user_email = NULL,
+      user_id = NULL,
+      old_data = NULL,
+      new_data = NULL,
+      metadata = NULL
+  WHERE tenant_id = ANY (v_ids)
+    AND entity_type NOT IN ('order', 'coupon', 'item');
+
+  -- Entrees financieres: les montants restent, les cles personnelles partent.
   UPDATE public.audit_log
   SET user_email = NULL,
       user_id = NULL,
       old_data = old_data - public.audit_personal_keys(),
       new_data = new_data - public.audit_personal_keys(),
       metadata = metadata - public.audit_personal_keys()
-  WHERE tenant_id = ANY (v_ids);
+  WHERE tenant_id = ANY (v_ids)
+    AND entity_type IN ('order', 'coupon', 'item');
+
+  -- Annotations des managers sur les commandes (texte libre, ajout seul): le texte
+  -- est remplace, la ligne (qui, quand) est gardee.
+  UPDATE public.order_notes
+  SET note = 'Note effacee'
+  WHERE tenant_id = ANY (v_ids)
+    AND note <> 'Note effacee';
 
   UPDATE public.platform_audit_log
   SET actor_email = NULL,

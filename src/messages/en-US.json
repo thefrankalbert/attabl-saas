@@ -674,7 +674,7 @@
       "cookieSentry": "If an error occurs, Sentry may record the current session to help us fix it.",
       "section8Title": "8. How long we keep your data",
       "section8Intro": "Automatic purges run every night. These are the periods we apply.",
-      "retentionGuests": "A customer's name, phone, delivery address and free-text notes (on the order and on its items): erased {days} days after the order. The order and its amounts are kept without the customer's identity, because commercial law requires accounting records to be retained.",
+      "retentionGuests": "A customer's name, phone, delivery address and free-text notes (on the order and on its items, managers' annotations on the order): erased {days} days after the order. The order and its amounts are kept without the customer's identity, because commercial law requires accounting records to be retained.",
       "retentionSessions": "Login logs (IP address, browser): {days} days.",
       "retentionInvitations": "Expired or cancelled team invitations: deleted {days} days after their expiry date.",
       "retentionPush": "Notification subscriptions of an unused device: deleted after {days} days without activity.",
