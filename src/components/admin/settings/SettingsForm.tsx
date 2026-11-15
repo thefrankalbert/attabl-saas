@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Save, Store, LayoutGrid, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { SoundSettings } from './SoundSettings';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { usePermissions } from '@/hooks/usePermissions';
-import type { SettingsTab } from '@/lib/settings-tabs';
+import { parseSettingsTab, type SettingsTab } from '@/lib/settings-tabs';
 
 // Feature components
 import SettingsIdentity from '@/components/features/settings/SettingsIdentity';
@@ -51,8 +51,13 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
 export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: SettingsFormProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
-  const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // The active tab lives in the URL (?tab=), read on the client so a tab click
+  // never waits for the server.
+  const activeTab = searchParams
+    ? parseSettingsTab(searchParams.get('tab') ?? undefined)
+    : initialTab;
   const scrollRef = useRef<HTMLDivElement>(null);
   // La page s'ouvre sur `settings.view` (admin-route-permissions.ts). Sans
   // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
@@ -72,10 +77,15 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
         params.set('tab', value);
       }
       const qs = params.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
+      // Every tab is already rendered on the page: update the URL without a
+      // navigation. router.push re-fetched the whole settings page from the
+      // server on every tab click (seconds on a weak mobile network). The App
+      // Router keeps useSearchParams in sync with history.pushState, and Back
+      // still steps through the tabs.
+      window.history.pushState(null, '', qs ? `${pathname}?${qs}` : pathname);
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     },
-    [router, pathname],
+    [pathname],
   );
 
   const {
@@ -133,7 +143,7 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
         </Card>
 
         <Tabs
-          value={initialTab}
+          value={activeTab}
           onValueChange={handleTabChange}
           className="flex flex-col flex-1 min-h-0"
         >

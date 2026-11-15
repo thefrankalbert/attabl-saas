@@ -17,6 +17,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => '/sites/demo/admin/settings',
+  useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock('@/app/actions/tenant-settings', () => ({ actionUpdateTenantSettings: vi.fn() }));
 vi.mock('@/hooks/useSettingsData', () => ({
