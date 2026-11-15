@@ -11,6 +11,9 @@ import { escapeHtml } from './email.render';
 import {
   buildWelcomeEmail,
   buildPasswordResetEmail,
+  buildEmailChangeEmail,
+  buildEmailChangeApprovalEmail,
+  buildAccountExistsEmail,
   buildTeamInvitationEmail,
   buildOrderConfirmationEmail,
   buildLowStockAlertEmail,
@@ -24,6 +27,9 @@ import type {
   EmailService,
   WelcomeEmailData,
   PasswordResetEmailData,
+  EmailChangeEmailData,
+  EmailChangeApprovalEmailData,
+  AccountExistsEmailData,
   TeamInvitationEmailData,
   OrderConfirmationEmailData,
   LowStockAlertEmailData,
@@ -106,6 +112,24 @@ export function createEmailService(): EmailService {
       return send(to, subject, html, text);
     },
 
+    async sendEmailChangeEmail(to: string, data: EmailChangeEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildEmailChangeEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendEmailChangeApprovalEmail(
+      to: string,
+      data: EmailChangeApprovalEmailData,
+    ): Promise<EmailResult> {
+      const { subject, html, text } = buildEmailChangeApprovalEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendAccountExistsEmail(to: string, data: AccountExistsEmailData): Promise<EmailResult> {
+      const { subject, html, text } = buildAccountExistsEmail(data);
+      return send(to, subject, html, text);
+    },
+
     async sendTeamInvitationEmail(to: string, data: TeamInvitationEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildTeamInvitationEmail(data);
       return send(to, subject, html, text);
@@ -176,6 +200,21 @@ export const sendPasswordResetEmail = async (
   to: string,
   data: { resetUrl: string },
 ): Promise<boolean> => (await _svc.sendPasswordResetEmail(to, data)).success;
+
+export const sendEmailChangeConfirmationEmail = async (
+  to: string,
+  data: { confirmUrl: string },
+): Promise<boolean> => (await _svc.sendEmailChangeEmail(to, data)).success;
+
+export const sendEmailChangeApprovalToCurrentAddress = async (
+  to: string,
+  data: { approveUrl: string; newEmail: string },
+): Promise<boolean> => (await _svc.sendEmailChangeApprovalEmail(to, data)).success;
+
+export const sendSignupAccountExistsEmail = async (
+  to: string,
+  data: { loginUrl: string; forgotPasswordUrl: string },
+): Promise<boolean> => (await _svc.sendAccountExistsEmail(to, data)).success;
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,

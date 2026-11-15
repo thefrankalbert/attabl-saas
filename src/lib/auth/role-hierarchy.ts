@@ -19,9 +19,8 @@ const ROLE_RANK: Record<AdminRole, number> = {
  * strictly below their own level. Owner may grant any role; admin may grant
  * roles below admin (manager and under) - never owner or admin.
  *
- * Single source of truth shared by every admin_users creation path (Server
- * Action actionCreateAdminUser AND the invitation API) so the two cannot
- * diverge on policy.
+ * Single source of truth shared by the invitation API and the role-change
+ * Server Action, so the two cannot diverge on policy.
  */
 export function canGrantRole(granterRole: string | null, targetRole: AdminRole): boolean {
   if (!granterRole) return false;

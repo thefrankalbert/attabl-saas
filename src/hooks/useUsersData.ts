@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  actionCreateAdminUser,
-  actionDeleteAdminUser,
-  actionUpdateAdminUser,
-} from '@/app/actions/admin';
+import { actionDeleteAdminUser, actionUpdateAdminUser } from '@/app/actions/admin';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
@@ -15,15 +11,6 @@ import type { AdminUser, AdminRole } from '@/types/admin.types';
 import type { Invitation } from '@/types/invitation.types';
 
 // --- Types -------------------------------------------------
-
-export type ModalTab = 'invite' | 'direct';
-
-export interface CreateUserFormData {
-  email: string;
-  password: string;
-  full_name: string;
-  role: AdminRole;
-}
 
 /**
  * Async confirmation callback - typically from useConfirmDialog.
@@ -49,9 +36,6 @@ export interface UseUsersDataReturn {
   // Modal state
   isModalOpen: boolean;
   setIsModalOpen: (open: boolean) => void;
-  activeTab: ModalTab;
-  setActiveTab: (tab: ModalTab) => void;
-  loading: boolean;
 
   // Invitation form state
   inviteEmail: string;
@@ -67,15 +51,10 @@ export interface UseUsersDataReturn {
   cancellingId: string | null;
   pendingOnly: Invitation[];
 
-  // Direct creation form state
-  formData: CreateUserFormData;
-  setFormData: (data: CreateUserFormData) => void;
-
   // Actions
   handleSendInvitation: () => Promise<void>;
   handleResendInvitation: (invitationId: string) => Promise<void>;
   handleCancelInvitation: (invitationId: string) => Promise<void>;
-  handleCreateUser: () => Promise<void>;
   handleDeleteUser: (userId: string) => Promise<void>;
   handleToggleStatus: (user: AdminUser) => Promise<void>;
 }
@@ -141,10 +120,6 @@ export function useUsersData({
 
   const [users, setUsers] = useState<AdminUser[]>(initialUsers);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Modal tab state
-  const [activeTab, setActiveTab] = useState<ModalTab>('invite');
 
   // Invitation form state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -156,14 +131,6 @@ export function useUsersData({
   const [loadingInvitations, setLoadingInvitations] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-
-  // Direct creation form state
-  const [formData, setFormData] = useState<CreateUserFormData>({
-    email: '',
-    password: '',
-    full_name: '',
-    role: 'waiter' as AdminRole,
-  });
 
   // Meme regle que le serveur (check-tenant-admin + invitations): role owner
   // ou admin ET permission team.manage, que le proprietaire peut retirer.
@@ -305,31 +272,6 @@ export function useUsersData({
     }
   };
 
-  const handleCreateUser = async () => {
-    if (!formData.email || !formData.password || !formData.full_name) {
-      toast({ title: t('fillAllFields'), variant: 'destructive' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await actionCreateAdminUser(tenantId, formData);
-      if (result.error) throw new Error(result.error);
-
-      toast({ title: t('userCreated') });
-      setIsModalOpen(false);
-      window.location.reload();
-    } catch (e: unknown) {
-      toast({
-        title: tc('error'),
-        description: e instanceof Error ? e.message : tc('unknownError'),
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteUser = async (userId: string) => {
     // La cle `users.confirmDeleteUser` n'existe pas (elle vit sous `platform`):
     // la boite affichait le nom de la cle au lieu d'une question.
@@ -377,9 +319,6 @@ export function useUsersData({
 
     isModalOpen,
     setIsModalOpen,
-    activeTab,
-    setActiveTab,
-    loading,
 
     inviteEmail,
     setInviteEmail,
@@ -393,13 +332,9 @@ export function useUsersData({
     cancellingId,
     pendingOnly,
 
-    formData,
-    setFormData,
-
     handleSendInvitation,
     handleResendInvitation,
     handleCancelInvitation,
-    handleCreateUser,
     handleDeleteUser,
     handleToggleStatus,
   };

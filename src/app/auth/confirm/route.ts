@@ -2,6 +2,62 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { sendWelcomeOnboardingEmail } from '@/services/email.service';
+import { verifyEmailChangeToken } from '@/lib/auth/email-change-token';
+import { createEmailChangeService } from '@/services/email-change.service';
+import { adminPasswordResetLinkLimiter } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
+
+/**
+ * POST /auth/confirm (champ `token`, A-09): une etape du changement d'adresse.
+ *
+ * Un POST et non un GET: un scanner de courriel ou un apercu de lien ouvre les
+ * liens en GET sans que la personne ait decide quoi que ce soit. La page
+ * /auth/confirm-email-change affiche le bouton "Confirmer" qui poste ici.
+ * Aucune session n'est ouverte: le client service_role n'en persiste aucune.
+ */
+export async function POST(request: Request) {
+  const origin = new URL(request.url).origin;
+  const redirect = (path: string) => NextResponse.redirect(`${origin}${path}`, 303);
+
+  const originErr = verifyOrigin(request);
+  if (originErr) return originErr;
+
+  try {
+    const form = await request.formData();
+    const token = form.get('token');
+    // verifyEmailChangeToken peut lever si le secret serveur manque: dans le try,
+    // la personne voit une page d'erreur propre et non un 500.
+    const claims = typeof token === 'string' ? verifyEmailChangeToken(token) : null;
+    if (!claims) {
+      logger.warn('Email change confirmation refused: invalid or expired token');
+      return redirect('/login?error=expired_link');
+    }
+
+    // L'etape `current` envoie un courriel: bornee par compte pour qu'un lien
+    // rejoue ne serve pas a arroser la nouvelle adresse.
+    if (claims.step === 'current') {
+      const { success } = await adminPasswordResetLinkLimiter.check(
+        `email-change-step:${claims.userId}`,
+      );
+      if (!success) return redirect('/login?error=auth_failed');
+    }
+
+    const outcome = await createEmailChangeService(createAdminClient()).confirmStep(claims);
+    switch (outcome) {
+      case 'applied':
+        return redirect('/login?confirmed=true');
+      case 'new_address_notified':
+        return redirect('/auth/confirm-email-change?done=current');
+      case 'expired':
+        return redirect('/login?error=expired_link');
+      default:
+        return redirect('/login?error=auth_failed');
+    }
+  } catch (err) {
+    logger.error('Unexpected error during email change confirmation', err);
+    return redirect('/login?error=auth_failed');
+  }
+}
 
 /**
  * GET /auth/confirm?token_hash=...&type=signup
@@ -9,6 +65,8 @@ import { sendWelcomeOnboardingEmail } from '@/services/email.service';
  * Handles email confirmation links sent via Resend.
  * Verifies the OTP token, confirms the user, sends welcome email,
  * then redirects to login.
+ *
+ * Le changement d'adresse (A-09) passe par POST /auth/confirm, voir plus haut.
  */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);

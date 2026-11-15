@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { isSubscriptionUsable } from '@/lib/plans/features';
 import type { SubscriptionStatus } from '@/types/billing';
 import { ServiceError } from './errors';
+import { createMemberSessionService } from './member-session.service';
 
 /**
  * Platform super-admin service (god mode).
@@ -170,15 +171,25 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
 
   async function getAdminUserLabel(
     adminUserId: string,
-  ): Promise<{ email: string; tenant_id: string; role: string }> {
+  ): Promise<{ email: string; tenant_id: string; role: string; user_id: string | null }> {
     const { data, error } = await admin
       .from('admin_users')
-      .select('email, tenant_id, role')
+      .select('email, tenant_id, role, user_id')
       .eq('id', adminUserId)
       .maybeSingle();
     if (error) throw new ServiceError('Erreur lors du chargement du compte', 'INTERNAL', error);
     if (!data) throw new ServiceError('Compte introuvable', 'NOT_FOUND');
     return data;
+  }
+
+  // A-04: retirer l'acces d'un membre coupe aussi sa session (meilleur effort,
+  // journalise par le service; ne defait jamais le retrait deja ecrit).
+  async function revokeSessions(target: { tenant_id: string; user_id: string | null }) {
+    if (!target.user_id) return;
+    await createMemberSessionService(admin).revokeSessionsAfterRemoval(
+      target.tenant_id,
+      target.user_id,
+    );
   }
 
   return {
@@ -314,6 +325,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         .eq('id', adminUserId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec du bannissement', 'INTERNAL', error);
+      await revokeSessions(target);
       await audit(actor, {
         action: 'ban_user',
         targetType: 'admin_user',
@@ -358,6 +370,7 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
         .eq('id', adminUserId)
         .is('deleted_at', null);
       if (error) throw new ServiceError('Echec de la suppression du compte', 'INTERNAL', error);
+      await revokeSessions(target);
       await audit(actor, {
         action: 'soft_delete_user',
         targetType: 'admin_user',

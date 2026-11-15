@@ -300,7 +300,6 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.
     const lockedElsewhere = new Set([
-      'actionCreateAdminUser',
       'actionUpdateAdminUser',
       'actionResetUserPassword',
       'actionUpdateUserEmail',
