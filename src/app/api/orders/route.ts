@@ -249,6 +249,13 @@ export async function POST(request: Request) {
       }
     }
 
+    // A paid table never marked served frees itself after a delay: run that
+    // rule now so this order opens a NEW session instead of joining the old
+    // bill (owner decision 2026-11-15). Best-effort, never blocks the order.
+    if (service_type === 'dine_in' && orderTable) {
+      await orderService.releaseStaleSessions(tenantId, orderTable);
+    }
+
     // 8. Create order with all fields (rollback coupon usage on failure)
     let result;
     try {

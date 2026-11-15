@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useState, useMemo, useEffect, useRef, useId } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 import { X, Utensils, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { MenuItem, ItemPriceVariant, ItemModifier, CurrencyCode } from '@/types/admin.types';
@@ -29,6 +29,23 @@ export default function POSItemCustomizer({
 }: POSItemCustomizerProps) {
   const t = useTranslations('pos');
   const tc = useTranslations('common');
+  const locale = useLocale();
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  const variantName = (v: ItemPriceVariant) =>
+    locale.startsWith('en') ? (v.variant_name_en ?? v.variant_name_fr) : v.variant_name_fr;
+
+  // Focus stays inside the dialog while open and returns on close; Escape closes.
+  useFocusTrap(dialogRef, true);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   const variants = useMemo(() => item.price_variants ?? [], [item.price_variants]);
   const modifiers = useMemo(
@@ -90,6 +107,8 @@ export default function POSItemCustomizer({
     const variantPayload = selectedVariant
       ? {
           id: selectedVariant.id,
+          // The kitchen ticket keeps the reference (French) name; the server
+          // resolves the variant by id anyway.
           name: selectedVariant.variant_name_fr,
           price: selectedVariant.price,
         }
@@ -100,7 +119,14 @@ export default function POSItemCustomizer({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-app-card w-full sm:max-w-sm sm:rounded-xl border border-app-border animate-in slide-in-from-bottom-4 sm:zoom-in-95 max-h-[85dvh] flex flex-col rounded-t-xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="bg-app-card w-full sm:max-w-sm sm:rounded-xl border border-app-border animate-in slide-in-from-bottom-4 sm:zoom-in-95 max-h-[85dvh] flex flex-col rounded-t-xl outline-none"
+      >
         {/* --- Header --- */}
         <div className="flex items-start gap-3 p-4 border-b border-app-border">
           <div className="h-14 w-14 shrink-0 bg-app-elevated rounded-lg flex items-center justify-center relative overflow-hidden">
@@ -111,7 +137,9 @@ export default function POSItemCustomizer({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm text-app-text leading-tight">{item.name}</h3>
+            <h3 id={titleId} className="font-bold text-sm text-app-text leading-tight">
+              {item.name}
+            </h3>
             {item.description && (
               <p className="text-xs text-app-text-muted mt-0.5 line-clamp-2">{item.description}</p>
             )}
@@ -122,7 +150,7 @@ export default function POSItemCustomizer({
             size="icon"
             aria-label={tc('aria.close')}
             onClick={onClose}
-            className="w-9 h-9 rounded-lg text-app-text-muted hover:text-app-text shrink-0 touch-manipulation"
+            className="min-h-[44px] min-w-[44px] rounded-lg text-app-text-muted hover:text-app-text shrink-0 touch-manipulation"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -133,15 +161,16 @@ export default function POSItemCustomizer({
           {/* --- Price Variants ---------------------------- */}
           {sortedVariants.length > 0 && (
             <div>
-              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <p className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectVariant')}
-              </Label>
+              </p>
               <div className="flex flex-wrap gap-2">
                 {sortedVariants.map((variant) => (
                   <Button
                     key={variant.id}
                     type="button"
                     variant={selectedVariantId === variant.id ? 'default' : 'outline'}
+                    aria-pressed={selectedVariantId === variant.id}
                     onClick={() => setSelectedVariantId(variant.id)}
                     className={cn(
                       'flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-sm font-medium h-auto',
@@ -150,7 +179,7 @@ export default function POSItemCustomizer({
                         : 'border-app-border text-app-text-secondary hover:bg-app-hover hover:border-accent/30',
                     )}
                   >
-                    <span>{variant.variant_name_fr}</span>
+                    <span>{variantName(variant)}</span>
                     <span className="text-xs opacity-80">
                       {formatCurrency(variant.price, currency)}
                     </span>
@@ -163,9 +192,9 @@ export default function POSItemCustomizer({
           {/* --- Modifiers -------------------------------- */}
           {sortedModifiers.length > 0 && (
             <div>
-              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <p className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectModifiers')}
-              </Label>
+              </p>
               <div className="space-y-1.5">
                 {sortedModifiers.map((modifier) => {
                   const isSelected = selectedModifierIds.has(modifier.id);
@@ -183,8 +212,8 @@ export default function POSItemCustomizer({
                           : 'border-app-border text-app-text-secondary hover:bg-app-hover',
                       )}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div
+                      <span className="flex items-center gap-2.5">
+                        <span
                           className={cn(
                             'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
                             isSelected
@@ -193,9 +222,9 @@ export default function POSItemCustomizer({
                           )}
                         >
                           {isSelected && <Check className="w-3 h-3 text-accent-text" />}
-                        </div>
+                        </span>
                         <span className="font-medium">{modifier.name}</span>
-                      </div>
+                      </span>
                       <span className="text-xs text-app-text-muted font-mono">
                         +{formatCurrency(modifier.price, currency)}
                       </span>
@@ -208,7 +237,7 @@ export default function POSItemCustomizer({
         </div>
 
         {/* --- Footer --- */}
-        <div className="border-t border-app-border p-4 space-y-3">
+        <div className="border-t border-app-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3">
           {/* Price summary */}
           <div className="flex justify-between items-baseline">
             <span className="text-xs text-app-text-muted font-medium uppercase tracking-wide">

@@ -175,7 +175,8 @@ describe('order.service Wave 26 additions', () => {
     const supabase = buildSupabase({ orders: { data: null, error: null } });
     const svc = createOrderService(asSupabase(supabase));
     await svc.markPaid('order-1', 'tenant-A', { method: 'cash', tipAmount: 500 });
-    const chain = supabase._chains.orders[0];
+    // A tip first reads the current tip (restored if the ledger write fails).
+    const chain = supabase._chains.orders.find((c) => c._calls.some((x) => x.method === 'update'))!;
     expect(hasTenantFilter(chain, 'tenant-A')).toBe(true);
     const updateCall = chain._calls.find((c) => c.method === 'update');
     expect(updateCall).toBeDefined();

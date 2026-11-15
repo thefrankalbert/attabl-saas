@@ -27,7 +27,7 @@ export function POSClearCartDialog({ open, onOpenChange, onConfirm }: POSClearCa
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{tc('delete')}</AlertDialogTitle>
+          <AlertDialogTitle>{t('clearCart')}</AlertDialogTitle>
           <AlertDialogDescription>{t('confirmClearCart')}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -36,7 +36,7 @@ export function POSClearCartDialog({ open, onOpenChange, onConfirm }: POSClearCa
             onClick={onConfirm}
             className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
           >
-            {tc('delete')}
+            {t('clearCart')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

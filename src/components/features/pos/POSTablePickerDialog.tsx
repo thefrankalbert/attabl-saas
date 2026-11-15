@@ -3,7 +3,6 @@
 import { LayoutGrid, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -44,21 +43,22 @@ export function POSTablePickerDialog({
 
         <div className="p-4">
           {zones.length > 0 ? (
-            <div className="flex gap-4 h-72">
+            <div className="flex gap-3 sm:gap-4 h-72 max-h-[60dvh]">
               {/* Zone Column */}
-              <div className="w-36 flex flex-col shrink-0">
-                <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+              <div className="w-24 sm:w-36 flex flex-col shrink-0">
+                <p className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                   {t('zone')}
-                </Label>
+                </p>
                 <div className="flex-1 overflow-y-auto space-y-1">
                   {zones.map((zone) => (
                     <Button
                       key={zone.id}
                       type="button"
                       variant={pickerZoneId === zone.id ? 'default' : 'ghost'}
+                      aria-pressed={pickerZoneId === zone.id}
                       onClick={() => onPickZone(zone.id)}
                       className={cn(
-                        'w-full justify-start px-3 py-2 rounded-lg text-sm flex items-center gap-2 h-auto',
+                        'w-full justify-start px-2 sm:px-3 py-2 min-h-[44px] rounded-lg text-sm flex items-center gap-2 h-auto',
                         pickerZoneId === zone.id
                           ? 'bg-accent text-accent-text font-medium'
                           : 'text-app-text-secondary hover:bg-app-hover',
@@ -75,12 +75,12 @@ export function POSTablePickerDialog({
 
               {/* Tables Grid */}
               <div className="flex-1 flex flex-col min-w-0">
-                <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                <p className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                   {t('tables')}
-                </Label>
+                </p>
                 <div className="flex-1 overflow-y-auto">
                   {pickerTables.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {pickerTables.map((table) => {
                         const isSelected = selectedTable === table.table_number;
                         const isOccupiedRaw =
@@ -92,6 +92,7 @@ export function POSTablePickerDialog({
                             key={table.id}
                             type="button"
                             variant={isSelected ? 'default' : 'outline'}
+                            aria-pressed={isSelected}
                             // Owner decision 2026-11-15: an occupied table takes a second
                             // round (the order joins the table's open bill). Moving a table
                             // stays on the Service screen.
@@ -113,12 +114,12 @@ export function POSTablePickerDialog({
                             )}
                             <span className="font-semibold text-xs">{table.table_number}</span>
                             {table.display_name !== table.table_number && (
-                              <span className="text-[10px] opacity-70 truncate max-w-full">
+                              <span className="text-xs opacity-70 truncate max-w-full">
                                 {table.display_name}
                               </span>
                             )}
                             {isOccupied && (
-                              <span className="text-[10px] font-medium text-status-warning">
+                              <span className="text-xs font-medium text-status-warning">
                                 {t('tableOccupied')}
                               </span>
                             )}

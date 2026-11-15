@@ -3,13 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
-import { Search, Utensils, SearchX } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Utensils, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 import type { CartItem } from '@/hooks/usePOSData';
 import POSItemCustomizer from './POSItemCustomizer';
+import { POSProductFilters } from './POSProductFilters';
 
 interface POSProductBrowserProps {
   items: MenuItem[];
@@ -224,43 +224,15 @@ export default function POSProductBrowser({
 
   return (
     <>
-      {/* Header Filters */}
-      <div className="p-3 sm:p-4 border-b border-app-border space-y-3 sm:space-y-4">
-        <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-          <Input
-            data-search-input
-            placeholder={t('searchProduct')}
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div ref={pillBarRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          <Button
-            ref={(el) => setPillRef('all', el)}
-            variant={selectedCategory === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleCategoryClick('all')}
-            className="rounded-full min-h-[44px]"
-          >
-            {tc('all')}
-          </Button>
-          {activeCategories.map((cat) => (
-            <Button
-              key={cat.id}
-              ref={(el) => setPillRef(cat.id, el)}
-              variant={selectedCategory === cat.id ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleCategoryClick(cat.id)}
-              className="rounded-full whitespace-nowrap min-h-[44px]"
-            >
-              {cat.name}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <POSProductFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedCategory={selectedCategory}
+        categories={activeCategories}
+        pillBarRef={pillBarRef}
+        setPillRef={setPillRef}
+        onCategoryClick={handleCategoryClick}
+      />
 
       {/* Grid - grouped by category with sticky section headers */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
@@ -286,7 +258,7 @@ export default function POSProductBrowser({
                       onClick={() => handleItemClick(item)}
                       className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal overflow-visible"
                     >
-                      <div className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
+                      <span className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
                         {item.image_url ? (
                           <Image
                             src={item.image_url}
@@ -298,12 +270,12 @@ export default function POSProductBrowser({
                         ) : (
                           <Utensils className="w-5 h-5 text-app-text-muted/40" />
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0 pr-5">
-                        <h3 className="font-semibold text-xs text-app-text leading-tight">
+                      </span>
+                      <span className="block flex-1 min-w-0 pr-5">
+                        <span className="block font-semibold text-xs text-app-text leading-tight">
                           {item.name}
-                        </h3>
-                        <p className="text-[11px] font-bold text-app-text-secondary mt-0.5">
+                        </span>
+                        <span className="block text-[11px] font-bold text-app-text-secondary mt-0.5">
                           {item.price_variants && item.price_variants.length > 0
                             ? t('fromPrice', {
                                 price: formatCurrency(
@@ -312,17 +284,17 @@ export default function POSProductBrowser({
                                 ),
                               })
                             : formatCurrency(item.price, currency)}
-                        </p>
-                      </div>
+                        </span>
+                      </span>
                       {cartQuantityMap.has(item.id) && (
                         // Inside the card (top-1 right-1), NOT -top-1 -right-1: the badge
                         // used to overflow the card and get clipped by the scroll
                         // container's overflow-y-auto and hidden behind the sticky
                         // category header (z-20) on the top row. Kept inside so it is
                         // always fully visible; pr-5 on the text column reserves its space.
-                        <div className="absolute top-1 right-1 bg-accent text-accent-text min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums">
+                        <span className="absolute top-1 right-1 bg-accent text-accent-text min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[10px] font-bold tabular-nums">
                           {cartQuantityMap.get(item.id) || 0}
-                        </div>
+                        </span>
                       )}
                     </Button>
                   ))}

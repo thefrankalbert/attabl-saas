@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { logger } from '@/lib/logger';
@@ -45,12 +45,23 @@ export function remainingDueMinor(
  * placed QR order appears, and a just-settled order disappears, without a manual
  * refresh. RLS scopes the browser client to the caller's tenant.
  */
+/** Cap of the "A encaisser" list (the newest are kept). */
+export const UNPAID_LIMIT = 100;
+
 export function usePosUnpaidOrders(tenantId: string) {
   const [supabase] = useState(() => createClient());
   const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed load used to show an empty list ("nothing to settle") with a 0
+  // badge: the cashier must see it failed and be able to retry.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [truncated, setTruncated] = useState(false);
+  // Every realtime event reloads: an OLDER response arriving after a newer one
+  // put a just-settled order back in the list. Only the latest load may write.
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     try {
       // Cash-desk scope: only orders from the last 7 days, capped at 100. An
       // unpaid order older than that is a bookkeeping problem, not something
@@ -64,8 +75,10 @@ export function usePosUnpaidOrders(tenantId: string) {
         .in('payment_status', ['pending', 'partial'])
         .neq('status', 'cancelled')
         .gte('created_at', since)
-        .order('created_at', { ascending: true })
-        .limit(100);
+        // Newest first, so the cap hides the OLDEST, not the order the cashier
+        // is looking for; shown oldest first below.
+        .order('created_at', { ascending: false })
+        .limit(UNPAID_LIMIT);
 
       if (error) throw error;
 
@@ -123,16 +136,29 @@ export function usePosUnpaidOrders(tenantId: string) {
           })),
         }));
 
-      setUnpaidOrders(mapped as Order[]);
-    } catch (error) {
-      logger.error('POS unpaid orders loading error', error);
+      if (seq !== loadSeq.current) return;
+      setUnpaidOrders((mapped as Order[]).reverse());
+      setTruncated((data || []).length >= UNPAID_LIMIT);
+      setLoadFailed(false);
+    } catch (loadError) {
+      logger.error('POS unpaid orders loading error', loadError);
+      if (seq === loadSeq.current) setLoadFailed(true);
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [supabase, tenantId]);
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  // Back online: the realtime channel may have missed events meanwhile.
+  useEffect(() => {
+    const reload = () => {
+      void load();
+    };
+    window.addEventListener('online', reload);
+    return () => window.removeEventListener('online', reload);
   }, [load]);
 
   useRealtimeSubscription<Record<string, unknown>>({
@@ -144,5 +170,5 @@ export function usePosUnpaidOrders(tenantId: string) {
     },
   });
 
-  return { unpaidOrders, loading, refresh: load };
+  return { unpaidOrders, loading, loadFailed, truncated, refresh: load };
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import { ArrowRight, Check, Printer, StickyNote, Tag, X, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, Send, StickyNote, Tag, X, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode, PricingBreakdown } from '@/types/admin.types';
 import type { CartItem, AppliedCoupon } from '@/hooks/usePOSData';
@@ -36,6 +36,7 @@ interface POSCartFooterProps {
 
   // Payment
   onPrintOrder: () => void;
+  busy?: boolean;
   /** Absent quand le membre n'encaisse pas (`orders.pay`): seul "Envoyer" reste. */
   onCheckout?: () => void;
 }
@@ -58,6 +59,7 @@ export function POSCartFooter({
   onValidateCoupon,
   onRemoveCoupon,
   onPrintOrder,
+  busy = false,
   onCheckout,
 }: POSCartFooterProps) {
   const t = useTranslations('pos');
@@ -72,9 +74,10 @@ export function POSCartFooter({
         <Button
           type="button"
           variant="ghost"
+          aria-expanded={showOrderNotes}
           onClick={() => setShowOrderNotes((prev) => !prev)}
           className={cn(
-            'flex items-center gap-1 text-[11px] font-medium shrink-0 h-auto px-1 py-0.5',
+            'flex items-center gap-1 text-xs font-medium shrink-0 min-h-[44px] px-2',
             orderNotes
               ? 'text-[var(--warning)]'
               : 'text-app-text-muted hover:text-app-text-secondary',
@@ -105,7 +108,7 @@ export function POSCartFooter({
                   size="icon"
                   aria-label={t('removeCoupon')}
                   onClick={onRemoveCoupon}
-                  className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
+                  className="min-h-[44px] min-w-[44px] text-app-text-muted hover:text-status-error shrink-0"
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -116,7 +119,8 @@ export function POSCartFooter({
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder={t('couponPlaceholder')}
-                  className="h-7 text-base md:text-xs flex-1 min-w-0"
+                  aria-label={t('couponPlaceholder')}
+                  className="min-h-[44px] text-base md:text-xs flex-1 min-w-0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
                   }}
@@ -125,7 +129,8 @@ export function POSCartFooter({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-xs shrink-0"
+                  aria-label={t('applyCoupon')}
+                  className="min-h-[44px] min-w-[44px] px-2 text-xs shrink-0"
                   disabled={!couponCode.trim() || couponLoading || cart.length === 0}
                   onClick={() => onValidateCoupon(couponCode)}
                 >
@@ -148,6 +153,7 @@ export function POSCartFooter({
           onChange={(e) => setOrderNotes(e.target.value)}
           maxLength={500}
           placeholder={t('orderNotePlaceholder')}
+          aria-label={t('orderNote')}
           rows={2}
           className="w-full p-2 text-base md:text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
         />
@@ -155,9 +161,7 @@ export function POSCartFooter({
 
       {/* Coupon error */}
       {enableCoupons && couponError && (
-        <p className="text-[10px] text-status-error font-medium animate-in fade-in">
-          {couponError}
-        </p>
+        <p className="text-xs text-status-error font-medium animate-in fade-in">{couponError}</p>
       )}
 
       {/* Pricing breakdown */}
@@ -173,9 +177,7 @@ export function POSCartFooter({
           </div>
           {pricing.discountAmount > 0 && (
             <div className="flex justify-between items-baseline">
-              <span className="text-[11px] text-[var(--success)]">
-                {tc('discount') || 'Remise'}
-              </span>
+              <span className="text-[11px] text-[var(--success)]">{tc('discount')}</span>
               <span className="text-xs font-medium text-[var(--success)] tabular-nums font-mono">
                 -{formatCurrency(pricing.discountAmount, currency)}
               </span>
@@ -229,18 +231,19 @@ export function POSCartFooter({
             'min-h-[48px] rounded-xl gap-1.5 touch-manipulation',
             onCheckout ? 'col-span-2' : 'col-span-7',
           )}
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || busy}
           onClick={onPrintOrder}
-          title={seg.sentToProduction}
+          aria-label={t('sendToKitchen', { place: seg.production.toLowerCase() })}
+          title={t('sendToKitchen', { place: seg.production.toLowerCase() })}
         >
-          <Printer className="w-4 h-4" />
+          <Send className="w-4 h-4" />
           <span className="hidden @sm:inline text-xs">{t('printShort')}</span>
         </Button>
         {onCheckout && (
           <Button
             variant="default"
             className="col-span-5 min-h-[48px] rounded-xl px-2 @sm:px-4 text-xs @sm:text-sm font-bold touch-manipulation"
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || busy}
             onClick={onCheckout}
           >
             <Check className="w-4 h-4 shrink-0 hidden @sm:inline" />

@@ -95,6 +95,7 @@ vi.mock('@/services/order.service', () => ({
     validateTenant: mockValidateTenant,
     validateOrderItems: mockValidateOrderItems,
     createOrderWithItems: mockCreateOrderWithItems,
+    releaseStaleSessions: vi.fn(),
     determinePreparationZone: mockDeterminePreparationZone,
   })),
 }));

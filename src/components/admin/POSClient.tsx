@@ -1,26 +1,25 @@
 'use client';
 
-import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
-import { useSegmentTerms } from '@/hooks/useSegmentTerms';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Receipt } from 'lucide-react';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
 import POSUnpaidPanel from '@/components/features/pos/POSUnpaidPanel';
+import { POSLoadBanner } from '@/components/features/pos/POSLoadBanner';
+import { POSTopBar } from '@/components/features/pos/POSTopBar';
+import { POSNoteDialog } from '@/components/features/pos/POSNoteDialog';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { PaymentData } from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
-import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
-import { useToast } from '@/components/ui/use-toast';
+import { usePosUnpaidOrders, UNPAID_LIMIT } from '@/hooks/usePosUnpaidOrders';
+import { usePosDestinationCheck } from '@/components/features/pos/usePosDestinationCheck';
 import type { Order } from '@/types/admin.types';
 
 interface POSClientProps {
@@ -29,8 +28,6 @@ interface POSClientProps {
 
 export default function POSClient({ tenantId }: POSClientProps) {
   const t = useTranslations('pos');
-  const tc = useTranslations('common');
-  const seg = useSegmentTerms();
   const { isMobile } = useDevice();
   // Le serveur prend les commandes a la caisse sans encaisser (decision du
   // 2026-11-09): sans `orders.pay`, ni "Valider le paiement" ni "A encaisser",
@@ -45,6 +42,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const {
     unpaidOrders,
     loading: unpaidLoading,
+    loadFailed: unpaidLoadFailed,
+    truncated: unpaidTruncated,
     refresh: refreshUnpaid,
   } = usePosUnpaidOrders(tenantId);
   const mounted = useSyncExternalStore(
@@ -56,43 +55,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const ts = useTranslations('shortcuts');
   const pos = usePOSData(tenantId);
 
-  const { toast } = useToast();
-
-  // Everything a ticket needs to reach its destination, checked BEFORE the
-  // payment step: the server (or the kitchen table rule) used to refuse it only
-  // after the money was taken. Dine-in needs a table (owner decision
-  // 2026-11-14) - unless no table is configured or loaded (offline) - a
-  // delivery an address, a room service a room number.
-  const destinationReady = useCallback((): boolean => {
-    if (pos.serviceType === 'dine_in' && !pos.selectedTable && pos.allTables.length > 0) {
-      toast({
-        title: t('tableRequired'),
-        description: t('tableRequiredDesc'),
-        variant: 'destructive',
-      });
-      return false;
-    }
-    if (pos.serviceType === 'delivery' && !pos.deliveryAddress.trim()) {
-      toast({ title: t('deliveryAddressRequired'), variant: 'destructive' });
-      return false;
-    }
-    if (pos.serviceType === 'room_service' && !pos.roomNumber.trim()) {
-      toast({ title: t('roomNumberRequired'), variant: 'destructive' });
-      return false;
-    }
-    return true;
-  }, [
-    pos.serviceType,
-    pos.selectedTable,
-    pos.allTables.length,
-    pos.deliveryAddress,
-    pos.roomNumber,
-    toast,
-    t,
-  ]);
+  const destinationReady = usePosDestinationCheck(pos);
 
   // -- Contextual keyboard shortcuts --
-  const { cart, menuItems, addToCart } = pos;
+  const { cart, menuItems, addToCart, isSending } = pos;
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [
       {
@@ -114,11 +80,13 @@ export default function POSClient({ tenantId }: POSClientProps) {
         section: 'contextual',
         keys: ['p'],
         action: () => {
-          if (canPay && cart.length > 0 && destinationReady()) setShowPaymentModal(true);
+          if (canPay && cart.length > 0 && !isSending && destinationReady()) {
+            setShowPaymentModal(true);
+          }
         },
       },
     ],
-    [ts, cart, menuItems, addToCart, canPay, destinationReady],
+    [ts, cart, menuItems, addToCart, canPay, isSending, destinationReady],
   );
   useContextualShortcuts(shortcuts);
 
@@ -134,71 +102,24 @@ export default function POSClient({ tenantId }: POSClientProps) {
           </div>
         ) : (
           <>
-            {/* Back button + Mobile View Toggle */}
-            <div className="flex items-center border-b border-app-border shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={tc('aria.back')}
-                onClick={() => router.back()}
-                className="p-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-app-text-secondary hover:text-app-text transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
+            <POSTopBar
+              isMobile={isMobile}
+              mobileView={mobileView}
+              onMobileView={setMobileView}
+              cartCount={pos.cart.length}
+              unpaidCount={canPay ? unpaidOrders.length : undefined}
+              onOpenUnpaid={() => setShowUnpaid(true)}
+              onBack={() => router.back()}
+            />
 
-              {isMobile ? (
-                <div className="flex flex-1">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setMobileView('products')}
-                    className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors rounded-none',
-                      mobileView === 'products'
-                        ? 'border-b-2 border-accent text-app-text'
-                        : 'text-app-text-muted',
-                    )}
-                  >
-                    {t('productsTab')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setMobileView('cart')}
-                    className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative rounded-none',
-                      mobileView === 'cart'
-                        ? 'border-b-2 border-accent text-app-text'
-                        : 'text-app-text-muted',
-                    )}
-                  >
-                    {t('cart')}{' '}
-                    {pos.cart.length > 0 && (
-                      <span className="ml-1 bg-accent text-accent-text text-xs rounded-full px-1.5 py-0.5">
-                        {pos.cart.length}
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <h1 className="text-sm font-semibold text-app-text">{t('title')}</h1>
-              )}
-
-              {/* A encaisser: orders awaiting payment (incl. QR/served) */}
-              {canPay && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowUnpaid(true)}
-                  className="relative ml-auto mr-2 min-h-[44px] gap-2 text-sm font-semibold text-app-text-secondary hover:text-app-text"
-                >
-                  <Receipt className="h-4 w-4" />
-                  <span className="hidden @sm:inline">{t('toSettle')}</span>
-                  {unpaidOrders.length > 0 && (
-                    <span className="rounded-full bg-accent px-1.5 py-0.5 text-xs text-accent-text">
-                      {unpaidOrders.length}
-                    </span>
-                  )}
-                </Button>
-              )}
-            </div>
+            <POSLoadBanner
+              menuUnavailable={pos.menuUnavailable}
+              extrasError={pos.extrasError}
+              onRetry={() => {
+                if (pos.menuUnavailable) pos.retryMenu();
+                if (pos.extrasError) pos.retryExtras();
+              }}
+            />
 
             {/* Main layout - flat surfaces separated by border lines, no boxed cards */}
             <div className="flex-1 flex flex-col @md:flex-row overflow-hidden min-h-0">
@@ -264,8 +185,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   onRemoveCoupon={pos.removeCoupon}
                   // Refresh "A encaisser" right away: realtime alone misses the new
                   // unpaid order whenever the websocket is down (weak network).
+                  busy={pos.isSending}
                   onPrintOrder={() => {
-                    if (destinationReady()) pos.handleOrder({ onCreated: refreshUnpaid });
+                    if (destinationReady()) void pos.handleOrder({ onCreated: refreshUnpaid });
                   }}
                   onCheckout={
                     canPay
@@ -278,35 +200,13 @@ export default function POSClient({ tenantId }: POSClientProps) {
               </div>
             </div>
 
-            {/* Note Modal -- flat design */}
-            {pos.editingNotes && (
-              <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-                <div className="bg-app-card rounded-xl border border-app-border p-6 w-full max-w-sm animate-in zoom-in-95">
-                  <h3 className="font-bold text-lg text-app-text mb-4">
-                    {seg.productionNoteTitle}
-                  </h3>
-                  <Textarea
-                    autoFocus
-                    className="w-full h-32 p-3 border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none"
-                    placeholder={seg.productionNotePlaceholder}
-                    value={pos.notesText}
-                    onChange={(e) => pos.setNotesText(e.target.value)}
-                  />
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      variant="ghost"
-                      className="rounded-xl"
-                      onClick={() => pos.setEditingNotes(null)}
-                    >
-                      {tc('cancel')}
-                    </Button>
-                    <Button variant="default" className="rounded-xl" onClick={pos.saveNotes}>
-                      {tc('save')}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <POSNoteDialog
+              open={pos.editingNotes !== null}
+              value={pos.notesText}
+              onChange={pos.setNotesText}
+              onCancel={() => pos.setEditingNotes(null)}
+              onSave={pos.saveNotes}
+            />
 
             {/* Payment Modal Reuse */}
             {canPay && showPaymentModal && (
@@ -341,6 +241,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
               onClose={() => setShowUnpaid(false)}
               orders={unpaidOrders}
               loading={unpaidLoading}
+              loadFailed={unpaidLoadFailed}
+              truncatedAt={unpaidTruncated ? UNPAID_LIMIT : undefined}
+              onRetry={() => void refreshUnpaid()}
               currency={pos.currency}
               onSelect={(order) => {
                 setShowUnpaid(false);

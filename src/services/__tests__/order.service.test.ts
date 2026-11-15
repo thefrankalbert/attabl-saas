@@ -876,9 +876,13 @@ describe('OrderService', () => {
       const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
       update.mockReturnValue({ eq: eq1 });
       const paymentsInsert = vi.fn().mockResolvedValue({ error: null });
+      // Read of the tip before the payment (restored if the ledger write fails).
+      const tipRead = vi.fn(() => ({
+        eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { tip_amount: 0 } }) }) }),
+      }));
       const from = vi.fn((table: string) => {
         if (table === 'payments') return { insert: paymentsInsert };
-        return { update };
+        return { update, select: tipRead };
       });
       return {
         client: { from } as unknown as SupabaseClient,
@@ -960,28 +964,34 @@ describe('OrderService', () => {
     // row with a session; orders.select(count).eq().eq().in().neq() returns the
     // number of orders still owing money on the session (pending OR partial);
     // table_sessions.update().eq().eq().eq().
-    function makeSupabase(remainingUnpaid: number) {
+    function makeSupabase(remainingUnpaid: number, tenderError: unknown = null) {
       const tsUpdateEq3 = vi.fn().mockResolvedValue({ error: null });
       const tsUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: tsUpdateEq3 }) }),
       });
 
       const countNeq = vi.fn().mockResolvedValue({ count: remainingUnpaid, error: null });
-      const countIn = vi.fn().mockReturnValue({ neq: countNeq });
+      const countOr = vi.fn().mockReturnValue({ neq: countNeq });
       const ordersSelectCount = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({ in: countIn }),
+          eq: vi.fn().mockReturnValue({ or: countOr }),
         }),
       });
 
       const updateSelect = vi
         .fn()
         .mockResolvedValue({ data: [{ id: 'o1', session_id: 's1' }], error: null });
+      // Second update shape: the undo of a flip whose ledger row failed
+      // (update().eq(id).eq(tenant).eq(payment_status).eq(paid_at).select()).
+      const revertPaidAtEq = vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [{ id: 'o1' }], error: null }),
+      });
       const ordersUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               neq: vi.fn().mockReturnValue({ select: updateSelect }),
+              eq: revertPaidAtEq,
             }),
           }),
         }),
@@ -990,10 +1000,17 @@ describe('OrderService', () => {
       const from = vi.fn((table: string) => {
         if (table === 'orders') return { update: ordersUpdate, select: ordersSelectCount };
         if (table === 'table_sessions') return { update: tsUpdate };
-        if (table === 'payments') return { insert: vi.fn().mockResolvedValue({ error: null }) };
+        if (table === 'payments')
+          return { insert: vi.fn().mockResolvedValue({ error: tenderError }) };
         return {};
       });
-      return { client: { from } as unknown as SupabaseClient, tsUpdate, countIn };
+      return {
+        client: { from } as unknown as SupabaseClient,
+        tsUpdate,
+        countOr,
+        ordersUpdate,
+        revertPaidAtEq,
+      };
     }
 
     it('closes the session when no unpaid orders remain', async () => {
@@ -1024,7 +1041,36 @@ describe('OrderService', () => {
       // Ce filtre ne regardait que 'pending': une note 'partial' (il reste un
       // solde) ne comptait pas, la table se fermait comme entierement reglee et
       // le reliquat etait perdu.
-      expect(m.countIn).toHaveBeenCalledWith('payment_status', ['pending', 'partial']);
+      expect(m.countOr).toHaveBeenCalledWith(
+        expect.stringContaining('payment_status.in.(pending,partial)'),
+      );
+    });
+
+    // Audit caisse 2026-11-15: since #416 a paid caisse sale is still cooking.
+    it('garde la table occupee tant qu une commande n est pas servie, meme payee', async () => {
+      const m = makeSupabase(0);
+      const service = createOrderService(m.client);
+
+      await service.markPaid('o1', 't1', { method: 'cash' });
+
+      expect(m.countOr).toHaveBeenCalledWith(
+        expect.stringContaining('status.not.in.(delivered,served)'),
+      );
+    });
+
+    it('annule le passage a paye si la ligne du registre echoue, et le signale', async () => {
+      const m = makeSupabase(0, { message: 'ledger down' });
+      const service = createOrderService(m.client);
+
+      await expect(service.markPaid('o1', 't1', { method: 'cash' })).rejects.toThrow();
+
+      expect(m.ordersUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'pending', paid_at: null }),
+      );
+      // Only ITS OWN flip is undone: scoped to the paid_at this call wrote.
+      const written = (m.ordersUpdate.mock.calls[0][0] as { paid_at: string }).paid_at;
+      expect(m.revertPaidAtEq).toHaveBeenCalledWith('paid_at', written);
+      expect(m.tsUpdate).not.toHaveBeenCalled();
     });
   });
 

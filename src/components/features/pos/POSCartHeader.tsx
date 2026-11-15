@@ -12,7 +12,6 @@ interface POSCartHeaderProps {
 
 export function POSCartHeader({ orderNumber, onClear }: POSCartHeaderProps) {
   const t = useTranslations('pos');
-  const tc = useTranslations('common');
 
   return (
     <div className="px-4 py-3 border-b border-app-border flex items-center justify-between">
@@ -29,10 +28,10 @@ export function POSCartHeader({ orderNumber, onClear }: POSCartHeaderProps) {
       <Button
         variant="ghost"
         size="icon"
-        aria-label={tc('delete')}
+        aria-label={t('clearCart')}
         onClick={onClear}
-        title={tc('delete')}
-        className="w-9 h-9 text-app-text-muted hover:text-status-error"
+        title={t('clearCart')}
+        className="min-h-[44px] min-w-[44px] text-app-text-muted hover:text-status-error"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </Button>

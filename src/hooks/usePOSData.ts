@@ -2,89 +2,48 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems, useCategories } from '@/hooks/queries';
 import { useCreateOrder } from '@/hooks/mutations';
+import { usePosExtras } from '@/hooks/usePosExtras';
+import { usePosOccupancy } from '@/hooks/usePosOccupancy';
+import { usePosCoupon } from '@/hooks/usePosCoupon';
+import { usePosCartState } from '@/hooks/usePosCartState';
+import {
+  readOrderKey,
+  writeOrderKey,
+  clearComposeStorage,
+  dropOrderKey,
+} from '@/lib/pos/compose-storage';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { useSessionState } from '@/hooks/useSessionState';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
-import { MAX_ITEM_QTY } from '@/lib/utils/cart-display';
-import { logger } from '@/lib/logger';
-import type {
-  MenuItem,
-  ServiceType,
-  CurrencyCode,
-  Zone,
-  Table,
-  PricingBreakdown,
-} from '@/types/admin.types';
+import { formatCurrency } from '@/lib/utils/currency';
+import { fromMinorUnits } from '@/lib/utils/money';
+import type { ServiceType, PricingBreakdown } from '@/types/admin.types';
 
-export type CartItem = MenuItem & {
-  quantity: number;
-  notes?: string;
-  selectedModifiers?: Array<{ id?: string; name: string; price: number }>;
-  selectedVariant?: { id?: string; name: string; price: number };
-  cartKey?: string; // unique key when same item has different modifiers/variant
-};
-
-export interface POSSuggestion {
-  menu_item_id: string;
-  suggested_item_id: string;
-  suggested_item_name: string;
-  suggestion_type: string;
-  description: string | null;
-}
-
-export interface AppliedCoupon {
-  id: string;
-  code: string;
-  discount_type: 'percentage' | 'fixed';
-  discount_value: number;
-  discountAmount: number;
-}
-
-function getCartKey(
-  item: CartItem | MenuItem,
-  mods?: Array<{ id?: string; name: string; price: number }>,
-  variant?: { id?: string; name: string; price: number },
-) {
-  let key = item.id;
-  const resolvedVariant = variant || (item as CartItem).selectedVariant;
-  if (resolvedVariant) {
-    key = `${key}-var-${resolvedVariant.id ?? resolvedVariant.name}`;
-  }
-  const modifiers = mods || (item as CartItem).selectedModifiers;
-  if (modifiers && modifiers.length > 0) {
-    key = `${key}-mod-${modifiers
-      .map((m) => m.id ?? m.name)
-      .sort()
-      .join(',')}`;
-  }
-  return key;
-}
+export type { AppliedCoupon } from '@/hooks/usePosCoupon';
+export type { CartItem } from '@/hooks/usePosCartState';
+export type { POSSuggestion } from '@/hooks/usePosExtras';
 
 export function usePOSData(tenantId: string) {
   const t = useTranslations('pos');
   const { toast } = useToast();
-  const supabase = createClient();
   const queryClient = useQueryClient();
   const createOrder = useCreateOrder(tenantId);
-
-  // --- Cart state -----------------------------------------
-  const [cart, setCart] = useSessionState<CartItem[]>('pos:cart', []);
-
-  // --- Currency -------------------------------------------
-  const [currency, setCurrency] = useState<CurrencyCode>('XAF');
-
-  // --- Tax config -----------------------------------------
-  const [taxConfig, setTaxConfig] = useState<{
-    enableTax: boolean;
-    taxRate: number;
-    enableServiceCharge: boolean;
-    serviceChargeRate: number;
-  }>({ enableTax: false, taxRate: 0, enableServiceCharge: false, serviceChargeRate: 0 });
+  const {
+    currency,
+    taxConfig,
+    enableCoupons,
+    suggestions,
+    zones,
+    allTables,
+    extrasLoaded,
+    extrasError,
+    retryExtras,
+  } = usePosExtras(tenantId);
+  const { occupiedTableNumbers, loadOccupancy } = usePosOccupancy(tenantId);
 
   // --- Filters --------------------------------------------
   const [searchQuery, setSearchQuery] = useSessionState('pos:searchQuery', '');
@@ -99,32 +58,8 @@ export function usePOSData(tenantId: string) {
   const [roomNumber, setRoomNumber] = useSessionState<string>('pos:roomNumber', '');
   const [deliveryAddress, setDeliveryAddress] = useSessionState<string>('pos:deliveryAddress', '');
 
-  // --- Suggestions ----------------------------------------
-  const [suggestions, setSuggestions] = useState<POSSuggestion[]>([]);
-
-  // --- Zones & Tables (for dine-in table picker) --------
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [allTables, setAllTables] = useState<Table[]>([]);
-
-  // --- Table occupancy (open table_sessions) --------------
-  // Set of table_number for tables with an OPEN session (same canonical signal the
-  // Service floor view + dashboard use). Lets the dine-in picker show free/occupied
-  // so the cashier does not seat a party on a table another party already holds.
-  const [occupiedTableNumbers, setOccupiedTableNumbers] = useState<Set<string>>(new Set());
-
   // --- Order-level notes ----------------------------------
   const [orderNotes, setOrderNotes] = useSessionState<string>('pos:orderNotes', '');
-
-  // --- Coupon state ---------------------------------------
-  const [enableCoupons, setEnableCoupons] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponError, setCouponError] = useState('');
-
-  // --- Note editing state ---------------------------------
-  const [editingNotes, setEditingNotes] = useState<string | null>(null);
-  const [notesText, setNotesText] = useState('');
 
   // --- Order number - initialize from localStorage --------
   const [orderNumber, setOrderNumber] = useState(() => {
@@ -143,129 +78,58 @@ export function usePOSData(tenantId: string) {
   });
 
   // --- TanStack Query for menu items and categories -------
-  const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems(tenantId, {
-    availableOnly: true,
-  });
-  const { data: categories = [], isLoading: catsLoading } = useCategories(tenantId);
+  const menuQuery = useMenuItems(tenantId, { availableOnly: true });
+  const categoriesQuery = useCategories(tenantId);
+  const { data: menuItems = [], isLoading: itemsLoading } = menuQuery;
+  const { data: categories = [], isLoading: catsLoading } = categoriesQuery;
   const loading = itemsLoading || catsLoading;
+  // A failed (or offline-paused) catalogue load used to open an empty till with
+  // no message: the cashier believed the menu was empty.
+  const menuUnavailable =
+    menuQuery.isError ||
+    categoriesQuery.isError ||
+    (menuItems.length === 0 && menuQuery.fetchStatus === 'paused');
+  const retryMenu = useCallback(() => {
+    void menuQuery.refetch();
+    void categoriesQuery.refetch();
+  }, [menuQuery, categoriesQuery]);
+
+  const {
+    cart,
+    setCart,
+    addToCart,
+    updateQuantity,
+    clearCart,
+    editingNotes,
+    setEditingNotes,
+    notesText,
+    setNotesText,
+    saveNotes,
+    total,
+  } = usePosCartState(menuItems);
 
   // --- Order number persistence ---------------------------
   const updateOrderNumber = useCallback(
     (newNum: number) => {
       setOrderNumber(newNum);
-      const key = `pos_order_${tenantId}`;
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          date: new Date().toISOString().split('T')[0],
-          number: newNum,
-        }),
-      );
+      try {
+        localStorage.setItem(
+          `pos_order_${tenantId}`,
+          JSON.stringify({ date: new Date().toISOString().split('T')[0], number: newNum }),
+        );
+      } catch {
+        // Quota full / private mode: the local counter is only a display aid.
+      }
     },
     [tenantId],
   );
 
-  // --- Load tenant currency and suggestions ---------------
-  const loadExtras = useCallback(async () => {
-    try {
-      const [tenantRes, suggestionsRes, zonesRes] = await Promise.all([
-        supabase
-          .from('tenants')
-          .select(
-            'currency, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons',
-          )
-          .eq('id', tenantId)
-          .single(),
-        supabase
-          .from('item_suggestions')
-          .select(
-            'menu_item_id, suggested_item_id, suggestion_type, description, suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(name)',
-          )
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-        // Tenant-scoped via venues join: a tenant can have several venues and
-        // the dine-in picker must list every zone, not just the first venue's.
-        supabase
-          .from('zones')
-          .select('*, venues!inner(tenant_id)')
-          .eq('venues.tenant_id', tenantId)
-          .order('display_order'),
-      ]);
-
-      if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
-      if (tenantRes.data) {
-        setTaxConfig({
-          enableTax: !!tenantRes.data.enable_tax,
-          taxRate: (tenantRes.data.tax_rate as number) || 0,
-          enableServiceCharge: !!tenantRes.data.enable_service_charge,
-          serviceChargeRate: (tenantRes.data.service_charge_rate as number) || 0,
-        });
-        setEnableCoupons(!!tenantRes.data.enable_coupons);
-      }
-      if (suggestionsRes.data) {
-        setSuggestions(
-          suggestionsRes.data.map((s: Record<string, unknown>) => ({
-            menu_item_id: s.menu_item_id as string,
-            suggested_item_id: s.suggested_item_id as string,
-            suggested_item_name:
-              ((s.suggested_item as Record<string, unknown>)?.name as string) || '',
-            suggestion_type: s.suggestion_type as string,
-            description: s.description as string | null,
-          })),
-        );
-      }
-
-      // Fetch tables for the dine-in table picker (zones loaded above)
-      const zonesData = zonesRes.data;
-      if (zonesData && zonesData.length > 0) {
-        setZones(zonesData as Zone[]);
-        const zoneIds = zonesData.map((z: Record<string, unknown>) => z.id as string);
-        const { data: tablesData } = await supabase
-          .from('tables')
-          .select('*')
-          .in('zone_id', zoneIds)
-          .eq('is_active', true)
-          .order('table_number');
-
-        if (tablesData) setAllTables(tablesData as Table[]);
-      }
-    } catch {
-      // Non-critical - suggestions, currency, and tables are optional enhancements
-    }
-  }, [supabase, tenantId]);
-
-  // --- Initial load of extras ----------------------------
+  // A table remembered from an earlier sale that is gone (deleted, deactivated)
+  // must not be sent: forget it once the active tables are known.
   useEffect(() => {
-    loadExtras();
-  }, [loadExtras]);
-
-  // --- Table occupancy load + realtime -------------------
-  const loadOccupancy = useCallback(async () => {
-    const { data } = await supabase
-      .from('table_sessions')
-      .select('table_number')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'open');
-    if (data) {
-      setOccupiedTableNumbers(
-        new Set((data as { table_number: string }[]).map((s) => s.table_number)),
-      );
-    }
-  }, [supabase, tenantId]);
-
-  useEffect(() => {
-    loadOccupancy();
-  }, [loadOccupancy]);
-
-  // Refresh occupancy whenever a session opens/closes (cleanup handled by the hook).
-  useRealtimeSubscription<Record<string, unknown>>({
-    channelName: `pos_sessions_${tenantId}`,
-    table: 'table_sessions',
-    filter: `tenant_id=eq.${tenantId}`,
-    onChange: () => {
-      loadOccupancy();
-    },
-  });
+    if (allTables.length === 0 || !selectedTable) return;
+    if (!allTables.some((tbl) => tbl.table_number === selectedTable)) setSelectedTable('');
+  }, [allTables, selectedTable, setSelectedTable]);
 
   // --- Realtime: menu_items updates ---------------------
   useRealtimeSubscription<Record<string, unknown>>({
@@ -305,129 +169,17 @@ export function usePOSData(tenantId: string) {
     return searchFilteredItems.filter((i) => i.category_id === selectedCategory);
   }, [searchFilteredItems, selectedCategory]);
 
-  // --- Cart actions ---------------------------------------
-  const addToCart = useCallback(
-    (
-      item: MenuItem,
-      modifiers?: Array<{ id?: string; name: string; price: number }>,
-      variant?: { id?: string; name: string; price: number },
-    ) => {
-      const key = getCartKey(item, modifiers, variant);
-      const hasCustomization = (modifiers && modifiers.length > 0) || !!variant;
-      setCart((prev) => {
-        const existing = prev.find((i) => (i.cartKey || i.id) === key);
-        if (existing)
-          return prev.map((i) =>
-            (i.cartKey || i.id) === key
-              ? { ...i, quantity: Math.min(MAX_ITEM_QTY, i.quantity + 1) }
-              : i,
-          );
-        return [
-          ...prev,
-          {
-            ...item,
-            // Override price with variant price when a variant is selected
-            price: variant ? variant.price : item.price,
-            quantity: 1,
-            selectedModifiers: modifiers,
-            selectedVariant: variant,
-            cartKey: hasCustomization ? key : undefined,
-          },
-        ];
-      });
-    },
-    [setCart],
-  );
-
-  const updateQuantity = (itemId: string, delta: number) => {
-    setCart((prev) => {
-      const item = prev.find((i) => (i.cartKey || i.id) === itemId);
-      if (!item) return prev;
-      const newQty = Math.min(MAX_ITEM_QTY, item.quantity + delta);
-      const key = item.cartKey || item.id;
-      if (newQty <= 0) return prev.filter((i) => (i.cartKey || i.id) !== key);
-      return prev.map((i) => ((i.cartKey || i.id) === key ? { ...i, quantity: newQty } : i));
-    });
-  };
-
-  const clearCart = () => setCart([]);
-
-  // --- Note editing ---------------------------------------
-  const saveNotes = () => {
-    if (editingNotes) {
-      setCart((prev) =>
-        prev.map((i) => ((i.cartKey || i.id) === editingNotes ? { ...i, notes: notesText } : i)),
-      );
-      setEditingNotes(null);
-      setNotesText('');
-    }
-  };
-
-  // --- Total calculation ----------------------------------
-  const total = useMemo(
-    () =>
-      cart.reduce((acc, item) => {
-        const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
-        return acc + (item.price + modCost) * item.quantity;
-      }, 0),
-    [cart],
-  );
-
-  // --- Coupon validation (client-side preview) ------------
-  const validateCoupon = useCallback(
-    async (code: string) => {
-      if (!code.trim()) return;
-      setCouponLoading(true);
-      setCouponError('');
-      // BUG-38: Abort coupon validation after 10s to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      try {
-        const res = await fetch('/api/coupons/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, subtotal: total }),
-          signal: controller.signal,
-        });
-        const data: {
-          valid: boolean;
-          coupon?: {
-            id: string;
-            code: string;
-            discount_type: 'percentage' | 'fixed';
-            discount_value: number;
-          };
-          discountAmount: number;
-          error?: string;
-        } = await res.json();
-        if (data.valid && data.coupon) {
-          setAppliedCoupon({
-            id: data.coupon.id,
-            code: data.coupon.code,
-            discount_type: data.coupon.discount_type,
-            discount_value: data.coupon.discount_value,
-            discountAmount: data.discountAmount,
-          });
-          setCouponCode('');
-        } else {
-          setCouponError(data.error || t('couponInvalid'));
-        }
-      } catch (err) {
-        logger.error('Coupon validation failed', err);
-        setCouponError(t('couponValidationError'));
-      } finally {
-        clearTimeout(timeoutId);
-        setCouponLoading(false);
-      }
-    },
-    [total, t],
-  );
-
-  const removeCoupon = useCallback(() => {
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponError('');
-  }, []);
+  const {
+    couponCode,
+    setCouponCode,
+    appliedCoupon,
+    setAppliedCoupon,
+    couponLoading,
+    couponError,
+    setCouponError,
+    validateCoupon,
+    removeCoupon,
+  } = usePosCoupon(total);
 
   // --- Pricing breakdown (subtotal + tax + service charge - discount) -
   const discountAmount = appliedCoupon?.discountAmount ?? 0;
@@ -449,54 +201,74 @@ export function usePOSData(tenantId: string) {
   );
 
   // --- Order creation -------------------------------------
-  const submitLockRef = useRef(false);
-  // OFF-11. La cle d'idempotence doit survivre a un ECHEC, pas seulement aux
-  // reessais reseau d'un meme envoi. Frappee a chaque tap, elle laissait le
-  // scenario suivant ouvert: l'envoi echoue, le panier reste plein (onError ne
-  // le vide pas), le caissier retape - et cree une SECONDE commande alors qu'il
-  // croit rejouer la premiere. On garde donc la cle jusqu'au succes, comme
-  // PaymentModal le fait deja pour l'encaissement.
-  const orderRequestIdRef = useRef<string | null>(null);
+  // In-flight send, NOT `createOrder.isPending`: a mutation paused by TanStack
+  // stays pending forever and the guard used to swallow every later order once
+  // the network dropped. A second tap gets the SAME promise (the payment screen
+  // keeps its spinner) instead of returning at once.
+  const inFlightRef = useRef<Promise<void> | null>(null);
+  // Shown on the buttons: while one order is being sent, neither "send" nor
+  // "pay" may start another (a payment could be swallowed by the running send).
+  const [isSending, setIsSending] = useState(false);
 
-  // Every caisse order goes to the kitchen ('pending'), paid or not: a paid sale
-  // used to be created 'delivered' and never showed on the kitchen screen
-  // (live test 2026-11-15). Payment is recorded separately (payment_status).
-  const handleOrder = (options?: {
+  // Idempotency key of the composed order (OFF-11), read ONCE when the till
+  // mounts: if the cashier came back while an earlier send was still in flight,
+  // that send may clear sessionStorage afterwards; reading it lazily at the next
+  // tap then minted a new key for the same cart - a second sale.
+  const orderKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    orderKeyRef.current = readOrderKey();
+  }, []);
+
+  // Emptying the cart by hand starts a NEW order: forget the pending key, or a
+  // different cart would replay it and be deduplicated onto the old order.
+  const clearCartAndKey = useCallback(() => {
+    clearCart();
+    orderKeyRef.current = null;
+    dropOrderKey();
+  }, [clearCart]);
+
+  // Every caisse order goes to the kitchen ('pending'), paid or not; payment is
+  // recorded separately (payment_status). Returns once the order is settled, so
+  // the payment screen keeps its spinner until the end. The success branch runs
+  // after `await`, i.e. even if the till was left meanwhile.
+  const handleOrder = async (options?: {
     onPaymentModalClose?: () => void;
     paymentData?: { paymentMethod: string; tipAmount: number };
     /** Called once the server has recorded the order (not when only queued offline). */
     onCreated?: () => void;
-  }) => {
+  }): Promise<void> => {
+    if (inFlightRef.current) return inFlightRef.current;
     if (cart.length === 0) return;
-    // Destination (table, address, room) is checked by POSClient before the
-    // payment step, so a paid sale is never refused after the money is taken.
-    // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
-    // two taps would create two distinct orders. Block while a submit is in
-    // flight (the idempotency key only dedupes one submit's network retries).
-    //
-    // Verrou explicite et NON `createOrder.isPending`: une mutation mise en pause
-    // par TanStack reste `isPending` indefiniment, si bien que le garde avalait en
-    // silence toutes les commandes suivantes des que le reseau tombait. Le verrou
-    // est relache dans onSettled, qui se declenche aussi bien au succes qu'a
-    // l'echec, y compris quand l'outbox prend le relais hors ligne.
-    if (submitLockRef.current) return;
-    submitLockRef.current = true;
+    const run = submitOrder(options);
+    inFlightRef.current = run;
+    setIsSending(true);
+    try {
+      await run;
+    } finally {
+      inFlightRef.current = null;
+      setIsSending(false);
+    }
+  };
 
-    // Mint the idempotency key once per compose. It survives the network retry /
-    // durable outbox replay so an offline-sent order never duplicates. `??=`:
-    // un retap apres echec REJOUE la meme cle au lieu d'en creer une nouvelle
-    // (OFF-11). Remise a null au succes seulement, quand le panier est vide.
-    orderRequestIdRef.current ??= crypto.randomUUID();
-    const clientRequestId = orderRequestIdRef.current;
+  const submitOrder = async (options?: {
+    onPaymentModalClose?: () => void;
+    paymentData?: { paymentMethod: string; tipAmount: number };
+    onCreated?: () => void;
+  }): Promise<void> => {
+    // Kept until success: a retry after a failure - or after leaving and coming
+    // back to the till - REPLAYS the same key instead of creating a second order.
+    let clientRequestId = orderKeyRef.current ?? readOrderKey();
+    if (!clientRequestId) clientRequestId = crypto.randomUUID();
+    orderKeyRef.current = clientRequestId;
+    writeOrderKey(clientRequestId);
+    const announcedTotal = pricing.total;
 
-    createOrder.mutate(
-      {
+    try {
+      const order = await createOrder.mutateAsync({
         clientRequestId,
         // Dine-in only, like room_number/delivery_address below: a table picked
-        // in a previous dine-in compose must not tag a takeaway order. No pseudo
-        // "CMD-<n>" fallback either: tableless orders store table_number NULL
-        // (the server order_number is the ticket id). The old fallback also
-        // created ghost table_sessions for nonexistent "CMD-n" tables.
+        // in a previous dine-in compose must not tag a takeaway order. Tableless
+        // orders store table_number NULL (the order_number is the ticket id).
         table_number: serviceType === 'dine_in' && selectedTable ? selectedTable : undefined,
         status: 'pending',
         total,
@@ -516,47 +288,60 @@ export function usePOSData(tenantId: string) {
           selected_variant: item.selectedVariant?.name,
           selected_variant_id: item.selectedVariant?.id,
         })),
-      },
-      {
-        onSuccess: (order: { orderNumber?: string; queued?: boolean }) => {
-          // Close the payment modal first: the sale is recorded, leaving the
-          // keypad open with a zeroed total reads as a stuck payment.
-          options?.onPaymentModalClose?.();
-          if (order?.queued) {
-            // Offline: durably captured, will sync on reconnect. Clear the cart
-            // anyway - the order now lives in the outbox; re-submitting would mint
-            // a new key and create a duplicate.
-            toast({ title: t('orderQueued'), description: t('orderQueuedDesc') });
-          } else {
-            const serverNum = order?.orderNumber;
-            toast({
-              title: options?.paymentData ? t('saleRecorded') : t('sentToKitchen'),
-              description: serverNum ? `#${serverNum}` : undefined,
-            });
-            options?.onCreated?.();
-          }
-          // La commande est partie (ou est durablement en file): la prochaine
-          // composition est une commande DIFFERENTE, elle merite sa propre cle.
-          orderRequestIdRef.current = null;
-          updateOrderNumber(orderNumber + 1);
-          setCart([]);
-          setOrderNotes('');
-          setRoomNumber('');
-          setDeliveryAddress('');
-          // Clear coupon after successful order
-          setAppliedCoupon(null);
-          setCouponCode('');
-          setCouponError('');
-        },
-        onError: (error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          toast({ title: t('orderError'), description: message, variant: 'destructive' });
-        },
-        onSettled: () => {
-          submitLockRef.current = false;
-        },
-      },
-    );
+      });
+
+      // The order exists (or is durably queued): the next compose is a
+      // DIFFERENT order. Clear storage first - it works even when unmounted.
+      clearComposeStorage();
+      orderKeyRef.current = null;
+      // Close the payment screen: leaving the keypad open with a zeroed total
+      // reads as a stuck payment.
+      options?.onPaymentModalClose?.();
+
+      if (order.queued) {
+        toast({ title: t('orderQueued'), description: t('orderQueuedDesc') });
+      } else if (options?.paymentData && order.paid === false) {
+        // The order went to the kitchen but the money is NOT booked: the cashier
+        // must know before handing back change (audit caisse 2026-11-15).
+        toast({
+          title: t('paymentNotRecorded'),
+          description: t('paymentNotRecordedDesc'),
+          variant: 'destructive',
+        });
+        options?.onCreated?.();
+      } else {
+        toast({
+          title: options?.paymentData ? t('saleRecorded') : t('sentToKitchen'),
+          description: order.orderNumber ? `#${order.orderNumber}` : undefined,
+        });
+        options?.onCreated?.();
+        // The server bills current prices: say so when it differs from the
+        // amount the till announced (price changed while the till was open).
+        const billed = fromMinorUnits(Number(order.total || 0), currency);
+        if (order.total && Math.abs(billed - announcedTotal) >= 1) {
+          toast({
+            title: t('totalDiffers'),
+            description: t('totalDiffersDesc', { amount: formatCurrency(billed, currency) }),
+            variant: 'destructive',
+          });
+        }
+      }
+
+      updateOrderNumber(orderNumber + 1);
+      setCart([]);
+      setOrderNotes('');
+      setRoomNumber('');
+      setDeliveryAddress('');
+      // The table is chosen per order: keeping it silently sent the next
+      // dine-in sale to the previous table.
+      setSelectedTable('');
+      setAppliedCoupon(null);
+      setCouponCode('');
+      setCouponError('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: t('orderError'), description: message, variant: 'destructive' });
+    }
   };
 
   return {
@@ -569,6 +354,11 @@ export function usePOSData(tenantId: string) {
     currency,
     suggestions,
     loading,
+    menuUnavailable,
+    retryMenu,
+    extrasLoaded,
+    extrasError,
+    retryExtras,
     total,
     pricing,
     taxConfig,
@@ -599,7 +389,7 @@ export function usePOSData(tenantId: string) {
     // Cart actions
     addToCart,
     updateQuantity,
-    clearCart,
+    clearCart: clearCartAndKey,
 
     // Notes
     editingNotes,
@@ -624,5 +414,6 @@ export function usePOSData(tenantId: string) {
 
     // Order
     handleOrder,
+    isSending,
   };
 }

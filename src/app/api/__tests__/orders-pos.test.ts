@@ -50,7 +50,9 @@ vi.mock('@/services/order.service', () => ({
     validateOrderItems: mockValidateOrderItems,
     determinePreparationZone: mockDeterminePreparationZone,
     createOrderWithItems: mockCreateOrderWithItems,
+    releaseStaleSessions: vi.fn(),
     closeSessionIfFullySettled: mockCloseSession,
+    revertPaidFlip: vi.fn(),
   })),
 }));
 
@@ -161,12 +163,20 @@ function makeChain(resolved: unknown) {
 // conserve l'implementation, donc une chaine de portee module est sure ici.
 const ordersChain = makeChain({ data: null, error: null });
 
+// Active table '5' of the restaurant; set data to null for an unknown table.
+const mockTableRow: { data: { id: string } | null; error: null } = {
+  data: { id: 'table-5' },
+  error: null,
+};
+
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
     from: vi.fn((table: string) => {
       if (table === 'admin_users') return makeChain(mockAdminUserRow);
       if (table === 'tenants') return makeChain(mockTenantRow);
       if (table === 'orders') return ordersChain;
+      // The table sent with a dine-in order must exist (checkDineInTable).
+      if (table === 'tables') return makeChain(mockTableRow);
       if (table === 'notifications') {
         return { insert: vi.fn(() => Promise.resolve({ error: null })) };
       }
@@ -213,6 +223,11 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
       role: 'cashier',
     });
     mockFindByClientRequestId.mockResolvedValue(null);
+    // State read back after the payment UPDATE (the mocked UPDATE flips no row):
+    // already paid, so a payment reads as booked unless a test says otherwise.
+    ordersChain.maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { payment_status: 'paid', status: 'pending' }, error: null });
     mockFetchMenuItems.mockResolvedValue({
       data: [
         {
@@ -296,7 +311,7 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
   });
 
   /**
-   * L'UPDATE d'encaissement de `applyPosFinalState` porte DEUX filtres qui ne
+   * L'UPDATE d'encaissement de `applyPosPayment` porte DEUX filtres qui ne
    * sont pas decoratifs, et aucun test ne les observait:
    *
    *   - `payment_status = 'pending'` rend l'appel idempotent: un double-clic ou
@@ -454,6 +469,89 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
       );
     });
   });
+
+  // Audit caisse 2026-11-15.
+  describe('audit caisse', () => {
+    afterEach(() => {
+      mockTableRow.data = { id: 'table-5' };
+    });
+
+    it("n'imprime pas une table inconnue, mais garde la vente et le numero en note", async () => {
+      // Refuser aurait fait perdre pour de bon une vente mise en file hors
+      // ligne avant la suppression de la table (un 400 est definitif).
+      mockTableRow.data = null;
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+
+      expect(status).toBe(200);
+      expect(mockCreateOrderWithItems).toHaveBeenCalledWith(
+        expect.objectContaining({ tableNumber: undefined, notes: 'Table 5' }),
+      );
+    });
+
+    it('garde la table connue sur le ticket (temoin)', async () => {
+      const { POST } = await import('@/app/api/orders/pos/route');
+      await POST(createMockRequest(validPosBody()));
+
+      expect(mockCreateOrderWithItems).toHaveBeenCalledWith(
+        expect.objectContaining({ tableNumber: '5' }),
+      );
+    });
+
+    it('refuse un moyen de paiement hors liste AVANT de creer la commande', async () => {
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(
+        createMockRequest({ ...validPosBody(), payment_method: 'mobile_money' }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    });
+
+    it('compte la limite de debit par caissier, pas par adresse IP', async () => {
+      const { POST } = await import('@/app/api/orders/pos/route');
+      await POST(createMockRequest(validPosBody()));
+
+      expect(mockRateLimitCheck).toHaveBeenCalledWith('pos:tenant-abc:user-1');
+    });
+
+    it('repond 503 quand le paiement n a pas pu etre enregistre: la file hors ligne reessaie', async () => {
+      // Rien n'a bascule et la commande n'est toujours pas payee.
+      ordersChain.maybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: { payment_status: 'pending', status: 'pending' }, error: null });
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const response = await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' }));
+
+      expect(response.status).toBe(503);
+      // La commande existe deja: le rejeu la retrouvera (dedoublonnee).
+      expect(mockCreateOrderWithItems).toHaveBeenCalled();
+    });
+
+    it('commande annulee: rien a encaisser, reponse finale paid:false', async () => {
+      ordersChain.maybeSingle = vi.fn().mockResolvedValue({
+        data: { payment_status: 'pending', status: 'cancelled' },
+        error: null,
+      });
+      const { POST } = await import('@/app/api/orders/pos/route');
+      const { status, body } = await parseResponse(
+        await POST(createMockRequest({ ...validPosBody(), payment_method: 'cash' })),
+      );
+
+      expect(status).toBe(200);
+      expect(body.paid).toBe(false);
+    });
+
+    it('envoie toujours en cuisine: un ancien statut delivered est ramene a pending', async () => {
+      const { POST } = await import('@/app/api/orders/pos/route');
+      await POST(createMockRequest({ ...validPosBody(), status: 'delivered' }));
+
+      expect(ordersChain.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'delivered' }),
+      );
+      expect(mockCreateOrderWithItems).toHaveBeenCalled();
+    });
+  });
 });
 
 // --- Test Suite - coupure du restaurant -----------------------
@@ -478,6 +576,11 @@ describe('POST /api/orders/pos - coupure du restaurant', () => {
       role: 'cashier',
     });
     mockFindByClientRequestId.mockResolvedValue(null);
+    // State read back after the payment UPDATE (the mocked UPDATE flips no row):
+    // already paid, so a payment reads as booked unless a test says otherwise.
+    ordersChain.maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { payment_status: 'paid', status: 'pending' }, error: null });
     mockFetchMenuItems.mockResolvedValue({
       data: [
         {
@@ -545,7 +648,7 @@ describe('POST /api/orders/pos - coupure du restaurant', () => {
 
   it("refuse AVANT le rejeu hors ligne: une file d'attente ne peut pas encaisser apres le gel", async () => {
     // LE PLACEMENT EST LA MOITIE DU CORRECTIF. Le chemin `client_request_id`
-    // rappelle `applyPosFinalState` (donc le passage a `paid`) AVANT la lecture
+    // rappelle `applyPosPayment` (donc le passage a `paid`) AVANT la lecture
     // de configuration du restaurant. Une coupure posee la-bas laisserait une
     // tablette hors ligne encaisser toute sa file apres le gel.
     mockTenantRow.data = { ...ligneServante, subscription_status: 'frozen' };

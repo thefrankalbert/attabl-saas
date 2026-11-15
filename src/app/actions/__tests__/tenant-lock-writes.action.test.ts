@@ -331,6 +331,8 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
       'actionSettleHouseAccount',
       'actionAssignServer',
       'actionReleaseAssignment',
+      'actionReleaseTable',
+      'actionReleaseStaleTables',
     ]);
     const covered = new Set(writes.map(([name]) => name));
 

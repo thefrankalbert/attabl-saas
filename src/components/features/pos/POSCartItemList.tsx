@@ -79,7 +79,7 @@ export function POSCartItemList({
                     variant="ghost"
                     onClick={() => onEditNotes(itemKey, item.notes || '')}
                     className={cn(
-                      'flex items-center gap-1 min-w-0 h-8 px-1.5 text-[11px] font-medium touch-manipulation',
+                      'flex items-center gap-1 min-w-0 min-h-[44px] px-1.5 text-xs font-medium touch-manipulation',
                       item.notes
                         ? 'text-[var(--warning)] hover:text-[var(--warning)]'
                         : 'text-app-text-muted hover:text-app-text',
@@ -88,14 +88,14 @@ export function POSCartItemList({
                     <StickyNote className="w-3 h-3 shrink-0" />
                     <span className="truncate">{item.notes ? tc('edit') : seg.productionNote}</span>
                   </Button>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
                       <Button
                         variant="ghost"
                         size="icon"
                         aria-label={t('decreaseQty')}
                         onClick={() => onUpdateQuantity(itemKey, -1)}
-                        className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
+                        className="min-h-[44px] min-w-[44px] rounded-l-md text-app-text-muted touch-manipulation"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
@@ -108,7 +108,7 @@ export function POSCartItemList({
                         aria-label={t('increaseQty')}
                         disabled={item.quantity >= MAX_ITEM_QTY}
                         onClick={() => onUpdateQuantity(itemKey, 1)}
-                        className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
+                        className="min-h-[44px] min-w-[44px] rounded-r-md text-app-text-muted touch-manipulation disabled:opacity-40"
                       >
                         <Plus className="w-3 h-3" />
                       </Button>
@@ -119,7 +119,7 @@ export function POSCartItemList({
                       aria-label={tc('delete')}
                       title={tc('delete')}
                       onClick={() => onUpdateQuantity(itemKey, -item.quantity)}
-                      className="w-8 h-8 text-app-text-muted hover:text-status-error touch-manipulation"
+                      className="min-h-[44px] min-w-[44px] text-app-text-muted hover:text-status-error touch-manipulation"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

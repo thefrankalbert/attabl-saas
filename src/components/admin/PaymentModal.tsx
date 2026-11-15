@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useTranslations } from 'next-intl';
-import { Loader2, X, ArrowLeft, Delete, Check, Plus } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { submitOrder } from '@/lib/offline/submit-order';
+import { payExistingOrder } from '@/components/admin/payment/pay-existing-order';
 import { formatCurrency } from '@/lib/utils/currency';
+import { TipSelector } from '@/components/admin/payment/TipSelector';
+import { PaymentHeader } from '@/components/admin/payment/PaymentHeader';
+import { CashPanel } from '@/components/admin/payment/CashPanel';
+import { PaymentReceipt, type CartDisplayItem } from '@/components/admin/payment/PaymentReceipt';
+import { cashQuickAdd } from '@/components/admin/payment/payment-amounts';
+import { usePaymentAmounts } from '@/components/admin/payment/usePaymentAmounts';
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
 import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
@@ -23,13 +29,6 @@ import type { PaymentMethodId } from '@/lib/payments/methods';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 // --- Types --------------------------------------
-
-interface CartDisplayItem {
-  name: string;
-  quantity: number;
-  price: number;
-  modifiers?: string[];
-}
 
 export interface PaymentData {
   paymentMethod: PaymentMethod;
@@ -48,7 +47,11 @@ interface PaymentModalProps {
    * server (a server zeroing out checks = fraud). ORDER mode only.
    */
   canComp?: boolean;
-  onSuccess: (paymentData?: PaymentData) => void;
+  /**
+   * Cart mode: creates the order; the screen keeps its spinner until the
+   * returned promise settles (a second tap used to look ignored).
+   */
+  onSuccess: (paymentData?: PaymentData) => void | Promise<void>;
   cartItems?: CartDisplayItem[];
   currency?: CurrencyCode;
   pricing?: {
@@ -62,12 +65,6 @@ interface PaymentModalProps {
 
 // Especes ou carte (terminal du restaurant): ATTABL n'enregistre que le moyen.
 type PaymentMethod = PaymentMethodId;
-
-const TIP_AMOUNTS = [1000, 2000, 5000] as const;
-/** Quick cash increments (FCFA / XOF) */
-const CASH_QUICK_ADD = [1000, 2000, 5000, 10000] as const;
-// Standard POS keypad: 4 columns -- digits + backspace/clear
-const NUMPAD_KEYS = ['1', '2', '3', '⌫', '4', '5', '6', 'C', '7', '8', '9', '00', '0'] as const;
 
 // --- Component ----------------------------------
 
@@ -84,7 +81,6 @@ export default function PaymentModal({
   canComp = false,
 }: PaymentModalProps) {
   const t = useTranslations('payment');
-  const tc = useTranslations('common');
 
   // MONEY UNITS. This modal runs in two modes:
   //   - ORDER mode (order?.id present): the order's money columns (total_price,
@@ -122,19 +118,20 @@ export default function PaymentModal({
     setPortalTarget(document.body);
   }, []);
 
+  // Keyboard focus stays in the payment screen and returns to the till after.
+  // Cart mode only: opened from an order's details, the screen sits above a
+  // Radix dialog whose own focus scope would fight this trap.
+  const layerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(layerRef, portalTarget !== null && !isOrderMode);
+
   const methodChoices = usePaymentMethodChoices();
   const [chosenMethod, setChosenMethod] = useState<PaymentMethod | null>(null);
   const method = effectivePaymentMethod(chosenMethod, methodChoices);
   const isCash = method === 'cash';
-  const [amountReceived, setAmountReceived] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   // Cle d'idempotence de l'encaissement, stable tant que le paiement n'a pas
   // abouti (voir handleProcessPayment).
   const payRequestIdRef = useRef<string | null>(null);
-
-  const [tipFixed, setTipFixed] = useState<number>(0);
-  const [customTip, setCustomTip] = useState<string>('');
-  const [showCustomTip, setShowCustomTip] = useState(false);
 
   // Tips are Pro+ (canAccessTips, see pricing-data.ts). Hide the tip selectors when
   // the plan lacks them; tipAmount then stays 0 and the server rejects any crafted tip.
@@ -143,119 +140,64 @@ export default function PaymentModal({
 
   const { toast } = useToast();
 
-  const tipAmount = useMemo(() => {
-    if (showCustomTip) return parseFloat(customTip) || 0;
-    return tipFixed;
-  }, [tipFixed, customTip, showCustomTip]);
-
-  const totalWithTip = useMemo(() => finalTotal + tipAmount, [finalTotal, tipAmount]);
-
-  const receivedAmount = useMemo(() => parseFloat(amountReceived) || 0, [amountReceived]);
-
-  const change = useMemo(() => {
-    return Math.max(0, receivedAmount - totalWithTip);
-  }, [receivedAmount, totalWithTip]);
-
-  const amountRemaining = useMemo(() => {
-    return Math.max(0, totalWithTip - receivedAmount);
-  }, [receivedAmount, totalWithTip]);
-
-  const cashIsValid = receivedAmount >= totalWithTip;
+  const {
+    tipAmount,
+    totalWithTip,
+    receivedAmount,
+    change,
+    amountRemaining,
+    cashIsValid,
+    handleKeypadPress,
+    setExactCashAmount,
+    addCashAmount,
+    tipProps,
+  } = usePaymentAmounts(finalTotal, displayCurrency);
   // Carte: le terminal du restaurant a deja encaisse, aucune saisie de montant.
   const canValidate = !isCash || cashIsValid;
 
-  // Escape key to close
+  // Escape closes - but never while a payment is in flight (the cashier would
+  // lose the result), nor when a nested dialog (comp) already handled it.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !e.defaultPrevented && !isProcessing) onClose();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
-
-  const handleKeypadPress = useCallback((key: string) => {
-    if (key === 'C') {
-      setAmountReceived('');
-    } else if (key === '⌫') {
-      setAmountReceived((prev) => prev.slice(0, -1));
-    } else {
-      setAmountReceived((prev) => {
-        if (prev === '0' && key !== '00') {
-          return key;
-        }
-        return prev + key;
-      });
-    }
-  }, []);
-
-  const setExactCashAmount = useCallback(() => {
-    setAmountReceived(String(Math.round(totalWithTip)));
-  }, [totalWithTip]);
-
-  const addCashAmount = useCallback(
-    (delta: number) => {
-      setAmountReceived(String(Math.round(receivedAmount + delta)));
-    },
-    [receivedAmount],
-  );
+  }, [onClose, isProcessing]);
 
   const handleProcessPayment = async () => {
     setIsProcessing(true);
-
     try {
-      // paid=false means the order had already been settled (idempotent no-op),
-      // e.g. a double-tap or a concurrent cashier - surface a distinct message
-      // instead of implying this tap took a second payment.
-      let alreadySettled = false;
-      let queued = false;
       if (order?.id) {
         // tipAmount is a MAJOR keypad value; markPaid stores orders.tip_amount
         // in integer MINOR units, so convert at the boundary.
         const tipMinor = tipAmount > 0 ? toMinorUnits(tipAmount, orderCurrency) : undefined;
-
-        // OFF-05. Cet encaissement passait par un appel direct a
-        // actionMarkOrderPaid, donc hors outbox: une coupure reseau le faisait
-        // echouer avec un toast rouge alors que le caissier avait deja empoche
-        // l'argent, et la table restait ouverte en base. On passe par l'endpoint
-        // idempotent, qui met en file hors ligne et dedoublonne au rejeu -
-        // indispensable puisque markPaid ecrit dans le grand livre payments.
-        //
-        // La cle est frappee UNE fois par tentative et conservee tant que le
-        // paiement n'a pas abouti: un second tap apres un echec rejoue la meme
-        // cle au lieu d'encaisser deux fois.
         payRequestIdRef.current ??= crypto.randomUUID();
-        const result = await submitOrder({
-          endpoint: '/api/orders/mutations',
-          clientRequestId: payRequestIdRef.current,
-          body: { type: 'pay', orderId: order.id, method, tipMinor },
-        });
-
-        if (result.status === 'rejected' || result.status === 'failed') {
-          toast({ title: t('paymentError'), description: result.error, variant: 'destructive' });
-          setIsProcessing(false);
+        const outcome = await payExistingOrder(order.id, method, tipMinor, payRequestIdRef.current);
+        setIsProcessing(false);
+        if (outcome.kind === 'error') {
+          toast({ title: t('paymentError'), description: outcome.message, variant: 'destructive' });
           return;
         }
-
-        queued = result.status === 'queued';
-        if (result.status === 'sent') {
-          alreadySettled = (result.data as { paid?: boolean } | null)?.paid === false;
-        }
-        // Encaissement abouti (envoye ou durablement mis en file): la cle a joue
-        // son role, la prochaine addition en frappera une nouvelle.
+        // Sent or durably queued: the next bill gets a new key.
         payRequestIdRef.current = null;
-      }
-
-      setIsProcessing(false);
-      // For existing orders, payment was persisted above - show success toast
-      if (order?.id) {
-        if (queued) {
+        if (outcome.kind === 'queued') {
           toast({ title: t('paymentQueued'), description: t('paymentQueuedDesc') });
         } else {
-          toast({ title: alreadySettled ? t('paymentAlreadySettled') : t('paymentSuccess') });
+          // paid=false: already settled (double tap, another cashier) - say so
+          // instead of implying this tap took a second payment.
+          toast({
+            title:
+              outcome.kind === 'alreadySettled' ? t('paymentAlreadySettled') : t('paymentSuccess'),
+          });
         }
+        onSuccess();
+        return;
       }
-      // For POS orders, pass payment data - the caller handles the toast after order creation
-      onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });
+      // POS cart: the caller creates the order (and shows its own toast). Keep
+      // the spinner until it is done.
+      await onSuccess({ paymentMethod: method, tipAmount });
+      setIsProcessing(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : undefined;
       toast({ title: t('paymentError'), description: message, variant: 'destructive' });
@@ -264,267 +206,55 @@ export default function PaymentModal({
   };
 
   // Price breakdown from order (admin view, MINOR -> converted to major) or
-  // pricing prop (POS view, already major). In ORDER mode the source is the
-  // order's minor columns; in CART mode it is the major `pricing` prop.
-  const subtotal = isOrderMode
-    ? order?.subtotal != null
-      ? toMajor(order.subtotal)
-      : undefined
-    : pricing?.subtotal;
-  const taxAmount = isOrderMode
-    ? order?.tax_amount != null
-      ? toMajor(order.tax_amount)
-      : undefined
-    : pricing?.taxAmount;
-  const serviceChargeAmount = isOrderMode
-    ? order?.service_charge_amount != null
-      ? toMajor(order.service_charge_amount)
-      : undefined
-    : pricing?.serviceChargeAmount;
-  const discountAmount = isOrderMode
-    ? order?.discount_amount != null
-      ? toMajor(order.discount_amount)
-      : undefined
-    : pricing?.discountAmount;
-  // The items receipt (cart mode) already ends with its own Total row. Only
-  // show the breakdown block when it adds information (taxes, service charge,
-  // discount) or when there is no items receipt to display the total at all.
-  const showItemsReceipt = !!cartItems && cartItems.length > 0;
-  const hasExtras =
-    (taxAmount ?? 0) > 0 || (serviceChargeAmount ?? 0) > 0 || (discountAmount ?? 0) > 0;
-  const hasBreakdown = hasExtras || (!showItemsReceipt && subtotal !== undefined);
-  // With a tip, the receipt's "Total" (order only) and the "Amount to pay"
-  // headline (order + tip) differ: spell the gap out under the Total row so
-  // the two figures never look contradictory (live test 2026-11-15).
-  const tipRows =
-    tipAmount > 0 ? (
-      <>
-        <div className="flex justify-between text-app-text-secondary text-xs pt-1.5">
-          <span>{t('tip')}</span>
-          <span className="tabular-nums font-mono">
-            +{formatCurrency(tipAmount, displayCurrency)}
-          </span>
-        </div>
-        <div className="flex justify-between font-bold text-app-text text-sm">
-          <span>{t('totalWithTip')}</span>
-          <span className="tabular-nums font-mono">
-            {formatCurrency(totalWithTip, displayCurrency)}
-          </span>
-        </div>
-      </>
-    ) : null;
+  // pricing prop (POS view, already major).
+  const pick = (orderMinor: number | null | undefined, cartMajor: number | undefined) =>
+    isOrderMode ? (orderMinor != null ? toMajor(orderMinor) : undefined) : cartMajor;
+  const subtotal = pick(order?.subtotal, pricing?.subtotal);
+  const taxAmount = pick(order?.tax_amount, pricing?.taxAmount);
+  const serviceChargeAmount = pick(order?.service_charge_amount, pricing?.serviceChargeAmount);
+  const discountAmount = pick(order?.discount_amount, pricing?.discountAmount);
 
-  // PORTAIL VERS LE CORPS DU DOCUMENT. Ce calque se declare plein ecran
-  // (`fixed inset-0`), mais depuis le detail d'une commande il est rendu DANS
-  // une boite de dialogue Radix, dont le centrage applique `translate(-50%,
-  // -50%)`. Une transformation fait de l'ancetre le bloc conteneur de ses
-  // descendants `fixed`: le calque se retrouvait enferme dans la fenetre de
-  // commande. Mesure du 2026-11-06 en 1280x800: calque annonce plein ecran,
-  // rendu en 894x533 a la position (193,134), bouton "Valider l'encaissement"
-  // debordant de 18px hors de la zone visible. En telephone la fenetre occupe
-  // presque l'ecran, d'ou un defaut qui ne se voyait que sur ordinateur.
-  //
-  // Le portail n'est monte qu'apres le premier rendu: `document` n'existe pas
-  // pendant le rendu serveur.
+  // PORTAIL VERS LE CORPS DU DOCUMENT: rendu dans une fenetre Radix (detail
+  // de commande), dont le `transform` devient le bloc conteneur des `fixed`, le
+  // calque plein ecran restait enferme dans la fenetre (mesure du 2026-11-06,
+  // bouton "Valider" hors de la zone visible). Monte apres le premier rendu:
+  // `document` n'existe pas cote serveur.
   if (!portalTarget) return null;
 
   return createPortal(
-    <div className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden animate-in fade-in duration-200">
-      {/* --- HEADER --- */}
-      <header className="h-12 border-b border-app-border flex items-center justify-between px-3 sm:px-5 shrink-0">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={tc('aria.back')}
-            onClick={onClose}
-            className="-ml-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="font-bold text-sm sm:text-base">{t('title')}</h1>
-          {finalOrderNum && (
-            <span className="text-xs font-mono text-app-text-muted">#{finalOrderNum}</span>
-          )}
-        </div>
-        {/* "CMD-<n>" is a tableless POS ticket id, not a table - do not label it "Table" */}
-        {finalTable && !/^CMD-/i.test(finalTable) && (
-          <span className="text-xs sm:text-sm text-app-text-muted">
-            {t('tableLabel', { table: finalTable })}
-          </span>
-        )}
-      </header>
+    <div
+      ref={layerRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-modal-title"
+      className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden outline-none animate-in fade-in duration-200"
+    >
+      <PaymentHeader
+        titleId="payment-modal-title"
+        orderNumber={finalOrderNum}
+        table={finalTable}
+        onBack={onClose}
+        busy={isProcessing}
+      />
 
       {/* --- MAIN -- 2 columns on md+, payment-only on mobile --- */}
       <div className="flex-1 min-h-0 flex flex-col @3xl:grid @3xl:grid-cols-2 overflow-hidden">
         {/* --- LEFT: Receipt (hidden on mobile) --- */}
         <div className="hidden @3xl:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
-          {/* Hero: Pay Amount */}
-          <div className="mb-4">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted mb-1">
-              {t('amountToPay')}
-            </p>
-            <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-app-text tabular-nums tracking-tight">
-              {formatCurrency(totalWithTip, displayCurrency)}
-            </p>
-            {tipAmount > 0 && (
-              <p className="mt-1 text-xs text-app-text-muted">
-                {t('tipAmount', { amount: formatCurrency(tipAmount, displayCurrency) })}
-              </p>
-            )}
-          </div>
-
-          {/* Cart Items Receipt */}
-          {cartItems && cartItems.length > 0 && (
-            <div className="border-t border-app-border py-3 space-y-2 mb-3">
-              {cartItems.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start gap-3 text-sm">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-app-text text-xs">{item.name}</span>
-                      {item.quantity > 1 && (
-                        <span className="text-app-text-muted font-mono text-[10px]">
-                          &times;{item.quantity}
-                        </span>
-                      )}
-                    </div>
-                    {item.modifiers && item.modifiers.length > 0 && (
-                      <p className="text-[10px] text-app-text-muted mt-0.5">
-                        {item.modifiers.join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-app-text-secondary tabular-nums font-mono text-xs shrink-0">
-                    {formatCurrency(item.price * item.quantity, displayCurrency)}
-                  </span>
-                </div>
-              ))}
-              {!hasBreakdown && (
-                <div className="flex justify-between border-t border-app-border pt-2 text-sm font-bold text-app-text">
-                  <span>{t('total')}</span>
-                  <span className="tabular-nums font-mono">
-                    {formatCurrency(finalTotal, displayCurrency)}
-                  </span>
-                </div>
-              )}
-              {!hasBreakdown && tipRows}
-            </div>
-          )}
-
-          {/* Order Breakdown (admin view) */}
-          {hasBreakdown && (
-            <div className="space-y-1.5 border-t border-app-border py-3 text-sm mb-3">
-              <div className="flex justify-between text-app-text-secondary text-xs">
-                <span>{t('subtotal')}</span>
-                <span className="tabular-nums font-mono">
-                  {formatCurrency(subtotal!, displayCurrency)}
-                </span>
-              </div>
-              {taxAmount !== undefined && taxAmount !== null && taxAmount > 0 && (
-                <div className="flex justify-between text-app-text-secondary text-xs">
-                  <span>{t('taxes')}</span>
-                  <span className="tabular-nums font-mono">
-                    {formatCurrency(taxAmount, displayCurrency)}
-                  </span>
-                </div>
-              )}
-              {serviceChargeAmount !== undefined &&
-                serviceChargeAmount !== null &&
-                serviceChargeAmount > 0 && (
-                  <div className="flex justify-between text-app-text-secondary text-xs">
-                    <span>{t('service')}</span>
-                    <span className="tabular-nums font-mono">
-                      {formatCurrency(serviceChargeAmount, displayCurrency)}
-                    </span>
-                  </div>
-                )}
-              {discountAmount !== undefined && discountAmount !== null && discountAmount > 0 && (
-                <div className="flex justify-between text-[var(--success)] text-xs">
-                  <span>{t('discount')}</span>
-                  <span className="tabular-nums font-mono">
-                    -{formatCurrency(discountAmount, displayCurrency)}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-app-border pt-2 font-bold text-app-text text-sm">
-                <span>{t('total')}</span>
-                <span className="tabular-nums font-mono">
-                  {formatCurrency(finalTotal, displayCurrency)}
-                </span>
-              </div>
-              {tipRows}
-            </div>
-          )}
+          <PaymentReceipt
+            currency={displayCurrency}
+            finalTotal={finalTotal}
+            tipAmount={tipAmount}
+            cartItems={cartItems}
+            subtotal={subtotal}
+            taxAmount={taxAmount}
+            serviceChargeAmount={serviceChargeAmount}
+            discountAmount={discountAmount}
+          />
 
           {/* Tip Selection -- pushed to bottom */}
-          {canTip && (
-            <div className="space-y-2 mt-auto">
-              <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
-                {t('tip')}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setTipFixed(0);
-                    setShowCustomTip(false);
-                    setCustomTip('');
-                  }}
-                  className={cn(
-                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
-                    !showCustomTip && tipFixed === 0
-                      ? 'border-accent/40 bg-accent/10 text-accent'
-                      : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
-                  )}
-                >
-                  0
-                </Button>
-                {TIP_AMOUNTS.map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    onClick={() => {
-                      setTipFixed(amount);
-                      setShowCustomTip(false);
-                      setCustomTip('');
-                    }}
-                    className={cn(
-                      'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold tabular-nums',
-                      !showCustomTip && tipFixed === amount
-                        ? 'border-accent/40 bg-accent/10 text-accent'
-                        : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
-                    )}
-                  >
-                    {amount.toLocaleString()}
-                  </Button>
-                ))}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowCustomTip(true);
-                    setTipFixed(0);
-                  }}
-                  className={cn(
-                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
-                    showCustomTip
-                      ? 'border-accent/40 bg-accent/10 text-accent'
-                      : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
-                  )}
-                >
-                  {t('customTip')}
-                </Button>
-              </div>
-              {showCustomTip && (
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={customTip}
-                  onChange={(e) => setCustomTip(e.target.value)}
-                  className="w-full rounded-lg border border-app-border bg-app-elevated/30 px-3 py-2 text-base font-bold text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/30"
-                />
-              )}
-            </div>
-          )}
+          {canTip && <TipSelector withTitle className="mt-auto" {...tipProps} />}
         </div>
 
         {/* --- RIGHT: Payment Input (full width on mobile) --- */}
@@ -540,60 +270,7 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          {canTip && (
-            <div className="flex flex-wrap gap-1.5 mb-3 @3xl:hidden shrink-0">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setTipFixed(0);
-                  setShowCustomTip(false);
-                  setCustomTip('');
-                }}
-                className={cn(
-                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
-                  !showCustomTip && tipFixed === 0
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
-                )}
-              >
-                0
-              </Button>
-              {TIP_AMOUNTS.map((amount) => (
-                <Button
-                  key={amount}
-                  variant="outline"
-                  onClick={() => {
-                    setTipFixed(amount);
-                    setShowCustomTip(false);
-                    setCustomTip('');
-                  }}
-                  className={cn(
-                    'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold tabular-nums',
-                    !showCustomTip && tipFixed === amount
-                      ? 'border-accent/40 bg-accent/10 text-accent'
-                      : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
-                  )}
-                >
-                  {amount.toLocaleString()}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCustomTip(true);
-                  setTipFixed(0);
-                }}
-                className={cn(
-                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-xs font-bold',
-                  showCustomTip
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
-                )}
-              >
-                {t('customTip')}
-              </Button>
-            </div>
-          )}
+          {canTip && <TipSelector className="mb-3 @3xl:hidden shrink-0" {...tipProps} />}
 
           {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
           <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
@@ -605,101 +282,17 @@ export default function PaymentModal({
             />
 
             {isCash && (
-              <>
-                <div className="grid grid-cols-2 gap-2 shrink-0">
-                  <div className="rounded-xl border border-app-border bg-app-elevated/40 p-3 text-center">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted">
-                      {t('received')}
-                    </p>
-                    <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
-                      {formatCurrency(receivedAmount, displayCurrency)}
-                    </p>
-                    {!cashIsValid && amountRemaining > 0 && (
-                      <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
-                        {t('amountRemaining', {
-                          amount: formatCurrency(amountRemaining, displayCurrency),
-                        })}
-                      </p>
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      'rounded-xl border p-3 text-center',
-                      cashIsValid && change > 0
-                        ? 'border-[var(--border)] bg-app-elevated/40'
-                        : 'border-app-border bg-app-elevated/40',
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        'text-[10px] font-semibold uppercase tracking-widest',
-                        cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
-                      )}
-                    >
-                      {t('change')}
-                    </p>
-                    <p
-                      className={cn(
-                        'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
-                        cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
-                      )}
-                    >
-                      {formatCurrency(change, displayCurrency)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 shrink-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={setExactCashAmount}
-                    className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-accent text-xs font-bold px-3 hover:bg-app-elevated"
-                  >
-                    {t('exactAmount')}
-                  </Button>
-                  {CASH_QUICK_ADD.map((increment) => (
-                    <Button
-                      key={increment}
-                      type="button"
-                      variant="outline"
-                      onClick={() => addCashAmount(increment)}
-                      className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-xs font-bold tabular-nums px-3"
-                    >
-                      <Plus className="w-3 h-3 mr-0.5 opacity-70" />
-                      {t('quickAdd', { amount: increment.toLocaleString() })}
-                    </Button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
-                  {NUMPAD_KEYS.map((key) => (
-                    <Button
-                      key={key}
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleKeypadPress(key)}
-                      className={cn(
-                        'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
-                        key === 'C' && 'text-[var(--destructive)]',
-                        key === '⌫' && 'text-[var(--warning)]',
-                        key === '0' && 'col-span-2',
-                      )}
-                      aria-label={
-                        key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
-                      }
-                    >
-                      {key === 'C' ? (
-                        <X className="h-5 w-5" />
-                      ) : key === '⌫' ? (
-                        <Delete className="h-5 w-5" />
-                      ) : (
-                        key
-                      )}
-                    </Button>
-                  ))}
-                </div>
-              </>
+              <CashPanel
+                currency={displayCurrency}
+                receivedAmount={receivedAmount}
+                amountRemaining={amountRemaining}
+                change={change}
+                cashIsValid={cashIsValid}
+                quickAdd={cashQuickAdd(displayCurrency)}
+                onKey={handleKeypadPress}
+                onExact={setExactCashAmount}
+                onAdd={addCashAmount}
+              />
             )}
 
             <Button
