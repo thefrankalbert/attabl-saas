@@ -1761,6 +1761,7 @@ export type Database = {
           created_at: string;
           endpoint: string;
           id: string;
+          last_used_at: string;
           p256dh: string;
           tenant_id: string;
           user_id: string;
@@ -1770,6 +1771,7 @@ export type Database = {
           created_at?: string;
           endpoint: string;
           id?: string;
+          last_used_at?: string;
           p256dh: string;
           tenant_id: string;
           user_id: string;
@@ -1779,6 +1781,7 @@ export type Database = {
           created_at?: string;
           endpoint?: string;
           id?: string;
+          last_used_at?: string;
           p256dh?: string;
           tenant_id?: string;
           user_id?: string;
@@ -2444,6 +2447,7 @@ export type Database = {
         Row: {
           activation_events: Json;
           address: string | null;
+          anonymized_at: string | null;
           at_food_enabled: boolean | null;
           banner_url: string | null;
           bar_display_enabled: boolean;
@@ -2503,6 +2507,7 @@ export type Database = {
         Insert: {
           activation_events?: Json;
           address?: string | null;
+          anonymized_at?: string | null;
           at_food_enabled?: boolean | null;
           banner_url?: string | null;
           bar_display_enabled?: boolean;
@@ -2562,6 +2567,7 @@ export type Database = {
         Update: {
           activation_events?: Json;
           address?: string | null;
+          anonymized_at?: string | null;
           at_food_enabled?: boolean | null;
           banner_url?: string | null;
           bar_display_enabled?: boolean;

@@ -288,6 +288,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
         } as unknown as Parameters<typeof webpush.sendNotification>[2];
 
         const expirees: string[] = [];
+        const reussies: string[] = [];
         let envoyees = 0;
         let echecs = 0;
 
@@ -302,6 +303,7 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
               options,
             );
             envoyees += 1;
+            reussies.push(abonnement.id);
           } catch (erreur) {
             const code = (erreur as { statusCode?: number }).statusCode;
             if (code !== undefined && CODES_ABONNEMENT_MORT.includes(code)) {
@@ -313,6 +315,30 @@ export function createPushService(supabase: SupabaseClient): ServicePush {
             logger.warn('Envoi push refuse par le service de push', { tenantId, code });
           }
         });
+
+        // 3 bis. Un appareil joint avec succes est un appareil vivant: on
+        //    rafraichit `last_used_at`, que la purge des abonnements inactifs
+        //    (180 jours) lit. Un echec ici ne doit jamais gener l'envoi.
+        if (reussies.length > 0) {
+          try {
+            const { error: erreurMaj } = await supabase
+              .from('push_subscriptions')
+              .update({ last_used_at: new Date().toISOString() })
+              .eq('tenant_id', tenantId)
+              .in('id', reussies);
+            if (erreurMaj) {
+              logger.warn('Rafraichissement de last_used_at impossible', {
+                tenantId,
+                code: erreurMaj.code,
+              });
+            }
+          } catch (erreurMaj) {
+            logger.warn('Rafraichissement de last_used_at impossible', {
+              tenantId,
+              raison: erreurMaj instanceof Error ? erreurMaj.message : 'inconnue',
+            });
+          }
+        }
 
         // 4. Nettoyage. On ne compte comme "expiree" que ce qui a VRAIMENT ete
         //    supprime: annoncer des suppressions qui n'ont pas eu lieu rendrait

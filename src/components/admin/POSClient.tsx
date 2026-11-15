@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useSyncExternalStore } from 'react';
+import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { usePosUnpaidOrders } from '@/hooks/usePosUnpaidOrders';
+import { useToast } from '@/components/ui/use-toast';
 import type { Order } from '@/types/admin.types';
 
 interface POSClientProps {
@@ -55,6 +56,41 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const ts = useTranslations('shortcuts');
   const pos = usePOSData(tenantId);
 
+  const { toast } = useToast();
+
+  // Everything a ticket needs to reach its destination, checked BEFORE the
+  // payment step: the server (or the kitchen table rule) used to refuse it only
+  // after the money was taken. Dine-in needs a table (owner decision
+  // 2026-11-14) - unless no table is configured or loaded (offline) - a
+  // delivery an address, a room service a room number.
+  const destinationReady = useCallback((): boolean => {
+    if (pos.serviceType === 'dine_in' && !pos.selectedTable && pos.allTables.length > 0) {
+      toast({
+        title: t('tableRequired'),
+        description: t('tableRequiredDesc'),
+        variant: 'destructive',
+      });
+      return false;
+    }
+    if (pos.serviceType === 'delivery' && !pos.deliveryAddress.trim()) {
+      toast({ title: t('deliveryAddressRequired'), variant: 'destructive' });
+      return false;
+    }
+    if (pos.serviceType === 'room_service' && !pos.roomNumber.trim()) {
+      toast({ title: t('roomNumberRequired'), variant: 'destructive' });
+      return false;
+    }
+    return true;
+  }, [
+    pos.serviceType,
+    pos.selectedTable,
+    pos.allTables.length,
+    pos.deliveryAddress,
+    pos.roomNumber,
+    toast,
+    t,
+  ]);
+
   // -- Contextual keyboard shortcuts --
   const { cart, menuItems, addToCart } = pos;
   const shortcuts = useMemo<ShortcutDefinition[]>(
@@ -78,11 +114,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         section: 'contextual',
         keys: ['p'],
         action: () => {
-          if (canPay && cart.length > 0) setShowPaymentModal(true);
+          if (canPay && cart.length > 0 && destinationReady()) setShowPaymentModal(true);
         },
       },
     ],
-    [ts, cart, menuItems, addToCart, canPay],
+    [ts, cart, menuItems, addToCart, canPay, destinationReady],
   );
   useContextualShortcuts(shortcuts);
 
@@ -226,8 +262,18 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   couponError={pos.couponError}
                   onValidateCoupon={pos.validateCoupon}
                   onRemoveCoupon={pos.removeCoupon}
-                  onPrintOrder={() => pos.handleOrder('pending')}
-                  onCheckout={canPay ? () => setShowPaymentModal(true) : undefined}
+                  // Refresh "A encaisser" right away: realtime alone misses the new
+                  // unpaid order whenever the websocket is down (weak network).
+                  onPrintOrder={() => {
+                    if (destinationReady()) pos.handleOrder({ onCreated: refreshUnpaid });
+                  }}
+                  onCheckout={
+                    canPay
+                      ? () => {
+                          if (destinationReady()) setShowPaymentModal(true);
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </div>
@@ -281,7 +327,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 }))}
                 currency={pos.currency}
                 onSuccess={(paymentData?: PaymentData) =>
-                  pos.handleOrder('delivered', {
+                  pos.handleOrder({
                     onPaymentModalClose: () => setShowPaymentModal(false),
                     paymentData,
                   })
