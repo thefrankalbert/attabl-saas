@@ -468,6 +468,8 @@ export function usePOSData(tenantId: string) {
     onCreated?: () => void;
   }) => {
     if (cart.length === 0) return;
+    // Destination (table, address, room) is checked by POSClient before the
+    // payment step, so a paid sale is never refused after the money is taken.
     // Guard against rapid double-taps: each handleOrder call mints a NEW key, so
     // two taps would create two distinct orders. Block while a submit is in
     // flight (the idempotency key only dedupes one submit's network retries).
@@ -592,6 +594,7 @@ export function usePOSData(tenantId: string) {
     zones,
     allTables,
     occupiedTableNumbers,
+    refreshOccupancy: loadOccupancy,
 
     // Cart actions
     addToCart,

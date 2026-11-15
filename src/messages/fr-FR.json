@@ -2765,6 +2765,8 @@
     "tableNumber": "Numéro de table",
     "roomNumber": "Numéro de chambre",
     "selectTable": "Sélectionner une table",
+    "tableRequired": "Choisissez la table",
+    "tableRequiredDesc": "Une commande sur place part en cuisine avec sa table : le serveur saura où l'apporter.",
     "searchDish": "Rechercher un plat...",
     "allCategories": "Toutes les catégories",
     "orderCreated": "Commande créée",
@@ -3743,6 +3745,9 @@
     "dashCardCta": "Gérer"
   },
   "service": {
+    "readyAlertTable": "Commande prête - Table {table}",
+    "readyAlertOrder": "Commande prête - {order}",
+    "readyAlertDesc": "À servir maintenant.",
     "title": "Service",
     "activeAssignments": "{count} assignation(s) active(s)",
     "noZones": "Aucune zone configurée. Créez des zones et tables dans les paramètres.",
@@ -3823,7 +3828,6 @@
     "dragHint": "Glissez un serveur sur une table pour l'assigner.",
     "tableShort": "T.",
     "minutesAgoShort": "il y a {min} min",
-    "roleLabel": "Rôle",
     "availableStatus": "Disponible",
     "tablesPlural": "{count, plural, one {# table} other {# tables}}",
     "seatsLabel": "couverts",

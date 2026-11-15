@@ -1,5 +1,6 @@
 'use client';
 
+import { BottomNavProvider } from '@/components/admin/bottom-nav-context';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
@@ -257,10 +258,17 @@ function AdminLayoutInner({
           className={cn(
             'flex-1 min-h-0 overflow-y-auto flex flex-col',
             isDevMode && 'pt-6',
-            showBottomNav && 'pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]',
+            // No bottom padding here for the mobile bottom nav: a page taller than
+            // the screen overflows its height-bounded wrapper, and the scroll
+            // container's padding does not follow that overflow, so the last rows
+            // slid under the nav. AdminContentWrapper ends its content with a
+            // nav-height spacer instead, driven by THIS showBottomNav through
+            // BottomNavProvider so both always agree.
           )}
         >
-          <div className="flex-1 min-h-0 flex flex-col w-full">{children}</div>
+          <div className="flex-1 min-h-0 flex flex-col w-full">
+            <BottomNavProvider value={showBottomNav}>{children}</BottomNavProvider>
+          </div>
         </main>
 
         {showBottomNav && (

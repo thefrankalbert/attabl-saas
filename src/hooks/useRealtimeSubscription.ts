@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeWithAuth } from '@/lib/supabase/realtime-auth';
 import { logger } from '@/lib/logger';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -74,34 +75,42 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
       channelConfig.filter = filter;
     }
 
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', channelConfig, (payload: RealtimePostgresChangesPayload<T>) => {
-        const { onInsert: ins, onUpdate: upd, onDelete: del, onChange: chg } = callbacksRef.current;
+    // Join only once the user's JWT is handed to Realtime (see subscribeWithAuth).
+    const unsubscribe = subscribeWithAuth(supabase, channelName, () => [
+      supabase
+        .channel(channelName)
+        .on('postgres_changes', channelConfig, (payload: RealtimePostgresChangesPayload<T>) => {
+          const {
+            onInsert: ins,
+            onUpdate: upd,
+            onDelete: del,
+            onChange: chg,
+          } = callbacksRef.current;
 
-        switch (payload.eventType) {
-          case 'INSERT':
-            ins?.(payload.new as T);
-            break;
-          case 'UPDATE':
-            upd?.(payload.new as T, payload.old as Partial<T>);
-            break;
-          case 'DELETE':
-            del?.(payload.old as Partial<T>);
-            break;
-        }
-
-        chg?.();
-      })
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          logger.warn(`Realtime channel ${channelName} down (${status}) - scheduling reconnect`);
-          // Rebuild the channel after a short backoff. Guard against stacking timers.
-          if (!reconnectTimer) {
-            reconnectTimer = setTimeout(() => setRetryTick((t) => t + 1), 2000);
+          switch (payload.eventType) {
+            case 'INSERT':
+              ins?.(payload.new as T);
+              break;
+            case 'UPDATE':
+              upd?.(payload.new as T, payload.old as Partial<T>);
+              break;
+            case 'DELETE':
+              del?.(payload.old as Partial<T>);
+              break;
           }
-        }
-      });
+
+          chg?.();
+        })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            logger.warn(`Realtime channel ${channelName} down (${status}) - scheduling reconnect`);
+            // Rebuild the channel after a short backoff. Guard against stacking timers.
+            if (!reconnectTimer) {
+              reconnectTimer = setTimeout(() => setRetryTick((t) => t + 1), 2000);
+            }
+          }
+        }),
+    ]);
 
     // When the network drops, the websocket dies silently and supabase-js does
     // not always re-establish it. Rebuild the channel on the `online` event so
@@ -113,8 +122,7 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
     return () => {
       window.removeEventListener('online', onOnline);
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, [channelName, table, filter, event, enabled, retryTick]);
 }

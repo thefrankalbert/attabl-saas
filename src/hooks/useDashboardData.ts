@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeWithAuth } from '@/lib/supabase/realtime-auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStats } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
@@ -145,64 +146,67 @@ export function useDashboardData({
       }, 800);
     };
 
-    const channel = supabase
-      .channel(`dashboard-${tenantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'orders',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          // Notification is per-order (immediate); only the refetch is debounced.
-          playNotification();
-          scheduleRefetch();
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          scheduleRefetch();
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'orders',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          scheduleRefetch();
-        },
-      )
-      .subscribe();
-
-    // Realtime for stock changes
-    const stockChannel = supabase
-      .channel(`dashboard-stock-${tenantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ingredients',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          scheduleRefetch();
-        },
-      )
-      .subscribe();
+    // Join only once the user's JWT is handed to Realtime (see subscribeWithAuth):
+    // without it RLS ran as anon and the dashboard never received an order event.
+    const unsubscribe = subscribeWithAuth(supabase, `dashboard-${tenantId}`, () => [
+      supabase
+        .channel(`dashboard-${tenantId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'orders',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => {
+            // Notification is per-order (immediate); only the refetch is debounced.
+            playNotification();
+            scheduleRefetch();
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => {
+            scheduleRefetch();
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'orders',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => {
+            scheduleRefetch();
+          },
+        )
+        .subscribe(),
+      // Realtime for stock changes
+      supabase
+        .channel(`dashboard-stock-${tenantId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'ingredients',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => {
+            scheduleRefetch();
+          },
+        )
+        .subscribe(),
+    ]);
 
     // On network recovery the two channels above are dead; rebuild them (bump
     // the tick to re-run this effect) and refetch the data missed during the
@@ -219,10 +223,7 @@ export function useDashboardData({
         clearTimeout(refetchTimerRef.current);
         refetchTimerRef.current = null;
       }
-      channel.unsubscribe();
-      stockChannel.unsubscribe();
-      supabase.removeChannel(channel);
-      supabase.removeChannel(stockChannel);
+      unsubscribe();
     };
   }, [supabase, tenantId, queryClient, playNotification, reconnectTick]);
 

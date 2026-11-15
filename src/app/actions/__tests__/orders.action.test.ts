@@ -92,6 +92,11 @@ vi.mock('@/services/order-annotation.service', () => ({
   createOrderAnnotationService: vi.fn(() => ({})),
 }));
 
+const mockNotifyReady = vi.fn();
+vi.mock('@/services/order-ready.service', () => ({
+  createOrderReadyService: vi.fn(() => ({ notifyReady: mockNotifyReady })),
+}));
+
 // `tenantLockReason` (coupure du restaurant) lit `isSubscriptionUsable` dans ce
 // meme module: un mock qui ne rend que `canAccessFeature` le fait echouer en
 // "Erreur interne". On garde donc la vraie implementation du reste du module.
@@ -435,5 +440,69 @@ describe("actions de cuisine - fin d'essai", () => {
 
     expect(result.error).toBe('Ce restaurant est temporairement indisponible');
     expect(mockCompOrder).not.toHaveBeenCalled();
+  });
+});
+
+describe('actionUpdateOrderStatus - order ready push wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUserForTenant.mockResolvedValue({
+      supabase: mockAuthedSupabase,
+      user: { id: 'user-9' },
+    });
+    mockAuthedSupabase.from.mockReturnValue(
+      makeChain({
+        data: {
+          subscription_plan: 'business',
+          subscription_status: 'active',
+          trial_ends_at: null,
+          is_active: true,
+          suspended_at: null,
+        },
+      }),
+    );
+    mockNotifyReady.mockResolvedValue(undefined);
+    afterCallbacks.length = 0;
+  });
+
+  it('a real transition to ready schedules the push via after(), not inline', async () => {
+    mockUpdateStatus.mockResolvedValue(true);
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+
+    const result = await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    expect(result.success).toBe(true);
+    expect(mockNotifyReady).not.toHaveBeenCalled();
+    expect(afterCallbacks).toHaveLength(1);
+    await runScheduled();
+    expect(mockNotifyReady).toHaveBeenCalledWith(TENANT_ID, ORDER_ID);
+  });
+
+  it('a second tap or an outbox replay (no change) sends no second push', async () => {
+    mockUpdateStatus.mockResolvedValue(false);
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    expect(afterCallbacks).toHaveLength(0);
+  });
+
+  it('other statuses send no ready push', async () => {
+    mockUpdateStatus.mockResolvedValue(true);
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'preparing');
+
+    expect(afterCallbacks).toHaveLength(0);
+  });
+
+  it('a push that cannot start is logged, never thrown out of after()', async () => {
+    mockUpdateStatus.mockResolvedValue(true);
+    mockNotifyReady.mockRejectedValue(new Error('no service role key'));
+    const { actionUpdateOrderStatus } = await import('@/app/actions/orders');
+
+    await actionUpdateOrderStatus(TENANT_ID, ORDER_ID, 'ready');
+
+    await expect(runScheduled()).resolves.toBeUndefined();
   });
 });

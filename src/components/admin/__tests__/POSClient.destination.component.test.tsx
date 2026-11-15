@@ -111,6 +111,21 @@ describe('Caisse: destination verifiee avant envoi et paiement', () => {
     expect(toast).not.toHaveBeenCalled();
   });
 
+  it('sur place sans table (tables configurees): ni envoi ni paiement', () => {
+    renderPOS({ serviceType: 'dine_in', selectedTable: '', allTables: [{ id: 'tb1' }] });
+    fireEvent.click(screen.getByText('send'));
+    fireEvent.click(screen.getByText('pay'));
+    expect(handleOrder).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('payment-modal')).not.toBeInTheDocument();
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'tableRequired' }));
+  });
+
+  it('sur place sans aucune table configuree: pas de blocage (temoin)', () => {
+    renderPOS({ serviceType: 'dine_in', selectedTable: '', allTables: [] });
+    fireEvent.click(screen.getByText('send'));
+    expect(handleOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('envoi en cuisine: "A encaisser" est rafraichi une fois la commande creee', () => {
     renderPOS({ serviceType: 'takeaway' });
     fireEvent.click(screen.getByText('send'));

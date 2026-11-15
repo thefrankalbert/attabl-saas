@@ -31,7 +31,8 @@ interface POSCartProps {
   zones: Zone[];
   allTables: Table[];
   occupiedTableNumbers?: Set<string>;
-  onReassignOccupied?: (table: Table) => void;
+  /** Re-reads open table sessions: their realtime stream is not published. */
+  onTablePickerOpen?: () => void;
 
   // Cart actions
   onUpdateQuantity: (itemId: string, delta: number) => void;
@@ -76,7 +77,7 @@ export default function POSCart({
   zones,
   allTables,
   occupiedTableNumbers,
-  onReassignOccupied,
+  onTablePickerOpen,
   onUpdateQuantity,
   onClearCart,
   onEditNotes,
@@ -129,7 +130,10 @@ export default function POSCart({
         setRoomNumber={setRoomNumber}
         deliveryAddress={deliveryAddress}
         setDeliveryAddress={setDeliveryAddress}
-        onOpenTablePicker={() => setShowTablePicker(true)}
+        onOpenTablePicker={() => {
+          onTablePickerOpen?.();
+          setShowTablePicker(true);
+        }}
       />
 
       {/* --- SCROLLABLE AREA - only the item list scrolls --- */}
@@ -180,15 +184,6 @@ export default function POSCart({
           setShowTablePicker(false);
           setPickerZoneId(null);
         }}
-        onReassignOccupied={
-          onReassignOccupied
-            ? (table) => {
-                setShowTablePicker(false);
-                setPickerZoneId(null);
-                onReassignOccupied(table);
-              }
-            : undefined
-        }
       />
 
       {/* Clear cart confirmation (replaces window.confirm) */}

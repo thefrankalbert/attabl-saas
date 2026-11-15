@@ -310,4 +310,38 @@ describe('POSCart', () => {
       expect(mockCallbacks.setServiceType).toHaveBeenCalledWith('takeaway');
     }
   });
+
+  describe('table picker (owner decision 2026-11-15)', () => {
+    const zones = [{ id: 'z1', name: 'Salle' }];
+    const allTables = [
+      { id: 't8', table_number: '8', display_name: 'Salle 8', zone_id: 'z1' },
+      { id: 't9', table_number: '9', display_name: 'Salle 9', zone_id: 'z1' },
+    ];
+
+    it('re-reads occupied tables each time the picker opens', () => {
+      const onTablePickerOpen = vi.fn();
+      renderCart({ serviceType: 'dine_in', zones, allTables, onTablePickerOpen });
+
+      fireEvent.click(screen.getByText('selectTable'));
+
+      expect(onTablePickerOpen).toHaveBeenCalledTimes(1);
+    });
+
+    it('an occupied table is selected (second round joins its bill), not moved', () => {
+      const setSelectedTable = vi.fn();
+      renderCart({
+        serviceType: 'dine_in',
+        zones,
+        allTables,
+        setSelectedTable,
+        occupiedTableNumbers: new Set(['8']),
+      });
+
+      fireEvent.click(screen.getByText('selectTable'));
+      fireEvent.click(screen.getByText('Salle'));
+      fireEvent.click(screen.getByText('Salle 8'));
+
+      expect(setSelectedTable).toHaveBeenCalledWith('8');
+    });
+  });
 });
