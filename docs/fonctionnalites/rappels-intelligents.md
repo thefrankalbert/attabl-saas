@@ -29,15 +29,15 @@ Les textes partent dans **la langue du restaurant** (`tenants.default_locale`, f
 
 ## La précision
 
-Le moteur tourne **chaque minute** (tâche Vercel `/api/cron/reminders`, protégée par `CRON_SECRET`). Un rappel « prête depuis 3 min » part donc entre 3 et 4 minutes après le passage à « prête ». Le regroupement peut ajouter jusqu'à 2 minutes pour une commande qui rejoint un envoi récent (le délai est compté par niveau : une escalade n'attend jamais derrière un rappel ordinaire).
+Le moteur tourne **chaque minute** (tâche Vercel `/api/cron/reminders`, protégée par `CRON_SECRET`). Chaque passage note son heure dans `cron_heartbeats` : la console de la plateforme (onglet Réglages) affiche pour chaque tâche planifiée son dernier passage, et la signale en rouge si elle ne passe plus (10 minutes de silence pour les rappels, 7 heures pour le rapprochement Flutterwave qui passe toutes les 6 heures, 25 heures pour les tâches de nuit) ou si son dernier passage a échoué. Un rappel « prête depuis 3 min » part donc entre 3 et 4 minutes après le passage à « prête ». Le regroupement peut ajouter jusqu'à 2 minutes pour une commande qui rejoint un envoi récent (le délai est compté par niveau : une escalade n'attend jamais derrière un rappel ordinaire).
 
 Les rappels à heure fixe (avant le service, bilan du lundi) sont évalués pendant 3 minutes : assez pour survivre à un passage manqué de la tâche, sans relancer des lectures lourdes chaque minute. Si l'envoi échoue (cloche ou base indisponible), la réservation est libérée et le passage suivant réessaie.
 
 ## Les canaux
 
 - **La cloche de l'application** (centre de notifications), avec une icône dédiée et le bouton « Ne plus recevoir ce rappel ».
-- **La notification push** sur le téléphone. Pour les rappels de service, elle vibre, sonne de nouveau et reste affichée jusqu'à ce que la personne la touche. Le comportement exact dépend du téléphone : non vérifié sur un appareil réel.
-- **WhatsApp n'est pas utilisé pour les rappels.** Les messages envoyés automatiquement par un logiciel passent par l'offre professionnelle de Meta, facturée au message (environ 0,01 dollar en Afrique, à confirmer sur la grille de Meta). WhatsApp sert au **service client** : un bouton « Écrire sur WhatsApp » et un bouton « Appeler » sur la page d'aide. C'est gratuit, parce que c'est le restaurateur qui écrit ou qui appelle.
+- **La notification push** sur le téléphone. Pour les rappels de service, elle vibre, sonne de nouveau et reste affichée jusqu'à ce que la personne la touche. Le bouton « Tester l'alerte » (Paramètres, onglet Sons, une fois les notifications activées) envoie une fausse alerte urgente sur ses propres appareils, et seulement les siens : c'est la façon de vérifier sur un vrai téléphone. Sur Android (Chrome), l'alerte vibre et reste affichée. Sur iPhone, Safari ignore la vibration demandée par la page : le téléphone sonne et vibre selon ses propres réglages (Réglages > Notifications > ATTABL), et l'application doit être ajoutée à l'écran d'accueil.
+- **WhatsApp n'est pas utilisé pour les rappels.** Les messages envoyés automatiquement par un logiciel passent par l'offre professionnelle de Meta, facturée au message (environ 0,01 dollar en Afrique, à confirmer sur la grille de Meta). WhatsApp sert au **service client** : un bouton « Écrire sur WhatsApp » et un bouton « Appeler » sur la page d'aide. Le numéro se change dans la console de la plateforme (onglet Réglages), sans redéployer ; chaque changement est tracé dans le journal d'audit de la plateforme. C'est gratuit, parce que c'est le restaurateur qui écrit ou qui appelle.
 
 ## Les mesures (console de la plateforme, onglet Rappels)
 
@@ -72,5 +72,6 @@ Les droits sont vérifiés par `supabase/tests/rls/rappels_intelligents.test.sql
 - `src/services/reminders/reminder-stats.ts` : les mesures de la console.
 - `src/app/api/cron/reminders/route.ts` : la tâche planifiée.
 - `src/components/admin/settings/ReminderSettingsPanel.tsx` : l'onglet Rappels.
-- `src/lib/support-contact.ts` : le numéro du support (provisoire), à un seul endroit.
+- `src/lib/support-contact.ts` : le format du numéro du support et sa valeur par défaut ; le numéro en vigueur est dans `platform_settings` (migration `20261115180000_battement_taches_et_reglages_plateforme.sql`).
+- `src/lib/cron-jobs.ts` : la liste des tâches planifiées et leur fréquence, vérifiée contre `vercel.json` par un test.
 - `tests/integration/reminders/engine.test.ts` : le moteur entier sur une vraie base locale (`pnpm test:db`).

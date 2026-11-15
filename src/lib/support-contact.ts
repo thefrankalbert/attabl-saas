@@ -2,17 +2,38 @@
  * Le canal d'assistance humaine d'ATTABL. Un lien wa.me ouvre une conversation
  * que le RESTAURATEUR commence: c'est gratuit pour lui comme pour nous (seuls
  * les messages envoyes automatiquement par un logiciel sont factures par Meta).
+ *
+ * Le numero se change dans la console de la plateforme (onglet Reglages),
+ * sans redeployer: table platform_settings, cle 'support_contact'. La valeur
+ * ci-dessous ne sert que tant que personne ne l'a enregistre, ou si la lecture
+ * echoue.
  */
-// Numero provisoire (2026-11-15), WhatsApp et appel. Un seul endroit a changer.
-export const SUPPORT_WHATSAPP_NUMBER = '22655212293';
+
+export interface SupportContact {
+  /** Le numero tel qu'on l'affiche, ex: +226 55 21 22 93. */
+  display: string;
+  /** Chiffres seuls, indicatif compris: ce qu'attendent wa.me et tel:. */
+  digits: string;
+}
+
+export const DEFAULT_SUPPORT_CONTACT: SupportContact = toSupportContact('+226 55 21 22 93');
+
+/** Un seul format d'affichage: "+", puis les chiffres et espaces saisis, sans doublon. */
+export function toSupportContact(phone: string): SupportContact {
+  const digits = phone.replace(/\D/g, '');
+  const body = phone
+    .replace(/[^\d ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return { display: `+${body}`, digits };
+}
 
 /** Lien wa.me avec un premier message pre-rempli (le restaurant, pour aller vite). */
-export function supportWhatsAppLink(message: string): string {
-  return `https://wa.me/${SUPPORT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+export function supportWhatsAppLink(contact: SupportContact, message: string): string {
+  return `https://wa.me/${contact.digits}?text=${encodeURIComponent(message)}`;
 }
 
 /** Appel telephonique direct au meme numero (lien tel:). */
-export const SUPPORT_PHONE_LINK = `tel:+${SUPPORT_WHATSAPP_NUMBER}`;
-
-/** Le numero tel qu'on l'affiche: +226 55 21 22 93. */
-export const SUPPORT_PHONE_DISPLAY = '+226 55 21 22 93';
+export function supportPhoneLink(contact: SupportContact): string {
+  return `tel:+${contact.digits}`;
+}
