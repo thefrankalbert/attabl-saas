@@ -194,6 +194,10 @@ describe('createRetentionService', () => {
     await expect(createRetentionService(fausseBase()).executer(LE_15_MAI)).resolves.toEqual({
       commandesAnonymisees: 0,
       sessionsSupprimees: 0,
+      invitationsSupprimees: 0,
+      abonnementsPushSupprimes: 0,
+      journauxAuditSupprimes: 0,
+      restaurantsAnonymises: 0,
     });
   });
 });

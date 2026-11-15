@@ -291,6 +291,23 @@ export function createPlatformAdminService(admin: SupabaseClient): PlatformAdmin
     async restoreTenant(tenantId, actor) {
       const label = await getTenantLabel(tenantId);
       assertAbonnementUtilisable(label, 'restaurer ce restaurant');
+      // Passe le delai de grace de la politique de conservation, les donnees
+      // personnelles du restaurant sont anonymisees: le remettre en service
+      // donnerait un compte vide et des membres sans adresse.
+      const { data: anonymisation, error: erreurAnonymisation } = await admin
+        .from('tenants')
+        .select('anonymized_at')
+        .eq('id', tenantId)
+        .maybeSingle();
+      if (erreurAnonymisation) {
+        throw new ServiceError('Echec de la restauration', 'INTERNAL', erreurAnonymisation);
+      }
+      if (anonymisation?.anonymized_at) {
+        throw new ServiceError(
+          'Ce restaurant a ete anonymise apres sa fermeture: il ne peut plus etre restaure',
+          'CONFLICT',
+        );
+      }
       const { error } = await admin
         .from('tenants')
         .update({

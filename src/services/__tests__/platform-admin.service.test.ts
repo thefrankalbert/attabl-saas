@@ -179,6 +179,24 @@ describe('createPlatformAdminService', () => {
     );
   });
 
+  it('restoreTenant REFUSE un restaurant dont les donnees ont ete anonymisees', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: {
+          name: 'Resto',
+          slug: 'resto',
+          subscription_status: 'active',
+          anonymized_at: '2026-11-01T00:00:00.000Z',
+        },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).restoreTenant('t-1', actor)).rejects.toThrow(
+      /anonymise/,
+    );
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
   it('restoreTenant REFUSE aussi de restaurer un restaurant gele', async () => {
     const { client, updates } = makeAdmin({
       tenants: {

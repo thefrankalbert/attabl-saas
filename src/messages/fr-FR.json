@@ -594,25 +594,98 @@
     },
     "privacy": {
       "metaTitle": "Politique de Confidentialité",
-      "metaDescription": "Politique de confidentialité et protection des données personnelles d'ATTABL.",
+      "metaDescription": "Quelles données ATTABL collecte, qui les héberge, combien de temps on les garde et comment exercer vos droits.",
       "heading": "Politique de Confidentialité",
-      "lastUpdate": "Dernière mise à jour : 8 novembre 2026",
-      "section1Title": "1. Responsable du traitement",
-      "section1Body": "ATTABL, plateforme SaaS de gestion digitale pour la restauration, est responsable du traitement des données personnelles collectées via le site attabl.com.",
+      "lastUpdate": "Dernière mise à jour : 15 novembre 2026",
+      "section1Title": "1. Qui est responsable de vos données",
+      "section1Body": "ATTABL est responsable du traitement des données de son site et des comptes des restaurateurs et hôteliers (compte, abonnement, connexion). Pour les clients d'un restaurant (nom, téléphone, adresse de livraison d'une commande) et pour l'équipe d'un restaurant, c'est le restaurant qui décide de l'usage des données. ATTABL agit alors pour son compte, comme sous-traitant.",
+      "companyHeading": "Identité de l'entreprise",
+      "companyLegalName": "Raison sociale",
+      "companyLegalForm": "Forme juridique",
+      "companyRccm": "RCCM",
+      "companyNiu": "NIU",
+      "companyHeadOffice": "Siège social",
+      "companyBurkinaAddress": "Établissement au Burkina Faso",
       "section2Title": "2. Données collectées",
-      "section2Body": "Nous collectons les données suivantes : nom, adresse email, informations de l'établissement (nom, adresse, téléphone), et données de navigation (cookies analytiques). Les données de paiement sont traitées directement par Stripe et ne sont pas stockées sur nos serveurs.",
-      "section3Title": "3. Finalités",
-      "section3Body": "Les données sont utilisées pour : la gestion de votre compte, la fourniture du service, la facturation, le support client, et l'amélioration de la plateforme.",
-      "section4Title": "4. Hébergement et sécurité",
-      "section4Body": "Les données sont hébergées dans l'Union européenne : la base de données chez Supabase en Irlande (région eu-west-1), l'application chez Vercel à Paris (région cdg1). Toutes les communications sont chiffrées (HTTPS).",
-      "section5Title": "5. Vos droits",
-      "section5Body": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données. Contactez-nous à",
-      "section6Title": "6. Cookies",
-      "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé.",
-      "section7Title": "7. Durée de conservation",
-      "section7Body": "Les données de votre compte et de votre établissement sont conservées pendant toute la durée de votre abonnement. Les informations personnelles d'un convive qui passe commande (nom, téléphone, adresse de livraison) sont effacées automatiquement 90 jours après la commande : la commande, elle, est conservée sans ces informations, car le droit commercial impose de garder les pièces comptables. Les journaux de connexion sont supprimés au bout de 90 jours. Après la résiliation de votre abonnement, vous pouvez demander la suppression de votre compte à tout moment.",
-      "section8Title": "8. Application mobile Atfood",
-      "section8Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnee personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte."
+      "section2Body": "Compte : nom, adresse e-mail, téléphone, rôle. Établissement : nom, adresse, téléphone, paramètres. Connexion : adresse IP, navigateur et appareil. Commandes : nom, téléphone et adresse de livraison du client quand le restaurant les demande, notes, montants. Équipe : adresse e-mail de la personne invitée. Notifications : identifiant technique de l'appareil si vous les activez. Les données de paiement sont saisies chez Stripe et ne passent jamais par nos serveurs. Nous ne demandons aucune donnée sensible : évitez d'écrire une allergie ou une conviction dans un champ de notes libre.",
+      "section3Title": "3. Pourquoi nous les utilisons",
+      "section3Body": "Pour créer et protéger votre compte, faire fonctionner le menu, les commandes et la caisse, facturer l'abonnement, répondre à vos messages, détecter les abus et corriger les erreurs. Nous n'utilisons pas vos données pour de la publicité et nous ne les vendons pas.",
+      "section4Title": "4. Qui héberge ou traite vos données",
+      "section4Intro": "Ces prestataires touchent des données personnelles pour notre compte. Chacun est limité à la tâche indiquée.",
+      "section4Transfers": "Certains prestataires sont situés hors du Cameroun et du Burkina Faso, notamment dans l'Union européenne et aux États-Unis. Ces transferts reposent sur les engagements contractuels que ces prestataires prennent dans leurs conditions de traitement des données (clauses contractuelles types de l'Union européenne ou équivalent), sur le chiffrement des échanges (HTTPS) et sur le fait que nous ne leur transmettons que ce qui est nécessaire à leur tâche. Les données de la base sont stockées en Irlande, dans l'Union européenne. Vous pouvez nous demander la liste à jour des garanties applicables à chaque prestataire.",
+      "processors": {
+        "supabase": {
+          "name": "Supabase",
+          "role": "Base de données, comptes et stockage des photos",
+          "country": "Irlande (Union européenne)"
+        },
+        "vercel": {
+          "name": "Vercel",
+          "role": "Hébergement de l'application",
+          "country": "Paris, France (société américaine, réseau mondial)"
+        },
+        "resend": {
+          "name": "Resend",
+          "role": "Envoi des e-mails (bienvenue, invitation, mot de passe oublié, confirmation)",
+          "country": "États-Unis"
+        },
+        "sentry": {
+          "name": "Sentry",
+          "role": "Détection des erreurs et relecture de session (10 % des sessions, 100 % de celles en erreur)",
+          "country": "Union européenne ou États-Unis selon la région de collecte"
+        },
+        "upstash": {
+          "name": "Upstash",
+          "role": "Limitation des tentatives de connexion et des abus (adresse IP, durée très courte)",
+          "country": "Union européenne ou États-Unis selon la région de la base"
+        },
+        "cloudflare": {
+          "name": "Cloudflare Turnstile",
+          "role": "Anti-robot sur la connexion et l'inscription",
+          "country": "Réseau mondial (société américaine)"
+        },
+        "stripe": {
+          "name": "Stripe",
+          "role": "Paiement de l'abonnement, responsable de ses propres données de paiement",
+          "country": "États-Unis et Irlande"
+        },
+        "push": {
+          "name": "Services de notification des navigateurs (Google, Apple, Mozilla, Microsoft)",
+          "role": "Acheminer une notification push vers votre appareil si vous l'activez",
+          "country": "États-Unis et réseau mondial"
+        },
+        "improvmx": {
+          "name": "ImprovMX",
+          "role": "Réception du courrier envoyé aux adresses @attabl.com",
+          "country": "Selon le prestataire"
+        }
+      },
+      "section5Title": "5. Les lois qui s'appliquent",
+      "section5Body": "Au Cameroun, la loi n° 2024/017 sur la protection des données personnelles. Au Burkina Faso, la loi n° 001-2021/AN portant protection des personnes à l'égard du traitement des données à caractère personnel, sous le contrôle de la CIL. Le règlement européen (RGPD) n'est pas la loi qui nous gouverne : il encadre nos prestataires situés dans l'Union européenne.",
+      "section6Title": "6. Vos droits",
+      "section6Body": "Vous pouvez demander l'accès à vos données, leur correction, leur suppression, leur transfert ou vous opposer à un usage. Écrivez-nous depuis l'adresse liée à votre compte, en précisant votre demande : nous répondons sous 30 jours. Si un restaurant est responsable de vos données (vous avez commandé chez lui), nous lui transmettons votre demande. Vous pouvez aussi saisir l'autorité de protection des données de votre pays. Contact :",
+      "section7Title": "7. Cookies et stockage dans votre navigateur",
+      "section7Intro": "Aucun cookie publicitaire et aucun outil de statistiques d'un tiers. Voici exactement ce qui est enregistré sur votre appareil.",
+      "cookieAuth": "Cookies de connexion (Supabase) : gardent votre session ouverte. Indispensables.",
+      "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
+      "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
+      "cookieAb": "attabl_ab_id et attabl_ab_trial : une seule fois, pour tester la durée de l'essai gratuit (7 ou 14 jours) sur les pages d'inscription, 60 jours. Aucune information sur vous n'est associée.",
+      "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
+      "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
+      "section8Title": "8. Combien de temps nous gardons vos données",
+      "section8Intro": "Des purges automatiques tournent chaque nuit. Voici les durées appliquées.",
+      "retentionGuests": "Nom, téléphone et adresse de livraison d'un client : effacés {days} jours après la commande. La commande et ses montants sont conservés, sans l'identité du client, car le droit commercial impose de garder les pièces comptables.",
+      "retentionSessions": "Journaux de connexion (adresse IP, navigateur) : {days} jours.",
+      "retentionInvitations": "Invitations d'équipe expirées ou annulées : supprimées {days} jours après leur date d'expiration.",
+      "retentionPush": "Abonnements aux notifications d'un appareil inutilisé : supprimés après {days} jours sans activité.",
+      "retentionAudit": "Journaux d'audit des actions sensibles : {months} mois.",
+      "retentionClosed": "Restaurant supprimé : l'adresse e-mail, le nom et le téléphone de l'équipe, ainsi que le téléphone et l'adresse du restaurant, sont anonymisés {days} jours après la suppression. Passé ce délai, le restaurant ne peut plus être restauré.",
+      "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
+      "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
+      "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
+      "retentionNewsletter": "Lettre d'information : jusqu'à votre désinscription.",
+      "section9Title": "9. Application mobile Atfood",
+      "section9Body": "Atfood est l'application iPhone d'ATTABL pour le personnel du restaurant. Elle utilise l'appareil photo uniquement pour photographier les plats. Les photos sont envoyées dans l'espace de stockage du menu du restaurant (Supabase) et s'affichent publiquement sur le menu du restaurant. Le détourage, optionnel, et les contrôles de qualité des photos se font sur le téléphone (Apple Vision) : rien n'est envoyé à un tiers. L'application utilise les données de votre compte : adresse email, identifiant utilisateur et restaurant auquel vous êtes rattaché. En cas de plantage, un rapport anonyme, sans aucune donnee personnelle, peut être envoyé à Sentry pour corriger le problème. Vous pouvez demander la suppression de votre compte depuis l'application : Profil > Supprimer mon compte."
     },
     "features": {
       "metaTitle": "Fonctionnalités - Attabl",
