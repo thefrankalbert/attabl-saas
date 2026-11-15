@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { HomeHeaderClient } from '../HomeHeaderClient';
+import { readScannedTable } from '@/hooks/useScannedTable';
 
 // The storefront root page hands the scanned `?table=` to HomeHeaderClient as
 // `initialTable`. This locks the client half of that path: the header MUST pass
@@ -28,14 +29,14 @@ describe('HomeHeaderClient - table from a root QR', () => {
   it('persists initialTable for the cart and shows it', () => {
     render(<HomeHeaderClient site="resto" tenantName="Resto" initialTable="TER-1" />);
 
-    expect(localStorage.getItem('attabl_resto_table')).toBe('TER-1');
+    expect(readScannedTable('resto')).toBe('TER-1');
     expect(screen.getByText(/tableLabel:TER-1/)).toBeInTheDocument();
   });
 
   it('a root QR replaces a table remembered from an earlier visit', () => {
     localStorage.setItem('attabl_resto_table', 'OLD-9');
     render(<HomeHeaderClient site="resto" tenantName="Resto" initialTable="TER-1" />);
-    expect(localStorage.getItem('attabl_resto_table')).toBe('TER-1');
+    expect(readScannedTable('resto')).toBe('TER-1');
   });
 
   it('without a scanned table, keeps the remembered one', () => {

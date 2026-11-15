@@ -107,7 +107,9 @@ export default function OrderDetails({
           order={order}
           canComp={canComp}
           onSuccess={() => {
-            handleStatusUpdate('delivered');
+            // Une commande deja servie n'a pas a repasser par 'servie'.
+            if (order.status === 'delivered') onUpdate();
+            else handleStatusUpdate('delivered');
             setShowPayment(false);
             onClose();
           }}

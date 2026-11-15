@@ -72,9 +72,7 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
   }
 
   return (
-    // A document page: it grows with its content (no flex-1 min-h-0), so its
-    // last rows stay reachable above the mobile bottom nav.
-    <div className="flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       <PermissionsClient tenantId={tenantId} initialOverrides={overrides} />
     </div>
   );

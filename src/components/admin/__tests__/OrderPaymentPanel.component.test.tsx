@@ -2,11 +2,12 @@
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import messages from '@/messages/fr-FR.json';
 import type { PaymentSummary } from '@/services/payment.service';
+import { PaymentMethodsProvider } from '@/contexts/PaymentMethodsContext';
 import OrderPaymentPanel from '../OrderPaymentPanel';
 
 const summary: PaymentSummary = {
@@ -51,7 +52,7 @@ vi.mock('@/hooks/usePermissions', () => ({
   }),
 }));
 
-function renderPanel() {
+function renderPanel(methods: readonly string[] | null = null) {
   // onError rethrows: a message rendered without its {amount} value (or a
   // missing key) fails the test instead of silently showing the raw key.
   const onError = (err: Error) => {
@@ -60,13 +61,50 @@ function renderPanel() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="fr-FR" messages={messages} onError={onError}>
-        <OrderPaymentPanel tenantId="t" orderId="o1" currency="XAF" onUpdate={() => {}} />
+        <PaymentMethodsProvider methods={methods}>
+          <OrderPaymentPanel tenantId="t" orderId="o1" currency="XAF" onUpdate={() => {}} />
+        </PaymentMethodsProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>,
   );
 }
 
 describe('OrderPaymentPanel', () => {
+  afterEach(cleanup);
+
+  it('restaurant en especes seules: pas de selecteur, cash enregistre', async () => {
+    const { actionRecordTender } = await import('@/app/actions/orders');
+    const record = vi.mocked(actionRecordTender);
+    record.mockClear();
+    record.mockResolvedValue({ success: true } as Awaited<ReturnType<typeof actionRecordTender>>);
+    renderPanel(['cash']);
+    fireEvent.change(await screen.findByLabelText('Montant'), { target: { value: '1000' } });
+    expect(screen.queryByRole('radio', { name: 'Carte (terminal)' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le paiement/ }));
+    await waitFor(() => expect(record).toHaveBeenCalledTimes(1));
+    expect(record.mock.calls[0][3]).toBe('cash');
+  });
+
+  it('enregistre le moyen choisi (carte) et garde especes par defaut', async () => {
+    const { actionRecordTender } = await import('@/app/actions/orders');
+    const record = vi.mocked(actionRecordTender);
+    record.mockClear();
+    record.mockResolvedValue({ success: true } as Awaited<ReturnType<typeof actionRecordTender>>);
+    renderPanel();
+    const amount = await screen.findByLabelText('Montant');
+    fireEvent.change(amount, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le paiement/ }));
+    await waitFor(() => expect(record).toHaveBeenCalledTimes(1));
+    expect(record.mock.calls[0][3]).toBe('cash');
+
+    record.mockClear();
+    fireEvent.click(screen.getAllByRole('radio', { name: 'Carte (terminal)' })[0]);
+    fireEvent.change(screen.getByLabelText('Montant'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le paiement/ }));
+    await waitFor(() => expect(record).toHaveBeenCalledTimes(1));
+    expect(record.mock.calls[0][3]).toBe('card');
+  });
+
   it('renders the remaining amount with its value, not the raw key', async () => {
     renderPanel();
     const line = await screen.findByText(/^Reste à payer : /);
@@ -76,7 +114,9 @@ describe('OrderPaymentPanel', () => {
 
   it('translates the tender method instead of showing the raw id', async () => {
     renderPanel();
-    expect(await screen.findByText('Espèces')).toBeInTheDocument();
+    // Le libelle est lu dans l'historique, pas dans le selecteur de moyen.
+    const history = await screen.findByRole('list');
+    expect(within(history).getByText('Espèces')).toBeInTheDocument();
     expect(screen.queryByText('cash')).toBeNull();
   });
 

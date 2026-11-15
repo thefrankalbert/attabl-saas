@@ -126,3 +126,29 @@ describe('StorefrontLayout - fin d essai', () => {
     expect(state.billing).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * Audit du 2026-11-14: le panier proposait le pourboire a tous, mais la route de
+ * commande le refuse hors forfait (Starter). Le client voyait sa commande
+ * "enregistree" alors qu'elle ne partait jamais.
+ */
+describe('StorefrontLayout - pourboire selon le forfait', () => {
+  const tipsEnabled = (tree: ReactNode) =>
+    find(tree, (el) => el.type === TenantProvider)?.props.tipsEnabled;
+
+  it('Starter actif: pas de pourboire propose', async () => {
+    const tree = await render({ subscription_plan: 'starter', subscription_status: 'active' });
+    expect(tipsEnabled(tree)).toBe(false);
+  });
+
+  it('Pro actif: pourboire propose', async () => {
+    const tree = await render({ subscription_plan: 'pro', subscription_status: 'active' });
+    expect(tipsEnabled(tree)).toBe(true);
+  });
+
+  it('essai en cours: pourboire propose (l essai vaut Pro)', async () => {
+    state.billing.mockResolvedValue({ stripe_subscription_id: null });
+    const tree = await render({ subscription_status: 'trial', trial_ends_at: DEMAIN });
+    expect(tipsEnabled(tree)).toBe(true);
+  });
+});

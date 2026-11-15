@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Save, Store, LayoutGrid, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
@@ -31,6 +32,9 @@ interface SettingsFormProps {
   initialPaymentMethods: string[];
   initialTab: SettingsTab;
 }
+
+const MANAGEMENT_BTN_CLS =
+  'h-auto min-h-[44px] flex-col gap-1 px-2 py-2 text-xs whitespace-normal text-center sm:flex-row sm:gap-0 sm:px-4 sm:text-sm';
 
 const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'identity', labelKey: 'tabIdentity' },
@@ -93,37 +97,34 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
       >
-        <Card className="shrink-0 p-4 sm:p-5 mb-4 sm:mb-6">
-          <p className="text-sm font-semibold text-app-text mb-3">{t('management.title')}</p>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-            <Button
-              asChild
-              variant="outline"
-              className="min-h-[44px] justify-start sm:justify-center"
-            >
+        {/* Phone: the three links share one row so this pinned block stays short and
+            leaves the screen to the form; from sm they are regular buttons. */}
+        <Card className="shrink-0 p-3 sm:p-5 mb-3 sm:mb-6">
+          <p className="text-sm font-semibold text-app-text mb-2 sm:mb-3">
+            {t('management.title')}
+          </p>
+          <div
+            className={cn(
+              'grid gap-2 sm:flex sm:flex-row sm:flex-wrap',
+              canEditPermissions ? 'grid-cols-3' : 'grid-cols-2',
+            )}
+          >
+            <Button asChild variant="outline" className={MANAGEMENT_BTN_CLS}>
               <Link href={`${pathname}/espaces`}>
-                <Store className="mr-2 h-4 w-4" />
+                <Store className="h-4 w-4 shrink-0 sm:mr-2" />
                 {t('management.espaces')}
               </Link>
             </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="min-h-[44px] justify-start sm:justify-center"
-            >
+            <Button asChild variant="outline" className={MANAGEMENT_BTN_CLS}>
               <Link href={`${pathname}/tables`}>
-                <LayoutGrid className="mr-2 h-4 w-4" />
+                <LayoutGrid className="h-4 w-4 shrink-0 sm:mr-2" />
                 {t('management.tables')}
               </Link>
             </Button>
             {canEditPermissions && (
-              <Button
-                asChild
-                variant="outline"
-                className="min-h-[44px] justify-start sm:justify-center"
-              >
+              <Button asChild variant="outline" className={MANAGEMENT_BTN_CLS}>
                 <Link href={`${pathname}/permissions`}>
-                  <Users className="mr-2 h-4 w-4" />
+                  <Users className="h-4 w-4 shrink-0 sm:mr-2" />
                   {t('management.permissions')}
                 </Link>
               </Button>
@@ -136,7 +137,9 @@ export function SettingsForm({ tenant, initialPaymentMethods, initialTab }: Sett
           onValueChange={handleTabChange}
           className="flex flex-col flex-1 min-h-0"
         >
-          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
+          {/* Phone: the tabs scroll sideways; the right edge fades out so the hidden
+              ones (Sons, Securite, Contact) read as "more to swipe". */}
+          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0 [mask-image:linear-gradient(to_right,black_80%,transparent)] md:[mask-image:none]">
             {TAB_CONFIG.map(({ key, labelKey }) => (
               <TabsTrigger
                 key={key}

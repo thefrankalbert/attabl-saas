@@ -14,6 +14,12 @@ import { useToast } from '@/components/ui/use-toast';
 import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
 import { amountToCollectMajor } from '@/components/admin/payment/order-amount';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import {
+  PaymentMethodPicker,
+  effectivePaymentMethod,
+  usePaymentMethodChoices,
+} from '@/components/admin/payment/PaymentMethodPicker';
+import type { PaymentMethodId } from '@/lib/payments/methods';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 // --- Types --------------------------------------
@@ -54,10 +60,8 @@ interface PaymentModalProps {
   };
 }
 
-// Especes uniquement pour l'instant. Carte et mobile money sont declares dans
-// le registre central (src/lib/payments/methods.ts) mais inactifs - re-ajouter
-// un selecteur ici quand un autre moyen redevient actif.
-type PaymentMethod = 'cash';
+// Especes ou carte (terminal du restaurant): ATTABL n'enregistre que le moyen.
+type PaymentMethod = PaymentMethodId;
 
 const TIP_AMOUNTS = [1000, 2000, 5000] as const;
 /** Quick cash increments (FCFA / XOF) */
@@ -118,7 +122,10 @@ export default function PaymentModal({
     setPortalTarget(document.body);
   }, []);
 
-  const method: PaymentMethod = 'cash';
+  const methodChoices = usePaymentMethodChoices();
+  const [chosenMethod, setChosenMethod] = useState<PaymentMethod | null>(null);
+  const method = effectivePaymentMethod(chosenMethod, methodChoices);
+  const isCash = method === 'cash';
   const [amountReceived, setAmountReceived] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   // Cle d'idempotence de l'encaissement, stable tant que le paiement n'a pas
@@ -154,6 +161,8 @@ export default function PaymentModal({
   }, [receivedAmount, totalWithTip]);
 
   const cashIsValid = receivedAmount >= totalWithTip;
+  // Carte: le terminal du restaurant a deja encaisse, aucune saisie de montant.
+  const canValidate = !isCash || cashIsValid;
 
   // Escape key to close
   useEffect(() => {
@@ -564,110 +573,121 @@ export default function PaymentModal({
             </div>
           )}
 
-          {/* Cash: received, change, shortcuts, numpad, validate */}
+          {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
           <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
-            <div className="grid grid-cols-2 gap-2 shrink-0">
-              <div className="rounded-xl border border-app-border bg-app-elevated/40 p-3 text-center">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted">
-                  {t('received')}
-                </p>
-                <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
-                  {formatCurrency(receivedAmount, displayCurrency)}
-                </p>
-                {!cashIsValid && amountRemaining > 0 && (
-                  <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
-                    {t('amountRemaining', {
-                      amount: formatCurrency(amountRemaining, displayCurrency),
-                    })}
-                  </p>
-                )}
-              </div>
-              <div
-                className={cn(
-                  'rounded-xl border p-3 text-center',
-                  cashIsValid && change > 0
-                    ? 'border-[var(--border)] bg-app-elevated/40'
-                    : 'border-app-border bg-app-elevated/40',
-                )}
-              >
-                <p
-                  className={cn(
-                    'text-[10px] font-semibold uppercase tracking-widest',
-                    cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
-                  )}
-                >
-                  {t('change')}
-                </p>
-                <p
-                  className={cn(
-                    'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
-                    cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
-                  )}
-                >
-                  {formatCurrency(change, displayCurrency)}
-                </p>
-              </div>
-            </div>
+            <PaymentMethodPicker
+              value={method}
+              onChange={setChosenMethod}
+              choices={methodChoices}
+              disabled={isProcessing}
+            />
 
-            <div className="flex flex-wrap gap-1.5 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={setExactCashAmount}
-                className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-accent text-xs font-bold px-3 hover:bg-app-elevated"
-              >
-                {t('exactAmount')}
-              </Button>
-              {CASH_QUICK_ADD.map((increment) => (
-                <Button
-                  key={increment}
-                  type="button"
-                  variant="outline"
-                  onClick={() => addCashAmount(increment)}
-                  className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-xs font-bold tabular-nums px-3"
-                >
-                  <Plus className="w-3 h-3 mr-0.5 opacity-70" />
-                  {t('quickAdd', { amount: increment.toLocaleString() })}
-                </Button>
-              ))}
-            </div>
+            {isCash && (
+              <>
+                <div className="grid grid-cols-2 gap-2 shrink-0">
+                  <div className="rounded-xl border border-app-border bg-app-elevated/40 p-3 text-center">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-app-text-muted">
+                      {t('received')}
+                    </p>
+                    <p className="mt-1 text-xl sm:text-2xl font-bold text-app-text tabular-nums leading-none">
+                      {formatCurrency(receivedAmount, displayCurrency)}
+                    </p>
+                    {!cashIsValid && amountRemaining > 0 && (
+                      <p className="mt-1.5 text-[10px] font-medium text-[var(--warning)]">
+                        {t('amountRemaining', {
+                          amount: formatCurrency(amountRemaining, displayCurrency),
+                        })}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      'rounded-xl border p-3 text-center',
+                      cashIsValid && change > 0
+                        ? 'border-[var(--border)] bg-app-elevated/40'
+                        : 'border-app-border bg-app-elevated/40',
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        'text-[10px] font-semibold uppercase tracking-widest',
+                        cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text-muted',
+                      )}
+                    >
+                      {t('change')}
+                    </p>
+                    <p
+                      className={cn(
+                        'mt-1 text-xl sm:text-2xl font-bold tabular-nums leading-none',
+                        cashIsValid && change > 0 ? 'text-[var(--success)]' : 'text-app-text',
+                      )}
+                    >
+                      {formatCurrency(change, displayCurrency)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
-              {NUMPAD_KEYS.map((key) => (
-                <Button
-                  key={key}
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleKeypadPress(key)}
-                  className={cn(
-                    'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
-                    key === 'C' && 'text-[var(--destructive)]',
-                    key === '⌫' && 'text-[var(--warning)]',
-                    key === '0' && 'col-span-2',
-                  )}
-                  aria-label={
-                    key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
-                  }
-                >
-                  {key === 'C' ? (
-                    <X className="h-5 w-5" />
-                  ) : key === '⌫' ? (
-                    <Delete className="h-5 w-5" />
-                  ) : (
-                    key
-                  )}
-                </Button>
-              ))}
-            </div>
+                <div className="flex flex-wrap gap-1.5 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={setExactCashAmount}
+                    className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-accent text-xs font-bold px-3 hover:bg-app-elevated"
+                  >
+                    {t('exactAmount')}
+                  </Button>
+                  {CASH_QUICK_ADD.map((increment) => (
+                    <Button
+                      key={increment}
+                      type="button"
+                      variant="outline"
+                      onClick={() => addCashAmount(increment)}
+                      className="min-h-[44px] rounded-lg border-app-border bg-app-elevated/30 text-xs font-bold tabular-nums px-3"
+                    >
+                      <Plus className="w-3 h-3 mr-0.5 opacity-70" />
+                      {t('quickAdd', { amount: increment.toLocaleString() })}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
+                  {NUMPAD_KEYS.map((key) => (
+                    <Button
+                      key={key}
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleKeypadPress(key)}
+                      className={cn(
+                        'flex items-center justify-center rounded-xl border-app-border bg-app-elevated/50 min-h-[48px] sm:min-h-[52px] text-lg sm:text-xl font-bold text-app-text active:scale-95 touch-manipulation hover:bg-app-elevated',
+                        key === 'C' && 'text-[var(--destructive)]',
+                        key === '⌫' && 'text-[var(--warning)]',
+                        key === '0' && 'col-span-2',
+                      )}
+                      aria-label={
+                        key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
+                      }
+                    >
+                      {key === 'C' ? (
+                        <X className="h-5 w-5" />
+                      ) : key === '⌫' ? (
+                        <Delete className="h-5 w-5" />
+                      ) : (
+                        key
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <Button
               type="button"
               variant="default"
               onClick={handleProcessPayment}
-              disabled={!cashIsValid || isProcessing}
+              disabled={!canValidate || isProcessing}
               className={cn(
                 'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
-                cashIsValid ? '' : 'opacity-60',
+                canValidate ? '' : 'opacity-60',
               )}
             >
               {isProcessing ? (

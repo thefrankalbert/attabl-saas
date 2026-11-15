@@ -37,6 +37,8 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
     navDishes: tSeg(`${family}.items`),
     navKitchen: tSeg(`${family}.productionKds`),
     navRecipes: tSeg(`${family}.recipes`),
+    // "Tableau de bord" does not fit a 72px tab: it showed "Tableau de b...".
+    navDashboard: t('navDashboardShort'),
   };
   const resolveLabel = (key: string) => segmentLabelOverrides[key] ?? t(key);
 

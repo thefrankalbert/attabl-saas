@@ -380,7 +380,7 @@ export function SoundSettings({
             )}
           </Button>
           <p className="text-xs text-app-text-muted mt-1.5 text-center">
-            MP3, WAV, OGG - {t('maxFileSize', { size: '2 MB' })}
+            MP3, WAV, OGG - {t('maxFileSize', { size: t('soundMaxSize') })}
           </p>
         </div>
       ) : (

@@ -1,9 +1,10 @@
 /**
  * Registre central des moyens de paiement.
  *
- * Aujourd'hui: especes uniquement (`active: true`). Le mobile money et la carte
- * sont declares mais inactifs (`active: false`) - l'app reste prete a les
- * accueillir, ainsi que les pays cibles, sans rearchitecture.
+ * Aujourd'hui: especes et carte (`active: true`). La carte est encaissee sur le
+ * terminal du restaurant: ATTABL n'enregistre que le moyen, sans traitement
+ * bancaire. Le mobile money est declare mais inactif (`active: false`) - l'app
+ * reste prete a l'accueillir, ainsi que les pays cibles, sans rearchitecture.
  *
  * Pour activer un moyen plus tard:
  *  1. Passer son `active` a `true` ici.
@@ -26,7 +27,7 @@ export interface PaymentMethodMeta {
 
 const PAYMENT_METHODS = {
   cash: { active: true },
-  card: { active: false },
+  card: { active: true },
   wave: { active: false, countries: ['SN', 'CI'] },
   orange_money: { active: false, countries: ['SN', 'CI', 'ML', 'BF', 'CM'] },
   mtn_momo: { active: false, countries: ['CI', 'CM', 'BF', 'CG'] },
@@ -38,7 +39,7 @@ export type PaymentMethodId = keyof typeof PAYMENT_METHODS;
 /** Tous les ids connus, y compris ceux inactifs (utile pour lire des commandes historiques). */
 export const ALL_PAYMENT_METHOD_IDS = Object.keys(PAYMENT_METHODS) as PaymentMethodId[];
 
-/** Moyens actuellement proposes - especes seulement pour l'instant. */
+/** Moyens actuellement proposes - especes et carte (terminal du restaurant). */
 export const ACTIVE_PAYMENT_METHOD_IDS = ALL_PAYMENT_METHOD_IDS.filter(
   (id) => PAYMENT_METHODS[id].active,
 );

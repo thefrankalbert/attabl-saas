@@ -5,6 +5,8 @@ import { CategoryIcon } from './CategoryIcon';
 export interface ClientCategory {
   id: string;
   label: string;
+  /** Nom d'origine de la categorie, cle de `?section=` sur /menu. */
+  section: string;
   icon: string;
   bgColor?: string;
   fgColor?: string;

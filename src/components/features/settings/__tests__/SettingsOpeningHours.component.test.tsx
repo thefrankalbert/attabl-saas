@@ -28,12 +28,14 @@ function Harness({ initial }: { initial?: OpeningHoursMap }) {
 }
 
 describe('SettingsOpeningHours', () => {
-  it('renders all 7 days as closed by default', () => {
+  it('says the venue is always open when no hours are set', () => {
     render(<Harness />);
     // 7 day switches present
     expect(screen.getAllByRole('switch')).toHaveLength(7);
-    // every row shows the "closed" label, no time inputs yet
-    expect(screen.getAllByText('openingHoursClosed')).toHaveLength(7);
+    // no hours at all = always open: no day is labelled "closed"
+    expect(screen.getByText('openingHoursAlwaysOpen')).toBeInTheDocument();
+    expect(screen.getAllByText('openingHoursNotSet')).toHaveLength(7);
+    expect(screen.queryByText('openingHoursClosed')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('dayMon - openingHoursOpen')).not.toBeInTheDocument();
   });
 
@@ -46,8 +48,9 @@ describe('SettingsOpeningHours', () => {
     const close = screen.getByLabelText('dayMon - openingHoursClose') as HTMLInputElement;
     expect(open.value).toBe('09:00');
     expect(close.value).toBe('22:00');
-    // only Monday opened
+    // only Monday opened: the other days are now really closed
     expect(screen.getAllByText('openingHoursClosed')).toHaveLength(6);
+    expect(screen.queryByText('openingHoursAlwaysOpen')).not.toBeInTheDocument();
   });
 
   it('renders existing hours and lets the close time be edited', () => {

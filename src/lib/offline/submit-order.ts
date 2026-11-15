@@ -131,7 +131,7 @@ export async function submitOrder({
     return queue('network');
   }
 
-  const verdict = classifyStatus(response.status);
+  const verdict = classifyStatus(response.status, endpoint);
   if (verdict === 'success') {
     return { status: 'sent', data: await readJson(response) };
   }

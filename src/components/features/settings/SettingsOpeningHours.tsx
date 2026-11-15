@@ -32,6 +32,9 @@ const DEFAULT_CLOSE = '22:00';
 
 export default function SettingsOpeningHours({ form, t }: SettingsOpeningHoursProps) {
   const hours: OpeningHoursMap = form.watch('openingHours') ?? {};
+  // No hours at all = the venue is treated as always open (customer badge too):
+  // say so instead of labelling every day "Closed".
+  const noHours = Object.keys(hours).length === 0;
 
   const update = (next: OpeningHoursMap) =>
     form.setValue('openingHours', next, { shouldDirty: true, shouldValidate: true });
@@ -55,6 +58,11 @@ export default function SettingsOpeningHours({ form, t }: SettingsOpeningHoursPr
   return (
     <TabsContent value="hours" className="mt-0">
       <p className="mb-4 text-sm text-app-text-secondary">{t('openingHoursHint')}</p>
+      {noHours && (
+        <p className="mb-4 rounded-lg border border-app-border bg-app-elevated px-3 py-2 text-sm text-app-text">
+          {t('openingHoursAlwaysOpen')}
+        </p>
+      )}
       <div className="space-y-3">
         {DAYS.map(({ key, labelKey }) => {
           const slot = hours[key];
@@ -94,7 +102,9 @@ export default function SettingsOpeningHours({ form, t }: SettingsOpeningHoursPr
                   />
                 </div>
               ) : (
-                <span className="text-sm text-app-text-secondary">{t('openingHoursClosed')}</span>
+                <span className="text-sm text-app-text-secondary">
+                  {t(noHours ? 'openingHoursNotSet' : 'openingHoursClosed')}
+                </span>
               )}
             </div>
           );

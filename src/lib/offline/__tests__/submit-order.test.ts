@@ -101,6 +101,32 @@ describe('submitOrder', () => {
     expect(entries).toHaveLength(1);
   });
 
+  /**
+   * Audit du 2026-11-14: la commande CONVIVE refusee en 401/403 (option hors
+   * forfait, restaurant coupe) etait mise en file, et le client voyait
+   * "Commande enregistree" alors que la cuisine ne la recevrait jamais.
+   */
+  it('rejects (does not queue) a guest order refused with 401/403', async () => {
+    for (const status of [401, 403]) {
+      const { outbox, entries } = fakeOutbox();
+      const fetchImpl = vi.fn(async () =>
+        jsonResponse(status, { error: 'Les pourboires ne sont pas inclus dans votre plan.' }),
+      );
+      const result = await submitOrder({
+        endpoint: '/api/orders',
+        body: {},
+        clientRequestId: `guest-${status}`,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        outbox,
+      });
+      expect(result).toMatchObject({
+        status: 'rejected',
+        error: 'Les pourboires ne sont pas inclus dans votre plan.',
+      });
+      expect(entries).toHaveLength(0);
+    }
+  });
+
   it('rejects (does not queue) on a 4xx business error', async () => {
     const { outbox, entries } = fakeOutbox();
     const fetchImpl = vi.fn(async () =>
@@ -159,6 +185,15 @@ describe('replayOrderEntry', () => {
       // Retryable (a session refreshes on reconnect) but bounded: a genuinely
       // forbidden request must eventually surface, not loop forever.
       expect(outcome).toMatchObject({ kind: 'retry', countsAsAttempt: true });
+    }
+  });
+
+  it('drops a queued GUEST order refused with 401/403 instead of replaying it', async () => {
+    const guest = { endpoint: '/api/orders', body: { client_request_id: 'g' } };
+    for (const status of [401, 403]) {
+      const fetchImpl = vi.fn(async () => jsonResponse(status, { error: 'Refus' }));
+      const outcome = await replayOrderEntry(guest, fetchImpl as unknown as typeof fetch);
+      expect(outcome).toEqual({ kind: 'permanent', reason: 'Refus' });
     }
   });
 

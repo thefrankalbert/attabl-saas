@@ -76,12 +76,17 @@ export default function CartPage() {
     applyCoupon,
     removeCoupon,
   } = useCart();
-  const { slug: tenantSlug, tenant, orderingPaused } = useTenant();
+  const { slug: tenantSlug, tenant, orderingPaused, tipsEnabled } = useTenant();
 
   const tableNum = useScannedTable(tenantSlug);
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
   const t = useTranslations('tenant');
   const locale = useLocale();
+  // Les refus du serveur sont rediges en francais. Un client en anglais voyait
+  // donc un message francais (audit du 2026-11-14): hors francais, on affiche
+  // le message traduit generique.
+  const serverMessage = (message?: string | null) =>
+    message && locale.startsWith('fr') ? message : t('orderError');
   const router = useRouter();
   const language = locale.startsWith('en') ? 'en' : 'fr';
   const menuPath = `/sites/${tenantSlug}/menu`;
@@ -178,13 +183,13 @@ export default function CartPage() {
 
   // Tip amount computation
   const tipAmount = useMemo(() => {
-    if (tipPreset === 0) return 0;
+    if (!tipsEnabled || tipPreset === 0) return 0;
     if (tipPreset === 'custom') {
       const parsed = parseFloat(customTipInput.replace(',', '.'));
       return Number.isFinite(parsed) && parsed > 0 ? roundForCurrency(parsed, currencyCode) : 0;
     }
     return tipPreset;
-  }, [tipPreset, customTipInput, currencyCode]);
+  }, [tipsEnabled, tipPreset, customTipInput, currencyCode]);
 
   // Smart suggestions (hook-owned)
   const { upsellItems, isLoadingUpsell } = useCartSuggestions(items, currentRestaurantId);
@@ -268,7 +273,7 @@ export default function CartPage() {
           });
           const previewData = await previewResponse.json();
           if (!previewResponse.ok) {
-            setError(previewData.error || t('orderError'));
+            setError(serverMessage(previewData.error));
             if (previewData.details && Array.isArray(previewData.details)) {
               setPreviewErrors(previewData.details);
             }
@@ -320,7 +325,7 @@ export default function CartPage() {
         if (result.details && Array.isArray(result.details)) {
           setPreviewErrors(result.details);
         }
-        setError(result.error || t('orderError'));
+        setError(serverMessage(result.error));
         return;
       }
 
@@ -648,24 +653,26 @@ export default function CartPage() {
         />
 
         {/* TIP SELECTOR */}
-        <TipSection
-          tipOpen={tipOpen}
-          setTipOpen={setTipOpen}
-          tipPreset={tipPreset}
-          setTipPreset={setTipPreset}
-          customTipInput={customTipInput}
-          setCustomTipInput={setCustomTipInput}
-          tipAmount={tipAmount}
-          currencyCode={currencyCode}
-          formatDisplayPrice={formatDisplayPrice}
-          labels={{
-            tip: t('tip'),
-            tipNone: t('tipNone'),
-            tipCustom: t('tipCustom'),
-            tipCustomPlaceholder: t('tipCustomPlaceholder'),
-            close: t('ariaClose'),
-          }}
-        />
+        {tipsEnabled && (
+          <TipSection
+            tipOpen={tipOpen}
+            setTipOpen={setTipOpen}
+            tipPreset={tipPreset}
+            setTipPreset={setTipPreset}
+            customTipInput={customTipInput}
+            setCustomTipInput={setCustomTipInput}
+            tipAmount={tipAmount}
+            currencyCode={currencyCode}
+            formatDisplayPrice={formatDisplayPrice}
+            labels={{
+              tip: t('tip'),
+              tipNone: t('tipNone'),
+              tipCustom: t('tipCustom'),
+              tipCustomPlaceholder: t('tipCustomPlaceholder'),
+              close: t('ariaClose'),
+            }}
+          />
+        )}
 
         {/* ORDER SUMMARY */}
         <OrderSummary

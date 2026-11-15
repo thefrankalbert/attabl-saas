@@ -29,6 +29,11 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
   const [isPending, startTransition] = useTransition();
 
   const toggle = (method: PaymentMethodId) => {
+    // At least one way to pay must stay on: say so instead of ignoring the click.
+    if (enabled.has(method) && enabled.size <= 1) {
+      toast.error(t('paymentMethodsAtLeastOne'));
+      return;
+    }
     setEnabled((prev) => {
       const next = new Set(prev);
       if (next.has(method)) {
@@ -82,7 +87,15 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button onClick={handleSave} disabled={isPending} size="sm" className="min-w-[120px]">
+        {/* type="button": this section sits inside the settings <form>; a default
+            (submit) button would also submit the whole settings form. */}
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={isPending}
+          size="sm"
+          className="min-w-[120px]"
+        >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('savePaymentMethods')}
         </Button>
       </div>

@@ -6,6 +6,7 @@ import { requireAdminPermission } from '@/lib/auth/require-admin-permission';
 import { FeatureUpgradeWall } from '@/components/admin/FeatureUpgradeWall';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { sortByTableNumber } from '@/lib/utils/table-order';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,13 +128,11 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
       .eq('zone_id', zones[0].id)
       .order('table_number');
 
-    initialTables = (tablesData || []) as typeof initialTables;
+    initialTables = sortByTableNumber((tablesData || []) as typeof initialTables);
   }
 
   return (
-    // A document page: it grows with its content (no flex-1 min-h-0), so its
-    // last rows stay reachable above the mobile bottom nav.
-    <div className="flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       <TablesClient
         tenantId={tenantId}
         venueId={venueId}
