@@ -110,7 +110,12 @@ export default async function RootLayout({
               <ScrollRestoration />
             </Suspense>
             {children}
-            <Toaster />
+            {/* The admin shell raises toasts above its fixed bottom nav by setting
+                --toast-bottom-offset (see bottom-nav-context.tsx). */}
+            <Toaster
+              offset={{ bottom: 'var(--toast-bottom-offset, 24px)' }}
+              mobileOffset={{ bottom: 'var(--toast-bottom-offset, 16px)' }}
+            />
             <RegisterSW />
             <AgentationOverlay />
           </ThemeProvider>

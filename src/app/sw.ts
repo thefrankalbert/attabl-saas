@@ -130,7 +130,14 @@ function cheminAdmin(data: { url?: string; slug?: string }): string {
 
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  let data: { title?: string; body?: string; tag?: string; url?: string; slug?: string };
+  let data: {
+    title?: string;
+    body?: string;
+    tag?: string;
+    url?: string;
+    slug?: string;
+    alert?: boolean;
+  };
   try {
     data = event.data.json();
   } catch {
@@ -144,6 +151,9 @@ self.addEventListener('push', (event) => {
     badge: '/icons/icon-192.png',
     tag: data.tag || 'default',
     data: { url: cheminAdmin(data) },
+    // Urgent service alert (order ready): vibrate, ring again even if a
+    // notification with the same tag is on screen, stay until touched.
+    ...(data.alert ? { vibrate: [200, 100, 200], renotify: true, requireInteraction: true } : {}),
   };
   event.waitUntil(self.registration.showNotification(data.title || 'ATTABL', options));
 });

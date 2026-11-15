@@ -138,7 +138,7 @@ export function ServiceFloorPlan({
   const zonesToShow = activeZoneId ? zones.filter((z) => z.id === activeZoneId) : zones;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <section className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
       {/* Room tabs */}
       <div className="flex items-center gap-0.5 overflow-x-auto border-b border-app-border/50 bg-app-bg px-[18px] pt-2.5 [scrollbar-width:none]">
         <RoomTab
@@ -273,7 +273,7 @@ export function ServiceFloorPlan({
       )}
 
       {/* Body */}
-      <div className="flex-1 overflow-auto bg-app-card p-[18px] [scrollbar-width:none]">
+      <div className="bg-app-card p-[18px] lg:flex-1 lg:overflow-auto lg:[scrollbar-width:none]">
         {viewMode === 'plan' ? (
           !activeZoneId ? (
             <div className="rounded border border-dashed border-app-border px-4 py-10 text-center text-[11px] text-app-text-muted">

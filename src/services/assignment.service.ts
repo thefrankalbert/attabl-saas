@@ -11,6 +11,7 @@ export interface AssignmentService {
   releaseAssignment(assignmentId: string, tenantId: string): Promise<void>;
   releaseAllForServer(tenantId: string, serverId: string): Promise<void>;
   getActiveServerForTable(tenantId: string, tableId: string): Promise<AdminUser | null>;
+  assignIfFree(tenantId: string, tableId: string, serverId: string): Promise<boolean>;
   getActiveAssignments(
     tenantId: string,
     options?: { page?: number; pageSize?: number },
@@ -19,7 +20,7 @@ export interface AssignmentService {
 }
 
 export function createAssignmentService(supabase: SupabaseClient): AssignmentService {
-  return {
+  const service: AssignmentService = {
     async assignServerToTable(
       tenantId: string,
       tableId: string,
@@ -104,6 +105,32 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       return data.server as unknown as AdminUser;
     },
 
+    /**
+     * Owner decision 2026-11-14: the waiter who takes a dine-in order at the POS
+     * becomes that table's server, unless the table already has one. Returns
+     * whether an assignment was created. Not atomic: two waiters ordering for
+     * the same free table in the same instant could both land. A unique index
+     * on active assignments is NOT the fix: assignServerToTable never ends the
+     * previous row, so several active servers per table are a supported state
+     * today (the screens show the latest). Worst case of the race = that state.
+     */
+    async assignIfFree(tenantId: string, tableId: string, serverId: string): Promise<boolean> {
+      // Read directly: getActiveServerForTable maps an error to null ("free"),
+      // which would stack a second server on a table during a DB hiccup.
+      const { data: current, error } = await supabase
+        .from('table_assignments')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('table_id', tableId)
+        .is('ended_at', null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new ServiceError('Lecture des assignations impossible', 'INTERNAL', error);
+      if (current) return false;
+      await service.assignServerToTable(tenantId, tableId, serverId);
+      return true;
+    },
+
     async getActiveAssignments(
       tenantId: string,
       options?: { page?: number; pageSize?: number },
@@ -156,4 +183,5 @@ export function createAssignmentService(supabase: SupabaseClient): AssignmentSer
       }
     },
   };
+  return service;
 }

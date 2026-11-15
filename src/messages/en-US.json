@@ -2765,6 +2765,8 @@
     "tableNumber": "Table number",
     "roomNumber": "Room number",
     "selectTable": "Select a table",
+    "tableRequired": "Choose the table",
+    "tableRequiredDesc": "A dine-in order goes to the kitchen with its table, so the waiter knows where to bring it.",
     "searchDish": "Search for a dish...",
     "allCategories": "All categories",
     "orderCreated": "Order created",
@@ -3741,6 +3743,9 @@
     "dashCardCta": "Manage"
   },
   "service": {
+    "readyAlertTable": "Order ready - Table {table}",
+    "readyAlertOrder": "Order ready - {order}",
+    "readyAlertDesc": "Serve it now.",
     "title": "Service",
     "activeAssignments": "{count} active assignment(s)",
     "noZones": "No zones configured. Create zones and tables in settings.",
@@ -3821,7 +3826,6 @@
     "dragHint": "Drag a server onto a table to assign.",
     "tableShort": "T.",
     "minutesAgoShort": "{min} min ago",
-    "roleLabel": "Role",
     "availableStatus": "Available",
     "tablesPlural": "{count, plural, one {# table} other {# tables}}",
     "seatsLabel": "seats",

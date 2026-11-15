@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { getRoleConfig } from '@/lib/role-config';
 
 // Builds the memoized label bundles handed down to the Service dashboard
 // sub-components (floor plan, metrics bar, right panel, table detail).
@@ -10,6 +11,7 @@ import { useTranslations } from 'next-intl';
 export function useServiceLabels() {
   const t = useTranslations('service');
   const tc = useTranslations('common');
+  const tu = useTranslations('users');
 
   const floorLabels = useMemo(
     () => ({
@@ -76,11 +78,12 @@ export function useServiceLabels() {
       tableShort: t('tableShort'),
       itemsCount: (count: number) => t('itemsCount', { count }),
       minutesAgoShort: (min: number) => t('minutesAgoShort', { min }),
-      roleLabel: t('roleLabel'),
+      // Translated role name; the raw enum ('waiter', 'owner') was shown before.
+      roleName: (role: string) => getRoleConfig(role, tu).label,
       availableStatus: t('availableStatus'),
       tablesPlural: (n: number) => t('tablesPlural', { count: n }),
     }),
-    [t],
+    [t, tu],
   );
 
   const detailLabels = useMemo(

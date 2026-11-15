@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { orderDisplayLabel } from '@/components/admin/orders/order-display-label';
 import type { DragEvent } from 'react';
 import { CheckCircle2, GripVertical, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ interface Props {
     tableShort: string;
     itemsCount: (count: number) => string;
     minutesAgoShort: (min: number) => string;
-    roleLabel: string;
+    roleName: (role: string) => string;
     availableStatus: string;
     tablesPlural: (n: number) => string;
   };
@@ -299,7 +300,7 @@ function ServerCard({
             ? labels.availableStatus
             : labels.tablesPlural(vm.assignedTables.length)}
           {' - '}
-          {vm.server.role}
+          {labels.roleName(vm.server.role)}
         </div>
         {vm.assignedTables.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
@@ -344,7 +345,11 @@ function OrderCard({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-app-text">
           <Utensils className="h-3 w-3 text-status-warning" />
           <span className="font-mono">
-            {labels.tableShort} {order.table_number}
+            {/* No table (dine-in sent without one): a bare "T." told the waiter
+                nothing, the order number at least identifies the ticket. */}
+            {order.table_number
+              ? `${labels.tableShort} ${order.table_number}`
+              : orderDisplayLabel(order)}
           </span>
         </div>
         <span className="font-mono text-[10px] text-app-text-muted">
@@ -366,7 +371,7 @@ function OrderCard({
           <span className="rounded-sm bg-status-warning/15 px-1.5 py-px text-[10px] font-semibold tracking-wide uppercase text-status-warning">
             {labels.itemsCount(items.length)}
           </span>
-          <span className="font-mono text-[10px] text-app-text-muted">
+          <span className="text-[10px] tabular-nums text-app-text-muted">
             {labels.minutesAgoShort(minutes)}
           </span>
         </span>

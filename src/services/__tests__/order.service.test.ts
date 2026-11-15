@@ -1065,14 +1065,14 @@ describe('OrderService', () => {
     it('allows a forward transition (preparing -> ready)', async () => {
       const m = makeSupabase('preparing', [{ id: 'o1' }]);
       const service = createOrderService(m.client);
-      await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBeUndefined();
+      await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBe(true);
       expect(m.update).toHaveBeenCalledWith({ status: 'ready' });
     });
 
     it('stamps served_at when reaching the terminal fulfillment state (delivered, C3)', async () => {
       const m = makeSupabase('ready', [{ id: 'o1' }]);
       const service = createOrderService(m.client);
-      await expect(service.updateStatus('o1', 't1', 'delivered')).resolves.toBeUndefined();
+      await expect(service.updateStatus('o1', 't1', 'delivered')).resolves.toBe(true);
       expect(m.update).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'delivered', served_at: expect.any(String) }),
       );
@@ -1081,7 +1081,8 @@ describe('OrderService', () => {
     it('is a no-op when the status is unchanged', async () => {
       const m = makeSupabase('ready');
       const service = createOrderService(m.client);
-      await service.updateStatus('o1', 't1', 'ready');
+      // false = nothing changed: the caller must not re-send the ready push.
+      await expect(service.updateStatus('o1', 't1', 'ready')).resolves.toBe(false);
       expect(m.update).not.toHaveBeenCalled();
     });
 
