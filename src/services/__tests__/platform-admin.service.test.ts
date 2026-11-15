@@ -14,6 +14,7 @@ interface TableState {
   row?: Record<string, unknown> | null;
   rowError?: unknown;
   mutError?: unknown;
+  count?: number;
 }
 
 /**
@@ -39,14 +40,12 @@ function makeAdmin(tables: Record<string, TableState>) {
     );
     chain.update = vi.fn((payload: Record<string, unknown>) => {
       updates.push({ table, payload });
-      // update().eq().is() is terminal; also support update().eq() (no .is()).
-      const updChain: Record<string, unknown> = {};
-      updChain.eq = vi.fn(() => {
-        updChain.is = vi.fn(() => Promise.resolve({ error: state.mutError ?? null }));
-        // restoreTenant ends at .eq() (no .is()), so make eq() awaitable too.
-        return Object.assign(Promise.resolve({ error: state.mutError ?? null }), updChain);
-      });
-      return updChain;
+      // Terminal a n'importe quel maillon (eq / is / or): chaine ET thenable.
+      const term: Record<string, unknown> = {};
+      for (const m of ['eq', 'is', 'or']) term[m] = vi.fn(() => term);
+      term.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
+        Promise.resolve({ error: state.mutError ?? null, count: state.count ?? 1 }).then(res, rej);
+      return term;
     });
     chain.insert = vi.fn((payload: Record<string, unknown>) => {
       inserts.push({ table, payload });
@@ -195,6 +194,45 @@ describe('createPlatformAdminService', () => {
       /anonymise/,
     );
     expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
+  const ILYA = (jours: number) => new Date(Date.now() - jours * 86400000).toISOString();
+
+  it('restoreTenant REFUSE un restaurant supprime depuis plus de 30 jours, meme sans anonymized_at', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: 'active', deleted_at: ILYA(40) },
+      },
+    });
+
+    await expect(createPlatformAdminService(client).restoreTenant('t-1', actor)).rejects.toThrow(
+      /anonymis/,
+    );
+    expect(updates.find((u) => u.table === 'tenants')).toBeUndefined();
+  });
+
+  it('restoreTenant accepte un restaurant supprime depuis 10 jours (temoin positif)', async () => {
+    const { client, updates } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: 'active', deleted_at: ILYA(10) },
+      },
+    });
+
+    await createPlatformAdminService(client).restoreTenant('t-1', actor);
+    expect(updates.find((u) => u.table === 'tenants')).toBeDefined();
+  });
+
+  it('restoreTenant: zero ligne touchee (le cron est passe entre la lecture et l ecriture) = refus', async () => {
+    const { client } = makeAdmin({
+      tenants: {
+        row: { name: 'Resto', slug: 'resto', subscription_status: 'active', deleted_at: ILYA(29) },
+        count: 0,
+      },
+    });
+
+    await expect(createPlatformAdminService(client).restoreTenant('t-1', actor)).rejects.toThrow(
+      ServiceError,
+    );
   });
 
   it('restoreTenant REFUSE aussi de restaurer un restaurant gele', async () => {

@@ -48,14 +48,24 @@ import { RETENTION } from '@/lib/legal/retention';
 export const RETENTION_JOURS = RETENTION.guestDataDays;
 
 /** Les colonnes d'une commande qui identifient une personne. */
-const COLONNES_PERSONNELLES = ['customer_name', 'customer_phone', 'delivery_address'] as const;
+const COLONNES_PERSONNELLES = [
+  'customer_name',
+  'customer_phone',
+  'delivery_address',
+  // Note libre du convive ("sans arachides, je suis Mme X"): texte libre, donc
+  // susceptible de porter une identite ou une information sensible. Efface avec
+  // le reste; la commande et ses montants restent.
+  'notes',
+] as const;
 
 export interface ResultatPurge {
   commandesAnonymisees: number;
+  notesArticlesEffacees: number;
   sessionsSupprimees: number;
   invitationsSupprimees: number;
   abonnementsPushSupprimes: number;
   journauxAuditSupprimes: number;
+  journauxAuditPseudonymises: number;
   restaurantsAnonymises: number;
 }
 
@@ -63,11 +73,6 @@ function dateLimite(maintenant: Date, jours: number = RETENTION_JOURS): string {
   const limite = new Date(maintenant);
   limite.setUTCDate(limite.getUTCDate() - jours);
   return limite.toISOString();
-}
-
-/** Adresse de remplacement d'un compte d'authentification anonymise. */
-function adresseAnonyme(userId: string): string {
-  return `anonymise-${userId}@anonymise.invalid`;
 }
 
 export function createRetentionService(supabase: SupabaseClient) {
@@ -105,7 +110,7 @@ export function createRetentionService(supabase: SupabaseClient) {
      * une donnee personnelle, et n'ont aucune valeur comptable.
      */
     async purgerSessionsAnciennes(maintenant = new Date()): Promise<number> {
-      const limite = dateLimite(maintenant);
+      const limite = dateLimite(maintenant, RETENTION.sessionsDays);
 
       // `count: 'exact'` et non un simple delete: PostgREST ne leve AUCUNE
       // erreur quand un DELETE ne touche rien, donc sans le compte on
@@ -135,7 +140,7 @@ export function createRetentionService(supabase: SupabaseClient) {
       const { count, error } = await supabase
         .from('invitations')
         .delete({ count: 'exact' })
-        .neq('status', 'accepted')
+        .or('status.is.null,status.neq.accepted')
         .lt('expires_at', limite);
 
       if (error) {
@@ -165,28 +170,64 @@ export function createRetentionService(supabase: SupabaseClient) {
     },
 
     /**
-     * Supprime les journaux d'audit de plus de 12 mois (restaurants et
-     * plateforme). Ils portent l'adresse e-mail de l'acteur. Le registre des
-     * paiements, les commandes et les evenements Stripe sont d'autres tables et
-     * ne sont JAMAIS purges: ce sont des pieces comptables.
+     * Efface les notes libres des articles d'une commande (`customer_notes`),
+     * apres le meme delai que les coordonnees du convive. Meme raison que la note
+     * de la commande: texte libre, donc potentiellement personnel.
      */
-    async purgerJournauxAudit(maintenant = new Date()): Promise<number> {
-      const limite = dateLimite(maintenant, RETENTION.auditLogDays);
-      let total = 0;
+    async effacerNotesArticlesAnciennes(maintenant = new Date()): Promise<number> {
+      const limite = dateLimite(maintenant);
 
-      for (const table of ['audit_log', 'platform_audit_log'] as const) {
-        const { count, error } = await supabase
-          .from(table)
-          .delete({ count: 'exact' })
-          .lt('created_at', limite);
+      const { count, error } = await supabase
+        .from('order_items')
+        .update({ customer_notes: null }, { count: 'exact' })
+        .lt('created_at', limite)
+        .not('customer_notes', 'is', null);
 
-        if (error) {
-          logger.error('Purge des journaux d audit impossible', error, { table });
-          throw error;
-        }
-        total += count ?? 0;
+      if (error) {
+        logger.error('Effacement des notes d articles impossible', error);
+        throw error;
       }
-      return total;
+      return count ?? 0;
+    },
+
+    /**
+     * Journaux d'audit de plus de 12 mois.
+     *
+     *   - journal de la plateforme (actions de suppression, suspension...):
+     *     supprime, aucune valeur comptable;
+     *   - journal des restaurants: la fonction SQL supprime les entrees non
+     *     financieres et PSEUDONYMISE les entrees financieres (commande, coupon,
+     *     article: prix): l'acteur et les cles personnelles du JSON disparaissent,
+     *     la ligne reste pour la tracabilite comptable.
+     *
+     * Les paiements, commandes et evenements Stripe ne sont jamais purges.
+     */
+    async purgerJournauxAudit(
+      maintenant = new Date(),
+    ): Promise<{ supprimes: number; pseudonymises: number }> {
+      const limite = dateLimite(maintenant, RETENTION.auditLogDays);
+
+      const { data, error } = await supabase.rpc('purge_audit_logs', { p_cutoff: limite });
+      if (error) {
+        logger.error('Purge des journaux d audit impossible', error);
+        throw error;
+      }
+      const ligne = (Array.isArray(data) ? data[0] : data) as
+        { deleted_count?: number; pseudonymized_count?: number } | null | undefined;
+
+      const { count, error: erreurPlateforme } = await supabase
+        .from('platform_audit_log')
+        .delete({ count: 'exact' })
+        .lt('created_at', limite);
+      if (erreurPlateforme) {
+        logger.error('Purge du journal de la plateforme impossible', erreurPlateforme);
+        throw erreurPlateforme;
+      }
+
+      return {
+        supprimes: (ligne?.deleted_count ?? 0) + (count ?? 0),
+        pseudonymises: ligne?.pseudonymized_count ?? 0,
+      };
     },
 
     /**
@@ -213,11 +254,14 @@ export function createRetentionService(supabase: SupabaseClient) {
 
       const comptes = (data ?? []) as { auth_user_id: string }[];
       for (const { auth_user_id: userId } of comptes) {
-        const { error: erreurAuth } = await supabase.auth.admin.updateUserById(userId, {
-          email: adresseAnonyme(userId),
-          user_metadata: {},
-        });
-        if (erreurAuth) {
+        // Suppression LOGIQUE (shouldSoftDelete = true): GoTrue masque l'adresse et
+        // le telephone, retire les identites (Google, Azure) et coupe les
+        // sessions, mais GARDE la ligne auth.users. C'est voulu: admin_users,
+        // audit_log et les commandes la referencent par cle etrangere, et une
+        // suppression physique les en detacherait ou echouerait. Un compte deja
+        // supprime (reessai apres un echec plus bas) repond 404: c'est fait.
+        const { error: erreurAuth } = await supabase.auth.admin.deleteUser(userId, true);
+        if (erreurAuth && (erreurAuth as { status?: number }).status !== 404) {
           logger.error('Anonymisation du compte d authentification impossible', erreurAuth, {
             userId,
           });
@@ -243,22 +287,32 @@ export function createRetentionService(supabase: SupabaseClient) {
     async executer(maintenant = new Date()): Promise<ResultatPurge> {
       const resultat: ResultatPurge = {
         commandesAnonymisees: 0,
+        notesArticlesEffacees: 0,
         sessionsSupprimees: 0,
         invitationsSupprimees: 0,
         abonnementsPushSupprimes: 0,
         journauxAuditSupprimes: 0,
+        journauxAuditPseudonymises: 0,
         restaurantsAnonymises: 0,
       };
       let echecs = 0;
 
       const etapes: [keyof ResultatPurge, (m: Date) => Promise<number>][] = [
         ['commandesAnonymisees', (m) => this.anonymiserCommandesAnciennes(m)],
+        ['notesArticlesEffacees', (m) => this.effacerNotesArticlesAnciennes(m)],
         ['sessionsSupprimees', (m) => this.purgerSessionsAnciennes(m)],
         ['invitationsSupprimees', (m) => this.purgerInvitationsPerimees(m)],
         ['abonnementsPushSupprimes', (m) => this.purgerAbonnementsPushInactifs(m)],
-        ['journauxAuditSupprimes', (m) => this.purgerJournauxAudit(m)],
         ['restaurantsAnonymises', (m) => this.anonymiserRestaurantsFermes(m)],
       ];
+
+      try {
+        const audit = await this.purgerJournauxAudit(maintenant);
+        resultat.journauxAuditSupprimes = audit.supprimes;
+        resultat.journauxAuditPseudonymises = audit.pseudonymises;
+      } catch {
+        echecs += 1;
+      }
 
       for (const [cle, etape] of etapes) {
         try {

@@ -15,7 +15,7 @@
  * sont des pieces comptables que le droit commercial impose de garder des annees.
  */
 export const RETENTION = {
-  /** Nom, telephone et adresse de livraison d'un convive, apres la commande. */
+  /** Nom, telephone, adresse de livraison et notes libres d'un convive, apres la commande. */
   guestDataDays: 90,
   /** Sessions de connexion (elles portent une adresse IP). */
   sessionsDays: 90,
@@ -23,7 +23,12 @@ export const RETENTION = {
   invitationsAfterExpiryDays: 30,
   /** Abonnements push d'un appareil jamais joint ni renouvele. */
   pushInactiveDays: 180,
-  /** Journaux d'audit (restaurant et plateforme): 12 mois. */
+  /**
+   * Journaux d'audit: 12 mois. Journal de la plateforme et entrees non
+   * financieres: supprimes. Entrees financieres du journal des restaurants
+   * (commande, coupon, article/prix): PSEUDONYMISEES (acteur et cles personnelles
+   * retires) et conservees, pour la tracabilite comptable.
+   */
   auditLogDays: 365,
   /** Donnees personnelles d'un restaurant clos, apres sa suppression. */
   closedTenantAnonymizeDays: 30,

@@ -21,6 +21,7 @@ const COOKIE_KEYS = [
   'cookieLocale',
   'cookieRecovery',
   'cookieAb',
+  'cookieCc',
   'cookieStorage',
   'cookieSentry',
 ] as const;

@@ -90,7 +90,7 @@ describe('createRetentionService', () => {
     expect(RETENTION_JOURS).toBe(90);
   });
 
-  it('vide les trois colonnes qui identifient une personne, et rien d autre', async () => {
+  it('vide les colonnes qui identifient une personne, et rien d autre', async () => {
     await createRetentionService(fausseBase()).anonymiserCommandesAnciennes(LE_15_MAI);
 
     const appel = appelsOrders.find((a) => a.table === 'orders')!;
@@ -98,6 +98,7 @@ describe('createRetentionService', () => {
       customer_name: null,
       customer_phone: null,
       delivery_address: null,
+      notes: null,
     });
     // La piece comptable reste intacte: aucun montant, aucune date, aucun numero.
     for (const interdit of ['total', 'subtotal', 'tax_amount', 'order_number', 'created_at']) {
@@ -123,7 +124,7 @@ describe('createRetentionService', () => {
 
     const appel = appelsOrders.find((a) => a.table === 'orders')!;
     expect(appel.filtreOr).toBe(
-      'customer_name.not.is.null,customer_phone.not.is.null,delivery_address.not.is.null',
+      'customer_name.not.is.null,customer_phone.not.is.null,delivery_address.not.is.null,notes.not.is.null',
     );
   });
 
@@ -193,10 +194,12 @@ describe('createRetentionService', () => {
 
     await expect(createRetentionService(fausseBase()).executer(LE_15_MAI)).resolves.toEqual({
       commandesAnonymisees: 0,
+      notesArticlesEffacees: 0,
       sessionsSupprimees: 0,
       invitationsSupprimees: 0,
       abonnementsPushSupprimes: 0,
       journauxAuditSupprimes: 0,
+      journauxAuditPseudonymises: 0,
       restaurantsAnonymises: 0,
     });
   });
