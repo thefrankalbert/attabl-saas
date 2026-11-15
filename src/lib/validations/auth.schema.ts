@@ -43,6 +43,8 @@ export const loginSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
+    // A-06: adresse du compte, retapee pour prouver que le lien est le sien.
+    accountEmail: z.string().trim().email('Email invalide'),
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'La confirmation est requise'),
   })
@@ -50,6 +52,12 @@ export const resetPasswordSchema = z
     message: 'Les mots de passe ne correspondent pas',
     path: ['confirmPassword'],
   });
+
+/** Corps du POST /api/reset-password (la confirmation du mot de passe reste cote formulaire). */
+export const resetPasswordSubmitSchema = z.object({
+  accountEmail: z.string().trim().email('Email invalide'),
+  password: passwordSchema,
+});
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

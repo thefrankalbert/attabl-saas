@@ -6,10 +6,13 @@ import { ServiceError } from '@/services/errors';
 // ---------------------------------------------------------------------------
 
 const mockCheck = vi.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+const mockRecipientCheck = vi.fn().mockResolvedValue({ success: true });
 const mockGetClientIp = vi.fn<(req: Request) => string>().mockReturnValue('127.0.0.1');
 
 vi.mock('@/lib/rate-limit', () => ({
   signupLimiter: { check: (...args: unknown[]) => mockCheck(...(args as [])) },
+  adminPasswordResetLinkLimiter: { check: (...args: unknown[]) => mockRecipientCheck(...args) },
+  cleCompte: (email: string) => `h(${email.toLowerCase()})`,
   getClientIp: (req: Request) => mockGetClientIp(req),
   getClientIpBrute: (req: Request) => mockGetClientIp(req),
 }));
@@ -19,13 +22,25 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => mockCreateAdminClient(),
 }));
 
-const mockCompleteEmailSignup = vi.fn<() => Promise<{ slug: string; tenantId: string }>>();
+const mockCompleteEmailSignup =
+  vi.fn<() => Promise<{ slug: string; tenantId: string; emailDelivered?: boolean }>>();
 
 vi.mock('@/services/signup.service', () => ({
   createSignupService: () => ({
-    completeEmailSignup: (...args: unknown[]): Promise<{ slug: string; tenantId: string }> =>
+    completeEmailSignup: (
+      ...args: unknown[]
+    ): Promise<{ slug: string; tenantId: string; emailDelivered?: boolean }> =>
       mockCompleteEmailSignup(...(args as [])),
   }),
+}));
+
+const mockNameTaken = vi.fn<() => Promise<boolean>>().mockResolvedValue(false);
+vi.mock('@/services/restaurant-name.service', () => ({
+  isRestaurantNameTaken: (...a: unknown[]) => mockNameTaken(...(a as [])),
+}));
+const mockAccountExistsEmail = vi.fn().mockResolvedValue(true);
+vi.mock('@/services/email.service', () => ({
+  sendSignupAccountExistsEmail: (...a: unknown[]) => mockAccountExistsEmail(...a),
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -79,6 +94,9 @@ describe('POST /api/signup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCheck.mockResolvedValue({ success: true });
+    mockNameTaken.mockResolvedValue(false);
+    mockAccountExistsEmail.mockResolvedValue(true);
+    mockRecipientCheck.mockResolvedValue({ success: true });
   });
 
   // 1. Rate limited -> 429
@@ -110,22 +128,109 @@ describe('POST /api/signup', () => {
     expect(json.error).toBeDefined();
   });
 
-  // 4. ServiceError maps to correct HTTP status
-  it('maps ServiceError CONFLICT to 409 with emailAlreadyRegistered message', async () => {
+  // 4. A-08: adresse deja inscrite -> reponse IDENTIQUE a une inscription reussie
+  it('answers an already-registered email exactly like a successful signup (A-08)', async () => {
+    mockCompleteEmailSignup.mockResolvedValueOnce({
+      slug: 'le-petit-bistrot',
+      tenantId: 'tenant-uuid-123',
+      emailDelivered: true,
+    });
+    const created = await POST(makeRequest(validBody()));
+    const createdJson = (await created.json()) as Record<string, unknown>;
+
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+    const existing = await POST(makeRequest(validBody()));
+    const existingJson = (await existing.json()) as Record<string, unknown>;
+
+    expect(existing.status).toBe(created.status);
+    expect(Object.keys(existingJson).sort()).toEqual(Object.keys(createdJson).sort());
+    expect(existingJson).toEqual(createdJson);
+    expect(JSON.stringify(existingJson)).not.toMatch(/already|deja|EMAIL_ALREADY_REGISTERED/i);
+  });
+
+  // A-08 (contre-audit H1): le refus "nom pris" ne depend pas de l'adresse.
+  it('answers a taken restaurant name identically for a new and an existing email (A-08)', async () => {
+    mockNameTaken.mockResolvedValue(true);
+
+    // Le service n'est jamais atteint: la reponse ne peut donc pas dependre de l'adresse.
+    const first = await POST(makeRequest({ ...validBody(), email: 'nouveau@bistrot.com' }));
+    const second = await POST(makeRequest({ ...validBody(), email: 'existant@bistrot.com' }));
+
+    expect(first.status).toBe(409);
+    expect(second.status).toBe(first.status);
+    expect(await second.json()).toEqual(await first.json());
+    expect(mockCompleteEmailSignup).not.toHaveBeenCalled();
+  });
+
+  it('A-08: previent le titulaire quand l adresse a deja un compte (un envoi)', async () => {
     mockCompleteEmailSignup.mockRejectedValueOnce(
       new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
     );
 
     const res = await POST(makeRequest(validBody()));
 
-    expect(res.status).toBe(409);
-    const json = (await res.json()) as { error: string };
-    expect(json.error).toBe('emailAlreadyRegistered');
-    expect((json as { code?: string }).code).toBe('EMAIL_ALREADY_REGISTERED');
+    expect(res.status).toBe(200);
+    expect(mockAccountExistsEmail).toHaveBeenCalledTimes(1);
+    expect(mockAccountExistsEmail.mock.calls[0][0]).toBe('owner@bistrot.com');
   });
 
-  // 5. Successful signup -> returns slug + tenantId
-  it('returns 200 with slug and tenantId on successful signup', async () => {
+  it('A-08: plafond par destinataire: au-dela, aucun envoi, meme reponse 200', async () => {
+    const refus = new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT');
+    mockCompleteEmailSignup.mockRejectedValueOnce(refus);
+    const first = await POST(makeRequest(validBody()));
+    const firstJson = await first.json();
+    expect(mockAccountExistsEmail).toHaveBeenCalledTimes(1);
+    expect(mockRecipientCheck).toHaveBeenCalledWith('signup-exists:h(owner@bistrot.com)');
+
+    mockAccountExistsEmail.mockClear();
+    mockRecipientCheck.mockResolvedValue({ success: false });
+    mockCompleteEmailSignup.mockRejectedValueOnce(refus);
+    const capped = await POST(makeRequest(validBody()));
+
+    expect(capped.status).toBe(first.status);
+    expect(await capped.json()).toEqual(firstJson);
+    expect(mockAccountExistsEmail).not.toHaveBeenCalled();
+  });
+
+  it('A-08: lecture du nom impossible -> meme 503 pour une adresse nouvelle et deja inscrite (echec ferme)', async () => {
+    mockNameTaken.mockRejectedValue(new Error('db down'));
+
+    const a = await POST(makeRequest({ ...validBody(), email: 'nouveau@bistrot.com' }));
+    const b = await POST(makeRequest({ ...validBody(), email: 'existant@bistrot.com' }));
+
+    expect(a.status).toBe(503);
+    expect(b.status).toBe(503);
+    expect(await b.json()).toEqual(await a.json());
+    expect(mockCompleteEmailSignup).not.toHaveBeenCalled();
+  });
+
+  it('A-08: un echec d envoi du courriel ne change pas la reponse neutre', async () => {
+    mockAccountExistsEmail.mockRejectedValueOnce(new Error('resend down'));
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('EMAIL_ALREADY_REGISTERED', 'CONFLICT'),
+    );
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+  });
+
+  // 4b. Other conflicts still map to their HTTP status
+  it('still maps RESTAURANT_NAME_TAKEN to 409', async () => {
+    mockCompleteEmailSignup.mockRejectedValueOnce(
+      new ServiceError('RESTAURANT_NAME_TAKEN', 'CONFLICT'),
+    );
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { code?: string }).code).toBe('RESTAURANT_NAME_TAKEN');
+  });
+
+  // 5. Successful signup -> neutral body, no account identifiers
+  it('returns 200 with the neutral body on successful signup', async () => {
     mockCompleteEmailSignup.mockResolvedValueOnce({
       slug: 'le-petit-bistrot',
       tenantId: 'tenant-uuid-123',
@@ -134,16 +239,12 @@ describe('POST /api/signup', () => {
     const res = await POST(makeRequest(validBody()));
 
     expect(res.status).toBe(200);
-    const json = (await res.json()) as {
-      success: boolean;
-      slug: string;
-      tenantId: string;
-      message: string;
-    };
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.success).toBe(true);
-    expect(json.slug).toBe('le-petit-bistrot');
-    expect(json.tenantId).toBe('tenant-uuid-123');
+    expect(json.requiresConfirmation).toBe(true);
     expect(json.message).toBeDefined();
+    expect(json).not.toHaveProperty('slug');
+    expect(json).not.toHaveProperty('tenantId');
   });
 
   // 6. Unknown error -> 500

@@ -5,7 +5,11 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { invitationManageLimiter, getClientIp } from '@/lib/rate-limit';
+import {
+  invitationManageLimiter,
+  invitationTenantDailyLimiter,
+  getClientIp,
+} from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { canGrantRole } from '@/lib/auth/role-hierarchy';
@@ -17,6 +21,8 @@ import type { Tenant } from '@/types/admin.types';
 import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
+import { getTranslations } from 'next-intl/server';
+import { retryAfterSeconds } from '@/lib/retry-after';
 import { tenantLockResponse } from '@/lib/billing/tenant-lock-response';
 
 export async function GET(request: Request) {
@@ -212,7 +218,7 @@ export async function POST(request: Request) {
 
       // SECURITY: prevent privilege escalation - an admin can only invite roles
       // strictly below admin (never another admin or an owner). Same policy as
-      // actionCreateAdminUser, shared via canGrantRole so the two creation
+      // l'ancienne creation directe, partage via canGrantRole so the two creation
       // paths cannot diverge.
       if (!canGrantRole(adminUser.role, parsed.data.role)) {
         return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
@@ -243,6 +249,19 @@ export async function POST(request: Request) {
 
       const service = createInvitationService(adminClient);
       await service.assertNotAlreadyMember(tenantId, parsed.data.email);
+
+      // P-10: plafond quotidien de courriels d'invitation PAR RESTAURANT. Pris
+      // apres l'identite, les droits, la validation, les limites de plan et le
+      // doublon (un refus ordinaire ne consomme pas le quota), et avant toute
+      // ecriture ou envoi.
+      const daily = await invitationTenantDailyLimiter.check(tenantId);
+      if (!daily.success) {
+        const te = await getTranslations('errors');
+        return NextResponse.json(
+          { error: te('invitationDailyLimit') },
+          { status: 429, headers: { 'Retry-After': retryAfterSeconds(daily.reset) } },
+        );
+      }
       const invitation = await service.createInvitation({
         tenantId,
         email: parsed.data.email,
