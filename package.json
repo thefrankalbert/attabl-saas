@@ -88,7 +88,7 @@
     "dinero.js": "2.0.2",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
-    "html2canvas-pro": "^1.5.8",
+    "html2canvas-pro": "^2.6.4",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "5.0.9",
     "lucide-react": "^1.71.0",
