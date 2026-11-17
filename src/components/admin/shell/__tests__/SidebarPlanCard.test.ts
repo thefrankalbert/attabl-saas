@@ -7,19 +7,16 @@ describe('getUpsellTarget', () => {
     expect(getUpsellTarget('STARTER')).toBe('pro');
   });
 
-  it('upsells Pro to Business', () => {
-    expect(getUpsellTarget('PRO')).toBe('business');
-  });
-
-  it('hides the card on the top plans (returns null)', () => {
+  it('never pushes a paying Pro, Business or Enterprise tenant to the next tier', () => {
+    expect(getUpsellTarget('PRO')).toBeNull();
     expect(getUpsellTarget('BUSINESS')).toBeNull();
     expect(getUpsellTarget('ENTERPRISE')).toBeNull();
   });
 
   it('is case-insensitive', () => {
-    expect(getUpsellTarget('pro')).toBe('business');
+    expect(getUpsellTarget('pro')).toBeNull();
     expect(getUpsellTarget('Business')).toBeNull();
-    expect(getUpsellTarget('enterprise')).toBeNull();
+    expect(getUpsellTarget('starter')).toBe('pro');
   });
 
   it('defaults unknown or empty plans to a Pro upsell', () => {
