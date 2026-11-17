@@ -224,12 +224,12 @@ export default function SupplierImportExcel({
         </Button>
         <Button
           variant="default"
-          disabled={!importFile || importing}
-          onClick={handleImport}
+          disabled={importing}
+          onClick={importFile ? handleImport : () => fileInputRef.current?.click()}
           className="gap-2 rounded-xl"
         >
           {importing && <Loader2 className="w-4 h-4 animate-spin" />}
-          {importing ? t('importing') : t('importExcel')}
+          {importing ? t('importing') : importFile ? t('importExcel') : t('chooseFile')}
         </Button>
       </div>
     </div>

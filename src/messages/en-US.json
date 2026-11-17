@@ -3660,7 +3660,8 @@
     "wizardItemPrice": "Price ({currency})",
     "wizardItemDescription": "Description (optional)",
     "wizardItemAdded": "{name} added",
-    "wizardAddItemsButton": "Add items"
+    "wizardAddItemsButton": "Add items",
+    "chooseFile": "Choose a file"
   },
   "payment": {
     "title": "Checkout",
@@ -5146,7 +5147,8 @@
     "downloadRecipes": "Download my recipe sheets (Excel)",
     "recipesRemoved": "{count} recipe line(s) removed",
     "recipesUnchanged": "{count} line(s) already up to date",
-    "importUpToDate": "Your recipe sheets are already up to date: nothing changed."
+    "importUpToDate": "Your recipe sheets are already up to date: nothing changed.",
+    "chooseFile": "Choose a file"
   },
   "authShell": {
     "secure": "Secure connection"
