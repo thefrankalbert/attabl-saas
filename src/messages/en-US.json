@@ -295,7 +295,7 @@
       "billing": {
         "monthly": "Monthly",
         "yearly": "Yearly",
-        "yearlyDiscount": "-20%",
+        "yearlyDiscount": "-15%",
         "noCommitment": "No credit card. No commitment."
       },
       "priceSuffix": "FCFA/mo",
@@ -490,7 +490,7 @@
           },
           "q4": {
             "question": "Is there a commitment?",
-            "answer": "Monthly = no commitment. Yearly = -20%."
+            "answer": "Monthly = no commitment. Yearly = about -15%."
           },
           "q5": {
             "question": "How do I pay?",

@@ -161,8 +161,8 @@ select is((select subscription_current_period_end from pg_temp.ten(3)), '2026-12
   'S3: periode expiree, on repart de maintenant (pas de rattrapage)');
 
 select pg_temp.mk_tenant(4, 'trial', 'starter', null);
-select pg_temp.mk_pending(4, 'pro', 'yearly', 758400);
-select pg_temp.go(4, 1004, 758400, 758400);
+select pg_temp.mk_pending(4, 'pro', 'yearly', 804000);
+select pg_temp.go(4, 1004, 804000, 804000);
 select is((select subscription_current_period_end from pg_temp.ten(4)), '2027-11-15T10:00:00Z'::timestamptz,
   'S4: annuel = douze mois');
 

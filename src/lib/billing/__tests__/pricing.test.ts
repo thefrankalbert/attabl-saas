@@ -25,10 +25,10 @@ const MOIS_PAR_INTERVALLE: Record<BillingInterval, number> = {
   yearly: 12,
 };
 
-/** Remise annoncee sur la page de tarifs, par periodicite. */
+/** Remise annoncee sur la page de tarifs, par periodicite (-15 %, arrondi au millier). */
 const REMISE: Record<BillingInterval, number> = {
   monthly: 0,
-  yearly: 0.2,
+  yearly: 0.15,
 };
 
 describe('grille tarifaire', () => {
@@ -55,7 +55,9 @@ describe('grille tarifaire', () => {
   it.each(PLANS)('%s : les remises annoncees sont respectees', (plan) => {
     const mensuel = PLAN_AMOUNTS[plan].monthly;
     for (const intervalle of INTERVALLES) {
-      expect(PLAN_AMOUNTS[plan][intervalle]).toBe(mensuel * (1 - REMISE[intervalle]));
+      expect(PLAN_AMOUNTS[plan][intervalle]).toBe(
+        Math.round((mensuel * (1 - REMISE[intervalle])) / 1000) * 1000,
+      );
     }
   });
 

@@ -128,7 +128,7 @@ describe('startPayment', () => {
   it('le prix annuel vient de la source unique', async () => {
     const { service } = setup({ tenants: [tenant({ currency: 'XAF' })] });
     const result = await service.startPayment({ ...START, plan: 'pro', interval: 'yearly' });
-    expect(result).toMatchObject({ amount: 758400, currency: 'XAF' });
+    expect(result).toMatchObject({ amount: 804000, currency: 'XAF' });
   });
 
   it('refuse une devise hors XOF/XAF et un restaurant supprime', async () => {

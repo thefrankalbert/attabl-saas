@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { BillingPeriod } from '../pricing-data';
 
-// `px-2.5` en dessous de `sm`: garde le selecteur de periode et son "-20%" dans
+// `px-2.5` en dessous de `sm`: garde le selecteur de periode et son "-15%" dans
 // la colonne de 335px d'un telephone de 375 (debordement mesure le 2026-11-06,
 // quand il avait trois onglets). L'aspect sur grand ecran ne bouge pas.
 const PILL =

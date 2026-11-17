@@ -19,9 +19,9 @@ export const PLAN_AMOUNTS: Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, number>
 > = {
-  starter: { monthly: 39000, yearly: 31200 },
-  pro: { monthly: 79000, yearly: 63200 },
-  business: { monthly: 149000, yearly: 119200 },
+  starter: { monthly: 39000, yearly: 33000 },
+  pro: { monthly: 79000, yearly: 67000 },
+  business: { monthly: 149000, yearly: 127000 },
 };
 
 // Montant TOTAL reellement facture pour la periode
@@ -29,7 +29,7 @@ export const PLAN_TOTALS: Record<
   Exclude<SubscriptionPlan, 'enterprise'>,
   Record<BillingInterval, number>
 > = {
-  starter: { monthly: 39000, yearly: 374400 },
-  pro: { monthly: 79000, yearly: 758400 },
-  business: { monthly: 149000, yearly: 1430400 },
+  starter: { monthly: 39000, yearly: 396000 },
+  pro: { monthly: 79000, yearly: 804000 },
+  business: { monthly: 149000, yearly: 1524000 },
 };
