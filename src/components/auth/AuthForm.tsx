@@ -40,6 +40,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
   const {
     isConfirmed,
+    isAccountDeleted,
     urlError,
     loading,
     oauthLoading,
@@ -99,6 +100,15 @@ function AuthForm({ mode }: AuthFormProps) {
           <MailCheck className="h-4 w-4" />
           <AlertDescription className="text-sm text-[var(--ok-fg)]">
             {tForm('emailConfirmedSuccess')}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Account deleted from the app (Settings or account menu) */}
+      {isLogin && isAccountDeleted && (
+        <Alert className="mb-4 rounded-lg border-[var(--ok-border)] bg-[var(--ok-bg)] text-[var(--ok-fg)]">
+          <AlertDescription className="text-sm text-[var(--ok-fg)]">
+            {tForm('accountDeletedSuccess')}
           </AlertDescription>
         </Alert>
       )}

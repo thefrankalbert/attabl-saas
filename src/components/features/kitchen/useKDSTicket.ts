@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { Order, OrderItem, OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 import { getUrgency, STATUS_BADGE, CTA_CONFIG, formatTime } from './kds-ticket.config';
+import { memberDisplayName } from '@/lib/member-display-name';
 
 interface UseKDSTicketParams {
   order: Order;
@@ -23,6 +24,7 @@ export function useKDSTicket({
   const [elapsed, setElapsed] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
   const locale = useLocale();
 
   // Extract short order number: "CMD-20260403-001" -> "001"
@@ -91,7 +93,11 @@ export function useKDSTicket({
   const serviceLabel = order.service_type ? SERVICE_LABELS[order.service_type] : null;
 
   // --- Server name (from joined admin_users relation) -----
-  const serverName = (order as unknown as { server?: { full_name?: string } }).server?.full_name;
+  const serverName =
+    memberDisplayName(
+      (order as unknown as { server?: { full_name?: string | null } | null }).server,
+      tc('teamMember'),
+    ) ?? undefined;
 
   // --- Actions ---------------------------------------------
   const handleAction = () => {

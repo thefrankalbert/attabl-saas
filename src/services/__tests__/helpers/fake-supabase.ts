@@ -2,6 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 type Row = Record<string, unknown>;
 type Filter = (row: Row) => boolean;
+
+/** Valeur d'une colonne, `relation.colonne` compris (ligne jointe). */
+function valueOf(row: Row, col: string): unknown {
+  const dot = col.indexOf('.');
+  if (dot === -1) return row[col];
+  const related = row[col.slice(0, dot)];
+  return related && typeof related === 'object' ? (related as Row)[col.slice(dot + 1)] : undefined;
+}
 export type Result = { data: unknown; error: { code?: string; message: string } | null };
 
 export interface FakeSupabaseOptions {
@@ -19,6 +27,11 @@ export interface FakeSupabaseOptions {
  * touchees, contraintes d'unicite. Chaque requete s'execute d'un seul bloc
  * synchrone, comme une instruction SQL: c'est ce qui rend les tests de
  * concurrence (deux webhooks) fideles a l'atomicite reelle.
+ *
+ * Jointure `relation!inner(colonnes)` en lecture: la ligne liee est trouvee par
+ * `<relation au singulier>_id` (ex: `tenants` par `tenant_id`), attachee sous
+ * `row[relation]`, et une ligne sans correspondance est ecartee (inner). Un
+ * filtre `relation.colonne` porte sur la ligne liee, comme PostgREST.
  */
 export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSupabaseOptions = {}) {
   const db: Record<string, Row[]> = {};
@@ -32,10 +45,17 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
     private limitN: number | null = null;
     private orders: { col: string; asc: boolean; nullsFirst: boolean }[] = [];
     private mode: 'many' | 'maybeSingle' = 'many';
+    private joins: { relation: string; columns: string[] }[] = [];
 
     constructor(private table: string) {}
 
-    select() {
+    select(columns = '*') {
+      for (const m of columns.matchAll(/(\w+)!inner\(([^)]*)\)/g)) {
+        this.joins.push({
+          relation: m[1],
+          columns: m[2].split(',').map((c) => c.trim()),
+        });
+      }
       if (this.op !== 'select') this.returning = true;
       return this;
     }
@@ -54,27 +74,31 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
       return this;
     }
     eq(col: string, value: unknown) {
-      this.filters.push((r) => r[col] === value);
+      this.filters.push((r) => valueOf(r, col) === value);
+      return this;
+    }
+    neq(col: string, value: unknown) {
+      this.filters.push((r) => valueOf(r, col) !== value);
       return this;
     }
     is(col: string, value: null) {
-      this.filters.push((r) => (r[col] ?? null) === value);
+      this.filters.push((r) => (valueOf(r, col) ?? null) === value);
       return this;
     }
     in(col: string, values: unknown[]) {
-      this.filters.push((r) => values.includes(r[col]));
+      this.filters.push((r) => values.includes(valueOf(r, col)));
       return this;
     }
     lt(col: string, value: string) {
-      this.filters.push((r) => r[col] != null && String(r[col]) < value);
+      this.filters.push((r) => valueOf(r, col) != null && String(valueOf(r, col)) < value);
       return this;
     }
     lte(col: string, value: string) {
-      this.filters.push((r) => r[col] != null && String(r[col]) <= value);
+      this.filters.push((r) => valueOf(r, col) != null && String(valueOf(r, col)) <= value);
       return this;
     }
     gt(col: string, value: string) {
-      this.filters.push((r) => r[col] != null && String(r[col]) > value);
+      this.filters.push((r) => valueOf(r, col) != null && String(valueOf(r, col)) > value);
       return this;
     }
     order(col: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) {
@@ -113,7 +137,21 @@ export function createFakeSupabase(seed: Record<string, Row[]>, options: FakeSup
         return { data: this.returning ? [row] : null, error: null };
       }
 
-      const matched = rows.filter((r) => this.filters.every((f) => f(r)));
+      // Jointures (lecture seulement): une ligne sans correspondance disparait.
+      const joined =
+        this.op === 'select' && this.joins.length > 0
+          ? rows.flatMap((r) => {
+              const out: Row = { ...r };
+              for (const { relation, columns } of this.joins) {
+                const fk = `${relation.replace(/s$/, '')}_id`;
+                const related = (db[relation] ?? []).find((t) => t.id === r[fk]);
+                if (!related) return [];
+                out[relation] = Object.fromEntries(columns.map((c) => [c, related[c]]));
+              }
+              return [out];
+            })
+          : rows;
+      const matched = joined.filter((r) => this.filters.every((f) => f(r)));
       if (this.op === 'update') {
         for (const row of matched) {
           const next = { ...row, ...(this.payload as Row) };

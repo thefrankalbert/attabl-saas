@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { HONEYPOT_FIELD } from '@/lib/honeypot';
+import { prepareLogoutInBrowser } from '@/lib/offline/browser-logout-cleanup';
 
 type AuthMode = 'login' | 'signup';
 
@@ -15,6 +16,17 @@ export function useAuthForm(mode: AuthMode) {
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
   const isConfirmed = searchParams.get('confirmed') === 'true';
+  const isAccountDeleted = searchParams.get('deleted') === 'true';
+
+  // Compte supprime depuis l'application: rien de local ne doit survivre sur
+  // cet appareil (caches de lecture). L'action a redirige ici cote serveur,
+  // c'est donc ici que le nettoyage se fait.
+  useEffect(() => {
+    if (!isAccountDeleted) return;
+    prepareLogoutInBrowser({ force: true }).catch((err: unknown) => {
+      logger.warn('Nettoyage local apres suppression de compte incomplet', { err });
+    });
+  }, [isAccountDeleted]);
   const urlError = searchParams.get('error') || '';
 
   const [loading, setLoading] = useState(false);
@@ -193,6 +205,7 @@ export function useAuthForm(mode: AuthMode) {
 
   return {
     isConfirmed,
+    isAccountDeleted,
     urlError,
     loading,
     oauthLoading,
