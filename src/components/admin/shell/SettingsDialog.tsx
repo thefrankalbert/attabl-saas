@@ -27,6 +27,7 @@ import {
 import { getTenantUrl } from '@/lib/constants';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
+import DeleteAccountSection from '@/components/features/settings/DeleteAccountSection';
 
 export type SettingsTab = 'compte' | 'etablissement' | 'imprimantes' | 'tva' | 'personnel';
 
@@ -61,7 +62,7 @@ export function SettingsDialog({
   // Chaque onglet ne fait que renvoyer vers une page: on ne montre que ceux dont
   // la page s'ouvre pour ce membre (meme regle que le middleware), au lieu
   // d'un bouton qui finit sur /unauthorized.
-  const { permissions } = usePermissions();
+  const { permissions, role } = usePermissions();
   const canOpen = (subPath: string) => canOpenAdminSubPath(subPath, permissions);
 
   const tabs: { key: SettingsTab; label: string; icon: typeof CircleUser }[] = [
@@ -133,8 +134,10 @@ export function SettingsDialog({
             ))}
           </nav>
 
-          {/* Panes */}
-          <div className="min-w-0 flex-1 space-y-4 p-[22px]">
+          {/* Panes. Hauteur fixe du dialogue (sm:h-[460px]): le volet defile a
+              l'interieur (liste explicite, regle viewport) au lieu de pousser le
+              dialogue hors de l'ecran sur une tablette en paysage. */}
+          <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto p-[22px]">
             {activeTab === 'compte' && (
               <Pane title={t('setAccount')} sub={t('setAccountSub')}>
                 <Field label={t('setFieldName')} value={userName || '-'} />
@@ -142,6 +145,14 @@ export function SettingsDialog({
                 <Field label={t('setFieldPlan')} value={planLabel} />
                 {canOpen('/subscription') && (
                   <div>{linkBtn(`${basePath}/subscription`, t('setManageSub'))}</div>
+                )}
+                {/* Suppression du compte, rendue ICI et pas seulement dans
+                    Parametres: un restaurant gele est renvoye sur /subscription
+                    par le proxy, et ce volet y reste ouvert. */}
+                {role === 'owner' ? (
+                  <DeleteAccountSection variant="owner" restaurantName={tenant.name} />
+                ) : (
+                  <DeleteAccountSection variant="staff" />
                 )}
               </Pane>
             )}

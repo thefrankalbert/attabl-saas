@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
+import RoleGuard from '@/components/admin/RoleGuard';
 import SettingsDataReset from './SettingsDataReset';
+import DeleteAccountSection from './DeleteAccountSection';
 
 // --- Types -------------------------------------------------
 
@@ -14,11 +16,17 @@ interface SettingsSecurityProps {
   form: UseFormReturn<SettingsFormValues>;
   t: (key: string) => string;
   tenantSlug: string;
+  tenantName: string;
 }
 
 // --- Component ---------------------------------------------
 
-export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecurityProps) {
+export default function SettingsSecurity({
+  form,
+  t,
+  tenantSlug,
+  tenantName,
+}: SettingsSecurityProps) {
   const {
     register,
     watch,
@@ -122,6 +130,11 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
 
         {/* Data Reset -- Danger Zone (owner only) */}
         <SettingsDataReset tenantSlug={tenantSlug} />
+
+        {/* Account deletion (owner only): closes THIS restaurant */}
+        <RoleGuard roles={['owner']} fallback={null}>
+          <DeleteAccountSection variant="owner" restaurantName={tenantName} />
+        </RoleGuard>
       </div>
     </TabsContent>
   );

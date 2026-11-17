@@ -305,10 +305,14 @@ describe('restaurant coupe: aucune ecriture par Server Action (A-02)', () => {
     // Retirer ou desactiver un membre reste permis restaurant coupe (securite).
     // Couper un rappel pour soi: etat personnel, comme "lu" (notifications.ts).
     // Alerte de test: aucune ecriture, un push vers ses propres appareils.
+    // Supprimer son compte (Apple 5.1.1(v)): un restaurant gele ou impaye doit
+    // TOUJOURS pouvoir partir, la coupure ne doit jamais retenir un client.
     const stayOpen = new Set([
       'actionDeleteAdminUser',
       'actionSetReminderMute',
       'actionSendTestAlert',
+      'actionDeleteOwnerAccount',
+      'actionDeleteStaffAccount',
     ]);
     // Ecritures verrouillees, prouvees par un autre fichier de test (avec la
     // garde simulee) ou deja existantes: la source doit appeler la garde.

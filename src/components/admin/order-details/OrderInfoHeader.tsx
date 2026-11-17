@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/types/admin.types';
 import { getStatusStyle } from '@/lib/design-tokens';
 import { InfoChip } from './InfoChip';
+import { memberDisplayName } from '@/lib/member-display-name';
 
 interface OrderInfoHeaderProps {
   order: Order;
@@ -30,6 +31,7 @@ export function OrderInfoHeader({
 }: OrderInfoHeaderProps) {
   const t = useTranslations('orders');
   const ta = useTranslations('admin');
+  const tc = useTranslations('common');
   const th = useTranslations('houseAccount');
 
   return (
@@ -81,7 +83,7 @@ export function OrderInfoHeader({
         <InfoChip
           icon={<User className="w-3 h-3" />}
           label={t('serverLabel')}
-          value={order.server?.full_name ?? ta('unassigned')}
+          value={memberDisplayName(order.server, tc('teamMember')) ?? ta('unassigned')}
         />
         {(order.customer_name || order.customer_phone) && (
           <InfoChip

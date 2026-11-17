@@ -208,7 +208,12 @@ export function SettingsForm({
               </TabsContent>
 
               {/* Security tab */}
-              <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} />
+              <SettingsSecurity
+                form={form}
+                t={t}
+                tenantSlug={tenant.slug}
+                tenantName={tenant.name}
+              />
 
               {/* Contact tab */}
               <SettingsContact form={form} t={t} />

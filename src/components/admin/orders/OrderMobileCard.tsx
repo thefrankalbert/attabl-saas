@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations, useFormatter } from 'next-intl';
+import { memberDisplayName } from '@/lib/member-display-name';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -100,7 +101,9 @@ export default function OrderMobileCard({
 
       {/* Row 3: Server + Items count + Total */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-app-text-muted break-words">{order.server?.full_name ?? ' - '}</span>
+        <span className="text-app-text-muted break-words">
+          {memberDisplayName(order.server, tc('teamMember')) ?? ' - '}
+        </span>
         <div className="flex items-center gap-3">
           <span className="text-app-text-secondary">
             {items.reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
