@@ -109,3 +109,14 @@ overrides:
   # source-map-js: DoS de la boucle d'evenements via une recherche indexee de
   # source. Tire par postcss, donc present dans le graphe de production.
   source-map-js: '>=1.2.2'
+
+auditConfig:
+  ignoreGhsas:
+    # GHSA-fc5q-39xc-vjpf (picomatch <=4.0.7, ReDoS par extglobs repetes), publie le
+    # 2026-10-19 SANS version corrigee (first_patched_version = null, derniere
+    # version publiee 4.0.7): aucune borne d overrides ne peut le resoudre.
+    # Chemin: @sentry/nextjs > @rollup/plugin-commonjs > picomatch. Ne tourne
+    # qu au BUILD, sur les motifs de notre propre configuration, jamais sur une
+    # entree utilisateur. Exception acceptee par le proprietaire le 2026-11-17.
+    # A retirer des qu une version corrigee sort (poser alors une borne dans overrides).
+    - GHSA-fc5q-39xc-vjpf
