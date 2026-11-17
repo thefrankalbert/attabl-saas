@@ -13,7 +13,7 @@ interface BillingIntervalToggleProps {
 
 /**
  * Segmented control for the billing interval. The yearly option
- * surfaces its savings as a semantic success badge instead of baking "-20%"
+ * surfaces its savings as a semantic success badge instead of baking "-15%"
  * into the label text.
  */
 export function BillingIntervalToggle({ value, onChange }: BillingIntervalToggleProps) {

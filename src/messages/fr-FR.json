@@ -295,7 +295,7 @@
       "billing": {
         "monthly": "Mensuel",
         "yearly": "Annuel",
-        "yearlyDiscount": "-20%",
+        "yearlyDiscount": "-15%",
         "noCommitment": "Sans carte bancaire. Sans engagement."
       },
       "priceSuffix": "FCFA/mois",
@@ -490,7 +490,7 @@
           },
           "q4": {
             "question": "Y a-t-il un engagement ?",
-            "answer": "Mensuel = sans engagement. Annuel = -20%."
+            "answer": "Mensuel = sans engagement. Annuel = environ -15%."
           },
           "q5": {
             "question": "Comment je paie ?",

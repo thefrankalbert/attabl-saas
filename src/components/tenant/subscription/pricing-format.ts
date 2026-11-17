@@ -8,7 +8,7 @@ export const BILLING_INTERVALS: BillingInterval[] = ['monthly', 'yearly'];
 
 /**
  * Percent saved versus the monthly price for a given interval. The discount is
- * uniform across plans (all -20% yearly), so it is computed
+ * uniform across plans (all about -15% yearly, rounded to the thousand), so it is computed
  * once from the starter reference. Returns 0 for monthly.
  */
 export function intervalSavingsPct(interval: BillingInterval): number {
