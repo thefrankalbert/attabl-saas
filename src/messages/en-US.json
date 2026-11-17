@@ -4059,14 +4059,16 @@
     "fromOrder": "Order {n}"
   },
   "screenLock": {
-    "lockingIn": "Locking in {time} - move your mouse to stay connected",
-    "sessionLocked": "Session locked due to inactivity",
-    "clickToUnlock": "Click or press a key to unlock",
+    "lockingIn": "Locking in {time}. Tap the screen to stay signed in.",
+    "sessionLocked": "Screen locked",
+    "clickToUnlock": "Tap the screen or press a key to continue",
     "password": "Password",
     "wrongPassword": "Incorrect password",
     "connectionError": "Connection error",
     "verifying": "Verifying...",
-    "unlock": "Unlock"
+    "unlock": "Unlock",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "tenant": {
     "tableOccupiedNotice": "Table {table} looks already taken. You can keep going, or check with the staff for another table.",

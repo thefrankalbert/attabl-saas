@@ -4059,14 +4059,16 @@
     "fromOrder": "Commande {n}"
   },
   "screenLock": {
-    "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",
-    "sessionLocked": "Session verrouillée pour inactivité",
-    "clickToUnlock": "Cliquez ou appuyez sur une touche pour déverrouiller",
+    "lockingIn": "Verrouillage dans {time}. Touchez l'écran pour rester connecté.",
+    "sessionLocked": "Écran verrouillé",
+    "clickToUnlock": "Touchez l'écran ou appuyez sur une touche pour reprendre",
     "password": "Mot de passe",
     "wrongPassword": "Mot de passe incorrect",
     "connectionError": "Erreur de connexion",
     "verifying": "Vérification...",
-    "unlock": "Déverrouiller"
+    "unlock": "Déverrouiller",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "tenant": {
     "tableOccupiedNotice": "La table {table} semble déjà occupée. Vous pouvez continuer, ou voir avec le personnel pour une autre table.",
