@@ -265,12 +265,12 @@ export default function MenuImportExcel({
         </Button>
         <Button
           variant="default"
-          disabled={!importFile || !importMenuId || importing}
-          onClick={handleImport}
+          disabled={importing || (!!importFile && !importMenuId)}
+          onClick={importFile ? handleImport : () => fileInputRef.current?.click()}
           className="gap-2 rounded-xl"
         >
           {importing && <Loader2 className="w-4 h-4 animate-spin" />}
-          {importing ? t('importing') : t('importExcel')}
+          {importing ? t('importing') : importFile ? t('importExcel') : t('chooseFile')}
         </Button>
       </div>
     </div>

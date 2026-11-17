@@ -17,12 +17,14 @@ import {
   sora,
 } from './fonts';
 import './globals.css';
+import '@/styles/keyboard-viewport.css';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollRestoration from '@/components/shared/ScrollRestoration';
 import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
 import { RegisterSW } from '@/components/shared/RegisterSW';
+import { KeyboardViewportSync } from '@/components/shared/KeyboardViewportSync';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -116,6 +118,7 @@ export default async function RootLayout({
               offset={{ bottom: 'var(--toast-bottom-offset, 24px)' }}
               mobileOffset={{ bottom: 'var(--toast-bottom-offset, 16px)' }}
             />
+            <KeyboardViewportSync />
             <RegisterSW />
             <AgentationOverlay />
           </ThemeProvider>

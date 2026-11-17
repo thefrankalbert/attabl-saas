@@ -3660,7 +3660,8 @@
     "wizardItemPrice": "Prix ({currency})",
     "wizardItemDescription": "Description (optionnel)",
     "wizardItemAdded": "{name} ajouté",
-    "wizardAddItemsButton": "Ajouter plats"
+    "wizardAddItemsButton": "Ajouter plats",
+    "chooseFile": "Choisir un fichier"
   },
   "payment": {
     "title": "Encaissement",
@@ -5146,7 +5147,8 @@
     "downloadRecipes": "Télécharger mes fiches (Excel)",
     "recipesRemoved": "{count} ligne(s) de fiche retirée(s)",
     "recipesUnchanged": "{count} ligne(s) déjà à jour",
-    "importUpToDate": "Vos fiches sont déjà à jour : rien n'a changé."
+    "importUpToDate": "Vos fiches sont déjà à jour : rien n'a changé.",
+    "chooseFile": "Choisir un fichier"
   },
   "authShell": {
     "secure": "Connexion sécurisée"

@@ -1,0 +1,17 @@
+/*
+ * Fenetres et clavier virtuel (iPad, iPhone). Voir KeyboardViewportSync.tsx.
+ *
+ * Tant que le clavier est ouvert, toute fenetre ouverte (Dialog, AlertDialog,
+ * Sheet) est calee dans la zone visible au-dessus du clavier et defile dans
+ * cette zone. Les !important sont necessaires: la position vient des classes
+ * Tailwind des composants shadcn (top-[50%], translate-y-[-50%], bottom-0),
+ * qu'on ne modifie pas. Clavier ferme: la regle ne s'applique pas.
+ */
+html[data-keyboard='open'] :is([role='dialog'], [role='alertdialog'])[data-state='open'] {
+  top: calc(var(--vv-top, 0px) + 0.5rem) !important;
+  bottom: auto !important;
+  --tw-translate-y: 0 !important;
+  max-height: calc(var(--vv-height, 100dvh) - 1rem) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
