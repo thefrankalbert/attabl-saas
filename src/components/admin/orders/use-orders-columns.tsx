@@ -183,15 +183,19 @@ export function useOrdersColumns({
           const order = row.original;
           const config = getStatusConfig(order.status);
           return (
-            <div className="flex justify-end gap-1">
+            // Colonne resserree (px-2, gap-0.5): a 1024 px le tableau debordait de
+            // 8 px et "Preparer" touchait le bord de la carte.
+            <div className="flex justify-end gap-0.5">
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label={ta('viewDetails')}
+                title={ta('viewDetails')}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedOrder(order);
                 }}
-                className="text-xs gap-1 min-h-[44px]"
+                className="text-xs gap-1 min-h-[44px] px-2"
               >
                 <Eye className="w-4 h-4" />
               </Button>
@@ -202,7 +206,7 @@ export function useOrdersColumns({
                     e.stopPropagation();
                     handleStatusChange(order.id, config.nextStatus!);
                   }}
-                  className="text-xs gap-1 min-h-[44px]"
+                  className="text-xs gap-1 min-h-[44px] px-2.5"
                 >
                   {config.nextLabel} <ChevronRight className="w-4 h-4" />
                 </Button>

@@ -110,8 +110,10 @@ export default function AttachToHouseAccount({
 
       <div className="flex flex-wrap gap-1.5">
         <Select value={selected} onValueChange={setSelected}>
-          <SelectTrigger className="h-9 min-w-0 flex-1 basis-24 text-sm">
-            <SelectValue placeholder={t('attach')} />
+          {/* Ligne entiere + libelle propre: le placeholder reprenait celui du
+              bouton et finissait coupe en "Mettre sur.." a 375 px. */}
+          <SelectTrigger className="h-9 min-w-0 basis-full text-sm">
+            <SelectValue placeholder={t('choose')} />
           </SelectTrigger>
           <SelectContent>
             {openAccounts.map((a) => (

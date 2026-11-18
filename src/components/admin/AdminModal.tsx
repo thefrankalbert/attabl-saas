@@ -18,10 +18,13 @@ interface AdminModalProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// Pas de largeur maximale sous sm: la fenetre y est une feuille pleine largeur
+// (dialog.tsx, left-0 right-0). L'ancien max-w-[calc(100vw-2rem)] la laissait
+// collee a gauche avec 32 px vides a droite, et les boutons de droite debordaient.
 const sizeClasses = {
-  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-md md:max-w-md',
-  md: 'max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-lg',
-  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl md:max-w-2xl lg:max-w-4xl',
+  sm: 'sm:max-w-md md:max-w-md',
+  md: 'sm:max-w-lg md:max-w-lg',
+  lg: 'sm:max-w-2xl md:max-w-2xl lg:max-w-4xl',
 };
 
 export default function AdminModal({
@@ -40,7 +43,9 @@ export default function AdminModal({
           sizeClasses[size],
         )}
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-app-border shrink-0">
+        {/* Marge droite pour la croix (un titre long passait dessous a 375 px),
+            symetrique sur telephone ou le titre est centre. */}
+        <DialogHeader className="px-12 sm:pl-6 sm:pr-12 pt-6 pb-4 border-b border-app-border shrink-0">
           <DialogTitle className="text-lg font-bold tracking-tight text-app-text">
             {title}
           </DialogTitle>

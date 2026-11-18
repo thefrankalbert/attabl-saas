@@ -148,7 +148,13 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80 p-0 bg-app-card border border-app-border">
+      {/* Telephone: toute la largeur moins 8 px de chaque cote (le panneau de 320 px
+          finissait colle au bord gauche, 55 px vides a droite, a 375 px). */}
+      <DropdownMenuContent
+        align="end"
+        collisionPadding={8}
+        className="w-[calc(100vw-1rem)] sm:w-80 p-0 bg-app-card border border-app-border"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
           <h3 className="text-sm font-semibold text-app-text">{t('title')}</h3>

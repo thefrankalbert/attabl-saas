@@ -77,7 +77,11 @@ export function OrderInfoHeader({
 
       {/* Info row - inline chips */}
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <InfoChip icon={<Hash className="w-3 h-3" />} value={order.table_number} />
+        {/* Pas de table (a emporter, livraison): la pastille restait vide ("#" seul)
+            ou affichait "N/A". */}
+        {order.table_number && order.table_number !== 'N/A' && (
+          <InfoChip icon={<Hash className="w-3 h-3" />} value={order.table_number} />
+        )}
         <InfoChip
           icon={<User className="w-3 h-3" />}
           label={t('serverLabel')}

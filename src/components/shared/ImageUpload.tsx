@@ -72,6 +72,7 @@ export default function ImageUpload({
     return (
       <ImageUploadPreview
         value={value}
+        aspect={aspect}
         disabled={disabled}
         isLoading={isLoading}
         openRecrop={openRecrop}

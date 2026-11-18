@@ -34,7 +34,9 @@ export function MicroRow({
   const hasAlerts = alertsCount > 0;
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    // Une colonne sur telephone: a 375 px, "1 / 1 en ligne" cassait en 3 lignes
+    // dans une case de 68 px.
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <StatCard label={t('orders')}>
         <span
           className="cc-mono block whitespace-nowrap text-[18px] font-semibold tracking-tight sm:text-[20px]"

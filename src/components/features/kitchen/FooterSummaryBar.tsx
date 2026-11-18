@@ -4,16 +4,12 @@ import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { Order, OrderStatus } from '@/types/admin.types';
 
 interface FooterSummaryBarProps {
   orders: Order[];
   activeFilter: OrderStatus | 'all';
   onFilterChange: (filter: OrderStatus | 'all') => void;
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (direction: 'prev' | 'next') => void;
   tenantName?: string;
 }
 
@@ -56,13 +52,9 @@ function FooterSummaryBarInner({
   orders,
   activeFilter,
   onFilterChange,
-  currentPage,
-  totalPages,
-  onPageChange,
   tenantName,
 }: FooterSummaryBarProps) {
   const t = useTranslations('kitchen');
-  const tc = useTranslations('common');
 
   const summary = useMemo(() => computeSummary(orders), [orders]);
 
@@ -122,10 +114,11 @@ function FooterSummaryBarInner({
 
       {/* Center: status filter tabs */}
       {/* Phone: five filters + pagination do not fit in 375 px; the filters
-          scroll sideways in their own strip instead of colliding with "Page". */}
+          scroll sideways in their own strip instead of colliding with "Page".
+          The right-edge fade tells the cook the strip scrolls. */}
       <nav
         role="tablist"
-        className="flex min-w-0 items-center gap-1 sm:gap-1.5 flex-1 justify-start sm:justify-center overflow-x-auto scrollbar-hide"
+        className="flex min-w-0 items-center gap-1 sm:gap-1.5 flex-1 justify-start sm:justify-center overflow-x-auto scrollbar-hide [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:[mask-image:none]"
       >
         {tabs.map((tab) => {
           const isActive = tab.key === 'delayed' ? false : activeFilter === tab.key;
@@ -159,33 +152,6 @@ function FooterSummaryBarInner({
           );
         })}
       </nav>
-
-      {/* Right: pagination */}
-      <div className="flex items-center gap-2 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onPageChange('prev')}
-          disabled={currentPage <= 1}
-          aria-label={tc('previousPage')}
-          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
-        >
-          <ChevronUp className="w-4 h-4" />
-        </Button>
-        <span className="sr-only sm:not-sr-only text-xs font-medium text-app-text-secondary tabular-nums whitespace-nowrap">
-          {t('footerPage')} {currentPage}/{totalPages}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onPageChange('next')}
-          disabled={currentPage >= totalPages}
-          aria-label={tc('nextPage')}
-          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
-        >
-          <ChevronDown className="w-4 h-4" />
-        </Button>
-      </div>
     </footer>
   );
 }

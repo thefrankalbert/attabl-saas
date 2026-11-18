@@ -46,7 +46,9 @@ export default function RecipeDishList({
               <span className="sr-only">{hasRecipe ? t('hasRecipe') : t('noRecipe')}</span>
               <p
                 className={cn(
-                  'min-w-0 flex-1 truncate text-sm',
+                  // Deux lignes au lieu d'une coupe: a 1024 px la liste coupait
+                  // "Brochettes d'agneau, fr..." sans moyen de lire la suite.
+                  'min-w-0 flex-1 line-clamp-2 whitespace-normal break-words text-sm leading-snug',
                   isSelected ? 'font-semibold text-accent' : 'font-medium text-app-text',
                 )}
               >

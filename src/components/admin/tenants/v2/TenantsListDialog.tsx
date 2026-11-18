@@ -69,10 +69,7 @@ export function TenantsListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-[calc(100vw-2rem)] cc-shell sm:max-w-2xl"
-        style={{ color: 'var(--cc-text)' }}
-      >
+      <DialogContent className="cc-shell sm:max-w-2xl" style={{ color: 'var(--cc-text)' }}>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>

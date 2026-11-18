@@ -83,8 +83,9 @@ function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="mb-7 text-center">
+      {/* Header - marges resserrees sous 820 px de haut: l'inscription
+          defilait de 26 px (1024x768) a 134 px (660 de haut), regle 12. */}
+      <div className="mb-7 text-center [@media(max-height:819px)]:mb-5 [@media(max-height:719px)]:mb-3">
         <h1 className="mb-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[var(--heading)]">
           {isLogin ? tForm('loginTitle') : tForm('signupTitle')}
         </h1>
@@ -156,7 +157,7 @@ function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 [@media(max-height:719px)]:space-y-3">
           <div
             className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
             aria-hidden="true"
@@ -249,7 +250,7 @@ function AuthForm({ mode }: AuthFormProps) {
               {isLogin && (
                 <Link
                   href="/forgot-password"
-                  className="absolute bottom-full right-0 mb-0 flex h-5 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
+                  className="absolute bottom-full right-0 mb-0 flex h-6 items-center text-xs font-medium text-[var(--subtle)] transition-colors hover:text-[var(--fg)]"
                 >
                   {tForm('forgotPassword')}
                 </Link>
@@ -335,13 +336,16 @@ function AuthForm({ mode }: AuthFormProps) {
           </Button>
 
           {!isLogin && (
-            <p className="text-center text-xs text-[var(--muted)]">{tForm('trialNote')}</p>
+            // Deja dit par le titre ("14 jours gratuits"): masque sur ecran court.
+            <p className="text-center text-xs text-[var(--muted)] [@media(max-height:719px)]:hidden">
+              {tForm('trialNote')}
+            </p>
           )}
         </form>
       </AuthCard>
 
       {/* Footer Link */}
-      <p className="mt-6 text-center text-sm text-[var(--muted)]">
+      <p className="mt-6 text-center text-sm text-[var(--muted)] [@media(max-height:819px)]:mt-4">
         {isLogin ? tForm('noAccount') : tForm('hasAccount')}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}

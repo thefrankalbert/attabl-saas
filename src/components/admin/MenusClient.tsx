@@ -176,6 +176,7 @@ export default function MenusClient({
                     </Button>
                     <Button
                       onClick={() => setShowImportModal(true)}
+                      aria-label={t('importExcel')}
                       variant="outline"
                       size="sm"
                       className="gap-1.5 shrink-0"
@@ -185,6 +186,7 @@ export default function MenusClient({
                     </Button>
                     <Button
                       onClick={() => setShowPdfImportModal(true)}
+                      aria-label={t('importPdf')}
                       variant="outline"
                       size="sm"
                       className="gap-1.5 shrink-0"
@@ -194,6 +196,7 @@ export default function MenusClient({
                     </Button>
                     <Button
                       onClick={() => openNewMenuModal()}
+                      aria-label={t('newMenu')}
                       variant="default"
                       size="sm"
                       disabled={isLimitReached}

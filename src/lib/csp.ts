@@ -20,7 +20,9 @@ export function buildCspHeader(nonce: string): string {
     : '';
   const directives = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'${devScriptExtras} https://*.stripe.com https://*.sentry.io https://challenges.cloudflare.com`,
+    // 'wasm-unsafe-eval': autorise SEULEMENT la compilation WebAssembly (le
+    // decodeur du scanner QR, cf QRScanner.tsx), pas eval() ni new Function().
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval'${devScriptExtras} https://*.stripe.com https://*.sentry.io https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net",
     "font-src 'self'",

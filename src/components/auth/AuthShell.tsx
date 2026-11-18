@@ -28,7 +28,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="auth-shell flex min-h-full w-full flex-row overflow-x-clip">
       {/* -- Left: brand + card + footer -------------------------------- */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between px-[max(1.25rem,env(safe-area-inset-left))] py-5">
+        <header className="flex items-center justify-between px-[max(1.25rem,env(safe-area-inset-left))] py-5 [@media(max-height:819px)]:py-3 [@media(max-height:719px)]:py-2">
           <Link href="/" className="flex items-center gap-[9px]">
             <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] bg-[var(--fg)]">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -41,13 +41,15 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
 
-        <main className="flex flex-1 items-start justify-center px-5 py-6 [@media(min-height:820px)]:py-12">
+        <main className="flex flex-1 items-start justify-center px-5 py-3 [@media(min-height:820px)]:py-12">
           <div className="mx-auto w-full max-w-sm [animation:auth-fade-up_0.35s_ease]">
             {children}
           </div>
         </main>
 
-        <footer className="flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 text-[12.5px] text-[var(--muted)]">
+        {/* Mention "Connexion securisee": masquee sous 680 px de haut pour que la
+            carte tienne sans defiler (regle 12, ecrans de tablette paysage). */}
+        <footer className="[@media(max-height:679px)]:hidden flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 [@media(max-height:819px)]:pt-3 text-[12.5px] text-[var(--muted)]">
           <Lock className="h-3 w-3 shrink-0" />
           {t('secure')}
         </footer>

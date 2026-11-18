@@ -6,7 +6,7 @@
  */
 export function AuthCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] [@media(max-height:719px)]:p-4">
       {children}
     </div>
   );

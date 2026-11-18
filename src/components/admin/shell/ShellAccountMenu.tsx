@@ -151,7 +151,9 @@ export function ShellAccountMenu({
           <Button
             type="button"
             variant="ghost"
-            title={collapsed ? userName || t('accountMenu') : undefined}
+            // Toujours: un nom long est coupe en ellipsis dans la barre laterale,
+            // l'infobulle le donne en entier.
+            title={userName || t('accountMenu')}
             className={cn(
               'flex h-12 w-full items-center gap-2 rounded-[0.625rem] text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]',
               collapsed ? 'justify-center px-0' : 'justify-start px-2',

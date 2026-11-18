@@ -112,7 +112,9 @@ export default function ClientSettings({
   return (
     <div
       className="h-full bg-[var(--color-surface-alt)]"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      // Barre du bas (64 px) + panier flottant (bottom-[92px], ~60 px de haut):
+      // avec 6rem, la carte "A propos" finissait cachee sous le panier.
+      style={{ paddingBottom: 'calc(10.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="mx-auto max-w-lg">
         <h1 className="sr-only">{t('settingsTitle')}</h1>
