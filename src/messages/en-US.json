@@ -129,7 +129,8 @@
     "previous": "Previous",
     "next": "Next",
     "notFoundSearch": "Search",
-    "notFoundPopular": "Most visited pages"
+    "notFoundPopular": "Most visited pages",
+    "teamMember": "Team member"
   },
   "checkout": {
     "successTitle": "Payment successful!",
@@ -1559,7 +1560,8 @@
       "strengthWeak": "Weak",
       "strengthMedium": "Medium",
       "strengthStrong": "Strong",
-      "trialNote": "14 days free - no commitment"
+      "trialNote": "14 days free - no commitment",
+      "accountDeletedSuccess": "Done: your account is deleted. Thank you for working with ATTABL."
     },
     "confirm": {
       "title": "Check your inbox",
@@ -2807,7 +2809,6 @@
     "planCardTitle": "Current plan",
     "planCardCta": "Upgrade to {plan}",
     "planCardUpsellPro": "Unlock the full POS, kitchen display and inventory.",
-    "planCardUpsellBusiness": "Multi-venue, room service and analytics.",
     "navSupports": "Print Materials",
     "navInventoryCounts": "Physical inventory",
     "supports": {
@@ -3660,7 +3661,8 @@
     "wizardItemPrice": "Price ({currency})",
     "wizardItemDescription": "Description (optional)",
     "wizardItemAdded": "{name} added",
-    "wizardAddItemsButton": "Add items"
+    "wizardAddItemsButton": "Add items",
+    "chooseFile": "Choose a file"
   },
   "payment": {
     "title": "Checkout",
@@ -5149,9 +5151,38 @@
     "downloadRecipes": "Download my recipe sheets (Excel)",
     "recipesRemoved": "{count} recipe line(s) removed",
     "recipesUnchanged": "{count} line(s) already up to date",
-    "importUpToDate": "Your recipe sheets are already up to date: nothing changed."
+    "importUpToDate": "Your recipe sheets are already up to date: nothing changed.",
+    "chooseFile": "Choose a file"
   },
   "authShell": {
     "secure": "Secure connection"
+  },
+  "accountDeletion": {
+    "openButton": "Delete my account",
+    "cancel": "Cancel",
+    "inProgress": "Deleting...",
+    "owner_title": "Delete my account",
+    "owner_line1": "The restaurant closes right away, for the whole team and for any other owners.",
+    "owner_line2": "Your subscription stops today. Nothing more will be charged for this restaurant.",
+    "owner_line3": "The restaurant's data and your account are erased after 30 days. If you run other restaurants, they stay open and your account stays active for them.",
+    "owner_dialogTitle": "Close this restaurant and delete my account?",
+    "owner_dialogWarning": "Any owner can close this restaurant. After 30 days, nothing can be recovered.",
+    "owner_confirmLabel": "To confirm, type the restaurant name:",
+    "owner_confirmButton": "Close and delete",
+    "staff_title": "Delete my account",
+    "staff_line1": "Your account is deleted right away, in every restaurant you work at.",
+    "staff_line2": "You can no longer sign in. Your name, email and phone are erased immediately.",
+    "staff_line3": "The orders you took stay in the restaurants' history.",
+    "staff_dialogTitle": "Delete my account?",
+    "staff_dialogWarning": "This can't be undone. To come back, you'll need to create a new account.",
+    "staff_confirmLabel": "To confirm, type:",
+    "staff_confirmButton": "Delete my account",
+    "error_rateLimited": "Too many attempts. Try again in an hour.",
+    "error_invalid": "Type the requested confirmation.",
+    "error_mismatch": "What you typed doesn't match. Check and try again.",
+    "error_forbidden": "This account can't do that here.",
+    "error_failed": "That didn't work. Try again in a moment.",
+    "staff_confirmWord": "DELETE",
+    "error_ownerMustClose": "You own an open restaurant. Close it first from My account, in that restaurant."
   }
 }

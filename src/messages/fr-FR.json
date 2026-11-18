@@ -129,7 +129,8 @@
     "previous": "Précédent",
     "next": "Suivant",
     "notFoundSearch": "Rechercher",
-    "notFoundPopular": "Pages les plus consultées"
+    "notFoundPopular": "Pages les plus consultées",
+    "teamMember": "Membre de l'équipe"
   },
   "checkout": {
     "successTitle": "Paiement réussi !",
@@ -1559,7 +1560,8 @@
       "strengthWeak": "Faible",
       "strengthMedium": "Moyen",
       "strengthStrong": "Fort",
-      "trialNote": "14 jours gratuits - aucun engagement"
+      "trialNote": "14 jours gratuits - aucun engagement",
+      "accountDeletedSuccess": "C'est fait : votre compte est supprimé. Merci d'avoir travaillé avec ATTABL."
     },
     "confirm": {
       "title": "Vérifiez votre boîte mail",
@@ -2807,7 +2809,6 @@
     "planCardTitle": "Plan actuel",
     "planCardCta": "Passer au {plan}",
     "planCardUpsellPro": "Débloquez le point de vente complet, la cuisine et le stock.",
-    "planCardUpsellBusiness": "Multi-établissements, room service et analytics.",
     "navSupports": "Supports",
     "navInventoryCounts": "Inventaires physiques",
     "supports": {
@@ -3660,7 +3661,8 @@
     "wizardItemPrice": "Prix ({currency})",
     "wizardItemDescription": "Description (optionnel)",
     "wizardItemAdded": "{name} ajouté",
-    "wizardAddItemsButton": "Ajouter plats"
+    "wizardAddItemsButton": "Ajouter plats",
+    "chooseFile": "Choisir un fichier"
   },
   "payment": {
     "title": "Encaissement",
@@ -5149,9 +5151,38 @@
     "downloadRecipes": "Télécharger mes fiches (Excel)",
     "recipesRemoved": "{count} ligne(s) de fiche retirée(s)",
     "recipesUnchanged": "{count} ligne(s) déjà à jour",
-    "importUpToDate": "Vos fiches sont déjà à jour : rien n'a changé."
+    "importUpToDate": "Vos fiches sont déjà à jour : rien n'a changé.",
+    "chooseFile": "Choisir un fichier"
   },
   "authShell": {
     "secure": "Connexion sécurisée"
+  },
+  "accountDeletion": {
+    "openButton": "Supprimer mon compte",
+    "cancel": "Annuler",
+    "inProgress": "Suppression...",
+    "owner_title": "Supprimer mon compte",
+    "owner_line1": "Le restaurant ferme tout de suite, pour toute l'équipe et pour les autres propriétaires s'il y en a.",
+    "owner_line2": "Votre abonnement s'arrête aujourd'hui. Plus rien ne vous sera facturé pour ce restaurant.",
+    "owner_line3": "Les données du restaurant et votre compte sont effacés au bout de 30 jours. Si vous gérez d'autres restaurants, ils restent ouverts et votre compte reste actif pour eux.",
+    "owner_dialogTitle": "Fermer ce restaurant et supprimer mon compte ?",
+    "owner_dialogWarning": "N'importe quel propriétaire peut fermer ce restaurant. Après 30 jours, rien ne pourra être récupéré.",
+    "owner_confirmLabel": "Pour confirmer, tapez le nom du restaurant :",
+    "owner_confirmButton": "Fermer et supprimer",
+    "staff_title": "Supprimer mon compte",
+    "staff_line1": "Votre compte est supprimé tout de suite, dans tous les restaurants où vous travaillez.",
+    "staff_line2": "Vous ne pourrez plus vous connecter. Votre nom, votre e-mail et votre téléphone sont effacés immédiatement.",
+    "staff_line3": "Les commandes que vous avez prises restent dans l'historique des restaurants.",
+    "staff_dialogTitle": "Supprimer mon compte ?",
+    "staff_dialogWarning": "Ça ne s'annule pas. Pour revenir, il faudra créer un nouveau compte.",
+    "staff_confirmLabel": "Pour confirmer, tapez :",
+    "staff_confirmButton": "Supprimer mon compte",
+    "error_rateLimited": "Trop d'essais. Réessayez dans une heure.",
+    "error_invalid": "Tapez la confirmation demandée.",
+    "error_mismatch": "Ce que vous avez tapé ne correspond pas. Vérifiez et réessayez.",
+    "error_forbidden": "Ce compte ne peut pas faire ça ici.",
+    "error_failed": "Ça n'a pas marché. Réessayez dans un instant.",
+    "staff_confirmWord": "SUPPRIMER",
+    "error_ownerMustClose": "Vous êtes propriétaire d'un restaurant ouvert. Fermez-le d'abord depuis Mon compte, dans ce restaurant."
   }
 }

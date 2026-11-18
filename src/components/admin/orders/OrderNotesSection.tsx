@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { actionAddOrderNote, actionListOrderNotes } from '@/app/actions/orders';
 import type { OrderNote } from '@/services/order-annotation.service';
+import { memberDisplayName } from '@/lib/member-display-name';
 
 interface OrderNotesSectionProps {
   tenantId: string;
@@ -21,6 +22,7 @@ interface OrderNotesSectionProps {
  */
 export default function OrderNotesSection({ tenantId, orderId }: OrderNotesSectionProps) {
   const t = useTranslations('orderNote');
+  const tc = useTranslations('common');
   const locale = useLocale();
   const { toast } = useToast();
 
@@ -64,16 +66,23 @@ export default function OrderNotesSection({ tenantId, orderId }: OrderNotesSecti
         <p className="text-xs text-app-text-muted">{t('empty')}</p>
       ) : (
         <ul className="space-y-1.5">
-          {notes.map((n) => (
-            <li key={n.id} className="text-xs text-app-text">
-              <p className="whitespace-pre-wrap break-words">{n.note}</p>
-              <p className="text-[10px] text-app-text-muted mt-0.5">
-                {n.authorName ? t('by', { name: n.authorName }) : ''}
-                {n.authorName ? ' - ' : ''}
-                {new Date(n.createdAt).toLocaleString(locale)}
-              </p>
-            </li>
-          ))}
+          {notes.map((n) => {
+            // Auteur connu (createdBy) mais nom efface ou absent: libelle de repli.
+            const author = memberDisplayName(
+              n.createdBy ? { full_name: n.authorName } : null,
+              tc('teamMember'),
+            );
+            return (
+              <li key={n.id} className="text-xs text-app-text">
+                <p className="whitespace-pre-wrap break-words">{n.note}</p>
+                <p className="text-[10px] text-app-text-muted mt-0.5">
+                  {author ? t('by', { name: author }) : ''}
+                  {author ? ' - ' : ''}
+                  {new Date(n.createdAt).toLocaleString(locale)}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       )}
 

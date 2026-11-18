@@ -1,7 +1,17 @@
 import Link from 'next/link';
 import { ShieldX } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import DeleteAccountSection from '@/components/features/settings/DeleteAccountSection';
 
-export default function UnauthorizedPage() {
+export default async function UnauthorizedPage() {
+  // Un membre du personnel d'un restaurant gele n'atteint QUE cette page (le
+  // proxy le renvoie vers /subscription, qu'il ne peut pas ouvrir): c'est donc
+  // ici qu'il doit pouvoir supprimer son compte (Apple 5.1.1(v)).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="min-h-dvh flex items-center justify-center bg-app-bg px-4">
       <div className="text-center max-w-sm">
@@ -26,6 +36,11 @@ export default function UnauthorizedPage() {
             Se reconnecter
           </Link>
         </div>
+        {user && (
+          <div className="mt-6 text-left">
+            <DeleteAccountSection variant="staff" />
+          </div>
+        )}
       </div>
     </div>
   );
