@@ -89,7 +89,7 @@ pnpm test:e2e         # Tests E2E (Playwright — necessite le serveur dev)
 pnpm test:e2e:ui      # Tests E2E avec UI interactive
 
 # Base de donnees
-pnpm db:migrate       # Appliquer les migrations Supabase (supabase db push)
+pnpm db:migrate       # Appliquer les migrations sur la base LOCALE uniquement (refuse une base distante)
 ```
 
 ### Pipeline CI/CD (GitHub Actions)

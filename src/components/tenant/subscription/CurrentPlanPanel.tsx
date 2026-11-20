@@ -1,18 +1,12 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { Crown, Zap, Building2, Loader2, CalendarDays, CreditCard, Receipt } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
-import { planBilledTotal, type SelfServicePlan } from './pricing-format';
-
-const PLAN_ICON_MAP: Record<SelfServicePlan, typeof Zap> = {
-  starter: Zap,
-  pro: Crown,
-  business: Building2,
-};
+import { planBilledTotal, SELF_SERVICE_PLANS, type SelfServicePlan } from './pricing-format';
 
 function statusBadgeClasses(status: string): string {
   switch (status) {
@@ -48,10 +42,9 @@ interface CurrentPlanPanelProps {
 }
 
 /**
- * Account / billing summary panel. Reads like Linear's billing pane: the plan,
- * its live status, the renewal (or trial end) date, and - for active
- * subscribers - the next amount charged, with one primary "manage billing"
- * action.
+ * Resume de la formule, en texte seul: nom, statut, et une ligne qui dit ce
+ * qui va se passer (fin d'essai, prochain paiement). Le prorata est explique
+ * ici, une fois, plutot que dans un message apres coup.
  */
 export function CurrentPlanPanel({
   plan,
@@ -66,8 +59,6 @@ export function CurrentPlanPanel({
 }: CurrentPlanPanelProps) {
   const t = useTranslations('admin');
   const locale = useLocale();
-
-  const PlanIcon = PLAN_ICON_MAP[plan in PLAN_ICON_MAP ? (plan as SelfServicePlan) : 'starter'];
 
   const statusLabel = (() => {
     switch (status) {
@@ -86,49 +77,53 @@ export function CurrentPlanPanel({
     }
   })();
 
-  const formattedDate = periodEnd
+  const date = periodEnd
     ? new Date(periodEnd).toLocaleDateString(locale, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       })
     : null;
-  const dateLabel = status === 'trial' ? t('subscription.trialEndsOn') : t('subscription.renewsOn');
 
-  const nextCharge =
-    hasSubscription && plan in PLAN_ICON_MAP
-      ? planBilledTotal(plan as SelfServicePlan, billingInterval).toLocaleString(locale)
+  const isSelfService = (SELF_SERVICE_PLANS as string[]).includes(plan);
+  const amount =
+    hasSubscription && isSelfService
+      ? `${planBilledTotal(plan as SelfServicePlan, billingInterval).toLocaleString(locale)} ${
+          billingInterval === 'yearly' ? t('subscription.perYear') : t('subscription.perMonth')
+        }`
       : null;
-  const chargeSuffix: Record<BillingInterval, string> = {
-    monthly: t('subscription.perMonth'),
-    yearly: t('subscription.perYear'),
-  };
+
+  const line = (() => {
+    if (!date) return null;
+    if (status === 'trial') return t('subscription.trialLine', { date });
+    if (amount) return t('subscription.nextPaymentLine', { amount, date });
+    return t('subscription.renewalLine', { date });
+  })();
 
   return (
-    <div className="rounded-xl border border-app-border bg-app-card p-4 sm:p-5">
+    <section className="rounded-2xl border border-app-border bg-app-card p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-app-border bg-app-elevated">
-            <PlanIcon className="h-5 w-5 text-app-text" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-app-text-muted">{t('subscription.yourPlan')}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2.5">
+            <h2 className="text-2xl font-semibold tracking-tight text-app-text">
+              {PLAN_NAMES[plan] || plan}
+            </h2>
+            <span
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                statusBadgeClasses(status),
+              )}
+            >
+              {statusLabel}
+            </span>
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-app-text-muted">
-              {t('subscription.currentSubscription')}
+          {line && <p className="mt-2 text-sm text-app-text-secondary">{line}</p>}
+          {trialDaysLeft !== null && (
+            <p className="mt-1 text-sm font-medium text-status-warning">
+              {t('subscription.trialDaysLeft', { count: trialDaysLeft })}
             </p>
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-base font-semibold text-app-text">
-                {PLAN_NAMES[plan] || plan}
-              </span>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-xs font-semibold',
-                  statusBadgeClasses(status),
-                )}
-              >
-                {statusLabel}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {hasSubscription && canOpenPortal && (
@@ -136,47 +131,19 @@ export function CurrentPlanPanel({
             variant="outline"
             onClick={onManageBilling}
             disabled={isBillingLoading}
-            className="h-9 gap-1.5 rounded-lg px-3 text-xs font-semibold"
+            className="h-10 shrink-0 rounded-lg px-4 text-sm font-semibold"
           >
-            {isBillingLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <CreditCard className="h-3.5 w-3.5" />
-            )}
+            {isBillingLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('subscription.manageBilling')}
           </Button>
         )}
       </div>
 
-      {(formattedDate || nextCharge) && (
-        <div className="mt-4 grid grid-cols-1 gap-3 border-t border-app-border pt-4 sm:grid-cols-2">
-          {formattedDate && (
-            <div className="flex items-center gap-2.5">
-              <CalendarDays className="h-4 w-4 shrink-0 text-app-text-muted" />
-              <div className="min-w-0">
-                <p className="text-[11px] text-app-text-muted">{dateLabel}</p>
-                <p className="text-sm font-medium text-app-text">{formattedDate}</p>
-                {trialDaysLeft !== null && (
-                  <p className="text-xs text-status-warning">
-                    {t('subscription.trialDaysLeft', { count: trialDaysLeft })}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          {nextCharge && (
-            <div className="flex items-center gap-2.5">
-              <Receipt className="h-4 w-4 shrink-0 text-app-text-muted" />
-              <div className="min-w-0">
-                <p className="text-[11px] text-app-text-muted">{t('subscription.nextCharge')}</p>
-                <p className="text-sm font-medium tabular-nums text-app-text">
-                  {nextCharge} {chargeSuffix[billingInterval]}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+      {hasSubscription && (
+        <p className="mt-5 border-t border-app-border pt-4 text-xs leading-relaxed text-app-text-muted">
+          {t('subscription.prorataNote')}
+        </p>
       )}
-    </div>
+    </section>
   );
 }

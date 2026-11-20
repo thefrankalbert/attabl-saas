@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Eye, EyeOff } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,24 @@ interface ScreenLockProps {
   remainingSeconds?: number;
 }
 
+/** Heure et date courantes, rafraichies chaque seconde tant que l'ecran est verrouille. */
+function useClock(active: boolean): Date | null {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const tick = () => setNow(new Date());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [active]);
+  return now;
+}
+
+/** Majuscule a la premiere lettre seulement: "Mardi 17 novembre", pas "Mardi 17 Novembre". */
+function capitalizeFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function ScreenLock({
   mode,
   isLocked,
@@ -26,6 +44,8 @@ export function ScreenLock({
   remainingSeconds = 0,
 }: ScreenLockProps) {
   const t = useTranslations('screenLock');
+  const locale = useLocale();
+  const now = useClock(isLocked);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -92,6 +112,13 @@ export function ScreenLock({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const clock = now ? now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : '';
+  const date = now
+    ? capitalizeFirst(
+        now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }),
+      )
+    : '';
+
   return (
     <>
       {/* Warning banner (before full lock) */}
@@ -102,9 +129,8 @@ export function ScreenLock({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-status-warning-solid px-4 py-2.5 text-sm font-medium text-accent-text"
+            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-app-text px-4 py-2.5 text-sm font-medium text-app-bg"
           >
-            <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{t('lockingIn', { time: formatTime(remainingSeconds) })}</span>
           </motion.div>
         )}
@@ -118,114 +144,72 @@ export function ScreenLock({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6"
             onClick={mode === 'overlay' ? handleOverlayUnlock : undefined}
           >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-app-bg/98 backdrop-blur-xl" />
+            <div className="absolute inset-0 bg-app-bg/95 backdrop-blur-2xl" />
 
             {/* Content */}
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.4, type: 'spring', damping: 25 }}
-              className="relative z-10 flex flex-col items-center text-center px-6 sm:px-8 w-full max-w-sm mx-auto"
+              initial={{ y: 8, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.05, duration: 0.35, ease: 'easeOut' }}
+              className="relative z-10 flex w-full max-w-sm flex-col items-center text-center"
               onClick={mode === 'password' ? (e) => e.stopPropagation() : undefined}
             >
-              {/* Lock icon */}
-              <motion.div
-                initial={{ y: -10 }}
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                className="mb-8"
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-app-text-muted">
+                {tenantName}
+              </p>
+
+              <p
+                className="mt-6 text-6xl font-light tabular-nums tracking-tight text-app-text sm:text-7xl"
+                suppressHydrationWarning
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/20">
-                  <Lock className="h-9 w-9 text-accent" />
-                </div>
-              </motion.div>
+                {clock}
+              </p>
+              <p className="mt-2 text-sm text-app-text-secondary" suppressHydrationWarning>
+                {date}
+              </p>
 
-              {/* Logo */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-app-elevated rounded-lg p-1.5">
-                  <svg
-                    className="h-4 w-4 text-accent"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M3 9h18" />
-                    <path d="M9 21V9" />
-                  </svg>
-                </div>
-                <span className="text-sm font-bold tracking-tight text-app-text-muted">ATTABL</span>
-              </div>
-
-              {/* Tenant name */}
-              <h2 className="text-xl font-semibold text-app-text mb-2">{tenantName}</h2>
-              <p className="text-sm text-app-text-muted mb-8">{t('sessionLocked')}</p>
+              <p className="mt-10 text-sm text-app-text-muted">{t('sessionLocked')}</p>
 
               {mode === 'overlay' ? (
-                /* Overlay mode */
-                <motion.p
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="text-sm text-app-text-secondary"
-                >
-                  {t('clickToUnlock')}
-                </motion.p>
+                <p className="mt-2 text-sm text-app-text-secondary">{t('clickToUnlock')}</p>
               ) : (
-                /* Password mode */
-                <form onSubmit={handlePasswordUnlock} className="w-full max-w-xs space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="text-left text-xs text-app-text-muted mb-1">{userEmail}</div>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder={t('password')}
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          setError('');
-                        }}
-                        required
-                        autoFocus
-                        className="h-12 pr-12 bg-app-elevated/50 border-app-border text-app-text placeholder:text-app-text-muted/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Hide password"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 h-auto w-auto p-0 text-app-text-muted hover:text-app-text-secondary transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
+                <form onSubmit={handlePasswordUnlock} className="mt-6 w-full max-w-xs space-y-3">
+                  <p className="truncate text-left text-xs text-app-text-muted">{userEmail}</p>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t('password')}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError('');
+                      }}
+                      required
+                      autoFocus
+                      className="h-12 rounded-xl border-app-border bg-app-elevated pr-12 text-app-text placeholder:text-app-text-muted"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 text-app-text-muted hover:text-app-text"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
                   </div>
 
-                  {error && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm text-status-error"
-                    >
-                      {error}
-                    </motion.p>
-                  )}
+                  {error && <p className="text-left text-sm text-status-error">{error}</p>}
 
                   <Button
                     type="submit"
                     disabled={loading || !password}
-                    className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text font-bold rounded-lg transition-all"
+                    className="h-12 w-full rounded-xl font-semibold"
                   >
                     {loading ? t('verifying') : t('unlock')}
                   </Button>

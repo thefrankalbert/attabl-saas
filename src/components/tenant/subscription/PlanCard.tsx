@@ -1,37 +1,39 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { Crown, Zap, Building2, Check, Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PLAN_NAMES } from '@/lib/plans/features';
 import type { BillingInterval } from '@/types/billing';
 import { planMonthlyPrice, planBilledTotal, type SelfServicePlan } from './pricing-format';
 
-const PLAN_ICON_MAP: Record<SelfServicePlan, typeof Zap> = {
-  starter: Zap,
-  pro: Crown,
-  business: Building2,
-};
-
 interface PlanCardProps {
   plan: SelfServicePlan;
+  /** Fonctionnalites propres a ce plan (cumulatives: "Tout Starter, plus"). */
   features: string[];
+  /** Plan dont celui-ci reprend tout (null pour le premier plan). */
+  includesPlan: SelfServicePlan | null;
   billingInterval: BillingInterval;
   isCurrent: boolean;
   isRecommended: boolean;
   isLoading: boolean;
   disabled: boolean;
   onChoose: () => void;
-  /** Libelle du bouton a la place de "Choisir ce plan" (ex: paiement mobile money). */
+  /** Libelle du bouton a la place de "Passer a ..." (ex: paiement mobile money). */
   ctaLabel?: string;
   /** Le plan actuel reste payable (renouvellement par lien de paiement). */
   repayable?: boolean;
 }
 
+/**
+ * Carte de formule, texte seul: nom, a qui elle s'adresse, prix, bouton,
+ * puis ce qu'elle apporte de plus que la formule precedente.
+ */
 export function PlanCard({
   plan,
   features,
+  includesPlan,
   billingInterval,
   isCurrent,
   isRecommended,
@@ -44,94 +46,78 @@ export function PlanCard({
   const t = useTranslations('admin');
   const locale = useLocale();
 
-  const PlanIcon = PLAN_ICON_MAP[plan];
   const locked = isCurrent && !repayable;
   const price = planMonthlyPrice(plan, billingInterval).toLocaleString(locale);
-
-  const subtitle = (() => {
-    if (billingInterval === 'monthly') return null;
-    const total = planBilledTotal(plan, billingInterval).toLocaleString(locale);
-    return t('subscription.billedYearly', { total });
-  })();
+  const yearlyTotal =
+    billingInterval === 'yearly'
+      ? t('subscription.billedYearly', {
+          total: planBilledTotal(plan, billingInterval).toLocaleString(locale),
+        })
+      : null;
 
   return (
-    <div
+    <article
       className={cn(
-        'flex flex-col rounded-xl border p-5 transition-colors',
-        isCurrent
-          ? 'border-app-border-hover bg-app-elevated'
-          : isRecommended
-            ? 'border-status-info/40 bg-app-card ring-1 ring-status-info/40'
-            : 'border-app-border bg-app-card',
+        'flex flex-col rounded-2xl border bg-app-card p-6',
+        isRecommended ? 'border-app-text' : 'border-app-border',
       )}
     >
-      {/* Header: icon + name, badge on the right (in flow, never clipped) */}
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-app-border bg-app-bg">
-            <PlanIcon className="h-4 w-4 text-app-text-secondary" />
-          </div>
-          <h3 className="text-sm font-bold text-app-text">{PLAN_NAMES[plan]}</h3>
-        </div>
+      <div className="flex min-h-6 items-center justify-between gap-2">
+        <h3 className="text-lg font-semibold text-app-text">{PLAN_NAMES[plan]}</h3>
         {isCurrent ? (
-          <span className="rounded-full bg-app-hover px-2.5 py-0.5 text-[11px] font-semibold text-app-text-secondary">
-            {t('subscription.currentPlan')}
+          <span className="rounded-full bg-app-elevated px-2.5 py-0.5 text-xs font-medium text-app-text-secondary">
+            {t('subscription.yourCurrentPlan')}
           </span>
         ) : isRecommended ? (
-          <span className="rounded-full bg-status-info-bg px-2.5 py-0.5 text-[11px] font-semibold text-status-info">
+          <span className="rounded-full bg-app-text px-2.5 py-0.5 text-xs font-medium text-app-bg">
             {t('subscription.popularPlan')}
           </span>
         ) : null}
       </div>
+      <p className="mt-1.5 min-h-10 text-sm text-app-text-secondary">
+        {t(`subscription.${plan}Tagline` as Parameters<typeof t>[0])}
+      </p>
 
-      {/* Price */}
-      <div className="mb-5">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold tracking-tight tabular-nums text-app-text">
-            {price}
-          </span>
-          <span className="text-xs text-app-text-muted">{t('subscription.perMonth')}</span>
-        </div>
-        <p className="mt-1 h-4 text-xs text-app-text-muted">{subtitle}</p>
+      <div className="mt-6 flex items-baseline gap-1.5">
+        <span className="text-4xl font-semibold tracking-tight tabular-nums text-app-text">
+          {price}
+        </span>
+        <span className="text-sm text-app-text-muted">{t('subscription.perMonth')}</span>
       </div>
+      <p className="mt-1 min-h-5 text-xs text-app-text-muted">{yearlyTotal}</p>
 
-      {/* Features */}
-      <ul className="mb-5 flex-1 space-y-2.5">
-        {features.map((key) => (
-          <li key={key} className="flex items-start gap-2">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-success" />
-            <span className="text-xs text-app-text-secondary">
-              {t(`subscription.${key}` as Parameters<typeof t>[0])}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {/* CTA */}
       <Button
         onClick={() => !locked && onChoose()}
         disabled={disabled || locked}
-        variant={isRecommended ? 'default' : 'outline'}
-        className={cn(
-          'h-10 w-full rounded-lg text-sm font-semibold',
-          locked
-            ? 'cursor-default border-app-border bg-transparent text-app-text-muted hover:bg-transparent'
-            : isRecommended
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'border-app-border bg-app-elevated text-app-text hover:bg-app-hover',
-        )}
+        variant={isRecommended && !locked ? 'default' : 'outline'}
+        className="mt-6 h-11 w-full rounded-xl text-sm font-semibold"
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : locked ? (
-          <span className="flex items-center gap-1.5">
-            <Check className="h-4 w-4" />
-            {t('subscription.currentPlan')}
-          </span>
+          t('subscription.yourCurrentPlan')
         ) : (
-          (ctaLabel ?? t('subscription.choosePlan'))
+          (ctaLabel ?? t('subscription.switchTo', { plan: PLAN_NAMES[plan] }))
         )}
       </Button>
-    </div>
+
+      <div className="mt-6 border-t border-app-border pt-5">
+        <p className="text-xs font-medium text-app-text-muted">
+          {includesPlan
+            ? t('subscription.everythingIn', { plan: PLAN_NAMES[includesPlan] })
+            : t('subscription.includes')}
+        </p>
+        <ul className="mt-3 space-y-2.5">
+          {features.map((key) => (
+            <li key={key} className="flex items-start gap-2.5">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-app-text-muted" />
+              <span className="text-sm text-app-text-secondary">
+                {t(`subscription.${key}` as Parameters<typeof t>[0])}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
   );
 }

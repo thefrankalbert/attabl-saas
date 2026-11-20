@@ -16,6 +16,7 @@ import type { PrecacheEntry, SerwistGlobalConfig, RuntimeCaching } from 'serwist
 import { Serwist, NetworkOnly } from 'serwist';
 import { getOrderOutbox, readOutboxIdentity } from '../lib/offline/outbox-idb';
 import { replayOrderEntry, OUTBOX_SYNC_TAG } from '../lib/offline/outbox-replay';
+import { messageOrigin } from '../lib/offline/sw-message-origin';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -200,7 +201,11 @@ self.addEventListener('activate', (event) => {
 // shared restaurant tablet does not retain the previous user's admin pages/RSC
 // in the runtime caches. /api data is never cached (NetworkOnly above), and the
 // app's TanStack persist is cleared by the logout flow itself.
+// Only a page of this site may ask for the purge. Browsers only let same-origin
+// clients message a service worker, so this is a second lock, not the first.
 self.addEventListener('message', (event) => {
+  const source = event.source as Client | null;
+  if (messageOrigin(event.origin, source?.url) !== self.location.origin) return;
   const data = event.data as { type?: string } | undefined;
   if (data?.type === 'attabl-clear-cache') {
     event.waitUntil(Promise.all(RUNTIME_DOC_CACHES.map((c) => caches.delete(c))));

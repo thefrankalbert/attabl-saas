@@ -1,19 +1,18 @@
-# Database migrations via CI - the professional path, so migrations are NEVER
-# applied to production by hand from a laptop against live data.
+# Database migrations via CI: a read-only dry-run on pull requests, and an
+# automatic apply to STAGING on push to main (skipped while STAGING_DB_URL is
+# not configured).
 #
-# Flow:
-#   - Pull request touching supabase/migrations/**  -> dry-run diff (read-only),
-#     posts what WOULD change. No apply.
-#   - Push to main                                  -> apply to STAGING.
-#   - GitHub Release published (or manual dispatch)  -> apply to PRODUCTION,
-#     with a schema backup artifact taken first.
+# There is NO production job, on purpose (2026-11-20). It used to run
+# `supabase db push` against production when a GitHub Release was published,
+# with no approval gate (the "Production" environment has no required
+# reviewer). The migration history table of production is out of sync with the
+# migration files (47 versions in the database without a file, about 40 files
+# without a row), so `db push` there would re-apply or skip migrations blindly.
+# Production migrations are applied one by one with psql, after a backup, and
+# checked by EXISTENCE in the database (see agent_docs/database-conventions.md).
 #
-# Required repository secrets:
+# Required repository secret:
 #   STAGING_DB_URL      session-pooler connection string for the staging project
-#   PRODUCTION_DB_URL   session-pooler connection string for the production project
-#
-# Until a separate staging project exists, set STAGING_DB_URL to the prod URL is
-# NOT recommended; create a staging project (see docs/DATABASE-MIGRATIONS.md).
 
 name: DB Migrations
 
@@ -25,30 +24,25 @@ on:
     branches: [main]
     paths:
       - 'supabase/migrations/**'
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      target:
-        description: 'Target environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options: [staging, production]
 
 concurrency:
   group: db-migrations-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
 
 jobs:
   dry-run:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
-          version: latest
+          version: 3.1.0
       - name: Show pending migrations (read-only, no apply)
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -66,10 +60,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
-          version: latest
+          version: 3.1.0
       - name: Apply migrations to staging
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -81,26 +75,3 @@ jobs:
             exit 0
           fi
           supabase db push --db-url "$STAGING_DB_URL"
-
-  production:
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'production')
-    runs-on: ubuntu-latest
-    environment: production # gate with required reviewers in repo settings
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
-      - name: Backup production schema first
-        run: |
-          mkdir -p supabase/backups
-          supabase db dump --db-url "${{ secrets.PRODUCTION_DB_URL }}" \
-            -f "supabase/backups/prod-schema-${GITHUB_SHA}.sql"
-      - name: Upload schema backup artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: prod-schema-backup-${{ github.sha }}
-          path: supabase/backups/prod-schema-${{ github.sha }}.sql
-          retention-days: 90
-      - name: Apply migrations to production
-        run: supabase db push --db-url "${{ secrets.PRODUCTION_DB_URL }}"
