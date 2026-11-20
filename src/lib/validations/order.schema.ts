@@ -6,7 +6,7 @@ import { ALL_PAYMENT_METHOD_IDS } from '@/lib/payments/methods';
  * convive anonyme pouvait gonfler le reste a payer d'une commande (et faire
  * deborder le montant en base).
  */
-const MAX_TIP_AMOUNT = 1_000_000;
+export const MAX_TIP_AMOUNT = 1_000_000;
 
 /**
  * Zod schemas for order validation.

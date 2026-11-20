@@ -85,6 +85,9 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                 <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                   {t('avgOrderValue')}
                 </TableHead>
+                <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                  {t('tipsLabel')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -104,6 +107,9 @@ export function ServerPerformanceCard({ serverStats, fmt }: ServerPerformanceCar
                   </TableCell>
                   <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
                     {fmt(s.avgOrder)}
+                  </TableCell>
+                  <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                    {fmt(s.tips)}
                   </TableCell>
                 </TableRow>
               ))}

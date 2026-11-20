@@ -44,16 +44,22 @@ describe('order.service multi-tenant isolation', () => {
   beforeEach(() => {
     db = createArgAwareSupabaseMock();
     db.seed('orders', [
+      // payment_status/tip_amount as a real order carries them: markPaid only
+      // adds a till tip to a still-pending order.
       {
         id: 'order-A',
         tenant_id: TENANT_A,
         status: 'ready',
+        payment_status: 'pending',
+        tip_amount: 0,
         created_at: '2026-06-18T08:00:00.000Z',
       },
       {
         id: 'order-B',
         tenant_id: TENANT_B,
         status: 'ready',
+        payment_status: 'pending',
+        tip_amount: 0,
         created_at: '2026-06-18T09:00:00.000Z',
       },
     ]);
@@ -86,7 +92,7 @@ describe('order.service multi-tenant isolation', () => {
     await service.markPaid('order-B', TENANT_A, { method: 'cash' });
     expect(db.affected.orders).toBe(0);
     const orderB = db.rows('orders').find((r) => r.id === 'order-B');
-    expect(orderB?.payment_status).toBeUndefined();
+    expect(orderB?.payment_status).toBe('pending');
   });
 
   it('markPaid control: tenant A on its own order touches exactly 1 row', async () => {

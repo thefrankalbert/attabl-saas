@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_TIP_AMOUNT } from './order.schema';
 
 // Body schema for POST /api/orders/mutations - the single idempotent endpoint
 // that carries offline-replayable order mutations (status change, server
@@ -41,7 +42,14 @@ export const orderMutationSchema = z.discriminatedUnion('type', [
     // jamais transmettre n'importe quoi.
     method: z.string().min(1).max(50),
     // Unites MINEURES entieres (le pourboire est stocke en minor dans orders).
-    tipMinor: z.number().int().nonnegative().optional(),
+    // Plafond grossier (devises a 2 decimales); markPaid applique le plafond
+    // exact de la devise sur le pourboire obtenu.
+    tipMinor: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(MAX_TIP_AMOUNT * 100)
+      .optional(),
   }),
   // OFF-12. Les actions AU NIVEAU ARTICLE de l'ecran cuisine passaient en direct,
   // hors outbox. Un cuisinier qui marque 14 articles "prets" pendant une coupure

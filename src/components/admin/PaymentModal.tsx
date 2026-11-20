@@ -18,7 +18,7 @@ import { usePaymentAmounts } from '@/components/admin/payment/usePaymentAmounts'
 import { fromMinorUnits, toMinorUnits } from '@/lib/utils/money';
 import { useToast } from '@/components/ui/use-toast';
 import CompOrderDialog from '@/components/admin/orders/CompOrderDialog';
-import { amountToCollectMajor } from '@/components/admin/payment/order-amount';
+import { orderTotalMajor, recordedTipMajor } from '@/components/admin/payment/order-amount';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
   PaymentMethodPicker,
@@ -100,7 +100,11 @@ export default function PaymentModal({
   // Montant reclame au client: regle isolee et testee dans `order-amount.ts`
   // (elle ne lisait que `total_price`, un champ derive que la liste des
   // commandes ne remplit pas, d'ou des encaissements a 0).
-  const finalTotal = amountToCollectMajor({ totalProp: total, order, currency: orderCurrency });
+  // Pourboire exclu: le pourboire deja laisse par le client s'y ajoute dans
+  // usePaymentAmounts (il etait oublie: la caisse reclamait 5 000 et le
+  // registre inscrivait 5 500).
+  const finalTotal = orderTotalMajor({ totalProp: total, order, currency: orderCurrency });
+  const recordedTip = recordedTipMajor(order, orderCurrency);
   // Display-only: tableless orders (takeaway, delivery, counter sales) are
   // legitimate - a table is never required to take a payment.
   const finalTable = tableNumber ?? order?.table_number ?? undefined;
@@ -142,6 +146,7 @@ export default function PaymentModal({
 
   const {
     tipAmount,
+    extraTip,
     totalWithTip,
     receivedAmount,
     change,
@@ -151,7 +156,7 @@ export default function PaymentModal({
     setExactCashAmount,
     addCashAmount,
     tipProps,
-  } = usePaymentAmounts(finalTotal, displayCurrency);
+  } = usePaymentAmounts(finalTotal, displayCurrency, recordedTip);
   // Carte: le terminal du restaurant a deja encaisse, aucune saisie de montant.
   const canValidate = !isCash || cashIsValid;
 
@@ -169,9 +174,10 @@ export default function PaymentModal({
     setIsProcessing(true);
     try {
       if (order?.id) {
-        // tipAmount is a MAJOR keypad value; markPaid stores orders.tip_amount
-        // in integer MINOR units, so convert at the boundary.
-        const tipMinor = tipAmount > 0 ? toMinorUnits(tipAmount, orderCurrency) : undefined;
+        // Only the tip ADDED at the till is sent (markPaid adds it to the one
+        // the customer left): sending the total would count the customer's tip
+        // twice. MAJOR keypad value -> integer MINOR units at the boundary.
+        const tipMinor = extraTip > 0 ? toMinorUnits(extraTip, orderCurrency) : undefined;
         payRequestIdRef.current ??= crypto.randomUUID();
         const outcome = await payExistingOrder(order.id, method, tipMinor, payRequestIdRef.current);
         setIsProcessing(false);

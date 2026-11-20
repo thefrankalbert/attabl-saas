@@ -868,7 +868,17 @@ describe('OrderService', () => {
 
   describe('markPaid (idempotency guard)', () => {
     // Bespoke mock for the update().eq().eq().eq().neq().select() chain.
-    function makeSupabase(selectResult: { data?: unknown; error?: unknown }) {
+    function makeSupabase(
+      selectResult: { data?: unknown; error?: unknown },
+      recorded: {
+        tip_amount: number;
+        display_currency: string | null;
+        payment_status?: string;
+      } = {
+        tip_amount: 0,
+        display_currency: 'XOF',
+      },
+    ) {
       const update = vi.fn();
       const select = vi.fn().mockResolvedValue(selectResult);
       const neq = vi.fn().mockReturnValue({ select });
@@ -879,7 +889,14 @@ describe('OrderService', () => {
       const paymentsInsert = vi.fn().mockResolvedValue({ error: null });
       // Read of the tip before the payment (restored if the ledger write fails).
       const tipRead = vi.fn(() => ({
-        eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { tip_amount: 0 } }) }) }),
+        eq: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: { payment_status: 'pending', ...recorded },
+              error: null,
+            }),
+          }),
+        }),
       }));
       const from = vi.fn((table: string) => {
         if (table === 'payments') return { insert: paymentsInsert };
@@ -928,6 +945,88 @@ describe('OrderService', () => {
           amount: 1500,
         }),
       );
+    });
+
+    // Constat B (audit pourboires 2026-11-20): le pourboire de la caisse
+    // REMPLACAIT celui du client. 500 laisses sur la vitrine + 200 a la caisse
+    // inscrivaient 200. Il doit s'ajouter: 700, une seule fois.
+    it('ADDS the till tip to the tip the customer left, without counting it twice', async () => {
+      const m = makeSupabase(
+        { data: [{ id: 'order-1', total: 5000, tip_amount: 700 }], error: null },
+        { tip_amount: 500, display_currency: 'XOF' },
+      );
+      await createOrderService(m.client).markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 200,
+      });
+      expect(m.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 700 }));
+      expect(m.paymentsInsert).toHaveBeenCalledWith(expect.objectContaining({ amount: 5700 }));
+    });
+
+    // Relecture adversariale (constat 3): le rejeu d'un encaissement deja
+    // passe relisait un pourboire DEJA augmente; pres du plafond, il etait
+    // refuse (422 definitif) alors que la commande etait payee.
+    it('a replay on an already-paid order is a no-op, never a ceiling refusal', async () => {
+      const m = makeSupabase(
+        { data: [], error: null },
+        { tip_amount: 999_900, display_currency: 'XOF', payment_status: 'paid' },
+      );
+      const res = await createOrderService(m.client).markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 200,
+      });
+      expect(res).toEqual({ paid: false });
+      expect(m.update.mock.calls[0][0]).not.toHaveProperty('tip_amount');
+    });
+
+    it('leaves the customer tip untouched when the till adds nothing', async () => {
+      const m = makeSupabase(
+        { data: [{ id: 'order-1', total: 5000, tip_amount: 500 }], error: null },
+        { tip_amount: 500, display_currency: 'XOF' },
+      );
+      await createOrderService(m.client).markPaid('order-1', 'tenant-123', { method: 'cash' });
+      expect(m.update.mock.calls[0][0]).not.toHaveProperty('tip_amount');
+      expect(m.paymentsInsert).toHaveBeenCalledWith(expect.objectContaining({ amount: 5500 }));
+    });
+
+    // Constat F: aucun plafond a l'encaissement. Meme plafond que la route de
+    // commande: 1 000 000 en unites MAJEURES de la devise, sur le pourboire obtenu.
+    it('refuses a tip above the ceiling of the order currency (XOF)', async () => {
+      const m = makeSupabase(
+        { data: [{ id: 'order-1' }], error: null },
+        { tip_amount: 500, display_currency: 'XOF' },
+      );
+      await expect(
+        createOrderService(m.client).markPaid('order-1', 'tenant-123', {
+          method: 'cash',
+          tipAmount: 999_501,
+        }),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+      expect(m.update).not.toHaveBeenCalled();
+      expect(m.paymentsInsert).not.toHaveBeenCalled();
+    });
+
+    it('accepts a tip exactly at the ceiling, and scales it for a 2-decimal currency', async () => {
+      const xof = makeSupabase(
+        { data: [{ id: 'order-1' }], error: null },
+        { tip_amount: 500, display_currency: 'XOF' },
+      );
+      await createOrderService(xof.client).markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 999_500,
+      });
+      expect(xof.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 1_000_000 }));
+
+      // 1 000 000 EUR = 100 000 000 centimes: 2 000 000 centimes passe.
+      const eur = makeSupabase(
+        { data: [{ id: 'order-1' }], error: null },
+        { tip_amount: 0, display_currency: 'EUR' },
+      );
+      await createOrderService(eur.client).markPaid('order-1', 'tenant-123', {
+        method: 'cash',
+        tipAmount: 2_000_000,
+      });
+      expect(eur.update).toHaveBeenCalledWith(expect.objectContaining({ tip_amount: 2_000_000 }));
     });
 
     it('is a no-op (paid:false) on an already-paid order (0 rows matched)', async () => {

@@ -172,10 +172,21 @@ describe('order.service Wave 26 additions', () => {
   });
 
   it('markPaid sets payment_method/payment_status/paid_at and filters tenant_id', async () => {
-    const supabase = buildSupabase({ orders: { data: null, error: null } });
+    // 1st orders call: read of the tip already on the order (the till tip is
+    // ADDED to it); 2nd: the guarded update.
+    const supabase = buildSupabase({
+      orders: [
+        {
+          data: { tip_amount: 0, display_currency: 'XOF', payment_status: 'pending' },
+          error: null,
+        },
+        { data: null, error: null },
+      ],
+    });
     const svc = createOrderService(asSupabase(supabase));
     await svc.markPaid('order-1', 'tenant-A', { method: 'cash', tipAmount: 500 });
-    // A tip first reads the current tip (restored if the ledger write fails).
+    // A tip first reads the current tip, scoped to the tenant too.
+    expect(hasTenantFilter(supabase._chains.orders[0], 'tenant-A')).toBe(true);
     const chain = supabase._chains.orders.find((c) => c._calls.some((x) => x.method === 'update'))!;
     expect(hasTenantFilter(chain, 'tenant-A')).toBe(true);
     const updateCall = chain._calls.find((c) => c.method === 'update');

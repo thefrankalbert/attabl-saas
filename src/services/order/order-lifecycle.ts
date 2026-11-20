@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '../errors';
 import { logger } from '@/lib/logger';
+import { toMinorUnits } from '@/lib/utils/money';
+import { MAX_TIP_AMOUNT } from '@/lib/validations/order.schema';
 
 /**
  * Forward-only rank of the kitchen/fulfillment axis of order.status (audit H13).
@@ -376,14 +378,38 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       // Tip before this payment, restored if the ledger write fails below.
       let tipBefore: number | undefined;
       if (payload.tipAmount && payload.tipAmount > 0) {
-        update.tip_amount = payload.tipAmount;
-        const { data: before } = await supabase
+        // The till tip is ADDED to the one the customer left on the storefront:
+        // it used to REPLACE it, so a 500 tip from the customer plus 200 at the
+        // till booked 200 (audit pourboires 2026-11-20, constat B).
+        const { data: before, error: beforeError } = await supabase
           .from('orders')
-          .select('tip_amount')
+          .select('tip_amount, display_currency, payment_status')
           .eq('id', orderId)
           .eq('tenant_id', tenantId)
           .maybeSingle();
-        tipBefore = before ? Number(before.tip_amount || 0) : undefined;
+        if (beforeError) {
+          // 'Erreur interne' is the sentinel /api/orders/mutations maps to 500:
+          // a transient read failure must stay retryable in the offline outbox.
+          throw new ServiceError('Erreur interne', 'INTERNAL', beforeError);
+        }
+        // Only a still-pending order gets a tip. An already-settled one (replay
+        // of a payment that went through) skips the sum and the ceiling: the
+        // guarded update below matches nothing and answers paid:false, instead
+        // of refusing a replay whose first attempt already added the tip.
+        if (before && before.payment_status === 'pending') {
+          tipBefore = Number(before.tip_amount || 0);
+          const newTip = tipBefore + payload.tipAmount;
+          // Same ceiling as the order route (MAX_TIP_AMOUNT in MAJOR units of
+          // the order currency), on the resulting tip (constat F).
+          const ceiling = toMinorUnits(MAX_TIP_AMOUNT, before.display_currency as string | null);
+          if (newTip > ceiling) {
+            throw new ServiceError('Pourboire trop eleve', 'VALIDATION');
+          }
+          // ponytail: read-then-write, a tip written between the read and the
+          // flip is overwritten. Only staff can write a pending order's tip
+          // (guard trigger); a compare-and-set would be the upgrade.
+          update.tip_amount = newTip;
+        }
       }
 
       const { data, error } = await supabase

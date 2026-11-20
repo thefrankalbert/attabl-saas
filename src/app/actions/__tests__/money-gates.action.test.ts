@@ -38,6 +38,9 @@ const member: { role: string; custom: Record<string, boolean> | null } = {
   custom: null,
 };
 
+// Plan du restaurant, modifiable par test (garde des pourboires).
+const tenantPlan = { value: 'business' };
+
 function chain(table: string) {
   const c: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'is', 'in', 'neq', 'order', 'limit']) c[m] = vi.fn(() => c);
@@ -51,7 +54,7 @@ function chain(table: string) {
         }
       : table === 'tenants'
         ? {
-            subscription_plan: 'business',
+            subscription_plan: tenantPlan.value,
             subscription_status: 'active',
             trial_ends_at: null,
             is_active: true,
@@ -99,6 +102,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   member.role = 'chef';
   member.custom = null;
+  tenantPlan.value = 'business';
   mockMarkPaid.mockResolvedValue({ paid: true });
   mockRecordTender.mockResolvedValue({ paymentStatus: 'paid', net: 100, due: 0 });
   mockGetSummary.mockResolvedValue({ paymentStatus: 'pending', due: 100, net: 0 });
@@ -187,5 +191,53 @@ describe('lecture du reglement: orders.view suffit', () => {
     const res = await actionGetPaymentSummary(TENANT_ID, ORDER_ID);
     expect(res.error).toBeUndefined();
     expect(res.summary).toBeDefined();
+  });
+});
+
+/**
+ * Constat E (audit pourboires 2026-11-20): aucun test ne verifiait, au niveau
+ * de l'action, le refus du pourboire selon le plan. Les pourboires sont Pro et
+ * plus (canAccessTips). Le temoin positif (Pro accepte) prouve que le refus
+ * vient bien du plan, pas d'une autre garde.
+ */
+describe('pourboire a l encaissement: refuse au plan Starter', () => {
+  it('Starter: un pourboire est refuse et rien n est encaisse', async () => {
+    member.role = 'cashier';
+    tenantPlan.value = 'starter';
+    const { actionMarkOrderPaid } = await import('@/app/actions/orders');
+    const res = await actionMarkOrderPaid(TENANT_ID, ORDER_ID, 'cash', 500);
+    expect(res.error).toBe('Les pourboires ne sont pas inclus dans votre plan.');
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+  });
+
+  it('Starter: sans pourboire, l encaissement passe', async () => {
+    member.role = 'cashier';
+    tenantPlan.value = 'starter';
+    const { actionMarkOrderPaid } = await import('@/app/actions/orders');
+    const res = await actionMarkOrderPaid(TENANT_ID, ORDER_ID, 'cash');
+    expect(res.success).toBe(true);
+  });
+
+  it('Pro: le meme pourboire est accepte', async () => {
+    member.role = 'cashier';
+    tenantPlan.value = 'pro';
+    const { actionMarkOrderPaid } = await import('@/app/actions/orders');
+    const res = await actionMarkOrderPaid(TENANT_ID, ORDER_ID, 'cash', 500);
+    expect(res.success).toBe(true);
+    expect(mockMarkPaid).toHaveBeenCalledWith(ORDER_ID, TENANT_ID, {
+      method: 'cash',
+      tipAmount: 500,
+    });
+  });
+
+  // Constat F, premiere barriere: un pourboire non entier ou demesure est
+  // refuse avant tout acces a la base (le plafond exact est dans markPaid).
+  it.each([12.5, 100_000_001])('refuse un pourboire invalide (%s)', async (tip) => {
+    member.role = 'cashier';
+    tenantPlan.value = 'pro';
+    const { actionMarkOrderPaid } = await import('@/app/actions/orders');
+    const res = await actionMarkOrderPaid(TENANT_ID, ORDER_ID, 'cash', tip);
+    expect(res.error).toBe('Donnees invalides');
+    expect(mockMarkPaid).not.toHaveBeenCalled();
   });
 });
