@@ -1,0 +1,2 @@
+# Regles du scan ZAP baseline (format TSV: id<TAB>IGNORE|WARN|FAIL<TAB>raison).
+# Une regle IGNORE exige une raison prouvee, ecrite sur la ligne.
