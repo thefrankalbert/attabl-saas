@@ -279,7 +279,7 @@ export function createRetentionService(supabase: SupabaseClient) {
       const comptes = (data ?? []) as { auth_user_id: string }[];
       for (const { auth_user_id: userId } of comptes) {
         // Suppression LOGIQUE (shouldSoftDelete = true): GoTrue masque l'adresse et
-        // le telephone, retire les identites (Google, Azure) et coupe les
+        // le telephone, retire les identites (Google) et coupe les
         // sessions, mais GARDE la ligne auth.users. C'est voulu: admin_users,
         // audit_log et les commandes la referencent par cle etrangere, et une
         // suppression physique les en detacherait ou echouerait. Un compte deja

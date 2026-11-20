@@ -680,7 +680,7 @@
       "retentionInvitations": "Invitations d'équipe expirées ou annulées : supprimées {days} jours après leur date d'expiration.",
       "retentionPush": "Abonnements aux notifications d'un appareil inutilisé : supprimés après {days} jours sans activité.",
       "retentionAudit": "Journaux d'audit des actions sensibles : {months} mois. Passé ce délai, les entrées sans valeur comptable sont supprimées. Celles qui touchent aux commandes, aux coupons et aux prix sont conservées sans l'identité de la personne.",
-      "retentionClosed": "Restaurant supprimé, {days} jours après la suppression : adresse e-mail, nom et téléphone de l'équipe (les comptes de connexion sont supprimés, y compris la connexion Google ou Microsoft), comptes clients à crédit, contacts des fournisseurs, journaux d'audit du restaurant, téléphone et adresse du restaurant. Passé ce délai, le restaurant ne peut plus être restauré.",
+      "retentionClosed": "Restaurant supprimé, {days} jours après la suppression : adresse e-mail, nom et téléphone de l'équipe (les comptes de connexion sont supprimés, y compris la connexion Google), comptes clients à crédit, contacts des fournisseurs, journaux d'audit du restaurant, téléphone et adresse du restaurant. Passé ce délai, le restaurant ne peut plus être restauré.",
       "retentionAccount": "Compte et établissement actifs : conservés pendant l'abonnement.",
       "retentionAccounting": "Paiements, factures et événements de paiement : jamais effacés avant la fin de la durée légale de conservation des pièces comptables.",
       "retentionContact": "Messages envoyés par le formulaire de contact : ils nous arrivent par e-mail, nous ne les enregistrons pas dans notre base et nous les supprimons de notre messagerie après {months} mois.",
