@@ -27,17 +27,22 @@ concurrency:
   group: promote-prod
   cancel-in-progress: false
 
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
 jobs:
   promote:
     name: Promote production deployment
     runs-on: ubuntu-latest
     timeout-minutes: 32
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
 
@@ -51,14 +56,16 @@ jobs:
           VERCEL_TEAM_ID: team_dnfIixBQWI1oNxE83sE1R2ia
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
-            echo "### Promotion production ignoree" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Le secret \`VERCEL_TOKEN\` n'est pas configure." >> "$GITHUB_STEP_SUMMARY"
-            echo "Creer un token sur https://vercel.com/account/tokens puis :" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo 'gh secret set VERCEL_TOKEN' >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "En attendant, lancer \`./scripts/promote-prod.sh\` en local apres chaque merge." >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "### Promotion production ignoree"
+              echo ""
+              echo "Le secret \`VERCEL_TOKEN\` n'est pas configure."
+              echo "Creer un token sur https://vercel.com/account/tokens puis :"
+              echo '```'
+              echo 'gh secret set VERCEL_TOKEN'
+              echo '```'
+              echo "En attendant, lancer \`./scripts/promote-prod.sh\` en local apres chaque merge."
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           # pipefail : sans lui, l'echec du script serait masque par le tee et le

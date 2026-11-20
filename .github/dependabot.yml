@@ -1,7 +1,12 @@
 # Mises a jour automatiques des dependances.
 # Une seule proposition groupee par semaine pour les correctifs et versions
 # mineures; les versions majeures restent des propositions separees, a relire.
-# Les alertes de securite ouvrent une proposition immediatement, hors calendrier.
+# Delai de 7 jours avant de proposer une version toute neuve: une version
+# piegee est en general retiree du registre avant ce delai (attaque par la
+# chaine d'approvisionnement). Meme delai que `minimum-release-age` de .npmrc.
+# Correctif de securite urgent sur une version de moins de 7 jours: ajouter le
+# paquet a `minimumReleaseAgeExclude` dans pnpm-workspace.yaml le temps de la
+# mise a jour, puis l'en retirer.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +14,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 3
     groups:
       mineures-et-correctifs:
@@ -19,4 +26,6 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 2

@@ -40,9 +40,9 @@ export function assignTrialVariant(id: string): TrialVariant {
 
 function getClientCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
+  const prefix = name + '=';
+  const pair = document.cookie.split('; ').find((c) => c.startsWith(prefix));
+  return pair ? decodeURIComponent(pair.slice(prefix.length)) : null;
 }
 
 function setClientCookie(name: string, value: string, days: number): void {

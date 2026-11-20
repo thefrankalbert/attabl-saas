@@ -84,11 +84,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Password recovery flow - redirect to reset page
-    if (type === 'recovery' && session) {
-      return redirectToResetPassword(requestUrl.origin, session.user?.id);
-    }
-
+    // No recovery branch here on purpose: every reset link the app sends uses
+    // token_hash (handled above, the token type is checked by Supabase). A
+    // `?type=recovery` added by hand to an OAuth/PKCE URL must not hand out the
+    // recovery marker (CodeQL js/user-controlled-bypass, 2026-11-20).
     if (session?.user) {
       // Check if user already has a tenant (existing user login). Fetch ALL rows:
       // a multi-tenant owner has several, and .single() would error -> wrongly fall
