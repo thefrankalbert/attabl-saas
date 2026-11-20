@@ -124,15 +124,21 @@ function setupSupabaseChain(options: {
     if (table === 'stripe_events') {
       return {
         insert: idempotencyInsert,
-        select: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: { completed_at: '2026-01-01T00:00:00Z', processed_at: '2026-01-01T00:00:00Z' },
-              error: null,
+            // Marquage d'aboutissement: update().eq() attendu directement.
+            then: (ok: (v: { error: null }) => unknown) =>
+              Promise.resolve({ error: null }).then(ok),
+            // Prise de controle: update().eq().is().lt().select().maybeSingle().
+            is: vi.fn().mockReturnValue({
+              lt: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
             }),
           }),
         }),
-        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
       };
     }
     return { select: selectFn, update: updateFn };

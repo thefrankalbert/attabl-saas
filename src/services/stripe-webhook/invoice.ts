@@ -258,9 +258,12 @@ export async function handleInvoicePaid(
   // soit rentre: facture a 0 (coupon 100 %, essai). Lever le gel pour
   // remboursement la-dessus rendrait l'acces gratuitement.
   //
-  // Le rejeu d'un ANCIEN `invoice.paid` est deja bloque en amont par
-  // l'idempotence (`INSERT ON CONFLICT DO NOTHING` sur `stripe_events`,
-  // verifie dans la route): pas besoin d'horodater le gel pour s'en proteger.
+  // RESIDU CONNU, non ferme ici: l'idempotence de la route ne bloque que le
+  // rejeu d'un evenement DEJA ABOUTI. Un ancien `invoice.paid` dont le premier
+  // traitement a echoue est rejoue par Stripe (c'est voulu), et s'il arrive
+  // APRES un `charge.refunded` il leve ce gel sans argent neuf. Le fermer
+  // demande d'horodater le gel (colonne `frozen_at`) et de comparer a la date
+  // de l'evenement.
   //
   // RESIDU ASSUME, ecrit pour ne pas etre decouvert plus tard: une facture
   // reglee depuis le SOLDE du client porte un `amount_paid` positif. Ce cas

@@ -106,18 +106,30 @@ export async function POST(request: Request) {
     }
 
     if (!insertedEvent) {
-      const { data: existing } = await supabase
+      // PRISE DE CONTROLE ATOMIQUE d'une ligne ancienne jamais aboutie. Une seule
+      // ecriture conditionnelle: elle ne rend une ligne que si l'evenement n'a
+      // jamais abouti ET n'est plus en cours, et elle rafraichit `processed_at`
+      // dans le meme geste. Deux rejeux simultanes ne peuvent donc pas la
+      // reprendre tous les deux (le second ne trouve plus de ligne ancienne).
+      const staleBefore = new Date(Date.now() - STALE_EVENT_MS).toISOString();
+      const { data: takenOver, error: takeoverError } = await supabase
         .from('stripe_events')
-        .select('completed_at, processed_at')
+        .update({ processed_at: new Date().toISOString() })
         .eq('id', event.id)
+        .is('completed_at', null)
+        .lt('processed_at', staleBefore)
+        .select('id')
         .maybeSingle();
-      // Lecture impossible ou ligne aboutie ou traitement encore en cours: on ne
-      // retraite pas. Seule une ligne ANCIENNE et jamais aboutie est reprise.
-      const neverCompleted =
-        !!existing &&
-        existing.completed_at === null &&
-        Date.now() - new Date(existing.processed_at).getTime() > STALE_EVENT_MS;
-      if (!neverCompleted) {
+      if (takeoverError) {
+        // On ne sait pas si l'evenement a abouti. Repondre 200 ferait cesser les
+        // rejeux de Stripe: exactement la perte que cette reprise doit fermer.
+        logger.error('Failed to check Stripe event completion', takeoverError, {
+          eventId: event.id,
+          eventType: event.type,
+        });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+      if (!takenOver) {
         logger.info('Stripe event already processed, skipping', {
           eventId: event.id,
           eventType: event.type,

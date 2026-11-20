@@ -31,6 +31,7 @@ vi.mock('@/services/stripe-webhook.service', () => ({
 const ledger = {
   inserted: true,
   existing: null as { completed_at: string | null; processed_at: string } | null,
+  takeoverError: null as { message: string } | null,
   completedUpdates: [] as Array<Record<string, unknown>>,
   insertedRows: [] as Array<Record<string, unknown>>,
 };
@@ -49,13 +50,32 @@ vi.mock('@/lib/supabase/admin', () => ({
           }),
         };
       },
-      select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: ledger.existing, error: null }) }),
+      update: (patch: Record<string, unknown>) => ({
+        eq: () => ({
+          // Marquage d'aboutissement: update({ completed_at }).eq('id').
+          then: (ok: (v: { error: null }) => unknown) => {
+            ledger.completedUpdates.push(patch);
+            return Promise.resolve({ error: null }).then(ok);
+          },
+          // Prise de controle: update({ processed_at }).eq().is().lt().select().
+          // Reproduit le filtre de la base: ligne jamais aboutie ET ancienne.
+          is: () => ({
+            lt: (_column: string, staleBefore: string) => ({
+              select: () => ({
+                maybeSingle: async () => {
+                  if (ledger.takeoverError) return { data: null, error: ledger.takeoverError };
+                  const row = ledger.existing;
+                  const eligible =
+                    !!row && row.completed_at === null && row.processed_at < staleBefore;
+                  if (!eligible || !row) return { data: null, error: null };
+                  row.processed_at = String(patch.processed_at);
+                  return { data: { id: 'evt_1' }, error: null };
+                },
+              }),
+            }),
+          }),
+        }),
       }),
-      update: (patch: Record<string, unknown>) => {
-        ledger.completedUpdates.push(patch);
-        return { eq: async () => ({ error: null }) };
-      },
       delete: () => ({ eq: async () => ({ error: null }) }),
     }),
   }),
@@ -76,6 +96,7 @@ beforeEach(() => {
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
   ledger.inserted = true;
   ledger.existing = null;
+  ledger.takeoverError = null;
   ledger.completedUpdates = [];
   ledger.insertedRows = [];
   mockConstructEvent.mockReturnValue({
@@ -125,6 +146,30 @@ describe('webhook Stripe - reprise d un evenement jamais abouti', () => {
     const res = await call();
 
     expect(await res.json()).toEqual({ received: true, idempotent: true });
+    expect(mockHandleEvent).not.toHaveBeenCalled();
+  });
+
+  it('deux rejeux d une ligne jamais aboutie: un seul la reprend', async () => {
+    ledger.inserted = false;
+    ledger.existing = { completed_at: null, processed_at: minutesAgo(60) };
+
+    const first = await call();
+    // Le premier a rafraichi `processed_at`: la ligne n'est plus "ancienne".
+    ledger.existing.completed_at = null;
+    const second = await call();
+
+    expect(await first.json()).toEqual({ received: true });
+    expect(await second.json()).toEqual({ received: true, idempotent: true });
+    expect(mockHandleEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('si l etat de la ligne est illisible, la route repond 500 pour que Stripe rejoue', async () => {
+    ledger.inserted = false;
+    ledger.takeoverError = { message: 'timeout' };
+
+    const res = await call();
+
+    expect(res.status).toBe(500);
     expect(mockHandleEvent).not.toHaveBeenCalled();
   });
 
