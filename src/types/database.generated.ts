@@ -2488,6 +2488,7 @@ export type Database = {
           past_due_since: string | null;
           phone: string | null;
           primary_color: string | null;
+          refund_frozen_at: string | null;
           screen_lock_mode: string | null;
           secondary_color: string | null;
           service_charge_rate: number | null;
@@ -2548,6 +2549,7 @@ export type Database = {
           past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
+          refund_frozen_at?: string | null;
           screen_lock_mode?: string | null;
           secondary_color?: string | null;
           service_charge_rate?: number | null;
@@ -2608,6 +2610,7 @@ export type Database = {
           past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
+          refund_frozen_at?: string | null;
           screen_lock_mode?: string | null;
           secondary_color?: string | null;
           service_charge_rate?: number | null;

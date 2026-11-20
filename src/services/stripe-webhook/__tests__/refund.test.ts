@@ -82,6 +82,8 @@ describe('handleChargeRefunded', () => {
       subscription_status: 'frozen',
       is_active: false,
       freeze_reason: 'refund',
+      // Horodatage du gel: une facture payee avant ne le leve pas.
+      refund_frozen_at: expect.any(String),
     });
     expect(ecritures[0].filtre).toBe('id');
   });

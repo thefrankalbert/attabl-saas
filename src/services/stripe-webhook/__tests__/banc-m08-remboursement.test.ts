@@ -109,7 +109,14 @@ describe('M-08 - charge.refunded', () => {
       lines: { data: [...creditee, payee] },
     });
   }
-  const GEL = [{ subscription_status: 'frozen', is_active: false, freeze_reason: 'refund' }];
+  const GEL = [
+    {
+      subscription_status: 'frozen',
+      is_active: false,
+      freeze_reason: 'refund',
+      refund_frozen_at: expect.any(String),
+    },
+  ];
 
   it('gele quand le paiement de la periode en cours est rembourse (temoin)', async () => {
     const { supabase, ecritures } = doublureBase(tenant);

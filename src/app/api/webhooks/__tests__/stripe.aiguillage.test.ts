@@ -80,6 +80,7 @@ type QueryResult = { data: unknown; error: unknown };
 interface Chain extends PromiseLike<QueryResult> {
   eq: (column: string, value: unknown) => Chain;
   is: (column: string, value: unknown) => Chain;
+  or: (filters: string) => Chain;
   maybeSingle: () => Promise<QueryResult>;
   single: () => Promise<QueryResult>;
 }
@@ -114,6 +115,10 @@ function setupMock(options: MockOptions = {}) {
       },
       is: (column, value) => {
         onFilter?.(column, value);
+        return chain;
+      },
+      or: (filters) => {
+        onFilter?.('or', filters);
         return chain;
       },
       maybeSingle: () => Promise.resolve(result()),
@@ -504,7 +509,11 @@ describe('invoice.paid', () => {
   it('ecrit le bloc de retour a la normale, scope aux seuls impayes non coupes', async () => {
     const chain = setupMock();
 
-    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
+    const response = await fire('invoice.paid', {
+      customer: 'cus_1',
+      amount_paid: 29000,
+      status_transitions: { paid_at: 1800000000 },
+    });
 
     expect(response.status).toBe(200);
     // DEUX ecritures, et leurs perimetres sont deux gardes distinctes:
@@ -524,6 +533,7 @@ describe('invoice.paid', () => {
         past_due_since: null,
         is_active: true,
         freeze_reason: null,
+        refund_frozen_at: null,
       },
     ]);
     // Le scope EST la garde: 'frozen' est exclu de la PREMIERE (un litige ne se
@@ -537,12 +547,26 @@ describe('invoice.paid', () => {
       ['stripe_customer_id', 'cus_1'],
       ['subscription_status', 'frozen'],
       ['freeze_reason', 'refund'],
+      // Seul un gel pose AVANT le paiement est leve (ou un gel sans date, pose
+      // par l'ancien code): un vieux paiement rejoue ne leve pas un gel recent.
+      ['or', 'refund_frozen_at.is.null,refund_frozen_at.lt."2027-01-15T08:00:00.000Z"'],
       ['suspended_at', null],
       ['deleted_at', null],
     ]);
     expect(logger.info).toHaveBeenCalledWith('Invoice paid, subscription state reconciled', {
       customerId: 'cus_1',
     });
+  });
+
+  it('sans date de paiement lisible, ne leve PAS un gel pour remboursement', async () => {
+    const chain = setupMock();
+
+    const response = await fire('invoice.paid', { customer: 'cus_1', amount_paid: 29000 });
+
+    expect(response.status).toBe(200);
+    // Une seule ecriture: celle de l'impaye. Dans le doute, le gel reste.
+    expect(chain.updatePayloads).toHaveLength(1);
+    expect(chain.updateFilters).not.toContainEqual(['freeze_reason', 'refund']);
   });
 
   it('retire la ligne d idempotence quand l ecriture echoue', async () => {

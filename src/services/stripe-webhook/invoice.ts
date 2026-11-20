@@ -258,12 +258,19 @@ export async function handleInvoicePaid(
   // soit rentre: facture a 0 (coupon 100 %, essai). Lever le gel pour
   // remboursement la-dessus rendrait l'acces gratuitement.
   //
-  // RESIDU CONNU, non ferme ici: l'idempotence de la route ne bloque que le
-  // rejeu d'un evenement DEJA ABOUTI. Un ancien `invoice.paid` dont le premier
-  // traitement a echoue est rejoue par Stripe (c'est voulu), et s'il arrive
-  // APRES un `charge.refunded` il leve ce gel sans argent neuf. Le fermer
-  // demande d'horodater le gel (colonne `frozen_at`) et de comparer a la date
-  // de l'evenement.
+  // REJEU D'UN ANCIEN `invoice.paid`. L'idempotence de la route ne bloque que
+  // le rejeu d'un evenement DEJA ABOUTI: un ancien paiement dont le premier
+  // traitement a echoue est rejoue par Stripe (c'est voulu). Arrive APRES un
+  // `charge.refunded`, il levait ce gel sans argent neuf. Le gel est donc
+  // horodate (`refund_frozen_at`), et seule une facture payee APRES lui le
+  // leve. Sans date de paiement, on prend la date de creation de la facture,
+  // plus ancienne: dans le doute, le gel reste.
+  // Aucune date lisible: on ne sait pas si le paiement precede le gel, on ne le
+  // leve pas.
+  const payeeLeSecondes = invoice.status_transitions?.paid_at ?? invoice.created;
+  const payeeLe = Number.isFinite(payeeLeSecondes)
+    ? new Date(payeeLeSecondes * 1000).toISOString()
+    : null;
   //
   // RESIDU ASSUME, ecrit pour ne pas etre decouvert plus tard: une facture
   // reglee depuis le SOLDE du client porte un `amount_paid` positif. Ce cas
@@ -282,27 +289,32 @@ export async function handleInvoicePaid(
   // `past_due` pour qu'une facture du mois suivant ne leve pas un gel pour
   // litige. Elargir son filtre aurait relache cette garde. Celle-ci ne cible
   // QUE la cause `refund`.
-  const { error: refundError } = !argentNeuf
-    ? { error: null }
-    : await updateTolerantToMissingFreezeReason(
-        {
-          subscription_status: 'active',
-          past_due_since: null,
-          is_active: true,
-          freeze_reason: null,
-        },
-        (payload) =>
-          supabase
-            .from('tenants')
-            .update(payload)
-            .eq('stripe_customer_id', customerId)
-            .eq('subscription_status', 'frozen')
-            .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND)
-            // Un paiement ne leve pas une suspension plateforme (CTR7-1).
-            .is('suspended_at', null)
-            .is('deleted_at', null),
-        { customerId, handler: 'invoice.paid', cause: FREEZE_REASONS.REFUND },
-      );
+  const { error: refundError } =
+    !argentNeuf || !payeeLe
+      ? { error: null }
+      : await updateTolerantToMissingFreezeReason(
+          {
+            subscription_status: 'active',
+            past_due_since: null,
+            is_active: true,
+            freeze_reason: null,
+            refund_frozen_at: null,
+          },
+          (payload) =>
+            supabase
+              .from('tenants')
+              .update(payload)
+              .eq('stripe_customer_id', customerId)
+              .eq('subscription_status', 'frozen')
+              .eq(FREEZE_REASON_COLUMN, FREEZE_REASONS.REFUND)
+              // Un gel sans date a ete pose par l'ancien code: comportement d'avant.
+              // Guillemets: `.` et `:` de l'horodatage sont reserves dans or().
+              .or(`refund_frozen_at.is.null,refund_frozen_at.lt."${payeeLe}"`)
+              // Un paiement ne leve pas une suspension plateforme (CTR7-1).
+              .is('suspended_at', null)
+              .is('deleted_at', null),
+          { customerId, handler: 'invoice.paid', cause: FREEZE_REASONS.REFUND },
+        );
 
   if (!argentNeuf) {
     logger.info('invoice.paid sans argent neuf: un gel pour remboursement n est pas leve', {

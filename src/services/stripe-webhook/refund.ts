@@ -276,6 +276,8 @@ export async function handleChargeRefunded(
       subscription_status: 'frozen',
       is_active: false,
       freeze_reason: FREEZE_REASONS.REFUND,
+      // Horodatage du gel: une facture payee AVANT ne le leve pas (invoice.ts).
+      refund_frozen_at: new Date().toISOString(),
     };
     appliquer = (p) => supabase.from('tenants').update(p).eq('id', tenant.id);
   }
