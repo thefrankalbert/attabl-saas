@@ -102,7 +102,7 @@ export function ScreenLock({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-status-warning px-4 py-2.5 text-sm font-medium text-accent-text"
+            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-status-warning-solid px-4 py-2.5 text-sm font-medium text-accent-text"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{t('lockingIn', { time: formatTime(remainingSeconds) })}</span>

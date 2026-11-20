@@ -113,9 +113,8 @@ function FooterSummaryBarInner({
       )}
 
       {/* Center: status filter tabs */}
-      {/* Phone: five filters + pagination do not fit in 375 px; the filters
-          scroll sideways in their own strip instead of colliding with "Page".
-          The right-edge fade tells the cook the strip scrolls. */}
+      {/* Phone: the five filters do not fit in 375 px; they scroll sideways in
+          their own strip. The right-edge fade tells the cook the strip scrolls. */}
       <nav
         role="tablist"
         className="flex min-w-0 items-center gap-1 sm:gap-1.5 flex-1 justify-start sm:justify-center overflow-x-auto scrollbar-hide [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:[mask-image:none]"

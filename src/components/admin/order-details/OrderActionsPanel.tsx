@@ -122,7 +122,9 @@ export function OrderActionsPanel({
             )}
           </div>
 
-          {showStatusButtons && canPay && order.status !== 'ready' && (
+          {/* Pour tout le personnel (avant cette PR, un second encadre l'affichait
+              aussi a qui ne peut pas encaisser): rien ne se perd. */}
+          {showStatusButtons && order.status !== 'ready' && (
             <p className="text-[10px] text-status-warning flex items-start gap-1">
               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
               {t('warningReadyBeforeCheckout')}

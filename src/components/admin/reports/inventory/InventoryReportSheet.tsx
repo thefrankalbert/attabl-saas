@@ -129,7 +129,7 @@ export function InventoryReportSheet({
                         : 'break-words text-left'
                     }`}
                   >
-                    {cell || ' '}
+                    {cell || '\u00a0'}
                   </TableCell>
                 ))}
               </TableRow>
@@ -145,7 +145,7 @@ export function InventoryReportSheet({
                       table.columns[ci]?.align ?? 'left',
                     )}`}
                   >
-                    {cell || ' '}
+                    {cell || '\u00a0'}
                   </TableCell>
                 ))}
               </TableRow>

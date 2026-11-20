@@ -116,7 +116,10 @@ export function RevenueChart({ series, formatValue, locale, labels }: RevenueCha
           </ToggleGroup>
           {/* Mobile: maquette swaps the toggle for a compact select under 768px */}
           <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
-            <SelectTrigger className="h-8 w-[140px] text-[13px] md:hidden">
+            <SelectTrigger
+              aria-label={labels.title}
+              className="h-8 w-[140px] text-[13px] md:hidden"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -164,7 +164,12 @@ export function ShellAccountMenu({
             </span>
             {!collapsed && (
               <>
-                <span className="flex min-w-0 flex-1 flex-col text-left leading-tight">
+                {/* Troncature voulue (infobulle sur le bouton): reconnue par le
+                    garde-fou tests/journeys/09 via data-troncature-voulue. */}
+                <span
+                  className="flex min-w-0 flex-1 flex-col text-left leading-tight"
+                  data-troncature-voulue=""
+                >
                   <span className="truncate text-[13px] font-semibold">
                     {userName || t('accountMenu')}
                   </span>

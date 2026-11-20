@@ -66,7 +66,7 @@ export function ServiceMobileOrders({ readyOrders, now, labels, onMarkDelivered 
                   type="button"
                   size="sm"
                   onClick={() => onMarkDelivered(order.id)}
-                  className="h-8 shrink-0 gap-1 bg-status-success px-2.5 text-[11px] font-semibold text-white hover:bg-status-success/90"
+                  className="h-8 shrink-0 gap-1 bg-status-success-solid px-2.5 text-[11px] font-semibold text-white hover:bg-status-success-solid/90"
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   {labels.markDelivered}

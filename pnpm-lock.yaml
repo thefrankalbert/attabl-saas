@@ -145,7 +145,7 @@ importers:
         specifier: ^1.41.0
         version: 1.41.0
       '@yudiel/react-qr-scanner':
-        specifier: ^2.6.0
+        specifier: 2.6.0
         version: 2.6.0(@types/emscripten@1.41.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       class-variance-authority:
         specifier: ^0.7.1

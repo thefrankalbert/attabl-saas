@@ -39,7 +39,9 @@ export function TopbarSearch({ className }: { className?: string }) {
       )}
     >
       <Search className="size-[15px] shrink-0" />
-      <span className="flex-1 truncate text-left">{tc('placeholder')}</span>
+      <span className="flex-1 truncate text-left" data-troncature-voulue="">
+        {tc('placeholder')}
+      </span>
       <span className="rounded-[5px] border border-[var(--border)] px-[5px] py-px font-mono text-[11px] text-[var(--muted-foreground)]">
         ⌘K
       </span>

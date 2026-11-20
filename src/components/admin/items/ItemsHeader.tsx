@@ -44,7 +44,10 @@ export function ItemsHeader({
         <>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Select value={categoryFilterValue} onValueChange={onCategoryChange}>
-              <SelectTrigger className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+              <SelectTrigger
+                aria-label={t('filterCategoryLabel')}
+                className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30"
+              >
                 <SelectValue placeholder={t('allCategories')} />
               </SelectTrigger>
               <SelectContent>
@@ -57,7 +60,10 @@ export function ItemsHeader({
               </SelectContent>
             </Select>
             <Select value={availableFilterValue} onValueChange={onAvailableChange}>
-              <SelectTrigger className="h-9 w-full sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+              <SelectTrigger
+                aria-label={t('filterAvailabilityLabel')}
+                className="h-9 w-full sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30"
+              >
                 <SelectValue placeholder={t('all')} />
               </SelectTrigger>
               <SelectContent>

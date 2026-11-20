@@ -80,7 +80,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.41.0",
-    "@yudiel/react-qr-scanner": "^2.6.0",
+    "@yudiel/react-qr-scanner": "2.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

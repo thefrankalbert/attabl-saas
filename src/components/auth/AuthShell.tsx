@@ -41,15 +41,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
 
-        <main className="flex flex-1 items-start justify-center px-5 py-3 [@media(min-height:820px)]:py-12">
+        <main className="flex flex-1 items-start justify-center px-5 py-6 [@media(min-height:820px)]:py-12">
           <div className="mx-auto w-full max-w-sm [animation:auth-fade-up_0.35s_ease]">
             {children}
           </div>
         </main>
 
-        {/* Mention "Connexion securisee": masquee sous 680 px de haut pour que la
-            carte tienne sans defiler (regle 12, ecrans de tablette paysage). */}
-        <footer className="[@media(max-height:679px)]:hidden flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 [@media(max-height:819px)]:pt-3 text-[12.5px] text-[var(--muted)]">
+        <footer className="flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [@media(max-height:719px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5 [@media(max-height:819px)]:pt-3 [@media(max-height:719px)]:pt-2 text-[12.5px] text-[var(--muted)]">
           <Lock className="h-3 w-3 shrink-0" />
           {t('secure')}
         </footer>

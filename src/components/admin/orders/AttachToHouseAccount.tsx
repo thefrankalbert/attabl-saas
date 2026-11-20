@@ -112,7 +112,7 @@ export default function AttachToHouseAccount({
         <Select value={selected} onValueChange={setSelected}>
           {/* Ligne entiere + libelle propre: le placeholder reprenait celui du
               bouton et finissait coupe en "Mettre sur.." a 375 px. */}
-          <SelectTrigger className="h-9 min-w-0 basis-full text-sm">
+          <SelectTrigger aria-label={t('choose')} className="h-9 min-w-0 basis-full text-sm">
             <SelectValue placeholder={t('choose')} />
           </SelectTrigger>
           <SelectContent>

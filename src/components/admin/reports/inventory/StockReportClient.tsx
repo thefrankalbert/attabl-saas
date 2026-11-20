@@ -83,9 +83,11 @@ export function StockReportClient({
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-4 px-1 print:hidden">
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('reportModel')}</Label>
+          <Label htmlFor="stock-report-model" className="text-xs text-app-text-secondary">
+            {t('reportModel')}
+          </Label>
           <Select value={model} onValueChange={(v) => setModel(v as StockReportModel)}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger id="stock-report-model" className="w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -99,9 +101,11 @@ export function StockReportClient({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-app-text-secondary">{t('orientation')}</Label>
+          <Label htmlFor="stock-report-orientation" className="text-xs text-app-text-secondary">
+            {t('orientation')}
+          </Label>
           <Select value={orientation} onValueChange={(v) => setOrientation(v as Orientation)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger id="stock-report-orientation" className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

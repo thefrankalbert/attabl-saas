@@ -21,6 +21,13 @@ html (height: 100%, overflow: hidden)
 4. `h-dvh` is the viewport anchor for top-level, non-nested shells only: AdminLayoutClient (tenant dashboard), PlatformConsole (/admin/platform), CommandCenterShell (/admin/tenants). Each is independent and owns exactly one scrolling `<main#main-content>`. No other component inside a shell may use `h-dvh` or `h-screen`
 5. Standalone full-page routes that render OUTSIDE any shell anchor their own viewport and may use `h-dvh`/`min-h-dvh` (never `h-screen`/`100vh`): app/error.tsx, app/global-error.tsx (inline `100dvh`), app/loading.tsx, app/not-found.tsx, app/unauthorized, checkout success/cancel, app/onboarding, app/offline (SW precache fallback), the storefront layout (sites/[site]/(storefront)) and StorefrontUnavailable. Audited and approved 2026-07-01
 6. NEVER add `overflow: auto/scroll` on intermediate containers between body and main-content
+7. Exception validated 2026-11-18 (PR #431): from `lg`, the order detail page
+   (`orders/[id]`) is a fixed-height split view. Its two columns are explicitly
+   scrollable lists: the items list (`OrderItemsList`) and the actions column
+   (`OrderActionsPanel`, `lg:min-h-0 lg:overflow-y-auto`). Without the latter the
+   payment block (Carte, Enregistrer le paiement, Offrir, Ardoises, Notes) was
+   cut off at 1024px. Below `lg` the page wrapper has no overflow at all, so
+   `main#main-content` remains the only scroller.
 
 ## Dev/Prod Parity (CRITICAL)
 

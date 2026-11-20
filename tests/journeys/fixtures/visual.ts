@@ -14,18 +14,29 @@ export function viewport(width: number): { width: number; height: number } {
 export interface MesureCasse {
   /** Pixels de defilement horizontal de la page (doit valoir 0). */
   debordementX: number;
-  /** Boutons / liens dont le libelle sort de la boite (texte coupe ou qui deborde). */
+  /** Textes coupes (largeur ou hauteur) ou qui sortent de leur boite. */
   libellesCoupes: string[];
 }
 
 /**
+ * Attribut a poser sur un texte dont la troncature est un CHOIX (nom long dans
+ * une barre etroite, avec infobulle). Seuls ces cas sont toleres: un `title`
+ * seul ne suffit plus, sinon toute coupe munie d'une infobulle passerait.
+ */
+export const TRONCATURE_VOULUE = 'data-troncature-voulue';
+
+/**
  * - debordement horizontal de la page (le conteneur qui defile ou le document);
- * - controle dont le texte visible depasse sa propre boite, ou qui est coupe sans
- *   ellipsis volontaire. Un libelle en ellipsis avec `title` est un choix, pas une casse.
+ * - texte visible d'un controle, d'un titre ou d'une cellule qui sort de sa
+ *   boite, ou qui est coupe en largeur (ellipsis) ou en hauteur (line-clamp,
+ *   hauteur fixe), sauf troncature voulue marquee `data-troncature-voulue`.
+ * Mesure apres chargement des polices: sinon le resultat depend du moment ou
+ * la police arrive (une police de repli plus etroite masque une coupe).
  * Les outils de dev (overlay Next, barre agentation) sont ignores.
  */
-export async function mesurerCasse(page: Page): Promise<MesureCasse> {
-  return page.evaluate(() => {
+async function mesurerUneFois(page: Page): Promise<MesureCasse> {
+  return page.evaluate(async (voulue) => {
+    await document.fonts.ready;
     const ignore = (el: Element) =>
       !!el.closest('nextjs-portal, [data-agentation-portal], [data-feedback-toolbar]');
     const sc = document.getElementById('main-content') ?? document.scrollingElement;
@@ -34,8 +45,10 @@ export async function mesurerCasse(page: Page): Promise<MesureCasse> {
       Math.round(document.documentElement.scrollWidth - window.innerWidth),
     );
     const libellesCoupes: string[] = [];
-    const controles = document.querySelectorAll('button, a, [role="tab"], [role="radio"]');
-    for (const el of controles) {
+    const cibles = document.querySelectorAll(
+      'button, a, [role="tab"], [role="radio"], h1, h2, h3, th, td',
+    );
+    for (const el of cibles) {
       if (ignore(el)) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
@@ -50,18 +63,22 @@ export async function mesurerCasse(page: Page): Promise<MesureCasse> {
           [...x.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? '').trim()),
       );
       for (const f of feuilles) {
+        if (f.closest(`[${voulue}]`)) continue;
         const range = document.createRange();
         range.selectNodeContents(f);
         const t = range.getBoundingClientRect();
         const fs = getComputedStyle(f);
-        const ellipsisVolontaire = fs.textOverflow === 'ellipsis' && (el as HTMLElement).title;
         const sort = t.left < r.left - 2 || t.right > r.right + 2;
-        const coupe =
+        const coupeLargeur =
           f instanceof HTMLElement &&
           f.scrollWidth > f.clientWidth + 1 &&
-          fs.overflowX !== 'visible' &&
-          !ellipsisVolontaire;
-        if (sort || coupe) {
+          fs.overflowX !== 'visible';
+        const clamp = fs.getPropertyValue('-webkit-line-clamp');
+        const coupeHauteur =
+          f instanceof HTMLElement &&
+          f.scrollHeight > f.clientHeight + 1 &&
+          (fs.overflowY !== 'visible' || (clamp !== '' && clamp !== 'none'));
+        if (sort || coupeLargeur || coupeHauteur) {
           const libelle = (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40);
           libellesCoupes.push(`"${libelle}" (${Math.round(r.width)}px)`);
           break;
@@ -69,7 +86,41 @@ export async function mesurerCasse(page: Page): Promise<MesureCasse> {
       }
     }
     return { debordementX, libellesCoupes: [...new Set(libellesCoupes)] };
-  });
+  }, TRONCATURE_VOULUE);
+}
+
+/**
+ * Attendre le CONTENU: plus aucun squelette de chargement (bloc `animate-pulse`
+ * sans texte, plus haut qu'une pastille). Echec explicite apres 30 s plutot que
+ * mesurer un squelette, qui a peu de texte et donnerait un faux vert.
+ */
+export async function attendreContenu(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () =>
+      ![...document.querySelectorAll('.animate-pulse')].some(
+        (e) => e.getBoundingClientRect().height > 24 && !(e.textContent ?? '').trim(),
+      ),
+    null,
+    { timeout: 30_000 },
+  );
+}
+
+/**
+ * Sous `next dev` (CI Journeys), Next 16 recharge parfois la page pendant la
+ * mesure ("Execution context was destroyed"): on remesure apres chargement.
+ */
+export async function mesurerCasse(page: Page): Promise<MesureCasse> {
+  for (let essai = 1; ; essai++) {
+    try {
+      return await mesurerUneFois(page);
+    } catch (err) {
+      const rechargement =
+        err instanceof Error && /context was destroyed|navigation/i.test(err.message);
+      if (!rechargement || essai >= 3) throw err;
+      await page.waitForLoadState('load');
+      await attendreContenu(page);
+    }
+  }
 }
 
 /**

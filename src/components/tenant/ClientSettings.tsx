@@ -339,8 +339,10 @@ export default function ClientSettings({
 
           {/* Footer */}
           <div className="space-y-1 pb-4 pt-1 text-center">
-            <p className="text-[11px] font-medium text-[var(--color-ink-soft)]">{t('poweredBy')}</p>
-            <p className="text-[11px] font-medium text-[var(--color-ink-soft)]">
+            <p className="text-[11px] font-medium text-[var(--color-ink-muted)]">
+              {t('poweredBy')}
+            </p>
+            <p className="text-[11px] font-medium text-[var(--color-ink-muted)]">
               {t('appVersion')}
             </p>
           </div>

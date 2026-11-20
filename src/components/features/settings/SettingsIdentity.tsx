@@ -134,12 +134,14 @@ export default function SettingsIdentity({
             </div>
 
             <div className="space-y-2">
-              <Label>{t('establishmentType') ?? "Type d'etablissement"}</Label>
+              <Label htmlFor="settings-establishment-type">
+                {t('establishmentType') ?? "Type d'etablissement"}
+              </Label>
               <Select
                 value={watchedEstablishmentType || 'restaurant'}
                 onValueChange={(val) => setValue('establishmentType', val, { shouldDirty: true })}
               >
-                <SelectTrigger className="min-h-[44px]">
+                <SelectTrigger id="settings-establishment-type" className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,12 +279,17 @@ export default function SettingsIdentity({
 
         {/* Language section (moved from separate tab) */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold text-app-text">{t('languageSection')}</Label>
+          <Label htmlFor="settings-language" className="text-sm font-semibold text-app-text">
+            {t('languageSection')}
+          </Label>
           <p className="text-xs text-app-text-secondary">{t('languageDescription')}</p>
           <div className="relative flex items-center max-w-xs">
             <Globe className="absolute left-2.5 h-3.5 w-3.5 text-app-text-muted pointer-events-none z-10" />
             <Select value={locale} onValueChange={handleLocaleChange}>
-              <SelectTrigger className="w-full h-10 min-h-[44px] pl-8 pr-3 text-sm">
+              <SelectTrigger
+                id="settings-language"
+                className="w-full h-10 min-h-[44px] pl-8 pr-3 text-sm"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

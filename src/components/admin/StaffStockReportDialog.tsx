@@ -83,7 +83,7 @@ export default function StaffStockReportDialog({
         <div className="space-y-4">
           {/* Period selector */}
           <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
-            <SelectTrigger className="w-full sm:w-56 h-9">
+            <SelectTrigger aria-label={t('staffReportPeriodLabel')} className="w-full sm:w-56 h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
