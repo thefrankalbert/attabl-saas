@@ -65,7 +65,10 @@ async function createEmbeddedSession(params: {
     cookieLocale === 'en-US' ? 'en' : 'fr';
 
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
-    ui_mode: 'embedded',
+    // `custom`: la page affiche son propre formulaire (Payment Element). Avec
+    // `embedded`, Stripe imposait son en-tete (prix en double, description du
+    // produit) qu'aucun style ne permet de retirer.
+    ui_mode: 'custom',
     mode: 'subscription',
     locale: stripeLocale,
     payment_method_types: ['card'],

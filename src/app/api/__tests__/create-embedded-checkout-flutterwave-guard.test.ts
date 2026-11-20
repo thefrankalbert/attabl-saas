@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type Stripe from 'stripe';
 
 vi.mock('@/lib/rate-limit', () => ({
   checkoutLimiter: { check: vi.fn().mockResolvedValue({ success: true }) },
@@ -65,5 +66,20 @@ describe('POST /api/create-embedded-checkout: garde Flutterwave', () => {
     expect(refuse).toHaveBeenCalledTimes(1);
     expect(stripe.checkout.sessions.create).toHaveBeenCalled();
     expect(res.status).toBe(200);
+  });
+});
+
+describe('POST /api/create-embedded-checkout: formulaire sur mesure', () => {
+  it('cree une session en mode custom (Payment Element), jamais la page Stripe toute faite', async () => {
+    vi.mocked(stripe.checkout.sessions.create).mockResolvedValue({
+      id: 'cs_2',
+      client_secret: 'secret',
+    } as never);
+    await POST(req());
+    const params = vi.mocked(stripe.checkout.sessions.create).mock.calls[0]?.[0] as
+      Stripe.Checkout.SessionCreateParams | undefined;
+    expect(params?.ui_mode).toBe('custom');
+    expect(params?.mode).toBe('subscription');
+    expect(params?.metadata?.tenant_id).toBe('t1');
   });
 });
