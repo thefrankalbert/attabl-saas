@@ -17,6 +17,7 @@ import {
   BILLING_INTERVALS,
   type SelfServicePlan,
 } from './subscription/pricing-format';
+import { PLAN_FEATURES, INCLUDES_PLAN } from './subscription/plan-features';
 
 interface Tenant {
   id: string;
@@ -28,37 +29,6 @@ interface Tenant {
   stripe_subscription_id?: string | null;
   email?: string;
 }
-
-// Listes cumulatives: chaque plan ne liste que ce qu'il ajoute au precedent.
-const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
-  starter: [
-    'feature1Space',
-    'featureUnlimitedMenu',
-    'featureBasicPOS',
-    'featureHdPhotos',
-    'featureEmailSupport',
-  ],
-  pro: [
-    'featureFullPOS',
-    'featureKDS',
-    'featureInventory',
-    'featureTableOrder',
-    'featureAdvancedStats',
-  ],
-  business: [
-    'feature10Spaces',
-    'featureRoomService',
-    'featureDelivery',
-    'featureAIAnalytics',
-    'featureUnlimitedStaff',
-  ],
-};
-
-const INCLUDES_PLAN: Record<SelfServicePlan, SelfServicePlan | null> = {
-  starter: null,
-  pro: 'starter',
-  business: 'pro',
-};
 
 const RECOMMENDED_PLAN: SelfServicePlan = 'pro';
 
