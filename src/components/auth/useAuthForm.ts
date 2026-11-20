@@ -30,7 +30,7 @@ export function useAuthForm(mode: AuthMode) {
   const urlError = searchParams.get('error') || '';
 
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'azure' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
   const [error, setError] = useState('');
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
@@ -53,7 +53,7 @@ export function useAuthForm(mode: AuthMode) {
 
   const supabase = createClient();
 
-  const handleOAuthLogin = async (provider: 'google' | 'azure') => {
+  const handleOAuthLogin = async (provider: 'google') => {
     setOauthLoading(provider);
     setError('');
 

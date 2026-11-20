@@ -680,7 +680,7 @@
       "retentionInvitations": "Expired or cancelled team invitations: deleted {days} days after their expiry date.",
       "retentionPush": "Notification subscriptions of an unused device: deleted after {days} days without activity.",
       "retentionAudit": "Audit logs of sensitive actions: {months} months. After that, entries with no accounting value are deleted. Those that concern orders, coupons and prices are kept without the person's identity.",
-      "retentionClosed": "Deleted restaurant, {days} days after deletion: the team's email address, name and phone (sign-in accounts are deleted, including Google or Microsoft sign-in), credit customer accounts, supplier contacts, the restaurant's audit logs, and the restaurant's phone and address. After that, the restaurant can no longer be restored.",
+      "retentionClosed": "Deleted restaurant, {days} days after deletion: the team's email address, name and phone (sign-in accounts are deleted, including Google sign-in), credit customer accounts, supplier contacts, the restaurant's audit logs, and the restaurant's phone and address. After that, the restaurant can no longer be restored.",
       "retentionAccount": "Active account and venue: kept for the duration of the subscription.",
       "retentionAccounting": "Payments, invoices and payment events: never erased before the legal retention period for accounting records ends.",
       "retentionContact": "Messages sent through the contact form: they reach us by email, we do not store them in our database and we delete them from our mailbox after {months} months.",
