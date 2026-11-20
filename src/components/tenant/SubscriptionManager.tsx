@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { billingCapabilities } from '@/lib/billing/provider';
 import { logger } from '@/lib/logger';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
-import { getTrialDaysRemaining } from '@/lib/plans/features';
+import { getTrialDaysRemaining, PLAN_NAMES } from '@/lib/plans/features';
 import { CurrentPlanPanel } from './subscription/CurrentPlanPanel';
 import { BillingIntervalToggle } from './subscription/BillingIntervalToggle';
 import { PlanCard } from './subscription/PlanCard';
@@ -29,6 +29,7 @@ interface Tenant {
   email?: string;
 }
 
+// Listes cumulatives: chaque plan ne liste que ce qu'il ajoute au precedent.
 const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
   starter: [
     'feature1Space',
@@ -38,7 +39,6 @@ const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
     'featureEmailSupport',
   ],
   pro: [
-    'feature1Space',
     'featureFullPOS',
     'featureKDS',
     'featureInventory',
@@ -47,7 +47,6 @@ const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
   ],
   business: [
     'feature10Spaces',
-    'featureAllProFeatures',
     'featureRoomService',
     'featureDelivery',
     'featureAIAnalytics',
@@ -55,7 +54,19 @@ const PLAN_FEATURES: Record<SelfServicePlan, string[]> = {
   ],
 };
 
+const INCLUDES_PLAN: Record<SelfServicePlan, SelfServicePlan | null> = {
+  starter: null,
+  pro: 'starter',
+  business: 'pro',
+};
+
 const RECOMMENDED_PLAN: SelfServicePlan = 'pro';
+
+/** Rang d'un plan: on ne recommande jamais un plan inferieur a l'actuel. */
+function planRank(plan: string): number {
+  const index = (SELF_SERVICE_PLANS as string[]).indexOf(plan);
+  return index === -1 ? (plan === 'enterprise' ? SELF_SERVICE_PLANS.length : -1) : index;
+}
 
 export function SubscriptionManager({
   tenant,
@@ -202,9 +213,10 @@ export function SubscriptionManager({
               key={plan}
               plan={plan}
               features={PLAN_FEATURES[plan]}
+              includesPlan={INCLUDES_PLAN[plan]}
               billingInterval={billingInterval}
               isCurrent={currentPlan === plan}
-              isRecommended={plan === RECOMMENDED_PLAN && currentPlan !== plan}
+              isRecommended={plan === RECOMMENDED_PLAN && planRank(plan) > planRank(currentPlan)}
               isLoading={isLoading === plan}
               disabled={isLoading !== null || isBillingLoading}
               onChoose={() => handleChangePlan(plan)}
@@ -215,9 +227,12 @@ export function SubscriptionManager({
                         ? 'subscription.renewMobileMoney'
                         : 'subscription.payMobileMoney',
                     )
-                  : undefined
+                  : !hasSubscription && currentPlan === plan
+                    ? t('subscription.subscribeTo', { plan: PLAN_NAMES[plan] })
+                    : undefined
               }
-              repayable={payByMobileMoney}
+              // Sans abonnement (essai, gele, resilie), la formule actuelle se paie aussi.
+              repayable={!hasSubscription}
             />
           ))}
         </div>

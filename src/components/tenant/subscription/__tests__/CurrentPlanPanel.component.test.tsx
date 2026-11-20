@@ -28,7 +28,9 @@ describe('CurrentPlanPanel - essai', () => {
     render(<CurrentPlanPanel {...base} periodEnd="2026-12-01T00:00:00Z" trialDaysLeft={5} />, {
       wrapper,
     });
-    expect(screen.getByText(messages.admin.subscription.trialEndsOn)).toBeInTheDocument();
+    expect(
+      screen.getByText('Votre essai gratuit se termine le 1 décembre 2026.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('5 jours restants')).toBeInTheDocument();
   });
 
@@ -37,5 +39,21 @@ describe('CurrentPlanPanel - essai', () => {
       wrapper,
     });
     expect(screen.queryByText(/restants?$/)).not.toBeInTheDocument();
+  });
+
+  it('annonce le prochain paiement et explique le prorata pour un abonne', () => {
+    render(
+      <CurrentPlanPanel
+        {...base}
+        status="active"
+        hasSubscription
+        periodEnd="2026-12-01T00:00:00Z"
+      />,
+      { wrapper },
+    );
+    expect(
+      screen.getByText(/^Prochain paiement : 79\s000 F\/mois, le 1 décembre 2026\.$/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(messages.admin.subscription.prorataNote)).toBeInTheDocument();
   });
 });
