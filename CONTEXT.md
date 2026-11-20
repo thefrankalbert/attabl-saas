@@ -110,7 +110,7 @@ nouveau dev (ou un agent IA) en 2 minutes.
 
 **Fichiers clés** :
 
-- `instrumentation-client.ts` (Sentry navigateur), `sentry.server.config.ts`, `sentry.edge.config.ts`
+- `src/instrumentation-client.ts` (Sentry navigateur), `src/instrumentation.ts` (demarrage serveur), `sentry.server.config.ts`, `sentry.edge.config.ts`
 - `src/lib/logger.ts` — wrapper centralisé. **JAMAIS utiliser `console.*`**, toujours `logger.error/warn/info`
 
 ---

@@ -7,18 +7,18 @@ import * as Sentry from '@sentry/nextjs';
 export async function register() {
   // Validate required environment variables at startup
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { validateEnv } = await import('./src/lib/env');
+    const { validateEnv } = await import('./lib/env');
     validateEnv();
   }
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     // Load server-side Sentry configuration
-    await import('./sentry.server.config');
+    await import('../sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
     // Load edge Sentry configuration (for middleware)
-    await import('./sentry.edge.config');
+    await import('../sentry.edge.config');
   }
 }
 
