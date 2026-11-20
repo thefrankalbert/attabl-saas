@@ -1,0 +1,105 @@
+# Revue de code automatique par Claude sur chaque pull request.
+#
+# Deux relecteurs independants:
+#   - "Revue IA (code)": justesse, regressions, regles du depot (CLAUDE.md et
+#     .claude/rules/ sont lus par l'agent), isolation multi-restaurant.
+#   - "Revue IA (securite)": l'action officielle anthropics/claude-code-security-review,
+#     qui cherche les failles exploitables et filtre les faux positifs.
+# Les deux commentent la PR. Ils conseillent, ils ne bloquent pas: les gardes
+# bloquantes restent Semgrep, CodeQL, les tests et les parcours.
+#
+# Exige le secret ANTHROPIC_API_KEY (cree par le proprietaire sur
+# console.anthropic.com, puis `gh secret set ANTHROPIC_API_KEY`). Sans lui, les
+# deux jobs passent en vert avec un message dans le resume: ils ne cassent rien.
+# Les PR de forks n'ont pas acces aux secrets: elles sont ignorees.
+
+name: Revue IA
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+jobs:
+  code:
+    name: Revue IA (code)
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Secret absent
+        if: env.HAS_KEY != 'true'
+        run: echo "ANTHROPIC_API_KEY absent - revue IA ignoree. Voir l'en-tete de ai-review.yml." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: env.HAS_KEY == 'true'
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        if: env.HAS_KEY == 'true'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          use_sticky_comment: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Relis cette pull request comme un relecteur senior exigeant. Ecris en
+            francais clair, phrases completes, sans tiret long.
+
+            Lis d'abord CLAUDE.md et les fichiers de .claude/rules/: ce sont les
+            regles du depot (isolation par tenant_id, fichiers proteges, design
+            system shadcn, typographie ASCII, zero dette).
+
+            Cherche uniquement des defauts reels et prouvables dans le diff:
+            bugs de logique, regressions, donnees d'un restaurant visibles par un
+            autre, validation Zod manquante, erreur avalee, fuite de ressource,
+            regle du depot violee. Pour chaque defaut: un commentaire en ligne sur
+            la ligne concernee, avec le scenario qui casse et la correction.
+            Ne signale ni le style ni les preferences.
+
+            Termine par un commentaire de synthese: "Aucun defaut trouve" ou la
+            liste des defauts par gravite.
+          claude_args: |
+            --model claude-sonnet-5-5
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
+
+  securite:
+    name: Revue IA (securite)
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Secret absent
+        if: env.HAS_KEY != 'true'
+        run: echo "ANTHROPIC_API_KEY absent - revue de securite IA ignoree. Voir l'en-tete de ai-review.yml." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: env.HAS_KEY == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main 2026-02-11
+        if: env.HAS_KEY == 'true'
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-model: claude-sonnet-5-5
+          comment-pr: true
+          exclude-directories: node_modules,.next,public,supabase/backups
