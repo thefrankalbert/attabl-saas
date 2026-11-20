@@ -15,13 +15,23 @@ import { createStripeWebhookService } from '@/services/stripe-webhook.service';
  *      bien de Stripe: elle ne bouge jamais, et rien ne la precede);
  *   2. l'idempotence (INSERT ON CONFLICT DO NOTHING sur `stripe_events`), plus
  *      le RETRAIT de cette ligne quand une ecriture echoue, pour que le rejeu
- *      de Stripe ne soit pas court-circuite en "deja traite";
+ *      de Stripe ne soit pas court-circuite en "deja traite". Si ce retrait
+ *      echoue lui aussi, `completed_at` reste NULL et le rejeu suivant retraite
+ *      l'evenement (voir STALE_EVENT_MS);
  *   3. l'aiguillage vers `createStripeWebhookService`;
  *   4. la traduction d'une `ServiceError` en statut HTTP.
  *
  * Toutes les regles d'acces (quel evenement ecrit quoi, depuis quel etat, et ce
  * qu'il ne doit jamais rendre) vivent dans `src/services/stripe-webhook/`.
  */
+
+/**
+ * Au-dela de ce delai, une ligne sans `completed_at` n'est plus un traitement
+ * en cours (une fonction ne vit pas aussi longtemps): c'est un evenement qui
+ * n'a jamais abouti et dont le retrait a echoue. Le premier rejeu de Stripe
+ * arrive bien apres ce delai.
+ */
+const STALE_EVENT_MS = 5 * 60 * 1000;
 
 function getWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -81,6 +91,8 @@ export async function POST(request: Request) {
         id: event.id,
         type: event.type,
         stripe_created_at: stripeCreatedAt,
+        // NULL explicite: la colonne vaut now() par defaut (lignes historiques).
+        completed_at: null,
       })
       .select('id')
       .maybeSingle();
@@ -94,11 +106,28 @@ export async function POST(request: Request) {
     }
 
     if (!insertedEvent) {
-      logger.info('Stripe event already processed, skipping', {
+      const { data: existing } = await supabase
+        .from('stripe_events')
+        .select('completed_at, processed_at')
+        .eq('id', event.id)
+        .maybeSingle();
+      // Lecture impossible ou ligne aboutie ou traitement encore en cours: on ne
+      // retraite pas. Seule une ligne ANCIENNE et jamais aboutie est reprise.
+      const neverCompleted =
+        !!existing &&
+        existing.completed_at === null &&
+        Date.now() - new Date(existing.processed_at).getTime() > STALE_EVENT_MS;
+      if (!neverCompleted) {
+        logger.info('Stripe event already processed, skipping', {
+          eventId: event.id,
+          eventType: event.type,
+        });
+        return NextResponse.json({ received: true, idempotent: true });
+      }
+      logger.warn('Stripe event never completed, reprocessing', {
         eventId: event.id,
         eventType: event.type,
       });
-      return NextResponse.json({ received: true, idempotent: true });
     }
 
     // This request inserted the idempotency row; remember it for rollback on throw.
@@ -125,6 +154,19 @@ export async function POST(request: Request) {
         });
       }
       return NextResponse.json({ error: err.message }, { status: serviceErrorToStatus(err.code) });
+    }
+
+    // La preuve du succes. Si cette ecriture echoue, l'evenement EST applique:
+    // on repond 200 (Stripe ne rejoue pas) et on trace, sans rien defaire.
+    const { error: completionError } = await supabase
+      .from('stripe_events')
+      .update({ completed_at: new Date().toISOString() })
+      .eq('id', event.id);
+    if (completionError) {
+      logger.error('Failed to mark Stripe event as completed', completionError, {
+        eventId: event.id,
+        eventType: event.type,
+      });
     }
 
     return NextResponse.json({ received: true });

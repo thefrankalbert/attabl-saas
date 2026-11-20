@@ -128,6 +128,15 @@ function setupMock(options: MockOptions = {}) {
 
     if (table === 'stripe_events') {
       return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { completed_at: '2026-01-01T00:00:00Z', processed_at: '2026-01-01T00:00:00Z' },
+              error: null,
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
@@ -245,7 +254,7 @@ describe('idempotence', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true, idempotent: true });
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(chain.updatePayloads).toEqual([]);
   });
 
@@ -324,7 +333,7 @@ describe('evenements sans effet de bord', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true });
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.info).toHaveBeenCalledWith('Unhandled Stripe event type', {
       eventType: 'customer.created',
     });
@@ -340,7 +349,7 @@ describe('evenements sans effet de bord', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.info).toHaveBeenCalledWith('Payment action required', {
       customerId: 'cus_1',
       invoiceId: 'in_1',
@@ -358,7 +367,7 @@ describe('evenements sans effet de bord', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(mockSubscriptionsRetrieve).not.toHaveBeenCalled();
   });
 });
@@ -552,7 +561,7 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     const response = await fire('charge.dispute.created', { id: 'dp_1', payment_intent: null });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.warn).toHaveBeenCalledWith('Dispute created without resolvable customer', {
       disputeId: 'dp_1',
     });
@@ -568,7 +577,7 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
     expect(logger.warn).toHaveBeenCalledWith('Dispute closed against us, tenant stays frozen', {
       disputeId: 'dp_1',
       status: 'lost',
@@ -585,6 +594,6 @@ describe('charge.dispute.* - sorties sans ecriture', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(chain.tablesTouched).toEqual(['stripe_events']);
+    expect(new Set(chain.tablesTouched)).toEqual(new Set(['stripe_events']));
   });
 });

@@ -2191,18 +2191,21 @@ export type Database = {
       };
       stripe_events: {
         Row: {
+          completed_at: string | null;
           id: string;
           processed_at: string;
           stripe_created_at: string | null;
           type: string;
         };
         Insert: {
+          completed_at?: string | null;
           id: string;
           processed_at?: string;
           stripe_created_at?: string | null;
           type: string;
         };
         Update: {
+          completed_at?: string | null;
           id?: string;
           processed_at?: string;
           stripe_created_at?: string | null;

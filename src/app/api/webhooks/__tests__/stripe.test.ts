@@ -122,7 +122,18 @@ function setupSupabaseChain(options: {
 
   mockFrom.mockImplementation((table: string) => {
     if (table === 'stripe_events') {
-      return { insert: idempotencyInsert };
+      return {
+        insert: idempotencyInsert,
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { completed_at: '2026-01-01T00:00:00Z', processed_at: '2026-01-01T00:00:00Z' },
+              error: null,
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+      };
     }
     return { select: selectFn, update: updateFn };
   });

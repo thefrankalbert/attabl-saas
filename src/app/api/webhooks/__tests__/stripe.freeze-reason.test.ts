@@ -132,6 +132,15 @@ function setupMock(options: MockOptions = {}) {
   mockFrom.mockImplementation((table: string) => {
     if (table === 'stripe_events') {
       return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { completed_at: '2026-01-01T00:00:00Z', processed_at: '2026-01-01T00:00:00Z' },
+              error: null,
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'evt_test' }, error: null }),
