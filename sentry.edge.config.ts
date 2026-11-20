@@ -4,16 +4,20 @@
 
 import * as Sentry from '@sentry/nextjs';
 
-const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+const dsn = (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)?.trim();
 
 Sentry.init({
   dsn,
   enabled: !!dsn,
+  // production / preview on Vercel, local otherwise: errors from a laptop no
+  // longer land in the production view.
+  environment: process.env.VERCEL_ENV || 'local',
 
   // Performance Monitoring
   // Lower sample rate for edge since middleware runs on every request
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.05 : 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+  // SENTRY_DEBUG=1 (set on Vercel previews only) prints the SDK start-up and
+  // each send in the runtime logs: the way to check Sentry really runs there.
+  debug: process.env.SENTRY_DEBUG === '1',
 });
