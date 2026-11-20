@@ -3,13 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 /** A-06: le marqueur de recuperation n'est pose qu'apres un jeton de recuperation valide. */
 
 const verifyOtp = vi.fn();
+const exchangeCodeForSession = vi.fn();
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
   hashEmail: () => 'h',
 }));
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({ auth: { verifyOtp } }),
+  createClient: async () => ({ auth: { verifyOtp, exchangeCodeForSession } }),
 }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
 vi.mock('@/services/signup.service', () => ({ createSignupService: () => ({}) }));
@@ -53,6 +54,15 @@ describe('GET /auth/callback (recovery)', () => {
     expect(new URL(res.headers.get('location') ?? '').searchParams.get('error')).toBe(
       'invalid_token',
     );
+    expect(res.cookies.get(RECOVERY_MARKER_COOKIE)).toBeUndefined();
+  });
+
+  it('un ?type=recovery ajoute a une URL OAuth ne mene pas a la reinitialisation', async () => {
+    exchangeCodeForSession.mockResolvedValue({ data: { session: {} }, error: null });
+
+    const res = await GET(new Request('https://attabl.com/auth/callback?code=xyz&type=recovery'));
+
+    expect(new URL(res.headers.get('location') ?? '').pathname).not.toBe('/reset-password');
     expect(res.cookies.get(RECOVERY_MARKER_COOKIE)).toBeUndefined();
   });
 });

@@ -45,13 +45,22 @@ jobs:
           category: /language:${{ matrix.language }}
           output: codeql-results
       # The analyze step only uploads: it stays green whatever it finds. This step
-      # is the gate. A proven false positive is excluded with a `query-filters`
-      # entry in a CodeQL config file, with the reason written next to it.
-      - name: Fail on any finding
+      # is the gate. A finding examined and proven harmless is listed, rule + file,
+      # with its written reason, in .github/codeql/accepted-findings.json. The rule
+      # stays active everywhere else.
+      - name: Fail on any finding not accepted in writing
         run: |
-          count=$(jq -s '[.[].runs[].results[]] | length' codeql-results/*.sarif)
+          jq -s --slurpfile ok .github/codeql/accepted-findings.json '
+            [ .[].runs[].results[]
+              | {rule: .ruleId,
+                 path: .locations[0].physicalLocation.artifactLocation.uri,
+                 line: .locations[0].physicalLocation.region.startLine}
+              | . as $f
+              | select([$ok[0][] | select(.rule == $f.rule and .path == $f.path)] | length == 0) ]
+          ' codeql-results/*.sarif > open-findings.json
+          count=$(jq length open-findings.json)
           echo "codeql: $count finding(s)"
           if [ "$count" -ne 0 ]; then
-            jq -rs '.[].runs[].results[] | "\(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)"' codeql-results/*.sarif
+            jq -r '.[] | "\(.rule) \(.path):\(.line)"' open-findings.json
             exit 1
           fi

@@ -17,9 +17,6 @@ jobs:
   semgrep:
     name: Static Analysis (Semgrep)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     container:
       image: semgrep/semgrep:1.185.0@sha256:67518c174185a2043fdbed16c70631b79209499b3671178e7194379b48295a0d
     steps:
@@ -32,15 +29,6 @@ jobs:
       # on purpose: a new rule that finds a real flaw turns this check red with no
       # code change, and the flaw is then fixed. That is the point of the gate.
       - run: semgrep scan --config p/default --config p/nextjs --config p/typescript --config p/owasp-top-ten --error --sarif --output semgrep.sarif .
-      # The repository is public, so code scanning is free: findings also show in
-      # the Security tab of GitHub. Skipped for pull requests from forks, whose
-      # token cannot write security events.
-      - name: Publish findings to GitHub code scanning
-        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        with:
-          sarif_file: semgrep.sarif
-          category: semgrep
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
@@ -48,6 +36,31 @@ jobs:
           name: semgrep-sarif
           path: semgrep.sarif
           if-no-files-found: ignore
+
+  # The repository is public, so code scanning is free: Semgrep findings also show
+  # in the Security tab. Semgrep keeps the `nosemgrep` findings in its SARIF
+  # (marked "suppressions"); GitHub would open an alert for each, so they are
+  # dropped first. Skipped for pull requests from forks, whose token cannot
+  # write security events.
+  semgrep-publish:
+    name: Publish Semgrep findings
+    needs: semgrep
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: semgrep-sarif
+      - name: Drop findings silenced in the code
+        run: jq '.runs[].results |= map(select((.suppressions // []) | length == 0))' semgrep.sarif > semgrep-open.sarif
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: semgrep-open.sarif
+          category: semgrep
 
   dependency-audit:
     name: Dependency Audit
