@@ -14,6 +14,7 @@ import { parsePaginationFromUrl, buildPaginationMeta } from '@/lib/pagination';
 import { runApiRoute } from '@/lib/api-route-context';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { ASSIGNMENT_MANAGER_ROLES, isRoleAllowed } from '@/lib/admin-roles';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 
 export async function GET(request: Request) {
   return runApiRoute(request, async () => {
@@ -132,6 +133,14 @@ export async function POST(request: Request) {
       // Coupure du restaurant: assigner un serveur est une ecriture de service.
       const locked = await tenantLockResponse(tenant.id);
       if (locked) return locked;
+
+      // Plan: "Assignation serveurs" est vendue a partir de Pro (canAccessService).
+      if (!(await isFeatureEntitled(supabase, tenant.id, 'canAccessService'))) {
+        return NextResponse.json(
+          { error: "Assigner des serveurs aux tables n'est pas inclus dans votre plan." },
+          { status: 403 },
+        );
+      }
 
       const body = await request.json();
       const parsed = createAssignmentSchema.safeParse(body);

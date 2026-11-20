@@ -267,15 +267,12 @@ export async function POST(request: Request) {
     // Plan gate: reject paid service modes (delivery/room service) and tips the
     // tenant's plan does not include. POS orders always use the tenant currency,
     // so display_currency is not part of this check. Throws ServiceError -> 403.
-    assertOrderFeaturesAllowed(
-      getPlanLimits(
-        tenant.subscription_plan as SubscriptionPlan | null,
-        tenant.subscription_status as SubscriptionStatus | null,
-        tenant.trial_ends_at,
-      ),
-      { service_type, tip_amount },
-      tenant.currency || 'XAF',
+    const planLimits = getPlanLimits(
+      tenant.subscription_plan as SubscriptionPlan | null,
+      tenant.subscription_status as SubscriptionStatus | null,
+      tenant.trial_ends_at,
     );
+    assertOrderFeaturesAllowed(planLimits, { service_type, tip_amount }, tenant.currency || 'XAF');
 
     type PosMenuRow = {
       id: string;
@@ -512,7 +509,9 @@ export async function POST(request: Request) {
     // kitchen becomes that table's server (unless it already has one), so the
     // Service floor shows who to call when it is ready. Best-effort: an
     // assignment problem must never fail an order that is already created.
-    if (service_type === 'dine_in' && adminUser.role === 'waiter') {
+    // Server assignment is a Pro feature (canAccessService): on Starter there is
+    // no Service floor to show it on, and the database refuses the row.
+    if (service_type === 'dine_in' && adminUser.role === 'waiter' && planLimits.canAccessService) {
       try {
         const { data: placed } = await adminSupabase
           .from('orders')

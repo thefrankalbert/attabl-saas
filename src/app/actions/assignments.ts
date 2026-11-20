@@ -6,6 +6,7 @@ import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError } from '@/services/errors';
 import { assertTenantServing, TenantLockedError } from '@/lib/billing/assert-tenant-serving';
 import { createClient } from '@/lib/supabase/server';
+import { isFeatureEntitled } from '@/lib/plans/assert-feature';
 import type { TableAssignment } from '@/types/admin.types';
 
 type ActionResponse<T = undefined> = {
@@ -57,6 +58,12 @@ export async function actionAssignServer(
 
   try {
     const supabase = await createClient();
+    // Plan: "Assignation serveurs" est vendue a partir de Pro (canAccessService).
+    // La page Service est fermee, mais une Server Action est un endpoint POST
+    // adressable par son Action ID. Liberer une assignation reste permis.
+    if (!(await isFeatureEntitled(supabase, tenantId, 'canAccessService'))) {
+      return { error: "Assigner des serveurs aux tables n'est pas inclus dans votre plan." };
+    }
     const assignmentService = createAssignmentService(supabase);
     const data = await assignmentService.assignServerToTable(tenantId, tableId, serverId);
     return { success: true, data };

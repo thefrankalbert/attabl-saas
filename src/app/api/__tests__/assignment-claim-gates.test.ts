@@ -36,6 +36,11 @@ vi.mock('@/lib/auth/resolve-admin-permission', () => ({
   resolveAdminPermission: (...a: unknown[]) => mockResolve(...a),
 }));
 
+const mockEntitled = vi.fn();
+vi.mock('@/lib/plans/assert-feature', () => ({
+  isFeatureEntitled: (...a: unknown[]) => mockEntitled(...a),
+}));
+
 const mockAssign = vi.fn();
 const mockClaim = vi.fn();
 vi.mock('@/services/assignment.service', () => ({
@@ -83,6 +88,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockAssign.mockResolvedValue({ id: 'a-1' });
   mockClaim.mockResolvedValue(undefined);
+  mockEntitled.mockResolvedValue(true);
 });
 
 describe('POST /api/assignments', () => {
@@ -97,6 +103,16 @@ describe('POST /api/assignments', () => {
     mockResolve.mockResolvedValue({ allowed: false, role: 'manager' });
     const res = await ASSIGN(assignRequest());
     expect(res.status).toBe(403);
+  });
+
+  // Audit des offres 2026-11-20: l'assignation est vendue a partir de Pro.
+  it('refuse un restaurant dont le plan n inclut pas l assignation des serveurs', async () => {
+    mockResolve.mockResolvedValue({ allowed: true, role: 'manager' });
+    mockEntitled.mockResolvedValue(false);
+    const res = await ASSIGN(assignRequest());
+    expect(res.status).toBe(403);
+    expect(mockEntitled).toHaveBeenCalledWith(expect.anything(), 'tenant-1', 'canAccessService');
+    expect(mockAssign).not.toHaveBeenCalled();
   });
 
   it('laisse un gerant assigner', async () => {
