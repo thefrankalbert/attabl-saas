@@ -124,7 +124,7 @@ function sendToSentry(
 export const logger = {
   error(message: string, error?: unknown, context?: LogContext): void {
     if (isDev) {
-      console.error(`[ERROR] ${message}`, error, context);
+      console.error('[ERROR]', message, error, context);
       return;
     }
     writeStructuredLog('error', message, context, error);
@@ -133,7 +133,7 @@ export const logger = {
 
   warn(message: string, context?: LogContext): void {
     if (isDev) {
-      console.warn(`[WARN] ${message}`, context);
+      console.warn('[WARN]', message, context);
       return;
     }
     writeStructuredLog('warn', message, context);
@@ -142,7 +142,7 @@ export const logger = {
 
   info(message: string, context?: LogContext): void {
     if (isDev) {
-      console.info(`[INFO] ${message}`, context);
+      console.info('[INFO]', message, context);
       return;
     }
     writeStructuredLog('info', message, context);
@@ -151,7 +151,7 @@ export const logger = {
 
   event(message: string, context?: LogContext): void {
     if (isDev) {
-      console.info(`[EVENT] ${message}`, context);
+      console.info('[EVENT]', message, context);
       return;
     }
     writeStructuredLog('event', message, context);

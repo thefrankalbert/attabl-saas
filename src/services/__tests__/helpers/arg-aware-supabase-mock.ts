@@ -87,6 +87,7 @@ function readColumn(row: MockRow, column: string): unknown | typeof ABSENT {
         typeof cursor === 'object' &&
         Object.prototype.hasOwnProperty.call(cursor, part)
       ) {
+        // nosemgrep: prototype-pollution-loop -- read-only walk, own properties only (hasOwnProperty above)
         cursor = (cursor as Record<string, unknown>)[part];
       } else {
         return ABSENT;
@@ -101,6 +102,7 @@ function readColumn(row: MockRow, column: string): unknown | typeof ABSENT {
 function likeToRegExp(pattern: string): RegExp {
   const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const translated = escaped.replace(/%/g, '.*').replace(/_/g, '.');
+  // nosemgrep: detect-non-literal-regexp -- test mock, input fully escaped above (only % and _ become wildcards)
   return new RegExp(`^${translated}$`);
 }
 

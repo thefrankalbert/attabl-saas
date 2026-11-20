@@ -1,0 +1,66 @@
+# CodeQL: GitHub's own code analysis, a second engine next to Semgrep.
+# The two do not find the same things: CodeQL follows data from where it enters
+# (request, form, URL) to where it is used (query, HTML, redirect).
+# Free because the repository is public. Results: Security tab > Code scanning.
+# Blocking: a red analysis prevents the merge only once the two "CodeQL (...)"
+# checks are listed as required in the branch protection of main.
+# On a pull request CodeQL may only report alerts on changed lines; the weekly
+# run and `workflow_dispatch` analyse the whole tree.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:${{ matrix.language }}
+          output: codeql-results
+      # The analyze step only uploads: it stays green whatever it finds. This step
+      # is the gate. A finding examined and proven harmless is listed, rule + file,
+      # with its written reason, in .github/codeql/accepted-findings.json. The rule
+      # stays active everywhere else.
+      - name: Fail on any finding not accepted in writing
+        run: |
+          jq -s --slurpfile ok .github/codeql/accepted-findings.json '
+            [ .[].runs[].results[]
+              | {rule: .ruleId,
+                 path: .locations[0].physicalLocation.artifactLocation.uri,
+                 line: .locations[0].physicalLocation.region.startLine}
+              | . as $f
+              | select([$ok[0][] | select(.rule == $f.rule and .path == $f.path)] | length == 0) ]
+          ' codeql-results/*.sarif > open-findings.json
+          count=$(jq length open-findings.json)
+          echo "codeql: $count finding(s)"
+          if [ "$count" -ne 0 ]; then
+            jq -r '.[] | "\(.rule) \(.path):\(.line)"' open-findings.json
+            exit 1
+          fi
