@@ -21,6 +21,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Moindre privilege : le jeton GitHub de ce workflow ne peut que lire le depot.
+# Aucun job n'ecrit avec ce jeton (les pushes et appels externes utilisent leurs propres secrets).
+permissions:
+  contents: read
+
 jobs:
   quality:
     name: Quality Gates
@@ -288,7 +293,7 @@ jobs:
         # `run-journeys-local.sh` appelle `supabase` en global, pas via pnpm.
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: v2.stable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

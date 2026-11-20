@@ -30,6 +30,11 @@ concurrency:
   group: pgtap-${{ github.ref }}
   cancel-in-progress: true
 
+# Moindre privilege : le jeton GitHub de ce workflow ne peut que lire le depot.
+# Aucun job n'ecrit avec ce jeton (les pushes et appels externes utilisent leurs propres secrets).
+permissions:
+  contents: read
+
 jobs:
   pgtap:
     name: Privileges et RLS

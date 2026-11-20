@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 8 * * 1'
 
+# Moindre privilege : le jeton GitHub de ce workflow ne peut que lire le depot.
+# Aucun job n'ecrit avec ce jeton (les pushes et appels externes utilisent leurs propres secrets).
+permissions:
+  contents: read
+
 jobs:
   semgrep:
     name: Static Analysis (Semgrep)

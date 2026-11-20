@@ -26,6 +26,11 @@ on:
 env:
   GITLAB_URL: https://gitlab.com/odcsupportagency/odc-support-agency-project.git
 
+# Moindre privilege : le jeton GitHub de ce workflow ne peut que lire le depot.
+# Aucun job n'ecrit avec ce jeton (les pushes et appels externes utilisent leurs propres secrets).
+permissions:
+  contents: read
+
 jobs:
   mirror:
     # GitHub ne donne pas les secrets du depot aux executions declenchees par

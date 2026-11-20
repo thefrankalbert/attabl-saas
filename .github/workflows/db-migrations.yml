@@ -40,6 +40,11 @@ concurrency:
   group: db-migrations-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
+# Moindre privilege : le jeton GitHub de ce workflow ne peut que lire le depot.
+# Aucun job n'ecrit avec ce jeton (les pushes et appels externes utilisent leurs propres secrets).
+permissions:
+  contents: read
+
 jobs:
   dry-run:
     if: github.event_name == 'pull_request'
@@ -48,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: v2.stable
       - name: Show pending migrations (read-only, no apply)
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -69,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: v2.stable
       - name: Apply migrations to staging
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -90,7 +95,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: v2.stable
       - name: Backup production schema first
         run: |
           mkdir -p supabase/backups
