@@ -379,7 +379,9 @@ describe('POST /api/orders', () => {
     expect(status).toBe(429);
     // Le point qui compte: le budget n'a PAS ete entame.
     expect(mockClaimUsage).not.toHaveBeenCalled();
-    expect(mockCouponClaimCheck).toHaveBeenCalledWith('127.0.0.1:test-restaurant:PROMO10');
+    // La cle porte l'identifiant du coupon, pas le texte saisi: "PROMO10" et
+    // "promo10" visent le meme quota.
+    expect(mockCouponClaimCheck).toHaveBeenCalledWith('127.0.0.1:test-restaurant:coupon-1');
   });
 
   it('ne consulte pas la garde coupon quand la commande n a pas de code promo', async () => {

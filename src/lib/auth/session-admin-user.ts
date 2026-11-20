@@ -72,7 +72,7 @@ export async function resolveSessionAdminUser(options?: {
   }> {
     let q = adminSupabase
       .from('admin_users')
-      .select('tenant_id, role, tenants ( slug, onboarding_completed, created_at )')
+      .select('tenant_id, role, tenants ( slug, onboarding_completed, created_at, deleted_at )')
       .eq('user_id', user!.id);
     if (requireActive) {
       q = q.eq('is_active', true);
@@ -84,7 +84,17 @@ export async function resolveSessionAdminUser(options?: {
     if (!data || data.length === 0) {
       return { data: null, error: null, hasAnyMembership: false };
     }
-    const allRows = data.map((row) => {
+    // Fermer un restaurant ne desactive pas la ligne admin_users du proprietaire:
+    // sans ce filtre, l'onboarding choisissait un restaurant FERME (le plus
+    // recent non termine) et y ecrivait les reponses.
+    const liveRows = data.filter((row) => {
+      const tenant = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
+      return !tenant?.deleted_at;
+    });
+    if (liveRows.length === 0) {
+      return { data: null, error: null, hasAnyMembership: true };
+    }
+    const allRows = liveRows.map((row) => {
       const tenant = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
       return {
         tenant_id: row.tenant_id,

@@ -57,7 +57,8 @@ export async function POST(request: Request) {
     const locked = await tenantLockResponse(tenant.id);
     if (locked) return locked;
 
-    const body = await request.json();
+    // Un corps illisible est une entree invalide (400), pas une panne (500).
+    const body: unknown = await request.json().catch(() => null);
     const parsed = claimOrderSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
 

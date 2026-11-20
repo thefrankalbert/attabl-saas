@@ -41,6 +41,8 @@ const RESERVED_SLUGS = new Set([
   'sitemap',
 ]);
 
+const MAX_BASE_SLUG_LENGTH = 50;
+
 /**
  * Slug generation service.
  *
@@ -62,12 +64,18 @@ export function createSlugService(supabase: SupabaseClient): SlugService {
      * - Trims leading/trailing hyphens
      */
     normalizeToSlug(name: string): string {
-      return name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove accents
-        .replace(/[^a-z0-9]+/g, '-') // Replace special chars with hyphens
-        .replace(/^-+|-+$/g, ''); // Trim leading/trailing hyphens
+      return (
+        name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .replace(/[^a-z0-9]+/g, '-') // Replace special chars with hyphens
+          .replace(/^-+|-+$/g, '') // Trim leading/trailing hyphens
+          // Un slug est un label DNS (63 caracteres au plus). 50 laisse la place
+          // aux suffixes de generateUniqueSlug ("-restaurant", "-9999").
+          .slice(0, MAX_BASE_SLUG_LENGTH)
+          .replace(/-+$/, '')
+      );
     },
 
     /**
@@ -75,7 +83,11 @@ export function createSlugService(supabase: SupabaseClient): SlugService {
      * If the base slug already exists, appends a random 3-digit number.
      */
     async generateUniqueSlug(name: string): Promise<string> {
-      let baseSlug = this.normalizeToSlug(name);
+      // Un nom sans aucune lettre latine ni chiffre (arabe, chinois, emojis)
+      // donne un slug vide, donc l'adresse "https://.attabl.com". Le repli vit
+      // ici et non dans normalizeToSlug: chaque appelant a le sien (un espace
+      // de restaurant retombe sur "espace").
+      let baseSlug = this.normalizeToSlug(name) || 'restaurant';
 
       // If the slug is reserved, append a suffix to avoid conflicts with system routes
       if (RESERVED_SLUGS.has(baseSlug)) {

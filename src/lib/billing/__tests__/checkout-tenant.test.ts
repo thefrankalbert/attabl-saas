@@ -26,7 +26,12 @@ vi.mock('@/lib/supabase/server', () => ({
 type LigneMembre = {
   role?: string;
   tenant_id: string;
-  tenants: { name: string; subscription_status?: string | null } | null;
+  tenants: {
+    name: string;
+    subscription_status?: string | null;
+    suspended_at?: string | null;
+    deleted_at?: string | null;
+  } | null;
 };
 
 /** Reponses que la base doit rendre, par table. */
@@ -80,6 +85,31 @@ describe('resolveCheckoutTenant', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u', email: null } }, error: null });
     const r = await resolveCheckoutTenant();
     expect(r).toMatchObject({ ok: false, status: 400 });
+  });
+
+  it('restaurant suspendu par la plateforme: 409, avec ou sans cible', async () => {
+    const suspendu = membre('tenant-2');
+    suspendu.tenants = { name: 'Resto', suspended_at: '2026-11-01T00:00:00Z' };
+    reponseMembreCible = suspendu;
+    reponseMembresSansCible = [suspendu];
+
+    expect(await resolveCheckoutTenant({ tenantSlug: 'resto' })).toMatchObject({
+      ok: false,
+      status: 409,
+    });
+    expect(await resolveCheckoutTenant()).toMatchObject({ ok: false, status: 409 });
+    // La confirmation d'un paiement deja fait n'est pas refusee.
+    expect(
+      await resolveCheckoutTenant({ tenantSlug: 'resto', allowSuspended: true }),
+    ).toMatchObject({ ok: true });
+  });
+
+  it('sans cible, un restaurant ferme n est pas abonnable: 404', async () => {
+    const ferme = membre('tenant-1');
+    ferme.tenants = { name: 'Resto', deleted_at: '2026-11-01T00:00:00Z' };
+    reponseMembresSansCible = [ferme];
+
+    expect(await resolveCheckoutTenant()).toMatchObject({ ok: false, status: 404 });
   });
 
   /** LE TEST DU DEFAUT: c'est la cible qui est facturee, pas la plus ancienne. */

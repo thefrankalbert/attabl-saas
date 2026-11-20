@@ -111,7 +111,19 @@ export async function POST(request: Request) {
       // Le gestionnaire a deja journalise la cause precise. Ce qui reste a faire
       // est propre a la route: retirer la ligne d'idempotence pour que le rejeu
       // de Stripe retraite l'evenement, puis rendre le statut HTTP.
-      await supabase.from('stripe_events').delete().eq('id', event.id);
+      // supabase-js ne LEVE pas sur un echec: sans lire `error`, un retrait rate
+      // passait inapercu et l'evenement n'etait jamais retraite (le rejeu de
+      // Stripe trouvait la ligne et repondait "idempotent").
+      const { error: rollbackError } = await supabase
+        .from('stripe_events')
+        .delete()
+        .eq('id', event.id);
+      if (rollbackError) {
+        logger.error('Failed to roll back Stripe idempotency record', rollbackError, {
+          eventId: event.id,
+          eventType: event.type,
+        });
+      }
       return NextResponse.json({ error: err.message }, { status: serviceErrorToStatus(err.code) });
     }
 
@@ -123,7 +135,11 @@ export async function POST(request: Request) {
     // client because the in-try one is out of scope here.
     if (recordedEventId) {
       try {
-        await createAdminClient().from('stripe_events').delete().eq('id', recordedEventId);
+        const { error: rollbackError } = await createAdminClient()
+          .from('stripe_events')
+          .delete()
+          .eq('id', recordedEventId);
+        if (rollbackError) throw rollbackError;
       } catch (rollbackErr) {
         logger.error('Failed to roll back Stripe idempotency record', rollbackErr, {
           eventId: recordedEventId,

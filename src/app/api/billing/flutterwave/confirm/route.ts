@@ -47,6 +47,8 @@ export async function POST(request: Request) {
 
     const resolved = await resolveCheckoutTenant({
       tenantSlug: readTenantSlug(request.headers).slug,
+      // Paiement deja fait: voir `allowSuspended` dans checkout-tenant.ts.
+      allowSuspended: true,
     });
     if (!resolved.ok) {
       return NextResponse.json({ error: resolved.error }, { status: resolved.status });

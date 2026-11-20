@@ -76,6 +76,31 @@ describe('resolveSessionAdminUser', () => {
     expect(r).toEqual({ ok: false, status: 401, error: 'Non authentifie' });
   });
 
+  it('ne choisit jamais un restaurant ferme, meme s il est le plus recent non termine', async () => {
+    const ferme = tenantRow('a', 'owner', false, '2026-11-02');
+    (ferme.tenants as { deleted_at?: string }).deleted_at = '2026-11-03';
+    query.rows = [tenantRow('b', 'owner', false, '2026-11-01'), ferme];
+
+    const r = await resolveSessionAdminUser({ ownerOnly: true });
+
+    expect(r.ok && r.adminUser.tenant_id).toBe('b');
+  });
+
+  it('un restaurant ferme demande par son slug est refuse, sans creer d etablissement', async () => {
+    const ferme = tenantRow('a', 'owner', false);
+    (ferme.tenants as { deleted_at?: string }).deleted_at = '2026-11-03';
+    query.rows = [ferme];
+
+    const r = await resolveSessionAdminUser({ siteSlug: 'a', provisionIfMissing: true });
+    expect(r).toMatchObject({ ok: false, status: 403 });
+
+    // Sans slug non plus: un seul restaurant, ferme, n'est pas "aucun
+    // etablissement". Le provisionnement en creerait un nouveau en silence.
+    const sansSlug = await resolveSessionAdminUser({ provisionIfMissing: true });
+    expect(sansSlug).toMatchObject({ ok: false, status: 403 });
+    expect(ensureTenantForOnboarding).not.toHaveBeenCalled();
+  });
+
   it('rend le tenant et le role de l utilisateur', async () => {
     query.rows = [tenantRow('t1', 'manager')];
 

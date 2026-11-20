@@ -89,12 +89,25 @@ export async function resolveAdminPermission(
     return { allowed: true, role };
   }
 
-  const { data: roleOverride } = await supabase
+  const { data: roleOverride, error: roleOverrideError } = await supabase
     .from('role_permissions')
     .select('permissions')
     .eq('tenant_id', tenantId)
     .eq('role', role)
     .maybeSingle();
+
+  // ECHEC FERME. Sans cette lecture, une panne retombait sur la matrice par
+  // defaut et REACCORDAIT une permission que le restaurant avait retiree.
+  // Le refus ne vaut que la ou la surcharge DECIDE: le proprietaire a tous les
+  // droits et une permission individuelle passe avant la surcharge de role
+  // (ordre de `hasPermission`). Les refuser sur une panne fermerait la caisse
+  // au proprietaire pour une lecture dont sa reponse ne depend pas.
+  const overrideDecides =
+    role !== 'owner' &&
+    (adminData.custom_permissions as Record<string, boolean> | null)?.[permission] === undefined;
+  if (roleOverrideError && overrideDecides) {
+    return { allowed: false, role };
+  }
 
   // hasPermission ne lit que `.permissions`; le select omet les autres champs
   // de RolePermissions, d'ou le cast.
