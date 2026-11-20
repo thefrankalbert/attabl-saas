@@ -31,6 +31,10 @@ export function buildCspHeader(nonce: string): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    // No fallback to default-src for this one: without it any site could frame
+    // the app (clickjacking). X-Frame-Options DENY says the same for older
+    // browsers. Found by the OWASP ZAP scan of 2026-11-20 (rule 10055).
+    "frame-ancestors 'none'",
   ];
   // upgrade-insecure-requests would rewrite the dev http://127.0.0.1 calls to
   // https and rebreak them, so it is production-only.

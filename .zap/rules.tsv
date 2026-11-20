@@ -1,2 +1,22 @@
-# Regles du scan ZAP baseline (format TSV: id<TAB>IGNORE|WARN|FAIL<TAB>raison).
-# Une regle IGNORE exige une raison prouvee, ecrite sur la ligne.
+# Regles du scan OWASP ZAP baseline (TSV: id<TAB>IGNORE|WARN|FAIL<TAB>raison).
+# Toute alerte non listee fait echouer le scan. Une regle IGNORE exige une raison
+# prouvee, ecrite sur sa ligne. Examen du premier scan: 2026-11-20 (PR #442).
+#
+# Corrigees dans la PR #442 (restent bloquantes si elles reviennent):
+#   10024 mot de passe dans l'URL: formulaires d'authentification en method="post"
+#   10037 X-Powered-By: poweredByHeader false
+#   10055 CSP sans repli: frame-ancestors 'none' ajoute
+10015	IGNORE	(Cache-control a revoir) manifest.json, robots.txt, sitemap.xml: fichiers publics, mis en cache volontairement
+10021	IGNORE	(nosniff absent) une seule reponse d'image optimisee servie par le CDN d'images Vercel; type image/webp exact, affichee dans <img>, rien a interpreter
+10031	IGNORE	(attribut controle par l'utilisateur) pre-remplissage voulu de l'e-mail (signup?email=); React echappe toute valeur d'attribut
+10035	IGNORE	(HSTS absent) seulement sur une reponse 304 sans corps du CDN d'images; HSTS est servi sur toutes les reponses 200 avec includeSubDomains et preload
+10049	IGNORE	(contenu non stockable) pages dynamiques par visiteur, non mises en cache volontairement
+10050	IGNORE	(servi depuis le cache) cache CDN Vercel des pages publiques, voulu
+10094	IGNORE	(Base64) charges RSC de Next.js et nonces CSP, aucune donnee sensible
+10098	IGNORE	(cross-domain) Access-Control-Allow-Origin * pose par Vercel sur les fichiers statiques publics (CSS, robots.txt), sans cookie ni donnee privee
+10109	IGNORE	(application web moderne) information, pas une faille
+10110	IGNORE	(fonction JS dangereuse) eval dans un polyfill du module Node vm embarque par une dependance; la CSP de production n'autorise pas unsafe-eval, il ne peut pas s'executer
+10111	IGNORE	(requete d'authentification identifiee) information, pas une faille
+10202	IGNORE	(jeton anti-CSRF absent) formulaire de contact: Server Action Next.js, protegee par la verification d'origine integree et des cookies SameSite=Lax
+90004	IGNORE	(COEP absent) require-corp casserait Stripe, Turnstile et les images Supabase; COOP same-origin et CORP same-origin sont deja servis
+90005	IGNORE	(Sec-Fetch-Dest absent) en-tete de REQUETE envoye par les navigateurs, absent des requetes du robot ZAP

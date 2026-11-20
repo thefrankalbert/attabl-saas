@@ -264,7 +264,7 @@ function AcceptInviteForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form method="post" onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="fullName" className="text-app-text-secondary font-medium text-sm">
               Nom complet
