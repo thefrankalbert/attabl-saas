@@ -40,15 +40,20 @@ concurrency:
   group: db-migrations-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
 jobs:
   dry-run:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
-          version: latest
+          version: 3.1.0
       - name: Show pending migrations (read-only, no apply)
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -66,10 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
-          version: latest
+          version: 3.1.0
       - name: Apply migrations to staging
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
@@ -87,20 +92,24 @@ jobs:
     runs-on: ubuntu-latest
     environment: production # gate with required reviewers in repo settings
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
-          version: latest
+          version: 3.1.0
       - name: Backup production schema first
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
         run: |
           mkdir -p supabase/backups
-          supabase db dump --db-url "${{ secrets.PRODUCTION_DB_URL }}" \
+          supabase db dump --db-url "$PRODUCTION_DB_URL" \
             -f "supabase/backups/prod-schema-${GITHUB_SHA}.sql"
       - name: Upload schema backup artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: prod-schema-backup-${{ github.sha }}
           path: supabase/backups/prod-schema-${{ github.sha }}.sql
           retention-days: 90
       - name: Apply migrations to production
-        run: supabase db push --db-url "${{ secrets.PRODUCTION_DB_URL }}"
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: supabase db push --db-url "$PRODUCTION_DB_URL"

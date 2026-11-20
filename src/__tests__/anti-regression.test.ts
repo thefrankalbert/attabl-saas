@@ -17,6 +17,7 @@ const SRC_DIR = path.resolve(__dirname, '..');
 // -- Helpers ----------------------------------------------------
 
 function readFile(relativePath: string): string {
+  // nosemgrep: path-join-resolve-traversal -- test-only, paths are constants written in this file
   const fullPath = path.resolve(SRC_DIR, '..', relativePath);
   return fs.readFileSync(fullPath, 'utf-8');
 }
@@ -26,6 +27,7 @@ function findTsxFiles(dir: string, exclude: string[] = []): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
   for (const entry of entries) {
+    // nosemgrep: path-join-resolve-traversal -- test-only, names come from readdirSync of src/
     const fullPath = path.join(dir, entry.name);
     const relativePath = path.relative(path.resolve(SRC_DIR, '..'), fullPath);
 

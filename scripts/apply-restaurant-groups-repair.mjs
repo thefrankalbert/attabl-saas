@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import pg from 'pg';
 import { fileURLToPath } from 'url';
+import { supabasePgConfig } from './lib/supabase-pg-ssl.cjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
@@ -61,9 +62,9 @@ async function main() {
   );
   const sql = fs.readFileSync(migrationPath, 'utf8');
 
+  // Encrypted and verified, or no connection (see scripts/lib/supabase-pg-ssl.cjs).
   const client = new pg.Client({
-    connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false },
+    ...supabasePgConfig(databaseUrl, env.SUPABASE_DB_CA_CERT),
     connectionTimeoutMillis: 30_000,
   });
 

@@ -1,0 +1,57 @@
+# CodeQL: GitHub's own code analysis, a second engine next to Semgrep.
+# The two do not find the same things: CodeQL follows data from where it enters
+# (request, form, URL) to where it is used (query, HTML, redirect).
+# Free because the repository is public. Results: Security tab > Code scanning.
+# Blocking: a red analysis prevents the merge only once the two "CodeQL (...)"
+# checks are listed as required in the branch protection of main.
+# On a pull request CodeQL may only report alerts on changed lines; the weekly
+# run and `workflow_dispatch` analyse the whole tree.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:${{ matrix.language }}
+          output: codeql-results
+      # The analyze step only uploads: it stays green whatever it finds. This step
+      # is the gate. A proven false positive is excluded with a `query-filters`
+      # entry in a CodeQL config file, with the reason written next to it.
+      - name: Fail on any finding
+        run: |
+          count=$(jq -s '[.[].runs[].results[]] | length' codeql-results/*.sarif)
+          echo "codeql: $count finding(s)"
+          if [ "$count" -ne 0 ]; then
+            jq -rs '.[].runs[].results[] | "\(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)"' codeql-results/*.sarif
+            exit 1
+          fi
