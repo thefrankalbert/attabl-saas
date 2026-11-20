@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { NextResponse, after } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter } from '@/lib/rate-limit';
@@ -9,16 +9,12 @@ import { createCouponService } from '@/services/coupon.service';
 import { createAssignmentService } from '@/services/assignment.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import {
-  createPlanEnforcementService,
-  assertOrderFeaturesAllowed,
-} from '@/services/plan-enforcement.service';
+import { assertOrderFeaturesAllowed } from '@/services/plan-enforcement.service';
 import { fetchMenuItemsByIds } from '@/lib/menu-items-query';
 import { scheduleDestock } from '../schedule-destock';
 import { applyPosPayment, type PosPaymentOutcome } from './apply-pos-payment';
 import { checkDineInTable } from '@/services/order/dine-in-table';
 import { canAccessFeature, getPlanLimits } from '@/lib/plans/features';
-import type { Tenant } from '@/types/admin.types';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { resolveAdminPermission } from '@/lib/auth/resolve-admin-permission';
 import { TENANT_LOCK_COLUMNS, tenantLockReason } from '@/lib/billing/tenant-lock';
@@ -588,41 +584,6 @@ export async function POST(request: Request) {
         channel: 'pos',
       });
     }
-
-    // 13. Monthly order quota check (NON-blocking - never rejects an order).
-    // Scheduled via after() so it survives serverless freeze.
-    after(async () => {
-      try {
-        const now = new Date();
-        const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-        const enforcement = createPlanEnforcementService(adminSupabase);
-        const usage = await enforcement.getMonthlyOrderUsage(
-          { ...tenant, id: tenant_id } as Tenant,
-          monthStart,
-        );
-        if (!usage.exceeded) return;
-
-        const monthKey = `monthly_quota_exceeded_${now.getUTCFullYear()}_${now.getUTCMonth() + 1}`;
-        // Atomically claim the monthly slot server-side - merges into the live row,
-        // so a concurrent writer's key is never clobbered. Notify once per month.
-        const { data: claimed } = await adminSupabase.rpc('claim_activation_event', {
-          p_tenant_id: tenant_id,
-          p_event_key: monthKey,
-        });
-        if (claimed) {
-          await adminSupabase.from('notifications').insert({
-            tenant_id,
-            user_id: null,
-            type: 'warning',
-            title: 'Quota de commandes mensuel atteint',
-            body: `Votre plan inclut ${usage.limit} commandes par mois. Passez au plan superieur pour lever cette limite.`,
-            link: `/admin/subscription`,
-          });
-        }
-      } catch (quotaErr) {
-        logger.warn('POS order: monthly quota check failed (non-blocking)', { err: quotaErr });
-      }
-    });
 
     return orderResponse(
       { orderId: result.orderId, orderNumber: result.orderNumber, total: result.total },

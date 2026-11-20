@@ -144,35 +144,6 @@ function tzOffsetMinutes(tz: string, at: Date): number {
 }
 
 /**
- * Compute a Date representing the first day of the current month at 00:00
- * in the tenant's local timezone, serialised back to an absolute instant.
- *
- * Equivalent to `startOfMonth(now, tenantTz)` in tz-aware date-fns.
- */
-export function getTenantMonthStart(tenant: { country?: string | null }, now = new Date()): Date {
-  const tz = resolveTenantTimezone(tenant);
-  // Year + month in the target timezone at the current instant.
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts(now);
-  const year = Number(parts.find((p) => p.type === 'year')?.value);
-  const month = Number(parts.find((p) => p.type === 'month')?.value);
-  if (!year || !month) {
-    const d = new Date(now);
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  // "Naive" UTC instant at month-start. Subtract the tz offset so the same
-  // absolute instant maps to 00:00 local time. (UTC+1 → -60min)
-  const naiveStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-  const offset = tzOffsetMinutes(tz, naiveStart);
-  return new Date(naiveStart.getTime() - offset * 60 * 1000);
-}
-
-/**
  * Debut de journee (00:00 locale du restaurant) `daysAgo` jours avant `now`,
  * serialise en instant absolu. Remplace `setHours(0, 0, 0, 0)`, qui prenait
  * minuit du serveur (UTC sur Vercel) cote page et minuit de l'appareil cote

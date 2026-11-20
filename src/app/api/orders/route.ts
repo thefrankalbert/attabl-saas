@@ -23,7 +23,6 @@ import {
   getT,
   scheduleOrderNotification,
   scheduleTriggerEmails,
-  scheduleMonthlyQuotaCheck,
 } from './route.helpers';
 import { scheduleDestock } from './schedule-destock';
 import { checkDineInTable } from '@/services/order/dine-in-table';
@@ -373,9 +372,6 @@ export async function POST(request: Request) {
         channel: 'convive',
       });
     }
-
-    // 12. Monthly order quota check (NON-blocking - never rejects an order).
-    scheduleMonthlyQuotaCheck(adminSupabase, { tenant, tenantId });
 
     return NextResponse.json({
       success: true,

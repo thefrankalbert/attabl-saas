@@ -467,7 +467,6 @@
           "volumes": {
             "title": "Volumes",
             "features": {
-              "monthlyOrders": "Commandes / mois",
               "menus": "Menus",
               "items": "Articles"
             }
@@ -2791,7 +2790,6 @@
     "newOrder": "Nouvelle commande",
     "secCatalogue": "Catalogue",
     "secGestion": "Gestion",
-    "usageMonthlyOrders": "Commandes / mois",
     "accountMenu": "Mon compte",
     "planLabel": "Plan {plan}",
     "planFree": "Gratuit",

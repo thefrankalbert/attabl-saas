@@ -35,8 +35,6 @@ interface AdminLayoutInnerProps {
   };
   userName?: string;
   userEmail?: string;
-  /** 0..100 - passed to the sidebar usage card in the footer */
-  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
@@ -325,7 +323,6 @@ interface AdminLayoutClientProps {
   };
   userName?: string;
   userEmail?: string;
-  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
@@ -342,7 +339,6 @@ export function AdminLayoutClient({
   tenant,
   userName,
   userEmail,
-  ordersUsagePercent,
   userTenants,
   notifications,
   breadcrumbs,
@@ -358,7 +354,6 @@ export function AdminLayoutClient({
         tenant={tenant}
         userName={userName}
         userEmail={userEmail}
-        ordersUsagePercent={ordersUsagePercent}
         userTenants={userTenants}
         notifications={notifications}
         breadcrumbs={breadcrumbs}

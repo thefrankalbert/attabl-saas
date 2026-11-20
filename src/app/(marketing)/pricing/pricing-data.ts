@@ -123,13 +123,6 @@ export const featureCategories: { key: CategoryKey; features: FeatureRow[] }[] =
     key: 'volumes',
     features: [
       {
-        labelKey: 'monthlyOrders',
-        starter: { kind: 'text', value: '500' },
-        pro: { kind: 'text', value: '3 000' },
-        business: { kind: 'text', value: '20 000' },
-        enterprise: { kind: 'unlimited' },
-      },
-      {
         labelKey: 'menus',
         starter: { kind: 'unlimited' },
         pro: { kind: 'unlimited' },

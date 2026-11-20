@@ -68,9 +68,7 @@ vi.mock('@/services/coupon.service', () => ({
 // Quota check runs in after(); keep it inert. The order-feature plan gate is
 // exercised in its own unit test, so keep it inert here (no-op assert).
 vi.mock('@/services/plan-enforcement.service', () => ({
-  createPlanEnforcementService: vi.fn(() => ({
-    getMonthlyOrderUsage: vi.fn().mockResolvedValue({ count: 0, limit: null, exceeded: false }),
-  })),
+  createPlanEnforcementService: vi.fn(() => ({})),
   assertOrderFeaturesAllowed: vi.fn(),
 }));
 

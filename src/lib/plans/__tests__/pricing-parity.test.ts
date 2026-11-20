@@ -43,7 +43,6 @@ const QUANT_MAP: Record<string, keyof PlanLimits> = {
   establishments: 'maxVenues',
   admins: 'maxAdmins',
   staff: 'maxStaff',
-  monthlyOrders: 'maxMonthlyOrders',
   menus: 'maxMenus',
   items: 'maxItems',
 };

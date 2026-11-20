@@ -21,15 +21,12 @@ import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
 import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialog';
 import { SoundProvider } from '@/contexts/SoundContext';
-import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
-import { getPlanLimits } from '@/lib/plans/features';
 import {
   kitchenMayFinishForTenant,
   menuVisibleDaysLeftForTenant,
   resolveDisplayedSubscriptionStatus,
 } from '@/lib/billing/lapsed-trial';
 import { LockedSubscriptionRedirect } from '@/components/admin/LockedSubscriptionRedirect';
-import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
 import type { PermissionCode, RolePermissions } from '@/types/permission.types';
 import { getEffectivePermissions } from '@/lib/permissions';
@@ -134,29 +131,6 @@ export default async function AdminLayout({
     .eq('user_id', user.id)
     .eq('is_active', true)
     .is('deleted_at', null);
-
-  // Monthly orders usage for the sidebar footer card.
-  //
-  // - Quota is derived from the tenant's effective plan
-  //   (see src/lib/plans/features.ts PLAN_LIMITS.maxMonthlyOrders).
-  //   `-1` means unlimited → the bar collapses to 0%.
-  // - Month start is computed in the tenant's local timezone (best-effort
-  //   resolved from tenant.country) so the bar rolls over at local midnight.
-  // - The count query is wrapped in unstable_cache (5 min TTL per tenant)
-  //   so admin-to-admin navigation doesn't hit Postgres every time.
-  // - All failure paths return 0 % rather than crashing the admin shell.
-  const planLimits = getPlanLimits(
-    tenant.subscription_plan,
-    tenant.subscription_status,
-    tenant.trial_ends_at,
-  );
-  const monthlyQuota = planLimits.maxMonthlyOrders;
-  let ordersUsagePercent = 0;
-  if (monthlyQuota > 0) {
-    const monthStart = getTenantMonthStart({ country: tenant.country });
-    const monthlyOrdersCount = await getMonthlyOrdersCount(tenant.id, monthStart);
-    ordersUsagePercent = Math.min(100, Math.round((monthlyOrdersCount / monthlyQuota) * 100));
-  }
 
   const userTenants = (userTenantLinks ?? [])
     .map((link) => {
@@ -306,7 +280,6 @@ export default async function AdminLayout({
                 }}
                 userName={adminUser?.name || user.email || ''}
                 userEmail={user.email ?? undefined}
-                ordersUsagePercent={ordersUsagePercent}
                 userTenants={userTenants}
                 notifications={
                   <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />

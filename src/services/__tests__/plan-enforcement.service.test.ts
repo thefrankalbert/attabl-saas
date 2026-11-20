@@ -243,50 +243,6 @@ describe('unlimited limits (-1 guard)', () => {
   });
 });
 
-describe('getMonthlyOrderUsage', () => {
-  const monthStart = new Date(Date.UTC(2026, 5, 1));
-
-  it('returns not exceeded when under the limit (starter = 500)', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 120, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(makeTenant(), monthStart);
-    expect(usage).toEqual({ count: 120, limit: 500, exceeded: false });
-  });
-
-  it('returns exceeded when at or over the limit (starter = 500)', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 500, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(makeTenant(), monthStart);
-    expect(usage.exceeded).toBe(true);
-  });
-
-  it('enterprise maxMonthlyOrders = -1 -> never exceeded, no query', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: 999999, error: null },
-    });
-    const service = createPlanEnforcementService(supabase);
-    const usage = await service.getMonthlyOrderUsage(
-      makeTenant({ subscription_plan: 'enterprise' }),
-      monthStart,
-    );
-    expect(usage).toEqual({ count: 0, limit: -1, exceeded: false });
-  });
-
-  it('throws INTERNAL on database error', async () => {
-    const supabase = createMockSupabase({
-      orders: { count: null, error: { message: 'DB error' } },
-    });
-    const service = createPlanEnforcementService(supabase);
-    await expect(service.getMonthlyOrderUsage(makeTenant(), monthStart)).rejects.toThrow(
-      ServiceError,
-    );
-  });
-});
-
 describe('getUsageCounts', () => {
   it('returns counts from all tables', async () => {
     const supabase = createMockSupabase({

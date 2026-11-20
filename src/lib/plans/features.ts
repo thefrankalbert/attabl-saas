@@ -17,11 +17,6 @@ export interface PlanLimits {
   maxMenus: number;
   maxItems: number;
   maxCategories: number;
-  /**
-   * Monthly orders quota. Drives the sidebar usage bar.
-   * Use `-1` for unlimited (rendered as 0% in the UI).
-   */
-  maxMonthlyOrders: number;
   // Feature flags
   canAccessPOS: boolean;
   canAccessKDS: boolean;
@@ -48,7 +43,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 500,
     canAccessPOS: true,
     canAccessKDS: false,
     canAccessTables: false,
@@ -70,7 +64,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 3000,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -92,7 +85,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: 20000,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
@@ -114,7 +106,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxMenus: -1,
     maxItems: -1,
     maxCategories: -1,
-    maxMonthlyOrders: -1,
     canAccessPOS: true,
     canAccessKDS: true,
     canAccessTables: true,
