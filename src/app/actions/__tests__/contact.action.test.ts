@@ -13,13 +13,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const sendContactFormEmail = vi.fn();
 
+// hash-email.ts est marque server-only: sans ce mock, son import fait echouer la suite.
+vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (cle: string) => cle,
 }));
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
-  hashEmail: () => 'hash',
 }));
 vi.mock('@/lib/rate-limit', () => ({
   contactLimiter: { check: async () => ({ success: true }) },
