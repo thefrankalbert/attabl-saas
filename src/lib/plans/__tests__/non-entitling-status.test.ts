@@ -27,6 +27,20 @@ describe('statuts non entitlants', () => {
     expect(canAccessFeature('canAccessInventory', 'pro', 'cancelled', null)).toBe(false);
   });
 
+  // Decision du 2026-11-20: l'essai donne TOUT (offre Business), plus seulement Pro.
+  it('un essai actif donne l offre Business, meme sur un plan enregistre starter', () => {
+    const future = new Date(Date.now() + 5 * 864e5).toISOString();
+    expect(getEffectivePlan('starter', 'trial', future)).toBe('business');
+    expect(canAccessFeature('canAccessDelivery', 'starter', 'trial', future)).toBe(true);
+    expect(canAccessFeature('canAccessRoomService', 'starter', 'trial', future)).toBe(true);
+    expect(canAccessFeature('canAccessAIAnalytics', 'starter', 'trial', future)).toBe(true);
+  });
+
+  it('un essai expire ne donne plus rien de payant', () => {
+    expect(getEffectivePlan('starter', 'trial', TRIAL_PAST)).toBe('starter');
+    expect(canAccessFeature('canAccessDelivery', 'starter', 'trial', TRIAL_PAST)).toBe(false);
+  });
+
   it('un impaye garde son plan: la relance Stripe est encore en cours', () => {
     expect(getEffectivePlan('pro', 'past_due', null)).toBe('pro');
     expect(canAccessFeature('canAccessInventory', 'pro', 'past_due', null)).toBe(true);

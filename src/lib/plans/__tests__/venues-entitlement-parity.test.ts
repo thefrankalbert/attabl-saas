@@ -5,7 +5,7 @@ import type { SubscriptionPlan } from '@/types/billing';
 /**
  * Guardrail contre la derive entre la matrice TS (PLAN_LIMITS.maxVenues) et le
  * CASE du trigger SQL enforce_venue_plan_limit
- * (supabase/migrations/20260717120000_venues_plan_limit_trigger.sql).
+ * (supabase/migrations/20261120120000_essai_plan_business.sql).
  * Si maxVenues change, ce test casse et force une migration correctrice.
  */
 const SQL_MAX_VENUES: Record<SubscriptionPlan, number> = {
@@ -23,8 +23,8 @@ describe('venue plan-limit parity (TS PLAN_LIMITS vs SQL trigger CASE)', () => {
     });
   });
 
-  it('trial actif = plafond pro (2) meme sur starter', () => {
+  it('trial actif = plafond business (10) meme sur starter', () => {
     const future = new Date(Date.now() + 30 * 864e5).toISOString();
-    expect(getPlanLimits('starter', 'trial', future).maxVenues).toBe(2);
+    expect(getPlanLimits('starter', 'trial', future).maxVenues).toBe(10);
   });
 });

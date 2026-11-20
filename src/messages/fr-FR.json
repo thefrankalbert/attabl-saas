@@ -287,10 +287,10 @@
   "marketing": {
     "pricing": {
       "metaTitle": "Attabl - Tarifs simples pour la restauration",
-      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
+      "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours avec toutes les fonctionnalités.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout le plan Pro : caisse, écran cuisine, stock, tables, rapports.",
+        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre.",
         "eyebrow": "Tarifs"
       },
       "billing": {
@@ -479,7 +479,7 @@
         "items": {
           "q1": {
             "question": "Comment fonctionne l'essai gratuit ?",
-            "answer": "14 jours avec tout le plan Pro, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports. La livraison, le service en chambre et les analyses IA restent réservés au plan Business."
+            "answer": "Pendant 14 jours, vous testez tout, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports, livraison, service en chambre et analyses IA. Ensuite, vous choisissez votre plan ou vous arrêtez."
           },
           "q2": {
             "question": "Que se passe-t-il après les 14 jours ?",
@@ -534,8 +534,8 @@
       "billedTotal": "{total} FCFA au total",
       "perDay": "soit ~{amount} FCFA par jour",
       "essai": {
-        "title": "Pendant 14 jours, vous testez le plan Pro en entier.",
-        "body": "L'essai donne un accès complet à l'offre Pro, sans carte bancaire. Vous jugez sur votre propre service.",
+        "title": "Pendant 14 jours, vous testez tout.",
+        "body": "Toutes les fonctionnalités sont ouvertes, sans carte bancaire. Vous jugez sur votre propre service.",
         "f1": "Écran cuisine",
         "f2": "Caisse",
         "f3": "Stock et recettes",
@@ -670,7 +670,6 @@
       "cookieAuth": "Cookies de connexion (Supabase) : gardent votre session ouverte. Indispensables.",
       "cookieLocale": "NEXT_LOCALE : retient la langue choisie, un an.",
       "cookieRecovery": "attabl_recovery : sécurise le changement de mot de passe, 15 minutes, invisible pour les scripts du site.",
-      "cookieAb": "attabl_ab_id et attabl_ab_trial : une seule fois, pour tester la durée de l'essai gratuit (7 ou 14 jours) sur les pages d'inscription, 60 jours. Aucune information sur vous n'est associée.",
       "cookieStorage": "Stockage local du navigateur : thème clair ou sombre, préférences d'affichage, devise, panier d'un client. Ces données restent sur votre appareil.",
       "cookieSentry": "Si une erreur survient, Sentry peut enregistrer la session en cours pour nous aider à la corriger.",
       "section8Title": "8. Combien de temps nous gardons vos données",
@@ -1229,7 +1228,7 @@
         "subtitle": "Compte créé en 2 minutes. Votre menu en ligne aujourd'hui.",
         "s1": {
           "title": "Créez votre compte",
-          "body": "2 minutes, sans carte bancaire. 14 jours d'accès complet à l'offre Pro."
+          "body": "2 minutes, sans carte bancaire. 14 jours pour tout tester."
         },
         "s2": {
           "title": "Montez votre carte",
@@ -2199,9 +2198,8 @@
     },
     "upgradeWall": {
       "planRequired": "Fonctionnalité Pro",
-      "upgradeCta": "Passer au Pro - 14j gratuits",
+      "upgradeCta": "Passer au Pro",
       "askOwner": "Le propriétaire du restaurant peut activer cette fonction.",
-      "trialNote": "Disponible gratuitement pendant votre essai Pro",
       "kds": {
         "title": "Écran cuisine (KDS)",
         "desc": "Les commandes arrivent directement sur l'écran de votre cuisine. Vos cuisiniers ne lisent plus les tickets. Moins d'erreurs, service plus rapide."

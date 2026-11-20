@@ -10,15 +10,15 @@ import { ServiceError } from './errors';
  */
 
 /**
- * C-080: pendant l'essai, le restaurant a les limites de l'offre Pro, mais les
- * messages citaient son plan enregistre ("starter"), ce qui contredisait la
+ * C-080: pendant l'essai, le restaurant a les limites de l'offre Business, mais
+ * les messages citaient son plan enregistre ("starter"), ce qui contredisait la
  * limite affichee.
  */
 function planLabel(tenant: Tenant): string {
   if (
     isTrialActive(tenant.subscription_status as SubscriptionStatus | null, tenant.trial_ends_at)
   ) {
-    return 'pendant votre essai (offre Pro)';
+    return 'pendant votre essai (offre Business)';
   }
   return `pour votre plan ${tenant.subscription_plan || 'starter'}`;
 }

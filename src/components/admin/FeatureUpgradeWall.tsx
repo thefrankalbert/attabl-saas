@@ -65,12 +65,9 @@ export async function FeatureUpgradeWall({
       </div>
       <div className="flex flex-col items-center gap-2">
         {canUpgrade ? (
-          <>
-            <Button asChild size="lg">
-              <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
-            </Button>
-            <p className="text-xs text-muted-foreground">{t('trialNote')}</p>
-          </>
+          <Button asChild size="lg">
+            <Link href={checkoutUrl}>{t('upgradeCta')}</Link>
+          </Button>
         ) : (
           <p className="text-sm text-muted-foreground">{t('askOwner')}</p>
         )}

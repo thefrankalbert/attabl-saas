@@ -14,7 +14,7 @@ import { createRetentionService } from '@/services/retention.service';
 /**
  * Freeze trials that expired without ever subscribing.
  *
- * A tenant that signs up starts on a 14-day (or 7-day A/B) trial with
+ * A tenant that signs up starts on a 14-day trial with
  * subscription_status='trial' and NO Stripe subscription. If they never pay,
  * nothing ever freezes them: there is no Stripe subscription, so no webhook
  * fires, and getEffectivePlan/isSubscriptionUsable still treat 'trial' as
