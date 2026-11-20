@@ -83,7 +83,8 @@ describe('handleChargeRefunded', () => {
       is_active: false,
       freeze_reason: 'refund',
       // Horodatage du gel: une facture payee avant ne le leve pas.
-      refund_frozen_at: expect.any(String),
+      // Sans date d'evenement: l'heure du traitement, au format ISO.
+      refund_frozen_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
     });
     expect(ecritures[0].filtre).toBe('id');
   });
@@ -128,6 +129,28 @@ describe('handleChargeRefunded', () => {
       expect(ecritures[0].payload).not.toHaveProperty('freeze_reason');
     },
   );
+
+  it('date le gel a l heure de l evenement Stripe, pas a l heure du traitement', async () => {
+    // Un charge.refunded rejoue en retard ne doit pas dater le gel apres une
+    // facture payee entre-temps.
+    await handleChargeRefunded(deps(), charge(), 1_800_000_000);
+
+    expect(ecritures[0].payload).toMatchObject({
+      freeze_reason: 'refund',
+      refund_frozen_at: '2027-01-15T08:00:00.000Z',
+    });
+  });
+
+  it('un second remboursement sur un gel deja refund le redate', async () => {
+    ligneTenant = { id: 't-1', subscription_status: 'frozen', freeze_reason: 'refund' };
+    await handleChargeRefunded(deps(), charge(), 1_800_000_000);
+
+    expect(ecritures).toHaveLength(1);
+    expect(ecritures[0].payload).toEqual({
+      is_active: false,
+      refund_frozen_at: '2027-01-15T08:00:00.000Z',
+    });
+  });
 
   it('tenant gele SANS cause: la cause refund peut etre posee', async () => {
     // Un gel sans cause ne se leve pas tout seul: lui donner une cause le rend

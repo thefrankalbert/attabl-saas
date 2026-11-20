@@ -196,6 +196,9 @@ export function handleInvoicePaymentActionRequired(invoice: Stripe.Invoice): voi
  * facture payee suffit a prouver que l'abonnement est sain - sans elle, un
  * tenant pouvait rester en past_due alors qu'il avait paye.
  */
+/** 9999-12-31: au-dela, `new Date(...).toISOString()` leve une RangeError. */
+const MAX_DATE_SECONDS = 253402300800;
+
 export async function handleInvoicePaid(
   { supabase }: StripeWebhookDeps,
   invoice: Stripe.Invoice,
@@ -267,10 +270,13 @@ export async function handleInvoicePaid(
   // plus ancienne: dans le doute, le gel reste.
   // Aucune date lisible: on ne sait pas si le paiement precede le gel, on ne le
   // leve pas.
+  // Bornee a l'intervalle representable par une date (sinon toISOString leve
+  // et la route repondrait 500 a chaque rejeu).
   const payeeLeSecondes = invoice.status_transitions?.paid_at ?? invoice.created;
-  const payeeLe = Number.isFinite(payeeLeSecondes)
-    ? new Date(payeeLeSecondes * 1000).toISOString()
-    : null;
+  const payeeLe =
+    Number.isFinite(payeeLeSecondes) && payeeLeSecondes > 0 && payeeLeSecondes < MAX_DATE_SECONDS
+      ? new Date(payeeLeSecondes * 1000).toISOString()
+      : null;
   //
   // RESIDU ASSUME, ecrit pour ne pas etre decouvert plus tard: une facture
   // reglee depuis le SOLDE du client porte un `amount_paid` positif. Ce cas
