@@ -68,17 +68,18 @@ qu'une colonne n'est pas classee : y mettre a jour la liste attendue.
 
 1. Ecrire le SQL de migration
 2. Tester en local avec `supabase start`
-3. Appliquer avec `supabase db push` ou `supabase migration up`
+3. Appliquer en local (`pnpm db:migrate`). En PRODUCTION: jamais `supabase db push` (historique
+   desynchronise); migration appliquee avec psql apres sauvegarde, puis verifiee par EXISTENCE en base
 4. Ne JAMAIS modifier une migration deja appliquee
 5. Pour corriger, creer une nouvelle migration
 
 ### Commandes
 
 ```bash
-pnpm db:migrate   # Appliquer les migrations via Supabase CLI
+pnpm db:migrate   # Appliquer les migrations sur la base locale (127.0.0.1) uniquement
 pnpm db:types     # Regenerer src/types/database.generated.ts (projet Supabase lie)
 supabase start    # Demarrer Supabase en local
-supabase db push  # Pousser les migrations vers le projet distant
+# Pas de `supabase db push` vers le projet distant: refuse par scripts/db-migrate.sh
 ```
 
 ## RLS (Row Level Security)
