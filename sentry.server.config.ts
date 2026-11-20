@@ -4,11 +4,14 @@
 
 import * as Sentry from '@sentry/nextjs';
 
-const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+const dsn = (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)?.trim();
 
 Sentry.init({
   dsn,
   enabled: !!dsn,
+  // production / preview on Vercel, local otherwise: errors from a laptop no
+  // longer land in the production view.
+  environment: process.env.VERCEL_ENV || 'local',
 
   // Performance Monitoring
   // Capture 10% of transactions in production
