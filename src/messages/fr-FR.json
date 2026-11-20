@@ -290,7 +290,7 @@
       "metaDescription": "Des prix clairs pour chaque établissement. Starter, Pro, Business ou Enterprise. Essai gratuit 14 jours sur le plan Pro.",
       "hero": {
         "title": "Un prix clair. Pas de surprise.",
-        "subtitle": "14 jours d'essai gratuit sur tous les plans. Vous testez tout avant de payer.",
+        "subtitle": "14 jours d'essai gratuit, quel que soit le plan choisi. Pendant l'essai, vous avez tout le plan Pro : caisse, écran cuisine, stock, tables, rapports.",
         "eyebrow": "Tarifs"
       },
       "billing": {
@@ -479,11 +479,11 @@
         "items": {
           "q1": {
             "question": "Comment fonctionne l'essai gratuit ?",
-            "answer": "14 jours d'accès complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables."
+            "answer": "14 jours avec tout le plan Pro, sans carte bancaire : caisse, écran cuisine, stock, tables, rapports. La livraison, le service en chambre et les analyses IA restent réservés au plan Business."
           },
           "q2": {
             "question": "Que se passe-t-il après les 14 jours ?",
-            "answer": "Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le contrôle."
+            "answer": "Les nouvelles commandes s'arrêtent. Votre espace de gestion se ferme et vous mène au choix d'un plan. Vos clients voient encore votre carte pendant 7 jours, sans pouvoir commander. Vos données restent intactes : choisissez un plan et tout repart."
           },
           "q3": {
             "question": "Puis-je changer de plan ?",
@@ -495,7 +495,7 @@
           },
           "q5": {
             "question": "Comment je paie ?",
-            "answer": "Par carte bancaire (Visa, Mastercard) via Stripe. Paiement sécurisé."
+            "answer": "Par mobile money (Orange Money, MTN MoMo, Moov) ou par carte bancaire (Visa, Mastercard). Vous validez sur votre téléphone. Paiement sécurisé."
           },
           "q6": {
             "question": "Je dois acheter du matériel ?",
@@ -534,7 +534,7 @@
       "billedTotal": "{total} FCFA au total",
       "perDay": "soit ~{amount} FCFA par jour",
       "essai": {
-        "title": "Pendant les 14 jours, vous testez tout.",
+        "title": "Pendant 14 jours, vous testez le plan Pro en entier.",
         "body": "L'essai donne un accès complet à l'offre Pro, sans carte bancaire. Vous jugez sur votre propre service.",
         "f1": "Écran cuisine",
         "f2": "Caisse",
@@ -1481,7 +1481,7 @@
           },
           "q6": {
             "q": "Y a-t-il un engagement ?",
-            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois. Sans contrat sur le matériel."
+            "a": "Non. Vous testez 14 jours gratuitement, puis vous payez au mois ou à l'année. Sans contrat sur le matériel."
           }
         }
       },

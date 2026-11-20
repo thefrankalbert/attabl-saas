@@ -290,7 +290,7 @@
       "metaDescription": "Clear pricing for every hospitality business. Starter, Pro, Business or Enterprise. 14-day free trial on the Pro plan.",
       "hero": {
         "title": "Clear pricing. No surprises.",
-        "subtitle": "14-day free trial on every plan. Try everything before you pay.",
+        "subtitle": "14-day free trial, whatever plan you pick. During the trial you get the whole Pro plan: register, kitchen screen, stock, tables, reports.",
         "eyebrow": "Pricing"
       },
       "billing": {
@@ -479,11 +479,11 @@
         "items": {
           "q1": {
             "question": "How does the free trial work?",
-            "answer": "14 days of full access to the PRO plan. No credit card required. You test everything: KDS, POS, stock, tables."
+            "answer": "14 days with the whole Pro plan, no credit card: register, kitchen screen, stock, tables, reports. Delivery, room service and AI analytics stay on the Business plan."
           },
           "q2": {
             "question": "What happens after the 14 days?",
-            "answer": "Your menu stays visible to your customers. Your dashboard goes read-only. Pick a plan to regain control."
+            "answer": "New orders stop. Your dashboard closes and takes you to choosing a plan. Your customers still see your menu for 7 days, without ordering. Your data stays intact: pick a plan and everything restarts."
           },
           "q3": {
             "question": "Can I change plans?",
@@ -495,7 +495,7 @@
           },
           "q5": {
             "question": "How do I pay?",
-            "answer": "By card (Visa, Mastercard) via Stripe. Secure payment."
+            "answer": "By mobile money (Orange Money, MTN MoMo, Moov) or by card (Visa, Mastercard). You confirm on your phone. Secure payment."
           },
           "q6": {
             "question": "Do I need to buy hardware?",
@@ -534,7 +534,7 @@
       "billedTotal": "{total} FCFA total",
       "perDay": "about ~{amount} FCFA per day",
       "essai": {
-        "title": "For 14 days, you test everything.",
+        "title": "For 14 days, you test the whole Pro plan.",
         "body": "The trial gives full access to the Pro plan, no credit card. You judge on your own service.",
         "f1": "Kitchen display",
         "f2": "Register",
@@ -1481,7 +1481,7 @@
           },
           "q6": {
             "q": "Is there any commitment?",
-            "a": "No. You try 14 days free, then pay monthly. No contract on hardware."
+            "a": "No. You try 14 days free, then pay monthly or yearly. No contract on hardware."
           }
         }
       },
