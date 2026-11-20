@@ -5,9 +5,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const verifyOtp = vi.fn();
 const exchangeCodeForSession = vi.fn();
 
+// hash-email.ts est marque server-only: sans ce mock, son import fait echouer la suite.
+vi.mock('server-only', () => ({}));
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
-  hashEmail: () => 'h',
 }));
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ auth: { verifyOtp, exchangeCodeForSession } }),

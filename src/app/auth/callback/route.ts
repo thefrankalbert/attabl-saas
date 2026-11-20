@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
-import { logger, hashEmail } from '@/lib/logger';
+import { logger } from '@/lib/logger';
+import { hashEmail } from '@/lib/hash-email';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError } from '@/services/errors';
 import { parseAbTrialFromCookieHeader } from '@/lib/ab-testing';
