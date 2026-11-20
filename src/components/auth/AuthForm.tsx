@@ -166,7 +166,7 @@ function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <div
             className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
             aria-hidden="true"
