@@ -75,4 +75,3 @@ jobs:
             exit 0
           fi
           supabase db push --db-url "$STAGING_DB_URL"
-
