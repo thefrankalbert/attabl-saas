@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Search, Volume2, VolumeX, NotebookTabs } from 'lucide-react';
 import { useSound } from '@/contexts/SoundContext';
@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canOpenAdminSubPath } from '@/lib/auth/admin-route-permissions';
 import SoundPicker from './SoundPicker';
+
+const STATUS_FILTERS = ['all', 'active', 'pending', 'preparing', 'ready', 'delivered'] as const;
 
 interface OrdersToolbarProps {
   search: string;
@@ -101,6 +103,12 @@ export default function OrdersToolbar({
             <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
             <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
           </TabsList>
+          {/* La liste filtree est rendue plus bas. Chaque onglet Radix pointe
+              (aria-controls) vers son panneau: sans eux, la reference etait
+              invalide (axe: aria-valid-attr-value). Panneaux vides, masques. */}
+          {STATUS_FILTERS.map((value) => (
+            <TabsContent key={value} value={value} forceMount className="hidden" />
+          ))}
         </Tabs>
 
         {showHouseAccounts && (

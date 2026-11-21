@@ -29,8 +29,10 @@ export default function RecipesToolbar({
 
   return (
     /* Toolbar on its own row (never crushes the title, like StockHistory) */
-    <div className="flex flex-col gap-3 md:flex-row md:items-center">
-      <div className="relative w-full md:w-64">
+    // md:flex-wrap: tout sur une ligne, la recherche tombait a 50 px et
+    // "Importer fiches techniques" etait coupe (768 et 1024 px).
+    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+      <div className="relative w-full md:w-64 md:shrink-0">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
         <Input
           data-search-input

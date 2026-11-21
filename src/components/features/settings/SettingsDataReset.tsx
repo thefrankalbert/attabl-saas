@@ -222,7 +222,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                 variant="destructive"
                 onClick={handleReset}
                 disabled={!isConfirmed || loading}
-                className="min-h-[44px] bg-status-error hover:bg-status-error/90 text-white"
+                className="min-h-[44px] bg-status-error-solid hover:bg-status-error-solid/90 text-white"
               >
                 {loading ? (
                   <>

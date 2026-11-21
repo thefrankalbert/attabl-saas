@@ -24,7 +24,8 @@ interface MenuItemCardProps {
 // ClientBadge kinds mapped to maquette Badge colors (app-ui Badge, contrat 6.1)
 const BADGE_CLS: Record<'popular' | 'new' | 'veg' | 'spicy', string> = {
   popular: 'bg-[var(--color-warning-bg)] text-[var(--color-warning-fg)]',
-  new: 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]',
+  // accent-700: le bleu de marque donnait 4.0:1 sur son fond pale (WCAG AA: 4.5).
+  new: 'bg-[var(--color-accent-muted)] text-[var(--accent-700)]',
   veg: 'bg-[var(--color-brand-light)] text-[var(--color-brand-dark)]',
   spicy: 'bg-[#fff0ee] text-[var(--color-promo)]',
 };

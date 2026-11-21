@@ -145,7 +145,7 @@ export function MenuItemCard({
             </span>
           </span>
           {item.oldPrice && (
-            <span className="text-[12.5px] tabular-nums text-[var(--color-ink-soft)] line-through">
+            <span className="text-[12.5px] tabular-nums text-[var(--color-ink-muted)] line-through">
               {formatAmount(item.oldPrice, currencyCode)}
             </span>
           )}

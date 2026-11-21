@@ -151,7 +151,9 @@ export function ShellAccountMenu({
           <Button
             type="button"
             variant="ghost"
-            title={collapsed ? userName || t('accountMenu') : undefined}
+            // Toujours: un nom long est coupe en ellipsis dans la barre laterale,
+            // l'infobulle le donne en entier.
+            title={userName || t('accountMenu')}
             className={cn(
               'flex h-12 w-full items-center gap-2 rounded-[0.625rem] text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]',
               collapsed ? 'justify-center px-0' : 'justify-start px-2',
@@ -162,7 +164,12 @@ export function ShellAccountMenu({
             </span>
             {!collapsed && (
               <>
-                <span className="flex min-w-0 flex-1 flex-col text-left leading-tight">
+                {/* Troncature voulue (infobulle sur le bouton): reconnue par le
+                    garde-fou tests/journeys/09 via data-troncature-voulue. */}
+                <span
+                  className="flex min-w-0 flex-1 flex-col text-left leading-tight"
+                  data-troncature-voulue=""
+                >
                   <span className="truncate text-[13px] font-semibold">
                     {userName || t('accountMenu')}
                   </span>

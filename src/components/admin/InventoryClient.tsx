@@ -183,7 +183,10 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
 
                 {/* Reports link */}
                 <Button asChild variant="outline" className="gap-2 h-9 shrink-0">
-                  <Link href={`/sites/${tenantSlug}/admin/inventory/reports`}>
+                  <Link
+                    href={`/sites/${tenantSlug}/admin/inventory/reports`}
+                    aria-label={tr('stockReportLink')}
+                  >
                     <FileText className="w-4 h-4" />
                     <span className="hidden sm:inline">{tr('stockReportLink')}</span>
                   </Link>
@@ -231,6 +234,7 @@ export default function InventoryClient({ tenantId, currency, tenantSlug }: Inve
                 data={filtered}
                 emptyMessage={t('noProductFound')}
                 storageKey="inventory"
+                cardsBelowXl
                 mobileConfig={{
                   renderCard: (ing) => (
                     <InventoryMobileCard

@@ -141,14 +141,20 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
         >
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-status-error px-1 text-[10px] font-bold tabular-nums text-white">
+            <span className="absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-status-error-solid px-1 text-[10px] font-bold tabular-nums text-white">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80 p-0 bg-app-card border border-app-border">
+      {/* Telephone: toute la largeur moins 8 px de chaque cote (le panneau de 320 px
+          finissait colle au bord gauche, 55 px vides a droite, a 375 px). */}
+      <DropdownMenuContent
+        align="end"
+        collisionPadding={8}
+        className="w-[calc(100vw-1rem)] sm:w-80 p-0 bg-app-card border border-app-border"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
           <h3 className="text-sm font-semibold text-app-text">{t('title')}</h3>

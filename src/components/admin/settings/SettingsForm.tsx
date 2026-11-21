@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Save, Store, LayoutGrid, Users } from 'lucide-react';
@@ -68,6 +68,17 @@ export function SettingsForm({
     ? parseSettingsTab(searchParams.get('tab') ?? undefined)
     : initialTab;
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Telephone: la bande d'onglets defile de cote. Ouverte sur ?tab=contact (ou
+  // sons, securite...), elle laissait l'onglet actif hors cadre: on le centre.
+  const tabsListRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = tabsListRef.current;
+    const active = list?.querySelector<HTMLElement>('[data-state="active"]');
+    if (!list || !active) return;
+    // offsetLeft se mesure depuis l'ancetre positionne, pas depuis la liste.
+    list.scrollLeft =
+      active.offsetLeft - list.offsetLeft - (list.clientWidth - active.offsetWidth) / 2;
+  }, [activeTab]);
   // La page s'ouvre sur `settings.view` (admin-route-permissions.ts). Sans
   // `settings.edit`, elle reste lisible mais figee: les champs sont desactives
   // et ni l'enregistrement ni l'editeur de permissions ne s'affichent, au lieu
@@ -158,7 +169,10 @@ export function SettingsForm({
         >
           {/* Phone: the tabs scroll sideways; the right edge fades out so the hidden
               ones (Sons, Securite, Contact) read as "more to swipe". */}
-          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0 [mask-image:linear-gradient(to_right,black_80%,transparent)] md:[mask-image:none]">
+          <TabsList
+            ref={tabsListRef}
+            className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0 [mask-image:linear-gradient(to_right,black_80%,transparent)] md:[mask-image:none]"
+          >
             {TAB_CONFIG.map(({ key, labelKey }) => (
               <TabsTrigger
                 key={key}

@@ -118,11 +118,6 @@ export default function KitchenClient({
     return filtered;
   }, [kitchen.allOrders, footerFilter, searchQuery]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pagination placeholder; signature preserved for when board pagination lands
-  const handlePageChange = useCallback((_direction: 'prev' | 'next') => {
-    // Pagination placeholder - no-op until board pagination is implemented
-  }, []);
-
   // -- Wake lock: prevent tablet screen from sleeping during KDS use --
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
@@ -269,9 +264,6 @@ export default function KitchenClient({
         orders={kitchen.allOrders}
         activeFilter={footerFilter}
         onFilterChange={setFooterFilter}
-        currentPage={1}
-        totalPages={1}
-        onPageChange={handlePageChange}
         tenantName={tenantName}
       />
     </div>

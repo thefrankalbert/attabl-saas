@@ -53,7 +53,7 @@ export default function RecipeEditorPanel({
       {selectedItemId && selectedItem ? (
         <div className="flex flex-col h-full lg:min-h-0">
           <div className="px-4 py-3 border-b border-app-border bg-app-bg">
-            <h3 className="truncate font-bold text-sm text-app-text">
+            <h3 className="font-bold text-sm text-app-text break-words">
               <span className="sr-only">{t('recipeFor')} </span>
               {selectedItem.name}
             </h3>

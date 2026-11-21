@@ -119,7 +119,10 @@ export function DetailsSection({
         <div className="space-y-4">
           {/* Language */}
           <div>
-            <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+            <Label
+              htmlFor="details-language"
+              className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+            >
               {t('languageLabel')}
             </Label>
             <Select
@@ -130,7 +133,10 @@ export function DetailsSection({
                 router.refresh();
               }}
             >
-              <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
+              <SelectTrigger
+                id="details-language"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -148,11 +154,17 @@ export function DetailsSection({
 
           {/* Currency */}
           <div>
-            <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+            <Label
+              htmlFor="details-currency"
+              className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+            >
               {t('currencyLabel')}
             </Label>
             <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
-              <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
+              <SelectTrigger
+                id="details-currency"
+                className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

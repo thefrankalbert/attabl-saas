@@ -100,14 +100,20 @@ export function CompleteZones({ zones, updateZone, addZone, removeZone }: Comple
                   />
                 </div>
                 <div>
-                  <Label className="mb-2 block text-xs font-medium text-app-text-secondary">
+                  <Label
+                    htmlFor={`zone-capacity-${index}`}
+                    className="mb-2 block text-xs font-medium text-app-text-secondary"
+                  >
                     {t('zoneCapacity')}
                   </Label>
                   <Select
                     value={String(zone.defaultCapacity ?? 2)}
                     onValueChange={(val) => updateZone(index, 'defaultCapacity', val)}
                   >
-                    <SelectTrigger className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15">
+                    <SelectTrigger
+                      id={`zone-capacity-${index}`}
+                      className="h-10 rounded-lg border-app-border bg-app-elevated px-3.5 text-sm shadow-sm focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

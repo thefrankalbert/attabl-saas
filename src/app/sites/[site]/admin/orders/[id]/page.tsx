@@ -75,7 +75,11 @@ export default async function SingleOrderPage({ params }: PageProps) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+    // Sous lg les panneaux s'empilent et la page grandit: c'est main#main-content
+    // qui defile (pas de min-h-0 ni d'overflow ici, sinon le bas de la fiche,
+    // "Enregistrer le paiement" et "Offrir", restait coupe: 469 px caches a 768).
+    // A partir de lg, hauteur bornee et chaque colonne defile elle-meme.
+    <div className="flex-1 flex flex-col lg:min-h-0 lg:overflow-hidden">
       <SingleOrderClient
         order={transformedOrder}
         currency={(order.display_currency as CurrencyCode) || 'XAF'}
