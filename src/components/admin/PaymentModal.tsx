@@ -157,6 +157,13 @@ export default function PaymentModal({
     addCashAmount,
     tipProps,
   } = usePaymentAmounts(finalTotal, displayCurrency, recordedTip);
+  // Sans le droit aux pourboires (plan inferieur), le selecteur est masque,
+  // mais un pourboire DEJA laisse par le client reste du et reclame: on le
+  // dit, sinon le montant parait plus eleve sans explication.
+  const recordedTipNote =
+    recordedTip > 0
+      ? t('tipFromCustomer', { amount: formatCurrency(recordedTip, displayCurrency) })
+      : null;
   // Carte: le terminal du restaurant a deja encaisse, aucune saisie de montant.
   const canValidate = !isCash || cashIsValid;
 
@@ -234,7 +241,12 @@ export default function PaymentModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-modal-title"
-      className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden outline-none animate-in fade-in duration-200"
+      // pointer-events-auto: opened from an order's details, a Radix modal
+      // dialog sets `pointer-events: none` on <body>, and this portal (a child
+      // of <body>, outside the dialog content) inherited it - every button of
+      // the payment screen ignored clicks (measured 2026-11-21 on a local
+      // production build: elementFromPoint fell through to the details list).
+      className="@container pointer-events-auto fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden outline-none animate-in fade-in duration-200"
     >
       <PaymentHeader
         titleId="payment-modal-title"
@@ -260,7 +272,13 @@ export default function PaymentModal({
           />
 
           {/* Tip Selection -- pushed to bottom */}
-          {canTip && <TipSelector withTitle className="mt-auto" {...tipProps} />}
+          {canTip ? (
+            <TipSelector withTitle className="mt-auto" {...tipProps} />
+          ) : (
+            recordedTipNote && (
+              <p className="mt-auto text-xs text-app-text-secondary">{recordedTipNote}</p>
+            )
+          )}
         </div>
 
         {/* --- RIGHT: Payment Input (full width on mobile) --- */}
@@ -276,7 +294,15 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          {canTip && <TipSelector className="mb-3 @3xl:hidden shrink-0" {...tipProps} />}
+          {canTip ? (
+            <TipSelector className="mb-3 @3xl:hidden shrink-0" {...tipProps} />
+          ) : (
+            recordedTipNote && (
+              <p className="mb-3 @3xl:hidden shrink-0 text-xs text-app-text-secondary">
+                {recordedTipNote}
+              </p>
+            )
+          )}
 
           {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
           <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">

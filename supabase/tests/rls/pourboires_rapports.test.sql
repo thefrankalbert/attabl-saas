@@ -1,10 +1,12 @@
--- Lot pourboires (migration 20261120210000, audit du 2026-11-20).
+-- Lot pourboires (migration 20261120130000, audit du 2026-11-20).
 --
 -- C. get_order_summary.total_tips suit la date d'ENCAISSEMENT (paid_at), comme
 --    les revenus. L'ancienne version (date de creation) rend un autre total
 --    ici: temoin.
 -- D. get_server_performance renvoie une colonne `tips` par serveur, y compris
 --    pour un serveur sans ligne au registre dans la periode.
+-- Droits: anon n'execute aucune des deux fonctions, et un membre d'un autre
+-- restaurant est refuse (assert_tenant_member, 42501).
 --
 -- Le controle du plan sur le pourboire (constat G) est teste avec son
 -- declencheur, dans la PR #444.
@@ -12,7 +14,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(5);
+select plan(9);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -21,11 +23,14 @@ values
   ('d5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'serveur-pro@test.local', 'x', now(), now()),
   ('d6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'serveur2-pro@test.local', 'x', now(), now());
+   'authenticated', 'authenticated', 'serveur2-pro@test.local', 'x', now(), now()),
+  ('d7777777-7777-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'voisin@test.local', 'x', now(), now());
 
 insert into public.tenants (id, slug, name, is_active, subscription_plan, subscription_status, trial_ends_at)
 values
-  ('da000000-0000-4000-8000-00000000000b', 'pb-pro', 'Pro', true, 'pro', 'active', null);
+  ('da000000-0000-4000-8000-00000000000b', 'pb-pro', 'Pro', true, 'pro', 'active', null),
+  ('da000000-0000-4000-8000-00000000000d', 'pb-voisin', 'Voisin', true, 'pro', 'active', null);
 
 insert into public.admin_users (id, tenant_id, user_id, email, role, is_active, custom_permissions)
 values
@@ -34,7 +39,9 @@ values
   ('db000000-0000-4000-8000-000000000005', 'da000000-0000-4000-8000-00000000000b',
    'd5555555-5555-5555-5555-555555555555', 'serveur-pro@test.local', 'waiter', true, null),
   ('db000000-0000-4000-8000-000000000006', 'da000000-0000-4000-8000-00000000000b',
-   'd6666666-6666-6666-6666-666666666666', 'serveur2-pro@test.local', 'waiter', true, null);
+   'd6666666-6666-6666-6666-666666666666', 'serveur2-pro@test.local', 'waiter', true, null),
+  ('db000000-0000-4000-8000-000000000007', 'da000000-0000-4000-8000-00000000000d',
+   'd7777777-7777-7777-7777-777777777777', 'voisin@test.local', 'owner', true, null);
 
 insert into public.orders (id, tenant_id, order_number, subtotal, total, status, payment_status,
                            tip_amount, paid_at, created_at, server_id)
@@ -99,6 +106,25 @@ select is(
      now() - interval '1 day', now() + interval '1 minute')
    where server_id = 'db000000-0000-4000-8000-000000000006'),
   300::numeric, 'serveur sans ligne au registre dans la periode: pourboire conserve');
+
+-- Un membre d'un AUTRE restaurant: refuse sur les deux fonctions.
+set local request.jwt.claims = '{"sub":"d7777777-7777-7777-7777-777777777777"}';
+select throws_ok(
+  $$select * from public.get_order_summary('da000000-0000-4000-8000-00000000000b',
+      now() - interval '1 day', now() + interval '1 minute')$$,
+  '42501', null, 'autre restaurant: resume refuse');
+select throws_ok(
+  $$select * from public.get_server_performance('da000000-0000-4000-8000-00000000000b',
+      now() - interval '1 day', now() + interval '1 minute')$$,
+  '42501', null, 'autre restaurant: performance des serveurs refusee');
+
+reset role;
+select is(has_function_privilege('anon',
+  'public.get_order_summary(uuid, timestamptz, timestamptz)', 'EXECUTE'),
+  false, 'anon n execute pas le resume');
+select is(has_function_privilege('anon',
+  'public.get_server_performance(uuid, timestamptz, timestamptz)', 'EXECUTE'),
+  false, 'anon n execute pas la performance des serveurs');
 
 select * from finish();
 rollback;

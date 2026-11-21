@@ -16,10 +16,15 @@
 --    et service_role). Une colonne en plus ne casse pas l'ancien code, qui lit
 --    les colonnes par leur nom.
 --
--- G (controle du plan sur `tip_amount`) n'est PAS ici: il est porte par un
--- seul verrou, le declencheur `enforce_order_plan_features` de la PR #444
--- (migration 20261120140000), fonde sur `tenant_effective_plan`. Decision de
--- coordination du 2026-11-20, pour eviter deux verrous divergents.
+-- G (controle du plan sur `tip_amount`) n'est PAS ici: un seul verrou de plan,
+-- le declencheur `enforce_order_plan_features` de la PR #444 (commit c3e58866),
+-- fonde sur `tenant_effective_plan`. Il ne protege qu'une fois #444 fusionnee.
+--
+-- ORDRE AVEC #444. Une migration de #444 enveloppe `get_order_summary` et
+-- `get_server_performance` dans un controle de plan (corps renomme en
+-- `<nom>_brut`). Celle-ci doit donc passer AVANT elle: son numero est
+-- inferieur. Si elle etait rejouee APRES, elle remplacerait l'enveloppe; il
+-- suffirait alors de rejouer la migration d'enveloppe de #444.
 --
 -- Rejouable: CREATE OR REPLACE et DROP ... IF EXISTS partout.
 --
@@ -73,6 +78,10 @@ BEGIN
     AND o.status != 'cancelled' AND o.payment_status IN ('paid', 'partial');
 END;
 $function$;
+
+-- Droits de la production (supabase/schema.sql: authenticated et service_role)
+-- rendus explicites: une base locale Supabase accorde EXECUTE a anon par defaut.
+REVOKE ALL ON FUNCTION public.get_order_summary(uuid, timestamp with time zone, timestamp with time zone) FROM PUBLIC, anon;
 
 -- ----------------------------------------------------------------------------
 -- D. Performance des serveurs: colonne `tips`.

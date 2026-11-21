@@ -3150,7 +3150,7 @@
     "serverName": "Serveur",
     "ordersCount": "Commandes",
     "tipsLabel": "Pourboires",
-    "tipsIncluded": "Dont pourboires : {amount}",
+    "tipsLine": "Pourboires des commandes soldées sur la période : {amount}",
     "avgOrderValue": "Panier moyen",
     "noServerData": "Aucune donnée serveur pour cette période",
     "noDataTitle": "Aucun rapport disponible",

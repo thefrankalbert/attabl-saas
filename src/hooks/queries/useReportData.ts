@@ -127,8 +127,8 @@ export function parseOrderSummary(data: unknown): ReportSummaryShape {
     revenue: Number(row?.total_revenue) || 0,
     orders: Number(row?.total_orders) || 0,
     avgBasket: Math.round(Number(row?.avg_basket) || 0),
-    // Pourboires encaisses sur la periode (date d'encaissement, comme les
-    // revenus). Deja compris dans `revenue`: le registre inscrit total + pourboire.
+    // Pourboires des commandes soldees sur la periode (orders.paid_at). Ce n'est
+    // pas une part de `revenue`, qui suit la date de chaque ligne du registre.
     tips: Number(row?.total_tips) || 0,
   };
 }

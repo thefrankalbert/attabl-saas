@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import POSUnpaidPanel from '../POSUnpaidPanel';
 import { POSTablePickerDialog } from '../POSTablePickerDialog';
-import type { Zone, Table } from '@/types/admin.types';
+import type { Order, Zone, Table } from '@/types/admin.types';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('@/components/admin/skeletons/ListRowsSkeleton', () => ({
@@ -29,6 +29,35 @@ describe('POSUnpaidPanel a11y', () => {
     expect(screen.getByRole('dialog', { name: 'toSettle' })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Audit pourboires du 2026-11-20: la liste affichait le total seul (5 000)
+// alors que l'ecran d'encaissement reclame total + pourboire du client (5 500).
+describe('POSUnpaidPanel montant', () => {
+  afterEach(cleanup);
+
+  it('affiche ce que l encaissement reclamera: total + pourboire du client', () => {
+    const order = {
+      id: 'o1',
+      order_number: 'CMD-1',
+      table_number: null,
+      total_price: 5000,
+      tip_amount: 500,
+      items: [],
+    } as unknown as Order;
+    render(
+      <POSUnpaidPanel
+        open
+        onClose={() => {}}
+        orders={[order]}
+        loading={false}
+        currency="XOF"
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByRole('dialog')).toHaveTextContent(/5\D?500/);
+    expect(screen.getByRole('dialog')).not.toHaveTextContent(/5\D?000/);
   });
 });
 

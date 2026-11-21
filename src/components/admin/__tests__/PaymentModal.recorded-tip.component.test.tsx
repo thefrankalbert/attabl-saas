@@ -21,8 +21,9 @@ const submitOrder = vi.fn();
 vi.mock('@/lib/offline/submit-order', () => ({
   submitOrder: (args: unknown) => submitOrder(args),
 }));
+const plan = { tips: true };
 vi.mock('@/contexts/SubscriptionContext', () => ({
-  useSubscription: () => ({ canAccess: () => true }),
+  useSubscription: () => ({ canAccess: () => plan.tips }),
 }));
 vi.mock('@/components/admin/orders/CompOrderDialog', () => ({ default: () => null }));
 vi.mock('@/components/ui/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
@@ -49,6 +50,7 @@ const sentTip = () =>
 
 describe('PaymentModal - pourboire deja laisse par le client', () => {
   beforeEach(() => {
+    plan.tips = true;
     submitOrder.mockReset();
     submitOrder.mockResolvedValue({ status: 'sent', data: { paid: true } });
   });
@@ -72,5 +74,15 @@ describe('PaymentModal - pourboire deja laisse par le client', () => {
     fireEvent.click(screen.getByRole('button', { name: /Valider/ }));
     await waitFor(() => expect(submitOrder).toHaveBeenCalledTimes(1));
     expect(sentTip()).toBe(1000);
+  });
+
+  // Contre-audit du 2026-11-21: un restaurant passe a un plan sans pourboires
+  // ne voyait plus le selecteur, ni la mention du pourboire du client. Le
+  // montant reclame (5 500) paraissait donc plus eleve sans explication.
+  it('sans le droit aux pourboires: la mention du pourboire du client reste', () => {
+    plan.tips = false;
+    renderModal();
+    expect(screen.getAllByText(/Pourboire laiss/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /^1\D?000$/ })).toBeNull();
   });
 });

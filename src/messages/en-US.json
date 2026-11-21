@@ -3150,7 +3150,7 @@
     "serverName": "Server",
     "ordersCount": "Orders",
     "tipsLabel": "Tips",
-    "tipsIncluded": "Including tips: {amount}",
+    "tipsLine": "Tips on orders fully paid in this period: {amount}",
     "avgOrderValue": "Avg. Order",
     "noServerData": "No server data for this period",
     "noDataTitle": "No reports available",

@@ -36,7 +36,10 @@ export interface ReportSummary {
   revenue: number;
   orders: number;
   avgBasket: number;
-  /** Tips collected over the period (minor units), already inside `revenue`. */
+  /**
+   * Tips of the orders fully paid in the period (minor units, `orders.paid_at`).
+   * Not a share of `revenue`, which follows each ledger row's own date.
+   */
   tips: number;
 }
 

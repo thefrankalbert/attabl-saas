@@ -53,8 +53,10 @@ export function ReportsSummaryHeader({
       label: t('revenueLabel'),
       value: fmt(summary.revenue) as string | number,
       trend: revenueTrend,
-      // Pourboires: une ligne a part sous le chiffre d'affaires, qui les comprend.
-      note: t('tipsIncluded', { amount: fmt(summary.tips) }),
+      // Pourboires: une ligne a part. Ce n'est PAS une part du chiffre au-dessus:
+      // le chiffre d'affaires suit la date de chaque versement au registre, les
+      // pourboires la date ou la commande est soldee (paid_at). Le libelle le dit.
+      note: t('tipsLine', { amount: fmt(summary.tips) }),
     },
     {
       key: 'orders',
