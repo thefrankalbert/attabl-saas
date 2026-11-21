@@ -15,7 +15,6 @@
 10094	IGNORE	(Base64) charges RSC de Next.js et nonces CSP, aucune donnee sensible
 10098	IGNORE	(cross-domain) Access-Control-Allow-Origin * pose par Vercel sur les fichiers statiques publics (CSS, robots.txt), sans cookie ni donnee privee
 10109	IGNORE	(application web moderne) information, pas une faille
-10110	IGNORE	(fonction JS dangereuse) eval dans un polyfill du module Node vm embarque par une dependance; la CSP de production n'autorise pas unsafe-eval, il ne peut pas s'executer
 10111	IGNORE	(requete d'authentification identifiee) information, pas une faille
 10202	IGNORE	(jeton anti-CSRF absent) formulaire de contact: Server Action Next.js, protegee par la verification d'origine integree et des cookies SameSite=Lax
 90004	IGNORE	(COEP absent) require-corp casserait Stripe, Turnstile et les images Supabase; COOP same-origin et CORP same-origin sont deja servis
