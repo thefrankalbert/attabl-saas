@@ -275,6 +275,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Appartenance D'ABORD: un non-membre ne doit rien apprendre du plan d'un
+  -- autre restaurant (service_role et super admin passent, comme partout).
+  PERFORM public.assert_tenant_member(p_tenant_id);
   IF public.tenant_effective_plan(p_tenant_id) NOT IN ('pro', 'business', 'enterprise') THEN
     RAISE EXCEPTION 'Reports require the Pro plan or higher'
       USING ERRCODE = '42501';

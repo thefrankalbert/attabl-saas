@@ -10,7 +10,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(21);
+select plan(22);
 
 -- Fixtures, ecrites sans triggers (etat de depart, pas un comportement teste).
 set local session_replication_role = replica;
@@ -146,6 +146,10 @@ $$, 'Pro: le client modifie son ingredient');
 select lives_ok($$
   select * from get_top_items('c3000000-0000-4000-8000-000000000002', now() - interval '30 days', now())
 $$, 'Pro: get_top_items ouvert');
+-- Un non-membre recoit le refus d'appartenance, pas une information de plan.
+select throws_like($$
+  select * from get_daily_revenue('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
+$$, 'access denied: caller is not a member%', 'non-membre: refus d appartenance avant tout controle de plan');
 select ok(not has_function_privilege('authenticated',
   'public.get_daily_revenue_brut(uuid, timestamp with time zone, timestamp with time zone)', 'EXECUTE'),
   'le corps brut des rapports n est pas appelable par un client');
