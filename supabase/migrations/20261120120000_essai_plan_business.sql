@@ -14,6 +14,8 @@
 -- Cette migration ecrit la regle UNE fois, dans tenant_effective_plan(), qui
 -- reproduit getEffectivePlan (src/lib/plans/features.ts) a l'identique:
 --   1. essai actif (status 'trial' et trial_ends_at dans le futur) -> 'business';
+--      essai expire (status encore 'trial', avant le gel de la nuit) -> 'starter',
+--      quel que soit le plan choisi a l'inscription;
 --   2. statut hors ('trial', 'active', 'past_due') -> 'starter'
 --      (isSubscriptionUsable: un abonnement inutilisable ne donne rien);
 --   3. sinon le plan enregistre s'il est connu, 'starter' sinon.
@@ -39,6 +41,7 @@ AS $$
     WHEN t.subscription_status = 'trial'
          AND t.trial_ends_at IS NOT NULL
          AND t.trial_ends_at > now() THEN 'business'
+    WHEN t.subscription_status = 'trial' THEN 'starter'
     WHEN t.subscription_status IS NULL
          OR t.subscription_status NOT IN ('trial', 'active', 'past_due') THEN 'starter'
     WHEN t.subscription_plan IN ('starter', 'pro', 'business', 'enterprise')

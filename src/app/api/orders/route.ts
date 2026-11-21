@@ -307,7 +307,7 @@ export async function POST(request: Request) {
     // Concurrent replay deduped at the DB unique index: the winning request
     // already created this order and ran every side effect. Undo the coupon
     // claim we made above (the deduped result is a success, so the catch that
-    // unclaims never fired) and skip notifications/destock/quota.
+    // unclaims never fired) and skip notifications/destock.
     if (result.deduplicated) {
       if (couponResult?.couponId) {
         try {

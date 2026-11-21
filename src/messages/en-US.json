@@ -2792,7 +2792,6 @@
     "secGestion": "Management",
     "accountMenu": "Account",
     "planLabel": "{plan} plan",
-    "planFree": "Free",
     "planCardTitle": "Current plan",
     "planCardCta": "Upgrade to {plan}",
     "planCardUpsellPro": "Unlock the full POS, kitchen display and inventory.",

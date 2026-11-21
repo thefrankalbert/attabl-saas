@@ -41,6 +41,14 @@ describe('statuts non entitlants', () => {
     expect(canAccessFeature('canAccessDelivery', 'starter', 'trial', TRIAL_PAST)).toBe(false);
   });
 
+  // Contre-audit: le plan choisi a l'inscription (business ici) restait acquis
+  // apres l'essai, tant que le gel de la nuit n'etait pas passe.
+  it('un essai expire avec un plan business enregistre retombe sur starter', () => {
+    expect(getEffectivePlan('business', 'trial', TRIAL_PAST)).toBe('starter');
+    expect(canAccessFeature('canAccessInventory', 'business', 'trial', TRIAL_PAST)).toBe(false);
+    expect(getEffectivePlan('business', 'trial', null)).toBe('starter');
+  });
+
   it('un impaye garde son plan: la relance Stripe est encore en cours', () => {
     expect(getEffectivePlan('pro', 'past_due', null)).toBe('pro');
     expect(canAccessFeature('canAccessInventory', 'pro', 'past_due', null)).toBe(true);

@@ -163,6 +163,12 @@ export function getEffectivePlan(
     return 'business';
   }
 
+  // Essai expire (statut encore 'trial' en attendant le gel de la nuit): il ne
+  // garde pas le plan choisi a l'inscription. Sans abonnement, rien de payant.
+  if (status === 'trial') {
+    return 'starter';
+  }
+
   // F3 + audit: l'entitlement DERIVE du statut, il ne le duplique pas.
   //
   // Cette fonction ne regardait pas le statut du tout. Un tenant 'cancelled',

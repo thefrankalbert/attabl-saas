@@ -383,15 +383,18 @@ describe('POST /api/orders/pos - auto-destock wiring', () => {
         subscription_plan: 'starter',
         subscription_status: 'active',
       };
-      mockAdminUserRow.data.role = 'waiter';
-      placeOn('tb-5');
-      const { POST } = await import('@/app/api/orders/pos/route');
+      try {
+        mockAdminUserRow.data.role = 'waiter';
+        placeOn('tb-5');
+        const { POST } = await import('@/app/api/orders/pos/route');
 
-      const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
+        const { status } = await parseResponse(await POST(createMockRequest(validPosBody())));
 
-      mockTenantRow.data = ligne;
-      expect(status).toBe(200);
-      expect(mockAssignIfFree).not.toHaveBeenCalled();
+        expect(status).toBe(200);
+        expect(mockAssignIfFree).not.toHaveBeenCalled();
+      } finally {
+        mockTenantRow.data = ligne;
+      }
     });
 
     it('a cashier ticket does not touch assignments', async () => {

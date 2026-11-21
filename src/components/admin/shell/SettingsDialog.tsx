@@ -57,7 +57,8 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations('admin');
   const clientUrl = getTenantUrl(tenant.slug);
-  const planLabel = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
+  // Aucun plan gratuit: sans plan enregistre, c'est Starter (repli de getEffectivePlan).
+  const planLabel = (tenant.subscription_plan || 'starter').toUpperCase();
 
   // Chaque onglet ne fait que renvoyer vers une page: on ne montre que ceux dont
   // la page s'ouvre pour ce membre (meme regle que le middleware), au lieu

@@ -49,6 +49,9 @@ insert into zones (id, venue_id, tenant_id, name, prefix) values
 insert into tables (id, zone_id, tenant_id, table_number, display_name) values
   ('b2000000-0000-4000-8000-000000000041', 'b2000000-0000-4000-8000-000000000031', 'b2000000-0000-4000-8000-000000000001', 'S1', 'Table 1'),
   ('b2000000-0000-4000-8000-000000000042', 'b2000000-0000-4000-8000-000000000032', 'b2000000-0000-4000-8000-000000000002', 'S1', 'Table 1');
+-- Leurs tables de depart existent: ils sont initialises (migration 20261120140000).
+insert into tenant_tables_initialisees (tenant_id) values
+  ('b2000000-0000-4000-8000-000000000001'), ('b2000000-0000-4000-8000-000000000002');
 set local session_replication_role = origin;
 
 select is((select count(*)::int from tables where tenant_id = 'b2000000-0000-4000-8000-000000000003'), 1,

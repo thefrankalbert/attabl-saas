@@ -461,7 +461,7 @@ export async function POST(request: Request) {
     // Concurrent replay deduped at the DB unique index: the winning request
     // already created this order and destocked. Undo the coupon claim we made
     // above (the deduped result is a success, so the catch never unclaimed),
-    // heal the payment/status idempotently, and skip destock/notif/quota.
+    // heal the payment/status idempotently, and skip destock/notif.
     if (result.deduplicated) {
       if (couponResult?.couponId) {
         try {

@@ -102,11 +102,11 @@ export function ShellSidebar({
       .map((p) => p.charAt(0).toUpperCase())
       .join('') || 'AB';
 
-  const planRaw = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
-  const planName = tenant.subscription_plan
-    ? tenant.subscription_plan.charAt(0).toUpperCase() +
-      tenant.subscription_plan.slice(1).toLowerCase()
-    : t('planFree');
+  // Il n'existe aucun plan gratuit: sans plan enregistre, c'est Starter
+  // (meme repli que getEffectivePlan).
+  const plan = tenant.subscription_plan || 'starter';
+  const planRaw = plan.toUpperCase();
+  const planName = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
 
   const renderItem = (item: ShellNavItem) => {
     const Icon = item.icon;

@@ -1,16 +1,16 @@
 -- Essai = offre Business, et une seule regle de plan effectif (migration 20261120120000).
 --
 -- Temoin negatif: sur le code d'AVANT la migration, ces assertions echouent:
---   - la fonction tenant_effective_plan n'existait pas (assertions 1 a 7);
---   - un essai actif plafonnait a 2 etablissements (assertions 8 et 9);
+--   - la fonction tenant_effective_plan n'existait pas (assertions 1 a 8);
+--   - un essai actif plafonnait a 2 etablissements (assertions 9 et 10);
 --   - un tenant resilie gardait le QR personnalise et le plafond de son plan
---     (assertions 11 et 13), un tenant en pause gardait l'Inventaire (15).
+--     (assertions 12 et 14), un tenant en pause gardait l'Inventaire (16).
 -- Execution: scripts/run-pgtap.sh --local
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(17);
 
 insert into tenants (id, slug, name, subscription_plan, subscription_status, trial_ends_at, is_active) values
   ('a1000000-0000-4000-8000-000000000001', 'pe-essai', 'PE Essai', 'starter', 'trial', now() + interval '5 days', true),
@@ -19,9 +19,10 @@ insert into tenants (id, slug, name, subscription_plan, subscription_status, tri
   ('a1000000-0000-4000-8000-000000000004', 'pe-pro', 'PE Pro', 'pro', 'active', null, true),
   ('a1000000-0000-4000-8000-000000000005', 'pe-impaye', 'PE Impaye', 'business', 'past_due', null, true),
   ('a1000000-0000-4000-8000-000000000006', 'pe-pause', 'PE Pause', 'pro', 'paused', null, false),
-  ('a1000000-0000-4000-8000-000000000007', 'pe-inconnu', 'PE Inconnu', 'gold', 'active', null, true);
+  ('a1000000-0000-4000-8000-000000000007', 'pe-inconnu', 'PE Inconnu', 'gold', 'active', null, true),
+  ('a1000000-0000-4000-8000-000000000008', 'pe-essai-fini-biz', 'PE Essai fini Business', 'business', 'trial', now() - interval '1 day', true);
 
--- 1-7. La regle elle-meme (miroir de getEffectivePlan).
+-- 1-8. La regle elle-meme (miroir de getEffectivePlan).
 select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000001'), 'business', 'essai actif: offre Business');
 select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000002'), 'starter', 'essai expire: starter');
 select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000003'), 'starter', 'resilie: starter, meme sur un plan pro');
@@ -29,8 +30,10 @@ select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000004'), 'pro', 
 select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000005'), 'business', 'impaye: garde son plan');
 select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000007'), 'starter', 'plan inconnu: starter');
 select is(tenant_effective_plan('a1000000-0000-4000-8000-0000000000ff'), 'starter', 'tenant introuvable: starter');
+-- Contre-audit: le plan choisi a l'inscription ne survit pas a l'essai.
+select is(tenant_effective_plan('a1000000-0000-4000-8000-000000000008'), 'starter', 'essai expire avec plan business enregistre: starter');
 
--- 8-9. Essai: 10 etablissements actifs autorises, pas 11.
+-- 9-10. Essai: 10 etablissements actifs autorises, pas 11.
 select lives_ok($$
   insert into venues (tenant_id, slug, name, is_active)
   select 'a1000000-0000-4000-8000-000000000001', 'v' || g, 'V' || g, true
@@ -41,7 +44,7 @@ select throws_ok($$
   values ('a1000000-0000-4000-8000-000000000001', 'v-onze', 'V onze', true)
 $$, '23514', null, 'essai: le 11e etablissement est refuse');
 
--- 10-11. Plafond d'etablissements: pro actif = 2; resilie = 1.
+-- 11-12. Plafond d'etablissements: pro actif = 2; resilie = 1.
 select lives_ok($$
   insert into venues (tenant_id, slug, name, is_active)
   select 'a1000000-0000-4000-8000-000000000004', 'p' || g, 'P' || g, true
@@ -53,7 +56,7 @@ select throws_ok($$
   from generate_series(1, 2) g
 $$, '23514', null, 'resilie: retombe au plafond starter (1 etablissement)');
 
--- 12-13. QR personnalise.
+-- 13-14. QR personnalise.
 select lives_ok($$
   insert into qr_designs (tenant_id, name, config) values ('a1000000-0000-4000-8000-000000000001', 'essai', '{}'::jsonb)
 $$, 'QR personnalise: ouvert pendant l essai');
@@ -61,7 +64,7 @@ select throws_ok($$
   insert into qr_designs (tenant_id, name, config) values ('a1000000-0000-4000-8000-000000000003', 'resilie', '{}'::jsonb)
 $$, '23514', null, 'QR personnalise: ferme a un tenant resilie');
 
--- 14-16. Inventaire.
+-- 15-17. Inventaire.
 select lives_ok($$
   insert into suppliers (tenant_id, name) values ('a1000000-0000-4000-8000-000000000001', 'Fournisseur essai')
 $$, 'Inventaire: ouvert pendant l essai');
