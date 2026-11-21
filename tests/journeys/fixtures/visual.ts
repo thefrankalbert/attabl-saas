@@ -68,7 +68,13 @@ async function mesurerUneFois(page: Page): Promise<MesureCasse> {
         range.selectNodeContents(f);
         const t = range.getBoundingClientRect();
         const fs = getComputedStyle(f);
-        const sort = t.left < r.left - 2 || t.right > r.right + 2;
+        // Sort de la boite du controle sur un des quatre cotes (un texte qui
+        // deborde en hauteur avec overflow visible chevauche ce qui suit).
+        const sort =
+          t.left < r.left - 2 ||
+          t.right > r.right + 2 ||
+          t.top < r.top - 2 ||
+          t.bottom > r.bottom + 2;
         const coupeLargeur =
           f instanceof HTMLElement &&
           f.scrollWidth > f.clientWidth + 1 &&

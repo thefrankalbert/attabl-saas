@@ -8,7 +8,7 @@ import {
   loadSupportContact,
   saveSupportContact,
 } from '../platform-settings.service';
-import { DEFAULT_SUPPORT_CONTACT, toSupportContact } from '@/lib/support-contact';
+import { toSupportContact } from '@/lib/support-contact';
 import { supportContactSchema } from '@/lib/validations/platform-admin.schema';
 
 const NOW = new Date('2026-11-15T12:00:00Z');
@@ -120,13 +120,11 @@ describe('loadSupportContact', () => {
     expect(c).toEqual({ display: '+237 6 99 00 11 22', digits: '237699001122' });
   });
 
-  it('retombe sur la valeur par defaut sans ligne ou si la lecture echoue', async () => {
-    expect(await loadSupportContact(settingsClient({ data: null, error: null }))).toEqual(
-      DEFAULT_SUPPORT_CONTACT,
-    );
+  it('ne rend aucun numero sans ligne ou si la lecture echoue (jamais un numero code en dur)', async () => {
+    expect(await loadSupportContact(settingsClient({ data: null, error: null }))).toBeNull();
     expect(
       await loadSupportContact(settingsClient({ data: null, error: { message: 'panne' } })),
-    ).toEqual(DEFAULT_SUPPORT_CONTACT);
+    ).toBeNull();
   });
 });
 
@@ -136,7 +134,6 @@ describe('numero du support', () => {
       display: '+226 55 21 22 93',
       digits: '22655212293',
     });
-    expect(DEFAULT_SUPPORT_CONTACT.digits).toBe('22655212293');
   });
 
   it('accepte un numero international et refuse lettres, trop court ou trop long', () => {
