@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { HomeHero } from '@/components/marketing/home/HomeHero';
-import { StockFeature } from '@/components/marketing/home/StockFeature';
-import { ShowcaseTabs } from '@/components/marketing/home/ShowcaseTabs';
-import { AllInOne } from '@/components/marketing/home/AllInOne';
+import { HomeMosaic } from '@/components/marketing/home/HomeMosaic';
+import { HomeRange } from '@/components/marketing/home/HomeRange';
+import { HomeLocal } from '@/components/marketing/home/HomeLocal';
+import { HomeAudience } from '@/components/marketing/home/HomeAudience';
 import { PricingTeaser } from '@/components/marketing/home/PricingTeaser';
 import { HomeFaq } from '@/components/marketing/home/HomeFaq';
 import { FinalCta } from '@/components/marketing/home/FinalCta';
@@ -25,9 +26,10 @@ export default function HomePage() {
   return (
     <>
       <HomeHero />
-      <StockFeature />
-      <ShowcaseTabs />
-      <AllInOne />
+      <HomeMosaic />
+      <HomeRange />
+      <HomeLocal />
+      <HomeAudience />
       <PricingTeaser />
       <HomeFaq />
       <FinalCta />
