@@ -317,6 +317,12 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
+              // Focus sur le premier lien a l'ouverture (Radix viserait sinon le
+              // premier element focusable du panneau).
+              onOpenAutoFocus={(e) => {
+                e.preventDefault();
+                (e.currentTarget as HTMLElement).querySelector<HTMLElement>('nav a')?.focus();
+              }}
               className="w-full max-w-sm border-trait bg-white p-0 text-encre dark:bg-encre dark:text-white"
             >
               <SheetHeader className="flex h-16 justify-center border-b border-trait px-5 text-left">

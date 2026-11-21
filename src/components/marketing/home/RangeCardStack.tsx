@@ -27,6 +27,10 @@ const CARD_CLASS: Record<string, string> = {
 const IMAGE_CLASS: Record<string, string> = {
   service: 'object-[50%_30%]',
 };
+// Photo de chaque carte (la carte Service reprend la photo de la serveuse).
+const IMAGE_FILE: Record<string, string> = {
+  service: 'serveuse',
+};
 
 const LG_QUERY = '(min-width: 1024px)';
 function subscribeLg(onChange: () => void): () => void {
@@ -123,7 +127,7 @@ function PileCard({
         </Link>
       </div>
       <Image
-        src={`/marketing/home/${card.key}.webp`}
+        src={`/marketing/home/${IMAGE_FILE[card.key] ?? card.key}.webp`}
         alt={card.imageAlt}
         width={1400}
         height={1400}
