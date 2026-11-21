@@ -317,16 +317,6 @@ function AuthForm({ mode }: AuthFormProps) {
             </Alert>
           )}
 
-          {turnstileSiteKey && (
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              onSuccess={setCfToken}
-              onExpire={() => setCfToken('')}
-              onError={() => setCfToken('')}
-              options={{ theme: 'auto', size: 'flexible', appearance: 'interaction-only' }}
-            />
-          )}
-
           <Button
             type="submit"
             className="h-10 w-full rounded-lg bg-[var(--fg)] text-sm font-medium text-[var(--primary-fg)] transition-colors hover:bg-[var(--fg-hover)]"
@@ -343,6 +333,19 @@ function AuthForm({ mode }: AuthFormProps) {
               tForm('submitSignup')
             )}
           </Button>
+
+          {/* Sous le bouton: en mode interaction-only le widget reste invisible pour la
+              plupart des visiteurs et ne s'ouvre que si Cloudflare doute. Place au-dessus,
+              son apparition tardive poussait le bouton (CLS 0,12 mesure par Lighthouse). */}
+          {turnstileSiteKey && (
+            <Turnstile
+              siteKey={turnstileSiteKey}
+              onSuccess={setCfToken}
+              onExpire={() => setCfToken('')}
+              onError={() => setCfToken('')}
+              options={{ theme: 'auto', size: 'flexible', appearance: 'interaction-only' }}
+            />
+          )}
 
           {!isLogin && (
             <p className="text-center text-xs text-[var(--muted)]">{tForm('trialNote')}</p>

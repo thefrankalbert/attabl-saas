@@ -8,10 +8,12 @@
 #   10055 CSP sans repli: frame-ancestors 'none' ajoute
 10015	IGNORE	(Cache-control a revoir) manifest.json, robots.txt, sitemap.xml: fichiers publics, mis en cache volontairement
 10021	IGNORE	(nosniff absent) une seule reponse d'image optimisee servie par le CDN d'images Vercel; type image/webp exact, affichee dans <img>, rien a interpreter
+10024	IGNORE	(information sensible dans l'URL) /monitoring?o=&p= est le tunnel Sentry: o et p sont les identifiants publics de l'organisation et du projet, deja presents dans le DSN envoye au navigateur
 10031	IGNORE	(attribut controle par l'utilisateur) pre-remplissage voulu de l'e-mail (signup?email=); React echappe toute valeur d'attribut
 10035	IGNORE	(HSTS absent) seulement sur une reponse 304 sans corps du CDN d'images; HSTS est servi sur toutes les reponses 200 avec includeSubDomains et preload
 10049	IGNORE	(contenu non stockable) pages dynamiques par visiteur, non mises en cache volontairement
 10050	IGNORE	(servi depuis le cache) cache CDN Vercel des pages publiques, voulu
+10055	IGNORE	(CSP style-src unsafe-inline) decision documentee dans src/lib/csp.ts: attributs style de React/Radix et Tailwind v4; script-src est verrouille par nonce, une injection CSS ne peut pas executer de script
 10094	IGNORE	(Base64) charges RSC de Next.js et nonces CSP, aucune donnee sensible
 10098	IGNORE	(cross-domain) Access-Control-Allow-Origin * pose par Vercel sur les fichiers statiques publics (CSS, robots.txt), sans cookie ni donnee privee
 10109	IGNORE	(application web moderne) information, pas une faille
