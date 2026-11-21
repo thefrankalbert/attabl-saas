@@ -83,4 +83,18 @@ describe('PaymentModal ouvert depuis une fenetre Radix (detail de commande)', ()
     expect(onClosePayment).toHaveBeenCalledTimes(1);
     expect(onCloseDetails).not.toHaveBeenCalled();
   });
+
+  // Radix porte le blocage du defilement sur l'arriere-plan (Overlay) de chaque
+  // fenetre. Sans arriere-plan propre, celui du detail refusait la molette et
+  // le defilement tactile dans l'encaissement (mesure au navigateur le
+  // 2026-11-21, colonne bloquee a 0 sur 150 px). happy-dom ne defile pas: on
+  // verifie donc que l'encaissement a bien son arriere-plan, en plus de celui
+  // du detail.
+  it('a son propre arriere-plan Radix, qui porte le blocage du defilement', () => {
+    renderInsideDetails();
+    const overlays = [...document.querySelectorAll('div[data-state="open"]')].filter(
+      (el) => el.getAttribute('role') !== 'dialog' && el.className.includes('fixed'),
+    );
+    expect(overlays.length).toBe(2);
+  });
 });

@@ -220,6 +220,10 @@ export default function PaymentModal({
   return (
     <DialogPrimitive.Root open onOpenChange={closeUnlessBusy}>
       <DialogPrimitive.Portal>
+        {/* Transparent, but required: Radix carries the scroll lock on the
+            overlay. Without it, the lock of the details dialog underneath
+            refused the wheel and touch scroll inside this screen. */}
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           // Plein ecran: il n'y a pas d'"exterieur" a cliquer, et un clic
@@ -283,7 +287,10 @@ export default function PaymentModal({
               )}
 
               {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
-              <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
+              {/* shrink-0: on a short phone screen this block used to shrink
+                  below its content and slide under "Annuler"; now the column
+                  scrolls instead. */}
+              <div className="flex-1 shrink-0 flex flex-col gap-2 sm:gap-3">
                 <PaymentMethodPicker
                   value={method}
                   onChange={setChosenMethod}
