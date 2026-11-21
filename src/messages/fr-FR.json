@@ -412,7 +412,8 @@
             "features": {
               "dashboard": "Dashboard (CA, commandes)",
               "salesReports": "Rapports de vente",
-              "bestSellers": "Best-sellers"
+              "bestSellers": "Best-sellers",
+              "aiSuggestions": "Suggestions automatiques (IA)"
             }
           },
           "team": {
@@ -2624,7 +2625,6 @@
     "reactivate": "Réactiver",
     "required": "Requis",
     "principal": "Principal",
-    "limitReached": "Limite du plan atteinte. Passer au plan supérieur",
     "newSpace": "Nouvel espace",
     "renameSpace": "Renommer l'espace",
     "nameLabel": "Nom de l'espace",
@@ -2642,7 +2642,9 @@
     "newSpaceHint": "Donnez un nom clair à ce lieu de service.",
     "renameHint": "Choisissez un nouveau nom pour cet espace.",
     "reactivateLimit": "Limite du plan atteinte",
-    "empty": "Aucun espace pour le moment."
+    "empty": "Aucun espace pour le moment.",
+    "limitBanner": "Votre plan inclut {max, plural, one {# espace actif} other {# espaces actifs}}. Vos {count, plural, one {# espace actif continue} other {# espaces actifs continuent}} de fonctionner normalement. Pour en ajouter un, passez au plan supérieur.",
+    "limitBannerCta": "Voir les plans"
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -3033,7 +3035,8 @@
     "durationLessThanHour": "moins d'une heure",
     "durationHours": "{count, plural, one {# heure} other {# heures}}",
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
-    "invitationExpired": "Invitation expirée"
+    "invitationExpired": "Invitation expirée",
+    "limitBannerCta": "Voir les plans"
   },
   "reports": {
     "title": "Rapports",

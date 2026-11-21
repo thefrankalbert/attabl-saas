@@ -25,6 +25,7 @@ import UserPermissionsDialog from '@/components/features/users/UserPermissionsDi
 import PendingInvitations from '@/components/features/users/PendingInvitations';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { ListPagination } from '@/components/admin/ListPagination';
+import { PlanLimitBanner } from '@/components/admin/PlanLimitBanner';
 import type { ServerListPagination } from '@/lib/pagination';
 import {
   actionUpdateAdminUser,
@@ -212,6 +213,13 @@ export default function UsersClient({
               ) : undefined
             }
           />
+          {data.planLimitMessage && (
+            <PlanLimitBanner
+              message={data.planLimitMessage}
+              ctaLabel={t('limitBannerCta')}
+              href={`${pathname.replace(/\/users\/?$/, '')}/subscription`}
+            />
+          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">

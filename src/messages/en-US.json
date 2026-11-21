@@ -412,7 +412,8 @@
             "features": {
               "dashboard": "Dashboard (revenue, orders)",
               "salesReports": "Sales reports",
-              "bestSellers": "Best-sellers"
+              "bestSellers": "Best-sellers",
+              "aiSuggestions": "Automatic suggestions (AI)"
             }
           },
           "team": {
@@ -2624,7 +2625,6 @@
     "reactivate": "Reactivate",
     "required": "Required",
     "principal": "Main",
-    "limitReached": "Plan limit reached. Upgrade your plan",
     "newSpace": "New space",
     "renameSpace": "Rename space",
     "nameLabel": "Space name",
@@ -2642,7 +2642,9 @@
     "newSpaceHint": "Give this service area a clear name.",
     "renameHint": "Pick a new name for this space.",
     "reactivateLimit": "Plan limit reached",
-    "empty": "No spaces yet."
+    "empty": "No spaces yet.",
+    "limitBanner": "Your plan includes {max, plural, one {# active space} other {# active spaces}}. Your {count, plural, one {# active space keeps} other {# active spaces keep}} working normally. To add one, upgrade your plan.",
+    "limitBannerCta": "See plans"
   },
   "commandPalette": {
     "placeholder": "Search for a page or action...",
@@ -3033,7 +3035,8 @@
     "durationLessThanHour": "less than an hour",
     "durationHours": "{count, plural, one {# hour} other {# hours}}",
     "durationDays": "{count, plural, one {# day} other {# days}}",
-    "invitationExpired": "Invitation expired"
+    "invitationExpired": "Invitation expired",
+    "limitBannerCta": "See plans"
   },
   "reports": {
     "title": "Reports",
