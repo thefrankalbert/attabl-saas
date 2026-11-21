@@ -3,11 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CRON_JOBS, cronSilenceLimitMs, type CronJob } from '@/lib/cron-jobs';
-import {
-  DEFAULT_SUPPORT_CONTACT,
-  toSupportContact,
-  type SupportContact,
-} from '@/lib/support-contact';
+import { toSupportContact, type SupportContact } from '@/lib/support-contact';
 import { logger } from '@/lib/logger';
 import { ServiceError } from './errors';
 
@@ -64,21 +60,23 @@ export async function loadCronHeartbeats(
   });
 }
 
-/** Le numero du support; la valeur par defaut si rien n'est enregistre ou si la lecture echoue. */
-export async function loadSupportContact(supabase: SupabaseClient): Promise<SupportContact> {
+/**
+ * Le numero du support; null si rien n'est enregistre ou si la lecture echoue.
+ * Pas de numero de secours code en dur: celui qui l'etait menait, sur WhatsApp,
+ * au compte d'un tiers. Sans numero, la page Support propose l'e-mail.
+ */
+export async function loadSupportContact(supabase: SupabaseClient): Promise<SupportContact | null> {
   const { data, error } = await supabase
     .from('platform_settings')
     .select('value')
     .eq('key', 'support_contact')
     .maybeSingle();
   if (error) {
-    logger.warn('Lecture du numero du support impossible: valeur par defaut', {
-      error: error.message,
-    });
-    return DEFAULT_SUPPORT_CONTACT;
+    logger.warn('Lecture du numero du support impossible', { error: error.message });
+    return null;
   }
   const phone = (data?.value as { phone?: unknown } | null)?.phone;
-  return typeof phone === 'string' && phone ? toSupportContact(phone) : DEFAULT_SUPPORT_CONTACT;
+  return typeof phone === 'string' && phone ? toSupportContact(phone) : null;
 }
 
 /**
@@ -111,7 +109,7 @@ export async function saveSupportContact(
     action: 'update_support_contact',
     target_type: 'platform_setting',
     target_label: 'support_contact',
-    metadata: { from: previous.display, to: contact.display },
+    metadata: { from: previous?.display ?? null, to: contact.display },
   });
   if (auditError) logger.error('platform_audit_log insert failed', auditError);
   return contact;
