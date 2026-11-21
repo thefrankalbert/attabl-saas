@@ -88,13 +88,22 @@ export default function Header() {
     };
   }, [open]);
 
-  // Search panel: focus the field once it is shown.
+  // Search panel: focus the field once it is shown. Le panneau reste en
+  // visibility: hidden au tout debut de sa transition et le navigateur refuse
+  // alors le focus : on reessaie a chaque image (30 au plus).
   useEffect(() => {
     if (open !== 'search') return;
-    const id = setTimeout(() => {
-      document.getElementById(searchId)?.querySelector('input')?.focus();
-    }, 50);
-    return () => clearTimeout(id);
+    let frame = 0;
+    let tries = 0;
+    const tryFocus = () => {
+      const input = document.getElementById(searchId)?.querySelector('input');
+      input?.focus();
+      if (document.activeElement !== input && tries++ < 30) {
+        frame = requestAnimationFrame(tryFocus);
+      }
+    };
+    frame = requestAnimationFrame(tryFocus);
+    return () => cancelAnimationFrame(frame);
   }, [open, searchId]);
 
   const hoverProps = (key: string) => ({
@@ -140,7 +149,7 @@ export default function Header() {
       aria-expanded={open === key}
       aria-controls={id}
       onClick={() => toggle(key)}
-      className={cn(NAV_LINK, 'h-auto bg-transparent dark:hover:bg-gris')}
+      className={cn(NAV_LINK, 'h-auto bg-transparent dark:hover:bg-gris [&_svg]:size-[11px]')}
     >
       {label}
       <ChevronDown
@@ -273,7 +282,7 @@ export default function Header() {
               aria-controls={searchId}
               aria-label={t('searchLabel')}
               onClick={() => toggle('search')}
-              className="size-10 rounded-full text-encre hover:bg-gris dark:text-white dark:hover:bg-gris"
+              className="size-10 rounded-full text-encre hover:bg-gris dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]"
             >
               <Search className="size-[18px]" />
             </Button>
@@ -310,7 +319,7 @@ export default function Header() {
                 variant="ghost"
                 size="icon"
                 aria-label={t('openMenu')}
-                className="size-10 rounded-full border border-trait bg-transparent text-encre hover:bg-gris lg:hidden dark:text-white dark:hover:bg-gris"
+                className="size-10 rounded-full border border-trait bg-transparent text-encre hover:bg-gris lg:hidden dark:text-white dark:hover:bg-gris [&_svg]:size-[18px]"
               >
                 <Menu className="size-[18px]" />
               </Button>
