@@ -308,18 +308,12 @@
           "subtitle": "For restaurant owners who want to go digital without the headache.",
           "button": "Try it free",
           "featuresTitle": "Included in STARTER",
-          "benefits": {
-            "b1": "Bilingual QR menu (FR/EN)",
-            "b2": "Basic POS (cash + card)",
-            "b3": "1 admin, 3 staff",
-            "b4": "Email support"
-          },
           "features": {
             "f1": "Bilingual digital QR menu",
             "f2": "Dine-in and takeaway orders",
             "f3": "Cash and card POS",
             "f4": "Dashboard (revenue, orders)",
-            "f5": "1 establishment, 2 menus"
+            "f5": "1 establishment, 1 admin, 3 staff"
           }
         },
         "pro": {
@@ -328,12 +322,6 @@
           "subtitle": "For those serving 50+ covers a day who want full control.",
           "button": "Try for free",
           "featuresTitle": "Included in PRO",
-          "benefits": {
-            "b1": "Everything in STARTER + KDS, tables, stock",
-            "b2": "Multi-currency (XAF, EUR, USD)",
-            "b3": "14-day free trial, no credit card",
-            "b4": "24h WhatsApp support"
-          },
           "features": {
             "f1": "Everything in STARTER",
             "f2": "KDS (kitchen display)",
@@ -341,33 +329,25 @@
             "f4": "Stock management and alerts",
             "f5": "Recipes (cost of ingredients)",
             "f6": "Supplier tracking",
-            "f7": "Mobile money and tips",
+            "f7": "Tips and multi-currency",
             "f8": "Sales reports and best-sellers",
             "f9": "Team management (roles, permissions)",
-            "f10": "10 menus, 10 staff"
+            "f10": "2 establishments, 2 admins, 15 staff"
           }
         },
         "business": {
           "badge": "Multi-site",
           "title": "BUSINESS",
-          "subtitle": "Hotel, chain or multi-site - one dashboard for everything.",
+          "subtitle": "Hotel, delivery, several establishments: everything included.",
           "primaryButton": "Try it free",
           "secondaryButton": "Request a demo",
           "featuresTitle": "Included in BUSINESS",
-          "benefits": {
-            "b1": "Everything in PRO + up to 10 sites",
-            "b2": "Room service and delivery",
-            "b3": "Advanced and multi-site reports",
-            "b4": "Priority 4h support"
-          },
           "features": {
             "f1": "Everything in PRO",
             "f2": "Digital room service",
             "f3": "Delivery orders",
-            "f4": "Advanced reports",
-            "f5": "Multi-site reports",
-            "f6": "Up to 10 establishments",
-            "f7": "99 admins, 999 staff, 99 menus"
+            "f4": "Up to 10 establishments",
+            "f5": "Unlimited admins and staff"
           }
         },
         "enterprise": {
@@ -376,12 +356,6 @@
           "subtitle": "For groups, franchises and chains managing multiple sites.",
           "button": "Contact us",
           "featuresTitle": "Included in ENTERPRISE",
-          "benefits": {
-            "b1": "Everything in BUSINESS + unlimited sites",
-            "b2": "99.9% SLA guaranteed",
-            "b3": "Dedicated account manager",
-            "b4": "1h phone support + custom API"
-          },
           "features": {
             "f1": "Everything in BUSINESS",
             "f2": "Unlimited establishments",
@@ -412,7 +386,6 @@
             "title": "Checkout",
             "features": {
               "pos": "POS (cash + card)",
-              "mobileMoney": "Mobile money",
               "multiCurrency": "Multi-currency (XAF, EUR, USD)",
               "tips": "Built-in tips"
             }
@@ -439,9 +412,7 @@
             "features": {
               "dashboard": "Dashboard (revenue, orders)",
               "salesReports": "Sales reports",
-              "bestSellers": "Best-sellers",
-              "advancedReports": "Advanced reports",
-              "multiSiteReports": "Multi-site reports"
+              "bestSellers": "Best-sellers"
             }
           },
           "team": {
@@ -584,7 +555,7 @@
         "p2cta": "Take Pro",
         "p3tag": "Growing",
         "p3title": "Hotel, several venues",
-        "p3body": "Room service, delivery, multi-site reports and priority support. One console for everything.",
+        "p3body": "Room service, delivery, up to 10 establishments and priority support.",
         "p3cta": "Go Business",
         "help": "Unsure which one?",
         "helpLink": "We help you decide"
@@ -1169,7 +1140,7 @@
           "points": {
             "p1": "Room service from the room",
             "p2": "Multiple points of sale (restaurant, bar)",
-            "p3": "Advanced multi-venue reports",
+            "p3": "Up to 10 establishments in one account",
             "p4": "Built-in delivery"
           },
           "offerWhy": "Room service, delivery and multi-venue come with the Business plan."

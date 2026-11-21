@@ -301,8 +301,20 @@ BEGIN
                                'get_category_breakdown', 'get_server_performance',
                                'get_staff_stock_report']
   LOOP
-    IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace = 'public'::regnamespace
-                   AND proname = v_nom || '_brut') THEN
+    -- La fonction qui porte le nom est-elle un VRAI corps (pas notre enveloppe) ?
+    -- C'est le cas au premier passage, et aussi si une migration posterieure
+    -- l'a recreee (par exemple le lot pourboires, PR #446, qui modifie
+    -- get_order_summary et get_server_performance). Ce corps devient alors le
+    -- nouveau _brut, l'ancien est jete: rejouer cette migration remet le
+    -- verrou en place quel que soit l'ordre d'application.
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace = 'public'::regnamespace
+               AND proname = v_nom AND prosrc NOT LIKE '%assert_tenant_reports%') THEN
+      FOR v_brut IN
+        SELECT oid::regprocedure FROM pg_proc
+         WHERE pronamespace = 'public'::regnamespace AND proname = v_nom || '_brut'
+      LOOP
+        EXECUTE format('DROP FUNCTION %s', v_brut);
+      END LOOP;
       EXECUTE format('ALTER FUNCTION public.%I RENAME TO %I', v_nom, v_nom || '_brut');
     END IF;
 
@@ -317,6 +329,15 @@ BEGIN
      WHERE p.pronamespace = 'public'::regnamespace AND p.proname = v_nom || '_brut';
 
     EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC, anon, authenticated', v_brut);
+
+    -- Enveloppe d'une version precedente au type de retour different: elle doit
+    -- disparaitre, CREATE OR REPLACE ne change pas un type de retour.
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace = 'public'::regnamespace
+               AND proname = v_nom
+               AND pg_get_function_identity_arguments(oid) = v_ident
+               AND pg_get_function_result(oid) <> pg_get_function_result(v_brut)) THEN
+      EXECUTE format('DROP FUNCTION public.%I(%s)', v_nom, v_ident);
+    END IF;
 
     EXECUTE format(
       'CREATE OR REPLACE FUNCTION public.%I(%s) RETURNS %s '

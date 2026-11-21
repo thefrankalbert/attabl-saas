@@ -12,7 +12,9 @@
 --   - pourboire > 0, devise d'affichage differente de celle du restaurant:
 --     Pro et plus.
 -- INSERT, et UPDATE quand l'une de ces colonnes CHANGE (une commande ancienne
--- n'est pas bloquee pour une autre modification).
+-- n'est pas bloquee pour une autre modification). Pour le pourboire, seule une
+-- HAUSSE est refusee (accord avec le lot pourboires, PR #446, qui a retire son
+-- propre controle: un seul verrou).
 --
 -- SECURITY DEFINER, et c'est voulu: la regle depend du plan du restaurant, pas
 -- du role de l'appelant (la lecon "garde = SECURITY INVOKER" vaut pour les
@@ -51,8 +53,12 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
 
+  -- Pourboire: refuse a la creation des qu'il est positif (quel que soit le
+  -- role, c'est le plan qui juge), et a la modification seulement s'il
+  -- AUGMENTE. Une baisse (correction, annulation d'un encaissement) passe,
+  -- meme si le plan a change entre-temps.
   IF COALESCE(NEW.tip_amount, 0) > 0
-     AND (TG_OP = 'INSERT' OR NEW.tip_amount IS DISTINCT FROM OLD.tip_amount)
+     AND (TG_OP = 'INSERT' OR COALESCE(NEW.tip_amount, 0) > COALESCE(OLD.tip_amount, 0))
      AND v_plan NOT IN ('pro', 'business', 'enterprise') THEN
     RAISE EXCEPTION 'Tips require the Pro plan or higher'
       USING ERRCODE = 'check_violation';

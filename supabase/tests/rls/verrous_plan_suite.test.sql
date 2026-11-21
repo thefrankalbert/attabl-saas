@@ -1,4 +1,4 @@
--- Verrous de plan, suite du contre-audit (migration 20261120140000).
+-- Verrous de plan, suite du contre-audit (migration 20261120160000).
 --
 -- Temoin negatif: sur le code d'AVANT la migration, les assertions qui
 -- attendent un refus (throws_ok) passent toutes en lives: tables apres

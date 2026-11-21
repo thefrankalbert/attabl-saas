@@ -18,7 +18,7 @@ const PLANS: {
 }[] = [
   { key: 'starter', featCount: 5, cta: 'button', href: '/signup', dark: false },
   { key: 'pro', featCount: 10, cta: 'button', href: '/signup', dark: true },
-  { key: 'business', featCount: 7, cta: 'primaryButton', href: '/signup', dark: false },
+  { key: 'business', featCount: 5, cta: 'primaryButton', href: '/signup', dark: false },
   { key: 'enterprise', featCount: 6, cta: 'button', href: '/contact', dark: false },
 ];
 

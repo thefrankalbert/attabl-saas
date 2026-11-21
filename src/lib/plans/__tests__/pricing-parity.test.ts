@@ -11,8 +11,8 @@ import type { SubscriptionPlan } from '@/types/billing';
  * what the app actually enforces. This test fails the build the moment the two
  * diverge, so a plan can never silently grant more (or less) than what is sold.
  *
- * Grouping is by module: several advertised lines (stock/suppliers/restockAlerts,
- * advancedReports/multiSiteReports) map to a single enforcement flag on purpose.
+ * Grouping is by module: several advertised lines (stock/suppliers/restockAlerts)
+ * map to a single enforcement flag on purpose.
  */
 
 const PLANS: SubscriptionPlan[] = ['starter', 'pro', 'business', 'enterprise'];
@@ -34,8 +34,6 @@ const BOOLEAN_FEATURE_MAP: Record<string, FeatureKey> = {
   restockAlerts: 'canAccessInventory',
   salesReports: 'canAccessReports',
   bestSellers: 'canAccessReports',
-  advancedReports: 'canAccessAIAnalytics',
-  multiSiteReports: 'canAccessAIAnalytics',
 };
 
 // Advertised quantitative line -> numeric limit field.
@@ -53,9 +51,12 @@ const ALWAYS_ON = new Set(['qrMenu', 'onsiteOrders', 'takeawayOrders', 'dashboar
 // Support lines are commercial copy, not enforced feature flags.
 const SUPPORT_ONLY = new Set(['whatsapp', 'manager', 'sla']);
 
-// Enforcement flags with no advertised pricing line. Every boolean flag now maps
-// to a pricing line; keep the list so a future internal-only flag can be documented.
-const FLAGS_WITHOUT_PRICING_LINE: FeatureKey[] = [];
+// Enforcement flags with no advertised pricing line.
+// - canAccessAIAnalytics: generation automatique de suggestions, reservee a
+//   Business. Les lignes "Rapports avances" et "Rapports multi-sites" ont ete
+//   retirees de la page Tarifs (decision du proprietaire, 2026-11-21): aucun
+//   ecran n'y correspondait. Elles reviendront avec les ecrans (lot 4).
+const FLAGS_WITHOUT_PRICING_LINE: FeatureKey[] = ['canAccessAIAnalytics'];
 
 /** Non-trial limits for a plan (status 'active' so the trial->pro override is off). */
 function limitsFor(plan: SubscriptionPlan): PlanLimits {

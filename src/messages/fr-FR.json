@@ -308,18 +308,12 @@
           "subtitle": "Pour les restaurateurs qui veulent digitaliser sans se compliquer la vie.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans STARTER",
-          "benefits": {
-            "b1": "Menu QR bilingue (FR/EN)",
-            "b2": "POS basique (cash + carte)",
-            "b3": "1 admin, 3 staff",
-            "b4": "Support email"
-          },
           "features": {
             "f1": "Menu QR digital bilingue",
             "f2": "Commandes sur place et à emporter",
             "f3": "POS cash et carte bancaire",
             "f4": "Dashboard (CA, commandes)",
-            "f5": "1 établissement, 2 menus"
+            "f5": "1 établissement, 1 admin, 3 employés"
           }
         },
         "pro": {
@@ -328,12 +322,6 @@
           "subtitle": "Pour ceux qui servent plus de 50 couverts par jour et veulent tout contrôler.",
           "button": "Essayer gratuitement",
           "featuresTitle": "Inclus dans PRO",
-          "benefits": {
-            "b1": "Tout STARTER + KDS, tables, stock",
-            "b2": "Multi-devises (XAF, EUR, USD)",
-            "b3": "Essai gratuit 14 jours sans CB",
-            "b4": "Support WhatsApp 24h"
-          },
           "features": {
             "f1": "Tout ce qui est dans STARTER",
             "f2": "KDS (écran cuisine)",
@@ -341,33 +329,25 @@
             "f4": "Gestion de stock et alertes",
             "f5": "Fiches techniques (coût matière)",
             "f6": "Suivi fournisseurs",
-            "f7": "Mobile money et pourboires",
+            "f7": "Pourboires et multi-devises",
             "f8": "Rapports de vente et best-sellers",
             "f9": "Gestion équipe (rôles, permissions)",
-            "f10": "10 menus, 10 staff"
+            "f10": "2 établissements, 2 admins, 15 employés"
           }
         },
         "business": {
           "badge": "Multi-sites",
           "title": "BUSINESS",
-          "subtitle": "Hôtel, chaîne ou multi-sites : un seul dashboard pour tout piloter.",
+          "subtitle": "Hôtel, livraison, plusieurs établissements : tout est inclus.",
           "primaryButton": "Essayer gratuitement",
           "secondaryButton": "Demander une démo",
           "featuresTitle": "Inclus dans BUSINESS",
-          "benefits": {
-            "b1": "Tout PRO + jusqu'à 10 sites",
-            "b2": "Room service et delivery",
-            "b3": "Rapports avancés et multi-sites",
-            "b4": "Support prioritaire 4h"
-          },
           "features": {
             "f1": "Tout ce qui est dans PRO",
             "f2": "Room service digital",
             "f3": "Commandes delivery",
-            "f4": "Rapports avancés",
-            "f5": "Rapports multi-sites",
-            "f6": "Jusqu'à 10 établissements",
-            "f7": "99 admins, 999 staff, 99 menus"
+            "f4": "Jusqu'à 10 établissements",
+            "f5": "Admins et employés illimités"
           }
         },
         "enterprise": {
@@ -376,12 +356,6 @@
           "subtitle": "Pour les groupes, franchises et chaînes qui gèrent plusieurs sites.",
           "button": "Contactez-nous",
           "featuresTitle": "Inclus dans ENTERPRISE",
-          "benefits": {
-            "b1": "Tout BUSINESS + sites illimités",
-            "b2": "SLA 99.9% garanti",
-            "b3": "Account manager dédié",
-            "b4": "Support téléphone 1h + API sur mesure"
-          },
           "features": {
             "f1": "Tout ce qui est dans BUSINESS",
             "f2": "Établissements illimités",
@@ -412,7 +386,6 @@
             "title": "Encaissement",
             "features": {
               "pos": "POS (cash + carte)",
-              "mobileMoney": "Mobile money",
               "multiCurrency": "Multi-devises (XAF, EUR, USD)",
               "tips": "Pourboires intégrés"
             }
@@ -439,9 +412,7 @@
             "features": {
               "dashboard": "Dashboard (CA, commandes)",
               "salesReports": "Rapports de vente",
-              "bestSellers": "Best-sellers",
-              "advancedReports": "Rapports avancés",
-              "multiSiteReports": "Rapports multi-sites"
+              "bestSellers": "Best-sellers"
             }
           },
           "team": {
@@ -584,7 +555,7 @@
         "p2cta": "Prenez Pro",
         "p3tag": "Vous grandissez",
         "p3title": "Hôtel, plusieurs établissements",
-        "p3body": "Service en chambre, livraison, rapports multi-sites et support prioritaire. Une console pour tout.",
+        "p3body": "Service en chambre, livraison, jusqu'à 10 établissements et support prioritaire.",
         "p3cta": "Passez en Business",
         "help": "Un doute sur le bon choix ?",
         "helpLink": "On vous aide à décider"
@@ -1169,7 +1140,7 @@
           "points": {
             "p1": "Service en chambre depuis la chambre",
             "p2": "Plusieurs points de vente (resto, bar)",
-            "p3": "Rapports avancés multi-établissements",
+            "p3": "Jusqu'à 10 établissements dans un seul compte",
             "p4": "Livraison intégrée"
           },
           "offerWhy": "Service en chambre, livraison et multi-établissements arrivent avec l'offre Business."

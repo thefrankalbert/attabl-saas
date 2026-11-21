@@ -151,7 +151,7 @@ export async function actionGenerateAndSaveSuggestions(
     const supabase = await createClient();
 
     // Plan gate: AI auto-generation of suggestions is Business+ (canAccessAIAnalytics,
-    // pricing "advancedReports"). The client hides the button, but the action must
+    // reserve a Business, sans ligne sur la page Tarifs). The client hides the button, but the action must
     // enforce it too so a crafted call cannot bypass the paywall.
     const { data: tenant } = await supabase
       .from('tenants')
