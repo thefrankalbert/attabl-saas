@@ -73,7 +73,7 @@ export function ResponsiveDataTable<TData>({
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-3" data-testid="responsive-cards">
         {data.map((row, i) => (
           <div
             key={i}
