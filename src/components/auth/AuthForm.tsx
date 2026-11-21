@@ -88,7 +88,7 @@ function AuthForm({ mode }: AuthFormProps) {
     <div className="w-full">
       {/* Header - marges resserrees sous 820 px de haut: l'inscription
           defilait de 26 px (1024x768) a 134 px (660 de haut), regle 12. */}
-      <div className="mb-7 text-center [@media(max-height:819px)]:mb-5 [@media(max-height:719px)]:mb-3">
+      <div className="mb-7 text-center [@media(min-height:720px)_and_(max-height:819px)]:mb-5 [@media(min-height:680px)_and_(max-height:719px)]:mb-3 [@media(max-height:679px)]:mb-2">
         <h1 className="mb-1.5 text-[22px] [@media(max-height:719px)]:text-[20px] [@media(max-height:719px)]:leading-tight font-semibold tracking-[-0.02em] text-[var(--heading)]">
           {isLogin ? tForm('loginTitle') : tForm('signupTitle')}
         </h1>
@@ -357,7 +357,7 @@ function AuthForm({ mode }: AuthFormProps) {
       </AuthCard>
 
       {/* Footer Link */}
-      <p className="mt-6 text-center text-sm text-[var(--muted)] [@media(max-height:819px)]:mt-4 [@media(max-height:719px)]:mt-3">
+      <p className="mt-6 text-center text-sm text-[var(--muted)] [@media(min-height:720px)_and_(max-height:819px)]:mt-4 [@media(min-height:680px)_and_(max-height:719px)]:mt-3 [@media(max-height:679px)]:mt-2">
         {isLogin ? tForm('noAccount') : tForm('hasAccount')}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}

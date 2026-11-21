@@ -28,7 +28,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="auth-shell flex min-h-full w-full flex-row overflow-x-clip">
       {/* -- Left: brand + card + footer -------------------------------- */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between px-[max(1.25rem,env(safe-area-inset-left))] py-5 [@media(max-height:819px)]:py-3 [@media(max-height:719px)]:py-2">
+        <header className="flex items-center justify-between px-[max(1.25rem,env(safe-area-inset-left))] py-5 [@media(min-height:720px)_and_(max-height:819px)]:py-3 [@media(min-height:680px)_and_(max-height:719px)]:py-2 [@media(max-height:679px)]:py-1">
           <Link href="/" className="flex items-center gap-[9px]">
             <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] bg-[var(--fg)]">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -47,7 +47,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        <footer className="flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [@media(max-height:719px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5 [@media(max-height:819px)]:pt-3 [@media(max-height:719px)]:pt-2 text-[12.5px] text-[var(--muted)]">
+        <footer className="flex items-center justify-center gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [@media(max-height:719px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5 [@media(min-height:720px)_and_(max-height:819px)]:pt-3 [@media(max-height:719px)]:pt-2 text-[12.5px] text-[var(--muted)]">
           <Lock className="h-3 w-3 shrink-0" />
           {t('secure')}
         </footer>

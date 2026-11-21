@@ -46,7 +46,7 @@ export function ItemsHeader({
             <Select value={categoryFilterValue} onValueChange={onCategoryChange}>
               <SelectTrigger
                 aria-label={t('filterCategoryLabel')}
-                className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30"
+                className="h-9 w-full sm:w-auto sm:min-w-44 sm:max-w-64 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30"
               >
                 <SelectValue placeholder={t('allCategories')} />
               </SelectTrigger>
