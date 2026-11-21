@@ -368,7 +368,6 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
       // tip ADDED at the till: the database adds it to the one the customer
       // left (audit pourboires 2026-11-20, constat B).
       const tipAdded = payload.tipAmount && payload.tipAmount > 0 ? payload.tipAmount : 0;
-      let tipCeiling: number | null = null;
       if (tipAdded > 0) {
         const { data: before, error: beforeError } = await supabase
           .from('orders')
@@ -388,9 +387,10 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         if (before && before.payment_status === 'pending') {
           // Same ceiling as the order route (MAX_TIP_AMOUNT in MAJOR units of
           // the order currency), on the resulting tip (constat F). Checked here
-          // for a clear message, and again by the database on the real sum.
-          tipCeiling = toMinorUnits(MAX_TIP_AMOUNT, before.display_currency as string | null);
-          if (Number(before.tip_amount || 0) + tipAdded > tipCeiling) {
+          // for a clear message; the database enforces it again on the real
+          // sum, with the same ceiling (migration 20261120220000).
+          const ceiling = toMinorUnits(MAX_TIP_AMOUNT, before.display_currency as string | null);
+          if (Number(before.tip_amount || 0) + tipAdded > ceiling) {
             throw new ServiceError('Pourboire trop eleve', 'VALIDATION');
           }
         }
@@ -409,7 +409,6 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
         p_tenant_id: tenantId,
         p_method: payload.method,
         p_tip_ajout: tipAdded,
-        p_tip_plafond: tipCeiling,
       });
 
       if (error) {
@@ -418,17 +417,37 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
           tenantId,
           error,
         });
-        // 22023 / 42501: the database REFUSED (guard, ceiling, rights). Anything
-        // else is transient: 'Erreur interne' keeps it retryable offline, and
+        // The database REFUSED: a definitive answer, never retried by the
+        // offline outbox. 23514 = the plan lock on the tip (PR #444,
+        // enforce_order_plan_features); 22023 / 42501 = guard, ceiling, rights.
+        // Anything else is transient: 'Erreur interne' keeps it retryable, and
         // nothing was booked, so a retry cannot collect twice.
         const code = (error as { code?: string }).code;
+        if (code === '23514') {
+          throw new ServiceError('Pourboire non inclus dans votre plan', 'VALIDATION', error);
+        }
         if (code === '22023' || code === '42501') {
           throw new ServiceError("Le paiement n'a pas pu etre enregistre", 'VALIDATION', error);
         }
         throw new ServiceError('Erreur interne', 'INTERNAL', error);
       }
 
-      const result = (data ?? {}) as { paid?: boolean; session_id?: string | null };
+      const result = (data ?? {}) as {
+        paid?: boolean;
+        session_id?: string | null;
+        payment_status?: string | null;
+      };
+
+      // A partly paid order is settled tender by tender from its details
+      // (OrderPaymentPanel): this screen would ask for the full amount. It used
+      // to answer "success, already settled" - the cashier believed the money
+      // was in.
+      if (!result.paid && result.payment_status === 'partial') {
+        throw new ServiceError(
+          'Cette commande a deja recu un paiement partiel. Encaissez le reste depuis le detail de la commande.',
+          'VALIDATION',
+        );
+      }
 
       // Close the table session once every order on it is settled (audit C1).
       // Leaving it open would let tomorrow's orders attach to today's check.

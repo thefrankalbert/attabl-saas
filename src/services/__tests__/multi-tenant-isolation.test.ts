@@ -103,8 +103,8 @@ describe('order.service multi-tenant isolation', () => {
     expect(res).toEqual({ paid: false });
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ p_order_id: 'order-B', p_tenant_id: TENANT_A });
-    // La lecture du pourboire est bornee a A: la commande de B reste invisible.
-    expect(calls[0].p_tip_plafond).toBeNull();
+    // Aucune ecriture directe: tout passe par la fonction, qui filtre par
+    // restaurant (prouve en pgTAP).
     expect(db.affected.orders ?? 0).toBe(0);
   });
 

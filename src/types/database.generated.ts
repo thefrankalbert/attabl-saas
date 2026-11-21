@@ -3258,7 +3258,6 @@ export type Database = {
           p_order_id: string;
           p_tenant_id: string;
           p_tip_ajout?: number;
-          p_tip_plafond?: number;
         };
         Returns: Json;
       };

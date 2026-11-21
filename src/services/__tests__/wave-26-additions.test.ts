@@ -190,7 +190,6 @@ describe('order.service Wave 26 additions', () => {
       p_tenant_id: 'tenant-A',
       p_method: 'cash',
       p_tip_ajout: 500,
-      p_tip_plafond: 1_000_000,
     });
   });
 
@@ -202,7 +201,7 @@ describe('order.service Wave 26 additions', () => {
     expect(supabase._chains.orders ?? []).toHaveLength(0);
     expect(supabase.rpc).toHaveBeenCalledWith(
       'encaisser_commande',
-      expect.objectContaining({ p_tip_ajout: 0, p_tip_plafond: null }),
+      expect.objectContaining({ p_tip_ajout: 0 }),
     );
   });
 

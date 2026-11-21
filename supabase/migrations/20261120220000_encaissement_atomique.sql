@@ -24,12 +24,23 @@
 -- meme restaurant, commande encore `pending`, non annulee.
 --
 -- Le pourboire de la caisse s'AJOUTE a celui deja enregistre (constat B), dans
--- le meme UPDATE: pas de lecture-puis-ecriture. `p_tip_plafond` (unites
--- mineures de la devise de la commande, calcule par l'application) borne le
--- pourboire OBTENU (constat F).
+-- le meme UPDATE: pas de lecture-puis-ecriture. Le plafond du pourboire OBTENU
+-- (constat F) est calcule ICI, depuis la devise de la commande: 1 000 000 en
+-- unites majeures (MAX_TIP_AMOUNT de src/lib/validations/order.schema.ts),
+-- soit 1 000 000 en XAF/XOF (sans decimales) et 100 000 000 centimes en
+-- EUR/USD. Un parametre se contournait par un appel direct avec NULL.
+--
+-- DROITS. Un employe sans `orders.pay` (serveur, chef par defaut) est refuse
+-- explicitement (42501) au lieu d'un "rien n'a bascule" silencieux. Le role
+-- service (route caisse) n'est pas concerne: il a deja ete controle.
+--
+-- RIEN N'A BASCULE. La fonction renvoie l'etat de reglement de la commande
+-- (`payment_status`): l'application distingue une commande deja reglee (rejeu,
+-- sans effet) d'une commande partiellement payee, qu'on solde depuis son
+-- detail et non ici.
 --
 -- Rejouable: CREATE OR REPLACE.
--- Rollback: DROP FUNCTION public.encaisser_commande(uuid, uuid, text, bigint, bigint);
+-- Rollback: DROP FUNCTION public.encaisser_commande(uuid, uuid, text, bigint);
 -- puis redeployer l'ancien markPaid (deux ecritures).
 
 BEGIN;
@@ -38,8 +49,7 @@ CREATE OR REPLACE FUNCTION public.encaisser_commande(
   p_order_id uuid,
   p_tenant_id uuid,
   p_method text,
-  p_tip_ajout bigint DEFAULT 0,
-  p_tip_plafond bigint DEFAULT NULL
+  p_tip_ajout bigint DEFAULT 0
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -48,9 +58,16 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_ligne record;
+  v_etat text;
 BEGIN
   IF coalesce(p_tip_ajout, 0) < 0 THEN
     RAISE EXCEPTION 'Pourboire negatif' USING ERRCODE = '22023';
+  END IF;
+
+  IF current_user IN ('authenticated', 'anon')
+     AND NOT public.has_tenant_write_permission(p_tenant_id, 'orders.pay')
+  THEN
+    RAISE EXCEPTION 'Encaissement non autorise' USING ERRCODE = '42501';
   END IF;
 
   UPDATE public.orders o
@@ -63,15 +80,22 @@ BEGIN
      AND o.payment_status = 'pending'
      -- Une commande annulee garde payment_status = 'pending'.
      AND o.status <> 'cancelled'
-  RETURNING o.session_id, o.total, o.tip_amount INTO v_ligne;
+  RETURNING o.session_id, o.total, o.tip_amount, o.display_currency INTO v_ligne;
 
-  -- Rien de bascule: deja reglee (double appui, rejeu), annulee, ou hors de
-  -- portee. Le rejeu reste un non-evenement.
+  -- Rien de bascule: deja reglee (double appui, rejeu), partiellement payee,
+  -- annulee, ou hors de portee. L'etat dit lequel (NULL = invisible).
   IF NOT FOUND THEN
-    RETURN jsonb_build_object('paid', false);
+    SELECT o.payment_status INTO v_etat
+      FROM public.orders o
+     WHERE o.id = p_order_id AND o.tenant_id = p_tenant_id;
+    RETURN jsonb_build_object('paid', false, 'payment_status', v_etat);
   END IF;
 
-  IF p_tip_plafond IS NOT NULL AND coalesce(v_ligne.tip_amount, 0) > p_tip_plafond THEN
+  -- Parentheses obligatoires: sans elles, PL/pgSQL coupe la condition du IF
+  -- au premier THEN, celui du CASE.
+  IF coalesce(v_ligne.tip_amount, 0) >
+       (CASE WHEN v_ligne.display_currency IN ('EUR', 'USD') THEN 100000000 ELSE 1000000 END)
+  THEN
     RAISE EXCEPTION 'Pourboire trop eleve' USING ERRCODE = '22023';
   END IF;
 
@@ -86,8 +110,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.encaisser_commande(uuid, uuid, text, bigint, bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.encaisser_commande(uuid, uuid, text, bigint, bigint)
+REVOKE ALL ON FUNCTION public.encaisser_commande(uuid, uuid, text, bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.encaisser_commande(uuid, uuid, text, bigint)
   TO authenticated, service_role;
 
 COMMIT;

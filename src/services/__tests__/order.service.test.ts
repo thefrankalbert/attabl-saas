@@ -930,7 +930,6 @@ describe('OrderService', () => {
         p_tenant_id: 't1',
         p_method: 'cash',
         p_tip_ajout: 0,
-        p_tip_plafond: null,
       });
     });
 
@@ -982,7 +981,8 @@ describe('OrderService', () => {
         payment_status: 'pending',
       });
       await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash', tipAmount: 200 });
-      expect(payCall(m)).toMatchObject({ p_tip_ajout: 200, p_tip_plafond: 1_000_000 });
+      expect(payCall(m)).toEqual(expect.objectContaining({ p_tip_ajout: 200 }));
+      expect(payCall(m)).not.toHaveProperty('p_tip_plafond');
       expect(m.readEqs).toContainEqual(['tenant_id', 't1']);
     });
 
@@ -990,7 +990,7 @@ describe('OrderService', () => {
       const m = makeSupabase();
       await createOrderService(m.client).markPaid('o1', 't1', { method: 'cash', tipAmount: 0 });
       expect(m.tipRead).not.toHaveBeenCalled();
-      expect(payCall(m)).toMatchObject({ p_tip_ajout: 0, p_tip_plafond: null });
+      expect(payCall(m)).toMatchObject({ p_tip_ajout: 0 });
     });
 
     // Constat F: meme plafond que la route de commande, 1 000 000 en unites
@@ -1017,18 +1017,19 @@ describe('OrderService', () => {
         method: 'cash',
         tipAmount: 999_500,
       });
-      expect(payCall(xof)).toMatchObject({ p_tip_ajout: 999_500, p_tip_plafond: 1_000_000 });
+      expect(payCall(xof)).toMatchObject({ p_tip_ajout: 999_500 });
 
       const eur = makeSupabase(undefined, {
         tip_amount: 0,
         display_currency: 'EUR',
         payment_status: 'pending',
       });
+      // 1 000 000 EUR = 100 000 000 centimes: 2 000 000 centimes passe.
       await createOrderService(eur.client).markPaid('o1', 't1', {
         method: 'cash',
         tipAmount: 2_000_000,
       });
-      expect(payCall(eur)).toMatchObject({ p_tip_plafond: 100_000_000 });
+      expect(payCall(eur)).toMatchObject({ p_tip_ajout: 2_000_000 });
     });
 
     // Un rejeu d'un encaissement deja passe relisait un pourboire DEJA augmente:
@@ -1044,7 +1045,29 @@ describe('OrderService', () => {
         tipAmount: 200,
       });
       expect(res).toEqual({ paid: false });
-      expect(payCall(m)).toMatchObject({ p_tip_plafond: null });
+      expect(payCall(m)).toMatchObject({ p_tip_ajout: 200 });
+    });
+
+    // Contre-verification du 2026-11-21: le refus de plan de la base (PR #444,
+    // code 23514) etait traite comme une panne passagere: "Erreur interne" a
+    // l'ecran, et la file hors ligne relancait en boucle.
+    it('refus de plan (23514): refus definitif, message clair', async () => {
+      const m = makeSupabase({ data: null, error: { code: '23514', message: 'plan' } });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION',
+        message: 'Pourboire non inclus dans votre plan',
+      });
+    });
+
+    // Une commande partiellement payee repondait "succes, deja reglee": le
+    // caissier croyait avoir encaisse.
+    it('commande partiellement payee: erreur explicite, pas un faux succes', async () => {
+      const m = makeSupabase({ data: { paid: false, payment_status: 'partial' }, error: null });
+      await expect(
+        createOrderService(m.client).markPaid('o1', 't1', { method: 'cash' }),
+      ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringMatching(/partiel/) });
     });
   });
 

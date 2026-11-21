@@ -14,12 +14,11 @@ import PaymentModal from '../PaymentModal';
  * Mesure du 2026-11-21 sur un build de production local: ouvert depuis le
  * detail d'une commande (fenetre Radix modale), l'ecran d'encaissement
  * ignorait TOUS les clics. Radix pose `pointer-events: none` sur <body>, et le
- * portail de l'ecran (enfant de <body>, hors du contenu Radix) en heritait.
- * La correction est la classe `pointer-events-auto` sur la racine de l'ecran.
- * Sans feuille de style ici, happy-dom ne l'applique pas: on verifie donc la
- * classe (absente de l'ancien code), et le clic avec la verification de
- * pointer-events coupee. La preuve dans un vrai navigateur est la mesure
- * elementFromPoint decrite ci-dessus.
+ * portail maison de l'ecran (hors du contenu Radix) en heritait; le piege a
+ * focus et la touche Echap restaient aussi a la fenetre du dessous.
+ *
+ * Ces tests passent par user-event, qui REFUSE de cliquer un element qui a ou
+ * herite de `pointer-events: none`: ils echouent sur l'ancien code.
  */
 
 vi.mock('@/lib/offline/submit-order', () => ({ submitOrder: vi.fn() }));
@@ -38,25 +37,50 @@ const order = {
   display_currency: 'XOF',
 } as unknown as Order;
 
+function renderInsideDetails(onClosePayment = vi.fn(), onCloseDetails = vi.fn()) {
+  render(
+    <NextIntlClientProvider locale="fr-FR" messages={messages}>
+      <Dialog open onOpenChange={(open) => !open && onCloseDetails()}>
+        <DialogContent>
+          <DialogTitle>Detail</DialogTitle>
+          <PaymentModal
+            order={order}
+            currency="XOF"
+            onClose={onClosePayment}
+            onSuccess={() => {}}
+          />
+        </DialogContent>
+      </Dialog>
+    </NextIntlClientProvider>,
+  );
+  return { onClosePayment, onCloseDetails };
+}
+
 describe('PaymentModal ouvert depuis une fenetre Radix (detail de commande)', () => {
   afterEach(cleanup);
 
   it('reste cliquable: le pourboire de la caisse s ajoute au montant', async () => {
-    const user = userEvent.setup({ pointerEventsCheck: 0 });
-    render(
-      <NextIntlClientProvider locale="fr-FR" messages={messages}>
-        <Dialog open>
-          <DialogContent>
-            <DialogTitle>Detail</DialogTitle>
-            <PaymentModal order={order} currency="XOF" onClose={() => {}} onSuccess={() => {}} />
-          </DialogContent>
-        </Dialog>
-      </NextIntlClientProvider>,
-    );
-    expect(document.body.style.pointerEvents).toBe('none');
-    const screenRoot = screen.getByRole('dialog', { name: /Encaissement/ });
-    expect(screenRoot).toHaveClass('pointer-events-auto');
+    const user = userEvent.setup();
+    renderInsideDetails();
     await user.click(screen.getAllByRole('button', { name: /^1\D?000$/ })[0]);
     expect(screen.getAllByText(/6\D?500/).length).toBeGreaterThan(0);
+  });
+
+  it('accepte la saisie d un pourboire personnalise', async () => {
+    const user = userEvent.setup();
+    renderInsideDetails();
+    await user.click(screen.getAllByRole('button', { name: 'Personnalisé' })[0]);
+    const field = screen.getAllByRole('spinbutton', { name: 'Personnalisé' })[0];
+    await user.type(field, '750');
+    expect(field).toHaveValue(750);
+    expect(screen.getAllByText(/6\D?250/).length).toBeGreaterThan(0);
+  });
+
+  it('Echap ferme l encaissement, pas le detail de la commande', async () => {
+    const user = userEvent.setup();
+    const { onClosePayment, onCloseDetails } = renderInsideDetails();
+    await user.keyboard('{Escape}');
+    expect(onClosePayment).toHaveBeenCalledTimes(1);
+    expect(onCloseDetails).not.toHaveBeenCalled();
   });
 });

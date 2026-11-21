@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useState, useRef } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslations } from 'next-intl';
 import { Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -115,19 +114,6 @@ export default function PaymentModal({
   // In ORDER mode amounts come from the order's currency, not the prop default.
   const displayCurrency = isOrderMode ? orderCurrency : currency;
 
-  // Cible du portail (voir le commentaire au rendu). `null` tant que le
-  // composant n'est pas monte cote navigateur.
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    setPortalTarget(document.body);
-  }, []);
-
-  // Keyboard focus stays in the payment screen and returns to the till after.
-  // Cart mode only: opened from an order's details, the screen sits above a
-  // Radix dialog whose own focus scope would fight this trap.
-  const layerRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(layerRef, portalTarget !== null && !isOrderMode);
-
   const methodChoices = usePaymentMethodChoices();
   const [chosenMethod, setChosenMethod] = useState<PaymentMethod | null>(null);
   const method = effectivePaymentMethod(chosenMethod, methodChoices);
@@ -166,16 +152,6 @@ export default function PaymentModal({
       : null;
   // Carte: le terminal du restaurant a deja encaisse, aucune saisie de montant.
   const canValidate = !isCash || cashIsValid;
-
-  // Escape closes - but never while a payment is in flight (the cashier would
-  // lose the result), nor when a nested dialog (comp) already handled it.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented && !isProcessing) onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onClose, isProcessing]);
 
   const handleProcessPayment = async () => {
     setIsProcessing(true);
@@ -227,149 +203,152 @@ export default function PaymentModal({
   const serviceChargeAmount = pick(order?.service_charge_amount, pricing?.serviceChargeAmount);
   const discountAmount = pick(order?.discount_amount, pricing?.discountAmount);
 
-  // PORTAIL VERS LE CORPS DU DOCUMENT: rendu dans une fenetre Radix (detail
-  // de commande), dont le `transform` devient le bloc conteneur des `fixed`, le
-  // calque plein ecran restait enferme dans la fenetre (mesure du 2026-11-06,
-  // bouton "Valider" hors de la zone visible). Monte apres le premier rendu:
-  // `document` n'existe pas cote serveur.
-  if (!portalTarget) return null;
+  // FENETRE RADIX, IMBRIQUEE QUAND IL LE FAUT. Ouvert depuis le detail d'une
+  // commande, l'ecran est au-dessus d'une fenetre Radix modale. C'etait un
+  // portail maison: la fenetre du dessous gardait le piege a focus, le blocage
+  // du defilement, la touche Echap, et posait `pointer-events: none` sur
+  // <body> - aucun bouton de l'encaissement ne repondait (mesure du
+  // 2026-11-21). Une fenetre Radix imbriquee prend la main sur tout cela: elle
+  // devient la couche du dessus, et Echap ne ferme qu'elle. Son portail vers
+  // <body> la sort aussi du `transform` de la fenetre parente (mesure du
+  // 2026-11-06: calque enferme, bouton "Valider" hors de vue).
+  // Fermeture refusee pendant un encaissement: le caissier perdrait le resultat.
+  const closeUnlessBusy = (open: boolean) => {
+    if (!open && !isProcessing) onClose();
+  };
 
-  return createPortal(
-    <div
-      ref={layerRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="payment-modal-title"
-      // pointer-events-auto: opened from an order's details, a Radix modal
-      // dialog sets `pointer-events: none` on <body>, and this portal (a child
-      // of <body>, outside the dialog content) inherited it - every button of
-      // the payment screen ignored clicks (measured 2026-11-21 on a local
-      // production build: elementFromPoint fell through to the details list).
-      className="@container pointer-events-auto fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden outline-none animate-in fade-in duration-200"
-    >
-      <PaymentHeader
-        titleId="payment-modal-title"
-        orderNumber={finalOrderNum}
-        table={finalTable}
-        onBack={onClose}
-        busy={isProcessing}
-      />
-
-      {/* --- MAIN -- 2 columns on md+, payment-only on mobile --- */}
-      <div className="flex-1 min-h-0 flex flex-col @3xl:grid @3xl:grid-cols-2 overflow-hidden">
-        {/* --- LEFT: Receipt (hidden on mobile) --- */}
-        <div className="hidden @3xl:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
-          <PaymentReceipt
-            currency={displayCurrency}
-            finalTotal={finalTotal}
-            tipAmount={tipAmount}
-            cartItems={cartItems}
-            subtotal={subtotal}
-            taxAmount={taxAmount}
-            serviceChargeAmount={serviceChargeAmount}
-            discountAmount={discountAmount}
+  return (
+    <DialogPrimitive.Root open onOpenChange={closeUnlessBusy}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          // Plein ecran: il n'y a pas d'"exterieur" a cliquer, et un clic
+          // dans une fenetre imbriquee (offrir) ne doit pas fermer celle-ci.
+          onInteractOutside={(e) => e.preventDefault()}
+          className="@container fixed inset-0 z-50 bg-app-bg text-app-text flex flex-col overflow-hidden outline-none animate-in fade-in duration-200"
+        >
+          <PaymentHeader
+            orderNumber={finalOrderNum}
+            table={finalTable}
+            onBack={onClose}
+            busy={isProcessing}
           />
 
-          {/* Tip Selection -- pushed to bottom */}
-          {canTip ? (
-            <TipSelector withTitle className="mt-auto" {...tipProps} />
-          ) : (
-            recordedTipNote && (
-              <p className="mt-auto text-xs text-app-text-secondary">{recordedTipNote}</p>
-            )
-          )}
-        </div>
-
-        {/* --- RIGHT: Payment Input (full width on mobile) --- */}
-        <div className="flex-1 flex flex-col overflow-y-auto min-h-0 p-3 sm:p-4 lg:p-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {/* Mobile: compact summary (hidden on desktop) */}
-          <div className="flex items-center justify-between mb-3 @3xl:hidden shrink-0">
-            <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
-              {t('amountToPay')}
-            </p>
-            <p className="text-xl sm:text-2xl font-bold text-app-text tabular-nums">
-              {formatCurrency(totalWithTip, displayCurrency)}
-            </p>
-          </div>
-
-          {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          {canTip ? (
-            <TipSelector className="mb-3 @3xl:hidden shrink-0" {...tipProps} />
-          ) : (
-            recordedTipNote && (
-              <p className="mb-3 @3xl:hidden shrink-0 text-xs text-app-text-secondary">
-                {recordedTipNote}
-              </p>
-            )
-          )}
-
-          {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
-          <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
-            <PaymentMethodPicker
-              value={method}
-              onChange={setChosenMethod}
-              choices={methodChoices}
-              disabled={isProcessing}
-            />
-
-            {isCash && (
-              <CashPanel
+          {/* --- MAIN -- 2 columns on md+, payment-only on mobile --- */}
+          <div className="flex-1 min-h-0 flex flex-col @3xl:grid @3xl:grid-cols-2 overflow-hidden">
+            {/* --- LEFT: Receipt (hidden on mobile) --- */}
+            <div className="hidden @3xl:flex flex-col border-r border-app-border overflow-y-auto p-5 lg:p-6">
+              <PaymentReceipt
                 currency={displayCurrency}
-                receivedAmount={receivedAmount}
-                amountRemaining={amountRemaining}
-                change={change}
-                cashIsValid={cashIsValid}
-                quickAdd={cashQuickAdd(displayCurrency)}
-                onKey={handleKeypadPress}
-                onExact={setExactCashAmount}
-                onAdd={addCashAmount}
+                finalTotal={finalTotal}
+                tipAmount={tipAmount}
+                cartItems={cartItems}
+                subtotal={subtotal}
+                taxAmount={taxAmount}
+                serviceChargeAmount={serviceChargeAmount}
+                discountAmount={discountAmount}
               />
-            )}
 
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleProcessPayment}
-              disabled={!canValidate || isProcessing}
-              className={cn(
-                'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
-                canValidate ? '' : 'opacity-60',
-              )}
-            >
-              {isProcessing ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              {/* Tip Selection -- pushed to bottom */}
+              {canTip ? (
+                <TipSelector withTitle className="mt-auto" {...tipProps} />
               ) : (
-                <Check className="mr-2 h-5 w-5" />
+                recordedTipNote && (
+                  <p className="mt-auto text-xs text-app-text-secondary">{recordedTipNote}</p>
+                )
               )}
-              {t('validatePayment')}
-            </Button>
+            </div>
 
-            {/* Offrir (comp) - MANAGER only, ORDER mode only. Closes the order for
+            {/* --- RIGHT: Payment Input (full width on mobile) --- */}
+            <div className="flex-1 flex flex-col overflow-y-auto min-h-0 p-3 sm:p-4 lg:p-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              {/* Mobile: compact summary (hidden on desktop) */}
+              <div className="flex items-center justify-between mb-3 @3xl:hidden shrink-0">
+                <p className="text-xs font-medium uppercase tracking-widest text-app-text-muted">
+                  {t('amountToPay')}
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-app-text tabular-nums">
+                  {formatCurrency(totalWithTip, displayCurrency)}
+                </p>
+              </div>
+
+              {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
+              {canTip ? (
+                <TipSelector className="mb-3 @3xl:hidden shrink-0" {...tipProps} />
+              ) : (
+                recordedTipNote && (
+                  <p className="mb-3 @3xl:hidden shrink-0 text-xs text-app-text-secondary">
+                    {recordedTipNote}
+                  </p>
+                )
+              )}
+
+              {/* Method picker; cash: received, change, shortcuts, numpad, validate */}
+              <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3">
+                <PaymentMethodPicker
+                  value={method}
+                  onChange={setChosenMethod}
+                  choices={methodChoices}
+                  disabled={isProcessing}
+                />
+
+                {isCash && (
+                  <CashPanel
+                    currency={displayCurrency}
+                    receivedAmount={receivedAmount}
+                    amountRemaining={amountRemaining}
+                    change={change}
+                    cashIsValid={cashIsValid}
+                    quickAdd={cashQuickAdd(displayCurrency)}
+                    onKey={handleKeypadPress}
+                    onExact={setExactCashAmount}
+                    onAdd={addCashAmount}
+                  />
+                )}
+
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={handleProcessPayment}
+                  disabled={!canValidate || isProcessing}
+                  className={cn(
+                    'w-full min-h-[52px] rounded-xl text-base font-bold shrink-0 touch-manipulation',
+                    canValidate ? '' : 'opacity-60',
+                  )}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Check className="mr-2 h-5 w-5" />
+                  )}
+                  {t('validatePayment')}
+                </Button>
+
+                {/* Offrir (comp) - MANAGER only, ORDER mode only. Closes the order for
                 free without a tender; the server re-checks the role. */}
-            {isOrderMode && canComp && order?.id && order.tenant_id && (
-              <CompOrderDialog
-                tenantId={order.tenant_id}
-                orderId={order.id}
-                onComped={() => onSuccess()}
-              />
-            )}
-          </div>
+                {isOrderMode && canComp && order?.id && order.tenant_id && (
+                  <CompOrderDialog
+                    tenantId={order.tenant_id}
+                    orderId={order.id}
+                    onComped={() => onSuccess()}
+                  />
+                )}
+              </div>
 
-          {/* Cancel - especes : la validation se fait via le bouton ci-dessus */}
-          <div className="flex shrink-0 mt-auto pt-2 border-t border-app-border @3xl:border-t-0 @3xl:pt-0">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isProcessing}
-              className="rounded-xl min-h-[44px] flex-1"
-            >
-              {t('cancel')}
-            </Button>
+              {/* Cancel - especes : la validation se fait via le bouton ci-dessus */}
+              <div className="flex shrink-0 mt-auto pt-2 border-t border-app-border @3xl:border-t-0 @3xl:pt-0">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isProcessing}
+                  className="rounded-xl min-h-[44px] flex-1"
+                >
+                  {t('cancel')}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>,
-    portalTarget,
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
