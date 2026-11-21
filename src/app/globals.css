@@ -600,6 +600,15 @@ body {
   overflow: hidden;
 }
 
+/* Pages marketing uniquement : la fenetre defile (position sticky, useScroll,
+   barre d'adresse mobile et restauration du scroll se calent sur elle). Le
+   contrat ci-dessus reste intact pour l'application. */
+html:has(.marketing-shell),
+html:has(.marketing-shell) body {
+  height: auto;
+  overflow: visible;
+}
+
 body {
   background-color: var(--app-bg);
   color: var(--app-text);
