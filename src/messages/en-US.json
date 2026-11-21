@@ -860,60 +860,150 @@
     "home": {
       "hero": {
         "title": "Your restaurant,\nunder control.",
-        "subtitle": "Your register, your orders, your stock. One single app.",
-        "ctaPrimary": "Try it free",
-        "ctaDemo": "Request a demo",
-        "trust": "14 days free - No credit card required",
-        "imageAlt": "The Attabl dashboard: average ticket, active tables, QR codes and revenue by sales channel"
+        "subtitle": "Register, orders, kitchen and stock in one app. Even when the internet drops.",
+        "ctaPrimary": "Try it free for 14 days",
+        "ctaWhatsapp": "Message us on WhatsApp",
+        "proof": "They run their service with Attabl",
+        "clientLogoAlt": "Radisson Blu N'Djamena"
       },
-      "stock": {
-        "badge": "Stock & inventory",
-        "title": "Stock stops surprising you.",
-        "body": "Every product, its level, its cost. An alert fires before you run out, and food cost stays in view, recipe by recipe.",
-        "link": "See stock management",
-        "browserLabel": "Inventory",
-        "imageAlt": "Inventory table: current stock, alert threshold, unit cost and status of each product"
+      "mosaic": {
+        "title": "From the first cover to the last ticket, Attabl keeps pace.",
+        "images": {
+          "patron": "Restaurant owner in Ouagadougou in his dining room before service",
+          "grill": "Cook turning a braised fish on the grill",
+          "serveuse": "Smiling waitress, tablet in hand",
+          "associes": "A chef and a manager, business partners, in front of their kitchen"
+        }
       },
-      "showcase": {
-        "title": "One screen for the whole service.",
-        "subtitle": "From order to register, from kitchen to supplier. Built for the pace of a real restaurant.",
-        "tabs": {
-          "dashboard": {
-            "title": "Dashboard",
-            "desc": "Today's sales, average ticket, active tables, revenue by channel."
+      "range": {
+        "eyebrow": "The Attabl range",
+        "title": "A setup that fits you.",
+        "intro": "One tablet at the counter, one in each server's hand, one in the kitchen, and the owner's office. Everything stays in sync, even offline.",
+        "cards": {
+          "comptoir": {
+            "name": "Attabl Comptoir",
+            "title": "The register that holds the rush.",
+            "body": "Order taking, cash or card payment, printed ticket. On the iPad or tablet you already own.",
+            "points": {
+              "p1": "Dine-in, takeaway, delivery and room orders in a single queue",
+              "p2": "Receipts and bills printed at the counter",
+              "p3": "Keeps selling when the internet drops"
+            },
+            "cta": "Discover Attabl Comptoir",
+            "imageAlt": "A hand rings up an order on the Attabl tablet at the counter, next to the ticket printer"
           },
-          "orders": {
-            "title": "Orders",
-            "desc": "Dine-in, takeaway, delivery or room. All in one queue."
+          "service": {
+            "name": "Attabl Service",
+            "title": "The order leaves from the table.",
+            "body": "Each server takes the order on their small tablet. It reaches the kitchen and the register at the same moment. Nobody copies anything twice.",
+            "points": {
+              "p1": "Floor plan and tables assigned to each server",
+              "p2": "The order goes to the kitchen as soon as it is taken",
+              "p3": "Live status for every order: pending, preparing, ready"
+            },
+            "cta": "Discover Attabl Service",
+            "imageAlt": "Smiling waitress holding her Attabl tablet"
           },
-          "kitchen": {
-            "title": "Kitchen display",
-            "desc": "Tickets reach the kitchen, in the right order, no paper."
+          "cuisine": {
+            "name": "Attabl Cuisine",
+            "title": "No more lost tickets.",
+            "body": "One tablet at the pass. Each order shows its time and table. The chef sees what is waiting, what is cooking, what is going out.",
+            "points": {
+              "p1": "Tickets sorted by status: pending, preparing, ready",
+              "p2": "Elapsed time visible on every order",
+              "p3": "The floor is notified when the dish is ready"
+            },
+            "cta": "Discover Attabl Cuisine",
+            "imageAlt": "Chef saucing a Nile perch on attieke, the Attabl Cuisine tablet at the pass"
           },
-          "stock": {
-            "title": "Stock & inventory",
-            "desc": "Levels, alert thresholds and food cost, always up to date."
+          "bureau": {
+            "name": "Attabl Bureau",
+            "title": "Your business, at a glance.",
+            "body": "Today's revenue, average ticket, stock and suppliers. On the office computer, for one or several venues.",
+            "points": {
+              "p1": "Sales reports and best-selling dishes",
+              "p2": "Stock, recipe cards and food cost per dish",
+              "p3": "Team, roles and access for everyone"
+            },
+            "cta": "Discover Attabl Bureau",
+            "imageAlt": "Hotel manager checking the Attabl dashboard on her computer"
+          }
+        },
+        "menu": {
+          "name": "Attabl Menu",
+          "title": "Your guests order from their table.",
+          "body": "They scan the QR code, browse your menu in French or English, and order. The order goes straight to the kitchen.",
+          "cta": "Discover Attabl Menu"
+        }
+      },
+      "local": {
+        "eyebrow": "Made for here",
+        "title": "The register that holds service, even when the internet gives out.",
+        "items": {
+          "offline": {
+            "title": "Offline",
+            "body": "The register keeps running locally and syncs on its own when the network returns. You lose nothing."
+          },
+          "fcfa": {
+            "title": "In FCFA",
+            "body": "From the menu to the end-of-day report, everything is built for your currency and your habits."
+          },
+          "whatsapp": {
+            "title": "On WhatsApp",
+            "body": "A real person answers you and trains your team, on-site or remotely."
+          },
+          "ready": {
+            "title": "Ready in 2 minutes",
+            "body": "Your account is created in 2 minutes and your menu is online the same day."
           }
         }
       },
-      "allInOne": {
-        "title": "Everything you need, in one app.",
-        "subtitle": "Six feature families, from the online menu to multi-venue reports.",
-        "chips": {
-          "menu": "Menu & orders",
-          "register": "Register & payment",
-          "kitchen": "Kitchen & prep",
-          "stock": "Stock & suppliers",
-          "reports": "Reports & analytics",
-          "team": "Team & staff"
-        },
-        "link": "All features"
+      "audience": {
+        "eyebrow": "Who it's for",
+        "title": "Restaurants, hotels, bars and cafes.",
+        "items": {
+          "restaurants": {
+            "title": "Restaurants",
+            "body": "Dine-in, takeaway and delivery in a single queue. The kitchen and the register see the same thing."
+          },
+          "hotels": {
+            "title": "Hotels",
+            "body": "Restaurant, bar and room service. Each outlet has its own register, one dashboard to run it all."
+          },
+          "bars": {
+            "title": "Bars and cafes",
+            "body": "Fast orders at the counter and a drinks stock that adds up at the end of the night."
+          }
+        }
       },
       "pricing": {
+        "eyebrow": "Pricing",
         "title": "Clear pricing. No commitment.",
-        "body": "From {price} per month, about {perDay} per day. 14-day trial, no credit card.",
-        "ctaPrimary": "See pricing",
-        "ctaSecondary": "Compare plans"
+        "trial": "14-day free trial. No credit card.",
+        "perMonth": "FCFA / month",
+        "perDay": "about {perDay} per day",
+        "cta": "Try it free",
+        "plans": {
+          "starter": {
+            "name": "Starter",
+            "desc": "Go digital without the hassle."
+          },
+          "pro": {
+            "name": "Pro",
+            "badge": "14-day trial",
+            "desc": "For more than 50 covers a day."
+          },
+          "business": {
+            "name": "Business",
+            "desc": "Hotel, chain or multiple sites.",
+            "note": "one dashboard to run it all"
+          }
+        },
+        "enterprise": {
+          "title": "Enterprise.",
+          "body": "Groups, franchises and chains: custom pricing."
+        },
+        "compare": "Compare plans"
       },
       "faq": {
         "title": "What people ask before they sign.",
@@ -940,8 +1030,7 @@
         "title": "Your business deserves better than a notebook and a calculator.",
         "subtitle": "Account created in 2 minutes. Your menu online today.",
         "ctaPrimary": "Launch my restaurant, free",
-        "whatsapp": "Message us on WhatsApp",
-        "trust": "14 days free - No credit card required"
+        "whatsapp": "Message us on WhatsApp"
       }
     },
     "header": {
