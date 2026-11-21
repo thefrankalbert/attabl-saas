@@ -68,7 +68,7 @@ CREATE POLICY "Tenant members can update assignments"
 
 **Step 2: Apply migration locally**
 
-Run: `~/.local/bin/supabase db push` or use the `scripts/run-migrations.mjs` pattern with `postgres` package.
+Run: appliquer la migration sur la base locale avec `pnpm db:migrate` (la production ne se migre jamais depuis un script, voir docs/DATABASE-MIGRATIONS.md).
 
 **Step 3: Commit**
 
