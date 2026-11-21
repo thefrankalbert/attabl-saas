@@ -172,7 +172,10 @@ export function TableGrid({
                       value={String(table.capacity)}
                       onValueChange={(val) => onUpdateCapacity(table, parseInt(val, 10))}
                     >
-                      <SelectTrigger className="text-xs h-7 w-16 px-1.5 py-0.5">
+                      <SelectTrigger
+                        aria-label={`${t('capacity')} ${table.display_name || table.table_number}`}
+                        className="text-xs h-7 w-16 px-1.5 py-0.5"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

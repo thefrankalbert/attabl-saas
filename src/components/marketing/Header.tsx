@@ -19,7 +19,7 @@ import { AttablLogo } from './AttablLogo';
 import { LocaleToggle } from './LocaleToggle';
 
 const NAV_LINK =
-  'inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50';
+  'inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50';
 const PANEL_BASE =
   'invisible absolute left-0 right-0 top-full z-50 -translate-y-2.5 border-b border-zinc-200 bg-white/95 opacity-0 shadow-[0_26px_44px_-30px_rgba(9,9,11,0.22)] backdrop-blur-md transition-[opacity,transform,visibility] duration-200 dark:border-zinc-800 dark:bg-zinc-950/95';
 const PANEL_OPEN = 'visible translate-y-0 opacity-100';

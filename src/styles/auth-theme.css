@@ -14,8 +14,11 @@
   --card: #ffffff;
   --surface-hover: #f4f4f5;
   --border: #e4e4e7;
-  --muted: #a1a1aa;
-  --secondary: #71717a;
+  /* #a1a1aa donnait 2.5:1 sur le fond ("ou", mentions): 4.6:1 (axe, WCAG AA). */
+  --muted: #71717a;
+  /* Un cran plus fonce que --muted (desormais #71717a pour le contraste AA):
+     les deux niveaux de gris restent distincts. */
+  --secondary: #5c5c66;
   --subtle: #52525b;
   --fg: #18181b;
   --heading: #09090b;
@@ -42,7 +45,8 @@
   --card: #141416;
   --surface-hover: #26262b;
   --border: #27272a;
-  --muted: #71717a;
+  /* #71717a: 4.1:1 sur le fond et 3.8:1 sur la carte en sombre. */
+  --muted: #8e8e96;
   --secondary: #a1a1aa;
   --subtle: #a1a1aa;
   --fg: #fafafa;

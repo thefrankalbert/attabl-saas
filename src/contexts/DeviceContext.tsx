@@ -24,7 +24,7 @@ const DeviceContext = createContext<DeviceContextValue | null>(null);
 
 // --- External Store (matchMedia) ------------------------
 
-function createMediaStore(query: string) {
+export function createMediaStore(query: string) {
   let listeners: Array<() => void> = [];
 
   function subscribe(callback: () => void) {

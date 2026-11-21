@@ -157,12 +157,14 @@ export function QRExportPanel({
       <div className="space-y-5">
         {/* Format */}
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-app-text-secondary">{t('cardFormat')}</Label>
+          <Label htmlFor="qr-card-format" className="text-xs font-medium text-app-text-secondary">
+            {t('cardFormat')}
+          </Label>
           <Select
             value={printLayout.cardFormat}
             onValueChange={(v) => setFormat(v as QRCardFormatId)}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="qr-card-format" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,7 +267,9 @@ export function QRExportPanel({
 
         {/* Tiling */}
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-app-text-secondary">{t('perPage')}</Label>
+          <Label htmlFor="qr-per-page" className="text-xs font-medium text-app-text-secondary">
+            {t('perPage')}
+          </Label>
           <Select
             value={String(printLayout.perPage)}
             onValueChange={(v) =>
@@ -275,7 +279,7 @@ export function QRExportPanel({
               })
             }
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="qr-per-page" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

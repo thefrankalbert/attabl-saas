@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
-import ImageUpload from '@/components/shared/ImageUpload';
+import { ItemPhotoFields } from './ItemPhotoFields';
 import { cn } from '@/lib/utils';
 import { ALLERGENS } from '@/lib/config/allergens';
 import { useToast } from '@/components/ui/use-toast';
@@ -196,9 +196,14 @@ export function ItemFormModal({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-app-text">{t('category')}</Label>
+              <Label htmlFor="item-form-category" className="text-app-text">
+                {t('category')}
+              </Label>
               <Select value={categoryId} onValueChange={setters.setCategoryId}>
-                <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30 w-full sm:w-64">
+                <SelectTrigger
+                  id="item-form-category"
+                  className="rounded-lg border border-app-border text-app-text focus:ring-accent/30 w-full sm:w-64"
+                >
                   <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,48 +282,12 @@ export function ItemFormModal({
         {/* Step 3 - Photo & Details */}
         {formStep === 3 && (
           <div className="space-y-5">
-            <div className="space-y-1.5">
-              <Label className="text-app-text">{t('imageUrl')}</Label>
-              <ImageUpload
-                value={imageUrl}
-                onChange={(url) => setters.setImageUrl(url)}
-                onRemove={() => setters.setImageUrl('')}
-                bucket="menu-items"
-              />
-            </div>
-
-            {/* Extra gallery photos - shown as a swipeable carousel on the item
-                detail sheet, after the primary image above. */}
-            <div className="space-y-2">
-              <Label className="text-app-text">{t('galleryPhotos')}</Label>
-              <p className="text-xs text-app-text-muted">{t('galleryPhotosDesc')}</p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {galleryImages.map((url, idx) => (
-                  <ImageUpload
-                    key={`${url}-${idx}`}
-                    value={url}
-                    onChange={(next) =>
-                      setters.setGalleryImages((prev) => prev.map((u, i) => (i === idx ? next : u)))
-                    }
-                    onRemove={() =>
-                      setters.setGalleryImages((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                    bucket="menu-items"
-                    aspect={1}
-                  />
-                ))}
-                {galleryImages.length < 5 && (
-                  <ImageUpload
-                    key={`add-${galleryImages.length}`}
-                    value=""
-                    onChange={(url) => setters.setGalleryImages((prev) => [...prev, url])}
-                    onRemove={() => {}}
-                    bucket="menu-items"
-                    aspect={1}
-                  />
-                )}
-              </div>
-            </div>
+            <ItemPhotoFields
+              imageUrl={imageUrl}
+              setImageUrl={setters.setImageUrl}
+              galleryImages={galleryImages}
+              setGalleryImages={setters.setGalleryImages}
+            />
             <div className="space-y-1.5">
               <Label className="text-app-text flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-[var(--warning)]" />

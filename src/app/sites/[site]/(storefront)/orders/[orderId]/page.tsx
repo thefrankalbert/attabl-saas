@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { getCartItemKey } from '@/components/tenant/cart/CartItemsList';
 import { remainingItemCapacity } from '@/lib/utils/cart-display';
 import { fromMinorUnits } from '@/lib/utils/money';
+import { formatCurrency } from '@/lib/utils/currency';
 import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -29,69 +30,12 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { PriceStacked } from '@/components/tenant/PriceStacked';
 import Image from 'next/image';
-
-interface DetailItem {
-  name: string;
-  quantity: number;
-  price: number;
-  menu_item_id?: string | null;
-  image_url?: string | null;
-}
-
-interface OrderDetailData {
-  id: string;
-  order_number: string;
-  table_number: string | null;
-  status: string;
-  total: number;
-  subtotal: number | null;
-  tip_amount: number;
-  created_at: string;
-  items: DetailItem[];
-}
-
-// Shape returned by the get_orders_for_tracking RPC (non-PII columns only).
-interface TrackedDetailRow {
-  id: string;
-  order_number: string;
-  table_number: string | null;
-  status: string;
-  total: number;
-  subtotal: number | null;
-  tip_amount: number | null;
-  created_at: string;
-  order_items: Array<{
-    item_name: string;
-    quantity: number;
-    price_at_order: number;
-    menu_item_id: string | null;
-    image_url: string | null;
-  }> | null;
-}
-
-/**
- * Libelle i18n par statut REEL de la commande.
- *
- * POURQUOI CETTE TABLE EXISTE. Cette page n'avait que DEUX etats: annulee, ou
- * tout le reste. Une commande qui venait d'etre passee ('pending') affichait
- * donc "Commande servie" avec une coche verte et le badge "Terminee". Le
- * convive lisait que son plat etait deja servi alors que la cuisine ne l'avait
- * pas encore vu, et il n'avait aucun moyen de savoir ou en etait sa commande.
- * Les sept statuts de `orders_status_check` sont couverts ici, et les cles
- * i18n existaient deja toutes (fr-FR et en-US).
- */
-const CLES_LIBELLE_STATUT: Record<string, string> = {
-  pending: 'statusPending',
-  confirmed: 'statusConfirmed',
-  preparing: 'statusPreparing',
-  ready: 'statusReady',
-  delivered: 'statusDelivered',
-  served: 'statusServed',
-  cancelled: 'statusCancelled',
-};
-
-/** Statuts terminaux ou la commande a bien ete remise au convive. */
-const STATUTS_SERVIS = new Set(['served', 'delivered']);
+import {
+  CLES_LIBELLE_STATUT,
+  STATUTS_SERVIS,
+  type OrderDetailData,
+  type TrackedDetailRow,
+} from '@/components/tenant/order-detail/order-detail-data';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -191,61 +135,49 @@ export default function OrderDetailPage() {
     if (!order) return;
     setDownloadingReceipt(true);
     try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      const left = 20;
-      const right = 190;
-      let y = 22;
-      // jsPDF core fonts are cp1252/WinAnsi: the thin-space (U+2009 / U+202F) thousands
-      // separator from formatDisplayPrice is not in that charset and renders as a missing
-      // glyph. Swap it for a regular ASCII space in the PDF.
-      const pdfPrice = (n: number) => formatDisplayPrice(n).replace(/[\u2009\u202f]/g, ' ');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text(tenant?.name ?? t('menuTitle'), left, y);
-      y += 9;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.text(order.order_number, left, y);
-      y += 6;
-      doc.setFontSize(10);
-      doc.text(
-        format(new Date(order.created_at), 'dd MMM yyyy - HH:mm', { locale: dateLocale }),
-        left,
-        y,
+      const [{ jsPDF }, { buildReceiptPdf }] = await Promise.all([
+        import('jspdf'),
+        import('@/lib/receipt/receipt-pdf'),
+      ]);
+      const doc = buildReceiptPdf(
+        jsPDF,
+        {
+          restaurantName: tenant?.name ?? t('menuTitle'),
+          // La ville n'est ajoutee que si l'adresse ne la contient pas deja.
+          address:
+            [
+              tenant?.address,
+              tenant?.city && !tenant?.address?.includes(tenant.city) ? tenant.city : null,
+            ]
+              .filter(Boolean)
+              .join(', ') || null,
+          phone: tenant?.phone ?? null,
+          orderNumber: order.order_number,
+          dateTime: format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
+          table: order.table_number,
+          lines: order.items.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unitPrice: i.price,
+          })),
+          subtotal,
+          total: order.total,
+          tip: order.tip_amount,
+        },
+        {
+          title: t('receiptTitle'),
+          order: t('receiptOrder'),
+          table: t('table'),
+          phone: t('receiptPhone'),
+          subtotal: t('subtotal'),
+          adjustments: t('receiptAdjustments'),
+          tip: t('tip'),
+          total: t('total'),
+          thanks: t('receiptThanks'),
+        },
+        // Devise de la COMMANDE (un justificatif), pas celle choisie a l'ecran.
+        (n: number) => formatCurrency(n, orderCurrency),
       );
-      y += 6;
-      if (order.table_number) {
-        doc.text(`${t('table')} ${order.table_number}`, left, y);
-        y += 6;
-      }
-
-      y += 4;
-      doc.setDrawColor(220);
-      doc.line(left, y, right, y);
-      y += 9;
-
-      doc.setFontSize(11);
-      order.items.forEach((item) => {
-        doc.text(`${item.quantity} x ${item.name}`, left, y);
-        doc.text(pdfPrice(item.price * item.quantity), right, y, { align: 'right' });
-        y += 7;
-      });
-
-      y += 2;
-      doc.line(left, y, right, y);
-      y += 9;
-
-      doc.text(t('subtotal'), left, y);
-      doc.text(pdfPrice(subtotal), right, y, { align: 'right' });
-      y += 8;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.text(t('total'), left, y);
-      doc.text(pdfPrice(grandTotal), right, y, { align: 'right' });
-
       doc.save(`recu_${order.order_number}.pdf`);
       toast({ title: t('receiptDownloaded') });
     } catch (err) {
@@ -254,7 +186,7 @@ export default function OrderDetailPage() {
     } finally {
       setDownloadingReceipt(false);
     }
-  }, [order, tenant, t, dateLocale, formatDisplayPrice, subtotal, grandTotal, toast]);
+  }, [order, tenant, t, dateLocale, orderCurrency, subtotal, toast]);
 
   if (loading) {
     return (

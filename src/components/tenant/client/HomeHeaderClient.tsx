@@ -116,7 +116,6 @@ export function HomeHeaderClient({
             variant="ghost"
             onClick={openSearch}
             className="h-auto flex-1 justify-start p-0 text-[13.5px] font-normal tracking-[-0.01em] text-[var(--color-ink-muted)] hover:bg-transparent"
-            aria-label={t('searchMenu')}
           >
             {t('searchPlaceholder')}
           </Button>

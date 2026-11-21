@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import { adminStoragePrefix } from '@/lib/admin-session-storage';
 
 type SetStateAction<T> = T | ((prev: T) => T);
 type Dispatch<A> = (action: A) => void;
@@ -44,11 +46,12 @@ function readStorage<T>(key: string, defaultValue: T): T {
  * Drop-in replacement for useState that persists state to sessionStorage.
  * State survives navigation but is cleared when the browser tab is closed.
  *
- * @param key - Unique key for this state (namespaced automatically as `attabl:admin:{key}`)
+ * @param key - Unique key for this state (namespaced automatically as
+ *   `attabl:admin:{slug}:{key}`, see adminStoragePrefix)
  * @param defaultValue - Default value when no stored value exists
  */
 export function useSessionState<T>(key: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] {
-  const storageKey = `attabl:admin:${key}`;
+  const storageKey = `${adminStoragePrefix(usePathname())}${key}`;
   const defaultRef = useRef(defaultValue);
 
   // Always start from defaultValue to match SSR; hydrate from sessionStorage after mount.

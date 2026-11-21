@@ -77,6 +77,18 @@ const DEMO_DIR =
   process.env.DEMO_DIR ||
   '/Users/a.g.i.c/Documents/SAAS Ressources 26/Project App-Saas/Admin Doc/Attabl/Attabl/compte-demo-epicurien';
 
+// Paths come from the dossier's own manifest: refuse any that escapes the dossier
+// (e.g. "../../.env.local", or a symlink pointing outside) instead of reading it.
+function demoPath(rel: string): string {
+  const root = fs.realpathSync(DEMO_DIR);
+  // nosemgrep: path-join-resolve-traversal -- this IS the traversal guard, checked on the next line
+  const full = fs.realpathSync(path.resolve(root, rel));
+  if (full !== root && !full.startsWith(root + path.sep)) {
+    throw new Error(`Chemin hors du dossier de demo refuse: ${rel}`);
+  }
+  return full;
+}
+
 interface ManifestItem {
   slug: string;
   sort_order: number;
@@ -157,7 +169,7 @@ interface Expected {
 }
 
 function readJson<T>(rel: string): T {
-  return JSON.parse(fs.readFileSync(path.join(DEMO_DIR, rel), 'utf8')) as T;
+  return JSON.parse(fs.readFileSync(demoPath(rel), 'utf8')) as T;
 }
 
 const manifest = readJson<Manifest>('manifest.json');
@@ -626,7 +638,7 @@ async function createMenu() {
 
 // Upload one local dossier file to a bucket path and return its public URL.
 async function uploadFile(bucket: string, relPath: string, storagePath: string): Promise<string> {
-  const buf = fs.readFileSync(path.join(DEMO_DIR, relPath));
+  const buf = fs.readFileSync(demoPath(relPath));
   const { error } = await supabase.storage
     .from(bucket)
     .upload(storagePath, buf, { contentType: 'image/jpeg', upsert: true });

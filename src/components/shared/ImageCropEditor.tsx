@@ -38,7 +38,9 @@ export default function ImageCropEditor({
   const tc = useTranslations('common');
 
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
+    // col-span-full: dans une grille de galerie, l'editeur prend toute la ligne
+    // au lieu d'une case de 150 px ou la zone de recadrage devient minuscule.
+    <div className="col-span-full w-full rounded-xl overflow-hidden border border-app-border bg-app-card shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
         <div className="flex items-center gap-2">

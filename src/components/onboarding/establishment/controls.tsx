@@ -43,7 +43,7 @@ export function NumberStepper({
         <Button
           variant="outline"
           size="icon"
-          aria-label={tc('decrease')}
+          aria-label={`${tc('decrease')} - ${label}`}
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
@@ -52,6 +52,7 @@ export function NumberStepper({
         </Button>
         <Input
           type="number"
+          aria-label={label}
           value={value}
           onChange={(e) => {
             const val = parseInt(e.target.value, 10);
@@ -66,7 +67,7 @@ export function NumberStepper({
         <Button
           variant="outline"
           size="icon"
-          aria-label={tc('increase')}
+          aria-label={`${tc('increase')} - ${label}`}
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}

@@ -9,6 +9,7 @@ import {
   type LogoutCleanupResult,
   type PrepareLogoutOptions,
 } from './logout-cleanup';
+import { clearAdminSessionStorage } from '@/lib/admin-session-storage';
 
 /**
  * Liaison navigateur de prepareLogout (OFF-03). La logique pure et testee vit
@@ -24,6 +25,7 @@ export async function prepareLogoutInBrowser(
   // file d'attente possible, donc rien a perdre. On purge et on laisse partir.
   if (!outbox) {
     await deleteQueryCacheDb();
+    clearAdminSessionStorage();
     return { blocked: false, pending: 0, lost: 0 };
   }
 
@@ -57,6 +59,9 @@ export async function prepareLogoutInBrowser(
   // et repartiront a la prochaine connexion de cette personne sur cette tablette.
   if (!result.blocked) {
     await persistOutboxIdentity(null);
+    // Panier de caisse, table choisie, cle d'idempotence: rien ne doit rester
+    // pour la personne suivante sur ce poste.
+    clearAdminSessionStorage();
   }
 
   return result;

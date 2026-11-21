@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mocks
 // ---------------------------------------------------------------------------
 
+// hash-email.ts est marque server-only: sans ce mock, son import fait echouer la suite.
+vi.mock('server-only', () => ({}));
 vi.mock('@/lib/rate-limit', () => ({
   // La garde serree est passee sur le COMPTE, et une garde large reste par
   // adresse: comptee par adresse, la garde serree punissait le Wi-Fi d'un
@@ -26,7 +28,6 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
-  hashEmail: (email: string) => `hash_${email}`,
 }));
 
 vi.mock('@/services/email.service', () => ({

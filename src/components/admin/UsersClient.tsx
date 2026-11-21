@@ -298,9 +298,9 @@ export default function UsersClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('role')}</Label>
+              <Label htmlFor="edit-user-role">{t('role')}</Label>
               <Select value={editRole} onValueChange={setEditRole}>
-                <SelectTrigger className="min-h-[44px]">
+                <SelectTrigger id="edit-user-role" className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

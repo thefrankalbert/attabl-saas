@@ -1,0 +1,12 @@
+[
+  {
+    "rule": "js/user-controlled-bypass",
+    "path": "src/app/api/login/route.ts",
+    "reason": "Captcha Turnstile: la condition porte sur verifyTurnstileToken, qui fait verifier le jeton par Cloudflare cote serveur (src/lib/turnstile.ts). Le client fournit le jeton, pas le verdict. Examine le 2026-11-20 (PR #435)."
+  },
+  {
+    "rule": "js/user-controlled-bypass",
+    "path": "src/app/auth/callback/route.ts",
+    "reason": "Branche token_hash + type=recovery: verifyOtp est appele avec type 'recovery' code en dur, Supabase refuse un jeton d'un autre type; changer ?type= ne fait que changer de branche. La branche code + type=recovery, qui posait le marqueur sur simple parametre, a ete SUPPRIMEE dans la meme PR. Examine le 2026-11-20 (PR #435)."
+  }
+]

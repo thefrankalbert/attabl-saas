@@ -26,6 +26,11 @@ on:
 env:
   GITLAB_URL: https://gitlab.com/odcsupportagency/odc-support-agency-project.git
 
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
 jobs:
   mirror:
     # GitHub ne donne pas les secrets du depot aux executions declenchees par
@@ -37,7 +42,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout full history
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 

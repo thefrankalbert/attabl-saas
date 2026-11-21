@@ -177,7 +177,11 @@ export function ScreenLock({
               {mode === 'overlay' ? (
                 <p className="mt-2 text-sm text-app-text-secondary">{t('clickToUnlock')}</p>
               ) : (
-                <form onSubmit={handlePasswordUnlock} className="mt-6 w-full max-w-xs space-y-3">
+                <form
+                  method="post"
+                  onSubmit={handlePasswordUnlock}
+                  className="mt-6 w-full max-w-xs space-y-3"
+                >
                   <p className="truncate text-left text-xs text-app-text-muted">{userEmail}</p>
                   <div className="relative">
                     <Input

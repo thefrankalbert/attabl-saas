@@ -1,5 +1,6 @@
 'use client';
 
+import { clearAdminSessionStorage } from '@/lib/admin-session-storage';
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -177,6 +178,7 @@ export default function TenantsPageClient({
     [router],
   );
   const handleLogout = useCallback(async () => {
+    clearAdminSessionStorage();
     await supabase.auth.signOut();
     router.push('/login');
   }, [router, supabase]);

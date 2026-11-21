@@ -117,14 +117,16 @@ export function ChartPanelMinimal({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-[12px] border border-[var(--cc-border)] bg-[var(--cc-surface)] p-4">
-      <div className="mb-3 flex items-center justify-between">
+      {/* flex-wrap: a 375 px le titre etait ecrase en 3 lignes a cote des deux
+          selecteurs, dont le second touchait le bord de la carte. */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div
-          className="text-xs font-medium tracking-[0.02em]"
+          className="whitespace-nowrap text-xs font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
           {periodDescriptor}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Segmented
             value={mode}
             options={[

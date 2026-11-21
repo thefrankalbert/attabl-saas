@@ -1,13 +1,31 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Scanner, type IDetectedBarcode } from '@yudiel/react-qr-scanner';
+import {
+  Scanner,
+  setZXingModuleOverrides,
+  type IDetectedBarcode,
+  type IScannerError,
+} from '@yudiel/react-qr-scanner';
 import { X, Camera, CameraOff, RotateCcw, ScanLine, MapPin, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { logger } from '@/lib/logger';
 import type { Table } from '@/types/admin.types';
+
+// Sans lecteur QR integre au navigateur (Safari sur iPhone), la bibliotheque
+// decode avec un module WebAssembly qu'elle allait chercher sur
+// fastly.jsdelivr.net: la CSP (connect-src) le refusait, la camera s'ouvrait
+// puis l'ecran "camera non disponible" s'affichait. Le module est emis par le
+// bundler sous /_next/static: servi par notre domaine, et jamais reecrit par le
+// proxy sur le sous-domaine d'un restaurant (un fichier de public/ en .wasm y
+// repondait 404). zxing-wasm est epingle a la version qu'utilise le scanner.
+const ZXING_READER_WASM = new URL('zxing-wasm/reader/zxing_reader.wasm', import.meta.url).href;
+setZXingModuleOverrides({
+  locateFile: (path: string, prefix: string) =>
+    path.endsWith('.wasm') ? ZXING_READER_WASM : prefix + path,
+});
 
 // --- Types ---
 type ScanStatus = 'loading' | 'scanning' | 'success' | 'error';
@@ -74,6 +92,9 @@ export default function QRScanner({
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
   const [scannedResult, setScannedResult] = useState<QRScanResult | null>(null);
+  // Refus de la permission: on dit ou l'autoriser (un site ne peut pas ouvrir
+  // les reglages du telephone lui-meme).
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // Reset on open/close
   useEffect(() => {
@@ -136,9 +157,12 @@ export default function QRScanner({
     onClose();
   }, [scannedResult, onScan, onClose]);
 
-  const handleError = useCallback((error: unknown) => {
-    const errStr = error instanceof Error ? error.message : String(error);
-    if (errStr.includes('NotAllowedError') || errStr.includes('Permission denied')) {
+  const handleError = useCallback((error: IScannerError) => {
+    // La bibliotheque classe deja l'erreur: `kind` est la seule source fiable
+    // (le message d'origine n'est pas repris tel quel).
+    const denied = error.kind === 'permission-denied';
+    setPermissionDenied(denied);
+    if (denied) {
       logger.warn('Camera permission denied');
     } else {
       logger.error('Camera error', error);
@@ -295,8 +319,12 @@ export default function QRScanner({
               <CameraOff className="w-7 h-7 text-white/30" />
             </div>
             <div className="text-center">
-              <p className="text-white text-base font-semibold">{t('cameraUnavailable')}</p>
-              <p className="text-white/40 text-xs mt-1 leading-relaxed">{t('cameraHint')}</p>
+              <p className="text-white text-base font-semibold">
+                {permissionDenied ? t('cameraDeniedTitle') : t('cameraUnavailable')}
+              </p>
+              <p className="text-white/60 text-xs mt-1 leading-relaxed">
+                {permissionDenied ? t('cameraDeniedHint') : t('cameraHint')}
+              </p>
             </div>
 
             <Button
@@ -337,7 +365,7 @@ export default function QRScanner({
             <Button
               variant="ghost"
               onClick={onClose}
-              className="text-white/30 text-xs hover:text-white/50 min-h-[44px]"
+              className="text-white/70 text-xs hover:text-white min-h-[44px]"
             >
               {t('close')}
             </Button>

@@ -226,11 +226,14 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="type" className="text-sm font-medium text-app-text">
+                <Label htmlFor="add-restaurant-type" className="text-sm font-medium text-app-text">
                   {t('addRestaurant.typeLabel')}
                 </Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="h-11 rounded-lg border-app-border">
+                  <SelectTrigger
+                    id="add-restaurant-type"
+                    className="h-11 rounded-lg border-app-border"
+                  >
                     <SelectValue placeholder={t('addRestaurant.typePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>

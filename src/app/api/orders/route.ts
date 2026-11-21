@@ -226,11 +226,13 @@ export async function POST(request: Request) {
       // elle ne coute rien au convive qui commande sans code promo, c'est-a-dire
       // l'immense majorite.
       //
-      // La cle inclut le CODE: viser trois codes differents ne donne pas trois
-      // fois le quota du meme code, et un attaquant doit deviner chaque code
+      // La cle inclut le COUPON: viser trois coupons differents ne donne pas
+      // trois fois le quota du meme, et un attaquant doit deviner chaque code
       // separement. Elle inclut le tenant: un code `BIENVENUE` chez A et chez B
-      // sont deux campagnes distinctes.
-      const claimIdentifier = `${ip}:${tenantSlug}:${coupon_code}`;
+      // sont deux campagnes distinctes. Elle porte l'IDENTIFIANT du coupon
+      // resolu, pas le texte saisi: le code est valide sans tenir compte de la
+      // casse, donc "PROMO", "Promo" et "promo" donnaient trois quotas.
+      const claimIdentifier = `${ip}:${tenantSlug}:${couponResult.couponId}`;
       const { success: claimAllowed } = await couponClaimLimiter.check(claimIdentifier);
       if (!claimAllowed) {
         logger.warn('ORDER-SPAM: rafale de reclamations sur un code promo', {

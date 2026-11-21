@@ -17,6 +17,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { Client } = require('pg');
 const readline = require('readline');
+const { supabasePgConfig } = require('./lib/supabase-pg-ssl.cjs');
 
 // Configuration - Load from environment variables
 // Run with: source .env.local && node scripts/manage-super-admin.js [action]
@@ -33,10 +34,14 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !DATABASE_URL) {
 const SUPER_ADMIN_EMAIL = 'superadmin@attabl.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const pgClient = new Client({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+// Encrypted and verified, or no connection (see scripts/lib/supabase-pg-ssl.cjs).
+let pgClient;
+try {
+  pgClient = new Client(supabasePgConfig(DATABASE_URL, process.env.SUPABASE_DB_CA_CERT));
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
 
 async function prompt(question) {
   const rl = readline.createInterface({

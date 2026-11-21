@@ -245,7 +245,14 @@ export default function OrdersClient({
         />
 
         {/* Orders Table / Cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        {/* tabIndex: la zone defile seule; au clavier elle doit pouvoir prendre le
+            focus pour defiler (axe: scrollable-region-focusable). */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          tabIndex={0}
+          role="region"
+          aria-label={t('title')}
+        >
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />

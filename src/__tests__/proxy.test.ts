@@ -226,6 +226,20 @@ describe('proxy - subdomain extraction', () => {
     expect(injectedTenantSlug(res)).toBe('theblutable');
   });
 
+  it('un domaine personnalise a trois parties passe par la recherche de domaine, pas par son premier label', async () => {
+    getCachedTenantByDomainMock.mockResolvedValue('monresto');
+    const res = await proxy(makeRequest('menu.monresto.com', '/carte'));
+    expect(getCachedTenantByDomainMock).toHaveBeenCalledWith('menu.monresto.com');
+    expect(rewriteTarget(res)).toBe('/sites/monresto/carte');
+    expect(injectedTenantSlug(res)).toBe('monresto');
+  });
+
+  it('un domaine a trois parties non enregistre ne sert le restaurant de personne', async () => {
+    const res = await proxy(makeRequest('menu.inconnu.com', '/carte'));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(injectedTenantSlug(res)).toBeNull();
+  });
+
   it('does not rewrite when the custom-domain lookup misses', async () => {
     getCachedTenantByDomainMock.mockResolvedValue(null);
     const res = await proxy(makeRequest('unknown-domain.com', '/'));

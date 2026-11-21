@@ -40,6 +40,10 @@ export async function createMiddlewareClient(
           cookiesToSet.push({ name, value, options });
         },
         remove(name: string, options: CookieOptions) {
+          // Meme domaine que set(), sinon le cookie pose sur `.attabl.com` survit.
+          if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
+            options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
+          }
           request.cookies.set({ name, value: '', ...options });
           cookiesToSet.push({ name, value: '', options });
         },

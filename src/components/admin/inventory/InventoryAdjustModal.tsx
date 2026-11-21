@@ -107,14 +107,17 @@ export default function InventoryAdjustModal({
 
           <div className="space-y-4">
             <div>
-              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+              <Label
+                htmlFor="adjust-movement-type"
+                className="text-xs font-medium text-app-text-secondary mb-1 block"
+              >
                 {t('movementType')}
               </Label>
               <Select
                 value={adjustType}
                 onValueChange={(val) => setAdjustType(val as MovementType)}
               >
-                <SelectTrigger className="w-full h-10">
+                <SelectTrigger id="adjust-movement-type" className="w-full h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,14 +138,17 @@ export default function InventoryAdjustModal({
 
             {canReceiveInPurchaseUnit && selectedIngredient && (
               <div>
-                <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                <Label
+                  htmlFor="adjust-enter-in"
+                  className="text-xs font-medium text-app-text-secondary mb-1 block"
+                >
                   {t('enterIn')}
                 </Label>
                 <Select
                   value={receiveUnitMode}
                   onValueChange={(val) => setReceiveUnitMode(val as 'base' | 'purchase')}
                 >
-                  <SelectTrigger className="w-full h-10">
+                  <SelectTrigger id="adjust-enter-in" className="w-full h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,14 +189,17 @@ export default function InventoryAdjustModal({
 
             {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
               <div>
-                <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                <Label
+                  htmlFor="adjust-supplier"
+                  className="text-xs font-medium text-app-text-secondary mb-1 block"
+                >
                   {t('supplierOptional')}
                 </Label>
                 <Select
                   value={adjustSupplierId || '__none__'}
                   onValueChange={(val) => setAdjustSupplierId(val === '__none__' ? '' : val)}
                 >
-                  <SelectTrigger className="w-full h-10">
+                  <SelectTrigger id="adjust-supplier" className="w-full h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

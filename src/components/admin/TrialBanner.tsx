@@ -76,7 +76,7 @@ function getStyleConfig(daysRemaining: number): StyleConfig {
       containerClass: 'bg-status-error/10 border-status-error/20',
       iconClass: 'text-status-error',
       textClass: 'text-status-error',
-      ctaClass: 'bg-status-error text-white',
+      ctaClass: 'bg-status-error-solid text-white',
       closeClass: 'text-status-error hover:bg-status-error/10',
     };
   }
@@ -86,7 +86,7 @@ function getStyleConfig(daysRemaining: number): StyleConfig {
       containerClass: 'bg-status-warning/10 border-status-warning/20',
       iconClass: 'text-status-warning',
       textClass: 'text-status-warning',
-      ctaClass: 'bg-status-warning text-white',
+      ctaClass: 'bg-status-warning-solid text-white',
       closeClass: 'text-status-warning hover:bg-status-warning/10',
     };
   }
@@ -95,7 +95,7 @@ function getStyleConfig(daysRemaining: number): StyleConfig {
     containerClass: 'bg-status-info/10 border-status-info/20',
     iconClass: 'text-status-info',
     textClass: 'text-status-info',
-    ctaClass: 'bg-status-info text-white',
+    ctaClass: 'bg-status-info-solid text-white',
     closeClass: 'text-status-info hover:bg-status-info/10',
   };
 }

@@ -45,7 +45,8 @@ export default function MenuItemsList({
     return (
       <div className="text-center py-20">
         <div className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto bg-white border border-[#EEEEEE]">
-          <p className="font-medium text-[#B0B0B0]">{t('noMenuAvailable')}</p>
+          {/* ink-muted: le gris #B0B0B0 donnait 2.2:1 sur blanc (WCAG AA: 4.5). */}
+          <p className="font-medium text-[var(--color-ink-muted)]">{t('noMenuAvailable')}</p>
         </div>
       </div>
     );

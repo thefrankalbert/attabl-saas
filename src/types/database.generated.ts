@@ -2191,18 +2191,21 @@ export type Database = {
       };
       stripe_events: {
         Row: {
+          completed_at: string | null;
           id: string;
           processed_at: string;
           stripe_created_at: string | null;
           type: string;
         };
         Insert: {
+          completed_at?: string | null;
           id: string;
           processed_at?: string;
           stripe_created_at?: string | null;
           type: string;
         };
         Update: {
+          completed_at?: string | null;
           id?: string;
           processed_at?: string;
           stripe_created_at?: string | null;
@@ -2485,6 +2488,7 @@ export type Database = {
           past_due_since: string | null;
           phone: string | null;
           primary_color: string | null;
+          refund_frozen_at: string | null;
           screen_lock_mode: string | null;
           secondary_color: string | null;
           service_charge_rate: number | null;
@@ -2545,6 +2549,7 @@ export type Database = {
           past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
+          refund_frozen_at?: string | null;
           screen_lock_mode?: string | null;
           secondary_color?: string | null;
           service_charge_rate?: number | null;
@@ -2605,6 +2610,7 @@ export type Database = {
           past_due_since?: string | null;
           phone?: string | null;
           primary_color?: string | null;
+          refund_frozen_at?: string | null;
           screen_lock_mode?: string | null;
           secondary_color?: string | null;
           service_charge_rate?: number | null;

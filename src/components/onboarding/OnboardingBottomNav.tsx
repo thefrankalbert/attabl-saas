@@ -39,6 +39,7 @@ export function OnboardingBottomNav({
             type="button"
             variant="ghost"
             onClick={goPrev}
+            aria-label={t('back')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
           >
             <ArrowLeft className="h-4 w-4" />

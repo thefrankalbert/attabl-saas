@@ -71,6 +71,31 @@ export async function fetchTenders(
 }
 
 /**
+ * Un encaissement portant cette cle d'idempotence existe-t-il deja sur cette
+ * commande ? Sert a reconnaitre un rejeu la ou le plafond le refuserait.
+ */
+export async function isReplayedTender(
+  supabase: SupabaseClient,
+  orderId: string,
+  tenantId: string,
+  clientRequestId: string | null | undefined,
+): Promise<boolean> {
+  if (!clientRequestId) return false;
+  const { data, error } = await supabase
+    .from('payments')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('order_id', orderId)
+    .eq('client_request_id', clientRequestId)
+    .limit(1);
+
+  if (error) {
+    throw new ServiceError('Erreur lors du chargement des paiements', 'INTERNAL', error);
+  }
+  return (data ?? []).length > 0;
+}
+
+/**
  * Recompute and persist payment_status from the ledger after a tender write.
  * When the order becomes 'paid' (and was not already paid) it also stamps
  * paid_at (if null) and closes a fully-settled table session (best-effort).
@@ -125,11 +150,15 @@ export async function recompute(
     }
   }
 
-  const { error } = await supabase
-    .from('orders')
-    .update(update)
-    .eq('id', order.id)
-    .eq('tenant_id', tenantId);
+  let write = supabase.from('orders').update(update).eq('id', order.id).eq('tenant_id', tenantId);
+  // Sans remboursement, le registre ne fait que croitre: une commande deja
+  // 'paid' ne redevient jamais 'partial'. Deux encaissements simultanes lisaient
+  // chacun un registre incomplet, et le plus lent ecrasait 'paid' par 'partial'
+  // sur une commande soldee. Ce filtre rend cette ecriture en retard sans effet.
+  if (newStatus !== 'paid' && refunded === 0) {
+    write = write.neq('payment_status', 'paid');
+  }
+  const { error } = await write;
 
   if (error) {
     throw new ServiceError('Erreur lors de la mise a jour du paiement', 'INTERNAL', error);

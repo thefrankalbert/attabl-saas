@@ -288,10 +288,11 @@ export default function ItemDetailSheet({
             transition={{ duration: 0.25 }}
           />
 
-          {/* Bottom sheet */}
+          {/* Bottom sheet - max-w-xl: sur ordinateur la fiche s'etalait sur toute la
+              largeur (bouton d'ajout de 1300 px, prix colle au bord droit). */}
           <motion.div
             key="sheet"
-            className="fixed inset-x-0 bottom-0 top-[46px] z-[61] flex flex-col overflow-hidden rounded-t-[var(--radius-modal)] bg-white shadow-[0_20px_25px_-5px_rgba(26,26,26,0.10),0_8px_10px_-6px_rgba(26,26,26,0.04)]"
+            className="fixed inset-x-0 bottom-0 top-[46px] z-[61] mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-t-[var(--radius-modal)] bg-white shadow-[0_20px_25px_-5px_rgba(26,26,26,0.10),0_8px_10px_-6px_rgba(26,26,26,0.04)]"
             initial={{ y: shouldReduceMotion ? 0 : '100%', opacity: shouldReduceMotion ? 0 : 1 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{

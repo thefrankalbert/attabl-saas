@@ -28,7 +28,10 @@ export function OrderItemsList({
   const ta = useTranslations('admin');
 
   return (
-    <div className="rounded-xl border border-app-border overflow-hidden flex flex-col lg:min-h-0 lg:flex-1">
+    <div
+      data-testid="order-items-card"
+      className="rounded-xl border border-app-border overflow-hidden flex flex-col lg:min-h-0 lg:flex-1"
+    >
       <div className="px-3 py-2 bg-app-bg border-b border-app-border flex items-center justify-between shrink-0">
         <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
           {t('orderDetails')}
