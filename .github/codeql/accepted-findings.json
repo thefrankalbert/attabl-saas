@@ -8,5 +8,10 @@
     "rule": "js/user-controlled-bypass",
     "path": "src/app/auth/callback/route.ts",
     "reason": "Branche token_hash + type=recovery: verifyOtp est appele avec type 'recovery' code en dur, Supabase refuse un jeton d'un autre type; changer ?type= ne fait que changer de branche. La branche code + type=recovery, qui posait le marqueur sur simple parametre, a ete SUPPRIMEE dans la meme PR. Examine le 2026-11-20 (PR #435)."
+  },
+  {
+    "rule": "js/http-to-file-access",
+    "path": "scripts/telecharger-polices.mjs",
+    "reason": "Outil lance a la main pour auto-heberger les polices (PR #322), jamais au build ni en production. Il ecrit des woff2 telecharges depuis fonts.gstatic.com uniquement (URL filtree par regex), sous un nom fait du slug de FAMILLES et d'une graisse verifiee numerique. Le resultat est relu en revue avant d'etre versionne. Examine le 2026-11-21."
   }
 ]
