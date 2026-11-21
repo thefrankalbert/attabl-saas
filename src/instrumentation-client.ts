@@ -21,12 +21,10 @@ Sentry.init({
   // Capture 10% of transactions in production
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  // Session Replay
-  // Capture 10% of sessions, 100% of sessions with errors
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-
-  integrations: [Sentry.replayIntegration()],
+  // No Session Replay, on purpose (2026-11-20): it added 91 KB (275 KB unpacked)
+  // of JavaScript to EVERY page, the heaviest file on a phone over 3G, and it
+  // records what customers see on screen (names, phone numbers), a processing
+  // of personal data that would have to be declared. Errors are still reported.
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
