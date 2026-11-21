@@ -1,0 +1,100 @@
+# Test d'intrusion automatique du site en ligne (DAST).
+#
+# Remplace le test d'intrusion fait a la main le 2026-11-12 par deux outils
+# reconnus qui attaquent le site comme un tiers le ferait, depuis l'exterieur:
+#   - OWASP ZAP (scan "baseline"): explore le site et signale en-tetes de
+#     securite manquants, cookies mal proteges, fuites d'information, etc.
+#   - Nuclei (ProjectDiscovery): des milliers de controles connus (CVE,
+#     mauvaises configurations, fichiers exposes, panneaux d'admin).
+#
+# Les deux sont PASSIFS ou NON DESTRUCTIFS: ZAP baseline ne fait que lire les
+# reponses, et Nuclei exclut les modeles intrusifs, de deni de service et de
+# fuzzing. Rien n'est ecrit en base. Debit limite (10 requetes/s).
+#
+# Quand: chaque jour, apres chaque mise en production, et a la demande.
+# Un constat fait echouer le run: GitHub previent alors le proprietaire par
+# e-mail. Un faux positif prouve est ecarte dans .zap/rules.tsv (ZAP) ou
+# .nuclei-ignore (Nuclei), avec sa raison ecrite.
+
+name: Test d'intrusion
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_run:
+    workflows: ['Promote production']
+    types: [completed]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/dast.yml'
+      - '.zap/**'
+      - '.nuclei-ignore'
+
+concurrency:
+  group: dast
+  cancel-in-progress: false
+
+# Least privilege: the token can only read the code. A job that needs more
+# asks for it in its own `permissions:` block.
+permissions:
+  contents: read
+
+env:
+  TARGET: https://attabl.com
+
+jobs:
+  zap:
+    name: OWASP ZAP (baseline)
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: ${{ env.TARGET }}
+          rules_file_name: .zap/rules.tsv
+          cmd_options: '-a -j -T 15'
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-baseline
+
+  nuclei:
+    name: Nuclei
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: projectdiscovery/nuclei-action@32a91c0da7be14c07b0ade6c14fa0f6e78d97c9c # v3.1.0
+        with:
+          args: >-
+            -u ${{ env.TARGET }}
+            -severity low,medium,high,critical
+            -etags intrusive,dos,fuzz,bruteforce
+            -rate-limit 10
+            -jsonl -output nuclei.jsonl
+            -silent -no-color
+      - name: Fail on any finding not accepted in writing
+        run: |
+          touch nuclei.jsonl
+          if [ -f .nuclei-ignore ]; then
+            grep -v '^#' .nuclei-ignore | cut -f1 | sed '/^$/d' > ignored-ids.txt
+          else
+            : > ignored-ids.txt
+          fi
+          jq -c --rawfile ok ignored-ids.txt 'select(((.["template-id"]) as $id | ($ok | split("\n") | index($id))) | not)' nuclei.jsonl > open.jsonl
+          count=$(wc -l < open.jsonl | tr -d ' ')
+          echo "nuclei: $count finding(s)"
+          {
+            echo "### Nuclei: $count constat(s) sur $TARGET"
+            jq -r '"- \(.info.severity) \(.["template-id"]): \(.["matched-at"])"' open.jsonl
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$count" -eq 0 ]
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: nuclei-results
+          path: nuclei.jsonl
+          if-no-files-found: ignore

@@ -1,14 +1,21 @@
-// This file configures the initialization of Sentry on the client.
-// The config you add here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+// Sentry in the browser.
+//
+// This file MUST be named instrumentation-client.ts. It used to be
+// sentry.client.config.ts, which only the Webpack plugin injects: this project
+// builds with Turbopack, so that file was never loaded and Sentry never ran in
+// the browser in production (no DSN in the client bundle, measured 2026-11-20).
+// https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
 
 import * as Sentry from '@sentry/nextjs';
 
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
 
 Sentry.init({
   dsn,
   enabled: !!dsn,
+  // production / preview on Vercel, local otherwise: errors from a laptop no
+  // longer land in the production view.
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV || 'local',
 
   // Performance Monitoring
   // Capture 10% of transactions in production
@@ -42,3 +49,6 @@ Sentry.init({
     return event;
   },
 });
+
+// Traces client-side navigations (required by @sentry/nextjs with the App Router).
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

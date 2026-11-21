@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
-import { logger, hashEmail } from '@/lib/logger';
+import { logger } from '@/lib/logger';
+import { hashEmail } from '@/lib/hash-email';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
 import {
   forgotPasswordLimiter,

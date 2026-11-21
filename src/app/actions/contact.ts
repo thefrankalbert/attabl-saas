@@ -1,7 +1,8 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { logger, hashEmail } from '@/lib/logger';
+import { logger } from '@/lib/logger';
+import { hashEmail } from '@/lib/hash-email';
 import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import { contactSchema } from '@/lib/validations/contact.schema';
 import { sendContactFormEmail } from '@/services/email.service';

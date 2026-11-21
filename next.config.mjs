@@ -35,6 +35,9 @@ const supabaseImageHostname = (() => {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // No "X-Powered-By: Next.js" header: it told an attacker which framework and
+  // which known flaws to try first (OWASP ZAP scan of 2026-11-20, rule 10037).
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
