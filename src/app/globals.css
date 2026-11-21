@@ -157,8 +157,13 @@
   --color-trait: #e4e2df;
   --color-nuit: #0b0b0b;
   --color-service: #2f7a36;
-  --font-titre: var(--font-dm-serif-display);
   --ease-attabl: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* inline : la variable de police est posee sur <body> par next/font, pas sur
+   :root ; la classe font-titre doit donc la lire la ou elle est utilisee. */
+@theme inline {
+  --font-titre: var(--font-dm-serif-display);
 }
 
 /* Surtitre des sections marketing (Geist Mono 13 px, majuscules). En couche
@@ -607,6 +612,13 @@ html:has(.marketing-shell),
 html:has(.marketing-shell) body {
   height: auto;
   overflow: visible;
+}
+
+/* Mode sombre du marketing : les sections claires s'inversent (encre <-> blanc
+   via les classes dark:, gris et trait ici). Les sections sombres ne changent pas. */
+.dark .marketing-shell {
+  --color-gris: #161616;
+  --color-trait: #2a2a2a;
 }
 
 body {
