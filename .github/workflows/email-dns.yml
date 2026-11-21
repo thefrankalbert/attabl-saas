@@ -1,0 +1,32 @@
+# Chaque lundi: les enregistrements DNS de l'e-mail (MX, DMARC, SPF, DKIM)
+# sont-ils toujours en place ? Un seul qui disparait et les e-mails d'ATTABL
+# (confirmation de compte, mot de passe oublie, invitations) partent en spam
+# ou ne sont plus recus, sans aucune erreur visible dans l'application.
+# Detail des controles: scripts/verifier-dns-email.sh
+name: DNS e-mail
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/email-dns.yml'
+      - 'scripts/verifier-dns-email.sh'
+
+# Least privilege: the token can only read the code.
+permissions:
+  contents: read
+
+jobs:
+  dns:
+    name: DNS e-mail (MX, DMARC, SPF, DKIM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Controler les enregistrements
+        run: |
+          set -o pipefail
+          bash scripts/verifier-dns-email.sh | tee resultat.txt
+          { echo '### DNS e-mail'; echo '```'; cat resultat.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
