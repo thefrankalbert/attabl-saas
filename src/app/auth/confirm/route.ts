@@ -108,7 +108,7 @@ export async function GET(request: Request) {
       const userEmail = verifyData?.user?.email;
 
       if (userId && userEmail) {
-        // Get restaurant name from admin_users
+        // Find the owner's restaurant (name for the greeting, slug for the link)
         const { data: adminUser } = await supabase
           .from('admin_users')
           .select('tenant_id')
@@ -121,14 +121,17 @@ export async function GET(request: Request) {
         if (adminUser) {
           const { data: tenant } = await supabase
             .from('tenants')
-            .select('slug')
+            .select('name, slug')
             .eq('id', adminUser.tenant_id)
             .single();
 
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
           const dashboardUrl = tenant ? `${appUrl}/sites/${tenant.slug}/admin` : `${appUrl}/login`;
 
-          await sendWelcomeOnboardingEmail(userEmail, { dashboardUrl });
+          await sendWelcomeOnboardingEmail(userEmail, {
+            dashboardUrl,
+            restaurantName: tenant?.name ?? undefined,
+          });
         }
       }
     } catch (emailErr) {

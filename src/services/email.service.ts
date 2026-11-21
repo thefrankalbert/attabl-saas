@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger';
 import { escapeHtml } from './email.render';
 import {
   buildWelcomeEmail,
+  buildWelcomeOnboardingEmail,
   buildPasswordResetEmail,
   buildEmailChangeEmail,
   buildEmailChangeApprovalEmail,
@@ -27,6 +28,7 @@ import type {
   EmailResult,
   EmailService,
   WelcomeEmailData,
+  WelcomeOnboardingEmailData,
   PasswordResetEmailData,
   EmailChangeEmailData,
   EmailChangeApprovalEmailData,
@@ -106,6 +108,14 @@ export function createEmailService(): EmailService {
   return {
     async sendWelcomeEmail(to: string, data: WelcomeEmailData): Promise<EmailResult> {
       const { subject, html, text } = buildWelcomeEmail(data);
+      return send(to, subject, html, text);
+    },
+
+    async sendWelcomeOnboardingEmail(
+      to: string,
+      data: WelcomeOnboardingEmailData,
+    ): Promise<EmailResult> {
+      const { subject, html, text } = buildWelcomeOnboardingEmail(data);
       return send(to, subject, html, text);
     },
 
@@ -228,9 +238,8 @@ export const sendSignupAccountExistsEmail = async (
 
 export const sendWelcomeOnboardingEmail = async (
   to: string,
-  data: { dashboardUrl: string },
-): Promise<boolean> =>
-  (await _svc.sendWelcomeEmail(to, { confirmationUrl: data.dashboardUrl })).success;
+  data: WelcomeOnboardingEmailData,
+): Promise<boolean> => (await _svc.sendWelcomeOnboardingEmail(to, data)).success;
 
 export const sendInvitationEmail = async (
   to: string,

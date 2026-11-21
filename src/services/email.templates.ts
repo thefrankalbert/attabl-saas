@@ -2,12 +2,12 @@
  * Email Service - Message templates.
  *
  * Pure builders that turn typed email data into { subject, html, text }.
- * Rendering strings are byte-identical to the original inline factory bodies.
  */
 
 import { escapeHtml, sanitizeUrl, FOOTER, wrap, card, cta, formatCurrency } from './email.render';
 import type {
   WelcomeEmailData,
+  WelcomeOnboardingEmailData,
   PasswordResetEmailData,
   EmailChangeEmailData,
   EmailChangeApprovalEmailData,
@@ -24,24 +24,80 @@ export interface EmailContent {
   text: string;
 }
 
+const SUPPORT_EMAIL = 'support@attabl.com';
+
+/** E-mail de confirmation d'adresse, envoye a l'inscription. */
 export function buildWelcomeEmail(data: WelcomeEmailData): EmailContent {
   const safeUrl = sanitizeUrl(data.confirmationUrl);
   const rawUrl = escapeHtml(data.confirmationUrl);
 
   const html = wrap(
-    'Confirmez votre adresse email pour activer votre compte.',
+    'Un clic pour activer votre compte ATTABL.',
     card(
-      `<p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">Bienvenue sur ATTABL</p>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">Merci pour votre inscription. Confirmez votre adresse email pour activer votre compte.</p>
+      `<p style="margin:0 0 12px;font-size:22px;font-weight:600;line-height:1.3;color:#111827;">Confirmez votre adresse e-mail</p>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#4b5563;">Merci d'avoir créé votre compte ATTABL. Confirmez votre adresse pour activer votre compte et ouvrir votre tableau de bord.</p>
           ${cta(safeUrl, 'Confirmer mon adresse')}
-          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Ce lien expire dans 1 heure.</p>
-          <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;word-break:break-all;">Lien : ${rawUrl}</p>`,
+          <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">Ce lien est valable 1 heure. Si vous n'avez pas créé de compte ATTABL, ignorez cet e-mail : rien ne sera activé.</p>
+          <p style="margin:16px 0 0;padding-top:16px;border-top:1px solid #f3f4f6;font-size:12px;line-height:1.6;color:#9ca3af;word-break:break-all;">Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br />${rawUrl}</p>`,
     ),
   );
 
-  const text = `Bienvenue sur ATTABL\n\nConfirmez votre adresse email :\n${data.confirmationUrl}\n\nCe lien expire dans 1 heure.\n\n${FOOTER}`;
+  const text = `Confirmez votre adresse e-mail\n\nMerci d'avoir créé votre compte ATTABL. Confirmez votre adresse pour activer votre compte :\n${data.confirmationUrl}\n\nCe lien est valable 1 heure. Si vous n'avez pas créé de compte ATTABL, ignorez cet e-mail.\n\n${FOOTER}`;
 
-  return { subject: 'Confirmez votre adresse email', html, text };
+  return { subject: 'Confirmez votre adresse e-mail pour ATTABL', html, text };
+}
+
+const FIRST_STEPS: { title: string; body: string }[] = [
+  {
+    title: 'Créez votre carte',
+    body: 'Ajoutez vos plats, vos prix et vos photos. Vos clients la verront sur leur téléphone.',
+  },
+  {
+    title: 'Imprimez vos QR codes',
+    body: 'Un QR code par table. Le client scanne, choisit et commande sans attendre.',
+  },
+  {
+    title: 'Invitez votre équipe',
+    body: 'Serveurs, cuisine et caisse reçoivent chacun les commandes qui les concernent.',
+  },
+];
+
+/** E-mail de bienvenue, envoye une fois l'adresse confirmee. */
+export function buildWelcomeOnboardingEmail(data: WelcomeOnboardingEmailData): EmailContent {
+  const name = data.restaurantName?.trim();
+  const safeName = name ? escapeHtml(name) : '';
+  const intro = name
+    ? `Votre compte est actif. <strong style="color:#111827;">${safeName}</strong> a 14 jours pour tout essayer, toutes les fonctions comprises.`
+    : 'Votre compte est actif. Vous avez 14 jours pour tout essayer, toutes les fonctions comprises.';
+
+  const steps = FIRST_STEPS.map(
+    (step, i) =>
+      `<tr><td valign="top" style="width:28px;padding:0 12px 16px 0;"><div style="width:24px;height:24px;border-radius:12px;background:#111827;color:#fff;font-size:12px;font-weight:600;line-height:24px;text-align:center;">${i + 1}</div></td><td valign="top" style="padding:0 0 16px;"><p style="margin:0;font-size:14px;font-weight:600;color:#111827;">${step.title}</p><p style="margin:2px 0 0;font-size:14px;line-height:1.5;color:#4b5563;">${step.body}</p></td></tr>`,
+  ).join('');
+
+  const html = wrap(
+    'Votre compte est actif. Voici comment bien démarrer.',
+    card(
+      `<p style="margin:0 0 12px;font-size:22px;font-weight:600;line-height:1.3;color:#111827;">Bienvenue sur ATTABL</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">${intro}</p>
+          <p style="margin:0 0 16px;font-size:13px;font-weight:600;letter-spacing:0.02em;color:#6b7280;">Pour bien démarrer</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${steps}</table>
+          ${cta(data.dashboardUrl, 'Ouvrir mon tableau de bord')}
+          <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #f3f4f6;font-size:13px;line-height:1.6;color:#6b7280;">Une question ? Écrivez-nous à <a href="mailto:${SUPPORT_EMAIL}" style="color:#111827;">${SUPPORT_EMAIL}</a>. Une personne de l'équipe vous répond.</p>`,
+    ),
+  );
+
+  const stepsText = FIRST_STEPS.map((s, i) => `${i + 1}. ${s.title} : ${s.body}`).join('\n');
+  const introText = name
+    ? `Votre compte est actif. ${name} a 14 jours pour tout essayer, toutes les fonctions comprises.`
+    : 'Votre compte est actif. Vous avez 14 jours pour tout essayer, toutes les fonctions comprises.';
+  const text = `Bienvenue sur ATTABL\n\n${introText}\n\nPour bien démarrer :\n${stepsText}\n\nOuvrir mon tableau de bord : ${data.dashboardUrl}\n\nUne question ? Écrivez-nous à ${SUPPORT_EMAIL}.\n\n${FOOTER}`;
+
+  return {
+    subject: name ? `Bienvenue sur ATTABL, ${name}` : 'Bienvenue sur ATTABL',
+    html,
+    text,
+  };
 }
 
 export function buildPasswordResetEmail(data: PasswordResetEmailData): EmailContent {
