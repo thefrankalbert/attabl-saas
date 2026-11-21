@@ -1,4 +1,4 @@
--- Lot pourboires (migration 20261120130000, audit du 2026-11-20).
+-- Lot pourboires (migration 20261120210000, audit du 2026-11-20).
 --
 -- C. get_order_summary.total_tips suit la date d'ENCAISSEMENT (paid_at), comme
 --    les revenus. L'ancienne version (date de creation) rend un autre total
