@@ -3252,6 +3252,16 @@ export type Database = {
         Args: { p_lines: Json; p_menu_item_id: string; p_tenant_id: string };
         Returns: undefined;
       };
+      encaisser_commande: {
+        Args: {
+          p_method: string;
+          p_order_id: string;
+          p_tenant_id: string;
+          p_tip_ajout?: number;
+          p_tip_plafond?: number;
+        };
+        Returns: Json;
+      };
       unclaim_coupon_usage: {
         Args: { p_coupon_id: string };
         Returns: undefined;

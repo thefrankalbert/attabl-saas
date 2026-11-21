@@ -87,21 +87,25 @@ describe('order.service multi-tenant isolation', () => {
     expect(orderA?.status).toBe('delivered');
   });
 
-  it('markPaid on a B-owned order with tenant A id touches ZERO rows', async () => {
+  // markPaid encaisse par UNE fonction de base (encaisser_commande): c'est
+  // elle qui filtre par restaurant, prouve par
+  // supabase/tests/rls/encaissement_atomique.test.sql (commande d'un autre
+  // restaurant: rien de bascule, rien au registre). Ici: le restaurant de
+  // l'appelant est bien celui transmis, a la lecture comme a l'encaissement.
+  it('markPaid transmet le restaurant de l appelant, jamais celui de la commande', async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    db.setRpc('encaisser_commande', async (args) => {
+      calls.push(args);
+      return { data: { paid: false }, error: null };
+    });
     const service = createOrderService(asClient(db));
-    await service.markPaid('order-B', TENANT_A, { method: 'cash' });
-    expect(db.affected.orders).toBe(0);
-    const orderB = db.rows('orders').find((r) => r.id === 'order-B');
-    expect(orderB?.payment_status).toBe('pending');
-  });
-
-  it('markPaid control: tenant A on its own order touches exactly 1 row', async () => {
-    const service = createOrderService(asClient(db));
-    await service.markPaid('order-A', TENANT_A, { method: 'cash', tipAmount: 500 });
-    expect(db.affected.orders).toBe(1);
-    const orderA = db.rows('orders').find((r) => r.id === 'order-A');
-    expect(orderA?.payment_status).toBe('paid');
-    expect(orderA?.tip_amount).toBe(500);
+    const res = await service.markPaid('order-B', TENANT_A, { method: 'cash', tipAmount: 500 });
+    expect(res).toEqual({ paid: false });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ p_order_id: 'order-B', p_tenant_id: TENANT_A });
+    // La lecture du pourboire est bornee a A: la commande de B reste invisible.
+    expect(calls[0].p_tip_plafond).toBeNull();
+    expect(db.affected.orders ?? 0).toBe(0);
   });
 
   it('listReadyOrdersToday returns ONLY tenant A orders, never tenant B', async () => {

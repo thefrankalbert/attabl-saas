@@ -55,24 +55,19 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
    * Undo a payment flip whose ledger row could not be written: back to unpaid,
    * so the order shows again in "A encaisser" instead of being 'paid' with no
    * money in the takings. Scoped to the `paid_at` THIS flip wrote, so it never
-   * undoes a concurrent settlement that did book its money. `tipBefore`
-   * restores the tip this payment overwrote (undefined = leave it). A revert
-   * that fails or matches nothing leaves a paid order without its ledger row:
-   * logged as an error to be fixed by hand.
+   * undoes a concurrent settlement that did book its money. Only the POS
+   * route uses it, with the service role (the guard trigger lets that role
+   * through); markPaid no longer needs it, its flip and ledger row share one
+   * transaction. A revert that fails or matches nothing leaves a paid order
+   * without its ledger row: logged as an error to be fixed by hand.
    */
-  async function revertPaidFlip(
-    orderId: string,
-    tenantId: string,
-    paidAt: string,
-    tipBefore?: number,
-  ): Promise<void> {
+  async function revertPaidFlip(orderId: string, tenantId: string, paidAt: string): Promise<void> {
     const { data, error } = await supabase
       .from('orders')
       .update({
         payment_status: 'pending',
         payment_method: null,
         paid_at: null,
-        ...(tipBefore !== undefined ? { tip_amount: tipBefore } : {}),
       })
       .eq('id', orderId)
       .eq('tenant_id', tenantId)
@@ -345,8 +340,9 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
     },
 
     /**
-     * Mark an order as paid - updates payment_method, payment_status, paid_at,
-     * and optionally tip_amount. Always filters by tenant_id for isolation.
+     * Mark an order as paid - payment_method, payment_status, paid_at, the till
+     * tip, and the ledger row, in one database transaction. Always scoped to
+     * tenant_id for isolation.
      *
      * C3 (Phase 3): payment is DECOUPLED from fulfillment. markPaid no longer
      * touches orders.status - the fulfillment axis is driven solely by the KDS/POS
@@ -355,10 +351,10 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
      * unprepared order on the KDS active board (which filters on status, not
      * payment) instead of wrongly dropping it.
      *
-     * Idempotent: the update is scoped to payment_status='pending' (same guard as
-     * the POS route applyPosPayment). A double-tap / network retry on an
-     * already-paid order matches 0 rows and is a no-op - it never re-stamps
-     * paid_at nor overwrites the recorded tip. Returns whether the order was
+     * Idempotent: the database call is scoped to payment_status='pending' (same
+     * guard as the POS route applyPosPayment). A double-tap / network retry on
+     * an already-paid order matches nothing and is a no-op - it never re-stamps
+     * paid_at nor adds the till tip twice. Returns whether the order was
      * actually flipped from pending to paid by this call.
      */
     async markPaid(
@@ -368,19 +364,12 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
     ): Promise<{ paid: boolean }> {
       // payload.tipAmount is in integer MINOR units (orders.tip_amount is BIGINT
       // minor). The caller (PaymentModal -> actionMarkOrderPaid) converts the
-      // major keypad amount with the order currency before sending.
-      const paidAt = new Date().toISOString();
-      const update: Record<string, unknown> = {
-        payment_method: payload.method,
-        payment_status: 'paid',
-        paid_at: paidAt,
-      };
-      // Tip before this payment, restored if the ledger write fails below.
-      let tipBefore: number | undefined;
-      if (payload.tipAmount && payload.tipAmount > 0) {
-        // The till tip is ADDED to the one the customer left on the storefront:
-        // it used to REPLACE it, so a 500 tip from the customer plus 200 at the
-        // till booked 200 (audit pourboires 2026-11-20, constat B).
+      // major keypad amount with the order currency before sending. It is the
+      // tip ADDED at the till: the database adds it to the one the customer
+      // left (audit pourboires 2026-11-20, constat B).
+      const tipAdded = payload.tipAmount && payload.tipAmount > 0 ? payload.tipAmount : 0;
+      let tipCeiling: number | null = null;
+      if (tipAdded > 0) {
         const { data: before, error: beforeError } = await supabase
           .from('orders')
           .select('tip_amount, display_currency, payment_status')
@@ -393,77 +382,61 @@ export function createLifecycleMethods(supabase: SupabaseClient) {
           throw new ServiceError('Erreur interne', 'INTERNAL', beforeError);
         }
         // Only a still-pending order gets a tip. An already-settled one (replay
-        // of a payment that went through) skips the sum and the ceiling: the
-        // guarded update below matches nothing and answers paid:false, instead
-        // of refusing a replay whose first attempt already added the tip.
+        // of a payment that went through) skips the ceiling: the database call
+        // below matches nothing and answers paid:false, instead of refusing a
+        // replay whose first attempt already added the tip.
         if (before && before.payment_status === 'pending') {
-          tipBefore = Number(before.tip_amount || 0);
-          const newTip = tipBefore + payload.tipAmount;
           // Same ceiling as the order route (MAX_TIP_AMOUNT in MAJOR units of
-          // the order currency), on the resulting tip (constat F).
-          const ceiling = toMinorUnits(MAX_TIP_AMOUNT, before.display_currency as string | null);
-          if (newTip > ceiling) {
+          // the order currency), on the resulting tip (constat F). Checked here
+          // for a clear message, and again by the database on the real sum.
+          tipCeiling = toMinorUnits(MAX_TIP_AMOUNT, before.display_currency as string | null);
+          if (Number(before.tip_amount || 0) + tipAdded > tipCeiling) {
             throw new ServiceError('Pourboire trop eleve', 'VALIDATION');
           }
-          // ponytail: read-then-write, a tip written between the read and the
-          // flip is overwritten. Only staff can write a pending order's tip
-          // (guard trigger); a compare-and-set would be the upgrade.
-          update.tip_amount = newTip;
         }
       }
 
-      const { data, error } = await supabase
-        .from('orders')
-        .update(update)
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId)
-        .eq('payment_status', 'pending')
-        // Une commande annulee garde payment_status='pending': le filtre
-        // ci-dessus ne la couvre donc PAS. Sans celui-ci, encaisser une commande
-        // annulee reussissait et inscrivait un tender au ledger. Filtre pose
-        // dans le meme UPDATE, donc atomique face a une annulation concurrente.
-        .neq('status', 'cancelled')
-        .select('id, session_id, total, tip_amount');
+      // Flip AND ledger row in ONE transaction (migration 20261120220000). They
+      // used to be two writes, and undoing the flip after a failed ledger row
+      // could never work for a cashier: the guard trigger rewrites paid_at and
+      // refuses paid -> pending without the money authority. A paid order was
+      // left without its ledger row, missing from the takings for good. Now a
+      // failed ledger row rolls the flip back by itself. SECURITY INVOKER: RLS
+      // and every guard still apply to the caller. Same filters as before: this
+      // tenant, still 'pending', not cancelled - a replay is a no-op.
+      const { data, error } = await supabase.rpc('encaisser_commande', {
+        p_order_id: orderId,
+        p_tenant_id: tenantId,
+        p_method: payload.method,
+        p_tip_ajout: tipAdded,
+        p_tip_plafond: tipCeiling,
+      });
 
       if (error) {
-        throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
-      }
-
-      const paidRow = Array.isArray(data) && data.length > 0 ? data[0] : null;
-
-      if (paidRow) {
-        // Append the tender to the ledger (audit H2/H8): who/what/when, append-only.
-        // Revenue is read from this ledger: a 'paid' order WITHOUT its row would be
-        // missing from the day's takings for good (the guarded flip above can never
-        // run again). So a failed insert UNDOES the flip: the order goes back to
-        // "A encaisser" and the cashier is told the payment did not go through
-        // (audit caisse 2026-11-15). The amount = order total (excl. tip) + tip.
-        const amount = Number(paidRow.total || 0) + Number(paidRow.tip_amount || 0);
-        const { error: tenderError } = await supabase.from('payments').insert({
-          tenant_id: tenantId,
-          order_id: orderId,
-          amount,
-          method: payload.method,
-          status: 'completed',
+        logger.error('Payment not recorded (flip and ledger rolled back together)', {
+          orderId,
+          tenantId,
+          error,
         });
-        if (tenderError) {
-          logger.error('Failed to record payment tender, payment undone', {
-            orderId,
-            tenantId,
-            error: tenderError,
-          });
-          await revertPaidFlip(orderId, tenantId, paidAt, tipBefore);
-          throw new ServiceError("Le paiement n'a pas pu etre enregistre", 'INTERNAL', tenderError);
+        // 22023 / 42501: the database REFUSED (guard, ceiling, rights). Anything
+        // else is transient: 'Erreur interne' keeps it retryable offline, and
+        // nothing was booked, so a retry cannot collect twice.
+        const code = (error as { code?: string }).code;
+        if (code === '22023' || code === '42501') {
+          throw new ServiceError("Le paiement n'a pas pu etre enregistre", 'VALIDATION', error);
         }
-
-        // Close the table session once every order on it is settled (audit C1).
-        // Leaving it open would let tomorrow's orders attach to today's check.
-        if (paidRow.session_id) {
-          await closeSessionIfFullySettled(paidRow.session_id as string, tenantId);
-        }
+        throw new ServiceError('Erreur interne', 'INTERNAL', error);
       }
 
-      return { paid: paidRow !== null };
+      const result = (data ?? {}) as { paid?: boolean; session_id?: string | null };
+
+      // Close the table session once every order on it is settled (audit C1).
+      // Leaving it open would let tomorrow's orders attach to today's check.
+      if (result.paid && result.session_id) {
+        await closeSessionIfFullySettled(result.session_id, tenantId);
+      }
+
+      return { paid: result.paid === true };
     },
   };
 }
