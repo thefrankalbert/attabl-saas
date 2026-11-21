@@ -19,7 +19,7 @@
 -- cf. src/services/onboarding.complete.ts). Ensuite, ajouter des tables ou des
 -- zones demande Pro ou plus.
 --
--- S'appuie sur public.tenant_effective_plan (20261120120000).
+-- S'appuie sur public.tenant_effective_plan (20261121100000).
 -- Additive et rejouable. Rollback:
 --   drop trigger if exists trg_enforce_service_entitlement on public.table_assignments;
 --   drop trigger if exists trg_enforce_tables_entitlement on public.tables;

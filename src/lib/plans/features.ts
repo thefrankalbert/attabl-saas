@@ -151,7 +151,7 @@ export function isTrialActive(
  * Pendant l'essai de 14 jours, le restaurant a TOUTES les fonctionnalites
  * (offre Business), decision du proprietaire du 2026-11-20: il teste tout, puis
  * il s'abonne ou il s'arrete. Copie SQL: public.tenant_effective_plan
- * (migration 20261120120000), gardee par le test pgTAP
+ * (migration 20261121100000), gardee par le test pgTAP
  * plan_effectif_essai_business.test.sql.
  */
 export function getEffectivePlan(

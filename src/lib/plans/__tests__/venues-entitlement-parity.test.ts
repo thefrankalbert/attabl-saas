@@ -5,7 +5,7 @@ import type { SubscriptionPlan } from '@/types/billing';
 /**
  * Guardrail contre la derive entre la matrice TS (PLAN_LIMITS.maxVenues) et le
  * CASE du trigger SQL enforce_venue_plan_limit
- * (supabase/migrations/20261120120000_essai_plan_business.sql).
+ * (supabase/migrations/20261121100000_essai_plan_business.sql).
  * Si maxVenues change, ce test casse et force une migration correctrice.
  */
 const SQL_MAX_VENUES: Record<SubscriptionPlan, number> = {

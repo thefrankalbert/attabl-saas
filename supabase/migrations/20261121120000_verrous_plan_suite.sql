@@ -2,7 +2,7 @@
 -- ============================================================================
 -- Le proprietaire exige des verrous cote serveur PARTOUT: un appel direct a
 -- PostgREST ou a une fonction SQL doit etre refuse comme l'interface. Tous les
--- verrous s'appuient sur public.tenant_effective_plan (20261120120000).
+-- verrous s'appuient sur public.tenant_effective_plan (20261121100000).
 --
 -- 1. Tables et zones: l'exception d'onboarding reposait sur
 --    tenants.onboarding_completed, que le client peut ecrire (attaque: le
@@ -56,7 +56,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Premiere creation de tables du restaurant (onboarding): incluse partout.
+  -- Un verrou par restaurant: deux premieres creations simultanees ne passent
+  -- pas toutes les deux (la seconde attend, puis voit le registre rempli).
+  PERFORM pg_advisory_xact_lock(hashtext('tables_init:' || NEW.tenant_id::text));
+
+  -- Premiere creation de tables du restaurant (onboarding): incluse partout,
+  -- dans les bornes de l'onboarding (controlees apres l'instruction).
   IF NOT EXISTS (SELECT 1 FROM tenant_tables_initialisees WHERE tenant_id = NEW.tenant_id) THEN
     RETURN NEW;
   END IF;
@@ -71,6 +76,9 @@ $$;
 
 -- Marque le restaurant initialise APRES l'instruction qui a cree ses tables:
 -- toutes les lignes d'un meme INSERT multi-lignes (onboarding) passent.
+-- Borne de la premiere creation hors Pro: 4000 tables, soit le maximum que
+-- l'onboarding sait produire (20 zones de 200 tables au plus,
+-- src/lib/validations/onboarding.schema.ts). Au-dela, l'instruction est annulee.
 CREATE OR REPLACE FUNCTION public.marquer_tables_initialisees()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -78,6 +86,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM (SELECT DISTINCT tenant_id FROM nouvelles_tables) n
+    WHERE public.tenant_effective_plan(n.tenant_id) NOT IN ('pro', 'business', 'enterprise')
+      AND (SELECT count(*) FROM tables t WHERE t.tenant_id = n.tenant_id) > 4000
+  ) THEN
+    RAISE EXCEPTION 'Initial tables exceed the onboarding limit (4000)'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
   INSERT INTO tenant_tables_initialisees (tenant_id)
   SELECT DISTINCT tenant_id FROM nouvelles_tables
   ON CONFLICT (tenant_id) DO NOTHING;
@@ -91,6 +109,37 @@ CREATE TRIGGER trg_marquer_tables_initialisees
   REFERENCING NEW TABLE AS nouvelles_tables
   FOR EACH STATEMENT
   EXECUTE FUNCTION public.marquer_tables_initialisees();
+
+-- Zones de depart hors Pro: 20 au plus, comme l'onboarding.
+CREATE OR REPLACE FUNCTION public.borner_zones_depart()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM (SELECT DISTINCT tenant_id FROM nouvelles_zones) n
+    WHERE public.tenant_effective_plan(n.tenant_id) NOT IN ('pro', 'business', 'enterprise')
+      AND (SELECT count(*) FROM zones z WHERE z.tenant_id = n.tenant_id) > 20
+  ) THEN
+    RAISE EXCEPTION 'Initial zones exceed the onboarding limit (20)'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_borner_zones_depart ON public.zones;
+CREATE TRIGGER trg_borner_zones_depart
+  AFTER INSERT ON public.zones
+  REFERENCING NEW TABLE AS nouvelles_zones
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION public.borner_zones_depart();
+
+REVOKE EXECUTE ON FUNCTION public.marquer_tables_initialisees() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.borner_zones_depart() FROM PUBLIC, anon, authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 2. Assignations: INSERT et UPDATE qui deplace ou reactive.
@@ -216,7 +265,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT p_tenant_id = ANY (public.get_my_tenant_ids_array())
+  -- Membre du restaurant, ou super administrateur (meme regle d'appartenance
+  -- que assert_tenant_member); le plan juge ensuite dans les deux cas.
+  SELECT (p_tenant_id = ANY (public.get_my_tenant_ids_array()) OR public.is_super_admin())
      AND public.tenant_effective_plan(p_tenant_id) IN ('pro', 'business', 'enterprise');
 $$;
 REVOKE ALL ON FUNCTION public.mon_restaurant_a_le_stock(uuid) FROM PUBLIC, anon;

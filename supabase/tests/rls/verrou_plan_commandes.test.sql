@@ -1,4 +1,4 @@
--- Verrou de plan sur les commandes (migration 20261120170000).
+-- Verrou de plan sur les commandes (migration 20261121130000).
 --
 -- Temoin negatif: sans la migration, chaque throws_ok ci-dessous passe en lives
 -- (aucun controle du plan sur une commande ecrite directement en base).
@@ -31,7 +31,7 @@ insert into orders (id, tenant_id, order_number, subtotal, total, service_type, 
   ('d4000000-0000-4000-8000-0000000000b3', 'd4000000-0000-4000-8000-000000000002', 'P-9', 1000, 1000, 'dine_in', 200);
 set local session_replication_role = origin;
 
--- 1-4. Starter.
+-- 1-5. Starter.
 select lives_ok($$
   insert into orders (tenant_id, order_number, subtotal, total, service_type)
   values ('d4000000-0000-4000-8000-000000000001', 'S-2', 1000, 1000, 'takeaway')

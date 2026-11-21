@@ -1,4 +1,4 @@
--- Verrous de plan, suite du contre-audit (migration 20261120160000).
+-- Verrous de plan, suite du contre-audit (migration 20261121120000).
 --
 -- Temoin negatif: sur le code d'AVANT la migration, les assertions qui
 -- attendent un refus (throws_ok) passent toutes en lives: tables apres
@@ -10,31 +10,40 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(22);
+select plan(30);
 
 -- Fixtures, ecrites sans triggers (etat de depart, pas un comportement teste).
 set local session_replication_role = replica;
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at, email_confirmed_at) values
   ('c3000000-0000-4000-8000-0000000000a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'proprio-s@test.local', 'x', now(), now(), now()),
-  ('c3000000-0000-4000-8000-0000000000a2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'proprio-p@test.local', 'x', now(), now(), now());
+  ('c3000000-0000-4000-8000-0000000000a2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'proprio-p@test.local', 'x', now(), now(), now()),
+  ('c3000000-0000-4000-8000-0000000000a3', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'super@test.local', 'x', now(), now(), now());
 
 insert into tenants (id, slug, name, subscription_plan, subscription_status, trial_ends_at, is_active, onboarding_completed) values
   ('c3000000-0000-4000-8000-000000000001', 'vs-starter', 'VS Starter', 'starter', 'active', now() - interval '20 days', true, true),
   ('c3000000-0000-4000-8000-000000000002', 'vs-pro', 'VS Pro', 'pro', 'active', null, true, true),
-  ('c3000000-0000-4000-8000-000000000003', 'vs-neuf', 'VS Neuf', 'starter', 'active', null, true, false);
+  ('c3000000-0000-4000-8000-000000000003', 'vs-neuf', 'VS Neuf', 'starter', 'active', null, true, false),
+  ('c3000000-0000-4000-8000-000000000004', 'vs-neuf-bis', 'VS Neuf bis', 'starter', 'active', null, true, false),
+  ('c3000000-0000-4000-8000-000000000005', 'vs-neuf-ter', 'VS Neuf ter', 'starter', 'active', null, true, false);
 
 insert into admin_users (id, tenant_id, user_id, email, role, is_active) values
   ('c3000000-0000-4000-8000-000000000011', 'c3000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-0000000000a1', 'proprio-s@test.local', 'owner', true),
   ('c3000000-0000-4000-8000-000000000012', 'c3000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-0000000000a2', 'proprio-p@test.local', 'owner', true);
 
+insert into admin_users (id, tenant_id, user_id, email, role, is_active, is_super_admin) values
+  ('c3000000-0000-4000-8000-000000000013', 'c3000000-0000-4000-8000-000000000003', 'c3000000-0000-4000-8000-0000000000a3', 'super@test.local', 'owner', true, true);
+
 insert into venues (id, tenant_id, slug, name, is_active) values
   ('c3000000-0000-4000-8000-000000000021', 'c3000000-0000-4000-8000-000000000001', 'v', 'V', true),
   ('c3000000-0000-4000-8000-000000000022', 'c3000000-0000-4000-8000-000000000002', 'v', 'V', true),
-  ('c3000000-0000-4000-8000-000000000023', 'c3000000-0000-4000-8000-000000000003', 'v', 'V', true);
+  ('c3000000-0000-4000-8000-000000000023', 'c3000000-0000-4000-8000-000000000003', 'v', 'V', true),
+  ('c3000000-0000-4000-8000-000000000024', 'c3000000-0000-4000-8000-000000000004', 'v', 'V', true),
+  ('c3000000-0000-4000-8000-000000000025', 'c3000000-0000-4000-8000-000000000005', 'v', 'V', true);
 insert into zones (id, venue_id, tenant_id, name, prefix) values
   ('c3000000-0000-4000-8000-000000000031', 'c3000000-0000-4000-8000-000000000021', 'c3000000-0000-4000-8000-000000000001', 'Salle', 'S'),
-  ('c3000000-0000-4000-8000-000000000033', 'c3000000-0000-4000-8000-000000000023', 'c3000000-0000-4000-8000-000000000003', 'Salle', 'S');
+  ('c3000000-0000-4000-8000-000000000033', 'c3000000-0000-4000-8000-000000000023', 'c3000000-0000-4000-8000-000000000003', 'Salle', 'S'),
+  ('c3000000-0000-4000-8000-000000000034', 'c3000000-0000-4000-8000-000000000024', 'c3000000-0000-4000-8000-000000000004', 'Salle', 'S');
 insert into tables (id, zone_id, tenant_id, table_number, display_name) values
   ('c3000000-0000-4000-8000-000000000041', 'c3000000-0000-4000-8000-000000000031', 'c3000000-0000-4000-8000-000000000001', 'S1', 'Table 1');
 insert into tenant_tables_initialisees (tenant_id) values ('c3000000-0000-4000-8000-000000000001');
@@ -80,6 +89,19 @@ select throws_ok($$
   insert into tables (zone_id, tenant_id, table_number, display_name)
   values ('c3000000-0000-4000-8000-000000000033', 'c3000000-0000-4000-8000-000000000003', 'S3', 'Table 3')
 $$, '23514', null, 'restaurant neuf (Starter): ajouter ensuite une table est refuse');
+
+-- Premiere creation bornee (contre-audit D): au-dela de ce que l'onboarding
+-- produit (4000 tables, 20 zones), meme la premiere creation est refusee.
+select throws_ok($$
+  insert into tables (zone_id, tenant_id, table_number, display_name)
+  select 'c3000000-0000-4000-8000-000000000034', 'c3000000-0000-4000-8000-000000000004', 'T' || g, 'T' || g
+  from generate_series(1, 4001) g
+$$, '23514', null, 'restaurant neuf (Starter): une premiere creation de 4001 tables est refusee');
+select throws_ok($$
+  insert into zones (venue_id, tenant_id, name, prefix)
+  select 'c3000000-0000-4000-8000-000000000025', 'c3000000-0000-4000-8000-000000000005', 'Zone ' || g, 'Z' || g
+  from generate_series(1, 21) g
+$$, '23514', null, 'restaurant neuf (Starter): plus de 20 zones de depart refusees');
 
 -- 5-6. Assignations.
 select throws_ok($$
@@ -138,6 +160,13 @@ $$, '42501', null, 'Starter: get_daily_revenue refuse');
 select throws_ok($$
   select * from get_top_items('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
 $$, '42501', null, 'Starter: get_top_items refuse (valeur par defaut de p_limit conservee)');
+-- Contre-audit B: les deux fonctions que modifie le lot pourboires (#446).
+select throws_ok($$
+  select * from get_order_summary('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
+$$, '42501', null, 'Starter: get_order_summary refuse');
+select throws_ok($$
+  select * from get_server_performance('c3000000-0000-4000-8000-000000000001', now() - interval '30 days', now())
+$$, '42501', null, 'Starter: get_server_performance refuse');
 
 set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a2"}';
 select lives_ok($$
@@ -153,7 +182,20 @@ $$, 'access denied: caller is not a member%', 'non-membre: refus d appartenance 
 select ok(not has_function_privilege('authenticated',
   'public.get_daily_revenue_brut(uuid, timestamp with time zone, timestamp with time zone)', 'EXECUTE'),
   'le corps brut des rapports n est pas appelable par un client');
+
+-- Contre-audit C: un super administrateur passe l'appartenance; le plan juge.
+set local request.jwt.claims = '{"sub":"c3000000-0000-4000-8000-0000000000a3"}';
+select ok(mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000002'),
+  'super administrateur: un restaurant Pro dont il n est pas membre a le stock');
+select ok(not mon_restaurant_a_le_stock('c3000000-0000-4000-8000-000000000001'),
+  'super administrateur: un restaurant Starter n a toujours pas le stock');
 reset role;
+
+-- Contre-audit E: le registre n'est ni lisible ni ecrivable par un client.
+select ok(not has_table_privilege('anon', 'public.tenant_tables_initialisees', 'SELECT, INSERT, UPDATE, DELETE'),
+  'registre tenant_tables_initialisees: aucun droit pour anon');
+select ok(not has_table_privilege('authenticated', 'public.tenant_tables_initialisees', 'SELECT, INSERT, UPDATE, DELETE'),
+  'registre tenant_tables_initialisees: aucun droit pour authenticated');
 
 select ok(not has_function_privilege('authenticated', 'public.tenant_effective_plan(uuid)', 'EXECUTE'),
   'tenant_effective_plan reste fermee aux clients');

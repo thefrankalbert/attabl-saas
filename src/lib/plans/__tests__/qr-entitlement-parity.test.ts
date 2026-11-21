@@ -6,7 +6,7 @@ import type { SubscriptionPlan } from '@/types/billing';
  * Guardrail against paywall drift between the TypeScript plan matrix
  * (canAccessFeature / PLAN_LIMITS in lib/plans/features.ts) and the SQL trigger
  * enforce_qr_customization_entitlement
- * (supabase/migrations/20261120120000_essai_plan_business.sql), which allows
+ * (supabase/migrations/20261121100000_essai_plan_business.sql), which allows
  * tenant_effective_plan() IN ('pro','business','enterprise').
  *
  * If PLAN_LIMITS.canAccessQrCustomization changes (e.g. a new tier, or Starter

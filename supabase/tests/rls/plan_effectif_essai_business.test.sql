@@ -1,4 +1,4 @@
--- Essai = offre Business, et une seule regle de plan effectif (migration 20261120120000).
+-- Essai = offre Business, et une seule regle de plan effectif (migration 20261121100000).
 --
 -- Temoin negatif: sur le code d'AVANT la migration, ces assertions echouent:
 --   - la fonction tenant_effective_plan n'existait pas (assertions 1 a 8);

@@ -1,5 +1,5 @@
 -- Verrous de plan en base: assignation des serveurs, tables, zones
--- (migration 20261120150000).
+-- (migration 20261121110000).
 --
 -- Temoin negatif: sur le code d'AVANT la migration, les assertions 5, 7 et 8
 -- echouent (aucun trigger: un tenant Starter ecrit librement dans
@@ -49,7 +49,7 @@ insert into zones (id, venue_id, tenant_id, name, prefix) values
 insert into tables (id, zone_id, tenant_id, table_number, display_name) values
   ('b2000000-0000-4000-8000-000000000041', 'b2000000-0000-4000-8000-000000000031', 'b2000000-0000-4000-8000-000000000001', 'S1', 'Table 1'),
   ('b2000000-0000-4000-8000-000000000042', 'b2000000-0000-4000-8000-000000000032', 'b2000000-0000-4000-8000-000000000002', 'S1', 'Table 1');
--- Leurs tables de depart existent: ils sont initialises (migration 20261120160000).
+-- Leurs tables de depart existent: ils sont initialises (migration 20261121120000).
 insert into tenant_tables_initialisees (tenant_id) values
   ('b2000000-0000-4000-8000-000000000001'), ('b2000000-0000-4000-8000-000000000002');
 set local session_replication_role = origin;
