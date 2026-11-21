@@ -3053,6 +3053,7 @@ export type Database = {
           revenue: number;
           server_id: string;
           server_name: string;
+          tips: number;
         }[];
       };
       get_staff_stock_report: {
@@ -3256,6 +3257,15 @@ export type Database = {
       set_recipe_tx: {
         Args: { p_lines: Json; p_menu_item_id: string; p_tenant_id: string };
         Returns: undefined;
+      };
+      encaisser_commande: {
+        Args: {
+          p_method: string;
+          p_order_id: string;
+          p_tenant_id: string;
+          p_tip_ajout?: number;
+        };
+        Returns: Json;
       };
       unclaim_coupon_usage: {
         Args: { p_coupon_id: string };

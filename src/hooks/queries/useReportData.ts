@@ -33,6 +33,14 @@ interface ServerStats {
   orders: number;
   revenue: number;
   avgOrder: number;
+  tips: number;
+}
+
+interface ReportSummaryShape {
+  revenue: number;
+  orders: number;
+  avgBasket: number;
+  tips: number;
 }
 
 interface ReportData {
@@ -40,8 +48,8 @@ interface ReportData {
   topItems: TopItem[];
   categories: CategoryBreakdown[];
   serverStats: ServerStats[];
-  summary: { revenue: number; orders: number; avgBasket: number };
-  previousSummary: { revenue: number; orders: number; avgBasket: number };
+  summary: ReportSummaryShape;
+  previousSummary: ReportSummaryShape;
 }
 
 export function getDateRange(p: Period) {
@@ -108,21 +116,43 @@ export function getDateRange(p: Period) {
  * yields undefined for every field and silently zeroes the KPI cards. Read the
  * first row; tolerate a bare object in case a caller ever uses .single().
  */
-export function parseOrderSummary(data: unknown): {
-  revenue: number;
-  orders: number;
-  avgBasket: number;
-} {
+export function parseOrderSummary(data: unknown): ReportSummaryShape {
   const row = (Array.isArray(data) ? data[0] : data) as {
     total_revenue?: number;
     total_orders?: number;
     avg_basket?: number;
+    total_tips?: number;
   } | null;
   return {
     revenue: Number(row?.total_revenue) || 0,
     orders: Number(row?.total_orders) || 0,
     avgBasket: Math.round(Number(row?.avg_basket) || 0),
+    // Pourboires des commandes soldees sur la periode (orders.paid_at). Ce n'est
+    // pas une part de `revenue`, qui suit la date de chaque ligne du registre.
+    tips: Number(row?.total_tips) || 0,
   };
+}
+
+/**
+ * Normalize get_server_performance rows (server_id, server_name, orders,
+ * revenue, tips - ordered by orders desc). avgOrder is cheap client-side math.
+ * `tips` defaults to 0 so an older function without the column still renders.
+ */
+export function parseServerPerformance(data: unknown): ServerStats[] {
+  if (!Array.isArray(data)) return [];
+  return (data as { server_name: string; orders: number; revenue: number; tips?: number }[]).map(
+    (s) => {
+      const orders = Number(s.orders) || 0;
+      const revenue = Number(s.revenue) || 0;
+      return {
+        serverName: s.server_name,
+        orders,
+        revenue,
+        avgOrder: orders > 0 ? Math.round(revenue / orders) : 0,
+        tips: Number(s.tips) || 0,
+      };
+    },
+  );
 }
 
 /**
@@ -239,27 +269,8 @@ export function useReportData(tenantId: string, period: Period) {
         });
       }
 
-      // Server performance (RPC returns: server_id, server_name, orders, revenue
-      // - ordered by orders desc). avgOrder is cheap client-side math.
-      let serverStats: ServerStats[] = [];
-      if (!serverRes.error && serverRes.data) {
-        const rows = serverRes.data as {
-          server_id: string;
-          server_name: string;
-          orders: number;
-          revenue: number;
-        }[];
-        serverStats = rows.map((s) => {
-          const orders = Number(s.orders) || 0;
-          const revenue = Number(s.revenue) || 0;
-          return {
-            serverName: s.server_name,
-            orders,
-            revenue,
-            avgOrder: orders > 0 ? Math.round(revenue / orders) : 0,
-          };
-        });
-      }
+      // Server performance: rows ordered by orders desc (see parseServerPerformance).
+      const serverStats = serverRes.error ? [] : parseServerPerformance(serverRes.data);
 
       return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
     },

@@ -53,6 +53,10 @@ export function ReportsSummaryHeader({
       label: t('revenueLabel'),
       value: fmt(summary.revenue) as string | number,
       trend: revenueTrend,
+      // Pourboires: une ligne a part. Ce n'est PAS une part du chiffre au-dessus:
+      // le chiffre d'affaires suit la date de chaque versement au registre, les
+      // pourboires la date ou la commande est soldee (paid_at). Le libelle le dit.
+      note: t('tipsLine', { amount: fmt(summary.tips) }),
     },
     {
       key: 'orders',
@@ -61,6 +65,7 @@ export function ReportsSummaryHeader({
       label: t('orders'),
       value: summary.orders as string | number,
       trend: ordersTrend,
+      note: null,
     },
     {
       key: 'basket',
@@ -69,6 +74,7 @@ export function ReportsSummaryHeader({
       label: t('averageBasket'),
       value: fmt(summary.avgBasket) as string | number,
       trend: basketTrend,
+      note: null,
     },
   ];
 
@@ -132,7 +138,7 @@ export function ReportsSummaryHeader({
 
       {/* -- KPI Cards -- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {kpis.map(({ key, Icon, accent, label, value, trend }) => (
+        {kpis.map(({ key, Icon, accent, label, value, trend, note }) => (
           <div
             key={key}
             className="bg-app-card border border-app-border/60 rounded-xl p-4 flex items-center gap-3"
@@ -155,6 +161,7 @@ export function ReportsSummaryHeader({
                 </p>
                 <TrendBadge value={trend} />
               </div>
+              {note && <p className="mt-0.5 text-xs text-app-text-muted tabular-nums">{note}</p>}
             </div>
           </div>
         ))}

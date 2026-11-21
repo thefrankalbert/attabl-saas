@@ -28,12 +28,19 @@ export interface ServerStats {
   orders: number;
   revenue: number;
   avgOrder: number;
+  /** Tips collected for this server (minor units, date of payment). */
+  tips: number;
 }
 
 export interface ReportSummary {
   revenue: number;
   orders: number;
   avgBasket: number;
+  /**
+   * Tips of the orders fully paid in the period (minor units, `orders.paid_at`).
+   * Not a share of `revenue`, which follows each ledger row's own date.
+   */
+  tips: number;
 }
 
 /** Currency formatter for integer MINOR-unit amounts. */

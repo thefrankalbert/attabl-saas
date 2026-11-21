@@ -3,8 +3,10 @@
  * Isolated to be tested: this is money handed back to a customer.
  */
 
+import { MAX_TIP_AMOUNT } from '@/lib/validations/order.schema';
+
 /** Same ceiling as the server (order.schema MAX_TIP_AMOUNT). */
-const MAX_TIP = 1_000_000;
+const MAX_TIP = MAX_TIP_AMOUNT;
 
 /** FCFA has no cents: amounts are whole numbers. */
 function isZeroDecimal(currency: string): boolean {
@@ -36,3 +38,22 @@ export function cashQuickAdd(currency: string): readonly number[] {
 
 /** Longest amount the keypad accepts (999 999 999): beyond, parseFloat goes exponential. */
 export const MAX_KEYPAD_DIGITS = 9;
+
+/**
+ * Amounts the cashier collects, in MAJOR units.
+ *
+ * `recordedTip` is the tip the customer already left on the storefront (stored
+ * on the order); `extraTip` is what the cashier adds at the till. Both are
+ * collected: the ledger books `total + tip_amount`, and the server ADDS the
+ * till tip to the recorded one (it used to replace it). `tipTotal` is what
+ * the receipt shows, `extraTip` alone is what gets sent to the server, so the
+ * customer's tip is never counted twice.
+ */
+export function collectTotals(
+  orderTotal: number,
+  recordedTip: number,
+  extraTip: number,
+): { tipTotal: number; totalWithTip: number } {
+  const tipTotal = Math.max(0, recordedTip) + Math.max(0, extraTip);
+  return { tipTotal, totalWithTip: orderTotal + tipTotal };
+}
